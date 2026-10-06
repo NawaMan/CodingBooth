@@ -102,7 +102,7 @@ fi
 # answers this variant's root from a file on disk the instant it binds, with the
 # ttyd processes behind it still starting. So the assertion is on /s1/ — the
 # pane the opened page actually loads — and on the readiness endpoint booth
-# waits for. Asserting on '/' would pass with all four panes showing a 502.
+# waits for. Asserting on '/' would pass with every pane showing a 502.
 PANE="$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "http://localhost:$PORT/s1/" 2>/dev/null || echo "000")"
 if [[ "$PANE" =~ ^(200|301|302|401|403)$ ]]; then
   print_test_result "true" "$0" "2" "The booth's terminal was already answering ($PANE) when the browser was opened"

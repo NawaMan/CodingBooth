@@ -74,9 +74,9 @@ A second code-server works too, next to a `codeserver` booth's own: `start-codes
 from any terminal, including one inside code-server. It keeps its state in
 `~/.local/share/code-server-<port>` so the two do not share a session.
 
-The web console started with `start-webconsole` also uses the four ports just above its own and
-the seventh (`11112`–`11115`, `11118` by default), as the one on the booth port uses
-`10001`–`10004` and `10007`.
+The web console started with `start-webconsole` also uses the six ports just above its own and
+the seventh (`11112`–`11117`, `11118` by default), as the one on the booth port uses
+`10001`–`10006` and `10007`.
 
 Web apps from the catalog that serve their own UI default to the `2xxxx` range, one
 hundred apart: AFFiNE `20100`, AnythingLLM `20200`, CloudBeaver `20300`, Excalidraw `20400`,

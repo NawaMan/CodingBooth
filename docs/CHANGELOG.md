@@ -4,6 +4,43 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The Console UI has six panes, every 2×2 layout, and + / − buttons.** Two more sessions
+  (`/s5/`, `/s6/` on `10005`–`10006`; `11116`–`11117` for a `start-webconsole` console) and a
+  `grid6` layout of three columns by two rows. The toolbar now covers every way to divide a 2×2
+  grid — `right-main` and `bottom-main` join the six it had — and shows an **Other** button, drawn
+  in the layout's shape, only while the layout has no button of its own. **+** and **−** beside
+  Reload open and close a pane like `Ctrl+Alt+Enter` / `Ctrl+Alt+Shift+q`, and `Ctrl+Alt+1` … `6`
+  reach every session. Layouts are columns first: in `quad` and `grid6` each column has its own
+  top/bottom divider, and each preset remembers its divider positions. `.booth/console.json`
+  accepts the new names and panes `"5"` and `"6"`. The toolbar's **Reload** no longer stops at a
+  web tab showing an outside site, which used to leave the panes after it unreloaded. See
+  [Console Layout](BOOTH_CONSOLE.md#layouts).
+
+- **The Console UI's Keyboard Shortcut Hint is always on.** The toolbar pill that used to appear
+  only in resize mode now always shows the main keys — the `Ctrl+Alt` ones, then the
+  `Ctrl+Alt+Shift` ones, with the modifiers drawn as key caps — switches to what the keys do while
+  a mode is on (a full pane, where the next pane opens), and opens the full shortcut table when
+  clicked. That table, in CodingBooth Help, is grouped the same way and now ends with a picture of
+  the home-row keys. New `Ctrl+Alt+=` equalizes: every pane in the layout the same size, so a
+  dragged preset is even again. `Ctrl+Alt+r` (resize mode) is off for now; drag a divider to
+  resize.
+
+- **Reset a Console UI session.** Closing a pane only hides it; the new ⏻ in a terminal pane's
+  header, or `Ctrl+Alt+Shift+x`, really ends it. After a confirmation it ends that pane's tmux
+  session — its shell and whatever runs there — and the pane reconnects to a fresh shell. The
+  booth's message API gains `POST /booth-messages/api/session-reset`, which ends only the six
+  pane sessions, by exact name, and logs `console-session-reset` to the lifecycle log.
+
+- **A broken `.booth/console.json` no longer breaks or empties the console.** A tab containing
+  `</script>` or `<!--` used to end the page's embedded config early — losing it, and with `<!--`
+  the page script after it. An unknown layout now falls back to the smallest preset that shows
+  every pane given tabs instead of a lone pane; a layout name is matched without regard to case
+  or spaces; a tab that is not an address is skipped instead of opening as a Google search; and
+  every problem is named in a browser-console warning. A file with problems is never saved over,
+  even with `console-spec`. With `console-spec`, a preset whose dividers were dragged is now saved
+  as its whole tree, so the file reproduces the screen. See
+  [When the File Is Wrong](BOOTH_CONSOLE.md#when-the-file-is-wrong).
+
 - **Change or remove a booth's apt freeze from `booth config`.** A new booth is still frozen to
   today's Ubuntu archive snapshot, and later runs still keep that date. Now
   `--apt-snapshot <id>` sets a specific snapshot, `--apt-snapshot today` moves it to today, and

@@ -157,6 +157,16 @@
       padding: 5px 8px;
     }
 
+    button.pane-count {
+      min-width: 30px;
+      font-weight: 600;
+    }
+
+    button.pane-count:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
     button.active {
       border-color: var(--accent);
       color: white;
@@ -165,45 +175,10 @@
 
     .grid {
       --pane-gap: 8px;
-      --gap-half: calc(var(--pane-gap) / 2);
-      --split-x-pct: 50%;
-      --split-y-pct: 50%;
       padding: 8px;
-      display: grid;
-      gap: var(--pane-gap);
       min-height: 0;
       height: 100%;
       position: relative;
-    }
-
-    .grid.layout-single {
-      grid-template-columns: 1fr;
-      grid-template-rows: 1fr;
-    }
-
-    .grid.layout-hsplit {
-      grid-template-columns: calc(var(--split-x-pct) - var(--gap-half)) calc(100% - var(--split-x-pct) - var(--gap-half));
-      grid-template-rows: 1fr;
-    }
-
-    .grid.layout-vsplit {
-      grid-template-columns: 1fr;
-      grid-template-rows: calc(var(--split-y-pct) - var(--gap-half)) calc(100% - var(--split-y-pct) - var(--gap-half));
-    }
-
-    .grid.layout-quad {
-      grid-template-columns: calc(var(--split-x-pct) - var(--gap-half)) calc(100% - var(--split-x-pct) - var(--gap-half));
-      grid-template-rows: calc(var(--split-y-pct) - var(--gap-half)) calc(100% - var(--split-y-pct) - var(--gap-half));
-    }
-
-    .grid.layout-left-main {
-      grid-template-columns: calc(var(--split-x-pct) - var(--gap-half)) calc(100% - var(--split-x-pct) - var(--gap-half));
-      grid-template-rows: calc(var(--split-y-pct) - var(--gap-half)) calc(100% - var(--split-y-pct) - var(--gap-half));
-    }
-
-    .grid.layout-top-main {
-      grid-template-columns: calc(var(--split-x-pct) - var(--gap-half)) calc(100% - var(--split-x-pct) - var(--gap-half));
-      grid-template-rows: calc(var(--split-y-pct) - var(--gap-half)) calc(100% - var(--split-y-pct) - var(--gap-half));
     }
 
     .pane {
@@ -511,6 +486,29 @@
       flex-shrink: 0;
     }
 
+    /* Reset session: terminal panes only — a web view's tabs are not it. */
+    .session-reset {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 2px 4px;
+      line-height: 1;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .session-reset:hover {
+      color: #f87171;
+      background: rgba(248, 113, 113, 0.12);
+    }
+
+    .pane.mode-web .session-reset {
+      display: none;
+    }
+
     .proxy-open-tab:hover,
     .proxy-hist-back:hover,
     .proxy-hist-forward:hover,
@@ -556,9 +554,6 @@
 
     .split-handle-x {
       width: 12px;
-      top: 10px;
-      bottom: 10px;
-      left: calc(var(--split-x-pct) - 6px);
       cursor: col-resize;
     }
 
@@ -569,9 +564,6 @@
 
     .split-handle-y {
       height: 12px;
-      left: 10px;
-      right: 10px;
-      top: calc(var(--split-y-pct) - 6px);
       cursor: row-resize;
     }
 
@@ -580,28 +572,10 @@
       height: 2px;
     }
 
-    .grid.show-handle-x .split-handle-x {
-      display: block;
-    }
-
-    .grid.show-handle-y .split-handle-y {
-      display: block;
-    }
-
-    .grid.layout-left-main .split-handle-y {
-      left: calc(var(--split-x-pct) + var(--gap-half));
-      right: 10px;
-    }
-
-    .grid.layout-top-main .split-handle-x {
-      top: calc(var(--split-y-pct) + var(--gap-half));
-      bottom: 10px;
-    }
-
-    /* Tiling (Ctrl+Alt shortcuts, tiling.js): a layout that is not one of the
-       six presets places its panes absolutely from the layout tree, so the
-       pane elements — and the iframes in them — never move in the page. */
-    .grid.layout-tree .pane.active {
+    /* Every layout is a tree (tiling.js) and places its panes absolutely,
+       so the pane elements — and the iframes in them — never move in the
+       page when the layout changes. */
+    .grid .pane.active {
       position: absolute;
     }
 
@@ -632,19 +606,52 @@
       color: #333;
     }
 
-    .tiling-status {
-      display: none;
+    /* The Keyboard Shortcut Hint: always shown, quiet until a mode
+       (resize, full pane, next split) is on, then in the accent colour. */
+    .shortcut-hint {
+      display: inline-block;
+      align-self: center;
       font-family: "JetBrains Mono", "Fira Code", monospace;
       font-size: 11px;
-      color: var(--accent);
-      border: 1px solid var(--accent);
+      color: var(--muted);
+      border: 1px solid var(--panel-edge);
       border-radius: 8px;
       padding: 4px 8px;
       white-space: nowrap;
+      cursor: pointer;
     }
 
-    .tiling-status.shown {
+    .shortcut-hint.mode {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    /* A modifier key in the hint, drawn as an inverted key cap. */
+    .shortcut-hint kbd {
       display: inline-block;
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 700;
+      line-height: 1.2;
+      padding: 0 5px;
+      margin: 0 1px;
+      border-radius: 4px;
+      border: 1px solid color-mix(in srgb, currentColor, white 45%);
+      background: currentColor;
+    }
+
+    .shortcut-hint kbd span {
+      color: var(--bg);
+    }
+
+    /* Between the Ctrl+Alt keys and the Ctrl+Alt+Shift ones. */
+    .shortcut-hint .hint-gap {
+      display: inline-block;
+      width: 1px;
+      height: 12px;
+      margin: 0 9px;
+      vertical-align: middle;
+      background: var(--panel-edge);
     }
 
     .drag-overlay {
@@ -677,13 +684,9 @@
         flex-wrap: wrap;
       }
 
-      .grid.layout-hsplit,
-      .grid.layout-vsplit,
-      .grid.layout-quad,
-      .grid.layout-left-main,
-      .grid.layout-top-main {
-        grid-template-columns: 1fr;
-        grid-template-rows: repeat(4, minmax(0, 1fr));
+      /* No room, and rarely a keyboard: only a mode's hint stays. */
+      .shortcut-hint:not(.mode) {
+        display: none;
       }
 
       .split-handle {
@@ -707,162 +710,92 @@
         <button data-layout="left-main" title="Left Main">
           <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="10" y1="1" x2="10" y2="13" stroke="currentColor" stroke-width="1"/><line x1="10" y1="7" x2="15" y2="7" stroke="currentColor" stroke-width="1"/></svg>
         </button>
+        <button data-layout="right-main" title="Right Main">
+          <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="6" y1="1" x2="6" y2="13" stroke="currentColor" stroke-width="1"/><line x1="1" y1="7" x2="6" y2="7" stroke="currentColor" stroke-width="1"/></svg>
+        </button>
         <button data-layout="vsplit" title="Top - Bottom">
           <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" stroke-width="1"/></svg>
         </button>
         <button data-layout="top-main" title="Top Main">
           <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="1" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1"/><line x1="8" y1="8" x2="8" y2="13" stroke="currentColor" stroke-width="1"/></svg>
         </button>
+        <button data-layout="bottom-main" title="Bottom Main">
+          <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="1" y1="6" x2="15" y2="6" stroke="currentColor" stroke-width="1"/><line x1="8" y1="1" x2="8" y2="6" stroke="currentColor" stroke-width="1"/></svg>
+        </button>
         <button data-layout="quad" title="Quad">
           <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="8" y1="1" x2="8" y2="13" stroke="currentColor" stroke-width="1"/><line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" stroke-width="1"/></svg>
         </button>
-        <button id="tree-layout" title="Tiling layout" style="display:none"></button>
-        <span id="tiling-status" class="tiling-status" aria-live="polite"></span>
+        <button data-layout="grid6" title="Six (3 columns × 2 rows)">
+          <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="5.5" y1="1" x2="5.5" y2="13" stroke="currentColor" stroke-width="1"/><line x1="10.5" y1="1" x2="10.5" y2="13" stroke="currentColor" stroke-width="1"/><line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" stroke-width="1"/></svg>
+        </button>
+        <button id="tree-layout" title="Other layout" style="display:none"></button>
+        <span id="shortcut-hint" class="shortcut-hint" aria-live="polite"></span>
+        <button id="pane-add" class="pane-count" title="Add a pane beside the focused one (Ctrl+Alt+Enter)">+</button>
+        <button id="pane-remove" class="pane-count" title="Close the focused pane; its session keeps running (Ctrl+Alt+Shift+q)">&#x2212;</button>
         <button id="reload">Reload</button>
         <button id="kbcapture" title="Full screen mode with full keyboard capture: browser shortcuts like Ctrl+W go to the booth">&#x26F6;</button>
       </div>
     </header>
 
-    <main id="grid" class="grid layout-single">
-      <section class="pane pane-1" data-pane="1">
-        <div class="pane-header">
-          <span class="pane-title">Session 1</span>
-          <span class="proxy-page-title" data-session="1" title="">
-            <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5h4.2L9.5 4v6.5H3z" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M7.2 1.5V4H9.5" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>
-          </span>
-          <label class="proxy-addr" data-session="1">
-            <input class="proxy-port-input" data-session="1" type="text" placeholder="http://booth" spellcheck="false" autocomplete="off" aria-label="Booth address">
-          </label>
-          <button class="proxy-toggle" data-session="1" title="Web view">
-            <span class="proxy-toggle-web" aria-hidden="true">&#x1F310;</span>
-            <svg class="proxy-toggle-term" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1.25" y="1.25" width="11.5" height="11.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.2 4.4 L7.2 7 L4.2 9.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-          <button class="md-toggle" data-session="1" title="Markdown viewer">
-            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3.2 1.5h5.1L11.5 4.7v7.8H3.2z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M8.2 1.5V4.7H11.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M5 8.2h4M5 10.3h2.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-          </button>
-          <button class="proxy-reload" data-session="1" title="Reload">&#x21BB;</button>
-          <button class="proxy-hist-back" data-session="1" title="Back" style="display:none">&#x2190;</button>
-          <button class="proxy-hist-forward" data-session="1" title="Forward" style="display:none">&#x2192;</button>
-          <button class="proxy-open-tab" data-session="1" title="Open in new tab" style="display:none">&#x2197;</button>
-          <span class="proxy-warning" data-session="1" title="URL rewriting is best-effort. Some apps using dynamic JS URLs may not work correctly. For full compatibility, use booth expose." style="display:none">&#x26A0;</span>
-        </div>
-        <div class="tab-strip" data-pane="1">
-          <button class="tab-add" data-pane="1" title="New tab">+</button>
-          <div class="tab-list" data-pane="1"></div>
-        </div>
-        <div class="pane-body" data-pane="1">
-          <iframe class="term-frame" title="Session 1" data-default-src="s1/"></iframe>
-          <div class="tab-empty" data-pane="1"></div>
-        </div>
-      </section>
-      <section class="pane pane-2" data-pane="2">
-        <div class="pane-header">
-          <span class="pane-title">Session 2</span>
-          <span class="proxy-page-title" data-session="2" title="">
-            <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5h4.2L9.5 4v6.5H3z" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M7.2 1.5V4H9.5" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>
-          </span>
-          <label class="proxy-addr" data-session="2">
-            <input class="proxy-port-input" data-session="2" type="text" placeholder="http://booth" spellcheck="false" autocomplete="off" aria-label="Booth address">
-          </label>
-          <button class="proxy-toggle" data-session="2" title="Web view">
-            <span class="proxy-toggle-web" aria-hidden="true">&#x1F310;</span>
-            <svg class="proxy-toggle-term" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1.25" y="1.25" width="11.5" height="11.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.2 4.4 L7.2 7 L4.2 9.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-          <button class="md-toggle" data-session="2" title="Markdown viewer">
-            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3.2 1.5h5.1L11.5 4.7v7.8H3.2z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M8.2 1.5V4.7H11.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M5 8.2h4M5 10.3h2.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-          </button>
-          <button class="proxy-reload" data-session="2" title="Reload">&#x21BB;</button>
-          <button class="proxy-hist-back" data-session="2" title="Back" style="display:none">&#x2190;</button>
-          <button class="proxy-hist-forward" data-session="2" title="Forward" style="display:none">&#x2192;</button>
-          <button class="proxy-open-tab" data-session="2" title="Open in new tab" style="display:none">&#x2197;</button>
-          <span class="proxy-warning" data-session="2" title="URL rewriting is best-effort. Some apps using dynamic JS URLs may not work correctly. For full compatibility, use booth expose." style="display:none">&#x26A0;</span>
-        </div>
-        <div class="tab-strip" data-pane="2">
-          <button class="tab-add" data-pane="2" title="New tab">+</button>
-          <div class="tab-list" data-pane="2"></div>
-        </div>
-        <div class="pane-body" data-pane="2">
-          <iframe class="term-frame" title="Session 2" data-default-src="s2/"></iframe>
-          <div class="tab-empty" data-pane="2"></div>
-        </div>
-      </section>
-      <section class="pane pane-3" data-pane="3">
-        <div class="pane-header">
-          <span class="pane-title">Session 3</span>
-          <span class="proxy-page-title" data-session="3" title="">
-            <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5h4.2L9.5 4v6.5H3z" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M7.2 1.5V4H9.5" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>
-          </span>
-          <label class="proxy-addr" data-session="3">
-            <input class="proxy-port-input" data-session="3" type="text" placeholder="http://booth" spellcheck="false" autocomplete="off" aria-label="Booth address">
-          </label>
-          <button class="proxy-toggle" data-session="3" title="Web view">
-            <span class="proxy-toggle-web" aria-hidden="true">&#x1F310;</span>
-            <svg class="proxy-toggle-term" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1.25" y="1.25" width="11.5" height="11.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.2 4.4 L7.2 7 L4.2 9.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-          <button class="md-toggle" data-session="3" title="Markdown viewer">
-            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3.2 1.5h5.1L11.5 4.7v7.8H3.2z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M8.2 1.5V4.7H11.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M5 8.2h4M5 10.3h2.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-          </button>
-          <button class="proxy-reload" data-session="3" title="Reload">&#x21BB;</button>
-          <button class="proxy-hist-back" data-session="3" title="Back" style="display:none">&#x2190;</button>
-          <button class="proxy-hist-forward" data-session="3" title="Forward" style="display:none">&#x2192;</button>
-          <button class="proxy-open-tab" data-session="3" title="Open in new tab" style="display:none">&#x2197;</button>
-          <span class="proxy-warning" data-session="3" title="URL rewriting is best-effort. Some apps using dynamic JS URLs may not work correctly. For full compatibility, use booth expose." style="display:none">&#x26A0;</span>
-        </div>
-        <div class="tab-strip" data-pane="3">
-          <button class="tab-add" data-pane="3" title="New tab">+</button>
-          <div class="tab-list" data-pane="3"></div>
-        </div>
-        <div class="pane-body" data-pane="3">
-          <iframe class="term-frame" title="Session 3" data-default-src="s3/"></iframe>
-          <div class="tab-empty" data-pane="3"></div>
-        </div>
-      </section>
-      <section class="pane pane-4" data-pane="4">
-        <div class="pane-header">
-          <span class="pane-title">Session 4</span>
-          <span class="proxy-page-title" data-session="4" title="">
-            <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5h4.2L9.5 4v6.5H3z" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M7.2 1.5V4H9.5" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>
-          </span>
-          <label class="proxy-addr" data-session="4">
-            <input class="proxy-port-input" data-session="4" type="text" placeholder="http://booth" spellcheck="false" autocomplete="off" aria-label="Booth address">
-          </label>
-          <button class="proxy-toggle" data-session="4" title="Web view">
-            <span class="proxy-toggle-web" aria-hidden="true">&#x1F310;</span>
-            <svg class="proxy-toggle-term" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1.25" y="1.25" width="11.5" height="11.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.2 4.4 L7.2 7 L4.2 9.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-          <button class="md-toggle" data-session="4" title="Markdown viewer">
-            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3.2 1.5h5.1L11.5 4.7v7.8H3.2z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M8.2 1.5V4.7H11.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M5 8.2h4M5 10.3h2.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-          </button>
-          <button class="proxy-reload" data-session="4" title="Reload">&#x21BB;</button>
-          <button class="proxy-hist-back" data-session="4" title="Back" style="display:none">&#x2190;</button>
-          <button class="proxy-hist-forward" data-session="4" title="Forward" style="display:none">&#x2192;</button>
-          <button class="proxy-open-tab" data-session="4" title="Open in new tab" style="display:none">&#x2197;</button>
-          <span class="proxy-warning" data-session="4" title="URL rewriting is best-effort. Some apps using dynamic JS URLs may not work correctly. For full compatibility, use booth expose." style="display:none">&#x26A0;</span>
-        </div>
-        <div class="tab-strip" data-pane="4">
-          <button class="tab-add" data-pane="4" title="New tab">+</button>
-          <div class="tab-list" data-pane="4"></div>
-        </div>
-        <div class="pane-body" data-pane="4">
-          <iframe class="term-frame" title="Session 4" data-default-src="s4/"></iframe>
-          <div class="tab-empty" data-pane="4"></div>
-        </div>
-      </section>
-      <div id="handle-x" class="split-handle split-handle-x" aria-hidden="true"></div>
-      <div id="handle-y" class="split-handle split-handle-y" aria-hidden="true"></div>
+    <main id="grid" class="grid">
+      <!-- The six panes are stamped from #pane-template by the script below. -->
     </main>
+    <template id="pane-template">
+      <section class="pane pane-__N__" data-pane="__N__">
+        <div class="pane-header">
+          <span class="pane-title">Session __N__</span>
+          <span class="proxy-page-title" data-session="__N__" title="">
+            <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5h4.2L9.5 4v6.5H3z" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M7.2 1.5V4H9.5" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>
+          </span>
+          <label class="proxy-addr" data-session="__N__">
+            <input class="proxy-port-input" data-session="__N__" type="text" placeholder="http://booth" spellcheck="false" autocomplete="off" aria-label="Booth address">
+          </label>
+          <button class="proxy-toggle" data-session="__N__" title="Web view">
+            <span class="proxy-toggle-web" aria-hidden="true">&#x1F310;</span>
+            <svg class="proxy-toggle-term" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1.25" y="1.25" width="11.5" height="11.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.2 4.4 L7.2 7 L4.2 9.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="md-toggle" data-session="__N__" title="Markdown viewer">
+            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3.2 1.5h5.1L11.5 4.7v7.8H3.2z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M8.2 1.5V4.7H11.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M5 8.2h4M5 10.3h2.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          </button>
+          <button class="proxy-reload" data-session="__N__" title="Reload">&#x21BB;</button>
+          <button class="session-reset" data-session="__N__" title="Reset session __N__: a fresh shell; stops what runs in it (Ctrl+Alt+Shift+x)">
+            <svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 1.6v4.2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M4.1 3.3a5 5 0 1 0 5.8 0" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </button>
+          <button class="proxy-hist-back" data-session="__N__" title="Back" style="display:none">&#x2190;</button>
+          <button class="proxy-hist-forward" data-session="__N__" title="Forward" style="display:none">&#x2192;</button>
+          <button class="proxy-open-tab" data-session="__N__" title="Open in new tab" style="display:none">&#x2197;</button>
+          <span class="proxy-warning" data-session="__N__" title="URL rewriting is best-effort. Some apps using dynamic JS URLs may not work correctly. For full compatibility, use booth expose." style="display:none">&#x26A0;</span>
+        </div>
+        <div class="tab-strip" data-pane="__N__">
+          <button class="tab-add" data-pane="__N__" title="New tab">+</button>
+          <div class="tab-list" data-pane="__N__"></div>
+        </div>
+        <div class="pane-body" data-pane="__N__">
+          <iframe class="term-frame" title="Session __N__" data-default-src="s__N__/"></iframe>
+          <div class="tab-empty" data-pane="__N__"></div>
+        </div>
+      </section>
+    </template>
   </div>
   <div id="drag-overlay" class="drag-overlay" aria-hidden="true"></div>
 
   <script>
     (() => {
+      // Every layout, preset or not, is a tree from tiling.js.
+      const Tiling = window.BoothTiling;
       const grid = document.getElementById("grid");
-      const panes = Array.from(document.querySelectorAll(".pane"));
-      const handleX = document.getElementById("handle-x");
-      const handleY = document.getElementById("handle-y");
+      // One pane per session start-ttyd-split runs (/s1/ … /s6/), stamped
+      // from #pane-template before anything below looks them up.
+      const paneTemplate = document.getElementById("pane-template").innerHTML;
+      for (let n = 1; n <= Tiling.MAX_PANES; n++) {
+        grid.insertAdjacentHTML("beforeend", paneTemplate.replace(/__N__/g, String(n)));
+      }
+      const panes = Array.from(grid.querySelectorAll(".pane"));
       const dragOverlay = document.getElementById("drag-overlay");
       const layoutButtons = Array.from(document.querySelectorAll("[data-layout]"));
       const reloadButton = document.getElementById("reload");
+      const paneAddButton = document.getElementById("pane-add");
+      const paneRemoveButton = document.getElementById("pane-remove");
       const kbCaptureButton = document.getElementById("kbcapture");
       const projectName = (document.querySelector('meta[name="booth-project"]') || {}).content || "default";
 
@@ -871,14 +804,90 @@
       // type="application/json" (inert text, never JS-parsed) plus our own
       // JSON.parse means a malformed file just yields {} here instead of
       // ever risking a syntax error in this script itself.
+      //
+      // Whatever the file holds, the console still loads: anything outside
+      // the documented shape is dropped with a console.warn saying so, and
+      // what is left comes back as { layout, panes } in the shape the code
+      // below expects — never a half-valid value for it to trip on.
+      let consoleConfigProblems = 0;
+      function warnConsoleConfig(message) {
+        consoleConfigProblems++;
+        console.warn(".booth/console.json: " + message);
+      }
+
+      function isPlainObject(value) {
+        return !!value && typeof value === "object" && !Array.isArray(value);
+      }
+
+      // The smallest toolbar layout that shows panes 1 … highest, so a pane
+      // the file gives tabs to is never hidden by a fallback.
+      function layoutShowingPanes(highest) {
+        if (highest >= 5) return "grid6";
+        if (highest === 4) return "quad";
+        if (highest === 3) return "left-main";
+        if (highest === 2) return "hsplit";
+        return "single";
+      }
+
       function readConsoleConfig() {
+        const out = { layout: "", panes: {} };
+        let raw;
         try {
-          var el = document.getElementById("cb-console-config");
-          var parsed = el && JSON.parse(el.textContent);
-          return (parsed && typeof parsed === "object") ? parsed : {};
+          const el = document.getElementById("cb-console-config");
+          const text = el ? el.textContent.trim() : "";
+          raw = text ? JSON.parse(text) : {};
         } catch (_e) {
-          return {};
+          warnConsoleConfig("not readable as JSON; ignored");
+          return out;
         }
+        if (!isPlainObject(raw)) {
+          warnConsoleConfig("expected an object like { \"layout\": …, \"panes\": { … } }; ignored");
+          return out;
+        }
+
+        if (raw.panes !== undefined && !isPlainObject(raw.panes)) {
+          warnConsoleConfig("\"panes\" must be an object keyed \"1\" … \"" + Tiling.MAX_PANES + "\"; ignored");
+        }
+        let highest = 0;
+        Object.keys(isPlainObject(raw.panes) ? raw.panes : {}).forEach(function(key) {
+          const n = Number(String(key).trim());
+          if (!Number.isInteger(n) || n < 1 || n > Tiling.MAX_PANES) {
+            warnConsoleConfig("pane \"" + key + "\" is not 1 … " + Tiling.MAX_PANES + "; ignored");
+            return;
+          }
+          const cfg = raw.panes[key];
+          if (!isPlainObject(cfg)) {
+            warnConsoleConfig("pane " + n + " must be an object like { \"web\": true, \"tabs\": [ … ] }; ignored");
+            return;
+          }
+          const pane = { tabs: [] };
+          if (cfg.web === true || cfg.web === false) pane.web = cfg.web;
+          else if (cfg.web !== undefined) warnConsoleConfig("pane " + n + ": \"web\" must be true or false; left a terminal");
+          if (cfg.force === true) pane.force = true;
+          if (cfg.tabs !== undefined && !Array.isArray(cfg.tabs)) {
+            warnConsoleConfig("pane " + n + ": \"tabs\" must be a list of addresses; ignored");
+          }
+          (Array.isArray(cfg.tabs) ? cfg.tabs : []).forEach(function(tab) {
+            if (typeof tab === "string" && tab.trim()) pane.tabs.push(tab.trim());
+            else if (Number.isInteger(tab) && tab > 0) pane.tabs.push(":" + tab);   // a bare port
+            else warnConsoleConfig("pane " + n + ": tab " + JSON.stringify(tab) + " is not an address; skipped");
+          });
+          out.panes[String(n)] = pane;
+          if (pane.web && pane.tabs.length) highest = Math.max(highest, n);
+        });
+
+        // A layout that cannot be read falls back to one that shows every
+        // pane given tabs above; so does a file with tabs but no layout.
+        const layout = typeof raw.layout === "string" ? raw.layout.trim().toLowerCase() : "";
+        if (layout && isKnownLayout(layout)) {
+          out.layout = layout;
+        } else if (raw.layout !== undefined || highest > 1) {
+          out.layout = layoutShowingPanes(highest);
+          if (raw.layout !== undefined) {
+            warnConsoleConfig("\"layout\": " + JSON.stringify(raw.layout) + " is not a layout; using \"" + out.layout + "\"");
+          }
+        }
+        return out;
       }
       const consoleConfig = readConsoleConfig();
 
@@ -902,7 +911,7 @@
       // terminal pane is simply absent, matching how an absent pane in the
       // file already means "leave it as a terminal" on the read side.
       function buildCurrentConsoleSpec() {
-        var spec = { layout: currentLayout, panes: {} };
+        var spec = { layout: consoleLayoutText(), panes: {} };
         panes.forEach(function(pane) {
           if (!pane.classList.contains("mode-web")) return;
           var session = pane.getAttribute("data-pane");
@@ -914,12 +923,35 @@
         return spec;
       }
 
+      // The layout as console.json gets it: a preset by name while its
+      // dividers are where the preset puts them, otherwise the whole tree
+      // with its sizes — h(v(1@30,3),v(2,4)) is still quad, and reads back
+      // as quad, but the file reproduces the screen exactly. (The URL and
+      // localStorage keep the name; this browser has the sizes already.)
+      function consoleLayoutText() {
+        if (!currentTree || !isPresetName(currentLayout)) return currentLayout;
+        var text = Tiling.serialize(currentTree);
+        return text === Tiling.serialize(Tiling.presetTree(currentLayout)) ? currentLayout : text;
+      }
+
       // Debounced so a burst of changes (closing several tabs, say) becomes
       // one write, not several — each one is a real file write, and for
       // console-spec=shared a real git-working-tree change.
       let consoleSaveTimer = null;
+      // A file that could not be read in full is never saved over: what it
+      // got wrong is still the author's, to fix by hand, and a save would
+      // replace it with only the part that was understood. Changes then
+      // live in this browser alone, as without console-spec.
+      let consoleSaveRefusalWarned = false;
       function scheduleConsoleSave() {
         if (!consoleSpecMode || suppressConsoleSave) return;
+        if (consoleConfigProblems) {
+          if (!consoleSaveRefusalWarned) {
+            consoleSaveRefusalWarned = true;
+            console.warn(".booth/console.json: not saving layout changes over a file with problems (see above); fix it and restart the booth");
+          }
+          return;
+        }
         clearTimeout(consoleSaveTimer);
         consoleSaveTimer = setTimeout(function() {
           fetch("booth-messages/api/console-config", {
@@ -963,41 +995,32 @@
 
       const minSplit = 0.2;
       const maxSplit = 0.8;
-      let dragAxis = null;
-      let dragHandle = null;
-      let activePointerId = null;
-
-      const layouts = {
-        single: [1],
-        hsplit: [1, 2],
-        vsplit: [1, 2],
-        quad: [1, 2, 3, 4],
-        "left-main": [1, 2, 3],
-        "top-main": [1, 2, 3]
-      };
 
       let currentLayout = "single";
+      // The two shared divider positions from before presets were trees —
+      // the starting positions of a preset this browser has no sizes saved for.
       const split = loadSplitValues();
 
-      // Besides the six preset names, a layout can be a tiling tree written
-      // as text — h(1,v(2,3)) — from the Ctrl+Alt shortcuts (tiling.js).
-      const Tiling = window.BoothTiling || null;
+      // A layout is a preset name (a toolbar button) or a tiling tree written
+      // as text — h(1,v(2,3)) — from the Ctrl+Alt shortcuts.
+      function isPresetName(mode) {
+        return Tiling.PRESET_NAMES.indexOf(mode) >= 0;
+      }
       function isKnownLayout(mode) {
         if (typeof mode !== "string") return false;
-        return !!layouts[mode] || !!(Tiling && Tiling.parse(mode));
+        return isPresetName(mode) || !!Tiling.parse(mode);
       }
 
       // Tiling state — see "Tiling" further down. Declared up here because
       // setLayout, which runs on every layout change, reads it.
-      let currentTree = null;   // set only while a tree layout (not a preset) shows
+      let currentTree = null;   // the layout showing, as a tree
       let zoomPane = null;      // Ctrl+Alt+F: the one pane filling the grid
       let focusedPane = 1;      // the pane the shortcuts act on
       let pendingSplit = null;  // Ctrl+Alt+B / V: { pane, dir } for the next open
       let resizeMode = false;   // Ctrl+Alt+R
       let treeDrag = null;      // a tree divider being dragged
-      const tilingStatus = document.getElementById("tiling-status");
+      const shortcutHint = document.getElementById("shortcut-hint");
       const treeLayoutButton = document.getElementById("tree-layout");
-      let lastTreeLayout = "";  // the tree layout the toolbar's tiling button goes back to
 
       function clamp(value, min, max) {
         return Math.min(max, Math.max(min, value));
@@ -1025,12 +1048,31 @@
         }
       }
 
-      function saveSplitValues() {
+      // Each preset keeps its own divider positions, so going back to a
+      // preset shows it the way it was left: { quad: "h(v(1@40,3),v(2,4))" }.
+      const presetSizesStorageKey = "cb.webSplit." + projectName + ".presetSizes";
+      const presetSizes = (function() {
         try {
-          window.localStorage.setItem(splitStorageKey, JSON.stringify(split));
+          const parsed = JSON.parse(window.localStorage.getItem(presetSizesStorageKey) || "{}");
+          return parsed && typeof parsed === "object" ? parsed : {};
+        } catch (_error) {
+          return {};
+        }
+      })();
+
+      function savePresetSizes(name, tree) {
+        presetSizes[name] = Tiling.serialize(tree);
+        try {
+          window.localStorage.setItem(presetSizesStorageKey, JSON.stringify(presetSizes));
         } catch (_error) {
           // Ignore localStorage write failures (private mode / restricted env).
         }
+      }
+
+      function presetTreeFor(name) {
+        const saved = typeof presetSizes[name] === "string" ? Tiling.parse(presetSizes[name]) : null;
+        const match = saved && Tiling.matchPreset(saved);
+        return match && match.name === name ? saved : Tiling.presetTree(name, split.x, split.y);
       }
 
       function loadSavedLayout() {
@@ -1053,24 +1095,6 @@
           // Ignore localStorage write failures (private mode / restricted env).
         }
         scheduleConsoleSave();
-      }
-
-      function applySplitVariables() {
-        grid.style.setProperty("--split-x-pct", (split.x * 100).toFixed(2) + "%");
-        grid.style.setProperty("--split-y-pct", (split.y * 100).toFixed(2) + "%");
-      }
-
-      function setPanePosition(pane, row, column) {
-        pane.style.gridRow = String(row);
-        pane.style.gridColumn = String(column);
-      }
-
-      function layoutHasXSplit(layout) {
-        return layout === "hsplit" || layout === "quad" || layout === "left-main" || layout === "top-main";
-      }
-
-      function layoutHasYSplit(layout) {
-        return layout === "vsplit" || layout === "quad" || layout === "left-main" || layout === "top-main";
       }
 
       function parseModeFromHash() {
@@ -1097,221 +1121,21 @@
         window.history.replaceState(null, "", nextUrl);
       }
 
-      function updateGridGeometry(layout) {
-        panes.forEach((pane) => {
-          pane.style.gridRow = "";
-          pane.style.gridColumn = "";
-        });
-
-        if (compactQuery.matches) {
-          grid.style.gridTemplateColumns = "1fr";
-          if (layout === "single") {
-            grid.style.gridTemplateRows = "1fr";
-            setPanePosition(panes[0], 1, 1);
-          } else if (layout === "quad") {
-            grid.style.gridTemplateRows = "repeat(4, minmax(0, 1fr))";
-            panes.forEach((pane, index) => setPanePosition(pane, index + 1, 1));
-          } else if (layout === "left-main" || layout === "top-main") {
-            grid.style.gridTemplateRows = "repeat(3, minmax(0, 1fr))";
-            setPanePosition(panes[0], 1, 1);
-            setPanePosition(panes[1], 2, 1);
-            setPanePosition(panes[2], 3, 1);
-          } else {
-            grid.style.gridTemplateRows = "repeat(2, minmax(0, 1fr))";
-            setPanePosition(panes[0], 1, 1);
-            setPanePosition(panes[1], 2, 1);
-          }
-          return;
-        }
-
-        if (layout === "single") {
-          grid.style.gridTemplateColumns = "1fr";
-          grid.style.gridTemplateRows = "1fr";
-          setPanePosition(panes[0], 1, 1);
-        } else if (layout === "hsplit") {
-          grid.style.gridTemplateColumns =
-            "calc(var(--split-x-pct) - var(--gap-half)) calc(100% - var(--split-x-pct) - var(--gap-half))";
-          grid.style.gridTemplateRows = "1fr";
-          setPanePosition(panes[0], 1, 1);
-          setPanePosition(panes[1], 1, 2);
-        } else if (layout === "vsplit") {
-          grid.style.gridTemplateColumns = "1fr";
-          grid.style.gridTemplateRows =
-            "calc(var(--split-y-pct) - var(--gap-half)) calc(100% - var(--split-y-pct) - var(--gap-half))";
-          setPanePosition(panes[0], 1, 1);
-          setPanePosition(panes[1], 2, 1);
-        } else if (layout === "left-main") {
-          grid.style.gridTemplateColumns =
-            "calc(var(--split-x-pct) - var(--gap-half)) calc(100% - var(--split-x-pct) - var(--gap-half))";
-          grid.style.gridTemplateRows =
-            "calc(var(--split-y-pct) - var(--gap-half)) calc(100% - var(--split-y-pct) - var(--gap-half))";
-          panes[0].style.gridRow = "1 / span 2";
-          panes[0].style.gridColumn = "1";
-          setPanePosition(panes[1], 1, 2);
-          setPanePosition(panes[2], 2, 2);
-        } else if (layout === "top-main") {
-          grid.style.gridTemplateColumns =
-            "calc(var(--split-x-pct) - var(--gap-half)) calc(100% - var(--split-x-pct) - var(--gap-half))";
-          grid.style.gridTemplateRows =
-            "calc(var(--split-y-pct) - var(--gap-half)) calc(100% - var(--split-y-pct) - var(--gap-half))";
-          panes[0].style.gridRow = "1";
-          panes[0].style.gridColumn = "1 / span 2";
-          setPanePosition(panes[1], 2, 1);
-          setPanePosition(panes[2], 2, 2);
-        } else {
-          grid.style.gridTemplateColumns =
-            "calc(var(--split-x-pct) - var(--gap-half)) calc(100% - var(--split-x-pct) - var(--gap-half))";
-          grid.style.gridTemplateRows =
-            "calc(var(--split-y-pct) - var(--gap-half)) calc(100% - var(--split-y-pct) - var(--gap-half))";
-          setPanePosition(panes[0], 1, 1);
-          setPanePosition(panes[1], 1, 2);
-          setPanePosition(panes[2], 2, 1);
-          setPanePosition(panes[3], 2, 2);
-        }
-      }
-
+      // Shows a layout by name: a preset, or a tree written as text. Anything
+      // else shows a single pane.
       function setLayout(layout, options = {}) {
-        if (!layouts[layout] && Tiling) {
-          const tree = Tiling.parse(layout || "");
-          if (tree) {
-            setTreeLayout(tree, options);
-            return;
-          }
-        }
-        leaveTreeLayout();
-        const updateHash = options.updateHash !== false;
-        const persistLayout = options.persistLayout !== false;
-        currentLayout = layouts[layout] ? layout : "single";
-        const activePanes = new Set(layouts[currentLayout]);
-
-        grid.className = "grid layout-" + currentLayout;
-
-        const showX = !compactQuery.matches && layoutHasXSplit(currentLayout);
-        const showY = !compactQuery.matches && layoutHasYSplit(currentLayout);
-        grid.classList.toggle("show-handle-x", showX);
-        grid.classList.toggle("show-handle-y", showY);
-
-        panes.forEach((pane, index) => {
-          const paneNumber = index + 1;
-          pane.classList.toggle("active", activePanes.has(paneNumber));
-        });
-
-        updateGridGeometry(currentLayout);
-        applySplitVariables();
-
-        layoutButtons.forEach((button) => {
-          button.classList.toggle("active", button.dataset.layout === currentLayout);
-        });
-
-        if (persistLayout) {
-          saveLayout(currentLayout);
-        }
-        if (updateHash) {
-          setHashMode(currentLayout);
-        }
-        refreshTilingFocus();
-        updateTreeLayoutButton();
-      }
-
-      function updateSplitFromPointer(event) {
-        const rect = grid.getBoundingClientRect();
-        if (dragAxis === "x" && rect.width > 0) {
-          split.x = clamp((event.clientX - rect.left) / rect.width, minSplit, maxSplit);
-        } else if (dragAxis === "y" && rect.height > 0) {
-          split.y = clamp((event.clientY - rect.top) / rect.height, minSplit, maxSplit);
-        } else {
-          return;
-        }
-
-        applySplitVariables();
-        updateGridGeometry(currentLayout);
-        saveSplitValues();
-      }
-
-      function beginDrag(axis, event) {
-        if (compactQuery.matches) {
-          return;
-        }
-
-        if (axis === "x" && !layoutHasXSplit(currentLayout)) {
-          return;
-        }
-
-        if (axis === "y" && !layoutHasYSplit(currentLayout)) {
-          return;
-        }
-
-        dragAxis = axis;
-        dragHandle = axis === "x" ? handleX : handleY;
-        activePointerId = typeof event.pointerId === "number" ? event.pointerId : null;
-        document.body.classList.add(axis === "x" ? "dragging-col" : "dragging-row");
-        dragOverlay.classList.add("active", axis === "x" ? "axis-x" : "axis-y");
-        if (dragHandle && activePointerId !== null && typeof dragHandle.setPointerCapture === "function") {
-          try {
-            dragHandle.setPointerCapture(activePointerId);
-          } catch (_error) {
-            // Ignore pointer-capture failures.
-          }
-        }
-        event.preventDefault();
-        updateSplitFromPointer(event);
-      }
-
-      function handlePointerMove(event) {
-        if (!dragAxis) {
-          return;
-        }
-
-        if (activePointerId !== null && typeof event.pointerId === "number" && event.pointerId !== activePointerId) {
-          return;
-        }
-
-        updateSplitFromPointer(event);
-      }
-
-      function endDrag() {
-        if (!dragAxis) {
-          return;
-        }
-
-        if (dragHandle && activePointerId !== null && typeof dragHandle.releasePointerCapture === "function") {
-          try {
-            dragHandle.releasePointerCapture(activePointerId);
-          } catch (_error) {
-            // Ignore pointer-release failures.
-          }
-        }
-
-        dragAxis = null;
-        dragHandle = null;
-        activePointerId = null;
-        document.body.classList.remove("dragging-col", "dragging-row");
-        dragOverlay.classList.remove("active", "axis-x", "axis-y");
+        const tree = isPresetName(layout) ? presetTreeFor(layout) : Tiling.parse(layout || "");
+        setTreeLayout(tree || Tiling.presetTree("single"), options);
       }
 
       layoutButtons.forEach((button) => {
         button.addEventListener("click", () => setLayout(button.dataset.layout));
       });
 
-      handleX.addEventListener("pointerdown", (event) => beginDrag("x", event));
-      handleY.addEventListener("pointerdown", (event) => beginDrag("y", event));
-      dragOverlay.addEventListener("pointermove", handlePointerMove);
-      window.addEventListener("pointermove", handlePointerMove);
-      dragOverlay.addEventListener("pointerup", endDrag);
-      dragOverlay.addEventListener("pointercancel", endDrag);
-      window.addEventListener("pointerup", endDrag);
-      window.addEventListener("pointercancel", endDrag);
-      window.addEventListener("blur", endDrag);
-      window.addEventListener("dragstart", (event) => {
-        if (dragAxis) {
-          event.preventDefault();
-        }
-      });
-
       if (typeof compactQuery.addEventListener === "function") {
-        compactQuery.addEventListener("change", () => setLayout(currentLayout, { updateHash: false }));
+        compactQuery.addEventListener("change", () => showCurrentLayout());
       } else if (typeof compactQuery.addListener === "function") {
-        compactQuery.addListener(() => setLayout(currentLayout, { updateHash: false }));
+        compactQuery.addListener(() => showCurrentLayout());
       }
 
       window.addEventListener("hashchange", () => {
@@ -1320,15 +1144,27 @@
         setLayout(hashMode || savedMode || "single", { updateHash: false });
       });
 
+      // Reloads what a pane's iframe shows. A terminal reattaches to its tmux
+      // session, so nothing running in it is lost. A booth page is
+      // same-origin and reloads in place, keeping its history; an outside
+      // site is cross-origin, where location.reload() throws, so it is
+      // loaded again from its src — the page the tab opened on, since where
+      // a cross-origin page has navigated to cannot be read.
+      function reloadFrame(iframe) {
+        if (!iframe) return;
+        try {
+          iframe.contentWindow.location.reload();
+        } catch (_e) {
+          iframe.src = iframe.src;
+        }
+      }
+
       reloadButton.addEventListener("click", () => {
         panes.forEach((pane) => {
           if (!pane.classList.contains("active")) {
             return;
           }
-          const iframe = activeWebFrame(pane) || pane.querySelector(".term-frame");
-          if (iframe && iframe.contentWindow) {
-            iframe.contentWindow.location.reload();
-          }
+          reloadFrame(activeWebFrame(pane) || pane.querySelector(".term-frame"));
         });
       });
 
@@ -1351,14 +1187,13 @@
 
       // ── Tiling: i3-style Ctrl+Alt shortcuts ──
       // The same keys as the i3 template's +ctrl-alt bindings (i3--setup.sh),
-      // acting on the four panes: focus, move, split, open, close, full,
+      // acting on the six panes: focus, move, split, open, close, full,
       // resize. The layout logic is tiling.js; this is the page side.
       //
-      // The six presets keep their own grid code above untouched. A shortcut
-      // turns the current preset into a tree, edits it, and shows the result
-      // as a preset again whenever it is exactly one (tiling.js matchPreset);
-      // anything else shows as a tree layout, placed absolutely so the pane
-      // elements, and the terminals in them, never move in the page.
+      // Every layout is a tree, placed absolutely so the pane elements, and
+      // the terminals in them, never move in the page. A shortcut edits the
+      // tree, and the result shows as a preset whenever it has a preset's
+      // shape (tiling.js matchPreset); anything else is "Other".
       //
       // Keys pressed inside a pane arrive in that pane's iframe, not here, so
       // each same-origin frame (the terminals, booth web tabs) gets the same
@@ -1374,7 +1209,7 @@
       }
 
       function layoutTreeNow() {
-        return currentTree || Tiling.presetTree(currentLayout, split.x, split.y);
+        return currentTree || Tiling.presetTree("single");
       }
 
       function clearTreeGeometry() {
@@ -1386,13 +1221,6 @@
           pane.style.height = "";
         });
         grid.querySelectorAll(".tree-handle").forEach(function(handle) { handle.remove(); });
-      }
-
-      function leaveTreeLayout() {
-        currentTree = null;
-        zoomPane = null;
-        clearTreeGeometry();
-        setTilingStatus();
       }
 
       // Lengths below are [fraction of the grid's content box, px]: a split
@@ -1465,16 +1293,11 @@
 
       // Places the panes of `tree` without touching currentTree — the full
       // pane of Ctrl+Alt+F is drawn this way too. Narrow screens stack the
-      // panes in tree order, as the presets do.
+      // panes in tree order.
       function renderTree(tree) {
         clearTreeGeometry();
-        grid.className = "grid layout-tree";
-        grid.style.gridTemplateColumns = "";
-        grid.style.gridTemplateRows = "";
         const order = Tiling.panes(tree);
         panes.forEach(function(pane, index) {
-          pane.style.gridRow = "";
-          pane.style.gridColumn = "";
           pane.classList.toggle("active", order.indexOf(index + 1) >= 0);
         });
         // Narrow: the same panes stacked in tree order, one column.
@@ -1489,28 +1312,25 @@
 
       function setTreeLayout(tree, options = {}) {
         const preset = Tiling.matchPreset(tree);
-        if (preset) {
-          if (preset.x !== undefined) split.x = preset.x;
-          if (preset.y !== undefined) split.y = preset.y;
-          saveSplitValues();
-          setLayout(preset.name, options);
-          return;
-        }
         currentTree = tree;
         zoomPane = null;
-        currentLayout = Tiling.serialize(tree);
+        currentLayout = preset ? preset.name : Tiling.serialize(tree);
+        if (preset) savePresetSizes(preset.name, tree);
         renderTree(tree);
-        layoutButtons.forEach(function(button) { button.classList.remove("active"); });
+        layoutButtons.forEach(function(button) {
+          button.classList.toggle("active", button.dataset.layout === currentLayout);
+        });
         if (options.persistLayout !== false) saveLayout(currentLayout);
         if (options.updateHash !== false) setHashMode(currentLayout);
-        lastTreeLayout = currentLayout;
         updateTreeLayoutButton();
+        updatePaneCountButtons();
         setTilingStatus();
       }
 
-      // The toolbar's seventh button: the last tree layout, drawn the way
-      // the six preset icons are. Lit while it shows; after a preset is
-      // picked it stays, so one click goes back to it.
+      // "Other": a lit placeholder for a layout that has no toolbar button,
+      // drawn in its shape the way the preset icons are. Shown only while
+      // such a layout is showing; the layout itself is remembered like any
+      // other (URL hash, localStorage, console.json).
       function treeLayoutIcon(tree) {
         const lines = [];
         (function walk(node, x, y, w, h) {
@@ -1540,20 +1360,23 @@
       }
 
       function updateTreeLayoutButton() {
-        const tree = Tiling && lastTreeLayout ? Tiling.parse(lastTreeLayout) : null;
-        treeLayoutButton.style.display = tree ? "" : "none";
-        if (!tree) return;
-        if (treeLayoutButton.dataset.tree !== lastTreeLayout) {
-          treeLayoutButton.dataset.tree = lastTreeLayout;
-          treeLayoutButton.innerHTML = treeLayoutIcon(tree);
-          treeLayoutButton.title = "Tiling layout " + lastTreeLayout;
-        }
-        treeLayoutButton.classList.toggle("active", currentTree !== null);
+        const other = currentTree && !Tiling.matchPreset(currentTree) ? currentLayout : "";
+        treeLayoutButton.style.display = other ? "" : "none";
+        treeLayoutButton.classList.toggle("active", !!other);
+        if (!other || treeLayoutButton.dataset.tree === other) return;
+        treeLayoutButton.dataset.tree = other;
+        treeLayoutButton.innerHTML = treeLayoutIcon(currentTree);
+        treeLayoutButton.title = "Other layout: " + other;
       }
 
-      treeLayoutButton.addEventListener("click", function() {
-        if (lastTreeLayout) setLayout(lastTreeLayout);
-      });
+      // + and − beside Reload: Ctrl+Alt+Enter and Ctrl+Alt+Shift+q.
+      function updatePaneCountButtons() {
+        const shown = Tiling.panes(layoutTreeNow()).length;
+        paneAddButton.disabled = shown >= Tiling.MAX_PANES;
+        paneRemoveButton.disabled = shown < 2;
+      }
+      paneAddButton.addEventListener("click", function() { tilingOpen(null); });
+      paneRemoveButton.addEventListener("click", function() { tilingClose(); });
 
       // Redraws whatever the current layout is, e.g. to come back from full.
       function showCurrentLayout() {
@@ -1608,6 +1431,7 @@
           pane.classList.toggle("split-next-h", pending === "h");
           pane.classList.toggle("split-next-v", pending === "v");
         });
+        setTilingStatus();
       }
 
       // Puts the keyboard in a pane: its terminal, or its web tab.
@@ -1655,20 +1479,33 @@
         noteFocus(e.target && e.target.closest ? e.target.closest(".pane") : null);
       }, true);
 
-      // ── Tiling: status ──
+      // ── Tiling: Keyboard Shortcut Hint ──
+      // Always in the toolbar: the main keys, or what the keys do right now
+      // while a mode is on. A click leaves the mode, or opens the full table.
       function setTilingStatus() {
         let text = "";
         if (resizeMode) {
           text = "Resize: h j k l or arrows · Enter or Esc to finish";
         } else if (zoomPane !== null) {
           text = "Session " + zoomPane + " full · Ctrl+Alt+F to restore";
+        } else if (pendingSplit && pendingSplit.pane === focusedPane) {
+          text = "Next pane opens " + (pendingSplit.dir === "h" ? "beside" : "below") +
+            " session " + focusedPane + " · Ctrl+Alt+Enter";
         }
-        tilingStatus.textContent = text;
-        tilingStatus.classList.toggle("shown", !!text);
+        shortcutHint.classList.toggle("mode", !!text);
+        // The text is this page's own; only the modifiers become key caps.
+        shortcutHint.innerHTML = (text ||
+          "Ctrl+Alt+ h j k l focus · Enter open · f full · = equalize | Ctrl+Alt+Shift+ h j k l move · q close · x reset")
+          .replace(/(Ctrl\+Alt\+Shift|Ctrl\+Alt)\+ ?/g, '<kbd><span>$1</span></kbd> ')
+          .replace(" | ", '<span class="hint-gap"></span>');
+        shortcutHint.title = text
+          ? "Keyboard Shortcut Hint — click to leave"
+          : "Keyboard Shortcut Hint — click for every console shortcut";
       }
-      tilingStatus.addEventListener("click", function() {
+      shortcutHint.addEventListener("click", function() {
         if (resizeMode) setResizeMode(false);
         else if (zoomPane !== null) tilingZoom();
+        else if (window.BoothHelp && typeof window.BoothHelp.open === "function") window.BoothHelp.open("console");
       });
 
       // ── Tiling: actions ──
@@ -1690,6 +1527,41 @@
         focusPaneContent(focusedPane);
       }
 
+      // Ctrl+Alt+Shift+x or a terminal pane's power button: after asking,
+      // ends the pane's tmux session — the shell and anything running in it —
+      // and reconnects the pane, which starts a fresh one. Closing a pane
+      // (Ctrl+Alt+Shift+q) only hides it; this is the one that really ends it.
+      function resetSession(n) {
+        const pane = panes[n - 1];
+        if (!pane) return;
+        if (!window.confirm("Reset session " + n + "?\n\nIts shell, and anything running in it, " +
+            "will be stopped and a fresh shell started.")) {
+          focusPaneContent(n);
+          return;
+        }
+        fetch("booth-messages/api/session-reset", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session: n })
+        }).then(function(res) {
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const frame = pane.querySelector(".term-frame");
+          frame.src = frame.dataset.boothSrc || frame.dataset.defaultSrc;
+          focusPaneContent(n);
+        }).catch(function(err) {
+          console.warn("Resetting session " + n + " failed:", err);
+        });
+      }
+
+      document.querySelectorAll(".session-reset").forEach(function(btn) {
+        btn.addEventListener("click", function() { resetSession(Number(btn.dataset.session)); });
+      });
+
+      function tilingEqualize() {
+        unzoom();
+        applyTree(Tiling.equalize(layoutTreeNow()));
+      }
+
       function tilingToggleSplit() {
         unzoom();
         applyTree(Tiling.toggleSplit(layoutTreeNow(), focusedPane));
@@ -1706,7 +1578,10 @@
         unzoom();
         const tree = layoutTreeNow();
         const shown = Tiling.panes(tree);
-        const next = pane || [1, 2, 3, 4].find(function(n) { return shown.indexOf(n) < 0; });
+        let next = pane;
+        for (let n = 1; !next && n <= Tiling.MAX_PANES; n++) {
+          if (shown.indexOf(n) < 0) next = n;
+        }
         if (!next || shown.indexOf(next) >= 0) return;
         const dir = pendingSplit && pendingSplit.pane === focusedPane ? pendingSplit.dir : undefined;
         const rect = panes[focusedPane - 1].getBoundingClientRect();
@@ -1775,21 +1650,28 @@
         if (e.key && e.key.length === 1 && /[a-z0-9]/i.test(e.key)) return e.key.toLowerCase();
         if (/^Key[A-Z]$/.test(e.code || "")) return e.code.slice(3).toLowerCase();
         if (/^Digit[0-9]$/.test(e.code || "")) return e.code.slice(5);
+        if (e.code === "Equal" || e.code === "NumpadEqual") return "=";
         return (e.key || "").toLowerCase();
       }
 
       function tilingAction(key, shift) {
         const dir = tilingDirs[key];
         if (dir) return shift ? function() { tilingMove(dir); } : function() { tilingFocus(dir); };
-        if (shift) return key === "q" ? tilingClose : null;
+        if (shift) {
+          if (key === "q") return tilingClose;
+          if (key === "x") return function() { resetSession(focusedPane); };
+          return null;
+        }
         switch (key) {
           case "b": return function() { setPendingSplit("h"); };
           case "v": return function() { setPendingSplit("v"); };
           case "e": return tilingToggleSplit;
+          case "=": return tilingEqualize;
+          // Ctrl+Alt+r (resize mode) is off for now; dragging a divider resizes.
           case "enter": return function() { tilingOpen(null); };
           case "f": return tilingZoom;
-          case "r": return function() { setResizeMode(true); };
-          case "1": case "2": case "3": case "4": return function() { tilingGoTo(Number(key)); };
+          case "1": case "2": case "3": case "4": case "5": case "6":
+            return function() { tilingGoTo(Number(key)); };
         }
         return null;
       }
@@ -1865,31 +1747,38 @@
         // key table, the way i3--setup.sh's i3-help.js adds the desktop's.
         document.addEventListener("DOMContentLoaded", function() {
           if (!window.BoothHelp || typeof window.BoothHelp.addTab !== "function") return;
+          // Ctrl+Alt first, then Ctrl+Alt+Shift.
           const keys = [
             ["Ctrl+Alt+h / j / k / l", "Focus the pane left / down / up / right (arrows work too)"],
-            ["Ctrl+Alt+Shift+h / j / k / l", "Move the pane left / down / up / right"],
+            ["Ctrl+Alt+Enter  or  +", "Open a pane (up to six)"],
             ["Ctrl+Alt+b / Ctrl+Alt+v", "Next pane opens beside / below this one"],
-            ["Ctrl+Alt+Enter", "Open a pane (up to four)"],
-            ["Ctrl+Alt+Shift+q", "Close the pane — its session keeps running"],
-            ["Ctrl+Alt+1 … 4", "Go to session 1 … 4, opening it if closed"],
-            ["Ctrl+Alt+e", "Turn the pane's split the other way"],
+            ["Ctrl+Alt+1 … 6", "Go to session 1 … 6, opening it if closed"],
             ["Ctrl+Alt+f", "The pane fills the console / back"],
-            ["Ctrl+Alt+r", "Resize mode (h/j/k/l or arrows, Enter to leave)"]
+            ["Ctrl+Alt+e", "Turn the pane's split the other way (side by side ↔ stacked)"],
+            ["Ctrl+Alt+=", "Equalize: every pane in the layout the same size"],
+            ["Ctrl+Alt+Shift+h / j / k / l", "Move the pane left / down / up / right"],
+            ["Ctrl+Alt+Shift+q  or  −", "Close the pane — its session keeps running"],
+            ["Ctrl+Alt+Shift+x  or  ⏻", "Reset the session: a fresh shell (asks first; stops what runs in it)"]
           ];
           const rows = keys.map(function(k) {
             return '<tr><td style="padding:2px 12px 2px 0;white-space:nowrap"><code>' + k[0] +
               '</code></td><td style="padding:2px 0">' + k[1] + '</td></tr>';
           }).join("");
           window.BoothHelp.addTab("console", "Console Shortcuts",
-            '<p class="msg-dialog-lead">The console tiles its four sessions the way the ' +
+            '<p class="msg-dialog-lead">The console tiles its six sessions the way the ' +
             '<strong>i3</strong> window manager tiles windows, with <strong>Ctrl+Alt</strong> ' +
-            'as the modifier. The toolbar layouts still work; a shortcut can reach any ' +
-            'arrangement of up to four panes.</p>' +
+            'as the modifier. The toolbar has every 2×2 layout and the 3×2 grid, and its ' +
+            '<strong>+</strong> / <strong>−</strong> buttons open and close panes; a shortcut ' +
+            'can reach any arrangement of up to six. A layout without a button shows as ' +
+            '<strong>Other</strong>.</p>' +
             '<table style="border-collapse:collapse;font-size:13px">' + rows + '</table>' +
             '<h3>Shortcut did nothing?</h3>' +
             '<p>A web tab showing an outside site keeps its keys to itself: click into a ' +
             'terminal pane first. Ctrl+Alt+arrows may be taken by your own desktop; ' +
-            'h/j/k/l always work.</p>');
+            'h/j/k/l always work.</p>' +
+            '<img src="console-ui-tile-keys.webp" alt="Hold Ctrl+Alt, then press H J K L to focus ' +
+            'the pane left, down, up or right" style="display:block;width:100%;max-width:405px;' +
+            'margin:14px auto 0;border-radius:8px" onerror="this.remove()">');
         });
       }
 
@@ -2323,15 +2212,7 @@
 
       document.querySelectorAll(".proxy-reload").forEach(function(btn) {
         btn.addEventListener("click", function() {
-          var iframe = activeWebFrame(btn.closest(".pane"));
-          if (!iframe) return;
-          try {
-            // Same-origin: contentWindow.location.reload() preserves history.
-            iframe.contentWindow.location.reload();
-          } catch (_e) {
-            // Cross-origin: fall back to resetting src to itself.
-            iframe.src = iframe.src;
-          }
+          reloadFrame(activeWebFrame(btn.closest(".pane")));
         });
       });
 
@@ -2830,7 +2711,11 @@
           var opened = false;
           urls.forEach(function(raw, i) {
             var parsed = parseBoothTarget(raw, session);
-            if (!parsed || parsed.error) return;
+            if (!parsed || parsed.error) {
+              warnConsoleConfig("pane " + session + ": tab " + JSON.stringify(raw) + " cannot be opened (" +
+                ((parsed && parsed.error) || "unknown") + "); skipped");
+              return;
+            }
             // navigateActiveTab always targets *whichever* tab is active
             // *when it runs* — and ensureViewmdIfTarget makes that a real
             // async wait (up to 5s for a cold viewmd, near-instant for
@@ -2873,7 +2758,6 @@
         });
       });
 
-      applySplitVariables();
       const hashMode = parseModeFromHash();
       const savedMode = loadSavedLayout();
       const configLayout = consoleConfig.layout;

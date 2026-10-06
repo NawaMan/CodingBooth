@@ -3,7 +3,7 @@
 // Every variant is fronted by nginx, and nginx binds the booth's port before
 // the service behind it is listening. A page that points its frames at that
 // service the moment the port answers gets nginx's raw 502 instead: the split
-// UI in all four panes, the wrapper variants in their one full-screen frame.
+// UI in every pane, the wrapper variants in their one full-screen frame.
 //
 // This polls /__booth/health — which proxies to that service, so it only
 // answers 200 once there is something to show — and lets a page hold its frames

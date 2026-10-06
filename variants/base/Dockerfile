@@ -298,6 +298,7 @@ COPY --chmod=0644 web-ttyd-split/index.html /usr/local/share/ttyd-split/index.ht
 COPY --chmod=0644 web-ttyd-split/login.html /usr/local/share/ttyd-split/login.html
 COPY --chmod=0644 web-ttyd-split/nginx.conf.template /usr/local/share/ttyd-split/nginx.conf.template
 COPY --chmod=0644 web-ttyd-split/tiling.js /usr/local/share/ttyd-split/tiling.js
+COPY --chmod=0644 web-ttyd-split/console-ui-tile-keys.webp /usr/local/share/ttyd-split/console-ui-tile-keys.webp
 RUN chmod 0755 /usr/local/share/ttyd-split
 
 # Shared booth message wrapper infrastructure (nginx + overlay for all variants)

@@ -10,7 +10,7 @@
 #
 # The console that *is* the main service (the base variant) is started by
 # start-ttyd on the booth port. This one defaults to 11111, and its panes and
-# message API sit just above it (11112-11115, 11118).
+# message API sit just above it (11112-11117, 11118).
 set -euo pipefail
 
 PORT="${1:-11111}"

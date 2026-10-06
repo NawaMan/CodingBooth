@@ -22,6 +22,7 @@
 #   POST /booth-messages/api/login         — trade the password for a session cookie
 #   POST /booth-messages/api/viewmd        — start viewmd --daemon if it is not already serving
 #   POST /booth-messages/api/display-size  — fit the desktop to the browser {"width": W, "height": H}
+#   POST /booth-messages/api/session-reset — end a Console UI pane's tmux session {"session": 1-6}
 #
 # Usage: booth-message-api-server <port>
 # -----------------------------------------------------------------------------
@@ -109,6 +110,9 @@ handle_request() {
                 /booth-messages/api/display-size)
                     handle_display_size "$body"
                     ;;
+                /booth-messages/api/session-reset)
+                    handle_session_reset "$body"
+                    ;;
                 *) send_response 404 '{"error":"not found"}' ;;
             esac
             ;;
@@ -161,6 +165,27 @@ handle_respond() {
         > "$MSG_DIR/${msg_id}.response.json"
 
     send_response 200 '{"ok":true}'
+}
+
+# The Console UI's "Reset session" (it asks first): ends pane N's tmux
+# session, s1 … s6, and with it the shell and anything running there. The
+# pane then reconnects, and start-ttyd-split's `tmux new-session -A` starts a
+# fresh one. Only the six pane sessions, matched by exact name ("=s3"), so
+# nothing else in the booth's tmux can be reached from here.
+handle_session_reset() {
+    local n
+    n=$(printf '%s' "$1" | jq -r '.session // empty' 2>/dev/null)
+    if [[ ! "$n" =~ ^[1-6]$ ]]; then
+        send_response 400 '{"error":"session must be 1 to 6"}'
+        return
+    fi
+    # Not running (never opened, or already ended) is fine: the next
+    # connection starts it fresh either way.
+    tmux kill-session -t "=s$n" >/dev/null 2>&1 || true
+    if command -v booth--lifecycle-log >/dev/null 2>&1; then
+        booth--lifecycle-log console-session-reset "session=s$n" >/dev/null 2>&1 || true
+    fi
+    send_response 200 "{\"ok\":true,\"session\":$n}"
 }
 
 handle_viewmd_start() {
