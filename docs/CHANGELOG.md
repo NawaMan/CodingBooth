@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The generated `.booth/.gitignore` now ignores profile env files (`.*--env`).** Booth already
+  refused to start a profile whose `.<name>--env` git would commit, but the `.gitignore` that
+  `booth install` and `booth config` write only covered `.env`, so the first `--profile` run
+  failed until you added the rule by hand. Both writers now carry it; the next `booth config`
+  adds it to an existing project.
+
 - **`setup bash` and source-built `setup make` no longer stall when GNU's servers are down.** Both
   now try `ftp.gnu.org`, then `ftpmirror.gnu.org`, then `mirrors.kernel.org/gnu`, with a 15-second
   connect timeout. Before, an unreachable GNU host cost about 28 minutes of retries before the

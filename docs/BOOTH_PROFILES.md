@@ -297,6 +297,9 @@ Put credentials in `.env` / `.<name>--env`, and keep them out of git:
 .*--env
 ```
 
+The `.booth/.gitignore` that `booth install` and `booth config` write carries both rules. Add
+them yourself only to a `.gitignore` you maintain by hand.
+
 Booth enforces this. Before starting, it checks that **every env file it is about
 to use** — the base `.env` and each selected profile's `.<name>--env` — is
 ignored by git, and refuses to run if one is not:

@@ -40,10 +40,11 @@ func TestBoothGitignoreMatchesWrapper(t *testing.T) {
 	}
 }
 
-// TestBoothGitignoreCoversCache guards the rule the start-up check depends on: booth refuses
-// to start when .booth/cache/ is not ignored, so the file we generate had better ignore it.
+// TestBoothGitignoreCoversCache guards the rules the start-up checks depend on: booth refuses
+// to start when .booth/cache/ is not ignored, or when a selected profile's .<name>--env is
+// not, so the file we generate had better ignore both.
 func TestBoothGitignoreCoversCache(t *testing.T) {
-	for _, rule := range []string{"cache/", ".booth.password", ".env", "tools/codingbooth-*"} {
+	for _, rule := range []string{"cache/", ".booth.password", ".env", ".*--env", "tools/codingbooth-*"} {
 		if !hasLine(BoothGitignore, rule) {
 			t.Errorf("BoothGitignore is missing the %q rule", rule)
 		}
