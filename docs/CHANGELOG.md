@@ -4,6 +4,15 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The nested-booth guard now catches `./booth --<flag> …` too.** Inside a booth container the
+  wrapper refuses to start another booth unless `BOOTH_IN_BOOTH=true` and a distinct `--port` are
+  given — but it only checked bare `./booth` and `./booth run`. The binary treats a leading flag
+  (`./booth --variant x`) as a run as well, and that form went straight through and started
+  building. Every leading flag except `-h`/`--help` is now checked.
+
+- **A lock file without a `version=` line reports itself instead of exiting silently.** The wrapper
+  exited 1 with no output, before its own "Invalid lock file: missing version" message could print.
+
 - **A project template can be a single file.** `.booth/templates/<folder>/<name>/template.toml` no
   longer needs a `meta.toml` beside it or any display keys: `display-name` falls back to the
   template name, and `primary` defaults to `true` so it shows in `booth template list`. With

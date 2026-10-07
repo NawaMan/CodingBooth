@@ -190,7 +190,7 @@ function Main() {
             ensure_project_wrapper_for_install "$cmd" "${install_forward[@]}"
             if [[ "$cmd" == "install" && -z "$version_arg" && -f "$LOCK_FILE" ]]; then
                 local lock_version lock_cache install_platform
-                lock_version=$(grep '^version=' "$LOCK_FILE" 2>/dev/null | cut -d= -f2-)
+                lock_version=$(grep '^version=' "$LOCK_FILE" 2>/dev/null | cut -d= -f2- || true)
                 install_platform=$(detect_platform 2>/dev/null || echo "unknown")
                 if find_binary_dir "$lock_version" "$install_platform" >/dev/null 2>&1; then
                     echo "CodingBooth is already installed (version: ${lock_version:-unknown})."
@@ -245,7 +245,7 @@ function Main() {
     fi
 
     local lock_version lock_cache
-    lock_version=$(grep '^version=' "$LOCK_FILE" 2>/dev/null | cut -d= -f2-)
+    lock_version=$(grep '^version=' "$LOCK_FILE" 2>/dev/null | cut -d= -f2- || true)
     lock_cache=$(grep '^cache=' "$LOCK_FILE" 2>/dev/null | cut -d= -f2- || echo "shared")
 
     if [[ -z "$lock_version" ]]; then
@@ -488,7 +488,7 @@ function UninstallBooth() {
     # Read lock version BEFORE removing it (needed for --shared-binary scope).
     local lock_version=""
     if [[ -f "$lock_file" ]]; then
-        lock_version=$(grep '^version=' "$lock_file" 2>/dev/null | cut -d= -f2-)
+        lock_version=$(grep '^version=' "$lock_file" 2>/dev/null | cut -d= -f2- || true)
     fi
 
     # Build summary of what will be removed (shown in the confirmation prompt).
@@ -628,7 +628,7 @@ function DownloadBooth() {
                     # Check if this is a version switch
                     local prev_version=""
                     if [[ -f "$lock_file" ]]; then
-                        prev_version=$(grep '^version=' "$lock_file" 2>/dev/null | cut -d= -f2-)
+                        prev_version=$(grep '^version=' "$lock_file" 2>/dev/null | cut -d= -f2- || true)
                     fi
                     if [[ -n "$prev_version" && "$prev_version" != "$actual_version" ]]; then
                         echo "Switched from $prev_version to $actual_version."
@@ -1375,10 +1375,12 @@ case "${COMMAND}" in
 esac
 
 # Check for nested booth execution (running booth inside a booth container)
-# Only warn for 'run' command — other commands (list, init, etc.) are safe inside a container
-if [[ "${COMMAND}" == "run" ]]; then
-    detect_nested_booth "$@"
-fi
+# Only warn for a run — other commands (list, init, etc.) are safe inside a container.
+# The binary treats a leading flag (`./booth --variant x`) as a run too, except -h/--help.
+case "${COMMAND}" in
+    -h|--help) ;;
+    run|-*)    detect_nested_booth "$@" ;;
+esac
 
 # Need curl for install/run/update/uninstall/create
 if ! command -v curl >/dev/null 2>&1; then
