@@ -25,6 +25,7 @@ setup python ${PYTHON_VERSION}
 setup nodejs-code-extension
 setup playwright ${PLAYWRIGHT_BROWSERS} --version ${PLAYWRIGHT_VERSION}
 setup dotnet-code-extension
+setup dotnet-code-extension
 setup go-code-extension
 setup java-code-extension
 setup playwright-code-extension

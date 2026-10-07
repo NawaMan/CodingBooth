@@ -7,5 +7,6 @@ arg CLAUDE_CODE_VERSION=latest
 
 setup claude-code ${CLAUDE_CODE_VERSION}
 setup dind
+setup docker-code-extension
 setup docker-buildx
 setup antigravity

@@ -18,6 +18,7 @@ setup dind
 setup go ${GO_VERSION}                                # GO tool chain
 install go golang.org/x/tools/gopls@latest            # GO language server
 install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
+setup docker-code-extension
 setup kind --kind-version ${KIND_VERSION}
 setup python ${PYTHON_VERSION}
 setup antigravity
