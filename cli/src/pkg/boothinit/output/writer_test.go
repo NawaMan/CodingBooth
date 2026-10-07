@@ -378,3 +378,30 @@ func TestWriteOutput_NilConfig(t *testing.T) {
 	_, err = os.Stat(filepath.Join(tmpDir, ".booth", "config.toml"))
 	assert.True(t, os.IsNotExist(err))
 }
+
+// A dir entry's permission suffix sets the mode the dir is created with, and the
+// suffix never reaches the path on disk.
+func TestWriteOutput_CacheDirModeSuffix(t *testing.T) {
+	tmpDir := t.TempDir()
+	out := &BoothOutput{
+		Config: &ConfigToml{Variant: "base"},
+		CacheDirs: []FileContent{
+			{RelPath: "home/coder/.gnupg:0700"},
+			{RelPath: "home/coder/.envfolio"},
+		},
+	}
+	require.NoError(t, WriteOutput(out, tmpDir))
+
+	cache := filepath.Join(tmpDir, ".booth", "cache", "home", "coder")
+	info, err := os.Stat(filepath.Join(cache, ".gnupg"))
+	require.NoError(t, err)
+	assert.Equal(t, os.FileMode(0o700), info.Mode().Perm())
+	assert.FileExists(t, filepath.Join(cache, ".gnupg", ".mount-this"))
+
+	info, err = os.Stat(filepath.Join(cache, ".envfolio"))
+	require.NoError(t, err)
+	assert.NotEqual(t, os.FileMode(0o700), info.Mode().Perm(), "no suffix keeps the default mode")
+
+	assert.Contains(t, OutputPaths(out, tmpDir),
+		filepath.Join(tmpDir, ".booth", "cache", "home", "coder", ".gnupg", ".mount-this"))
+}

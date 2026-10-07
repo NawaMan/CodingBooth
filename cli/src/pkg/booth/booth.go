@@ -24,6 +24,7 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
 	"github.com/nawaman/codingbooth/src/pkg/docker"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/pathmode"
 	"golang.org/x/term"
 )
 
@@ -1102,8 +1103,12 @@ func materializePathMounts(baseDir string, files, dirs []string) {
 		os.WriteFile(path, []byte{}, 0644)
 	}
 	for _, cd := range dirs {
-		dirPath := filepath.Join(baseDir, cd)
-		os.MkdirAll(dirPath, 0755)
+		relPath, mode, err := pathmode.Split(cd)
+		if err != nil {
+			continue
+		}
+		dirPath := filepath.Join(baseDir, relPath)
+		pathmode.MkdirAll(dirPath, mode)
 		markerPath := filepath.Join(dirPath, ".mount-this")
 		if _, err := os.Stat(markerPath); err == nil {
 			continue

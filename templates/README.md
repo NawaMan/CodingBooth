@@ -379,6 +379,7 @@ language.
 | `tools/docker-buildx`      | Docker Buildx |
 | `tools/docker-compose`     | Docker Compose |
 | `tools/duckdb`             | DuckDB |
+| `tools/envfolio`           | EnvFolio (`+store-cache`) |
 | `tools/firebase`           | Firebase CLI |
 | `tools/floci`              | Floci (local AWS emulator) |
 | `tools/freelens`           | FreeLens |

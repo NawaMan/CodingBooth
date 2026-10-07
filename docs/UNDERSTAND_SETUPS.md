@@ -74,7 +74,7 @@ A variant is an image that has already run a set of setups, and that defines the
 
 | Variant | Built from | Setups baked in (main ones) |
 | --- | --- | --- |
-| `base` | `ubuntu` | `tls`, `just`, `lazygit`, `viewmd`, fonts, `booth-message-wrapper` |
+| `base` | `ubuntu` | `tls`, `just`, `lazygit`, `viewmd`, `envfolio`, fonts, `booth-message-wrapper` |
 | `notebook` | `base` | `python`, `notebook`, `bash-nb-kernel`, web preview, message wrapper |
 | `codeserver` | `base` | `python`, `codeserver`, code extensions, message wrapper |
 | `desktop-xfce` / `-kde` / `-lxqt` / `-wayland` | `base` | the desktop, `firefox`, `google-chrome`, `vscode`, code extensions, kernels, desktop actions |
