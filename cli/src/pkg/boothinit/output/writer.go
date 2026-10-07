@@ -10,6 +10,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/nawaman/codingbooth/src/pkg/pathmode"
 )
 
 // OutputPaths returns the list of file paths that WriteOutput would create
@@ -57,7 +59,7 @@ func OutputPaths(out *BoothOutput, targetPath string) []string {
 	}
 
 	for _, d := range out.CacheDirs {
-		paths = append(paths, filepath.Join(boothDir, "cache", d.RelPath, ".mount-this"))
+		paths = append(paths, filepath.Join(boothDir, "cache", pathmode.Path(d.RelPath), ".mount-this"))
 	}
 
 	for _, f := range out.Shared {
@@ -65,7 +67,7 @@ func OutputPaths(out *BoothOutput, targetPath string) []string {
 	}
 
 	for _, d := range out.SharedDirs {
-		paths = append(paths, filepath.Join(boothDir, "shared", d.RelPath, ".mount-this"))
+		paths = append(paths, filepath.Join(boothDir, "shared", pathmode.Path(d.RelPath), ".mount-this"))
 	}
 
 	return paths
@@ -300,11 +302,16 @@ func touchCacheFiles(files []FileContent, cacheDir string) error {
 }
 
 // touchCacheDirs creates directories with .mount-this markers in the cache directory (no-clobber).
-// If the .mount-this marker already exists, the directory is left untouched.
+// If the .mount-this marker already exists, the directory is left untouched. An entry's
+// permission suffix (":0700", see package pathmode) applies when the directory is created.
 func touchCacheDirs(dirs []FileContent, cacheDir string) error {
 	for _, d := range dirs {
-		dirPath := filepath.Join(cacheDir, d.RelPath)
-		if err := os.MkdirAll(dirPath, 0755); err != nil {
+		relPath, mode, err := pathmode.Split(d.RelPath)
+		if err != nil {
+			return err
+		}
+		dirPath := filepath.Join(cacheDir, relPath)
+		if err := pathmode.MkdirAll(dirPath, mode); err != nil {
 			return err
 		}
 		markerPath := filepath.Join(dirPath, ".mount-this")

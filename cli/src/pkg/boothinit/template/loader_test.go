@@ -966,3 +966,34 @@ func TestLoadRegistry_VmSizingAndRuntimeParam(t *testing.T) {
 	assert.Equal(t, "2g", tmpl.VmShmSize)
 	assert.True(t, tmpl.Params["VM_MEMORY"].Runtime, "runtime = true is read")
 }
+
+// A cache-dirs / shared-dirs entry may carry a permission suffix (":0700"); the
+// loader keeps the entry as written and rejects a suffix that is not a mode.
+func TestLoadRegistry_DirEntryModeSuffix(t *testing.T) {
+	write := func(t *testing.T, body string) string {
+		tmpDir := t.TempDir()
+		catDir := filepath.Join(tmpDir, "tools")
+		tmplDir := filepath.Join(catDir, "parent")
+		require.NoError(t, os.MkdirAll(tmplDir, 0755))
+		require.NoError(t, os.WriteFile(filepath.Join(catDir, "meta.toml"),
+			[]byte("display-name = \"Tools\"\norder = 1\n"), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "template.toml"),
+			[]byte("display-name = \"Parent\"\ndisplay-order = 1\n"), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "keep--extension.toml"),
+			[]byte("display-name = \"Keep\"\ndisplay-order = 10\n"+body), 0644))
+		return tmpDir
+	}
+
+	registry, err := LoadRegistry(write(t,
+		"cache-dirs = [\"home/coder/.gnupg:0700\"]\nshared-dirs = [\"home/coder/.team:0750\"]\n"))
+	require.NoError(t, err)
+	ext := registry.ByName["parent"].Extensions[0]
+	assert.Equal(t, []string{"home/coder/.gnupg:0700"}, ext.CacheDirs)
+	assert.Equal(t, []string{"home/coder/.team:0750"}, ext.SharedDirs)
+
+	_, err = LoadRegistry(write(t, "cache-dirs = [\"home/coder/.gnupg:rwx\"]\n"))
+	assert.ErrorContains(t, err, "invalid cache-dirs path")
+
+	_, err = LoadRegistry(write(t, "shared-dirs = [\"../x:0700\"]\n"))
+	assert.ErrorContains(t, err, "traversal")
+}
