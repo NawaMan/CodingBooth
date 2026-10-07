@@ -21,7 +21,7 @@ if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
     exit 0
 fi
 
-VERSION=0.15.1
+VERSION=0.15.2
 VERBOSE="${VERBOSE:-true}"
 
 # Resolve this wrapper's absolute path (follow symlinks). All project paths are
@@ -297,7 +297,7 @@ function Main() {
     fi
     binary_name=$(get_binary_name "$platform")
 
-    # Find binary directory (local first, then shared cache)
+    # Find binary directory (in the lock's cache mode only)
     local binary_dir sha_file dest
     if ! binary_dir=$(find_binary_dir "$lock_version" "$platform" "$lock_cache"); then
         # Binary not found, auto-download
@@ -655,6 +655,46 @@ function DownloadBooth() {
     mkdir -p "$target_dir"
     mkdir -p "$tools_dir"  # Always need tools dir for lock file
 
+    # Write .booth/.gitignore. This runs before the CLI binary exists, which is why the
+    # wrapper carries a copy at all. It sits above the already-cached early return below,
+    # so a project whose pinned version is already in the shared cache still gets one.
+    #
+    # MUST stay byte-identical to BoothGitignore in cli/src/pkg/boothinit/output/gitignore.go
+    # -- TestBoothGitignoreMatchesWrapper reads this heredoc and diffs it against that
+    # constant. `booth config` rewrites this file unconditionally, so a rule that only one
+    # writer knows about gets silently dropped as soon as the other one runs.
+    #
+    # Not conditioned on CACHE_MODE: the tools/ rules used to be emitted only for
+    # --cache=local, so the first `booth config` in such a project un-ignored the downloaded
+    # binaries. In shared-cache mode tools/ holds only the lock file, so they are a no-op.
+    cat > "${BOOTH_DIR}/.gitignore" <<'GITIGNORE'
+# Secrets - never commit
+.booth.password
+.env
+.*--env
+
+# Local persistent state (not committed).
+# Holds whatever the container writes to the mounted paths, including live credentials
+# (~/.claude/.credentials.json arrives here via the cb-home override layer).
+# Booth refuses to start if this is tracked by git.
+cache/
+
+# Runtime temp files
+.tmp/
+
+# Transient artifacts of booth config overwriting hand-written files:
+# .bak = what was replaced, .new = generated content awaiting a manual merge
+*.bak
+*.new
+
+# Downloaded binaries - re-fetched from the lock version.
+# Shared cache (the default) keeps them in ~/.cache/codingbooth/; --cache=local puts them here.
+tools/codingbooth-*
+tools/*.sha256
+
+# codingbooth.lock and .generated are version-controlled
+GITIGNORE
+
     # For specific versions (not 'latest'), check if already cached and valid
     if [[ "$CB_VERSION" != "latest" ]]; then
         local current_platform_check
@@ -696,45 +736,6 @@ function DownloadBooth() {
         fi
     fi
 
-    # Write .booth/.gitignore. This runs before the CLI binary exists, which is why the
-    # wrapper carries a copy at all.
-    #
-    # MUST stay byte-identical to BoothGitignore in cli/src/pkg/boothinit/output/gitignore.go
-    # -- TestBoothGitignoreMatchesWrapper reads this heredoc and diffs it against that
-    # constant. `booth config` rewrites this file unconditionally, so a rule that only one
-    # writer knows about gets silently dropped as soon as the other one runs.
-    #
-    # Not conditioned on CACHE_MODE: the tools/ rules used to be emitted only for
-    # --cache=local, so the first `booth config` in such a project un-ignored the downloaded
-    # binaries. In shared-cache mode tools/ holds only the lock file, so they are a no-op.
-    cat > "${BOOTH_DIR}/.gitignore" <<'GITIGNORE'
-# Secrets - never commit
-.booth.password
-.env
-.*--env
-
-# Local persistent state (not committed).
-# Holds whatever the container writes to the mounted paths, including live credentials
-# (~/.claude/.credentials.json arrives here via the cb-home override layer).
-# Booth refuses to start if this is tracked by git.
-cache/
-
-# Runtime temp files
-.tmp/
-
-# Transient artifacts of booth config overwriting hand-written files:
-# .bak = what was replaced, .new = generated content awaiting a manual merge
-*.bak
-*.new
-
-# Downloaded binaries - re-fetched from the lock version.
-# Shared cache (the default) keeps them in ~/.cache/codingbooth/; --cache=local puts them here.
-tools/codingbooth-*
-tools/*.sha256
-
-# codingbooth.lock and .generated are version-controlled
-GITIGNORE
-
     local current_platform
     if ! current_platform=$(detect_platform); then
         echo "Error: Failed to detect platform" >&2
@@ -765,7 +766,7 @@ GITIGNORE
     fi
 
     local tmpsha256 expected_sha256
-    tmpsha256=$(mktemp "/tmp/booth.sha256.XXXXXX")
+    tmpsha256=$(mktemp "${TMPDIR:-/tmp}/booth.sha256.XXXXXX")
     if ! curl -fsSLo "$tmpsha256" --retry 3 --retry-delay 2 --retry-connrefused "$SHA256_URL"; then
         echo "FAILED (sha256 fetch)"
         rm -f "$tmpsha256"
@@ -802,7 +803,7 @@ GITIGNORE
         fi
 
         local tmpfile actual_sha256
-        tmpfile=$(mktemp "/tmp/booth.XXXXXX")
+        tmpfile=$(mktemp "${TMPDIR:-/tmp}/booth.XXXXXX")
         if ! curl -fsSLo "$tmpfile" --retry 3 --retry-delay 2 --retry-connrefused "$TOOL_URL"; then
             echo "FAILED (download)"
             rm -f "$tmpfile"
