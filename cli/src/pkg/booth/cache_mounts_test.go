@@ -142,3 +142,43 @@ func TestIsMountableContainerPath(t *testing.T) {
 		}
 	}
 }
+
+// A config.toml cache-dirs entry with a permission suffix is created with that
+// mode at start; an existing dir is left alone; a bad suffix is skipped, not mounted
+// under a path with a colon in it.
+func TestEnsureCacheFromConfig_DirModeSuffix(t *testing.T) {
+	boothDir := t.TempDir()
+	config := "cache-dirs = [\"home/coder/.gnupg:0700\", \"home/coder/.bad:rwx\"]\n"
+	if err := os.WriteFile(filepath.Join(boothDir, "config.toml"), []byte(config), 0644); err != nil {
+		t.Fatal(err)
+	}
+	ensureCacheFromConfig(boothDir)
+
+	gnupg := filepath.Join(boothDir, "cache", "home", "coder", ".gnupg")
+	info, err := os.Stat(gnupg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := info.Mode().Perm(); got != 0o700 {
+		t.Errorf(".gnupg mode = %o, want 700", got)
+	}
+	if _, err := os.Stat(filepath.Join(gnupg, ".mount-this")); err != nil {
+		t.Errorf(".mount-this missing: %v", err)
+	}
+	entries, _ := os.ReadDir(filepath.Join(boothDir, "cache", "home", "coder"))
+	for _, e := range entries {
+		if strings.Contains(e.Name(), ":") || e.Name() == ".bad" {
+			t.Errorf("bad entry should be skipped, found %q", e.Name())
+		}
+	}
+
+	// A second start does not re-chmod a dir the user changed.
+	if err := os.Chmod(gnupg, 0o750); err != nil {
+		t.Fatal(err)
+	}
+	ensureCacheFromConfig(boothDir)
+	info, _ = os.Stat(gnupg)
+	if got := info.Mode().Perm(); got != 0o750 {
+		t.Errorf("existing dir mode = %o, want it left at 750", got)
+	}
+}

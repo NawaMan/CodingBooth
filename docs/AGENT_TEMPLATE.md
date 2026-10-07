@@ -176,6 +176,11 @@ shared-files = [
 ]
 ```
 
+A `cache-dirs` / `shared-dirs` entry may end in an octal mode, `"home/coder/.gnupg:0700"`, for a
+tool that refuses a folder others can read. The mode is applied when the CLI creates the folder
+(at `booth config`, and at start for one missing); an existing folder keeps its mode. A suffix
+that is not 3–4 octal digits within `0777` fails the template load.
+
 Directories get a `.mount-this` marker so the booth knows to mount them. Full behaviour:
 `docs/BOOTH_LOCALCACHE.md` and `docs/BOOTH_SHARED.md`.
 

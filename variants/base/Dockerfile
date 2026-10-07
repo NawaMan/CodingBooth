@@ -249,6 +249,9 @@ RUN tls--setup.sh
 # Markdown viewer (viewmd) - every booth can serve a folder of .md files to a browser
 RUN viewmd--setup.sh
 
+# Texts and secrets as env vars (envfolio, on pass) - every booth can keep and load its own
+RUN envfolio--setup.sh
+
 # Command runner (just) - every booth can run recipes from a Justfile
 RUN just--setup.sh
 

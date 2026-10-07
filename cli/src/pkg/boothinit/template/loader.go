@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/nawaman/codingbooth/src/pkg/pathmode"
 )
 
 // DefaultSegmentOrder is the order assigned to segment files without an explicit order suffix.
@@ -288,7 +289,7 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 
 	// Validate and assign cache-dirs
 	for _, cd := range spec.CacheDirs {
-		if err := validateFilePath(cd); err != nil {
+		if err := validateDirEntry(cd); err != nil {
 			return nil, fmt.Errorf("invalid cache-dirs path %q: %w", cd, err)
 		}
 	}
@@ -304,7 +305,7 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 
 	// Validate and assign shared-dirs
 	for _, sd := range spec.SharedDirs {
-		if err := validateFilePath(sd); err != nil {
+		if err := validateDirEntry(sd); err != nil {
 			return nil, fmt.Errorf("invalid shared-dirs path %q: %w", sd, err)
 		}
 	}
@@ -437,7 +438,7 @@ func loadExtensionFile(filePath, name, categoryName string) (*Template, error) {
 
 	// Validate and assign cache-dirs
 	for _, cd := range spec.CacheDirs {
-		if err := validateFilePath(cd); err != nil {
+		if err := validateDirEntry(cd); err != nil {
 			return nil, fmt.Errorf("invalid cache-dirs path %q: %w", cd, err)
 		}
 	}
@@ -453,7 +454,7 @@ func loadExtensionFile(filePath, name, categoryName string) (*Template, error) {
 
 	// Validate and assign shared-dirs
 	for _, sd := range spec.SharedDirs {
-		if err := validateFilePath(sd); err != nil {
+		if err := validateDirEntry(sd); err != nil {
 			return nil, fmt.Errorf("invalid shared-dirs path %q: %w", sd, err)
 		}
 	}
@@ -606,6 +607,16 @@ func validateFilePath(relPath string) error {
 		}
 	}
 	return nil
+}
+
+// validateDirEntry validates a cache-dirs / shared-dirs entry: a relative path,
+// optionally followed by a permission suffix (":0700", see package pathmode).
+func validateDirEntry(entry string) error {
+	path, _, err := pathmode.Split(entry)
+	if err != nil {
+		return err
+	}
+	return validateFilePath(path)
 }
 
 // parseInlineFiles converts a map of relative-path → content into validated FileRef slices.

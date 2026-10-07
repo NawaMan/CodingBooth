@@ -21,6 +21,27 @@ assert_file() {
     fi
 }
 
+# Helper for directory-mode assertions
+assert_mode() {
+    local path="$1"
+    local want="$2"
+    local label="$3"
+    local got
+    got=$(stat -c %a "$path" 2>/dev/null || echo "missing")
+    TEST_COUNT=$((TEST_COUNT + 1))
+    local pad=$(printf '%*s' $((64 - ${#label} - 1)) '' | tr ' ' '.')
+    echo -n "Test ${TEST_COUNT}: ${label} ${pad} "
+    if [ "$got" == "$want" ]; then
+        PASS_COUNT=$((PASS_COUNT + 1))
+        echo -e "\033[32mPASSED\033[0m"
+    else
+        FAIL_COUNT=$((FAIL_COUNT + 1))
+        FAIL_TESTS+=("Test ${TEST_COUNT}: ${label}")
+        echo -e "\033[31mFAILED\033[0m"
+        echo "  EXPECTED: mode $want on $path, got $got"
+    fi
+}
+
 # Test 1: ruby+repl-history creates .irb_history
 run rm -Rf $prj ; mkdir -p $prj
 run booth config $prj --no-tui --select "ruby+repl-history"
@@ -137,5 +158,15 @@ run rm -Rf $prj ; mkdir -p $prj
 run booth config $prj --no-tui --select "lxqt+desktop-icons-cache"
 assert_file "$prj/.booth/cache/home/coder/Desktop/.mount-this" "lxqt+desktop-icons-cache creates Desktop dir"
 assert_file "$prj/.booth/cache/home/coder/.config/pcmanfm-qt/.mount-this" "lxqt+desktop-icons-cache creates pcmanfm-qt dir"
+
+# Test 17: envfolio+store-cache creates the store and the GPG keyring 0700 — gpg
+# warns on a group/world-readable homedir, so the ":0700" suffix must reach disk
+# and must not reach the folder name.
+run rm -Rf $prj ; mkdir -p $prj
+run booth config $prj --no-tui --select "envfolio+store-cache"
+assert_file "$prj/.booth/cache/home/coder/.envfolio/.mount-this" "envfolio+store-cache creates .envfolio dir"
+assert_file "$prj/.booth/cache/home/coder/.gnupg/.mount-this" "envfolio+store-cache creates .gnupg dir"
+assert_mode "$prj/.booth/cache/home/coder/.envfolio" 700 "envfolio+store-cache creates .envfolio 0700"
+assert_mode "$prj/.booth/cache/home/coder/.gnupg"    700 "envfolio+store-cache creates .gnupg 0700"
 
 finally
