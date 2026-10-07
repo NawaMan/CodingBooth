@@ -13,3 +13,4 @@ setup clang --version ${LLVM_VERSION}
 setup cmake --version ${CMAKE_VERSION}
 setup make --version ${MAKE_VERSION}
 setup clang-code-extension
+setup cmake-code-extension

@@ -9,3 +9,4 @@ arg NODE_VERSION=22
 setup mongodb --version ${MONGO_VERSION}
 setup nodejs ${NODE_VERSION}
 setup mongodb-start
+setup mongodb-code-extension

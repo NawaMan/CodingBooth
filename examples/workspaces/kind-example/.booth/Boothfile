@@ -10,4 +10,5 @@ arg KIND_VERSION=0.27.0
 setup claude-code ${CLAUDE_CODE_VERSION}
 setup dind
 setup k9s --version ${K9S_VERSION}
+setup docker-code-extension
 setup kind --kind-version ${KIND_VERSION}
