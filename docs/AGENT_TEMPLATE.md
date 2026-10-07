@@ -59,7 +59,10 @@ templates/
 
 ## Category meta.toml
 
-Every category directory needs a `meta.toml`:
+Every category directory in the catalog needs a `meta.toml` — a folder without one is skipped.
+(Project-local templates under `.booth/templates/` are exempt: they all list under "This project",
+and need no `meta.toml` or display keys — see
+[BOOTH_CUSTOMIZATION.md](BOOTH_CUSTOMIZATION.md#project-local-templates-and-extensions).)
 
 ```toml
 display-name = "Languages"

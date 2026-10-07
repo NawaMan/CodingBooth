@@ -55,10 +55,11 @@ func loadProjectRegistry(projectRoot string, warn io.Writer) (*TemplateRegistry,
 
 	projectDir := ProjectTemplatesDir(projectRoot)
 	if info, err := os.Stat(projectDir); err == nil && info.IsDir() {
-		project, err = LoadRegistry(projectDir)
+		loaded, err := loadRegistry(projectDir, true)
 		if err != nil {
 			return nil, fmt.Errorf("loading project templates from %q: %w", projectDir, err)
 		}
+		project = collapseProjectCategories(loaded)
 	}
 
 	setupsDir := ProjectSetupsDir(projectRoot)
@@ -68,6 +69,55 @@ func loadProjectRegistry(projectRoot string, warn io.Writer) (*TemplateRegistry,
 	}
 	addSetupHeaderTemplates(project, headers, warn)
 	return project, nil
+}
+
+// collapseProjectCategories puts every project-local template into the one
+// project category, whatever folder under .booth/templates/ it sits in, so the
+// TUI shows them all under "This project". The category takes its display name
+// and order from project/meta.toml when there is one, else the defaults. A
+// template.toml there needs only its segments: display-name falls back to the
+// template name, and primary to true unless the file sets it.
+func collapseProjectCategories(loaded *TemplateRegistry) *TemplateRegistry {
+	cat := &Category{
+		Name:        ProjectCategoryName,
+		DisplayName: ProjectCategoryDisplayName,
+		Order:       ProjectCategoryOrder,
+	}
+	for _, c := range loaded.Categories {
+		if c.Name == ProjectCategoryName && c.DisplayName != "" {
+			cat.DisplayName = c.DisplayName
+			cat.Order = c.Order
+		}
+		cat.Templates = append(cat.Templates, c.Templates...)
+	}
+
+	project := &TemplateRegistry{ByName: loaded.ByName}
+	if len(cat.Templates) == 0 {
+		return project
+	}
+	for _, t := range cat.Templates {
+		applyProjectDefaults(t)
+		if !t.primarySet {
+			t.Primary = true
+		}
+	}
+	slices.SortStableFunc(cat.Templates, func(a, b *Template) int {
+		return a.DisplayOrder - b.DisplayOrder
+	})
+	project.Categories = []*Category{cat}
+	return project
+}
+
+// applyProjectDefaults moves t and its extensions into the project category and
+// fills an empty display-name with the template name.
+func applyProjectDefaults(t *Template) {
+	t.CategoryName = ProjectCategoryName
+	if t.DisplayName == "" {
+		t.DisplayName = t.Name
+	}
+	for _, ext := range t.Extensions {
+		applyProjectDefaults(ext)
+	}
 }
 
 // addSetupHeaderTemplates adds header-derived templates to the project registry,

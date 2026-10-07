@@ -208,10 +208,17 @@ func TestLoadMergedRegistry_TemplateTomlBeatsSetupHeader(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, "Explicit", reg.ByName["db-seed"].DisplayName)
-	assert.Contains(t, warn.String(), `project template "db-seed" (category "mine") overrides the cb-template header in .booth/setups/db-seed--setup.sh`)
+	// A local template in any folder lands in the project category.
+	assert.Contains(t, warn.String(), `project template "db-seed" (category "project") overrides the cb-template header in .booth/setups/db-seed--setup.sh`)
+	var projectCats []*Category
 	for _, c := range reg.Categories {
-		assert.NotEqual(t, ProjectCategoryName, c.Name, "no empty project category for a header that lost")
+		if c.Name == ProjectCategoryName {
+			projectCats = append(projectCats, c)
+		}
 	}
+	require.Len(t, projectCats, 1, "one project category, holding the template.toml that won")
+	require.Len(t, projectCats[0].Templates, 1)
+	assert.Equal(t, "Explicit", projectCats[0].Templates[0].DisplayName)
 }
 
 func TestLoadMergedRegistry_SetupHeaderOverridesStock(t *testing.T) {

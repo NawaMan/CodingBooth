@@ -491,7 +491,8 @@ Recipe files are plain text with the same DSL syntax — one template per line.
 Bare `@name` looks under the config target’s `.booth/recipes/` (`.recipe` is
 appended when missing). Path-shaped refs and `@@` URLs bypass that directory.
 Project templates under `.booth/templates/` are merged into the catalog
-automatically (local name overrides stock with a warning).
+automatically (local name overrides stock with a warning) and all list under
+**This project**; they need no `meta.toml` and no display keys.
 
 ---
 

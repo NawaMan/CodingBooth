@@ -4,6 +4,14 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A project template can be a single file.** `.booth/templates/<folder>/<name>/template.toml` no
+  longer needs a `meta.toml` beside it or any display keys: `display-name` falls back to the
+  template name, and `primary` defaults to `true` so it shows in `booth template list`. With
+  `[files.setups]` carrying the setup script inline, one `template.toml` is the whole template.
+  Every project template now lists under **This project** in the config TUI, whatever folder it
+  sits in — a local override of a stock template too, which used to stay in the stock category.
+  Before, a folder without `meta.toml` was skipped silently and its templates were `unknown`.
+
 - **The generated `.booth/.gitignore` now ignores profile env files (`.*--env`).** Booth already
   refused to start a profile whose `.<name>--env` git would commit, but the `.gitignore` that
   `booth install` and `booth config` write only covered `.env`, so the first `--profile` run

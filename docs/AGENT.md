@@ -375,10 +375,11 @@ in the manager's own syntax when it matters — `apt-pkg:htop=3.3.0-1`.
    TUI-editable and your tool shows up under **This project** like any other template.
 
    > **When a script header is not enough** — the tool needs extensions, files or run-args of its
-   > own — write a full project-local template instead:
-   > `.booth/templates/<category>/<name>/template.toml` (see
-   > [AGENT_TEMPLATE.md](AGENT_TEMPLATE.md)). A project-local template of the same name as a stock
-   > one overrides it, with a warning.
+   > own — write a project-local template instead: one file,
+   > `.booth/templates/project/<name>/template.toml`, with the setup script inline under
+   > `[files.setups]`. It needs no `meta.toml` and no display keys, and lists under **This project**
+   > (see [AGENT_TEMPLATE.md](AGENT_TEMPLATE.md)). A project-local template of the same name as a
+   > stock one overrides it, with a warning.
 
    > **Shortcut, with a cost:** you *can* skip the header and add `setup <tool>` to the Boothfile
    > by hand. It builds — and it converts the booth to hand-written, so the user's next

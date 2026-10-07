@@ -457,12 +457,23 @@ using the same layout as the stock catalog. `booth config` (CLI and TUI) and
 target (or the current directory for `template` subcommands) and merge them into
 the stock registry.
 
+Every project template lists under one category, **This project**, first in the
+TUI — whatever folder under `.booth/templates/` it sits in. So a local template
+is lighter than a stock one:
+
+- **`meta.toml` is optional.** A `project/meta.toml` still names the category
+  (`display-name`, `order`); any other folder's `meta.toml` is ignored.
+- **Only the segments are required.** `display-name` falls back to the template
+  name, `primary` defaults to `true` (write `primary = false` to hide it from
+  `template list` without `--full`), and `display-disc`, `display-detail` and
+  `tags` may be left out.
+
 ```
 my-project/
 └── .booth/
     └── templates/
-        └── project/                 # any category name
-            ├── meta.toml
+        └── project/                 # any folder name — all list under "This project"
+            ├── meta.toml            # optional
             └── myapp/
                 ├── template.toml
                 ├── fancy--extension.toml
@@ -475,6 +486,26 @@ my-project/
 booth config --no-tui . --select myapp+fancy
 ```
 
+The smallest project template is one file. This one installs an apt package
+and runs a setup script carried inline (`[files.setups]` writes it to
+`.booth/setups/` on every `booth config`, so edit it here, not there):
+
+```toml
+# .booth/templates/project/native-libs/template.toml — the whole template
+[segments]
+"Boothfile--45" = """
+install apt libc++1
+setup native-libs
+"""
+
+[files.setups]
+"native-libs--setup.sh" = """
+#!/usr/bin/env bash
+set -Eeuo pipefail
+ldconfig
+"""
+```
+
 **Name collision:** template names are global. If a local template reuses a stock
 name (e.g. local `go`), the **project version wins** and CodingBooth prints a
 warning on stderr:
@@ -482,6 +513,8 @@ warning on stderr:
 ```text
 Warning: project template "go" overrides built-in (category "languages" → "project")
 ```
+
+The local `go` lists under **This project**, not under Languages.
 
 Override is **full template replace**: the local entry replaces the stock one
 including its extensions. There is no partial “add one extension to stock `go`”
