@@ -24,14 +24,15 @@ separate `coder` user. The installer warns if it detects either; `booth`
 refuses to start. `--rootless` skips that check (unsupported; file ownership
 may be wrong).
 
-The wrapper is a Bash script — on Windows that means Git Bash or WSL. The CLI
-on `PATH` must be Docker, not Podman.
+The wrapper is a Bash script — on Windows that means Git Bash or WSL. Docker is
+the default engine; Podman is supported experimentally (see
+[BOOTH_ENGINES.md](BOOTH_ENGINES.md)).
 
 ## The six layers
 
 | # | Layer                | Lives in                                            | Scope         | Required for          |
 |---|----------------------|-----------------------------------------------------|---------------|-----------------------|
-| 1 | **Shell function**   | `~/.bashrc`, `~/.zshrc`, `~/.bash_profile`, `~/.profile` | Per user      | Typing `booth` from any subdirectory |
+| 1 | **Shell function**   | `~/.bashrc`, `~/.zshrc`, `~/.config/fish/functions/booth.fish` | Per user      | Typing `booth` from any subdirectory |
 | 2 | **Wrapper**          | `<project>/booth`                                   | Per project   | Bootstrapping a project; downloading the binary |
 | 3 | **Binary**           | shared cache **or** `<project>/.booth/tools/`       | Per user *or* per project | Actually running booths |
 | 4 | **`.booth/` config** | `<project>/.booth/` (Boothfile, config.toml, generated scripts) | Per project   | Building/running this project's image |
@@ -140,6 +141,16 @@ The wrapper picks where to store the binary based on a flag:
 - `--cache=shared` (default) → `~/.cache/codingbooth/versions/<v>/` (see layer 6)
 - `--cache=local` → `<project>/.booth/tools/`
 
+The choice is recorded in the lock file (`cache=`), and from then on the
+wrapper looks for the binary only there. A later `install` or `update` without
+`--cache` keeps the project's mode; pass `--cache` to switch.
+
+With `--cache=local`, `.booth/tools/codingbooth-version` records which version
+the binary in that folder is (its file name is the same for every version).
+When it does not match the lock — say a `git pull` bumped the lock — the
+wrapper downloads the pinned version on the next run, as it does for a missing
+binary.
+
 **Install**
 
 ```bash
@@ -157,8 +168,10 @@ If the binary for that version is already present (at the chosen location),
 ```bash
 ./booth update                # latest
 ./booth update 0.54.0         # specific version
-./booth update-wrapper        # also update the ./booth wrapper script itself
 ```
+
+To update the `./booth` wrapper script itself, re-run the installer:
+`curl -fsSL https://codingbooth.io/install.sh | bash`.
 
 **Uninstall**
 
@@ -230,6 +243,7 @@ would pin one platform's hash for everyone.
 .booth/tools/
 ├── codingbooth.lock          # version=0.53.0 — committed
 ├── codingbooth.sha256        # only with --cache=local — gitignored
+├── codingbooth-version       # only with --cache=local — gitignored
 └── codingbooth-linux-amd64   # only with --cache=local — gitignored
 ```
 
@@ -287,9 +301,12 @@ booth uninstall --shared-binary       # remove only this project's pinned versio
 booth uninstall --all-shared-binary   # remove every cached version
 ```
 
-`tools-cache` is the cache-only entry point. `uninstall --shared-binary` is
-useful when you're already running uninstall for other reasons and want one
-prompt that summarises everything.
+`tools-cache` is the cache-only entry point. It is a command of the binary, so
+it needs the project to still be installed; after `booth uninstall`, use
+`booth uninstall --all-shared-binary -y` (it works without a lock file) or
+delete `versions/` by hand. `uninstall --shared-binary` is useful when you're
+already running uninstall for other reasons and want one prompt that
+summarises everything.
 
 ---
 
@@ -388,6 +405,7 @@ Restart your shell after `shell-config uninstall` to drop the `booth` function.
     └── tools/
         ├── codingbooth.lock          [layer 5: lock file]
         ├── codingbooth.sha256        [layer 3: binary checksum, only with --cache=local]
+        ├── codingbooth-version       [layer 3: binary's version, only with --cache=local]
         └── codingbooth-<platform>    [layer 3: binary, only with --cache=local]
 ```
 
