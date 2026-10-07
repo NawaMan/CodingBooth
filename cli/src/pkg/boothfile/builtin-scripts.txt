@@ -87,6 +87,7 @@ setup elixir
 setup elixir-code-extension
 setup elm
 setup elm-code-extension
+setup envfolio
 setup erlang
 setup erlang-code-extension
 setup excalidraw

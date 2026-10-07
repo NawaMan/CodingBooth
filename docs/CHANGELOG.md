@@ -4,6 +4,19 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **EnvFolio is in every booth.** [EnvFolio](https://github.com/NawaMan/EnvFolio) keeps texts and
+  GPG-encrypted secrets in a `pass` store and loads them into a command or a shell as environment
+  variables (`envfolio exec --secrets <entry> -- <cmd>`; secrets only with `--secrets`). The base
+  image installs it with `pass`, checksum-verified, and the login welcome lists it. Select
+  `tools/envfolio` to pin a version, and `+store-cache` to keep the store and its GPG key
+  (`~/.envfolio`, `~/.gnupg`) in `.booth/cache/` across container restarts.
+
+- **A cache or shared dir can be created with a mode.** A `cache-dirs` / `shared-dirs` entry may end
+  in an octal mode — `"home/coder/.gnupg:0700"` — in a template or in `config.toml`. The folder is
+  created with that mode, so a tool that refuses a folder others can read (gpg warned
+  `unsafe permissions on homedir` on every call) works from the cache. A folder that already exists
+  keeps its mode; an invalid suffix fails the template load.
+
 - **Wrapper `0.15.2` — every install writes `.booth/.gitignore`.** Installing a pinned version
   that was already in the shared cache (`install <version>`, `update <version>`,
   `create <dir> <version>`) took an early "already up-to-date" return that came before the

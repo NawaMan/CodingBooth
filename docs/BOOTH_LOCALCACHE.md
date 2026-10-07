@@ -228,6 +228,16 @@ mount, a symlink, and a copy-back mirror alike. Use `--persist-home` there.
 
 For the team/git version of either, see [Shared State](BOOTH_SHARED.md).
 
+### Secrets (`cache-dirs`)
+
+| Template Selection | What's Cached |
+|--------------------|---------------|
+| `envfolio+store-cache` | `~/.envfolio/`, `~/.gnupg/` (both created `0700`) |
+
+The EnvFolio store and the GPG keyring that holds its private key (still protected by its
+passphrase). `.booth/cache/` stays on this machine and out of git; `envfolio store backup` /
+`restore` is the portable way to move a store.
+
 ### Browser Profiles (`cache-dirs`)
 
 | Template Selection | What's Cached |
@@ -285,6 +295,7 @@ booth config --no-tui . --select go --set cache-dirs=home/coder/.custom_app_data
 
 - `cache-files` creates individual empty files that are bind-mounted as files
 - `cache-dirs` creates directories with `.mount-this` markers that are bind-mounted as whole directories
+- A `cache-dirs` entry may end in an octal mode — `home/coder/.gnupg:0700` — for a tool that refuses a folder others can read (gpg, ssh). The mode is set when the folder is created; an existing folder keeps its own
 - These paths are merged with any cache paths from selected templates — duplicates are automatically removed
 - Paths are relative to the container root (e.g., `home/coder/.foo` maps to `/home/coder/.foo`)
 

@@ -328,6 +328,9 @@ These essentials are preinstalled so you can start working immediately — no ex
 - **Editors & File Browsers**
   `nano`, `tilde`, `ranger`, `less`, `viewmd` (Markdown viewer in a browser)
 
+- **Secrets & Environment**
+  `envfolio` (texts and secrets as environment variables, on `pass`)
+
 - **Task runners**
   `just` (run recipes from a Justfile)
 
