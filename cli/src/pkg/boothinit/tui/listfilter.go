@@ -141,7 +141,7 @@ type chipLabel struct {
 // Config has no list to filter, so the chips stay off that tab — the search
 // box then keeps the full width it had before this row grew a second widget.
 func (m model) chipLabels() []chipLabel {
-	if m.activeTab == 0 || m.width == 0 {
+	if m.activeTab == 0 || m.isRecipesTab() || m.width == 0 {
 		return nil
 	}
 	filters := m.visibleFilters()

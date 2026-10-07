@@ -90,8 +90,7 @@ func TestLoadMergedRegistry_FromProjectRoot(t *testing.T) {
 	stockDir := t.TempDir()
 	projectRoot := t.TempDir()
 	writeTemplateTree(t, stockDir, "languages", "go", "Go", "setup go")
-	local := filepath.Join(projectRoot, ".booth", "templates")
-	writeTemplateTree(t, local, "project", "myapp", "My App", "setup myapp")
+	writeFlatProjectTemplate(t, projectRoot, "myapp.toml", "display-name = \"My App\"\nprimary = true\n\n[segments]\nBoothfile = \"\"\"\nsetup myapp\n\"\"\"\n")
 
 	var warn bytes.Buffer
 	reg, err := LoadMergedRegistry(stockDir, projectRoot, &warn)
@@ -99,6 +98,14 @@ func TestLoadMergedRegistry_FromProjectRoot(t *testing.T) {
 	require.Contains(t, reg.ByName, "myapp")
 	require.Contains(t, reg.ByName, "go")
 	assert.Empty(t, warn.String())
+}
+
+// writeFlatProjectTemplate writes .booth/templates/<name>.toml.
+func writeFlatProjectTemplate(t *testing.T, projectRoot, name, content string) {
+	t.Helper()
+	dir := filepath.Join(projectRoot, ".booth", "templates")
+	require.NoError(t, os.MkdirAll(dir, 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, name), []byte(content), 0644))
 }
 
 // writeBareTemplate writes a template.toml with only a segment — no meta.toml,
@@ -126,7 +133,7 @@ func TestLoadMergedRegistry_ProjectTemplateNeedsNoMetaOrDisplayKeys(t *testing.T
 	stockDir := t.TempDir()
 	projectRoot := t.TempDir()
 	writeTemplateTree(t, stockDir, "languages", "go", "Go", "setup go")
-	writeBareTemplate(t, filepath.Join(projectRoot, ".booth", "templates"), "project", "native-libs", "")
+	writeFlatProjectTemplate(t, projectRoot, "native-libs.toml", "[segments]\nBoothfile = \"\"\"\nsetup native-libs\n\"\"\"\n")
 
 	reg, err := LoadMergedRegistry(stockDir, projectRoot, nil)
 	require.NoError(t, err)
@@ -148,41 +155,77 @@ func TestLoadMergedRegistry_ProjectTemplateKeepsExplicitPrimaryFalse(t *testing.
 	stockDir := t.TempDir()
 	projectRoot := t.TempDir()
 	writeTemplateTree(t, stockDir, "languages", "go", "Go", "setup go")
-	writeBareTemplate(t, filepath.Join(projectRoot, ".booth", "templates"), "project", "quiet", "primary = false\n")
+	writeFlatProjectTemplate(t, projectRoot, "quiet.toml", "primary = false\n\n[segments]\nBoothfile = \"\"\"\nsetup quiet\n\"\"\"\n")
 
 	reg, err := LoadMergedRegistry(stockDir, projectRoot, nil)
 	require.NoError(t, err)
 	assert.False(t, reg.ByName["quiet"].Primary)
 }
 
-func TestLoadMergedRegistry_AllProjectTemplatesShareOneCategory(t *testing.T) {
+func TestLoadMergedRegistry_FlatFilesShareOneCategory(t *testing.T) {
 	stockDir := t.TempDir()
 	projectRoot := t.TempDir()
-	local := filepath.Join(projectRoot, ".booth", "templates")
 	writeTemplateTree(t, stockDir, "languages", "go", "Go", "setup go")
-	writeTemplateTree(t, local, "languages", "go", "Our Go", "setup go 1.24") // overrides stock, with a meta.toml
-	writeBareTemplate(t, local, "tools", "native-libs", "")                   // no meta.toml
-	require.NoError(t, os.MkdirAll(filepath.Join(local, "project"), 0755))    // project meta names the category
-	require.NoError(t, os.WriteFile(filepath.Join(local, "project", "meta.toml"),
-		[]byte("display-name = \"Acme\"\norder = 0\n"), 0644))
+	writeFlatProjectTemplate(t, projectRoot, "go.toml", "display-name = \"Our Go\"\n\n[segments]\nBoothfile = \"\"\"\nsetup go 1.24\n\"\"\"\n")
+	writeFlatProjectTemplate(t, projectRoot, "native-libs.toml", "[segments]\nBoothfile = \"\"\"\nsetup native-libs\n\"\"\"\n")
+	writeFlatProjectTemplate(t, projectRoot, "native-libs--fancy--extension.toml", "[segments]\nBoothfile = \"\"\"\nsetup native-libs-fancy\n\"\"\"\n")
 
-	reg, err := LoadMergedRegistry(stockDir, projectRoot, &bytes.Buffer{})
+	var warn bytes.Buffer
+	reg, err := LoadMergedRegistry(stockDir, projectRoot, &warn)
 	require.NoError(t, err)
 
 	cat := projectCategory(t, reg)
-	assert.Equal(t, "Acme", cat.DisplayName, "project/meta.toml still names the category")
+	assert.Equal(t, ProjectCategoryDisplayName, cat.DisplayName)
 	var names []string
 	for _, tmpl := range cat.Templates {
 		names = append(names, tmpl.Name)
 		assert.Equal(t, ProjectCategoryName, tmpl.CategoryName)
 	}
 	assert.ElementsMatch(t, []string{"go", "native-libs"}, names)
+	require.Len(t, reg.ByName["native-libs"].Extensions, 1)
+	assert.Equal(t, "fancy", reg.ByName["native-libs"].Extensions[0].Name)
+	assert.Contains(t, warn.String(), `project template "go" overrides built-in`)
 	for _, c := range reg.Categories {
-		assert.NotEqual(t, "tools", c.Name, "a local folder is not a category of its own")
 		if c.Name == "languages" {
 			assert.Empty(t, c.Templates, "the overridden stock go left Languages")
 		}
 	}
+}
+
+func TestLoadMergedRegistry_ProjectDirectoryIsAnError(t *testing.T) {
+	stockDir := t.TempDir()
+	projectRoot := t.TempDir()
+	writeTemplateTree(t, stockDir, "languages", "go", "Go", "setup go")
+	dir := filepath.Join(projectRoot, ".booth", "templates", "project")
+	require.NoError(t, os.MkdirAll(dir, 0755))
+
+	_, err := LoadMergedRegistry(stockDir, projectRoot, nil)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "is a directory")
+	assert.Contains(t, err.Error(), "<name>.toml")
+}
+
+func TestLoadMergedRegistry_ProjectMetaTomlIsAnError(t *testing.T) {
+	stockDir := t.TempDir()
+	projectRoot := t.TempDir()
+	writeTemplateTree(t, stockDir, "languages", "go", "Go", "setup go")
+	writeFlatProjectTemplate(t, projectRoot, "meta.toml", "display-name = \"Acme\"\norder = 0\n")
+
+	_, err := LoadMergedRegistry(stockDir, projectRoot, nil)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "meta.toml")
+	assert.Contains(t, err.Error(), "This project")
+}
+
+func TestLoadMergedRegistry_ExtensionNeedsParentPrefix(t *testing.T) {
+	stockDir := t.TempDir()
+	projectRoot := t.TempDir()
+	writeTemplateTree(t, stockDir, "languages", "go", "Go", "setup go")
+	writeFlatProjectTemplate(t, projectRoot, "fancy--extension.toml", "[segments]\nBoothfile = \"\"\"\nsetup fancy\n\"\"\"\n")
+
+	_, err := LoadMergedRegistry(stockDir, projectRoot, nil)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "needs a parent prefix")
 }
 
 func TestLoadRegistry_StockStillRequiresMeta(t *testing.T) {

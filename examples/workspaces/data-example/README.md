@@ -52,7 +52,7 @@ From a shell inside the booth, `start-sales-explorer` does the same build-and-st
   the "Sales Explorer" desktop icon via `cb-web-icon.sh`, the same helper JupyterLab uses.
   The icon's descriptor carries a start command, so `cb-web-open` builds and starts the
   server on click when nothing is listening on port 13000.
-- `.booth/templates/project/sales-explorer/` — a project-local template that makes that
+- `.booth/templates/sales-explorer.toml` — a project-local template that makes that
   setup *selectable*, so its `setup` line is generated rather than hand-typed. It shows up
   in `booth config` (TUI and `--select`) under "This project", which keeps the Boothfile
   fully generated and reconfigurable.

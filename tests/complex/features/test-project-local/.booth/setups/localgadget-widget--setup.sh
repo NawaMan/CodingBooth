@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Project-local extension setup (from widget--extension.toml files.setups)
+# Project-local extension setup (from localgadget--widget--extension.toml [files.setups])
 set -euo pipefail
 
 MARKER="CB_DETECT_EXTENSION_v1"

@@ -320,8 +320,8 @@ More: [A setup that is its own template](https://github.com/NawaMan/CodingBooth/
 ### A template of your own
 
 When one `setup` line is not enough — a package *and* a script, run-args, a port — write a project
-template. It is a single file, `.booth/templates/project/<name>/template.toml`: no `meta.toml`
-next to it, and no display keys. This one installs `libc++1` and runs a script carried inline:
+template. It is a single file, `.booth/templates/<name>.toml`: no directory, no `meta.toml`,
+and no display keys. This one installs `libc++1` and runs a script carried inline:
 
 ```toml
 [segments]
@@ -342,10 +342,11 @@ ldconfig
 booth config --no-tui --overwrite --add-select native-libs
 ```
 
-Every project template lists under **This project** in the TUI, named after its folder unless you
+Every project template lists under **This project** in the TUI, named after its file unless you
 give it a `display-name`. `booth config` writes the inline script to
-`.booth/setups/native-libs--setup.sh` each time, so edit the script in `template.toml`, not the
-copy. A project template with the name of a built-in replaces it, with a warning.
+`.booth/setups/native-libs--setup.sh` each time, so edit the script in the `.toml`, not the
+copy. A project template with the name of a built-in replaces it, with a warning. An extension
+of it is `.booth/templates/<name>--<ext>--extension.toml`.
 
 More: [Project-local templates](https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_CUSTOMIZATION.md#project-local-templates-and-extensions) ·
 [Template schema](https://github.com/NawaMan/CodingBooth/blob/main/docs/AGENT_TEMPLATE.md)

@@ -13,13 +13,16 @@ This file contains a list of changes for each released version.
 - **A lock file without a `version=` line reports itself instead of exiting silently.** The wrapper
   exited 1 with no output, before its own "Invalid lock file: missing version" message could print.
 
-- **A project template can be a single file.** `.booth/templates/<folder>/<name>/template.toml` no
-  longer needs a `meta.toml` beside it or any display keys: `display-name` falls back to the
-  template name, and `primary` defaults to `true` so it shows in `booth template list`. With
-  `[files.setups]` carrying the setup script inline, one `template.toml` is the whole template.
-  Every project template now lists under **This project** in the config TUI, whatever folder it
-  sits in — a local override of a stock template too, which used to stay in the stock category.
-  Before, a folder without `meta.toml` was skipped silently and its templates were `unknown`.
+- **A project template is one file, and the config TUI can apply a recipe.**
+  `.booth/templates/<name>.toml` is the whole template. A directory there is an error, and
+  `meta.toml` is not read: every project template lists under **This project**. `display-name`
+  falls back to the filename, and `primary` defaults to `true`. An extension is
+  `.booth/templates/<template>--<ext>--extension.toml`, selected as `<template>+<ext>`. A `#`
+  outside quotes in a recipe, or in any `--select` text, is a comment through the end of the
+  line. The config TUI adds a **Recipes** tab when `.booth/recipes/` has a top-level `*.recipe`.
+  Enter applies that recipe onto the template checkboxes, and a save keeps `@name` while those
+  checkboxes still match. A recipe does not contain another recipe. `booth config --web` has no
+  Recipes tab.
 
 - **The generated `.booth/.gitignore` now ignores profile env files (`.*--env`).** Booth already
   refused to start a profile whose `.<name>--env` git would commit, but the `.gitignore` that

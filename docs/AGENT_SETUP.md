@@ -186,7 +186,7 @@ prefer the `--add-*` / `--remove-*` forms.
 | A system package | `--add-select 'apt-pkg:htop,jq'` |
 | A language package | the language's `*-pkg` extension, e.g. `--add-select 'nodejs+npm-pkg:"tsx"'` |
 | Anything more | write `.booth/setups/<name>--setup.sh` (runs as root at image build) with a `# cb-template: <Display name>` header, then `--add-select <name>` |
-| More than one `setup` line (a package plus a script, run-args, a port) | write one file, `.booth/templates/project/<name>/template.toml` — `[segments]` plus the script inline under `[files.setups]`; no `meta.toml` needed — then `--add-select <name>` |
+| More than one `setup` line (a package plus a script, run-args, a port) | write one file, `.booth/templates/<name>.toml` — `[segments]` plus the script inline under `[files.setups]`; no directory and no `meta.toml` — then `--add-select <name>` |
 
 Never type a `setup` or `run` line into the Boothfile. A setup script named after a built-in
 replaces that built-in, so choose a new name.

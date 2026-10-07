@@ -451,19 +451,25 @@ Categories are displayed in `order` sequence. They exist for organizational purp
 
 ### Project-local templates and extensions
 
-A project can own templates (and their extensions) under **`.booth/templates/`**,
-using the same layout as the stock catalog. `booth config` (CLI and TUI) and
-`booth template list|show|search|cat` load them **automatically** from the config
-target (or the current directory for `template` subcommands) and merge them into
-the stock registry.
+A project can own templates under **`.booth/templates/`**, as flat files.
+`booth config` (CLI and TUI) and `booth template list|show|search|cat` load them
+**automatically** from the config target (or the current directory for `template`
+subcommands) and merge them into the stock registry. The stock catalog under
+`templates/` stays nested; only the project tree is flat.
 
 Every project template lists under one category, **This project**, first in the
-TUI — whatever folder under `.booth/templates/` it sits in. So a local template
-is lighter than a stock one:
+TUI. There is no category folder and no `meta.toml` — that name is an error.
+A directory under `.booth/templates/` is an error too; the message names the
+flat file to write instead.
 
-- **`meta.toml` is optional.** A `project/meta.toml` still names the category
-  (`display-name`, `order`); any other folder's `meta.toml` is ignored.
-- **Only the segments are required.** `display-name` falls back to the template
+- **`<name>.toml` is a template** named `<name>`. A name is a letter, then
+  letters, digits, and single hyphens.
+- **`<template>--<ext>--extension.toml` is extension `<ext>` of `<template>`**,
+  selected as `<template>+<ext>`. The file is split on the first `--`, so
+  `native-libs--fancy--extension.toml` is extension `fancy` of `native-libs`.
+  A file named only `<ext>--extension.toml` is an error: prefix the template.
+  The parent `<template>.toml` has to be in the same directory.
+- **Only the segments are required.** `display-name` falls back to the file
   name, `primary` defaults to `true` (write `primary = false` to hide it from
   `template list` without `--full`), and `display-disc`, `display-detail` and
   `tags` may be left out.
@@ -471,14 +477,11 @@ is lighter than a stock one:
 ```
 my-project/
 └── .booth/
-    └── templates/
-        └── project/                 # any folder name — all list under "This project"
-            ├── meta.toml            # optional
-            └── myapp/
-                ├── template.toml
-                ├── fancy--extension.toml
-                └── setups/          # optional — written into .booth/setups/ on config
-                    └── myapp--setup.sh
+    ├── templates/
+    │   ├── myapp.toml
+    │   └── myapp--fancy--extension.toml
+    └── setups/
+        └── myapp--setup.sh           # hand-placed; the template only names it
 ```
 
 ```bash
@@ -488,10 +491,12 @@ booth config --no-tui . --select myapp+fancy
 
 The smallest project template is one file. This one installs an apt package
 and runs a setup script carried inline (`[files.setups]` writes it to
-`.booth/setups/` on every `booth config`, so edit it here, not there):
+`.booth/setups/` on every `booth config`, so edit it here, not there). A
+hand-placed script in `.booth/setups/` is the other way: the template's
+`setup` line names it, and `booth config` leaves that file alone.
 
 ```toml
-# .booth/templates/project/native-libs/template.toml — the whole template
+# .booth/templates/native-libs.toml — the whole template
 [segments]
 "Boothfile--45" = """
 install apt libc++1
@@ -559,9 +564,9 @@ booth config --no-tui . --select db-seed:full
   setups, `65` after the editor; see the bands under *Segments and Ordering*.
 - **A typo is an error** once `cb-template` is present: an unknown `cb-` key,
   a bad band or a malformed param stops `booth config` and names the line.
-- **Need more** — `run-args`, extensions, a startup segment, files? Write a
-  `template.toml` under `.booth/templates/` instead. When both exist for one
-  name, the `template.toml` wins and `booth config` warns:
+- **Need more** — `run-args`, extensions, a startup segment, files? Write
+  `.booth/templates/<name>.toml` instead. When both exist for one name, the
+  flat file wins and `booth config` warns:
 
   ```text
   Warning: project template "db-seed" (category "project") overrides the cb-template header in .booth/setups/db-seed--setup.sh
@@ -891,7 +896,7 @@ A **recipe** is a file that captures a template selection for reuse. Instead of 
 
 - **Shareable** — commit a recipe file to your repo so teammates can init the same way.
 - **Readable** — multiline format with one template per line is easier to read than a dense DSL string.
-- **Composable** — recipes are just text files that feed into the same parser.
+- **Composable** — repeat `--select` to combine recipes. A recipe file does not include another recipe.
 
 ### Recipe Syntax
 
@@ -915,6 +920,11 @@ claude-code
 - Extensions on continuation lines (indented, starting with `+`): `  + maven`.
 - Blank lines and leading/trailing whitespace are ignored.
 - Spaces around `+` are stripped.
+- `#` outside quotes starts a comment through the end of that line. A line
+  that is only a comment is skipped. There are no escape sequences, so a `#`
+  inside `"` or `'` stays part of the value.
+- A line that starts with `@` is a template name, not another recipe. A recipe
+  does not include a recipe. To combine two, pass both: `--select @base --select @extra`.
 
 The parser normalizes this multiline format into the standard DSL before parsing. Continuation lines (starting with `+`) are joined to the previous template.
 

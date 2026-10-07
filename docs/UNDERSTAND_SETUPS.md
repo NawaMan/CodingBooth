@@ -135,7 +135,7 @@ the generated files and the runtime state.
 | --- | --- | --- |
 | **Generated** | `Boothfile`, `config.toml`, `.generated` | written by `booth config`; `.generated` is the fingerprint that guards hand edits — commit all three |
 | **Local catalog** — hand-written; `booth config` copies these, never regenerates them | `setups/` | local setup *and* install scripts; first on `PATH`, so they **shadow built-ins**; a setup with a `# cb-template:` header is also a template ([how](BOOTH_CUSTOMIZATION.md#a-setup-that-is-its-own-template)) |
-| | `templates/<cat>/<name>/` | local templates; they override a stock one of the same name, all list under "This project", and need only their `[segments]` — no `meta.toml`, no display keys |
+| | `templates/<name>.toml` | local templates, one file each; they override a stock one of the same name, all list under "This project", and need only their `[segments]` — no directory, no `meta.toml`, no display keys. An extension is `<template>--<ext>--extension.toml` |
 | | `recipes/` | `@name` recipes |
 | | `startups/`, `startup.sh` | project startup hooks |
 | | `home/`, `home-seed/` | copied to `~` — `home/` overwrites, `home-seed/` does not overwrite |
@@ -147,7 +147,7 @@ the generated files and the runtime state.
 
 The pattern that keeps a project's own logic local **and** the Boothfile generated is a local
 template that emits a local setup. `lamp-example` does it:
-`.booth/templates/project/lamp-init/template.toml` emits `setup lamp-init`, which runs
+`.booth/templates/lamp-init.toml` emits `setup lamp-init`, which runs
 `.booth/setups/lamp-init--setup.sh`. `lemp-example`, `wordpress-example` and `data-example` follow
 the same shape. A local template can also carry the setup script inline (`[files.setups]`), so template and
 setup are one file. When the template would be nothing but that one `setup` line, a

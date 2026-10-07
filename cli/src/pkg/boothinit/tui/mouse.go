@@ -344,6 +344,9 @@ func (m model) clickLeftPanel(line, x int) (tea.Model, tea.Cmd) {
 	if m.isConfigTab() {
 		return m.clickConfigLeft(line, x)
 	}
+	if m.isRecipesTab() {
+		return m.clickRecipeLeft(line, x)
+	}
 
 	m.commitActiveEdit()
 
@@ -400,6 +403,9 @@ func (m model) clickConfigLeft(line, x int) (tea.Model, tea.Cmd) {
 func (m model) clickRightPanel(line, x int) (tea.Model, tea.Cmd) {
 	if m.isConfigTab() {
 		return m.clickConfigOption(line)
+	}
+	if m.isRecipesTab() {
+		return m, nil
 	}
 
 	panel := m.renderRightPanel(m.layout().rightWidth, m.layout().contentH)
@@ -500,6 +506,10 @@ func (m model) handleWheel(msg tea.MouseMsg, delta int) (tea.Model, tea.Cmd) {
 
 	if m.isConfigTab() {
 		m.scrollConfigBy(delta)
+		return m, nil
+	}
+	if m.isRecipesTab() {
+		m.scrollRecipeBy(delta)
 		return m, nil
 	}
 	m.scrollTreeBy(delta)

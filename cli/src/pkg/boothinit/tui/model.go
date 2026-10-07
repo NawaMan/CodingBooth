@@ -58,12 +58,20 @@ type model struct {
 	// detail pane explains it, and selecting it says so.
 	hostArch string
 
-	// Tabs — tab 0 is Config, tabs 1..N are categories (sorted by order)
+	// Tabs — tab 0 is Config, then Recipes when the project has any, then
+	// categories (sorted by order).
 	tabNames      []string     // display names (index 0 = "Config")
 	tabItems      [][]treeItem // items per tab (index 0 = nil for Config tab)
 	activeTab     int
 	tabCursors    []int // cursor per tab (tab 0: config field index)
 	tabScrollOffs []int // scroll offset per tab
+
+	// Recipes from .booth/recipes. recipesTab is -1 when there are none, so it
+	// cannot be confused with the Config tab at index 0. applied is the recipes
+	// the user (or the opening header) asked to keep as @name.
+	recipes    []selection.ProjectRecipe
+	recipesTab int
+	applied    []string
 
 	notification string
 	confirmed    bool
@@ -185,6 +193,7 @@ func newModel(registry *tmpl.TemplateRegistry, pre *PreSelection) model {
 		listFields:   make(map[string][]string),
 		paramValues:  make(map[string]string),
 		listFilter:   listFilterPopular,
+		recipesTab:   -1,
 	}
 
 	// No string-field defaults: an unset port (and other unset string fields)
@@ -196,7 +205,15 @@ func newModel(registry *tmpl.TemplateRegistry, pre *PreSelection) model {
 	m.tabNames = append(m.tabNames, "Config")
 	m.tabItems = append(m.tabItems, nil)
 
-	// Tabs 1..N: categories
+	if pre != nil && len(pre.Recipes) > 0 {
+		m.recipes = pre.Recipes
+		m.applied = append([]string{}, pre.AppliedRecipes...)
+		m.recipesTab = len(m.tabNames)
+		m.tabNames = append(m.tabNames, "Recipes")
+		m.tabItems = append(m.tabItems, nil)
+	}
+
+	// Category tabs.
 	for _, cat := range registry.Categories {
 		sortedTemplates := make([]*tmpl.Template, len(cat.Templates))
 		copy(sortedTemplates, cat.Templates)
@@ -233,10 +250,10 @@ func newModel(registry *tmpl.TemplateRegistry, pre *PreSelection) model {
 		}
 	}
 
-	// Default to tab 1 (first category)
-	m.activeTab = 1
-	if len(m.tabItems) <= 1 {
-		m.activeTab = 0
+	// Land on the first category. Recipes sits beside Config and is not the
+	// default view.
+	if tab := m.firstCategoryTab(); tab >= 0 {
+		m.activeTab = tab
 	}
 
 	// Apply pre-selections
@@ -299,6 +316,9 @@ func newModel(registry *tmpl.TemplateRegistry, pre *PreSelection) model {
 	// copy out of this screen" deserves an answer before it becomes a question.
 	// The first action that has something to report replaces this.
 	m.notification = "Mouse: click rows, markers and tabs; wheel scrolls  │  hold Shift to select text"
+	if pre != nil && pre.RecipeNote != "" {
+		m.notification = pre.RecipeNote
+	}
 
 	// Taken last, so pre-selected templates and flag values are part of "unchanged"
 	// — the user did not do those, and cancelling right after opening should not
@@ -620,6 +640,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.isConfigTab() {
 			return m.handleConfigKey(msg)
 		}
+		if m.isRecipesTab() {
+			return m.handleRecipeKey(msg)
+		}
 		return m.handleTreeKey(msg)
 	}
 	return m, nil
@@ -665,9 +688,12 @@ func (m model) handleSearchInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.searchQuery = m.searchQuery[:m.searchCursor] + ins + m.searchQuery[m.searchCursor:]
 			m.searchCursor += len(ins)
 			m.resetTabCursors()
-			// Auto-switch to first category tab if on Config tab
-			if m.isConfigTab() && len(m.tabItems) > 1 {
-				m.activeTab = 1
+			// Auto-switch to the first category tab if on Config, so a query
+			// searches templates rather than the Recipes list.
+			if m.isConfigTab() {
+				if tab := m.firstCategoryTab(); tab >= 0 {
+					m.activeTab = tab
+				}
 			}
 		}
 	}
@@ -1500,7 +1526,8 @@ func (m model) contentHeight() int {
 	return h
 }
 
-func (m model) buildSelectDSL() string {
+// checkboxDSL is the selection implied by the template checkboxes alone.
+func (m model) checkboxDSL() string {
 	var parts []string
 
 	for _, cat := range m.registry.Categories {
