@@ -4,6 +4,11 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`setup bash` and source-built `setup make` no longer stall when GNU's servers are down.** Both
+  now try `ftp.gnu.org`, then `ftpmirror.gnu.org`, then `mirrors.kernel.org/gnu`, with a 15-second
+  connect timeout. Before, an unreachable GNU host cost about 28 minutes of retries before the
+  build failed.
+
 - **The Android emulator starts from its desktop icon, and with KVM by default.** The first click
   failed with `cb-android-emulator: line 163: …/.android/avd/booth.avd/.cb-recipe: No such file or
   directory`. A desktop session sets `XDG_CONFIG_HOME`, and `avdmanager` then put the AVD under

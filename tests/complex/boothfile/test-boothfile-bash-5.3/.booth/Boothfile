@@ -1,0 +1,8 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --select bash:5.3
+
+env APT_SNAPSHOT=20261006T000000Z
+
+arg GNU_BASH_VERSION=5.3
+
+setup bash --version ${GNU_BASH_VERSION}

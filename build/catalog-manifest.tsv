@@ -23,7 +23,7 @@ setup	aws-cli	1.0.0	86f33b090048a34908a279d640b232f8f3b4d70d17347fbf7116a24181f2
 setup	aws-sam-cli	1.0.0	f9ea029f35792cdc088f459e6192efb3e140ae9c72e2b5ecf659b4f0e6d73c2a	variants/base/setups/aws-sam-cli--setup.sh
 setup	azure-cli	1.0.0	98a239af8dceb156d984e50bca3cebcbddf28f78611837c695a77dc0e50a5b20	variants/base/setups/azure-cli--setup.sh
 setup	base-code-extension	1.0.0	8442e7a6aa51c3423207d8172d170208a5696abad356505cd95bb49983393db3	variants/base/setups/base-code-extension--setup.sh
-setup	bash	0.1.0	7dd1808ddcf064fadd1ea94d4281d5a649c898373051ea63cac9d42f77f7ee2f	variants/base/setups/bash--setup.sh
+setup	bash	0.1.1	d1717bbcce1980084f56794b8a45d135248ad6391f8a3c71ace8b2c3c065d0a3	variants/base/setups/bash--setup.sh
 setup	bash-code-extension	1.0.0	739b732e27d197027422df407be931c49db8b64c2ba1cbb5b33378ba0fda4635	variants/base/setups/bash-code-extension--setup.sh
 setup	bash-nb-kernel	1.0.0	7b99d4bb4f5c20b73ade9ec071e6b7051c7372bbc23f7f8d80ecf4aab51b70cb	variants/base/setups/bash-nb-kernel--setup.sh
 setup	bluej	1.0.0	1afcb7ad9ff53a0a2c0f10cd24894cd901e7ac05a9a9f727ea98efb6fcd37dcc	variants/base/setups/bluej--setup.sh
@@ -191,7 +191,7 @@ setup	lua-code-extension	1.0.0	c9947d26ad809b5a768ffa27604ed277460d2e0ba548c9452
 setup	lua-nb-kernel	1.0.0	001fd2f052a142a81f9fe60c5b88c71f53e73c3b2ed90b543458f685a5c95da3	variants/base/setups/lua-nb-kernel--setup.sh
 setup	lxqt	1.0.0	1796f036a89cfc480654f657def0fed432a9d6acb7577cc2c8c272c9cd0526a5	variants/base/setups/lxqt--setup.sh
 setup	lxqt-wallpaper	1.0.0	3a642a29c4b1a945808776d90e2a40827631cd40ab35648220510cb289e606f5	variants/base/setups/lxqt-wallpaper--setup.sh
-setup	make	1.0.0	c8052cadd2fcac1b611d348e1f99b9009999ad16ad61d93aa97907e560993f81	variants/base/setups/make--setup.sh
+setup	make	1.0.1	003cc302048699df8f78154881caf4d365a6f28e86ab86cc337bb81219360a72	variants/base/setups/make--setup.sh
 setup	material-cursors	1.0.0	8be1bb69e1da659faa6e7dc9b93b4b6b413466931764094f294661614f044021	variants/base/setups/material-cursors--setup.sh
 setup	mermaid	1.0.0	7d06620e83ea4827c94bed254ab3599b16a3af1db218726bd55571e204ca07d9	variants/base/setups/mermaid--setup.sh
 setup	mermaid-code-extension	0.1.0	b5ef19dba87af781749c4c3807897aab97566be4815ead5eebcbe71465684e0e	variants/base/setups/mermaid-code-extension--setup.sh
