@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -102,14 +102,25 @@ else
 
   TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
   TARBALL="make-${VERSION}.tar.gz"
-  URL="https://ftp.gnu.org/gnu/make/${TARBALL}"
-  ALT_URL="https://ftpmirror.gnu.org/make/${TARBALL}"
+  # Three sources, tried in order. --connect-timeout keeps an unreachable host
+  # from costing minutes per retry before the next source gets its turn.
+  MIRRORS=(
+    "https://ftp.gnu.org/gnu/make"
+    "https://ftpmirror.gnu.org/make"
+    "https://mirrors.kernel.org/gnu/make"
+  )
 
   echo "⬇️  Downloading GNU Make ${VERSION} ..."
-  if ! curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$URL" -o "$TMP/$TARBALL"; then
-    echo "   Primary mirror failed, trying fallback mirror..."
-    curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$ALT_URL" -o "$TMP/$TARBALL"
-  fi
+  got_tarball=0
+  for mirror in "${MIRRORS[@]}"; do
+    if curl --connect-timeout 15 --retry 3 --retry-delay 3 --retry-all-errors \
+        -fsSL "${mirror}/${TARBALL}" -o "$TMP/$TARBALL"; then
+      got_tarball=1
+      break
+    fi
+    echo "   ${mirror} failed, trying the next mirror..."
+  done
+  (( got_tarball )) || { echo "❌ Could not download ${TARBALL} from any mirror" >&2; exit 1; }
 
   echo "📦 Building GNU Make ${VERSION} ..."
   rm -rf "$TARGET_DIR"

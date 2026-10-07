@@ -4,11 +4,12 @@
 # you may not use this file except in compliance with the License.
 
 # -----------------------------------------------------------------------------
-# Test: Boothfile GNU Bash (a second shell, default 3.2.57)
+# Test: Boothfile GNU Bash (a second shell, default 3.2)
 #
-# bash-3.2 --version proves the binary. The safe probe is what a script must
-# do to run under the bash 3.2 that macOS ships. The unsafe probe is the
-# expansion that shell rejects.
+# bash-3.2 --version proves the binary. Only major.minor is asserted, so a
+# bump of the default patch release does not break the test. The safe probe
+# is what a script must do to run under the bash 3.2 that macOS ships. The
+# unsafe probe is the expansion that shell rejects.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -23,17 +24,17 @@ echo "=== Test: Boothfile GNU Bash Installation ==="
 FAILED=0
 
 ACTUAL=$(capture_codingbooth "head -1" --silence-build -- bash-3.2 --version)
-if echo "$ACTUAL" | grep -q "3.2.57"; then
-    print_test_result "true" "$0" "1" "bash-3.2 reports 3.2.57"
+if echo "$ACTUAL" | grep -q "version 3\.2\."; then
+    print_test_result "true" "$0" "1" "bash-3.2 reports 3.2"
 else
-    print_test_result "false" "$0" "1" "bash-3.2 should report 3.2.57"
+    print_test_result "false" "$0" "1" "bash-3.2 should report 3.2"
     echo "  Actual output: $ACTUAL"
     FAILED=$((FAILED + 1))
 fi
 
 # The image login shell stays the distro bash.
 ACTUAL=$(capture_codingbooth "head -1" --silence-build -- bash --version)
-if echo "$ACTUAL" | grep -q "GNU bash" && ! echo "$ACTUAL" | grep -q "3.2.57"; then
+if echo "$ACTUAL" | grep -q "GNU bash" && ! echo "$ACTUAL" | grep -q "version 3\.2\."; then
     print_test_result "true" "$0" "2" "/bin/bash is still the distro bash"
 else
     print_test_result "false" "$0" "2" "/bin/bash should stay the distro bash"
