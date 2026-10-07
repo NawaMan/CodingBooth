@@ -81,6 +81,7 @@ MAX_PARALLEL=1
 EXAMPLE_TIMEOUT=900  # 15 minutes per example
 TIMEOUT_GIVEN=false  # an explicit --timeout is carried into the rerun command
 RETRY=true           # rerun the failed examples once (see the retry below)
+CONFIG_CHECK=true    # check booth config can rerun on each example (see below)
 declare -a FILTER_TAGS=()
 declare -a FILTER_EXAMPLES=()
 
@@ -118,6 +119,10 @@ while [[ $# -gt 0 ]]; do
             RETRY=false
             shift
             ;;
+        --no-config-check)
+            CONFIG_CHECK=false
+            shift
+            ;;
         --help|-h)
             echo "Usage: $0 [OPTIONS]"
             echo ""
@@ -129,6 +134,8 @@ while [[ $# -gt 0 ]]; do
             echo "  --timeout <seconds>   Timeout per example in seconds (default: 900 = 15 min)"
             echo "  --no-retry            Do not rerun failed examples (by default they are rerun"
             echo "                        once, one at a time, when fewer than half failed)"
+            echo "  --no-config-check     Skip checking that booth config can regenerate each"
+            echo "                        example's .booth/ (../ensure-config.sh)"
             echo "  --help, -h            Show this help message"
             echo ""
             echo "While examples run, a single self-erasing line reports what is in flight"
@@ -342,6 +349,37 @@ echo "Max parallel: $MAX_PARALLEL"
 [ ${#FILTER_TAGS[@]} -gt 0 ] && echo "Filter tags: ${FILTER_TAGS[*]}"
 [ ${#FILTER_EXAMPLES[@]} -gt 0 ] && echo "Filter examples: ${FILTER_EXAMPLES[*]}"
 echo ""
+
+# Every example about to run must also be one `booth config` can regenerate:
+# a .booth/ it would refuse as hand-written, or fail on, is a broken example
+# even when its container tests pass. Read-only and container-free, so it runs
+# first; a failure counts toward the summary and exit code but does not stop
+# the examples from running. The table goes to .ensure-config.log, beside the
+# per-example logs. Guarded like the helpers above: an examples tree copied out
+# of the repo on its own may not have the checker.
+ENSURE_CONFIG="$SCRIPT_DIR/../ensure-config.sh"
+CONFIG_CHECK_LOG="$SCRIPT_DIR/.ensure-config.log"
+CONFIG_CHECK_RESULT=""    # empty when not run, else passed or FAILED
+declare -a config_check_failed=()
+if [ "$CONFIG_CHECK" = true ] && [ -x "$ENSURE_CONFIG" ]; then
+    declare -a example_names=()
+    for example_dir in "${examples[@]}"; do
+        example_names+=("$(basename "$example_dir")")
+    done
+    CONFIG_CHECK_START=$(date +%s)
+    if "$ENSURE_CONFIG" "${example_names[@]}" > "$CONFIG_CHECK_LOG" 2>&1; then
+        CONFIG_CHECK_RESULT=passed
+    else
+        CONFIG_CHECK_RESULT=FAILED
+        while read -r name; do
+            config_check_failed+=("$name")
+        done < <(awk '$2 == "COLLISION" || $2 == "ERROR" { print $1 }' "$CONFIG_CHECK_LOG")
+    fi
+    CONFIG_CHECK_DURATION=$(( $(date +%s) - CONFIG_CHECK_START ))
+    CONFIG_CHECK_SUMMARY=$(grep '^Total ' "$CONFIG_CHECK_LOG" | tail -1)
+    echo "Config check $CONFIG_CHECK_RESULT: ${CONFIG_CHECK_SUMMARY:-see .ensure-config.log}"
+    echo ""
+fi
 
 # Every example about to run needs its variant's image to actually match the
 # current source tree, or a build failure/pass reads as a flaky example
@@ -641,6 +679,10 @@ num_passed=${#passed_examples[@]}
 num_failed=${#failed_examples[@]}
 num_skipped=${#skipped_examples[@]}
 total=$((num_passed + num_failed + num_skipped))
+# The config check is not an example, so it stays out of the counts above and
+# decides the outcome on its own.
+config_check_ok=true
+[ "$CONFIG_CHECK_RESULT" = FAILED ] && config_check_ok=false
 
 # Colors
 RED='\033[0;31m'
@@ -662,18 +704,26 @@ for example_dir in "${examples[@]}"; do
         printf "${RED}  %-32s %-12s %s${NC}\n" "$example_name" "$duration_str" "FAILED"
     fi
 done
+if [ "$CONFIG_CHECK_RESULT" = passed ]; then
+    printf "  %-32s %-12s %s\n" "(config check)" "$(format_duration "$CONFIG_CHECK_DURATION")" "passed"
+elif [ "$CONFIG_CHECK_RESULT" = FAILED ]; then
+    printf "${RED}  %-32s %-12s %s${NC}\n" "(config check)" "$(format_duration "$CONFIG_CHECK_DURATION")" "FAILED"
+fi
 echo "------------------------------------------------------"
 printf "  %-32s %-12s\n" "Total (wall clock):" "$(format_duration $OVERALL_DURATION)"
 
 echo ""
 echo "======================================================"
-if [ $num_failed -eq 0 ]; then
+if [ $num_failed -eq 0 ] && [ "$config_check_ok" = true ]; then
     if [ $num_skipped -gt 0 ]; then
         echo "✓ $num_passed of $total example(s) passed (${num_skipped} skipped — not run, not verified)."
     else
         echo "✓ All $total example(s) passed!"
     fi
-else
+elif [ $num_failed -eq 0 ]; then
+    printf "${RED}✗ All $total example(s) passed, but the config check FAILED${NC}\n"
+fi
+if [ $num_failed -gt 0 ]; then
     printf "${RED}✗ $num_failed out of $total example(s) FAILED${NC}\n"
     echo ""
     echo "Failed examples:"
@@ -715,5 +765,12 @@ else
     echo ""
     echo "======================================================"
 fi
+if [ "$config_check_ok" = false ]; then
+    echo ""
+    printf "${RED}booth config cannot regenerate: %s - see .ensure-config.log${NC}\n" "${config_check_failed[*]:-(see log)}"
+    echo "Recheck with: ../ensure-config.sh ${config_check_failed[*]}"
+    echo ""
+    echo "======================================================"
+fi
 
-exit $([ $num_failed -eq 0 ] && echo 0 || echo 1)
+exit $([ $num_failed -eq 0 ] && [ "$config_check_ok" = true ] && echo 0 || echo 1)
