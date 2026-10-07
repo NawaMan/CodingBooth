@@ -4,6 +4,22 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Wrapper `0.15.1` — a `--cache=local` project runs the binary its lock names.** The binary in
+  `.booth/tools/` has the same file name for every version and still matched its own checksum, so
+  after a `git pull` bumped the lock the wrapper kept running the old one. It now writes
+  `.booth/tools/codingbooth-version` beside the binary and re-downloads when that does not match
+  the lock (an existing local install re-downloads once). The wrapper also looks for the binary
+  only where the lock's `cache=` says, and `install` / `update` without `--cache` keep the
+  project's mode — a plain `update` used to switch a local project to the shared cache. With
+  `--cache`, `install` on an installed project now switches to that mode at the locked version,
+  instead of stopping at "already installed"; the binary in the old location is kept.
+
+- **Wrapper: smaller fixes.** `uninstall` no longer suggests `tools-cache clean`, which cannot run
+  once the lock is gone; it names `uninstall --all-shared-binary -y` instead. Installing `latest`
+  downloads the binary from the release it resolved, so a release published mid-install can no
+  longer land under the previous version's cache folder. `install --cache` with no value is a usage
+  error instead of `Error on line N`.
+
 - **The nested-booth guard now catches `./booth --<flag> …` too.** Inside a booth container the
   wrapper refuses to start another booth unless `BOOTH_IN_BOOTH=true` and a distinct `--port` are
   given — but it only checked bare `./booth` and `./booth run`. The binary treats a leading flag

@@ -47,8 +47,10 @@ assert_contains "$LAST_OUTPUT" "EXIT: 0"
 # script mid-run, the message would never arrive.
 assert_contains "$LAST_OUTPUT" "CodingBooth has been uninstalled from this project."
 
-# No shared-binary scope was requested, so the cache hint must be offered.
-assert_contains "$LAST_OUTPUT" "To clean shared cache"
+# No shared-binary scope was requested, so the cache hint must be offered. With
+# ./booth deleted, it must not name a ./booth command — it points at the folder.
+assert_contains "$LAST_OUTPUT" "To remove them too, delete that directory."
+assert_not_contains "$LAST_OUTPUT" "uninstall --all-shared-binary"
 
 assert_contains "$after" "WRAPPER: gone"
 assert_contains "$after" "CACHE_DIR: kept"
