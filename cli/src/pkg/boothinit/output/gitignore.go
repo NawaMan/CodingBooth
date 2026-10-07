@@ -22,6 +22,7 @@ package output
 const BoothGitignore = `# Secrets - never commit
 .booth.password
 .env
+.*--env
 
 # Local persistent state (not committed).
 # Holds whatever the container writes to the mounted paths, including live credentials
