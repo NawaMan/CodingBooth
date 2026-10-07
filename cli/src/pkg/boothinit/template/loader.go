@@ -76,6 +76,13 @@ type paramToml struct {
 // The directory should contain category subdirectories, each with meta.toml
 // and template subdirectories containing template.toml.
 func LoadRegistry(rootDir string) (*TemplateRegistry, error) {
+	return loadRegistry(rootDir, false)
+}
+
+// loadRegistry loads a templates tree. With metaOptional, a category directory
+// without meta.toml is still loaded (empty display name, order 0) instead of
+// being skipped — the project-local tree uses this; the stock catalog does not.
+func loadRegistry(rootDir string, metaOptional bool) (*TemplateRegistry, error) {
 	entries, err := os.ReadDir(rootDir)
 	if err != nil {
 		return nil, fmt.Errorf("reading templates directory: %w", err)
@@ -91,7 +98,7 @@ func LoadRegistry(rootDir string) (*TemplateRegistry, error) {
 		}
 
 		catDir := filepath.Join(rootDir, entry.Name())
-		cat, err := loadCategory(catDir, entry.Name())
+		cat, err := loadCategory(catDir, entry.Name(), metaOptional)
 		if err != nil {
 			return nil, fmt.Errorf("loading category %q: %w", entry.Name(), err)
 		}
@@ -118,15 +125,16 @@ func LoadRegistry(rootDir string) (*TemplateRegistry, error) {
 }
 
 // loadCategory loads a single category from a directory.
-// Returns nil if meta.toml doesn't exist (directory is skipped).
-func loadCategory(dir, name string) (*Category, error) {
+// Returns nil if meta.toml doesn't exist (directory is skipped), unless
+// metaOptional is set, in which case the category loads with a zero meta.
+func loadCategory(dir, name string, metaOptional bool) (*Category, error) {
 	metaPath := filepath.Join(dir, "meta.toml")
-	if _, err := os.Stat(metaPath); os.IsNotExist(err) {
-		return nil, nil
-	}
-
 	var meta metaToml
-	if _, err := toml.DecodeFile(metaPath, &meta); err != nil {
+	if _, err := os.Stat(metaPath); os.IsNotExist(err) {
+		if !metaOptional {
+			return nil, nil
+		}
+	} else if _, err := toml.DecodeFile(metaPath, &meta); err != nil {
 		return nil, fmt.Errorf("parsing meta.toml: %w", err)
 	}
 
@@ -189,6 +197,7 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 		DisplayOrder:  spec.DisplayOrder,
 		Tags:          spec.Tags,
 		Primary:       spec.Primary,
+		primarySet:    md.IsDefined("primary"),
 		AutoSelect:    spec.AutoSelect,
 		UnsupportedArch:     spec.UnsupportedArch,
 		UnsupportedArchNote: spec.UnsupportedArchNote,
@@ -372,6 +381,7 @@ func loadExtensionFile(filePath, name, categoryName string) (*Template, error) {
 		DisplayOrder:  spec.DisplayOrder,
 		Tags:          spec.Tags,
 		Primary:       spec.Primary,
+		primarySet:    md.IsDefined("primary"),
 		AutoSelect:    spec.AutoSelect,
 		UnsupportedArch:     spec.UnsupportedArch,
 		UnsupportedArchNote: spec.UnsupportedArchNote,

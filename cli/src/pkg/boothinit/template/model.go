@@ -32,6 +32,7 @@ type Template struct {
 	CBVersion     string // from template.toml cb-version: the item's own semver (docs/CATALOG_VERSIONING.md)
 	Tags          []string
 	Primary       bool  // shown by default in list/search; non-primary only shown with --full
+	primarySet    bool  // template.toml set primary explicitly (project templates default it to true)
 	Local         bool  // set at merge time for templates from .booth/templates/
 	AutoSelect    *bool // extension only: auto-select when parent is selected
 
