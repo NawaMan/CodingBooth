@@ -149,10 +149,9 @@ Rules that follow from it:
 - **Run it from inside `$WS`, not with the path as an argument.** The target path lands verbatim in
   the `# Configured by:` header, which is how `server-example` ended up shipping an absolute
   `/home/nawa/...` path in a committed file.
-- **Don't restate a value that equals the template default** (`--select go:1.25.7` when the go
-  template already defaults to 1.25.7). The TUI writes the pin as an `arg` line and drops it from
-  the header's DSL, so a first open-and-save produces a spurious diff. The pin stays visible either
-  way — it is the `arg GO_VERSION=` line.
+- **Don't restate a value that equals the template default** (`booth template show <name>` lists
+  the defaults). The TUI drops such a pin from the header's DSL, so a first open-and-save produces
+  a spurious diff.
 - **Then prove the round trip**, because "it generated" and "the TUI reproduces it" are different
   claims: re-run `booth config --no-tui --overwrite` with no flags and `cmp` both files against
   their previous content. Identical means the header is a complete baseline. To drive the real TUI,
