@@ -156,6 +156,9 @@ PASS_COUNTS=()
 FAIL_COUNTS=()
 SKIP_COUNTS=()
 FAILURE_LINES=()
+# Passes from a first attempt that a targeted retry did not re-run (see
+# retry_targets) — added to whatever the retry's own log counts.
+CARRIED_PASS=()
 
 for i in "${!SUITES[@]}"; do
     if should_run_suite "${SUITES[$i]}"; then
@@ -167,6 +170,7 @@ for i in "${!SUITES[@]}"; do
     FAIL_COUNTS[$i]=0
     SKIP_COUNTS[$i]=0
     FAILURE_LINES[$i]=""
+    CARRIED_PASS[$i]=0
 done
 
 CURRENT_PID=""
@@ -225,6 +229,82 @@ last_failed_tests_block() {
     '
 }
 
+# Pass markers in an (ANSI-stripped) log on stdin; prints the count.
+count_pass_markers() {
+    grep -cE '✅|PASSED|^ok ' 2>/dev/null || true
+}
+
+# Names listed in a log's "Failed tests:" (last block) or "⚠️  Retried after a
+# first-attempt failure:" (every block) list, one per line, from an
+# ANSI-stripped log on stdin. Every suite runner prints both lists as
+# "  - <name>" lines.
+failed_test_names() {
+    last_failed_tests_block | sed -n 's/^[[:space:]]*-[[:space:]]*//p'
+}
+retried_test_names() {
+    awk '
+        /Retried after a first-attempt failure:/ { capturing = 1; next }
+        capturing && /^[[:space:]]*- / { sub(/^[[:space:]]*- /, ""); print; next }
+        { capturing = 0 }
+    '
+}
+
+strip_ansi() {
+    sed 's/\x1b\[[0-9;]*m//g' "$1" 2>/dev/null || true
+}
+
+# retry_targets <suite> <first-attempt-log>: the arguments that make the suite's
+# runner re-run only what failed, or nothing to re-run the whole suite.
+#
+# Only COMPLEX takes test names (category/test-…, exactly what its "Failed
+# tests:" list prints), and it is the one worth narrowing: a full re-run is
+# ~160 tests and the better part of an hour to re-check two or three. Any name
+# that is not that shape — or no list at all, as when the suite crashed before
+# its tally — falls back to the full re-run, which is never wrong, only slow.
+retry_targets() {
+    local suite="$1" log="$2" names name
+    [[ "$suite" == "complex" && -f "$log" ]] || return 0
+    names=$(strip_ansi "$log" | failed_test_names)
+    [[ -n "$names" ]] || return 0
+    while IFS= read -r name; do
+        [[ "$name" =~ ^[a-z]+/test-[A-Za-z0-9._-]+$ ]] || return 0
+    done <<< "$names"
+    echo $names
+}
+
+# Passes in a first-attempt COMPLEX log, minus the sections of the tests about to
+# be re-run (a failing test's own passing sub-checks would otherwise be counted
+# twice). Sections start at "--- Running: <test> ---"; the "====" line opens
+# the suite's closing summary.
+carried_passes() {
+    local log="$1" targets="$2"
+    strip_ansi "$log" \
+        | awk -v drop=" ${targets} " '
+            /^--- Running: / { skip = index(drop, " " $3 " ") > 0 }
+            /^====/ { skip = 0 }
+            !skip
+        ' \
+        | count_pass_markers
+}
+
+# flaky_tests <suite>: every test that failed at least once in this run and
+# passed in the end — a suite's own retry-once, or the retry below. Printed
+# even on a green run, because "passed on a retry" with the evidence thrown
+# away is how a real intermittent fault stays undiagnosed.
+flaky_tests() {
+    local suite="$1"
+    local log="${LOG_DIR}/${suite}.log" attempt1="${LOG_DIR}/${suite}.attempt1.log"
+    local still_failing
+    still_failing=$(strip_ansi "$log" | failed_test_names)
+    {
+        strip_ansi "$log" | retried_test_names
+        if [[ -f "$attempt1" ]]; then
+            strip_ansi "$attempt1" | retried_test_names
+            strip_ansi "$attempt1" | failed_test_names
+        fi
+    } | sort -u | grep -vxF -f <(printf '%s\n' "$still_failing" | sed '/^$/d') || true
+}
+
 # Count pass/fail/skip from a log file by looking for common test result markers.
 #
 # Skips are counted and reported, never folded into the pass tally. A test that
@@ -243,7 +323,7 @@ sync_counts() {
     local stripped
     stripped=$(sed 's/\x1b\[[0-9;]*m//g' "$log" 2>/dev/null) || stripped=""
     local pass fail skip
-    pass=$(echo "$stripped" | grep -cE '✅|PASSED|^ok ' 2>/dev/null) || pass=0
+    pass=$(echo "$stripped" | count_pass_markers)
     # Every suite but `unit` reaches one of two mutually-exclusive closing
     # lines: "Failed tests:" (+ list) on failure, or "All ... tests passed"
     # on success — never both. Once a suite has reached that verdict, trust
@@ -279,7 +359,7 @@ sync_counts() {
     fi
     # [[:space:]] rather than \s — BSD grep (macOS) does not honour \s.
     skip=$(echo "$stripped" | grep -cE '^[[:space:]]*(SKIP:|--- SKIP|--- Skipping:)' 2>/dev/null) || skip=0
-    PASS_COUNTS[$idx]=$((pass))
+    PASS_COUNTS[$idx]=$((pass + ${CARRIED_PASS[$idx]:-0}))
     FAIL_COUNTS[$idx]=$((fail))
     SKIP_COUNTS[$idx]=$((skip))
     FAILURE_LINES[$idx]="$failures"
@@ -484,6 +564,10 @@ for i in "${!SUITES[@]}"; do
     STATUS[$i]=running
     draw_graph
 
+    # A previous run's first attempt would otherwise sit beside this run's log
+    # and read as this run's evidence.
+    rm -f "${LOG_DIR}/${suite}.attempt1.log" "${LOG_DIR}/${suite}-booth-calls.attempt1.log"
+
     run_suite "$suite" "$dir" "$runner"
     poll_suite "$suite"
 
@@ -515,7 +599,7 @@ done
 
 if [[ ${#RETRY_SUITES[@]} -gt 0 && "$STOP_REQUESTED" != true ]]; then
     echo ""
-    echo -e "${C_BOLD}Retrying ${#RETRY_SUITES[@]} failed suite(s)...${C_RESET}"
+    echo -e "${C_BOLD}Retrying ${#RETRY_SUITES[@]} failed suite(s)...${C_RESET} ${C_GRAY}(first attempt kept as <suite>.attempt1.log)${C_RESET}"
     echo ""
 
     GRAPH_DRAWN=false
@@ -529,6 +613,23 @@ if [[ ${#RETRY_SUITES[@]} -gt 0 && "$STOP_REQUESTED" != true ]]; then
             break
         fi
 
+        # Keep the first attempt. run_suite truncates the suite's log, and the
+        # complex runner truncates its booth-call trace, so without this a
+        # failure that passes on the retry leaves nothing behind to explain it.
+        attempt1="${LOG_DIR}/${suite}.attempt1.log"
+        mv -f "${LOG_DIR}/${suite}.log" "$attempt1" 2>/dev/null || true
+        if [[ -f "${LOG_DIR}/${suite}-booth-calls.log" ]]; then
+            mv -f "${LOG_DIR}/${suite}-booth-calls.log" "${LOG_DIR}/${suite}-booth-calls.attempt1.log"
+        fi
+
+        targets=$(retry_targets "$suite" "$attempt1")
+        retry_runner="$runner"
+        CARRIED_PASS[$i]=0
+        if [[ -n "$targets" ]]; then
+            retry_runner="$runner $targets"
+            CARRIED_PASS[$i]=$(carried_passes "$attempt1" "$targets")
+        fi
+
         # Reset counts for retry
         PASS_COUNTS[$i]=0
         FAIL_COUNTS[$i]=0
@@ -537,7 +638,7 @@ if [[ ${#RETRY_SUITES[@]} -gt 0 && "$STOP_REQUESTED" != true ]]; then
         STATUS[$i]=running
         draw_graph
 
-        run_suite "$suite" "$dir" "$runner"
+        run_suite "$suite" "$dir" "$retry_runner"
         poll_suite "$suite"
 
         exit_file="${LOG_DIR}/${suite}.exit"
@@ -598,6 +699,30 @@ for i in "${!SUITES[@]}"; do
     fi
 done
 
+# ── Prune superseded images ──────────────────────────────────────────
+
+# Every booth test rebuilds its codingbooth-local:<test>-… image, and every
+# variant refresh re-tags nawaman/codingbooth:…, leaving the previous copy
+# untagged. Nothing removed them: 835 had piled up, the disk reached 94%, and
+# BuildKit's GC — which evicts build cache while free space is under its
+# min-free-space (197 GiB on a 1 TB disk with the default policy) — threw away
+# the desktop layers, so the next run rebuilt all four (~29 min). Scoped to
+# dangling images carrying
+# cb.managed=true (docker-build.sh and the CLI label everything they build), so
+# nothing else on the host is touched; one a container still uses is kept by
+# Docker itself. CB_NO_IMAGE_PRUNE=1 skips it.
+if [[ "${CB_NO_IMAGE_PRUNE:-}" != "1" && "$CB_ENGINE" == "docker" ]] \
+   && command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+    # Counted up front: Docker 29 reports "Total reclaimed space: 0B" even when it
+    # deleted layers, so prune's own tally says nothing useful.
+    superseded=$(docker images --quiet --filter dangling=true --filter label=cb.managed=true 2>/dev/null | wc -l | tr -d ' ')
+    if (( superseded > 0 )); then
+        docker image prune --force --filter label=cb.managed=true >/dev/null 2>&1 || true
+        echo ""
+        echo -e "${C_GRAY}Pruned ${superseded} superseded CodingBooth image(s).${C_RESET}"
+    fi
+fi
+
 # ── Summary ──────────────────────────────────────────────────────────
 
 OVERALL_END=$(date +%s)
@@ -626,6 +751,35 @@ done
 
 echo "  Total: $((total_pass + total_fail))   Passed: ${total_pass}   Failed: ${total_fail}   Skipped: ${total_skip}   Duration: ${OVERALL_DURATION}s"
 echo ""
+
+# A test that needed a retry to pass is a flake until shown otherwise — name it,
+# with the log that holds its failing attempt.
+flaky_header_shown=false
+for i in "${!SUITES[@]}"; do
+    s="${SUITES[$i]}"
+    [[ -f "${LOG_DIR}/${s}.log" ]] || continue
+    case "${STATUS[$i]}" in done|failed) ;; *) continue ;; esac
+    flaky=$(flaky_tests "$s")
+    if [[ -z "$flaky" && -f "${LOG_DIR}/${s}.attempt1.log" && "${STATUS[$i]}" == "done" ]]; then
+        flaky="(the suite as a whole — its first attempt failed without naming a test)"
+    fi
+    [[ -n "$flaky" ]] || continue
+    if [[ "$flaky_header_shown" != true ]]; then
+        echo -e "${C_BOLD}Passed only after a retry${C_RESET} ${C_GRAY}(failed at least once this run)${C_RESET}"
+        flaky_header_shown=true
+    fi
+    evidence="${LOG_DIR}/${s}.log"
+    if [[ -f "${LOG_DIR}/${s}.attempt1.log" ]]; then
+        evidence="${LOG_DIR}/${s}.attempt1.log"
+        [[ -f "${LOG_DIR}/${s}-booth-calls.attempt1.log" ]] \
+            && evidence="${evidence}, ${LOG_DIR}/${s}-booth-calls.attempt1.log"
+    fi
+    echo -e "  ${SUITE_LABELS[$i]}  ${C_GRAY}first failure in: ${evidence}${C_RESET}"
+    while IFS= read -r t; do
+        echo "    - $t"
+    done <<< "$flaky"
+done
+[[ "$flaky_header_shown" == true ]] && echo ""
 
 # A skipped test is a test that did not run — say so on an otherwise green run, so
 # "All tests passed" can never be read as "everything was checked".

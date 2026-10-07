@@ -486,22 +486,52 @@ sync_variant_to_podman() {
     fi
 
     echo "Syncing ${tag} into Podman's local store..."
+    local replaced
+    replaced="$(podman_image_ids "${tag}")"
     if ! docker save "${tag}" | podman load >/dev/null 2>&1; then
         echo "❌ podman sync: 'docker save ${tag} | podman load' failed."
         return 1
     fi
     podman tag "docker.io/${tag}" "${tag}" 2>/dev/null || true
+    remove_replaced_podman_images "${replaced}"
 
     # Mirror the -latest tag too, when the build produced one (not for --rc versions).
     if [[ ! "${version}" =~ --rc([0-9]+)?$ ]]; then
         local latest="${IMAGE_NAME}:${variant}-latest"
         if docker image inspect "${latest}" >/dev/null 2>&1; then
+            replaced="$(podman_image_ids "${latest}")"
             docker save "${latest}" | podman load >/dev/null 2>&1 || true
             podman tag "docker.io/${latest}" "${latest}" 2>/dev/null || true
+            remove_replaced_podman_images "${replaced}"
         fi
     fi
 
     echo "Synced ${tag} into Podman."
+}
+
+# podman_image_ids <tag>: the IDs Podman currently holds under <tag>, in both
+# names a sync gives it (docker.io/ from `podman load`, localhost/ from the
+# retag) — read before a sync so the copies it replaces can be removed after.
+podman_image_ids() {
+    local tag="$1" name
+    for name in "docker.io/${tag}" "localhost/${tag}"; do
+        podman image inspect --format '{{.Id}}' "${name}" 2>/dev/null || true
+    done | sort -u
+}
+
+# remove_replaced_podman_images <ids>: drop each pre-sync image the sync left
+# untagged. Every sync moves both tags onto the new copy, so without this the old
+# one stays behind as a dangling image — a few GB per desktop variant per build,
+# which reached ~600GB and starved BuildKit's GC (it evicts build cache while
+# free disk is under its min-free-space), costing the next test run a full
+# rebuild of every desktop image. Plain `podman rmi`, never --force: an image
+# still tagged elsewhere or used by a container is refused, and kept.
+remove_replaced_podman_images() {
+    local id
+    for id in $1; do
+        [[ -n "$(podman image inspect --format '{{.RepoTags}}' "${id}" 2>/dev/null | tr -d '[]')" ]] && continue
+        podman rmi "${id}" >/dev/null 2>&1 || true
+    done
 }
 
 build_base() {
