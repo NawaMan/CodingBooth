@@ -212,3 +212,14 @@ the suite finish, or run the single test on its own.
 The complex suite traces every booth call — command, exit code, stderr — to
 `tests/logs/complex-booth-calls.log`, because the tests themselves discard stderr. Set
 `CB_DIAG_LOG=<path>` to trace any suite, or `CB_DIAG_LOG=/dev/null` to opt out.
+
+Each suite runner already retries a failing test once. On top of that, `run-automate-tests.sh` gives
+a failed suite one more attempt — for `complex/`, only the tests that failed rather than all ~160.
+The first attempt is kept, not overwritten: `tests/logs/<suite>.attempt1.log`, plus
+`complex-booth-calls.attempt1.log` for its trace. The final summary lists every test that passed
+only after a retry and names the log holding its failure. Read that log before calling it a flake.
+
+At the end of a run on Docker, `run-automate-tests.sh` prunes dangling images labelled
+`cb.managed=true`. These are copies that a test rebuild or variant refresh replaced. Left alone
+they fill the disk, and BuildKit's GC then evicts build cache, so the next run rebuilds every
+desktop image. Set `CB_NO_IMAGE_PRUNE=1` to keep them.
