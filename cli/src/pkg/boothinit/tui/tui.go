@@ -10,6 +10,7 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/nawaman/codingbooth/src/pkg/boothinit/selection"
 	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
 )
 
@@ -72,6 +73,13 @@ type PreSelection struct {
 	BoolFields        map[string]bool            // pre-set bool values (dind, keep-alive, etc.)
 	ListFields        map[string][]string        // pre-set list values (expose, env, mount)
 	ParamValues       map[string]string          // "tmplName:PARAM" or "tmplName/extName:PARAM" → value
+
+	// Recipes lists .booth/recipes/*.recipe. AppliedRecipes are the @name
+	// tokens in the selection that opened the TUI. RecipeNote is shown when
+	// one of those could not be applied.
+	Recipes        []selection.ProjectRecipe
+	AppliedRecipes []string
+	RecipeNote     string
 
 	// ImageAptSnapshot names the image a booth with these settings builds FROM
 	// and the apt snapshot it was built at ("" when unknown — not on this

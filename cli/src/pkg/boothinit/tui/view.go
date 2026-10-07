@@ -10,6 +10,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/aptsnapshot"
+	"github.com/nawaman/codingbooth/src/pkg/boothinit/selection"
 	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
 )
 
@@ -159,11 +160,14 @@ func (m model) View() string {
 
 	// === Scroll indicator appended to header ===
 	if !m.isConfigTab() {
-		items := m.activeItems()
-		if len(items) > contentH {
+		count := len(m.activeItems())
+		if m.isRecipesTab() {
+			count = len(m.visibleRecipes())
+		}
+		if count > contentH {
 			off := m.scrollOffset()
 			scrollInfo := sepStyle.Render(fmt.Sprintf("  %d-%d of %d",
-				off+1, min(off+contentH, len(items)), len(items)))
+				off+1, min(off+contentH, count), count))
 			headerLine1 += scrollInfo
 		}
 	}
@@ -179,6 +183,9 @@ func (m model) View() string {
 	if m.isConfigTab() {
 		leftLines = m.renderConfigPanel(leftWidth, contentH)
 		rightLines = m.renderConfigDetail(rightWidth, contentH).lines
+	} else if m.isRecipesTab() {
+		leftLines = m.renderRecipePanel(leftWidth, contentH)
+		rightLines = m.renderRecipeDetail(rightWidth, contentH)
 	} else {
 		leftLines = m.renderLeftPanel(leftWidth, contentH)
 		rightLines = m.renderRightPanel(rightWidth, contentH).lines
@@ -700,6 +707,93 @@ func variantDisplay(v string) string {
 	return v
 }
 
+func (m model) renderRecipePanel(leftWidth, contentH int) []string {
+	recipes := m.visibleRecipes()
+	off := m.scrollOffset()
+	cursor := m.cursorPos()
+	var lines []string
+	end := off + contentH
+	if end > len(recipes) {
+		end = len(recipes)
+	}
+	for i := off; i < end; i++ {
+		recipe := recipes[i]
+		check := "[ ]"
+		if m.recipeIsMarked(recipe.Name) {
+			check = "[x]"
+		}
+		name := "@" + recipe.Name
+		plain := check + " " + name
+		line := check + " " + boldStyle.Render(name)
+		if lipgloss.Width(plain) < leftWidth {
+			line += strings.Repeat(" ", leftWidth-lipgloss.Width(plain))
+		}
+		if i == cursor {
+			line = cursorStyle.Render(line)
+		} else if m.recipeIsMarked(recipe.Name) {
+			line = selectedStyle.Render(line)
+		}
+		lines = append(lines, line)
+	}
+	for len(lines) < contentH {
+		lines = append(lines, strings.Repeat(" ", leftWidth))
+	}
+	return lines
+}
+
+func (m model) renderRecipeDetail(width, contentH int) []string {
+	recipes := m.visibleRecipes()
+	var lines []string
+	cur := m.cursorPos()
+	if cur < 0 || cur >= len(recipes) {
+		lines = append(lines, detailLabel.Render("No recipe"))
+	} else {
+		recipe := recipes[cur]
+		lines = append(lines, detailTitle.Render("@"+recipe.Name))
+		lines = append(lines, "")
+		lines = append(lines, wrapText(m.recipeStatus(recipe.Name), width)...)
+		lines = append(lines, "")
+		for _, line := range strings.Split(strings.TrimRight(recipe.Body, "\n"), "\n") {
+			lines = append(lines, wrapText(line, width)...)
+		}
+	}
+	for len(lines) < contentH {
+		lines = append(lines, "")
+	}
+	if len(lines) > contentH {
+		lines = lines[:contentH]
+	}
+	return lines
+}
+
+func (m model) recipeStatus(name string) string {
+	if m.recipeIsMarked(name) {
+		return "In the saved selection as @" + name + ". Uncheck one of its templates, or change a param it set, and the save writes those templates out in full."
+	}
+	if containsString(m.applied, name) {
+		recipe, found := m.recipeByName(name)
+		if parsed, err := selection.ParseSelectDSL(recipe.Body); found && err == nil {
+			for _, marked := range m.markedRecipes() {
+				body, ok := m.matchingRecipe(marked)
+				if !ok {
+					continue
+				}
+				covered := map[string]bool{}
+				for _, item := range body.Items {
+					covered[item.Name] = true
+				}
+				for _, item := range parsed.Items {
+					if covered[item.Name] {
+						return "Overlaps @" + marked + ", so this save does not also record @" + name + "."
+					}
+				}
+			}
+		}
+		return "Edited, so this save stores the templates instead of @" + name + "."
+	}
+	return "Enter applies this recipe. The template tabs show what it selected."
+}
+
 func (m model) renderLeftPanel(leftWidth, contentH int) []string {
 	var lines []string
 
@@ -1077,6 +1171,8 @@ func (m model) renderFooter() string {
 		keys = "  Enter: quit  │  Esc: cancel"
 	} else if m.searchFocused {
 		keys = "  Type to search  │  Tab/Enter/↓: go to list  │  Esc: clear"
+	} else if m.isRecipesTab() {
+		keys = "  Enter: apply  │  ↑↓: navigate  │  ◄►: tab  │  Tab: search"
 	} else if m.isConfigTab() {
 		if m.editing {
 			keys = "  Type value  │  Enter/Esc: finish  │  Backspace: delete"

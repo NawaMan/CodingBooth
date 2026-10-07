@@ -490,9 +490,11 @@ For readability in files and heredocs:
 Recipe files are plain text with the same DSL syntax — one template per line.
 Bare `@name` looks under the config target’s `.booth/recipes/` (`.recipe` is
 appended when missing). Path-shaped refs and `@@` URLs bypass that directory.
-Project templates under `.booth/templates/` are merged into the catalog
-automatically (local name overrides stock with a warning) and all list under
-**This project**; they need no `meta.toml` and no display keys.
+Project templates are flat files under `.booth/templates/<name>.toml`. They are
+merged into the catalog automatically (local name overrides stock with a
+warning) and all list under **This project**; they need no directory, no
+`meta.toml`, and no display keys. A `#` outside quotes in a recipe is a comment
+to the end of the line. A recipe does not contain another recipe.
 
 ---
 

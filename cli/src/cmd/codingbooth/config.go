@@ -449,7 +449,12 @@ func prepareInteractiveConfig(version, targetPath string, flags initFlags) inter
 	}
 
 	mergedFlags := mergeFlags(baseline.flags, flags, targetPath)
-	pre := buildPreSelection(registry, mergedFlags, readExistingArgs(targetPath))
+	recipes, err := selection.LoadProjectRecipes(targetPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading recipes: %v\n", err)
+		os.Exit(1)
+	}
+	pre := buildPreSelection(registry, mergedFlags, readExistingArgs(targetPath), recipes, targetPath)
 	pre.StringFields["booth-version"] = readLockFileVersion(targetPath, version)
 	pre.StringFields["apt-snapshot"] = resolveBoothAptSnapshot(mergedFlags, targetPath)
 	pre.ImageAptSnapshot = imageSnapshotLookup(readLockFileVersion(targetPath, version))
@@ -1215,12 +1220,120 @@ func removeByKey(base, removeKeys []string, keyFn func(string) string, flagName 
 	return result
 }
 
+// expandRecipeSelection replaces a bare @name with the templates in that
+// project recipe. A recipe that cannot be applied — unknown template, unknown
+// extension, or an @ include — contributes nothing and is named in the note.
+func expandRecipeSelection(items []selection.ParsedItem, recipes []selection.ProjectRecipe, registry *tmpl.TemplateRegistry) ([]selection.ParsedItem, []string, string) {
+	var out []selection.ParsedItem
+	var applied []string
+	var notes []string
+	for _, item := range items {
+		if !strings.HasPrefix(item.Name, "@") {
+			out = append(out, item)
+			continue
+		}
+		ref := strings.TrimPrefix(item.Name, "@")
+		recipe, ok := selection.FindProjectRecipe(recipes, ref)
+		if !ok {
+			notes = append(notes, fmt.Sprintf("@%s is not a file in .booth/recipes", ref))
+			continue
+		}
+		body, err := selection.ParseSelectDSL(recipe.Body)
+		if err != nil {
+			notes = append(notes, fmt.Sprintf("@%s: %v", recipe.Name, err))
+			continue
+		}
+		if msg := recipeSelectionError(body, registry); msg != "" {
+			notes = append(notes, fmt.Sprintf("@%s: %s", recipe.Name, msg))
+			continue
+		}
+		out = append(out, body.Items...)
+		applied = append(applied, recipe.Name)
+	}
+	return out, applied, strings.Join(notes, " | ")
+}
+
+func recipeSelectionError(parsed *selection.ParsedSelection, registry *tmpl.TemplateRegistry) string {
+	if parsed == nil || len(parsed.Items) == 0 {
+		return "recipe selects nothing"
+	}
+	for _, item := range parsed.Items {
+		if strings.HasPrefix(item.Name, "@") {
+			return "a recipe cannot include another recipe"
+		}
+		t, ok := registry.ByName[item.Name]
+		if !ok {
+			return fmt.Sprintf("unknown template %q", item.Name)
+		}
+		for _, ext := range item.Extensions {
+			found := false
+			for _, have := range t.Extensions {
+				if have.Name == ext.Name {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return fmt.Sprintf("unknown extension %q", ext.Name)
+			}
+		}
+	}
+	return ""
+}
+
+// preselectItems turns --select fragments into checkbox items. A path or URL
+// fragment is opened and its templates are checked directly. A bare @name is
+// left for expandRecipeSelection so the Recipes tab can mark it.
+func preselectItems(raw []string, projectRoot string, recipes []selection.ProjectRecipe, registry *tmpl.TemplateRegistry) ([]selection.ParsedItem, []string, string) {
+	var notes []string
+	var kept []string
+	var direct []selection.ParsedItem
+	for _, fragment := range raw {
+		body, external, err := selection.OpenExternalSelect(fragment, projectRoot)
+		if !external {
+			kept = append(kept, fragment)
+			continue
+		}
+		if err != nil {
+			notes = append(notes, err.Error())
+			continue
+		}
+		parsed, err := selection.ParseSelectDSL(body)
+		if err != nil {
+			notes = append(notes, fragment+": "+err.Error())
+			continue
+		}
+		if msg := recipeSelectionError(parsed, registry); msg != "" {
+			notes = append(notes, fragment+": "+msg)
+			continue
+		}
+		direct = append(direct, parsed.Items...)
+	}
+	var applied []string
+	if len(kept) > 0 {
+		parsed, err := selection.ParseSelectDSL(strings.Join(kept, "/"))
+		if err != nil {
+			notes = append(notes, err.Error())
+		} else {
+			expanded, names, note := expandRecipeSelection(parsed.Items, recipes, registry)
+			direct = append(direct, expanded...)
+			applied = names
+			if note != "" {
+				notes = append(notes, note)
+			}
+		}
+	}
+	return direct, applied, strings.Join(notes, " | ")
+}
+
 // buildPreSelection converts CLI flags into a TUI pre-selection. existingArgs
 // (param name → value from an existing Boothfile's `arg` lines, may be nil) is
 // overlaid onto the param fields so the TUI displays real pinned values rather
 // than template defaults for anything the selection DSL didn't carry.
-func buildPreSelection(registry *tmpl.TemplateRegistry, flags initFlags, existingArgs map[string]string) *tui.PreSelection {
+// projectRoot is the config target, used when a bare @name is not a path.
+func buildPreSelection(registry *tmpl.TemplateRegistry, flags initFlags, existingArgs map[string]string, recipes []selection.ProjectRecipe, projectRoot string) *tui.PreSelection {
 	pre := &tui.PreSelection{
+		Recipes:           recipes,
 		SelectedTemplates: make(map[string]bool),
 		SelectedExts:      make(map[string]map[string]bool),
 		StringFields:      make(map[string]string),
@@ -1298,14 +1411,15 @@ func buildPreSelection(registry *tmpl.TemplateRegistry, flags initFlags, existin
 		return pre
 	}
 
-	// Parse DSL to pre-populate selections
-	rawInput := strings.Join(flags.selectDSLs, "/")
-	parsed, err := selection.ParseSelectDSL(rawInput)
-	if err != nil {
-		return pre // silently fall back to empty pre-selection
-	}
+	// Parse DSL to pre-populate selections. A path or URL recipe is read first,
+	// the same way --no-tui does, because "/" inside @/tmp/file would otherwise
+	// split the path into template names. A bare @name stays @name so the
+	// Recipes tab can keep it when a later save still matches the file.
+	items, applied, note := preselectItems(flags.selectDSLs, projectRoot, recipes, registry)
+	pre.AppliedRecipes = applied
+	pre.RecipeNote = note
 
-	for _, item := range parsed.Items {
+	for _, item := range items {
 		t, ok := registry.ByName[item.Name]
 		if !ok {
 			continue

@@ -371,6 +371,28 @@ func TestReadSelectInput_ProjectRecipeMissing(t *testing.T) {
 	assert.Contains(t, err.Error(), filepath.Join(project, ".booth", "recipes", "missing.recipe"))
 }
 
+func TestOpenExternalSelect_BareNameStaysForTheRecipesTab(t *testing.T) {
+	body, external, err := OpenExternalSelect("@desk/htop", t.TempDir())
+	require.NoError(t, err)
+	assert.False(t, external)
+	assert.Empty(t, body)
+
+	body, external, err = OpenExternalSelect("go/python", t.TempDir())
+	require.NoError(t, err)
+	assert.False(t, external)
+	assert.Empty(t, body)
+}
+
+func TestOpenExternalSelect_AbsolutePathReadsTheFile(t *testing.T) {
+	filePath := filepath.Join(t.TempDir(), "lamp-desk.recipe")
+	require.NoError(t, os.WriteFile(filePath, []byte("# comment\nlamp-init\n"), 0644))
+
+	body, external, err := OpenExternalSelect("@"+filePath, t.TempDir())
+	require.NoError(t, err)
+	assert.True(t, external)
+	assert.Equal(t, "# comment\nlamp-init\n", body)
+}
+
 func TestReadSelectInput_RelativePathStillWorks(t *testing.T) {
 	tmpDir := t.TempDir()
 	filePath := filepath.Join(tmpDir, "custom.recipe")

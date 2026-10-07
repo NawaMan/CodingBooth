@@ -40,7 +40,7 @@ import (
 
 const (
 	// ProjectCategoryName is the category setup-header templates land in — the
-	// same one the examples use for their .booth/templates/project/ templates.
+	// same one .booth/templates/<name>.toml files use.
 	ProjectCategoryName = "project"
 	// ProjectCategoryDisplayName and ProjectCategoryOrder apply when the project
 	// has no project/meta.toml of its own.

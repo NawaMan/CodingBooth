@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 )
 
 // ProjectTemplatesDir returns the path to a project's local templates tree:
@@ -46,20 +47,20 @@ func LoadMergedRegistry(stockDir, projectRoot string, warn io.Writer) (*Template
 	return MergeRegistries(stock, project, warn), nil
 }
 
-// loadProjectRegistry loads a project's own templates: .booth/templates, plus a
-// template for each .booth/setups script with a `# cb-template:` header. When
-// both define a name, the template.toml wins — it is the explicit one — and the
-// header is reported to warn.
+// loadProjectRegistry loads a project's own templates: flat files in
+// .booth/templates, plus a template for each .booth/setups script with a
+// `# cb-template:` header. When both define a name, the flat file wins — it is
+// the explicit one — and the header is reported to warn.
 func loadProjectRegistry(projectRoot string, warn io.Writer) (*TemplateRegistry, error) {
 	project := &TemplateRegistry{ByName: make(map[string]*Template)}
 
 	projectDir := ProjectTemplatesDir(projectRoot)
 	if info, err := os.Stat(projectDir); err == nil && info.IsDir() {
-		loaded, err := loadRegistry(projectDir, true)
+		loaded, err := loadFlatProjectTemplates(projectDir)
 		if err != nil {
 			return nil, fmt.Errorf("loading project templates from %q: %w", projectDir, err)
 		}
-		project = collapseProjectCategories(loaded)
+		project = loaded
 	}
 
 	setupsDir := ProjectSetupsDir(projectRoot)
@@ -71,41 +72,148 @@ func loadProjectRegistry(projectRoot string, warn io.Writer) (*TemplateRegistry,
 	return project, nil
 }
 
-// collapseProjectCategories puts every project-local template into the one
-// project category, whatever folder under .booth/templates/ it sits in, so the
-// TUI shows them all under "This project". The category takes its display name
-// and order from project/meta.toml when there is one, else the defaults. A
-// template.toml there needs only its segments: display-name falls back to the
-// template name, and primary to true unless the file sets it.
-func collapseProjectCategories(loaded *TemplateRegistry) *TemplateRegistry {
+// loadFlatProjectTemplates reads .booth/templates as flat files.
+//
+//	<name>.toml                         template <name>
+//	<template>--<ext>--extension.toml   extension <ext> of <template>
+//
+// A directory, a meta.toml, or any other file is an error. Every template lands
+// in the project category. A template.toml needs only its segments: display-name
+// falls back to the template name, and primary defaults to true unless the file
+// sets it.
+func loadFlatProjectTemplates(dir string) (*TemplateRegistry, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	type pendingExt struct {
+		parent string
+		name   string
+		path   string
+	}
+
+	byName := make(map[string]*Template)
+	var names []string
+	var exts []pendingExt
+
+	for _, entry := range entries {
+		name := entry.Name()
+		if strings.HasPrefix(name, ".") {
+			continue
+		}
+		path := filepath.Join(dir, name)
+		if entry.IsDir() {
+			return nil, fmt.Errorf("%s is a directory; a project template is a file %s/<name>.toml", path, dir)
+		}
+		if name == "meta.toml" {
+			return nil, fmt.Errorf("%s is not used; project templates are <name>.toml files and the category is always %q", path, ProjectCategoryDisplayName)
+		}
+		if strings.HasSuffix(name, "--extension.toml") {
+			parent, ext, ok := splitFlatExtension(name)
+			if !ok {
+				return nil, fmt.Errorf("extension file %q needs a parent prefix, <template>--<ext>--extension.toml", name)
+			}
+			if err := validateProjectIdent(parent); err != nil {
+				return nil, fmt.Errorf("extension file %q: %w", name, err)
+			}
+			if err := validateProjectIdent(ext); err != nil {
+				return nil, fmt.Errorf("extension file %q: %w", name, err)
+			}
+			exts = append(exts, pendingExt{parent: parent, name: ext, path: path})
+			continue
+		}
+		if !strings.HasSuffix(name, ".toml") {
+			return nil, fmt.Errorf("%s is not a project template; expected <name>.toml or <template>--<ext>--extension.toml", name)
+		}
+		tname := strings.TrimSuffix(name, ".toml")
+		if err := validateProjectIdent(tname); err != nil {
+			return nil, fmt.Errorf("template file %q: %w", name, err)
+		}
+		loaded, err := loadExtensionFile(path, tname, ProjectCategoryName)
+		if err != nil {
+			return nil, fmt.Errorf("loading project template %q: %w", tname, err)
+		}
+		if _, exists := byName[tname]; exists {
+			return nil, fmt.Errorf("duplicate project template %q", tname)
+		}
+		byName[tname] = loaded
+		names = append(names, tname)
+	}
+
+	for _, ext := range exts {
+		parent, ok := byName[ext.parent]
+		if !ok {
+			return nil, fmt.Errorf("extension %q belongs to unknown project template %q (%s.toml)", ext.name, ext.parent, ext.parent)
+		}
+		for _, existing := range parent.Extensions {
+			if existing.Name == ext.name {
+				return nil, fmt.Errorf("duplicate extension %q on project template %q", ext.name, ext.parent)
+			}
+		}
+		loaded, err := loadExtensionFile(ext.path, ext.name, ProjectCategoryName)
+		if err != nil {
+			return nil, fmt.Errorf("loading extension %q of %q: %w", ext.name, ext.parent, err)
+		}
+		parent.Extensions = append(parent.Extensions, loaded)
+	}
+
+	project := &TemplateRegistry{ByName: make(map[string]*Template)}
+	if len(byName) == 0 {
+		return project, nil
+	}
 	cat := &Category{
 		Name:        ProjectCategoryName,
 		DisplayName: ProjectCategoryDisplayName,
 		Order:       ProjectCategoryOrder,
 	}
-	for _, c := range loaded.Categories {
-		if c.Name == ProjectCategoryName && c.DisplayName != "" {
-			cat.DisplayName = c.DisplayName
-			cat.Order = c.Order
-		}
-		cat.Templates = append(cat.Templates, c.Templates...)
-	}
-
-	project := &TemplateRegistry{ByName: loaded.ByName}
-	if len(cat.Templates) == 0 {
-		return project
-	}
-	for _, t := range cat.Templates {
+	for _, name := range names {
+		t := byName[name]
 		applyProjectDefaults(t)
 		if !t.primarySet {
 			t.Primary = true
 		}
+		slices.SortFunc(t.Extensions, func(a, b *Template) int {
+			return a.DisplayOrder - b.DisplayOrder
+		})
+		cat.Templates = append(cat.Templates, t)
+		project.ByName[t.Name] = t
 	}
 	slices.SortStableFunc(cat.Templates, func(a, b *Template) int {
 		return a.DisplayOrder - b.DisplayOrder
 	})
 	project.Categories = []*Category{cat}
-	return project
+	return project, nil
+}
+
+// splitFlatExtension splits "<parent>--<ext>--extension.toml" on the first "--".
+// A file with no parent prefix ("fancy--extension.toml") returns ok=false.
+func splitFlatExtension(filename string) (parent, ext string, ok bool) {
+	rest := strings.TrimSuffix(filename, "--extension.toml")
+	parent, ext, ok = strings.Cut(rest, "--")
+	if !ok || parent == "" || ext == "" {
+		return "", "", false
+	}
+	return parent, ext, true
+}
+
+// validateProjectIdent accepts a template or extension name: a letter, then
+// letters, digits, and single hyphens. "--" is the flat-file separator.
+func validateProjectIdent(name string) error {
+	if name == "" || strings.Contains(name, "--") {
+		return fmt.Errorf("name %q must be a letter followed by letters, digits, and single hyphens", name)
+	}
+	for i, r := range name {
+		letter := (r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z')
+		digit := r >= '0' && r <= '9'
+		if i == 0 && !letter {
+			return fmt.Errorf("name %q must be a letter followed by letters, digits, and single hyphens", name)
+		}
+		if i > 0 && !letter && !digit && r != '-' {
+			return fmt.Errorf("name %q must be a letter followed by letters, digits, and single hyphens", name)
+		}
+	}
+	return nil
 }
 
 // applyProjectDefaults moves t and its extensions into the project category and

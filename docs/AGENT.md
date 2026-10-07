@@ -376,8 +376,8 @@ in the manager's own syntax when it matters — `apt-pkg:htop=3.3.0-1`.
 
    > **When a script header is not enough** — the tool needs extensions, files or run-args of its
    > own — write a project-local template instead: one file,
-   > `.booth/templates/project/<name>/template.toml`, with the setup script inline under
-   > `[files.setups]`. It needs no `meta.toml` and no display keys, and lists under **This project**
+   > `.booth/templates/<name>.toml`, with the setup script inline under
+   > `[files.setups]`. It needs no directory, no `meta.toml` and no display keys, and lists under **This project**
    > (see [AGENT_TEMPLATE.md](AGENT_TEMPLATE.md)). A project-local template of the same name as a
    > stock one overrides it, with a warning.
 

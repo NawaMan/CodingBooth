@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Project-local template setup (from localgadget/setups/)
+# Project-local template setup (from localgadget.toml [files.setups])
 set -euo pipefail
 
 MARKER="CB_DETECT_TEMPLATE_v1"

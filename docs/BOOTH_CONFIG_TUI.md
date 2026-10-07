@@ -14,6 +14,7 @@ Back to [README](../README.md) | See also: [booth config reference](BOOTH_CONFIG
 - [How It Works](#how-it-works)
 - [TUI Layout](#tui-layout)
 - [The Config Tab](#the-config-tab)
+- [The Recipes Tab](#the-recipes-tab)
 - [Keybindings](#keybindings) · [Mouse](#mouse)
 - [Pre-populating with Flags](#pre-populating-with-flags)
 - [Selection Behavior](#selection-behavior)
@@ -88,8 +89,8 @@ If the booth holds hand-written files, step 2 also raises a warning on open and 
 ```
 
 - **Header**: Title and selection count
-- **Search bar**: Type to filter templates/extensions across all tabs (Tab to focus). On a category tab the right side holds exclusive **1 All / 2 Popular / 3 Selected** chips (and **4 Local** when the booth has project templates under `.booth/templates/`). **Popular is the default.** It shows `primary` templates plus anything already selected, so reopening a booth never hides a current pick. Press the digit, or click the chip. Typing searches the full tab even when a chip is active, so a hidden name is still findable; Esc restores the chip. The chips are hidden on the Config tab; the digits still work there.
-- **Tab bar**: Tab 0 = Config, Tabs 1..N = categories. Switch with `←`/`→`. A non-All chip stars the tabs that still have matching items, the same way a search does.
+- **Search bar**: Type to filter templates/extensions across all tabs (Tab to focus). On a category tab the right side holds exclusive **1 All / 2 Popular / 3 Selected** chips (and **4 Local** when the booth has project templates under `.booth/templates/`). **Popular is the default.** It shows `primary` templates plus anything already selected, so reopening a booth never hides a current pick. Press the digit, or click the chip. Typing searches the full tab even when a chip is active, so a hidden name is still findable; Esc restores the chip. The chips are hidden on the Config tab and on the Recipes tab; the digits still work on Config.
+- **Tab bar**: Tab 0 = Config. **Recipes** is the next tab when `.booth/recipes/` has a top-level `*.recipe`, and the category tabs follow. The TUI opens on the first category. Switch with `←`/`→`. A non-All chip stars the tabs that still have matching items, the same way a search does. Typing a search while Config is showing jumps to the first category.
 - **Left panel**: Scrollable template/extension list for the active category
 - **Right panel**: Details of the highlighted item (description, parameters, dependencies, extensions)
 - **Footer line 1**: Messages and notifications (auto-select, dependency resolution)
@@ -152,6 +153,42 @@ fall behind: a setting added to booth has no field until one is written for it,
 and a setting removed from booth loses its field automatically. A save rewrites
 `config.toml` from scratch but only speaks for the keys on this tab — anything
 else the booth holds is carried through untouched.
+
+---
+
+## The Recipes Tab
+
+The tab appears only when `.booth/recipes/` contains a top-level `*.recipe`.
+Each row is that file's select-name: `desk.recipe` is `desk`. A stem that
+already contains a dot keeps the whole filename, because `@my.stack` opens
+`.booth/recipes/my.stack` and does not append `.recipe`. The right panel shows
+the file text, comments included.
+
+**Enter** or **Space** applies the recipe onto the template checkboxes: its
+templates, parameters, extensions, and `~` exclusions. Applying again sets those
+values again. It does not toggle the recipe off. A recipe that names an unknown
+template or extension, or that contains an `@` line, applies nothing and is not
+marked. `booth config --web` has no Recipes tab.
+
+**Ctrl+S** keeps `@desk` while the checkboxes still match that recipe, and writes
+`@desk/htop` when something else is also checked. Unchecking a template the
+recipe selected, changing a parameter it effectively set, or adding an extension
+it does not produce clears the mark, and the save writes the templates out in
+full. Opening a booth whose header is already `@desk` (or `@desk/htop`) shows
+`desk` marked and the template checks filled in.
+
+A later recipe that names a template an earlier marked recipe also names is left
+unmarked, so one save does not record two `@` names for the same template.
+
+| Key | Action |
+|-----|--------|
+| `↑` / `↓` | Move through the recipe list |
+| `Enter` / `Space` | Apply the highlighted recipe |
+| `←` / `→` | Switch tab |
+| `Tab` | Focus search; the query matches a recipe's name or its text |
+
+Clicking a recipe row's `[ ]` marker applies it. A click in the right panel does
+nothing. The mouse wheel scrolls the list.
 
 ---
 

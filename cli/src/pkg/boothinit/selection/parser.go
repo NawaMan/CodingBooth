@@ -25,9 +25,9 @@ func ReadSelectInput(value string) (string, error) {
 //   - "@@…" is always a URL. If the remainder has no scheme, https:// is assumed
 //     (e.g. @@codingbooth.io/r.recipe → https://codingbooth.io/r.recipe).
 //   - "@…" is a recipe reference:
-//     - path-shaped (/…, ./…, ../…, ~/…, C:\…, or containing ://) → read that path/URL
-//     - otherwise → <projectRoot>/.booth/recipes/<name>.recipe
-//       (.recipe is appended when the name has no extension)
+//   - path-shaped (/…, ./…, ../…, ~/…, C:\…, or containing ://) → read that path/URL
+//   - otherwise → <projectRoot>/.booth/recipes/<name>.recipe
+//     (.recipe is appended when the name has no extension)
 //   - anything else is returned as-is (plain DSL)
 //
 // projectRoot is the booth project directory (config target), not necessarily cwd.
@@ -122,7 +122,7 @@ func stripSpacesAroundOperators(input string) string {
 // how a value that is itself made of separators — a Go module path — is written:
 // go+go-pkg:"github.com/pocketbase/pocketbase/examples/base@latest". See quoting.go.
 func ParseSelectDSL(input string) (*ParsedSelection, error) {
-	normalized := NormalizeInput(input)
+	normalized := NormalizeInput(stripRecipeComments(input))
 	parts := splitUnquoted(normalized, '/')
 
 	var items []ParsedItem

@@ -57,13 +57,9 @@ else
   echo -e "Test ${TEST_COUNT}: setup without cb-template is not a template ..... \033[32mPASSED\033[0m"
 fi
 
-# --- A template.toml of the same name wins, with a warning ---
-mkdir -p "$prj/.booth/templates/project/greet"
-cat > "$prj/.booth/templates/project/meta.toml" <<'EOF'
-display-name = "This project"
-order = 0
-EOF
-cat > "$prj/.booth/templates/project/greet/template.toml" <<'EOF'
+# --- A flat <name>.toml of the same name wins, with a warning ---
+mkdir -p "$prj/.booth/templates"
+cat > "$prj/.booth/templates/greet.toml" <<'EOF'
 display-name = "Greeting (explicit)"
 primary = true
 
@@ -76,7 +72,7 @@ EOF
 
 dry explicit greet
 assert-line "$out" "Warning: project template " "\"greet\" (category \"project\") overrides the cb-template header in .booth/setups/greet--setup.sh" \
-  "template.toml beating a header prints a warning"
-assert-line "$out" "# explicit-greet" "" "template.toml content is used over the header"
+  "greet.toml beating a header prints a warning"
+assert-line "$out" "# explicit-greet" "" "greet.toml content is used over the header"
 
 finally

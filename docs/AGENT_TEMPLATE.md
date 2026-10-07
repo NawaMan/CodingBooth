@@ -60,8 +60,9 @@ templates/
 ## Category meta.toml
 
 Every category directory in the catalog needs a `meta.toml` — a folder without one is skipped.
-(Project-local templates under `.booth/templates/` are exempt: they all list under "This project",
-and need no `meta.toml` or display keys — see
+(Project-local templates are flat files, `.booth/templates/<name>.toml`, not this tree. They all
+list under "This project" and need no `meta.toml` or display keys. An extension is
+`<template>--<ext>--extension.toml` in that same directory. See
 [BOOTH_CUSTOMIZATION.md](BOOTH_CUSTOMIZATION.md#project-local-templates-and-extensions).)
 
 ```toml

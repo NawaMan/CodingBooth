@@ -200,7 +200,7 @@ func TestLoadMergedRegistry_TemplateTomlBeatsSetupHeader(t *testing.T) {
 	stockDir := t.TempDir()
 	projectRoot := t.TempDir()
 	writeTemplateTree(t, stockDir, "languages", "go", "Go", "setup go")
-	writeTemplateTree(t, filepath.Join(projectRoot, ".booth", "templates"), "mine", "db-seed", "Explicit", "setup db-seed --full")
+	writeFlatProjectTemplate(t, projectRoot, "db-seed.toml", "display-name = \"Explicit\"\nprimary = true\n\n[segments]\nBoothfile = \"\"\"\nsetup db-seed --full\n\"\"\"\n")
 	writeSetup(t, projectRoot, "db-seed", "# cb-template: From header\n")
 
 	var warn bytes.Buffer
@@ -242,8 +242,7 @@ func TestLoadMergedRegistry_SetupHeaderJoinsProjectCategory(t *testing.T) {
 	stockDir := t.TempDir()
 	projectRoot := t.TempDir()
 	writeTemplateTree(t, stockDir, "languages", "go", "Go", "setup go")
-	local := filepath.Join(projectRoot, ".booth", "templates")
-	writeTemplateTree(t, local, ProjectCategoryName, "lamp-init", "LAMP demo", "setup lamp-init")
+	writeFlatProjectTemplate(t, projectRoot, "lamp-init.toml", "display-name = \"LAMP demo\"\nprimary = true\n\n[segments]\nBoothfile = \"\"\"\nsetup lamp-init\n\"\"\"\n")
 	writeSetup(t, projectRoot, "db-seed", "# cb-template: DB seed\n")
 
 	reg, err := LoadMergedRegistry(stockDir, projectRoot, nil)

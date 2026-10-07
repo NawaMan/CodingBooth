@@ -97,7 +97,13 @@ firebase ~ credential           # Same as firebase~credential
 
 ### Comments
 
-Recipe files do not support comments. Every non-blank line is parsed as a template selection.
+`#` outside quotes starts a comment through the end of that line. A line that is
+only a comment is skipped. There are no escape sequences: a `#` inside `"` or `'`
+stays part of the value (`go+go-pkg:"foo#bar"` keeps the parameter `foo#bar`).
+
+A line that starts with `@` is a template name, not another recipe. A recipe does
+not include a recipe. Combine two by repeating the flag:
+`--select @base --select @extra`.
 
 ---
 
@@ -310,7 +316,9 @@ codingbooth config --no-tui ./my-project --select @recipe.txt --start
 - URLs: `@@https://…` or `@@host/path` (HTTPS assumed without a scheme)
 - One template per line for readability
 - Use continuation lines (`+ extension`) for multiple extensions
-- Recipes can select project-local templates from `.booth/templates/`
+- `#` outside quotes comments out the rest of the line
+- A recipe does not contain `@` references to other recipes; repeat `--select` to combine them
+- Recipes can select project-local templates from `.booth/templates/<name>.toml`
 - Recipes can be version-controlled and shared across teams
 
 ---
