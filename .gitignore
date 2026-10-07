@@ -112,6 +112,14 @@ tests/dryrun/test--config.toml
 # interpolates `version = "$VERSION"`) and leaking into unrelated commits.
 tests/dryrun/test--env-expand-config.toml
 tests/dryrun/test--env-expand-unset-config.toml
+# test--project-local.sh deletes and regenerates these with `booth config` on every
+# run; the fixtures are local-hand--setup.sh and templates/. Tracked, they showed up
+# modified every day, because the Boothfile pins APT_SNAPSHOT to the run's date.
+tests/complex/features/test-project-local/.booth/Boothfile
+tests/complex/features/test-project-local/.booth/config.toml
+tests/complex/features/test-project-local/.booth/.generated
+tests/complex/features/test-project-local/.booth/setups/localgadget--setup.sh
+tests/complex/features/test-project-local/.booth/setups/localgadget-widget--setup.sh
 # tests/config/test*.sh writes its `$prj` working dir + recipe input into
 # tests/config/prj--*; these are regenerated every run (and bake the host's
 # absolute path into a header comment), so they shouldn't be tracked.
