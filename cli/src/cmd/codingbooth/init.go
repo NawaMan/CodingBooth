@@ -23,6 +23,7 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/output"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/selection"
 	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
+	"github.com/nawaman/codingbooth/src/pkg/pathmode"
 )
 
 // hostEnvPortRE matches a host port prefix that booth expands at start from the
@@ -645,7 +646,7 @@ func printDryrun(out *output.BoothOutput) {
 			fmt.Printf("  %s\n", f.RelPath)
 		}
 		for _, d := range out.CacheDirs {
-			fmt.Printf("  %s/ (.mount-this)\n", d.RelPath)
+			printDirEntry(d.RelPath)
 		}
 		fmt.Println()
 	}
@@ -656,10 +657,20 @@ func printDryrun(out *output.BoothOutput) {
 			fmt.Printf("  %s\n", f.RelPath)
 		}
 		for _, d := range out.SharedDirs {
-			fmt.Printf("  %s/ (.mount-this)\n", d.RelPath)
+			printDirEntry(d.RelPath)
 		}
 		fmt.Println()
 	}
+}
+
+// printDirEntry prints a cache/shared dir for the dry run, with its permission
+// suffix (":0700") shown as the mode it will be created with.
+func printDirEntry(entry string) {
+	if path, mode, err := pathmode.Split(entry); err == nil && mode != 0 {
+		fmt.Printf("  %s/ (.mount-this, %04o)\n", path, mode)
+		return
+	}
+	fmt.Printf("  %s/ (.mount-this)\n", entry)
 }
 
 // printDebug outputs the resolved selection and compiled output as JSON.
