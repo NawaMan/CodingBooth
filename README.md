@@ -426,6 +426,8 @@ ln -sf /opt/codingbooth/AGENT.md /home/coder/WARP.md        # Warp terminal
 
 User-facing guides:
 
+- **[Developing in a Booth](docs/USER_GUIDE.md)** — Start here if the project already has a booth: a working day, task by task, with links into the docs below
+- **[Setting Up a Booth](docs/SETUP_GUIDE.md)** — Start here if you are creating or maintaining a project's `.booth/`: tools, runtime, credentials, change, prove, hand off
 - **[Examples](EXAMPLES.md)** — Install, run your first example, the full catalog, and which setups support version pinning
 - **[booth install](docs/BOOTH_INSTALL.md)** — Install and uninstall every layer: shell function, wrapper, binary, `.booth/`, lock file, shared cache
 - **[booth run](docs/BOOTH_RUN.md)** — Running containers: image selection, config files, run modes, ports, DinD, TLS. [Express](docs/BOOTH_RUN.md#express) runs from arguments and leaves the project's `.booth` unread.
