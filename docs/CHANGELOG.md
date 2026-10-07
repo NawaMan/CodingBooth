@@ -4,6 +4,13 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Wrapper `0.15.2` — every install writes `.booth/.gitignore`.** Installing a pinned version
+  that was already in the shared cache (`install <version>`, `update <version>`,
+  `create <dir> <version>`) took an early "already up-to-date" return that came before the
+  `.gitignore` was written, so a fresh project got its lock but no `.gitignore` — and
+  `.booth/cache/` stayed unignored until the first `booth config`. The download's temp files now
+  go under `$TMPDIR` (falling back to `/tmp`) instead of a hard-coded `/tmp`.
+
 - **Wrapper `0.15.1` — a `--cache=local` project runs the binary its lock names.** The binary in
   `.booth/tools/` has the same file name for every version and still matched its own checksum, so
   after a `git pull` bumped the lock the wrapper kept running the old one. It now writes
