@@ -35,7 +35,7 @@ on `PATH` must be Docker, not Podman.
 | 2 | **Wrapper**          | `<project>/booth`                                   | Per project   | Bootstrapping a project; downloading the binary |
 | 3 | **Binary**           | shared cache **or** `<project>/.booth/tools/`       | Per user *or* per project | Actually running booths |
 | 4 | **`.booth/` config** | `<project>/.booth/` (Boothfile, config.toml, generated scripts) | Per project   | Building/running this project's image |
-| 5 | **Lock file**        | `<project>/.booth/tools/codingbooth.lock` + `codingbooth.sha256` | Per project   | Pinning which binary version this project uses |
+| 5 | **Lock file**        | `<project>/.booth/tools/codingbooth.lock`           | Per project   | Pinning which binary version this project uses |
 | 6 | **Shared cache**     | `~/.cache/codingbooth/versions/<v>/` (Linux) <br> `~/Library/Caches/codingbooth/versions/<v>/` (macOS) | Per user      | Sharing one downloaded binary across many projects |
 
 The layers stack. The shell function finds the wrapper; the wrapper finds (or
@@ -219,19 +219,27 @@ writes into `.booth/`.
 ## 5. Lock file
 
 `.booth/tools/codingbooth.lock` records which binary version this project
-pins. `.booth/tools/codingbooth.sha256` records the expected SHA256 of that
-binary. Commit both to git so collaborators get the same version.
+pins. **Commit it** so collaborators get the same version.
+
+`codingbooth.sha256` is not part of the lock. It holds the expected SHA256 of
+the binary downloaded for *this* platform, sits next to that binary, and is
+re-fetched from the release on every download. It is gitignored: committing it
+would pin one platform's hash for everyone.
 
 ```
 .booth/tools/
-├── codingbooth.lock          # version=0.53.0
-├── codingbooth.sha256        # SHA256 of the binary for this platform
-└── codingbooth-linux-amd64   # only present with --cache=local
+├── codingbooth.lock          # version=0.53.0 — committed
+├── codingbooth.sha256        # only with --cache=local — gitignored
+└── codingbooth-linux-amd64   # only with --cache=local — gitignored
 ```
+
+With the default shared cache, the binary and its `.sha256` live in the cache's
+`versions/<v>/` directory instead, and `.booth/tools/` holds only the lock.
 
 **Install**
 
-`./booth install` writes the lock and sha. There is no separate command.
+`./booth install` writes the lock (and downloads the binary with its checksum).
+There is no separate command.
 
 **Uninstall**
 
@@ -379,7 +387,7 @@ Restart your shell after `shell-config uninstall` to drop the `booth` function.
     ├── startups/, cache/, .tmp/, ...
     └── tools/
         ├── codingbooth.lock          [layer 5: lock file]
-        ├── codingbooth.sha256        [layer 5: lock file]
+        ├── codingbooth.sha256        [layer 3: binary checksum, only with --cache=local]
         └── codingbooth-<platform>    [layer 3: binary, only with --cache=local]
 ```
 
