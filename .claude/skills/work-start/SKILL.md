@@ -164,9 +164,9 @@ Tell the user, plainly:
 
 - the **path** (`worktree/<name>`), the **branch** (`<name>`), and the **version stamp**
   (`x.x.x--<name>` in `version.txt`);
-- that the branch is created but **nothing is committed** — committing is still its own ask
-  (Rule 8; creating the worktree branch is the one exception); the version stamp is a session
-  label and is restored to match main before landing;
+- that the branch is created and that you will **commit to it as you go**, without asking (Rule 8:
+  commits are free inside a worktree; push and landing still wait for the user). The version stamp
+  is a session label and is restored to match main before landing;
 - that they can open `worktree/<name>` in GitKraken or an editor, and that if they'd rather run a
   fresh agent inside the session they can start one from that folder;
 - that the session ends with **`work-finish`**, which rebases, tests, merges (`--no-ff`, or a
@@ -179,7 +179,7 @@ Then start the approved work — in that folder, and only there.
   editing main for a feature risks their tree.
 - **"Go ahead" authorises the work, not the checkout.** It is never permission to edit the main
   clone. Neither is "start work on X".
-- Never `git commit` / `push` / open a PR here (Rule 8). This skill creates a branch; that's all.
+- Never `push` / open a PR / merge here (Rule 8). Commits on the new branch need no ask; landing does.
 - One session, one worktree, one branch. Don't nest, and don't reuse another session's folder.
 - Booths are per-folder, so this worktree gets its own booth name. Check `./booth list` before
   starting anything long-lived, and never stop a booth you didn't start.

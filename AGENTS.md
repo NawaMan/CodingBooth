@@ -277,7 +277,7 @@ line to match main **before** landing (`work-finish`); do not merge `x.x.x--<nam
 
 ### Landing a worktree's branch into main
 
-Merging is a deliberate act, same bar as any commit/push (Rule 8) — only when the user asks to
+Merging is a deliberate act, same bar as a push (Rule 8) — only when the user asks to
 land/merge a worktree's work, never on your own initiative. Prefer the **`work-finish`** skill.
 Summary of the procedure:
 
@@ -357,8 +357,9 @@ Then:
    that branch if it exists; otherwise `git checkout -b <name>`.
 2. Tell the user the branch name so they can push / open the PR when ready.
 
-Still **do not** `git commit`, `git push`, or open the PR unless the user asks (Rule 8). Creating
-or switching the branch is the exception.
+**Commit** on the feature branch without asking: each coherent, verified step of the work is its
+own commit (Rule 8). Still **do not** `git push`, open the PR, or merge into main unless the user
+asks.
 
 If you are on a normal day-to-day clone of `main` (no `worktree/<name>` path) and the change is
 **feature work** (multi-file behaviour, anything `todo-pick` would offer), **Rule 0b applies** —
@@ -437,9 +438,13 @@ half they all point at — port picking, the `set -euo pipefail` traps, cleanup.
 3. **Keep product docs coherent with behaviour.** When behaviour changes, update the relevant
    `docs/BOOTH_*.md` / CHANGELOG Unreleased section when the change is user-visible. Do not invent
    docs churn for pure internal refactors.
-8. **No commit / push / PR / merge unless the user asks.** Landing a branch is only on explicit
-   "land" / "merge into main". Never push as part of landing. Creating a worktree branch is allowed
-   as part of Rule 0b without a separate commit request; committing still needs an ask.
+8. **No push / PR / merge unless the user asks. Commit freely inside a linked worktree.**
+   - **In a worktree** (`worktree/<name>`, on its own branch): commit without asking, once a
+     coherent step is done and verified. The branch is the session's scratch history, and landing
+     is the gate.
+   - **On the main clone:** commit only when the user asks.
+   - **Landing** (merging into main) happens only on an explicit "land" / "merge into main", so
+     wait for that go even when the branch is fully committed. Never push as part of landing.
 
 ---
 
