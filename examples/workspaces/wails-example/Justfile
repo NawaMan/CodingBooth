@@ -1,15 +1,17 @@
-# Wrapped commands auto-run inside the booth when called from the host
-# (empty once already inside one, where BOOTH_CONTAINER_NAME is set).
 # Not used on `run`: it drives this booth's XFCE desktop directly (exec's the
 # GUI binary), so a fresh ephemeral booth from the host has no display to show
 # it on. Not used on `build-ios` either: that one only ever runs on a macOS
 # host, never inside a (Linux) booth at all.
-run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+# {{run-in-booth}} runs a line in this project's booth (starting one if needed),
+# {{run-on-host}} keeps a line on the host. From `booth just-init`:
+# https://github.com/NawaMan/CodingBooth/blob/main/docs/just/Justfile
+run-in-booth := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+run-on-host  := if env("BOOTH_CONTAINER_NAME", "") == "" { "" } else { "echo 'just: this recipe runs on the host - exit the booth and run it there.' >&2; exit 2;" }
 # Same, but keeps the booth (and its DinD sidecar, which caches the
 # wails-cross image) running afterwards -- a plain --run would tear both
 # down right after the script returns, losing the ~800MB cross-build image
 # and forcing a full rebuild on the next macOS/build-all call.
-run-in-booth := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --keep-alive --" } else { "" }
+run-in-booth-keep-alive := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --keep-alive --" } else { "" }
 
 [private]
 default:
@@ -17,7 +19,7 @@ default:
 
 # Native Linux GUI binary (needs GTK4/WebKitGTK 6.0 to compile, a desktop to run)
 build:
-    {{run}} wails3 build
+    {{run-in-booth}} wails3 build
 
 [private]
 build-windows-impl:
@@ -32,7 +34,7 @@ build-windows-impl:
 # Wails writes both arches to bin/booth-counter.exe, so rename after each
 # build or the second clobbers the first.
 build-windows:
-    {{run}} just build-windows-impl
+    {{run-in-booth}} just build-windows-impl
 
 # Build the wails-cross image if it is missing (Zig + macOS SDK, ~800MB, once).
 [private]
@@ -76,7 +78,7 @@ build-macos-impl:
 
 # macOS amd64 + arm64 via wails-cross (builds the image if needed)
 build-macos:
-    {{run-in-booth}} just build-macos-impl
+    {{run-in-booth-keep-alive}} just build-macos-impl
 
 [private]
 build-all-impl:
@@ -109,7 +111,7 @@ build-all-impl:
 # Builds wails-cross on first use. Docker targets use a named volume, not a
 # bind mount — DinD cannot see /home/coder/code.
 build-all:
-    {{run-in-booth}} just build-all-impl
+    {{run-in-booth-keep-alive}} just build-all-impl
 
 # Run the GUI on this booth's XFCE desktop.
 # WebKitGTK's bubblewrap sandbox cannot create user namespaces in a booth.
@@ -155,7 +157,7 @@ build-android-impl:
 
 # Debug APK. Needs the Android SDK + NDK (`wails+android`); not in the default booth.
 build-android:
-    {{run}} just build-android-impl
+    {{run-in-booth}} just build-android-impl
 
 # iOS simulator .app. Needs macOS + full Xcode — a Linux booth cannot do this.
 # Always runs on the host directly (see `run` above) — there is no point
@@ -178,4 +180,4 @@ build-ios:
 
 # What Wails thinks of this booth
 doctor:
-    {{run}} wails3 doctor
+    {{run-in-booth}} wails3 doctor

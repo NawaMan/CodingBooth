@@ -171,7 +171,9 @@ examples/workspaces/<name>-example/
 **Justfile** when the sample has in-booth commands (`just run`, `just test`, `just start`/`stop`,
 or `just server`/`client` for two-process stacks). Wrap the existing scripts; keep them. Skip it
 for empty / tooling-only / autostart-stack examples. In-booth sample tests call `just <recipe>`,
-not the wrapped script.
+not the wrapped script. Start it from `booth just-init` and begin each line with
+`{{run-in-booth}}` (or `{{run-on-host}}`), so the recipe works from the host too. A recipe that
+leaves something running in the booth defines its own `run-in-booth-keep-alive`, as `kind-example` does.
 
 **Generate the two `.booth/` files; do not type them.** A hand-written pair is guarded as
 hand-written forever after — the TUI opens it behind a warning dialog and `booth config` will not

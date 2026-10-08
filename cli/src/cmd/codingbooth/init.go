@@ -21,6 +21,7 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/cache"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/compiler"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/output"
+	"github.com/nawaman/codingbooth/src/pkg/justinit"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/selection"
 	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
 	"github.com/nawaman/codingbooth/src/pkg/pathmode"
@@ -333,6 +334,8 @@ func runInitNew(version string, args []string) {
 		printDebug(resolved, out)
 	}
 
+	firstConfigure := justinit.IsFirstConfigure(targetPath)
+
 	// Check for existing files that would be overwritten
 	conflicts := output.FindConflicts(out, targetPath)
 	if len(conflicts) > 0 && !flags.overwrite {
@@ -355,6 +358,7 @@ func runInitNew(version string, args []string) {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
+	writeStarterJustfile(targetPath, firstConfigure)
 
 	fmt.Printf("Initialized .booth/ in %s\n", targetPath)
 	printSummary(resolved)
