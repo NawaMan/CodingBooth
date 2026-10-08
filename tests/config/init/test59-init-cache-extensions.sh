@@ -159,14 +159,18 @@ run booth config $prj --no-tui --select "lxqt+desktop-icons-cache"
 assert_file "$prj/.booth/cache/home/coder/Desktop/.mount-this" "lxqt+desktop-icons-cache creates Desktop dir"
 assert_file "$prj/.booth/cache/home/coder/.config/pcmanfm-qt/.mount-this" "lxqt+desktop-icons-cache creates pcmanfm-qt dir"
 
-# Test 17: envfolio+store-cache creates the store and the GPG keyring 0700 — gpg
-# warns on a group/world-readable homedir, so the ":0700" suffix must reach disk
-# and must not reach the folder name.
+# Test 17: envfolio+store-cache creates the store's parent and the GPG keyring
+# 0700 — gpg and EnvFolio warn on a folder others can open, so the ":0700" suffix
+# must reach disk and must not reach the folder name. The store itself is a
+# folder inside the cached one (ENVFOLIO_STORE_DIR), because a mounted folder
+# holds .mount-this and `envfolio store init` only takes an empty one.
 run rm -Rf $prj ; mkdir -p $prj
 run booth config $prj --no-tui --select "envfolio+store-cache"
-assert_file "$prj/.booth/cache/home/coder/.envfolio/.mount-this" "envfolio+store-cache creates .envfolio dir"
+assert_file "$prj/.booth/cache/home/coder/.local/share/envfolio/.mount-this" "envfolio+store-cache creates the store's parent dir"
 assert_file "$prj/.booth/cache/home/coder/.gnupg/.mount-this" "envfolio+store-cache creates .gnupg dir"
-assert_mode "$prj/.booth/cache/home/coder/.envfolio" 700 "envfolio+store-cache creates .envfolio 0700"
-assert_mode "$prj/.booth/cache/home/coder/.gnupg"    700 "envfolio+store-cache creates .gnupg 0700"
+assert_mode "$prj/.booth/cache/home/coder/.local/share/envfolio" 700 "envfolio+store-cache creates the store's parent 0700"
+assert_mode "$prj/.booth/cache/home/coder/.gnupg" 700 "envfolio+store-cache creates .gnupg 0700"
+assert-line "$prj/.booth/config.toml" "run-args = " '["-e", "ENVFOLIO_STORE_DIR=/home/coder/.local/share/envfolio/store"]' \
+    "envfolio+store-cache points ENVFOLIO_STORE_DIR inside the cache"
 
 finally

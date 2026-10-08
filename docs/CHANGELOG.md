@@ -8,8 +8,11 @@ This file contains a list of changes for each released version.
   GPG-encrypted secrets in a `pass` store and loads them into a command or a shell as environment
   variables (`envfolio exec --secrets <entry> -- <cmd>`; secrets only with `--secrets`). The base
   image installs it with `pass`, checksum-verified, and the login welcome lists it. Select
-  `tools/envfolio` to pin a version, and `+store-cache` to keep the store and its GPG key
-  (`~/.envfolio`, `~/.gnupg`) in `.booth/cache/` across container restarts.
+  `tools/envfolio` to pin a version, and `+store-cache` to keep the store and its GPG key in
+  `.booth/cache/` across container restarts. The default is EnvFolio 0.2.0, which makes its store
+  private (`700`). With `+store-cache` the store is `~/.local/share/envfolio/store`
+  (`ENVFOLIO_STORE_DIR`): the cached folder is its parent, so `envfolio store init` and
+  `store restore` create it there.
 
 - **A cache or shared dir can be created with a mode.** A `cache-dirs` / `shared-dirs` entry may end
   in an octal mode — `"home/coder/.gnupg:0700"` — in a template or in `config.toml`. The folder is
