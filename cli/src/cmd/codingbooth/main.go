@@ -86,6 +86,9 @@ func main() {
 		case "config":
 			runConfig(version, buildDate)
 			return
+		case "just-init":
+			runJustInit()
+			return
 		case "tools-cache":
 			runToolsCache()
 			return

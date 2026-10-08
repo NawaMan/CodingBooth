@@ -104,6 +104,28 @@ just test            # or: just run, just build, ...
 
 Run `booth--info` to see this booth's version, variant and key paths.
 
+### Run recipes from the host
+
+`booth just-init` writes a [starter Justfile](https://github.com/NawaMan/CodingBooth/blob/main/docs/just/Justfile)
+whose recipes run the same from the host as from inside the booth. If `just` is on the host,
+`just test` there starts the booth when needed and runs the recipe in it. Start each recipe line
+with where it runs:
+
+```just
+test:
+    {{run-in-booth}} go test ./...       # host: ./booth exec --run -- …   booth: as is
+shell:
+    {{run-on-host}} ./booth shell --run  # refused inside the booth
+```
+
+A new project gets this file without asking: `booth create` and a project's first `booth config`
+both add it, unless the project already has a Justfile. On a project that already has one,
+`just-init` offers to back it up (`Justfile.bak`) before writing the starter (`--yes` to skip the
+question).
+
+The host shell reads a `{{run-in-booth}}` line first, so wrap `$VAR`, `|` or `&&` in
+`bash -c '…'` to have the booth expand them instead.
+
 ### Edit with your own editor
 
 The project folder is mounted into the booth at `/home/coder/code`, and file ownership is mapped to
