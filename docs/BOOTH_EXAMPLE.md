@@ -114,7 +114,7 @@ cd ./my-go-project
 
 Once running, you can inspect the `.booth/` directory to understand how the example is configured and customize it for your needs.
 
-Inside the booth, **`just --list`** is the front door when the example ships a `Justfile` — typically `just run`, `just test`, or `just start` / `just stop`. Those recipes wrap the example's existing scripts. Empty and tooling-only examples have no Justfile.
+Inside the booth, **`just --list`** is the front door when the example ships a `Justfile` — typically `just run`, `just test`, or `just start` / `just stop`. Those recipes wrap the example's existing scripts. They work from the host too, where they start the booth when needed: see [Run recipes from the host](USER_GUIDE.md#run-recipes-from-the-host). Empty and tooling-only examples have no Justfile.
 
 ---
 

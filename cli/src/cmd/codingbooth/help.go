@@ -63,7 +63,7 @@ OTHER COMMANDS:
   CONNECT   | Connect to a running booth       | shell, exec                                                             | docs/BOOTH_CONNECT.md
   MESSAGE   | Send messages into a booth       | message                                                                 | docs/BOOTH_MESSAGE.md
   EXPOSE    | Inspect a booth's ports          | expose list                                                             | docs/BOOTH_EXPOSE.md
-  PROJECT   | Set up and scaffold new projects | example, config, template, showcase                                     | docs/BOOTH_EXAMPLE.md
+  PROJECT   | Set up and scaffold new projects | example, config, just-init, template, showcase                          | docs/BOOTH_EXAMPLE.md
   EXPRESS   | Run from arguments, ignoring the project's .booth | express                                                      | docs/BOOTH_RUN.md
 
 Run '%s --help <command>'   for command-specific help.
@@ -99,6 +99,7 @@ USAGE:
   %s template <subcommand>                     (browse and manage templates)
   %s showcase <subcommand>                     (browse and import CodingBooths.online showcases)
   %s config [path] [options]                    (configure a new or existing .booth/ project)
+  %s just-init [path] [--yes]                  (write a starter Justfile whose recipes run in the booth)
   %s build [options]                            (build and optionally push image)
   %s emit-dockerfile [options]                 (compile Boothfile to Dockerfile)
   %s home-volume-list                          (list persisted home volumes)
@@ -280,7 +281,7 @@ EXAMPLES:
   %s --env-file none --variant notebook
 `,
 		s, version,
-		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
+		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
 		s,
 		s, s, s, s, s,
 	)
@@ -583,6 +584,24 @@ USAGE:  %s config [path] [options]
 
 Run '%s config help' for available options.
 `, s, s, s)
+}
+
+func showHelpJustInit() {
+	s := scriptName()
+	fmt.Printf(`%s just-init — write a starter Justfile whose recipes run in the booth
+
+USAGE:  %s just-init [path] [--yes]
+
+Writes <path>/Justfile (default: the current folder). Its {{run-in-booth}} prefix
+runs a recipe line in this project's booth — './booth exec --run --', starting
+one if none is running — and as is when already inside; {{run-on-host}} marks a
+line that must run on the host. 'just test' then works from either side.
+
+An existing Justfile is backed up to Justfile.bak (or .bak.N) first: asked on a
+terminal, or up front with --yes.
+
+The file: https://github.com/NawaMan/CodingBooth/blob/main/docs/just/Justfile
+`, s, s)
 }
 
 func showHelpBuild() {
@@ -906,6 +925,8 @@ func dispatchHelp(args []string, version string) {
 			showHelpTemplate()
 		case "config":
 			showHelpConfig()
+		case "just-init":
+			showHelpJustInit()
 		case "build":
 			showHelpBuild()
 		case "shell":
