@@ -1,9 +1,11 @@
-# Wrapped commands auto-run inside the booth when called from the host
-# (empty once already inside one, where BOOTH_CONTAINER_NAME is set).
 # Not used on `emulator`/`run`: both drive this booth's XFCE desktop (AVD
 # window, adb) you're already looking at in the browser, so there's nothing
 # useful for a fresh ephemeral booth to do there.
-run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+# {{run-in-booth}} runs a line in this project's booth (starting one if needed),
+# {{run-on-host}} keeps a line on the host. From `booth just-init`:
+# https://github.com/NawaMan/CodingBooth/blob/main/docs/just/Justfile
+run-in-booth := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+run-on-host  := if env("BOOTH_CONTAINER_NAME", "") == "" { "" } else { "echo 'just: this recipe runs on the host - exit the booth and run it there.' >&2; exit 2;" }
 
 [private]
 default:
@@ -39,11 +41,11 @@ build-impl:
 # Needs ANDROID_HOME from the wails+android booth; just exports the booth paths
 # so a non-login shell (`booth -- just build`) sees them too.
 build:
-    {{run}} just build-impl
+    {{run-in-booth}} just build-impl
 
 # Native Linux GUI binary — same app, desktop target. Needs GTK; no APK.
 desktop:
-    {{run}} wails3 build
+    {{run-in-booth}} wails3 build
 
 # Start the AVD on this booth's XFCE desktop. Extra args go to the emulator
 # (`just emulator -- -no-window`). cb-android-emulator picks KVM vs -accel off.
@@ -99,4 +101,4 @@ doctor-impl:
 
 # What Wails / the Android SDK think of this booth
 doctor:
-    {{run}} just doctor-impl
+    {{run-in-booth}} just doctor-impl
