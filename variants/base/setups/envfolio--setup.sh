@@ -14,8 +14,8 @@ Usage:
 
 Examples:
   $0                         # install the current release
-  $0 --version 0.1.0         # pin a specific version
-  $0 0.1.0                   # same, in the form a Boothfile emits
+  $0 --version 0.2.0         # pin a specific version
+  $0 0.2.0                   # same, in the form a Boothfile emits
   $0 --version latest        # install the latest GitHub release
 
 Notes:
@@ -30,13 +30,13 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
 # ---- defaults / args ----
-ENVFOLIO_DEFAULT_VER="0.1.0"   # fallback when 'latest' cannot be resolved
+ENVFOLIO_DEFAULT_VER="0.2.0"   # fallback when 'latest' cannot be resolved
 REQ_VER="latest"               # no version given means "the current release"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --version) shift; REQ_VER="${1:-latest}"; shift ;;
     -h|--help) usage; exit 0 ;;
-    # `setup envfolio 0.1.0` in a Boothfile compiles to a positional argument,
+    # `setup envfolio 0.2.0` in a Boothfile compiles to a positional argument,
     # so accept that spelling too.
     -*) echo "❌ Unknown arg: $1" >&2; usage; exit 2 ;;
     *) REQ_VER="$1"; shift ;;
@@ -114,8 +114,9 @@ cat <<'EON'
 - Run with them as env vars: envfolio exec --secrets gh -- gh auth status
 
 Notes:
-- The store is ~/.envfolio and its GPG key lives in ~/.gnupg; both are lost when
-  the container is recreated. Select tools/envfolio+store-cache to keep them in
-  .booth/cache/, or use `envfolio store backup` / `restore`.
+- The store is ~/.envfolio (or $ENVFOLIO_STORE_DIR) and its GPG key lives in
+  ~/.gnupg; both are lost when the container is recreated. Select
+  tools/envfolio+store-cache to keep them in .booth/cache/, or use
+  `envfolio store backup` / `restore`.
 - See: https://github.com/NawaMan/EnvFolio
 EON

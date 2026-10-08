@@ -232,10 +232,13 @@ For the team/git version of either, see [Shared State](BOOTH_SHARED.md).
 
 | Template Selection | What's Cached |
 |--------------------|---------------|
-| `envfolio+store-cache` | `~/.envfolio/`, `~/.gnupg/` (both created `0700`) |
+| `envfolio+store-cache` | `~/.local/share/envfolio/` (the store is `store/` inside it), `~/.gnupg/` — both created `0700` |
 
 The EnvFolio store and the GPG keyring that holds its private key (still protected by its
-passphrase). `.booth/cache/` stays on this machine and out of git; `envfolio store backup` /
+passphrase). The extension sets `ENVFOLIO_STORE_DIR` to a folder *inside* the cached one: a
+mounted folder always holds the cache's `.mount-this` marker, and `envfolio store init` /
+`store restore` only take a folder that is missing or empty. `.booth/cache/` stays on this machine
+and out of git; `envfolio store backup` /
 `restore` is the portable way to move a store.
 
 ### Browser Profiles (`cache-dirs`)
