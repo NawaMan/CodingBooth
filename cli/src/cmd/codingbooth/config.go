@@ -18,6 +18,7 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/aptsnapshot"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/configweb"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/output"
+	"github.com/nawaman/codingbooth/src/pkg/justinit"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/selection"
 	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/tui"
@@ -269,6 +270,8 @@ func runConfigCLI(version string, targetPath string, flags initFlags) {
 		return
 	}
 
+	firstConfigure := justinit.IsFirstConfigure(targetPath)
+
 	// --beside: keep the user's files, write the generated content as <name>.new.
 	if len(drifted) > 0 && flags.beside && !flags.overwrite {
 		if err := output.WriteOutputBeside(out, targetPath, drifted); err != nil {
@@ -306,6 +309,7 @@ func runConfigCLI(version string, targetPath string, flags initFlags) {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
+	writeStarterJustfile(targetPath, firstConfigure)
 
 	fmt.Printf("Initialized .booth/ in %s\n", targetPath)
 	printSummary(resolved)
@@ -322,6 +326,23 @@ func runConfigCLI(version string, targetPath string, flags initFlags) {
 		fmt.Printf("\nTo start:  %s\n", filepath.Base(os.Args[0]))
 	} else {
 		fmt.Printf("\nTo start:  cd %s && %s\n", targetPath, filepath.Base(os.Args[0]))
+	}
+}
+
+// writeStarterJustfile adds the starter Justfile (as `booth just-init` writes it)
+// on a project's first configure, when it has no Justfile of its own. A
+// Justfile is not needed to run a booth, so a failure is only a warning.
+func writeStarterJustfile(targetPath string, firstConfigure bool) {
+	if !firstConfigure {
+		return
+	}
+	path, err := justinit.WriteIfMissing(targetPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: could not write a starter Justfile: %v\n", err)
+		return
+	}
+	if path != "" {
+		fmt.Printf("Created %s — its recipes run in the booth from the host too (`just` lists them).\n", path)
 	}
 }
 
@@ -689,6 +710,8 @@ func applyInteractiveResult(version, targetPath string, setup interactiveSetup, 
 		return
 	}
 
+	firstConfigure := justinit.IsFirstConfigure(targetPath)
+
 	if result.SaveBeside {
 		// The user kept their hand-written files: write what we generated alongside
 		// as <name>.new and leave theirs untouched, to merge by hand.
@@ -715,6 +738,7 @@ func applyInteractiveResult(version, targetPath string, setup interactiveSetup, 
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
+	writeStarterJustfile(targetPath, firstConfigure)
 
 	fmt.Printf("\nInitialized .booth/ in %s\n", targetPath)
 	printSummary(resolved)

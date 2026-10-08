@@ -631,6 +631,11 @@ There are **190+ templates** across 7 categories: languages, middlewares, tools,
 └── home-seed/       # Home directory defaults
 ```
 
+On a project's first configure (no `Boothfile` or `config.toml` yet), config also writes a starter
+`Justfile` at the project root, the one `booth just-init` writes. It skips this when the project
+already has a Justfile. After that the file is yours, and config never touches it again. See
+[USER_GUIDE → Run recipes from the host](USER_GUIDE.md#run-recipes-from-the-host).
+
 ### Startup scripts
 
 Template-generated startup segments are written as individual files in `.booth/startups/`, named `NN-name--startup.sh` where `NN` is the order number.

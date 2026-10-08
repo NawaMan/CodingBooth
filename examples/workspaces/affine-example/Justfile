@@ -1,6 +1,8 @@
-# Wrapped commands auto-run inside the booth when called from the host
-# (empty once already inside one, where BOOTH_CONTAINER_NAME is set).
-run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+# {{run-in-booth}} runs a line in this project's booth (starting one if needed),
+# {{run-on-host}} keeps a line on the host. From `booth just-init`:
+# https://github.com/NawaMan/CodingBooth/blob/main/docs/just/Justfile
+run-in-booth := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+run-on-host  := if env("BOOTH_CONTAINER_NAME", "") == "" { "" } else { "echo 'just: this recipe runs on the host - exit the booth and run it there.' >&2; exit 2;" }
 
 [private]
 default:
@@ -8,4 +10,4 @@ default:
 
 # Wait until AFFiNE answers on :13010
 run:
-    {{run}} ./demo.sh
+    {{run-in-booth}} ./demo.sh

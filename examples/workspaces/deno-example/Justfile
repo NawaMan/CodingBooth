@@ -1,4 +1,8 @@
-run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+# {{run-in-booth}} runs a line in this project's booth (starting one if needed),
+# {{run-on-host}} keeps a line on the host. From `booth just-init`:
+# https://github.com/NawaMan/CodingBooth/blob/main/docs/just/Justfile
+run-in-booth := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+run-on-host  := if env("BOOTH_CONTAINER_NAME", "") == "" { "" } else { "echo 'just: this recipe runs on the host - exit the booth and run it there.' >&2; exit 2;" }
 
 [private]
 default:
@@ -6,8 +10,8 @@ default:
 
 # Roll dice (`just run 2d6`)
 run *args:
-    {{run}} ./run-dice.sh {{ args }}
+    {{run-in-booth}} ./run-dice.sh {{ args }}
 
 # Run Deno tests
 test:
-    {{run}} ./run-deno-test.sh
+    {{run-in-booth}} ./run-deno-test.sh

@@ -21,7 +21,7 @@ if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
     exit 0
 fi
 
-VERSION=0.15.2
+VERSION=0.15.3
 VERBOSE="${VERBOSE:-true}"
 
 # Resolve this wrapper's absolute path (follow symlinks). All project paths are
@@ -371,7 +371,8 @@ Wrapper commands:
   shell-config [install]         Install central wrapper + booth() in bash/zsh/fish
   shell-config uninstall         Remove shell function block and central wrapper
   shell-config status            Show shell-config install state
-  create <dir>                   mkdir <dir>, install booth into it (wrapper + binary)
+  create <dir>                   mkdir <dir>, install booth into it (wrapper + binary),
+                                 then add a starter Justfile (booth just-init)
 
   run [ARGS...]           Run booth with ARGS (after integrity checks)
   version                 Show version information
@@ -1417,7 +1418,15 @@ CreateBooth() {
     mkdir -p "$dir"
     # Install targets $PWD of the child process → lands in <dir>.
     # Re-exec via this same wrapper so ensure_project_wrapper copies booth there.
-    (cd "$dir" && exec "$WRAPPER_SELF" install "$@")
+    (cd "$dir" && exec "$WRAPPER_SELF" install "$@") || return $?
+
+    # A starter Justfile whose recipes run in the booth. The logic is the binary's
+    # (`booth just-init`, which offers to back up a Justfile already there); a
+    # pinned binary older than the command fails its --help, and is skipped.
+    # Either way the install above stands, so this never fails the create.
+    if (cd "$dir" && ./booth just-init --help) >/dev/null 2>&1; then
+        (cd "$dir" && ./booth just-init) || true
+    fi
 }
 
 # Early handling of version/help/shell-config so they don't require curl

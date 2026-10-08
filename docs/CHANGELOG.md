@@ -4,6 +4,22 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth just-init` — a starter Justfile whose recipes run in the booth.** It defines
+  `{{run-in-booth}}` and `{{run-on-host}}`. On the host, a `{{run-in-booth}}` line runs through
+  `./booth exec --run --`, starting the booth if it is not running; inside the booth it runs as
+  is. A `{{run-on-host}}` line is refused inside the booth. So `just test` works from either
+  side. An existing Justfile is backed up to `Justfile.bak` first, after asking (`--yes` skips
+  the question).
+  - New projects get the starter without asking. `booth config` writes it on a project's first
+    configure (no `.booth/Boothfile` or `.booth/config.toml` yet), and `booth create` ends with
+    `just-init`. Neither ever replaces a Justfile the project already has.
+  - Every example's Justfile now uses the two variables.
+  - The file: [`docs/just/Justfile`](https://github.com/NawaMan/CodingBooth/blob/main/docs/just/Justfile).
+
+- **Wrapper `0.15.3` — `booth create <dir>` adds the starter Justfile.** After installing, it runs
+  `booth just-init` in `<dir>`. A pinned binary older than that command is skipped, and the
+  create still succeeds.
+
 - **EnvFolio is in every booth.** [EnvFolio](https://github.com/NawaMan/EnvFolio) keeps texts and
   GPG-encrypted secrets in a `pass` store and loads them into a command or a shell as environment
   variables (`envfolio exec --secrets <entry> -- <cmd>`; secrets only with `--secrets`). The base

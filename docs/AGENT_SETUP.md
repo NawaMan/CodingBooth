@@ -213,6 +213,8 @@ host:
 
 `just --list` (inside, or via `./booth -- just --list`) shows the project's own recipes. Use them
 rather than inventing commands.
+A project with no Justfile can get one from `./booth just-init`. Its `{{run-in-booth}}` recipes
+start the booth themselves, so `just test` works from the host as well.
 
 Ground rules:
 
