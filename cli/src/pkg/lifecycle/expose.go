@@ -42,7 +42,7 @@ func Expose(args []string, stdout io.Writer, stderr io.Writer) error {
 
 func exposeUsage() string {
 	return strings.TrimSpace(`
-Usage: booth expose list [name] [--name NAME]
+Usage: booth expose list [name] [--name NAME] [--json] [--engine ENGINE]
 
 List the ports a booth publishes to the host — the booth front door, any
 published (-p) ports, and any runtime tunnels created with booth--expose.
@@ -75,26 +75,27 @@ type livePort struct {
 
 // exposeRow is one line of the `booth expose list` table.
 type exposeRow struct {
-	ContainerPort int
-	HostIP        string
-	HostPort      int
-	Proto         string
-	Kind          string // "front door" | "published" | "tunnel"
-	Live          bool
-	Source        string
+	ContainerPort int    `json:"container_port"`
+	HostIP        string `json:"host_ip"`
+	HostPort      int    `json:"host_port"`
+	Proto         string `json:"proto"`
+	Kind          string `json:"kind"`
+	Live          bool   `json:"live"`
+	Source        string `json:"source"`
 }
 
 func exposeList(args []string, stdout io.Writer, stderr io.Writer) error {
-	positional, flags := extractPositionalAndFlags(args)
-
 	flagSet := flag.NewFlagSet("expose list", flag.ContinueOnError)
+	engineChoice := engineFlag(flagSet)
 	name := flagSet.String("name", "", "Container name")
+	jsonOutput := flagSet.Bool("json", false, "Print ports as a JSON document")
 	flagSet.SetOutput(stderr)
-	if err := flagSet.Parse(flags); err != nil {
+	if err := parseLifecycleFlags(flagSet, args); err != nil {
 		return commandExit(2, "")
 	}
 
-	containers, err := managedContainersAcross(resolveLifecycleEngines(""), false, stderr)
+	positional := flagSet.Args()
+	containers, err := managedContainersAcross(resolveLifecycleEngines("", *engineChoice), false, stderr)
 	if err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
@@ -116,6 +117,16 @@ func exposeList(args []string, stdout io.Writer, stderr io.Writer) error {
 	live := readLivePorts(target.Engine, target.Name)
 
 	rows := buildExposeRows(manifest, tunnels, live)
+	if *jsonOutput {
+		if rows == nil {
+			rows = []exposeRow{}
+		}
+		return json.NewEncoder(stdout).Encode(struct {
+			Name   string      `json:"name"`
+			Engine string      `json:"engine"`
+			Ports  []exposeRow `json:"ports"`
+		}{target.Name, target.Engine, rows})
+	}
 	printExposeRows(stdout, target, rows)
 	return nil
 }

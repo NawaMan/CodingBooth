@@ -65,6 +65,12 @@ func main() {
 		case "exec":
 			execBooth(version)
 			return
+		case "cp":
+			copyBooth(version)
+			return
+		case "inspect", "stats", "top", "diff", "wait":
+			observeBooth(command)
+			return
 		case "logs":
 			logsBooth(version)
 			return

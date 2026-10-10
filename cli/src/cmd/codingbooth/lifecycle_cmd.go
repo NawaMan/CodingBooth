@@ -76,3 +76,11 @@ func handleLifecycleErr(err error) {
 	}
 	os.Exit(lifecycle.ExitCode(err))
 }
+
+func copyBooth(_ string) {
+	handleLifecycleErr(lifecycle.Copy(os.Args[2:], os.Stdout, os.Stderr))
+}
+
+func observeBooth(command string) {
+	handleLifecycleErr(lifecycle.Observe(command, os.Args[2:], os.Stdout, os.Stderr))
+}

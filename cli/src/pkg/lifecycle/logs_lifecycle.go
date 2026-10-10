@@ -69,7 +69,7 @@ func showLifecycleLog(opts logsOptions, stdout io.Writer, stderr io.Writer) erro
 	var containers []managedContainer
 	if opts.name != "" {
 		var err error
-		containers, err = managedContainersAcross(resolveLifecycleEngines(""), false, stderr)
+		containers, err = managedContainersAcross(resolveLifecycleEngines("", opts.engine), false, stderr)
 		if err != nil {
 			return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 		}

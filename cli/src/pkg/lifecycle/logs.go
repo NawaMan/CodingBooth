@@ -52,6 +52,7 @@ var serviceNamePattern = regexp.MustCompile(`^[A-Za-z0-9_][A-Za-z0-9._-]*$`)
 
 // logsOptions is a parsed `booth logs` command line.
 type logsOptions struct {
+	engine   string
 	name     string
 	code     string
 	follow   bool
@@ -66,6 +67,7 @@ type logsOptions struct {
 // logsValueFlags are the flags that take a separate value, so the positional
 // scan can step over it. Flags may appear before or after service names.
 var logsValueFlags = map[string]bool{
+	"-engine": true, "--engine": true,
 	"-name": true, "--name": true, "-code": true, "--code": true,
 	"-tail": true, "--tail": true, "-n": true,
 	"-since": true, "--since": true, "-until": true, "--until": true,
@@ -96,6 +98,7 @@ func parseLogsArgs(args []string, stderr io.Writer) (logsOptions, error) {
 	var opts logsOptions
 	var startup bool
 	flagSet := flag.NewFlagSet("logs", flag.ContinueOnError)
+	engineChoice := engineFlag(flagSet)
 	flagSet.StringVar(&opts.name, "name", "", "Booth name")
 	flagSet.StringVar(&opts.code, "code", "", "Code path used to find the booth")
 	flagSet.BoolVar(&opts.follow, "follow", false, "Follow the output")
@@ -113,6 +116,7 @@ func parseLogsArgs(args []string, stderr io.Writer) (logsOptions, error) {
 		return logsOptions{}, commandExit(2, "")
 	}
 
+	opts.engine = *engineChoice
 	if startup {
 		opts.services = append(opts.services, startupLogService)
 	}
@@ -154,7 +158,7 @@ func Logs(args []string, stdout io.Writer, stderr io.Writer) error {
 		return showLifecycleLog(opts, stdout, stderr)
 	}
 
-	containers, err := managedContainersAcross(resolveLifecycleEngines(opts.code), false, stderr)
+	containers, err := managedContainersAcross(resolveLifecycleEngines(opts.code, opts.engine), false, stderr)
 	if err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}

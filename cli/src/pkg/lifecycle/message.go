@@ -49,8 +49,8 @@ type boothMessageResponse struct {
 
 // resolveMessageTarget resolves the booth container for message commands.
 // Uses --name flag, or defaults to the current directory name.
-func resolveMessageTarget(name string) (managedContainer, error) {
-	containers, err := managedContainersAcross(resolveLifecycleEngines(""), false, os.Stderr)
+func resolveMessageTarget(name string, explicit ...string) (managedContainer, error) {
+	containers, err := managedContainersAcross(resolveLifecycleEngines("", explicit...), false, os.Stderr)
 	if err != nil {
 		return managedContainer{}, commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
@@ -65,6 +65,7 @@ func resolveMessageTarget(name string) (managedContainer, error) {
 // MessageSend sends a message to a booth user and waits for a response.
 func MessageSend(args []string, stdout io.Writer, stderr io.Writer) error {
 	flagSet := flag.NewFlagSet("message send", flag.ContinueOnError)
+	engineChoice := engineFlag(flagSet)
 	name := flagSet.String("name", "", "Container name (default: current directory)")
 	title := flagSet.String("title", "", "Message title")
 	body := flagSet.String("body", "", "Message body")
@@ -74,7 +75,7 @@ func MessageSend(args []string, stdout io.Writer, stderr io.Writer) error {
 	id := flagSet.String("id", "", "Custom message ID (used by 'message adjust'; default: auto-generated)")
 	flagSet.SetOutput(stderr)
 
-	if err := flagSet.Parse(args); err != nil {
+	if err := parseLifecycleFlags(flagSet, args); err != nil {
 		return commandExit(2, "")
 	}
 
@@ -96,7 +97,7 @@ func MessageSend(args []string, stdout io.Writer, stderr io.Writer) error {
 		return commandExit(1, fmt.Sprintf("Error: --options is required for '%s' type", *msgType))
 	}
 
-	target, err := resolveMessageTarget(*name)
+	target, err := resolveMessageTarget(*name, *engineChoice)
 	if err != nil {
 		return err
 	}
@@ -240,14 +241,15 @@ func waitForResponse(target managedContainer, msg boothMessage) (string, error) 
 // MessageList lists pending messages for a booth.
 func MessageList(args []string, stdout io.Writer, stderr io.Writer) error {
 	flagSet := flag.NewFlagSet("message list", flag.ContinueOnError)
+	engineChoice := engineFlag(flagSet)
 	name := flagSet.String("name", "", "Container name (default: current directory)")
 	flagSet.SetOutput(stderr)
 
-	if err := flagSet.Parse(args); err != nil {
+	if err := parseLifecycleFlags(flagSet, args); err != nil {
 		return commandExit(2, "")
 	}
 
-	target, err := resolveMessageTarget(*name)
+	target, err := resolveMessageTarget(*name, *engineChoice)
 	if err != nil {
 		return err
 	}
@@ -307,10 +309,11 @@ func MessageList(args []string, stdout io.Writer, stderr io.Writer) error {
 // MessageResponse reads the response for a specific message.
 func MessageResponse(args []string, stdout io.Writer, stderr io.Writer) error {
 	flagSet := flag.NewFlagSet("message response", flag.ContinueOnError)
+	engineChoice := engineFlag(flagSet)
 	name := flagSet.String("name", "", "Container name (default: current directory)")
 	flagSet.SetOutput(stderr)
 
-	if err := flagSet.Parse(args); err != nil {
+	if err := parseLifecycleFlags(flagSet, args); err != nil {
 		return commandExit(2, "")
 	}
 
@@ -320,7 +323,7 @@ func MessageResponse(args []string, stdout io.Writer, stderr io.Writer) error {
 	}
 	msgID := positional[0]
 
-	target, err := resolveMessageTarget(*name)
+	target, err := resolveMessageTarget(*name, *engineChoice)
 	if err != nil {
 		return err
 	}
@@ -347,12 +350,13 @@ func MessageResponse(args []string, stdout io.Writer, stderr io.Writer) error {
 // fields (type, options, expires) are preserved as written.
 func MessageAdjust(args []string, stdout io.Writer, stderr io.Writer) error {
 	flagSet := flag.NewFlagSet("message adjust", flag.ContinueOnError)
+	engineChoice := engineFlag(flagSet)
 	name := flagSet.String("name", "", "Container name (default: current directory)")
 	title := flagSet.String("title", "", "New title (omit to keep existing)")
 	body := flagSet.String("body", "", "New body (omit to keep existing)")
 	flagSet.SetOutput(stderr)
 
-	if err := flagSet.Parse(args); err != nil {
+	if err := parseLifecycleFlags(flagSet, args); err != nil {
 		return commandExit(2, "")
 	}
 
@@ -380,7 +384,7 @@ func MessageAdjust(args []string, stdout io.Writer, stderr io.Writer) error {
 		return commandExit(1, "Error: at least one of --title or --body must be provided")
 	}
 
-	target, err := resolveMessageTarget(*name)
+	target, err := resolveMessageTarget(*name, *engineChoice)
 	if err != nil {
 		return err
 	}

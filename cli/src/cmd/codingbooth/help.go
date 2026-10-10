@@ -60,6 +60,7 @@ OTHER COMMANDS:
   BUILD     | Build and publish booth images   | build                                                                   | docs/BOOTH_BUILD.md
   LIFECYCLE | Manage kept-alive booths         | list, start, stop, restart, remove, prune, logs                         | docs/BOOTH_LIFECYCLE.md
   HOME VOL  | Manage persisted home volumes    | home-volume-list, home-volume-export, home-volume-import [Experimental] | docs/BOOTH_HOME.md
+  TOOLS     | Copy and inspect booth state    | cp, inspect, stats, top, diff, wait                                    | docs/BOOTH_TOOLS.md
   CONNECT   | Connect to a running booth       | shell, exec                                                             | docs/BOOTH_CONNECT.md
   MESSAGE   | Send messages into a booth       | message                                                                 | docs/BOOTH_MESSAGE.md
   EXPOSE    | Inspect a booth's ports          | expose list                                                             | docs/BOOTH_EXPOSE.md
@@ -85,16 +86,18 @@ USAGE:
   %s run [options] [--] [command ...]          (run the booth)
   %s express [options] [-- command ...]        (run from arguments; ignore the project's .booth)
   %s [options] [--] [command ...]              (default action: run)
-  %s list [--running|--stopped] [--name-only]  (list booth-managed containers)
+  %s list [--running|--stopped] [--json|--name-only]  (list booth-managed containers)
   %s start [--name <n>|--code <path>] [-d]     (start a stopped keep-alive booth)
-  %s stop [--name <n>] [-f] [--time <n>]       (stop a running booth)
-  %s restart [--name <n>] [--time <n>]         (restart a running booth)
+  %s stop [--name <n>] [-f] [--timeout <n>]       (stop a running booth)
+  %s restart [--name <n>] [--timeout <n>]         (restart a running booth)
   %s remove [--name <n>] [--force]             (remove booth container(s))
   %s prune [--yes]                             (remove stopped booth containers)
   %s shell [--name <n>] [--shell <s>]          (open interactive shell in booth)
   %s exec [--name <n>] -- <command>            (run a command in a running booth)
+  %s cp [options] SOURCE DESTINATION          (copy between host and booth)
+  %s inspect|stats|top|diff|wait [name]        (native engine tools for a booth)
   %s logs [--name <n>] [-f] [service ...]      (show a booth's output or service logs)
-  %s expose list [--name <n>]                  (list a booth's published ports)
+  %s expose list [--name <n>] [--json]         (list a booth's published ports)
   %s example <subcommand>                      (manage examples)
   %s template <subcommand>                     (browse and manage templates)
   %s showcase <subcommand>                     (browse and import CodingBooths.online showcases)
@@ -107,6 +110,11 @@ USAGE:
   %s home-volume-import <name> <file>          (import tar.gz into home volume)
   %s print-default-allowlist.txt               (print built-in egress allowlist)
   %s print-security-warning [options]          (print the run's security warning; exit 1 if any)
+
+LIFECYCLE ENGINE SELECTION:
+  --engine <docker|podman|apple>  Accepted by lifecycle, connection, copy, inspection,
+                                  message and home-volume commands. Overrides config
+                                  and CB_ENGINE; otherwise discover the owning engine.
 
 BOOTSTRAP OPTIONS (CLI or defaults; evaluated before env and config file):
   --code <path>          Host code path to mount at /home/coder/code
@@ -281,7 +289,7 @@ EXAMPLES:
   %s --env-file none --variant notebook
 `,
 		s, version,
-		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
+		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
 		s,
 		s, s, s, s, s,
 	)
@@ -492,6 +500,8 @@ OPTIONS:
   --running       Show only running containers
   --stopped       Show only stopped containers
   --name-only     Print container names only (useful for scripting)
+  --json          Print a JSON array, including [] for no matches
+  --engine <docker|podman|apple>  Select the engine explicitly
 `, s, s)
 }
 
@@ -502,6 +512,7 @@ func showHelpStart() {
 USAGE:  %s start [options]
 
 OPTIONS:
+  --engine <docker|podman|apple>  Select the engine explicitly
   --name <n>      Container name to start
   --code <path>   Identify the container by its code path
   -d              Start in detached/daemon mode
@@ -515,9 +526,10 @@ func showHelpStop() {
 USAGE:  %s stop [options]
 
 OPTIONS:
+  --engine <docker|podman|apple>  Select the engine explicitly
   --name <n>      Container name to stop
   -f              Force stop (SIGKILL)
-  --time <n>      Seconds to wait before force-killing (default: 10)
+  --timeout <n>      Seconds to wait before force-killing (default: 10)
 `, s, s)
 }
 
@@ -528,8 +540,9 @@ func showHelpRestart() {
 USAGE:  %s restart [options]
 
 OPTIONS:
+  --engine <docker|podman|apple>  Select the engine explicitly
   --name <n>      Container name to restart
-  --time <n>      Seconds to wait before force-killing (default: 10)
+  --timeout <n>      Seconds to wait before force-killing (default: 10)
 `, s, s)
 }
 
@@ -540,6 +553,7 @@ func showHelpRemove() {
 USAGE:  %s remove [options]
 
 OPTIONS:
+  --engine <docker|podman|apple>  Select the engine explicitly
   --name <n>      Container name to remove
   --force         Force-remove even if running
 `, s, s)
@@ -552,6 +566,7 @@ func showHelpPrune() {
 USAGE:  %s prune [options]
 
 OPTIONS:
+  --engine <docker|podman|apple>  Select the engine explicitly
   --yes           Skip confirmation prompt
 `, s, s)
 }
@@ -653,6 +668,7 @@ func showHelpShell() {
 USAGE:  %s shell [options] [name]
 
 OPTIONS:
+  --engine <docker|podman|apple>  Select the engine explicitly
   --name <n>           Container name
   --shell <shell>      Shell to launch (default: bash)
   --dir <path>         Starting directory (default: /home/coder/code)
@@ -694,6 +710,7 @@ func showHelpExec() {
 USAGE:  %s exec [options] [name] -- <command>
 
 OPTIONS:
+  --engine <docker|podman|apple>  Select the engine explicitly
   --name <n>           Container name
   --dir <path>         Working directory (default: /home/coder/code)
   -it                  Force interactive mode with TTY
@@ -751,6 +768,7 @@ USAGE:  %s logs [options]                 (the booth's container output)
         %s logs lifecycle [options]       (what happened to the booth, from the host)
 
 OPTIONS:
+  --engine <docker|podman|apple>  Select the engine explicitly
   --name <n>           Booth name (default: the current folder's booth)
   --code <path>        Code path used to find the booth
   --follow, -f         Keep streaming new output
@@ -795,7 +813,7 @@ func showHelpExpose() {
 	s := scriptName()
 	fmt.Printf(`%s expose — inspect the ports a booth publishes
 
-USAGE:  %s expose list [name] [--name <n>]
+USAGE:  %s expose list [name] [--name <n>] [--json] [--engine <engine>]
 
 Lists, for a running booth, the ports reachable from the host: the booth front
 door, any published (-p) ports, and any runtime tunnels opened with
@@ -805,6 +823,8 @@ name, the booth for the current directory is used.
 
 The source of truth is the run-time manifest .booth/.tmp/ports.json; when it is
 absent (e.g. an older booth), the live 'docker port' view is used instead.
+
+Use --json for an object containing name, engine, and a ports array.
 
 Inside a booth, 'booth--expose list' shows the same ports plus which process is
 listening on each — including internal-only services that are not published.
@@ -856,6 +876,9 @@ func showHelpListHomeVolume() {
 USAGE:  %s home-volume-list
 
 Lists all Docker volumes created by --persist-home.
+
+OPTIONS:
+  --engine <docker|podman|apple>  Select the engine explicitly
 `, s, s)
 }
 
@@ -869,6 +892,9 @@ Exports the persisted home volume for a booth to a compressed tar file.
 The volume must exist (booth must have been run with --persist-home).
 
 Note: home volumes can be large (1-3GB+ depending on usage).
+
+OPTIONS:
+  --engine <docker|podman|apple>  Select the engine explicitly
 `, s, s)
 }
 
@@ -880,6 +906,9 @@ USAGE:  %s home-volume-import <container-name> <input-file>
 
 Imports a compressed tar file into the home volume for a booth.
 Creates the volume if it does not exist.
+
+OPTIONS:
+  --engine <docker|podman|apple>  Select the engine explicitly
 `, s, s)
 }
 
@@ -933,6 +962,8 @@ func dispatchHelp(args []string, version string) {
 			showHelpShell()
 		case "exec":
 			showHelpExec()
+		case "cp", "inspect", "stats", "top", "diff", "wait":
+			showHelpTools(a)
 		case "logs":
 			showHelpLogs()
 		case "expose":
