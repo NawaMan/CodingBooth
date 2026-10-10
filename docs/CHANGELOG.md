@@ -39,6 +39,11 @@ This file contains a list of changes for each released version.
   mounted only on the read-only `.booth/` path, so `--writable-booth` (or `writable-booth = true`)
   silently started a booth without them — and skipped the check that the cache is gitignored.
   They are now mounted either way.
+- **Fix: code-server no longer overwrites a shared or cached `settings.json`.** `start-codeserver`
+  rewrote `settings.json` with its defaults on every launch. Under `+settings-shared` that file is
+  `.booth/shared/…/settings.json`, so each start replaced the team's committed settings on the
+  host; under `+settings-cache` it reset the user's own. The defaults now go only into a missing or
+  empty file.
 - **New doc: [In and Out of the Booth](IN-OUT.md)** — every way to put files into a booth, or
   connect it to something, outside `/home/coder/code`.
 
