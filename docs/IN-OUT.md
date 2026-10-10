@@ -9,8 +9,8 @@ place, and links to the guide that covers each in depth.
 
 Setups and startup scripts are left out on purpose. They can do anything, so they are not a
 mechanism of their own — see [Customization](BOOTH_CUSTOMIZATION.md) and [Setups](BOOTH_SETUP.md).
-The one exception is [copying a file outside home](#copying-outside-home), which only a startup
-script can do.
+The one exception is [copying a file outside home on every start](#copying-outside-home), using a
+startup script. For a copy into an existing booth, use [`booth cp`](BOOTH_TOOLS.md).
 
 Back to [README](../README.md)
 
@@ -249,9 +249,9 @@ See [Home Directory](BOOTH_HOME.md) for the exact precedence.
 
 ### Copying outside home
 
-None of the four copies reaches outside `/home/coder`. For a file at a system path, use a startup
-script: it runs as `coder` on every start, and it may use `sudo` even with `--no-sudo`, which takes
-sudo away only after the startup scripts have run.
+None of the four copies reaches outside `/home/coder`. To copy a file to a system path on every
+start, use a startup script: it runs as `coder`, and it may use `sudo` even with `--no-sudo`, which
+takes sudo away only after the startup scripts have run.
 
 ```bash
 # .booth/startups/20-corp-conf--startup.sh
@@ -262,6 +262,10 @@ sudo install -D -m 0644 -o root -g root \
 The source can be any project file; `.booth/files/` above is only a convention. Use `install`, not a
 link: `.booth/` is mounted read-only. Unlike the copies above, the script can also run a command
 after the copy, e.g. `sudo update-ca-certificates` for a CA certificate.
+
+For a one-time transfer into or out of an existing booth, use
+[`booth cp`](BOOTH_TOOLS.md#copy-files-outside-the-shared-project). It can copy outside home, but
+does not repeat the copy on future starts or run commands afterwards.
 
 Some paths have a better way:
 
@@ -313,7 +317,8 @@ See [Connect](BOOTH_CONNECT.md), [Message](BOOTH_MESSAGE.md) and [booth tmp](BOO
 | Team settings that must always apply | `.booth/home/` |
 | A team file that is edited inside the booth and committed | **Shared** |
 | Personal state kept between runs of this project — history, profiles, tool logins | **Cache** |
-| A file copied to a system path, such as `/etc` | A startup script with `sudo install` ([Copying outside home](#copying-outside-home)) |
+| A file copied to a system path, such as `/etc`, on every start | A startup script with `sudo install` ([Copying outside home](#copying-outside-home)) |
+| A one-time file transfer between host and an existing booth | [`booth cp`](BOOTH_TOOLS.md#copy-files-outside-the-shared-project) |
 | Personal credentials from the host, copied in | `/etc/cb-home-seed/` via a `credential` extension or `--mount …:ro` |
 | One host folder reused by every project — a package cache | **Bind mount** (`--mount ~/.m2:/home/coder/.m2`) |
 | The whole home kept, without listing paths | `--persist-home` |
@@ -339,8 +344,8 @@ Found while putting this map together; none is fixed yet.
   extension. They depend on the host's folder layout and are dropped when that folder is missing.
 - **Overlapping Cache and Shared paths are not detected** — e.g. `+profile-cache` with
   `+bookmarks-shared`.
-- **Copies reach only `/home/coder`.** There is no folder that copies into `/etc` or `/opt` at
-  start; a startup script does it instead
+- **The four startup copy folders reach only `/home/coder`.** There is no folder that copies
+  into `/etc` or `/opt` at start; a startup script does it instead
   ([Copying outside home](#copying-outside-home)).
 - **Template `[files]` cannot fill Cache or Shared** — only `home`, `home-seed` and `setups`.
 - **No per-booth volume for concurrent booths of one folder.** `--add-mount` and profiles both
