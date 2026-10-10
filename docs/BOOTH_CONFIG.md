@@ -799,6 +799,34 @@ When you re-open `booth config` on an existing project, the TUI reads `config.to
 
 This means users only see and edit their own overrides. Template values are managed by the template selection itself.
 
+### A user mount replaces the template's on the same path
+
+When a `--volume` (from `--mount` / `--add-mount` or the TUI's Mount field) lands on the same
+container path as a template's `-v`, the template's entry is dropped — Docker refuses two mounts on
+one path, and the user's is the one that was asked for. This is how a project swaps a template's
+data volume for its own:
+
+```bash
+booth config --no-tui --add-mount 'myproj-pgdata:/var/lib/postgresql'   # replaces booth-pgdata-{project}
+booth config --no-tui --remove-mount /var/lib/postgresql                # the template's comes back
+```
+
+Template entries that share a path are left alone: a credential extension lists one host path per
+platform for the same target on purpose, and the booth keeps the first that exists when it starts.
+
+### Raw run-args with `--set`
+
+For a docker flag no dedicated option covers, `--set run-args=<token>` adds one token to the same
+`run-args` list — repeat it for a flag and its value:
+
+```bash
+booth config --no-tui --set run-args=--cap-add --set run-args=SYS_PTRACE
+```
+
+The tokens go after the template's and the `--env`/`--expose`/`--mount` ones. The same holds for
+every key `config.toml` writes from its own field (`cmds`, `build-args`, `sudo`, `vm-*`): a `--set`
+merges into that key and never writes it a second time.
+
 ### Example config.toml with mixed forms
 
 ```toml

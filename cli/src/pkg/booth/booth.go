@@ -1630,6 +1630,10 @@ func volumeSource(spec string) string {
 	return spec
 }
 
+// VolumeTarget returns the container path of a -v/--volume spec ("src:dst[:opts]"),
+// with the same Windows-path handling the run pipeline uses.
+func VolumeTarget(spec string) string { return volumeTarget(spec) }
+
 // volumeTarget returns the container side of a Docker -v/--volume mount spec, with
 // any option suffix (":ro") removed. Booth runs Linux containers, so the target is
 // an absolute Unix path; the Windows-container form is handled for completeness.

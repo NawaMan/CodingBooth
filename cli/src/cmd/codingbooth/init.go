@@ -451,6 +451,7 @@ func compileEmptyE(flags initFlags) (*output.BoothOutput, *selection.ResolvedSel
 		}
 		applySetOverrides(out.Config, overrides)
 	}
+	out.Config.RunArgs = resolveRunArgs(out.Config.RunArgs)
 	out.Config.CacheFiles = append(out.Config.CacheFiles, flags.cacheFiles...)
 	out.Config.CacheDirs = append(out.Config.CacheDirs, flags.cacheDirs...)
 	out.Config.SharedFiles = append(out.Config.SharedFiles, flags.sharedFiles...)
@@ -590,6 +591,7 @@ func compileSelectionE(flags initFlags, projectRoot string, overrides map[string
 		}
 		applySetOverrides(out.Config, overrides)
 	}
+	out.Config.RunArgs = resolveRunArgs(out.Config.RunArgs)
 	out.Config.CacheFiles = append(out.Config.CacheFiles, flags.cacheFiles...)
 	out.Config.CacheDirs = append(out.Config.CacheDirs, flags.cacheDirs...)
 	out.Config.SharedFiles = append(out.Config.SharedFiles, flags.sharedFiles...)
@@ -1178,6 +1180,64 @@ func mountKey(mount string) string {
 	return container
 }
 
+// resolveRunArgs settles run-args once every source has been appended — template
+// entries first, then --expose/--env/--mount, then --set run-args:
+//
+//   - An identical flag/value pair is kept once. On a reconfigure the same entry can
+//     arrive both read back from config.toml and replayed from the header.
+//   - A user mount (long-form --volume, from --mount) replaces every template mount
+//     (short-form -v) on the same container path. Docker refuses a booth with a
+//     duplicate mount point, so without this a `--mount myproj-pgdata:/var/lib/postgresql`
+//     could never stand in for the postgresql template's own -v. Dropping the user's
+//     mount (--remove-mount) brings the template's back on the next configure.
+//
+// Template mounts that share a target are left alone: a credential extension lists
+// one host path per platform for the same target on purpose, and the run pipeline
+// keeps the first that exists (FilterMissingVolumeMounts).
+func resolveRunArgs(args []string) []string {
+	var groups [][]string
+	for i := 0; i < len(args); i++ {
+		if isRunArgPairFlag(args[i]) && i+1 < len(args) {
+			groups = append(groups, []string{args[i], args[i+1]})
+			i++
+		} else {
+			groups = append(groups, []string{args[i]})
+		}
+	}
+
+	seenGroup := make(map[string]bool, len(groups))
+	userTargets := make(map[string]bool)
+	unique := groups[:0]
+	for _, g := range groups {
+		key := strings.Join(g, "\x00")
+		if seenGroup[key] {
+			continue
+		}
+		seenGroup[key] = true
+		unique = append(unique, g)
+		if len(g) == 2 && g[0] == "--volume" {
+			if target := booth.VolumeTarget(g[1]); target != "" {
+				userTargets[target] = true
+			}
+		}
+	}
+
+	var out []string
+	for _, g := range unique {
+		if len(g) == 2 && g[0] == "-v" && userTargets[booth.VolumeTarget(g[1])] {
+			continue
+		}
+		out = append(out, g...)
+	}
+	return out
+}
+
+// isRunArgPairFlag reports whether a run-args token is a flag that takes the next
+// token as its value ("-v", "--volume"), as opposed to "--pull=never" or a value.
+func isRunArgPairFlag(s string) bool {
+	return strings.HasPrefix(s, "-") && !strings.Contains(s, "=")
+}
+
 // applyMountFlags appends --volume mount entries to RunArgs.
 // Uses long-form --volume to distinguish user-set values from template-contributed -v flags.
 func applyMountFlags(cfg *output.ConfigToml, mounts []string) {
@@ -1348,6 +1408,29 @@ func applySetOverrides(cfg *output.ConfigToml, overrides map[string]interface{})
 			if b, ok := value.(bool); ok {
 				cfg.Dind = b
 			}
+		// Every key below is also written from its own ConfigToml field. Left in
+		// Overrides it would be written a second time, and a config.toml with the
+		// same key twice is not valid TOML — the booth refuses to start.
+		case "sudo":
+			if b, ok := value.(bool); ok {
+				cfg.Sudo = &b
+			}
+		case "vm-memory":
+			cfg.VmMemory = fmt.Sprint(value)
+		case "vm-cpus":
+			cfg.VmCpus = fmt.Sprint(value)
+		case "vm-shm-size":
+			cfg.VmShmSize = fmt.Sprint(value)
+		case "cmds":
+			// Replaces, like --cmd: a start command is one command, not a pile.
+			cfg.Cmds = asStringList(value)
+		case "build-args":
+			cfg.BuildArgs = append(cfg.BuildArgs, asStringList(value)...)
+		case "run-args":
+			// Raw docker run arguments, one token per --set: after the template's
+			// and the --env/--expose/--mount ones, so they win on a shared target
+			// (see resolveRunArgs).
+			cfg.RunArgs = append(cfg.RunArgs, asStringList(value)...)
 		case "cache-files":
 			cfg.CacheFiles = append(cfg.CacheFiles, asStringList(value)...)
 		case "cache-dirs":
