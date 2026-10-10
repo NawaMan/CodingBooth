@@ -9,7 +9,8 @@
 # The script exists to replace `docker system prune -a --volumes`, so the bug that
 # matters is a pattern that reaches past the examples — a look-alike project
 # (go-examplex), a non-example project (myproj), a shared service volume
-# (booth-pgdata), a running booth or the image it uses.
+# (booth-pgdata, from before data volumes were per project), another project's
+# data volume, a running booth or the image it uses.
 #
 # $BOOTH_ENGINE points at a fake engine: it serves canned listings (already
 # narrowed the way the real engine's --filter would narrow them) and records every
@@ -76,6 +77,13 @@ cb-home-go-examplex
 cb-home-myproj
 booth-pgdata
 EOF
+# name|cb.project -- data volumes labelled cb.volume=project.
+cat > "$FAKE_DIR/data-volumes" <<'EOF'
+booth-pgdata-go-example|go-example
+booth-mysqldata-server-example-2|server-example-2
+booth-pgdata-go-examplex|go-examplex
+booth-pgdata-myproj|myproj
+EOF
 cat > "$FAKE_DIR/networks" <<'EOF'
 bridge
 go-example-10000-net
@@ -101,7 +109,11 @@ case "$1" in
             awk -F'|' '$3 == "running" { print $2 "|" $4 }' "$D/containers"
         fi ;;
     images)  cat "$D/images" ;;
-    volume)  if [[ "$2" == ls ]]; then cat "$D/volumes"
+    volume)  if [[ "$2" == ls && "$args" == *"cb.volume=project"* ]]; then
+                 # Serve the --filter label=cb.project=<name> narrowing.
+                 project="$(printf '%s' "$args" | sed -n 's/.*label=cb\.project=\([^ ]*\).*/\1/p')"
+                 awk -F'|' -v p="$project" '$2 == p { print $1 }' "$D/data-volumes"
+             elif [[ "$2" == ls ]]; then cat "$D/volumes"
              else fail_on "$3" && exit 1; echo "volume rm $3" >> "$D/log"; fi ;;
     network) if [[ "$2" == ls ]]; then cat "$D/networks"
              else fail_on "$3" && exit 1; echo "network rm $3" >> "$D/log"; fi ;;
@@ -137,6 +149,8 @@ rmi codingbooth-local:go-example-base-1.0
 rmi codingbooth-local:server-example-2-desktop-xfce-1.0
 volume rm cb-home-go-example
 volume rm cb-home-go-example-10000
+volume rm booth-pgdata-go-example
+volume rm booth-mysqldata-server-example-2
 network rm go-example-10000-net
 network rm go-example-10000-egress-net
 EOF

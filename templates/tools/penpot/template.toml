@@ -1,4 +1,4 @@
-cb-version = "0.1.0"
+cb-version = "0.2.0"
 display-name = "Penpot [experimental]"
 display-disc = "Experimental — self-hosted open-source design tool (Figma-class)"
 display-detail = """EXPERIMENTAL — new, not yet battle-tested; expect rough edges. \
@@ -9,7 +9,7 @@ server does not start or publish a port on its own — add +autostart to run it 
 on boot, and +expose to reach it from the host.
 
 First browser visit creates the account (email verification is off). Design \
-assets persist in a named Docker volume (booth-penpot-assets). PNG/PDF export \
+assets persist in a named Docker volume per project (booth-penpot-assets-<project>). PNG/PDF export \
 needs the optional +exporter extension (Playwright/Chromium, ~650MB). Pin the \
 image tag with penpot:2.18.1 or penpot:latest; the default is 2.18.1."""
 display-order = 27
@@ -26,7 +26,7 @@ requires = ["postgresql", "redis"]
 
 run-args = [
     "-e", "PENPOT_PORT=${PENPOT_PORT}",
-    "-v", "booth-penpot-assets:/opt/data/assets",
+    "-v", "booth-penpot-assets-{project}:/opt/data/assets",
 ]
 
 [params.PENPOT_VERSION]

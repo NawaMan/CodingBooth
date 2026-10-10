@@ -1,7 +1,7 @@
-cb-version = "1.0.0"
+cb-version = "2.0.0"
 display-name = "Redis"
 display-disc = "Redis in-memory store with persistent volume"
-display-detail = "Installs Redis in-memory data store with a persistent Docker volume for data storage across container restarts."
+display-detail = "Installs Redis in-memory data store with a persistent Docker volume for data storage across container restarts. The volume is per project (booth-redisdata-<project>), so projects do not share data."
 display-order = 20
 tags = [
     "database",
@@ -11,7 +11,7 @@ tags = [
 
 run-args = [
     # Persist Redis data across container restarts
-    "-v", "booth-redisdata:/home/coder/.redis",
+    "-v", "booth-redisdata-{project}:/home/coder/.redis",
 ]
 
 [params.REDIS_VERSION]

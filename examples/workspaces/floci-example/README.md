@@ -53,7 +53,7 @@ fine; the typed commands are how you would actually use Floci in a project.
 | Emulator      | Floci AWS (port 4566, LocalStack-compatible)         |
 | CLI           | `floci` (start/stop/wait/env) and `aws`              |
 | Docker        | DinD sidecar, required by `floci start`              |
-| Persistence   | Named volume `booth-flocidata` → `~/.floci`          |
+| Persistence   | Named volume `booth-flocidata-floci-example` → `~/.floci` |
 | Sample        | `demo.sh` — create a bucket and round-trip a file    |
 
 The dummy keys (`test` / `test`) are exported in every login shell. They are accepted by
