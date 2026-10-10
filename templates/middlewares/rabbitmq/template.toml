@@ -1,7 +1,7 @@
-cb-version = "1.0.0"
+cb-version = "2.0.0"
 display-name = "RabbitMQ"
 display-disc = "RabbitMQ message broker (AMQP 0-9-1) + management UI"
-display-detail = "Installs RabbitMQ from the distro package and configures a dev user, vhost, and management UI. Data dir: /opt/rabbitmq."
+display-detail = "Installs RabbitMQ from the distro package and configures a dev user, vhost, and management UI. Data dir: /opt/rabbitmq. Kept in a per-project Docker volume (booth-rabbitmqdata-<project>)."
 display-order = 50
 tags = [
     "rabbitmq",
@@ -11,7 +11,7 @@ tags = [
 
 run-args = [
     # Persist RabbitMQ data across container restarts
-    "-v", "booth-rabbitmqdata:/opt/rabbitmq",
+    "-v", "booth-rabbitmqdata-{project}:/opt/rabbitmq",
 ]
 
 [params.RABBIT_VERSION]

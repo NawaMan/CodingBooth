@@ -115,12 +115,14 @@ Reclaims disk from the booths run in `examples/workspaces/` — without the coll
 **What it removes:**
 - Stopped example booth containers (`cb.code-path` under `*/examples/workspaces/*`) and their stopped sidecars
 - Example images — `codingbooth-local:<example-folder>-<variant>-<version>`
-- Example home volumes (`cb-home-<example>`) and DinD/egress networks (`<example>-<port>-net`)
+- Example home volumes (`cb-home-<example>`), example data volumes (labelled
+  `cb.project=<example>`, e.g. `booth-pgdata-<example>`), and DinD/egress networks
+  (`<example>-<port>-net`)
 - With `--dangling`: all dangling `<none>` images; with `--build-cache`: the whole build cache (any project's)
 
-**Never removed:** running booths and anything they use, the shared service volumes
-(`booth-pgdata`, `booth-mysqldata`, … — shared by every project using those templates), and base
-images (`nawaman/codingbooth:*`). Uses `$BOOTH_ENGINE` (default `docker`).
+**Never removed:** running booths and anything they use, the old machine-wide service volumes
+(`booth-pgdata`, `booth-mysqldata`, … — from before data volumes were per project, possibly holding
+another project's data), and base images (`nawaman/codingbooth:*`). Uses `$BOOTH_ENGINE` (default `docker`).
 
 ---
 

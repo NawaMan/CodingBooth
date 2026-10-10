@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 
 set -Eeuo pipefail
 
@@ -81,11 +81,11 @@ CB_PG_CONF_DIR="/opt/codingbooth/postgresql"
 PG_VER=$(pg_config --version 2>/dev/null | grep -oP '\d+' | head -1)
 PG_DATA="/var/lib/postgresql/${PG_VER}/main"
 
-# booth-pgdata is a named volume reused across booths. The postgres UID in
-# the image can drift (this image is 100; an older one left the volume at
-# 112). A 0700 data dir owned by the old UID makes `cp pg_hba.conf` fail
-# with "Permission denied" and, under booth-entry's set -e, takes the
-# booth down before anything else starts.
+# The data dir is a named volume (booth-pgdata-<project>) reused across
+# starts. The postgres UID in the image can drift (this image is 100; an
+# older one left the volume at 112). A 0700 data dir owned by the old UID
+# makes `cp pg_hba.conf` fail with "Permission denied" and, under
+# booth-entry's set -e, takes the booth down before anything else starts.
 if [ -d /var/lib/postgresql ]; then
   if [ -d "$PG_DATA" ]; then
     sudo -u postgres test -r "$PG_DATA" 2>/dev/null || \

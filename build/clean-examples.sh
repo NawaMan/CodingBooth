@@ -12,11 +12,15 @@
 #   sidecars    stopped, label cb.role=sidecar, cb.parent = an example booth name
 #   images      codingbooth-local:<example-folder>-<variant>-<version>
 #   volumes     cb-home-<example booth>  (persisted homes)
+#               data volumes labelled cb.volume=project, cb.project=<example>
+#               (booth-pgdata-<example>, ... — one per project since templates
+#               name them <service>-{project})
 #   networks    <example booth>-<port>-net / -egress-net  (DinD / egress)
 #
 # Never touched: running booths (and so their images / volumes / networks), the
-# shared service volumes (booth-pgdata, booth-mysqldata, ... — every project using
-# those templates shares them), and base images (nawaman/codingbooth:*).
+# old machine-wide service volumes (booth-pgdata, booth-mysqldata, ... — from before
+# they were per project, possibly holding another project's data), and base images
+# (nawaman/codingbooth:*).
 #
 # Compatible with macOS's stock Bash 3.2.
 
@@ -35,8 +39,8 @@ show_help() {
     cat <<EOF
 Usage: ./build/clean-examples.sh [options]
 
-Remove the containers, images, home volumes and networks created by the booths in
-examples/workspaces/. Lists what it found, asks, then removes it.
+Remove the containers, images, home and data volumes, and networks created by the
+booths in examples/workspaces/. Lists what it found, asks, then removes it.
 
 Options:
   -n, --dry-run      List what would be removed; remove nothing
@@ -45,8 +49,9 @@ Options:
       --build-cache  Also clear the build cache — any project's (it is only a cache)
   -h, --help         Show this help
 
-Running booths are skipped, and so is anything they use. Shared service volumes
-(booth-pgdata, booth-mysqldata, ...) and base images are never removed.
+Running booths are skipped, and so is anything they use. The old machine-wide
+service volumes (booth-pgdata, booth-mysqldata, ...) and base images are never
+removed.
 
 Engine: \$BOOTH_ENGINE (default: docker).
 EOF
@@ -71,9 +76,11 @@ fi
 
 # Example names are the folder names: a booth's project name is its folder name.
 NAMES=""
+RAW_NAMES=""
 for dir in "$EXAMPLES_DIR"/*/; do
     name="$(basename "$dir")"
     [[ -d "$dir/.booth" ]] || continue
+    RAW_NAMES="$RAW_NAMES $name"
     # Escape regex metacharacters (a folder name is plain, but be safe about '.').
     name="$(printf '%s' "$name" | sed 's/[][\.*^$+?(){}|]/\\&/g')"
     NAMES="${NAMES:+$NAMES|}$name"
@@ -110,6 +117,16 @@ IMAGES="$("$ENGINE" images --filter 'reference=codingbooth-local' \
 VOLUMES="$("$ENGINE" volume ls -q --filter label=cb.managed=true \
     | awk -v re="^cb-home-($NAMES)(-[0-9]+)?$" '$0 ~ re')"
 
+# A project's data volumes carry its name as a label (cb.project), set by booth when
+# it creates <service>-{project}. Matching the label, not the name, cannot reach a
+# look-alike project. A volume a running booth uses is refused by the engine.
+DATA_VOLUMES=""
+for name in $RAW_NAMES; do
+    found="$("$ENGINE" volume ls -q --filter label=cb.volume=project --filter "label=cb.project=$name")"
+    [[ -n "$found" ]] && DATA_VOLUMES="${DATA_VOLUMES:+$DATA_VOLUMES
+}$found"
+done
+
 NETWORKS="$("$ENGINE" network ls --format '{{.Name}}' \
     | awk -v re="^($NAMES)-[0-9]+-(egress-)?net$" '$0 ~ re')"
 
@@ -134,6 +151,7 @@ echo
 section "Stopped containers" "$CONTAINERS" 2
 section "Images"             "$IMAGES"
 section "Home volumes"       "$VOLUMES"
+section "Data volumes"       "$DATA_VOLUMES"
 section "Networks"           "$NETWORKS"
 $DANGLING    && echo "Dangling images: all of them (--dangling)"
 $BUILD_CACHE && echo "Build cache: all of it (--build-cache)"
@@ -144,7 +162,7 @@ if [[ -n "$RUNNING" ]]; then
 fi
 echo
 
-TOTAL=$(( $(count "$CONTAINERS") + $(count "$IMAGES") + $(count "$VOLUMES") + $(count "$NETWORKS") ))
+TOTAL=$(( $(count "$CONTAINERS") + $(count "$IMAGES") + $(count "$VOLUMES") + $(count "$DATA_VOLUMES") + $(count "$NETWORKS") ))
 if [[ $TOTAL -eq 0 ]] && ! $DANGLING && ! $BUILD_CACHE; then
     echo "Nothing to clean."
     exit 0
@@ -192,6 +210,7 @@ remove_each() { # label, lines ("id" or "id|shown-as"), command...
 remove_each container "$CONTAINERS" rm
 remove_each image     "$(printf '%s\n' "$IMAGES"     | cut -d'|' -f1 | sed '/^$/d')" rmi
 remove_each volume    "$VOLUMES"  volume rm
+remove_each volume    "$DATA_VOLUMES" volume rm
 remove_each network   "$NETWORKS" network rm
 
 if $DANGLING; then
