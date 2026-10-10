@@ -4,6 +4,13 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Fix: `--writable-booth` no longer drops `.booth/cache/` and `.booth/shared/`.** Both were
+  mounted only on the read-only `.booth/` path, so `--writable-booth` (or `writable-booth = true`)
+  silently started a booth without them — and skipped the check that the cache is gitignored.
+  They are now mounted either way.
+- **New doc: [In and Out of the Booth](IN-OUT.md)** — every way to put files into a booth, or
+  connect it to something, outside `/home/coder/code`.
+
 - **`booth just-init` — a starter Justfile whose recipes run in the booth.** It defines
   `{{run-in-booth}}` and `{{run-on-host}}`. On the host, a `{{run-in-booth}}` line runs through
   `./booth exec --run --`, starting the booth if it is not running; inside the booth it runs as

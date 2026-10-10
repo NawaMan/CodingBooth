@@ -1,6 +1,6 @@
 # CodingBooth
 
-**Current Version:** v0.80.0--rc1 — [View Changelog](docs/CHANGELOG.md)
+**Current Version:** v0.80.0--in-out-doc — [View Changelog](docs/CHANGELOG.md)
 
 ![Works On My Machine](docs/Works-On-My-Machine-small.png)
 
@@ -447,6 +447,7 @@ User-facing guides:
 - **[booth home](docs/BOOTH_HOME.md)** — Home directory customization: seeding, overrides, credentials
 - **[booth persist-home](docs/BOOTH_PERSIST_HOME.md)** — Persist entire home directory across sessions via Docker volume
 - **[booth cache](docs/BOOTH_LOCALCACHE.md)** — Local persistent state: shell history, tool configs across sessions
+- **[In and out of the booth](docs/IN-OUT.md)** — Every way to put or connect things outside `/home/coder/code`: build, mount, copy, env, network
 - **[booth expose](docs/BOOTH_EXPOSE.md)** — Runtime port tunneling: expose container ports to the host without restarting
 - **[booth message](docs/BOOTH_MESSAGE.md)** — Send interactive messages and toast notifications to booth users
 - **[booth runtime](docs/BOOTH_RUNTIME.md)** — Session timers: elapsed time and countdown to shutdown
