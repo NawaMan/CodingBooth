@@ -13,9 +13,9 @@ Usage:
   $0 [<X.Y.Z>|latest]
 
 Examples:
-  $0                         # install the current release
-  $0 --version 0.2.0         # pin a specific version
-  $0 0.2.0                   # same, in the form a Boothfile emits
+  $0                         # install the pinned default (0.3.0)
+  $0 --version 0.3.0         # pin a specific version
+  $0 0.3.0                   # same, in the form a Boothfile emits
   $0 --version latest        # install the latest GitHub release
 
 Notes:
@@ -30,13 +30,16 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
 # ---- defaults / args ----
-ENVFOLIO_DEFAULT_VER="0.2.0"   # fallback when 'latest' cannot be resolved
-REQ_VER="latest"               # no version given means "the current release"
+# No version given means the pinned default, not 'latest': the base image then
+# gets the same EnvFolio on every build, and an upstream release that is not out
+# yet (a draft is invisible to the API) cannot silently pick an older one.
+ENVFOLIO_DEFAULT_VER="0.3.0"   # also the fallback when 'latest' cannot be resolved
+REQ_VER="$ENVFOLIO_DEFAULT_VER"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --version) shift; REQ_VER="${1:-latest}"; shift ;;
     -h|--help) usage; exit 0 ;;
-    # `setup envfolio 0.2.0` in a Boothfile compiles to a positional argument,
+    # `setup envfolio 0.3.0` in a Boothfile compiles to a positional argument,
     # so accept that spelling too.
     -*) echo "❌ Unknown arg: $1" >&2; usage; exit 2 ;;
     *) REQ_VER="$1"; shift ;;
@@ -112,6 +115,7 @@ cat <<'EON'
 - Create the store:          envfolio store init
 - Add a text / a secret:     envfolio text insert gh/user   |   envfolio secret insert gh/token
 - Run with them as env vars: envfolio exec --secrets gh -- gh auth status
+- Move items to another booth: envfolio store export   |   envfolio store import
 
 Notes:
 - The store is ~/.envfolio (or $ENVFOLIO_STORE_DIR) and its GPG key lives in
