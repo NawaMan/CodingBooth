@@ -25,8 +25,9 @@ This file contains a list of changes for each released version.
   variables (`envfolio exec --secrets <entry> -- <cmd>`; secrets only with `--secrets`). The base
   image installs it with `pass`, checksum-verified, and the login welcome lists it. Select
   `tools/envfolio` to pin a version, and `+store-cache` to keep the store and its GPG key in
-  `.booth/cache/` across container restarts. The default is EnvFolio 0.2.0, which makes its store
-  private (`700`). With `+store-cache` the store is `~/.local/share/envfolio/store`
+  `.booth/cache/` across container restarts. The image and the template pin EnvFolio 0.3.0 (not
+  `latest`), which makes its store private (`700`) and walks `store init` / `export` / `import`
+  through what they need. With `+store-cache` the store is `~/.local/share/envfolio/store`
   (`ENVFOLIO_STORE_DIR`): the cached folder is its parent, so `envfolio store init` and
   `store restore` create it there.
 
