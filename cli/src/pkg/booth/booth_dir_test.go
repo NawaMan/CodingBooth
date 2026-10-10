@@ -65,3 +65,38 @@ func TestNormalizeDockerFile_ExplicitBoothDirSkipsProjectBoothfile(t *testing.T)
 		t.Fatalf("NormalizeDockerFile() = %q, want empty when the spec has no Boothfile", got)
 	}
 }
+
+// --writable-booth only changes how the project's own .booth/ is mounted. It must not drop
+// the .booth/cache/ and .booth/shared/ mounts, which used to be added only on the read-only path.
+func TestPrepareCommonArgs_CacheAndSharedMountedEitherWay(t *testing.T) {
+	for _, writable := range []bool{false, true} {
+		project := t.TempDir()
+		cacheFile := filepath.Join(project, ".booth", "cache", "home", "coder", ".bash_history")
+		sharedFile := filepath.Join(project, ".booth", "shared", "home", "coder", ".team")
+		for _, f := range []string{cacheFile, sharedFile} {
+			if err := os.MkdirAll(filepath.Dir(f), 0755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(f, nil, 0644); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		builder := &appctx.AppContextBuilder{
+			CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+			BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+			RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+			Cmds:       ilist.NewAppendableList[ilist.List[string]](),
+		}
+		builder.Config.Name = "demo"
+		builder.Config.ProjectName = "demo"
+		builder.Config.Variant = "base"
+		builder.Config.Code = nillable.NewNillableString(project)
+		builder.Config.WritableBooth = writable
+
+		ctx := PrepareCommonArgs(builder.Build())
+
+		assertContainsArgPair(t, ctx.CommonArgs(), "-v", cacheFile+":/home/coder/.bash_history")
+		assertContainsArgPair(t, ctx.CommonArgs(), "-v", sharedFile+":/home/coder/.team")
+	}
+}
