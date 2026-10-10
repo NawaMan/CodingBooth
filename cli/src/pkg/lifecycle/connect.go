@@ -39,6 +39,7 @@ func (f *stringSliceFlag) Set(value string) error {
 // These apply only when --run creates a missing booth; against an existing booth
 // they are asserted (fail by default) unless --accept-existing is set.
 type connectCreateOpts struct {
+	engine            string // explicit --engine also applies when --run creates the booth
 	port              string // --port (empty if unset)
 	acceptExisting    bool   // --accept-existing: connect despite create-intent mismatch
 	dindAllowed       bool   // --dind-allowed: forwarded so a --run create need not ask
@@ -50,6 +51,7 @@ func Shell(args []string, stderr io.Writer) error {
 	positional, flags := extractPositionalAndFlags(args)
 
 	flagSet := flag.NewFlagSet("shell", flag.ContinueOnError)
+	engineChoice := engineFlag(flagSet)
 	name := flagSet.String("name", "", "Container name")
 	code := flagSet.String("code", "", "Code path used to find (or, with --run, create) the booth")
 	shell := flagSet.String("shell", "", "Shell to launch (default: container default)")
@@ -76,7 +78,7 @@ func Shell(args []string, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	create := connectCreateOpts{port: *port, acceptExisting: *acceptExisting, dindAllowed: *dindAllowed, privilegedAllowed: *privilegedAllowed}
+	create := connectCreateOpts{engine: *engineChoice, port: *port, acceptExisting: *acceptExisting, dindAllowed: *dindAllowed, privilegedAllowed: *privilegedAllowed}
 	target, cleanup, err := resolveConnectTarget(*name, positional, codePath, *run, *keepAlive, *silenceBuild, create, stderr)
 	if err != nil {
 		return err
@@ -113,6 +115,7 @@ func Exec(args []string, stderr io.Writer) error {
 	positional, flags := extractPositionalAndFlags(beforeSep)
 
 	flagSet := flag.NewFlagSet("exec", flag.ContinueOnError)
+	engineChoice := engineFlag(flagSet)
 	name := flagSet.String("name", "", "Container name")
 	code := flagSet.String("code", "", "Code path used to find (or, with --run, create) the booth")
 	dir := flagSet.String("dir", "", "Working directory inside the container")
@@ -149,7 +152,7 @@ func Exec(args []string, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	create := connectCreateOpts{port: *port, acceptExisting: *acceptExisting, dindAllowed: *dindAllowed, privilegedAllowed: *privilegedAllowed}
+	create := connectCreateOpts{engine: *engineChoice, port: *port, acceptExisting: *acceptExisting, dindAllowed: *dindAllowed, privilegedAllowed: *privilegedAllowed}
 	target, cleanup, err := resolveConnectTarget(*name, positional, codePath, *run, *keepAlive, *silenceBuild, create, stderr)
 	if err != nil {
 		return err
@@ -234,7 +237,7 @@ func resolveConnectTarget(name string, positional []string, codePath string, run
 
 	// Look the booth up on every engine (as stop/restart do) and act on the
 	// one that owns it.
-	engines := resolveLifecycleEngines(codePath)
+	engines := resolveLifecycleEngines(codePath, create.engine)
 	containers, err := managedContainersAcross(engines, false, stderr)
 	if err != nil {
 		return managedContainer{}, noCleanup, commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
@@ -906,6 +909,9 @@ func buildConnectRunArgs(explicitName string, keepAlive bool, create connectCrea
 	if explicitName != "" {
 		runArgs = append(runArgs, "--name", explicitName)
 	}
+	if create.engine != "" {
+		runArgs = append(runArgs, "--engine", create.engine)
+	}
 	if create.port != "" {
 		runArgs = append(runArgs, "--port", create.port)
 	}
@@ -925,7 +931,7 @@ func buildConnectRunArgs(explicitName string, keepAlive bool, create connectCrea
 // Flags that take a value (-e VAL, --name VAL) consume the next arg.
 func extractPositionalAndFlags(args []string) (positional []string, flags []string) {
 	knownValueFlags := map[string]bool{
-		"-e": true, "--name": true, "--shell": true,
+		"-e": true, "--name": true, "--shell": true, "--engine": true, "-engine": true,
 		"--dir": true, "--envfile": true, "--port": true, "--code": true,
 	}
 

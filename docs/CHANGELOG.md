@@ -4,6 +4,17 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Native booth tools:** `booth cp`, `inspect`, `stats`, `top`, `diff`, and `wait`
+  resolve a managed booth and invoke its owning engine. `cp` transfers files outside
+  the shared project using `:PATH` or `NAME:PATH`; Docker/Podman also support stopped
+  booths and tar streams. Apple supports ordinary copies while running, inspection,
+  and statistics; unsupported commands fail clearly. See [Booth tools](BOOTH_TOOLS.md).
+- **Lifecycle commands accept `--engine`.** It overrides config and `CB_ENGINE`,
+  including `shell`/`exec --run` creation and home-volume commands. Start, stop,
+  restart, and remove now also parse flags after positional names.
+- **JSON for automation:** `booth list --json` and `booth expose list --json` return
+  structured output, with empty arrays for empty results.
+
 - **Service data volumes are per project — breaking for existing data.** The postgresql, mysql,
   mongodb, redis, kafka, rabbitmq, floci and penpot templates used one machine-wide volume each
   (`booth-pgdata`, …), so every project on the machine shared one database, and two booths running

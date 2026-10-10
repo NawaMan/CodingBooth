@@ -294,6 +294,7 @@ See [Expose](BOOTH_EXPOSE.md), [Profiles](BOOTH_PROFILES.md) and [Security](BOOT
 
 | Mechanism | What it does |
 |---|---|
+| [`booth cp`](BOOTH_TOOLS.md#copy-files-outside-the-shared-project) | Copies files between host and booth outside the already-shared project; the destination determines persistence |
 | `booth exec`, `booth shell` | Runs commands inside the booth — which can change anything |
 | `booth message` | Sends a message from the host to the booth's user |
 | `booth home-volume-import` / `-export` | Moves a persisted home's contents in or out (experimental) |
@@ -346,7 +347,6 @@ Found while putting this map together; none is fixed yet.
   cannot give one booth its own: `--add-mount` changes the config every booth of the folder reads,
   and a profile can only add a mount, so one on the template's path is a duplicate Docker refuses.
   Only a second folder separates them.
-- **There is no `booth cp`** to drop a file into a running booth outside `code/`.
 
 ---
 
