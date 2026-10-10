@@ -10,7 +10,7 @@ run-args = [
     "-v", "~/AppData/Roaming/pip:/etc/cb-home-seed/.config/pip:ro",
     "-v", "$HOME/.m2:/home/coder/.m2",
     "-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro",
-    "-v", "booth-pgdata:/var/lib/postgresql",
+    "-v", "booth-pgdata-{project}:/var/lib/postgresql",
     "-p", "${NOTEBOOK_PORT:-+8888}:18888",
     "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
     "-v", "~/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro",

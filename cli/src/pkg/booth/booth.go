@@ -906,6 +906,16 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.RunArgs = rewriteAtCodeVolumeGroups(builder.RunArgs, codePath)
 	builder.CommonArgs = rewriteAtCodeVolumeGroups(builder.CommonArgs, codePath)
 
+	// Expand {project} in volume sources (booth-pgdata-{project}) and create any
+	// such volume that is new, labelled with its project.
+	runVolumes, commonVolumes := []projectVolume(nil), []projectVolume(nil)
+	builder.RunArgs, runVolumes = expandProjectVolumeGroups(builder.RunArgs, ctx.ProjectName())
+	builder.CommonArgs, commonVolumes = expandProjectVolumeGroups(builder.CommonArgs, ctx.ProjectName())
+	if !ctx.Dryrun() {
+		ensureProjectVolumes(append(runVolumes, commonVolumes...), ctx.ProjectName(),
+			engineOrDocker(ctx.Engine()), engineVolumeOps(ctx), os.Stderr)
+	}
+
 	return builder.Build()
 }
 

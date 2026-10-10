@@ -96,23 +96,40 @@ Templates can specify `run-args` to add Docker flags when the container starts.
 A common use case is **persistent volumes** for databases so data survives container restarts.
 
 ```toml
-# Named Docker volume — data persists across container restarts
+# Named Docker volume, one per project — data persists across container restarts
 run-args = [
-    "-v", "booth-pgdata:/var/lib/postgresql",
+    "-v", "booth-pgdata-{project}:/var/lib/postgresql",
 ]
 ```
 
-### Database Volume Conventions
+### Service Volume Conventions
 
-| Database   | Volume Name        | Mount Point            |
-|------------|--------------------|------------------------|
-| PostgreSQL | `booth-pgdata`     | `/var/lib/postgresql`  |
-| MySQL      | `booth-mysqldata`  | `/var/lib/mysql`       |
+Name a service's data volume `booth-<service>data-{project}`. `{project}` stays literal in
+`config.toml` and is replaced with the project name (its folder name) when the booth starts, so
+every project — every clone, every worktree — gets its own data, and the same committed
+`config.toml` works for all of them. A volume with one fixed name would be shared by every project
+on the machine, and two booths running at once would open the same data directory.
 
-These use **named Docker volumes** (not bind mounts), so Docker manages the storage.
-Data persists even if the container is removed, as long as the volume exists.
+| Template   | Volume                            | Mount point            |
+|------------|-----------------------------------|------------------------|
+| postgresql | `booth-pgdata-{project}`          | `/var/lib/postgresql`  |
+| mysql      | `booth-mysqldata-{project}`       | `/var/lib/mysql`       |
+| mongodb    | `booth-mongodata-{project}`       | `/home/coder/.mongodb` |
+| redis      | `booth-redisdata-{project}`       | `/home/coder/.redis`   |
+| kafka      | `booth-kafkadata-{project}`       | `/opt/kafkadata`       |
+| rabbitmq   | `booth-rabbitmqdata-{project}`    | `/opt/rabbitmq`        |
+| floci      | `booth-flocidata-{project}`       | `/home/coder/.floci`   |
+| penpot     | `booth-penpot-assets-{project}`   | `/opt/data/assets`     |
 
-To reset a database: `docker volume rm booth-pgdata` (or `booth-mysqldata`).
+These are **named Docker volumes** (not bind mounts), so Docker manages the storage. Booth creates
+one the first time it is needed, labelled `cb.project=<project>` and `cb.volume=project`. Data
+persists even if the container is removed, as long as the volume exists.
+
+A user overrides one with `booth config --add-mount <volume>:<mount point>`: a user mount replaces
+the template's mount on the same path (see
+[Run-Args Ownership](../docs/BOOTH_CONFIG.md#run-args-ownership-convention)).
+
+To reset a project's database: `docker volume rm booth-pgdata-<project>` while no booth uses it.
 
 ### Other Run Args Uses
 

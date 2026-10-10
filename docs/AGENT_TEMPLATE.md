@@ -143,7 +143,7 @@ install go golang.org/x/tools/gopls@latest
 | `vm-shm-size`   | string     | Config: `/dev/shm` size — engine `apple` only; `${PARAM}` expanded |
 | `cmds`          | []string   | Config: default commands                                 |
 | `build-args`    | []string   | Config: Docker build arguments                           |
-| `run-args`      | []string   | Config: Docker run arguments (flag-value pairs deduped). Volume source `@code` is rewritten at run time to the host project directory (the same path mounted at `/home/coder/code`) — use it to bind the project a second time into a tool jail that rejects symlink-out-of-jail. |
+| `run-args`      | []string   | Config: Docker run arguments (flag-value pairs deduped). Volume source `@code` is rewritten at run time to the host project directory (the same path mounted at `/home/coder/code`) — use it to bind the project a second time into a tool jail that rejects symlink-out-of-jail. `{project}` in a volume source is replaced at run time with the project name — name a service's data volume `booth-<service>data-{project}` so each project gets its own (booth creates it, labelled `cb.project`). |
 | `requires`      | []string   | Other template names that must also be selected          |
 | `cache-files`   | []string   | Files to persist in `.booth/cache/` (see below)          |
 | `cache-dirs`    | []string   | Directories to persist in `.booth/cache/`                |

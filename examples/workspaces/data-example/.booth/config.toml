@@ -9,7 +9,7 @@ run-args = [
     "-v", "~/Library/Application Support/pip:/etc/cb-home-seed/.config/pip:ro",
     "-v", "~/AppData/Roaming/pip:/etc/cb-home-seed/.config/pip:ro",
     "-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro",
-    "-v", "booth-pgdata:/var/lib/postgresql",
+    "-v", "booth-pgdata-{project}:/var/lib/postgresql",
     "-p", "+8888:18888",
     "--publish", "+3000:13000"
 ]

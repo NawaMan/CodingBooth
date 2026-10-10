@@ -61,7 +61,7 @@ different places.
 | **Host user** | `--mount` / run-args `-v $HOME/…` (`java+m2`, `rust+cargo-cache`) | `/etc/cb-home-seed/` (credential extensions, `npmrc`, `pip-config`) | `/etc/cb-home/` | — |
 | **Project, in git** | **Shared** — `.booth/shared/` | `.booth/home-seed/` | `.booth/home/` | Boothfile, `*-install` extensions |
 | **Project, not in git** | **Cache** — `.booth/cache/` | — | — | — |
-| **Docker storage** | `--persist-home` (one volume per booth); database volumes (one per machine) | — | — | — |
+| **Docker storage** | `--persist-home` (one volume per booth); service volumes (one per project) | — | — | — |
 | **Image** | — | `/etc/skel` re-seed (desktop launchers) | — | variant, `--image`, `--dockerfile` |
 | **None** | the container's own layer | | | |
 
@@ -91,7 +91,7 @@ See [Build](BOOTH_BUILD.md), [Customization](BOOTH_CUSTOMIZATION.md) and
 | **Shared** | `shared-files` / `shared-dirs`; or files placed in `.booth/shared/` by hand | `.booth/shared/<path>` → `/<path>`. Read-write. **Meant for git** |
 | **Bind mount** | `booth config --mount` / `--add-mount` (each adds a `-v`); `run-args = ["-v", …]` in `config.toml` or a template | Any host path → any container path, read-write or `:ro`. An entry whose host path does not exist is dropped with a notice |
 | `@code` source | run-args `-v @code:<path>` (`anythingllm+project-fs`) | The project folder, mounted a second time at another path |
-| **Named volume** | run-args `-v <name>:<path>` (`postgresql`, `mysql`, `redis`, `mongodb`, `penpot`) | Docker storage → path. The built-in names are fixed, so every project on the machine shares one volume per database |
+| **Named volume** | run-args `-v <name>:<path>` (`postgresql`, `mysql`, `redis`, `mongodb`, `penpot`, …) | Docker storage → path. `{project}` in the name makes it one volume per project |
 | `--persist-home` | CLI / `config.toml` | Volume `cb-home-<name>` → the whole of `/home/coder`. Seeding stops after the first run |
 | `--tls-cert`, `--tls-key` | CLI | Host files → `/tmp/booth-tls-*.pem`, read-only |
 | Devices and GPUs | run-args `--device /dev/kvm`, `--gpus all` | Host hardware → the booth |
@@ -148,59 +148,61 @@ inside that folder.
 
 ### Named volumes in use
 
-Every built-in name is **fixed and global**: all projects and booths on the machine that use it
-share one volume.
+The service templates name their volume `<prefix>-{project}`. `{project}` stays literal in
+`config.toml` and becomes the project name (its folder name) when the booth starts, so each
+project — each clone, each worktree — has its own data.
 
 | Volume | Template | Examples using it |
 |---|---|---|
-| `booth-pgdata` | `middlewares/postgresql` | affine, rails, data, pern, postgrest, `examples/demo` |
-| `booth-mysqldata` | `middlewares/mysql` | lamp, lemp, wordpress |
-| `booth-mongodata` | `middlewares/mongodb` | mean, mern |
-| `booth-redisdata` | `middlewares/redis` | affine |
-| `booth-kafkadata` | `middlewares/kafka` | — |
-| `booth-rabbitmqdata` | `middlewares/rabbitmq` | — |
-| `booth-flocidata` | `tools/floci` | floci |
-| `booth-penpot-assets` | `tools/penpot` | — |
+| `booth-pgdata-{project}` | `middlewares/postgresql` | affine, rails, data, pern, postgrest, `examples/demo` |
+| `booth-mysqldata-{project}` | `middlewares/mysql` | lamp, lemp, wordpress |
+| `booth-mongodata-{project}` | `middlewares/mongodb` | mean, mern |
+| `booth-redisdata-{project}` | `middlewares/redis` | affine |
+| `booth-kafkadata-{project}` | `middlewares/kafka` | — |
+| `booth-rabbitmqdata-{project}` | `middlewares/rabbitmq` | — |
+| `booth-flocidata-{project}` | `tools/floci` | floci |
+| `booth-penpot-assets-{project}` | `tools/penpot` | — |
 | `cb-home-<booth name>` | the CLI, for `--persist-home` | — (one per booth) |
 
-So the six postgres examples share one database, and running two at once opens it twice. Appwrite
-is different: its Compose volumes live in its own Docker-in-Docker sidecar, not on the host.
+Booth creates a `{project}` volume the first time it is needed, labelled `cb.project=<project>` and
+`cb.volume=project`, so `docker volume ls --filter label=cb.project=myproj` lists a project's data.
+
+Two folders with the same name share a project name, and so a volume. Two booths of the *same*
+project running at once (`--name '{project}-{port}'`) also share it — give the second its own with
+`--add-mount`.
+
+**Before per-project names** these volumes had one fixed name (`booth-pgdata`, …) shared by every
+project. The first start that creates a project's new volume while the old one exists prints a
+notice with both ways to keep the old data: mount it (`booth config --add-mount
+booth-pgdata:/var/lib/postgresql`) or copy it into the new volume. The old volume is never removed
+by booth.
+
+Appwrite is different: its Compose volumes live in its own Docker-in-Docker sidecar, not on the
+host.
 
 ### Adding or changing a named volume
 
-**Adding your own** works on any container path nothing else mounts. Use a name with no `/` as
-the source, and Docker creates the volume on the first start:
+**Adding your own** works on any container path. Use a name with no `/` as the source; `{project}`
+works here too. Docker creates the volume on the first start:
 
 ```bash
 booth config --no-tui --select go --mount 'myproj-data:/home/coder/.mydata'
 # config.toml:  run-args = ["--volume", "myproj-data:/home/coder/.mydata"]
 ```
 
-**Replacing a template's volume** is the hard case. Templates write their `-v` into `run-args`
-in `.booth/config.toml`:
+**Replacing a template's volume** is the same flag on the template's path. A user mount replaces
+the template's mount on the same container path, and survives every later `booth config`:
 
-```toml
-run-args = ["-v", "booth-pgdata:/var/lib/postgresql"]
+```bash
+booth config --no-tui --add-mount 'shared-pgdata:/var/lib/postgresql'   # use your own volume
+booth config --no-tui --remove-mount /var/lib/postgresql                # back to the template's
 ```
 
-To give one project its own database, **edit that line by hand**:
+The TUI's Mount field does the same. See
+[Run-Args Ownership](BOOTH_CONFIG.md#a-user-mount-replaces-the-templates-on-the-same-path).
 
-```toml
-run-args = ["-v", "myproj-pgdata:/var/lib/postgresql"]
-```
-
-Docker creates the new volume on the next start. `booth config` then sees `config.toml` as
-hand-edited — see [Hand-Written Files](BOOTH_CONFIG.md#hand-written-files).
-
-The flags do **not** work for this today:
-
-- `booth config --mount 'myproj-pgdata:/var/lib/postgresql'` *adds* a second entry beside the
-  template's, and Docker refuses to start with two mounts on one path ("Duplicate mount point").
-- `booth config --remove-mount /var/lib/postgresql` only matches mounts added with `--mount`, so it
-  reports *did not match anything* and leaves the template's entry in place.
-
-To reset a database instead, remove the volume while no booth uses it:
-`docker volume rm booth-pgdata`. Every project that uses that name loses its data.
+To reset a project's data, remove its volume while no booth uses it:
+`docker volume rm booth-pgdata-<project>`.
 
 ### Who uses `--persist-home`
 
@@ -295,12 +297,6 @@ committed. Cache is gitignored, and the booth checks that.
 
 Found while putting this map together; none is fixed yet.
 
-- **Database volumes are shared by every project on the machine.** `booth-pgdata` and friends have
-  fixed names, so two projects see each other's data, and two booths running at once open the same
-  data directory.
-- **A template's volume can only be changed by hand-editing `config.toml`.** `--mount` adds a
-  duplicate on the same path, and `--remove-mount` does not see template entries. The templates
-  already expand `${PARAM}` inside run-args, so the volume name could be a param.
 - **Nothing keeps secrets out of Shared.** Cache has a strict gitignore check; Shared has none,
   yet a browser's shared `Default/` folder also holds cookies and saved logins. The sample
   gitignores in [Shared State](BOOTH_SHARED.md#sample-gitignores) must be copied in by hand.
@@ -316,8 +312,6 @@ Found while putting this map together; none is fixed yet.
   and Shared can mount there.
 - **Template `[files]` cannot fill Cache or Shared** — only `home`, `home-seed` and `setups`.
 - **There is no `booth cp`** to drop a file into a running booth outside `code/`.
-- **Two front doors to one bind mount.** `--mount` and run-args `-v` produce the same `-v` but are
-  edited in different places.
 
 ---
 

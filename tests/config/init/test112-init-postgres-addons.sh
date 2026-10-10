@@ -133,7 +133,7 @@ TEST_COUNT=$((TEST_COUNT + 1))
 label="run-args merge the pgdata volume and the postgrest port "
 pad=$(printf '%*s' $((64 - ${#label})) '' | tr ' ' '.')
 echo -n "Test ${TEST_COUNT}: ${label}${pad} "
-if grep -qF '"booth-pgdata:/var/lib/postgresql"' "$config" && grep -qF '"3000:3000"' "$config"; then
+if grep -qF '"booth-pgdata-{project}:/var/lib/postgresql"' "$config" && grep -qF '"3000:3000"' "$config"; then
     PASS_COUNT=$((PASS_COUNT + 1))
     echo -e "\033[32mPASSED\033[0m"
 else
