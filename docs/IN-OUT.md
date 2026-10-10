@@ -167,9 +167,11 @@ project — each clone, each worktree — has its own data.
 Booth creates a `{project}` volume the first time it is needed, labelled `cb.project=<project>` and
 `cb.volume=project`, so `docker volume ls --filter label=cb.project=myproj` lists a project's data.
 
-Two folders with the same name share a project name, and so a volume. Two booths of the *same*
-project running at once (`--name '{project}-{port}'`) also share it — give the second its own with
-`--add-mount`.
+Two folders with the same name share a project name, and so a volume. Two booths started from the
+*same* folder also share it, whatever their `--name` — `{project}` comes from the folder, not the
+booth. Do not run two database booths on one volume at once: two servers writing one data folder
+can corrupt it. For a second booth with its own data, start it from its own folder — a worktree
+(`git worktree add ../myproj-2`) or another clone — whose folder name gives it its own volume.
 
 **Before per-project names** these volumes had one fixed name (`booth-pgdata`, …) shared by every
 project. The first start that creates a project's new volume while the old one exists prints a
@@ -311,6 +313,10 @@ Found while putting this map together; none is fixed yet.
 - **Copies reach only `/home/coder`.** Nothing copies into `/etc` or `/opt` at start, though Cache
   and Shared can mount there.
 - **Template `[files]` cannot fill Cache or Shared** — only `home`, `home-seed` and `setups`.
+- **No per-booth volume for concurrent booths of one folder.** `--add-mount` and profiles both
+  cannot give one booth its own: `--add-mount` changes the config every booth of the folder reads,
+  and a profile can only add a mount, so one on the template's path is a duplicate Docker refuses.
+  Only a second folder separates them.
 - **There is no `booth cp`** to drop a file into a running booth outside `code/`.
 
 ---
