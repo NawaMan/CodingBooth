@@ -226,7 +226,7 @@ setup	opencode	1.0.0	ca71227c4bd11873653df20062ec2dfe0603ba0c1bc18e6d30405532fd0
 setup	openssh	1.0.0	6a93cef06723e5533a896967d599f9699809d12de641ad055aa5f7354568d0ee	variants/base/setups/openssh--setup.sh
 setup	opensshd	1.0.0	5c7dbf41db974b86119595853d8ec2f167dd6f0bd6f98e101f8faeb53aed5ce6	variants/base/setups/opensshd--setup.sh
 setup	orchis-gtk	0.1.0	03bb0f3bb90620590a2cd7ab9682d99544ae0ec3bef77be80a7e83b78b3e4df2	variants/base/setups/orchis-gtk--setup.sh
-setup	penpot	0.1.0	177037ae094cb6f08cde209c43b381d07e2f57fe7ec740174bea6551ca166d15	variants/base/setups/penpot--setup.sh
+setup	penpot	0.1.1	0ba8bca6a4b92800850822516405fa28b07e2e7213a6edd6c21522ad62258b38	variants/base/setups/penpot--setup.sh
 setup	penpot-exporter	0.1.0	966f1f4b8e5c4ef54b8cf0783df10e138367ebc89427cf46d604900ce980cacf	variants/base/setups/penpot-exporter--setup.sh
 setup	php	1.0.0	397c63cb432fd45e81a827200be0a0bde3f1ac4bc6da62595944a4e51a3b0a93	variants/base/setups/php--setup.sh
 setup	php-code-extension	1.0.0	938a5949e6a3723c576a0b6f7c4bf04f346db5fb165b976774730f8974d74dbf	variants/base/setups/php-code-extension--setup.sh
@@ -235,7 +235,7 @@ setup	plantuml	1.0.0	d929a039b50ee7b0087b7fca824005a28e8fb8429e104a04b3357cab9bc
 setup	plantuml-code-extension	0.1.0	cbc444d18c725e8c48e6e0beb9a1a71c2b71a80bc72cc4a62ee1f0ab32ee1cd3	variants/base/setups/plantuml-code-extension--setup.sh
 setup	playwright	1.0.0	b1c66d74796b338a6bf5cfdab1ef6638b54b40b3ee81e0e025185030ef5c7892	variants/base/setups/playwright--setup.sh
 setup	playwright-code-extension	1.0.0	19ce485ba67bda927701ee3143a1e254743214cf58fcf5b0e963a7715d95a2e5	variants/base/setups/playwright-code-extension--setup.sh
-setup	postgresql	1.0.0	709def882e35693113c8d4bd28c1a998891b47ba39ad44434796a444bb7ebdde	variants/base/setups/postgresql--setup.sh
+setup	postgresql	1.0.1	268c36bd11fed811535fb1fc6c4a9aa152525a5ba480d92110d2bbba2292756a	variants/base/setups/postgresql--setup.sh
 setup	postgrest	0.1.0	948c17d3e0be2f9fd8a7a65624720474b4b387aa1f75766fdeb7937419fa4069	variants/base/setups/postgrest--setup.sh
 setup	posting	1.0.0	b88d852b924aacf6d4452bb9e09768637614fa2640103b9c43e362b50d018bfb	variants/base/setups/posting--setup.sh
 setup	protobuf-code-extension	0.1.0	1d6fa2c8084c0f4f1033469dd521ad95c6ab33f1ff5313d9df498d263f890e6d	variants/base/setups/protobuf-code-extension--setup.sh
@@ -364,7 +364,7 @@ assets	booth-web-preview	0.1.0	b7777911fb75cb633a8aeaf373bd3e3ac579736797db2d8da
 assets	logo-files	0.1.0	72cdb4272e6be5df2ad0e959508803ba6ef927b6e040e4affa3dca1293409d4e	variants/base/setups/logo-files/.cb-version
 template	act	1.0.0	33cac4f54cb7ceebada109f40c0f846caf3615f230ac76e7724e6be1fadfd916	templates/tools/act/template.toml
 template	affine-desktop	0.1.0	6b4070ca55a0c5ccd37b2a7c95c9e3f5409423489d671f64e30f66b4a165b330	templates/tools/affine-desktop/template.toml
-template	affine-server	0.1.0	9670f13978d3a64da30ac3327fb3bee279c7cdf7d72dba70243c14555b0b911c	templates/tools/affine-server/template.toml
+template	affine-server	0.1.1	9e5440b287a83e7a9d41ef43333d3aa30c8da7748ce09c934b71ddf7d9615036	templates/tools/affine-server/template.toml
 template	aider	1.0.0	07ec35d83e2435528f7a84617d28dafebf3d12e3e202d30620c33e788db15c39	templates/ai-tools/aider/template.toml
 template	alacritty	1.0.0	dd6d86e867b51a6dfe0fb79c8190880c5e0030d01b4c03d343dec25d3aa0adaa	templates/desktops/alacritty/template.toml
 template	android-sdk	0.1.0	f194b7dcd13e80241455c5cebeaad4ad8009e9df9eec778cdbcb84be97a2a532	templates/tools/android-sdk/template.toml
@@ -427,7 +427,7 @@ template	exercism	1.0.0	0871fa644f331917e0e3bdbbba224a5f30501b42fd7805df64423ad4
 template	ffmpeg	1.0.0	c2df74ca40d15edbbbc161d19794ba58d7ad47b22e69b19e0009717792aef13c	templates/tools/ffmpeg/template.toml
 template	firebase	1.0.0	dc0e54f22dee9bc7241799bace704d20794388f1b7433d139edb2e5db3c8a07a	templates/tools/firebase/template.toml
 template	firefox	1.0.0	f66cae6754afb97560e80091f722fb74be336a468fa56769423ba963d0300557	templates/desktops/firefox/template.toml
-template	floci	0.1.0	22d3d4008aba1e1507dcf8c01296699f406c2d731a5aae2b7f7f60ec030df407	templates/tools/floci/template.toml
+template	floci	0.2.0	273eb53b10fd51dcc893c50ea2bbde99ed9b93394565113c948b57290f63b063	templates/tools/floci/template.toml
 template	flutter	0.1.0	d3c96cf81f4a7ce3750eabd1e8eb0f7bb1e901a09ec7acc3a6b4c0341f127054	templates/languages/flutter/template.toml
 template	fpc	1.0.0	833b92d6fb18707c1d678ee941562af8ccbe880c68abbe61bb4f0ec3f8604a62	templates/languages/fpc/template.toml
 template	freelens	0.1.0	8120af7df1f43318882fbe66b5f86b01da2cebe33cd66c431a1beacc07d8c41a	templates/tools/freelens/template.toml
@@ -468,7 +468,7 @@ template	julia	1.0.0	6848f363b2573b14b73ae17b6500d2b16dd3f1d5bbae5584961dac2fedd
 template	just	1.0.0	9c8992b0eeb6463f626a6af1d7d5eff30c64ad90bf151f656563409d98d36b0f	templates/tools/just/template.toml
 template	k3d	1.0.0	71932187da528c0251e8ba067e6930cd4c9c889d8448b7cb055b6ffba2a1103d	templates/tools/k3d/template.toml
 template	k9s	1.0.0	62fe58c37caa6f310b4e92e30bb144593b3dbc5326f93221c43ea5b3759a19de	templates/tools/k9s/template.toml
-template	kafka	1.0.0	40c386141dd1172b0ae8c46af6ee35e071105c185c7200e29706eaaf39190494	templates/middlewares/kafka/template.toml
+template	kafka	2.0.0	2893ec3797b23e46f737c3a98dc0b7ef7703ff97d41823804b6ea64bcf02bec7	templates/middlewares/kafka/template.toml
 template	kde	1.0.0	a621763911b76074097a34b23459e29b7ab0c59be09f8338587ad6dac0741123	templates/desktops/kde/template.toml
 template	kind	1.0.0	f9cc7f96cfc67b101332adfe48e06451ad861504164cd66c8d77a30e489f7263	templates/tools/kind/template.toml
 template	kitty	1.0.0	e375e45cf5277047592572b73860628a8c1ab0998cd8d9c677d02fa2cd41b611	templates/desktops/kitty/template.toml
@@ -490,8 +490,8 @@ template	material-cursors	1.0.0	8b64d5c27d3113f60d8769aef239be563621a3cc8336df40
 template	mermaid	1.0.0	32a779e00e0dbef72353a5de2e4bc16e2bf8a638a672ff3fa73b959da2edf5bc	templates/tools/mermaid/template.toml
 template	mkcert	1.0.0	23be3ef98c34aa99430fbf664f38c726c462871b2a38e250d30f5ae0b6cd0b5f	templates/tools/mkcert/template.toml
 template	mojo	0.1.0	27ab9f41480cdb2b361b178d5eec62b94ebb469a3a4a48eb579509cb16d42718	templates/languages/mojo/template.toml
-template	mongodb	1.0.0	37adc9a48abacf508103b774c85597a7af20839357fffe24a537093b70902529	templates/middlewares/mongodb/template.toml
-template	mysql	1.0.0	c6697934cd282832a8bd2f93902980f21e73670ffa6c921339a4c18d1c096db5	templates/middlewares/mysql/template.toml
+template	mongodb	2.0.0	66b6775db7600001579c0fb3a443071dcb76077fa663d58c9b73cac39a3b14a7	templates/middlewares/mongodb/template.toml
+template	mysql	2.0.0	25faf49db9d10755edd0e217967cad9001d88fd2e1c3d3cfaa0413f6b2628d91	templates/middlewares/mysql/template.toml
 template	n8n	0.1.0	3af60599015d4a227b98f0108d8c1958b7484195d0cec85c4b7f8148eade2e1c	templates/tools/n8n/template.toml
 template	nbgrader	1.0.0	2e0765a2aa72972a73952ce75ac6a8333a943dae1c5110dc1ca7c863ceba1b8d	templates/education/nbgrader/template.toml
 template	neovim	1.0.0	64e255e62d166643992f9138358fc8eca3f1119f5dcf0fa58eba4646e5b19e19	templates/tools/neovim/template.toml
@@ -507,12 +507,12 @@ template	ollama	1.0.0	5fdb875baa6eaf50f9441fd727fc92d3b2638de822e280b13d16b0e604
 template	opencode	1.0.0	2871adf254f8f249db6118eb8c330dd3321501b66f2769ee69b2c61b3b9bf470	templates/ai-tools/opencode/template.toml
 template	openssh	1.0.0	3f9a44c7fea93ca4024e7939267d8e200a8419bfda285dbc2e9a5f4e0db8ccd3	templates/tools/openssh/template.toml
 template	orchis-gtk	0.1.0	90d120c836c889c8ee0f98ab8f29f20dd873e3ee952951daa39d475082bc0116	templates/desktops/orchis-gtk/template.toml
-template	penpot	0.1.0	e09e875e3bffc6328ccc46a61c9c82b9d3fec32a756e4a69c5decf6d346f6acb	templates/tools/penpot/template.toml
+template	penpot	0.2.0	45f3c73c59571d0dd41cfc6e98760ccf8229c0f25a13a605716d1deef65fbad7	templates/tools/penpot/template.toml
 template	php	1.0.0	1c7bf5b149e8922242abac9d78935da6c45881f91a58268e3fdada08e5cbaa63	templates/languages/php/template.toml
 template	phpstorm	1.0.0	e3f9978b35ff7170c9e2bf825a5a5c09c1b42ca9e50e84b6861d102ca31cef18	templates/ides/phpstorm/template.toml
 template	plantuml	1.0.0	2ea1d2e1c098fadcbff7add437e7658f691d89a092f7b60a4cfd31a70e645b39	templates/tools/plantuml/template.toml
 template	playwright	1.0.0	ce10be322839dd6bf6648078e9b808b560994be2a8e18f0e5cd49bdad48a4d1d	templates/tools/playwright/template.toml
-template	postgresql	1.0.0	8bb7071b6e99d39e2a5e18fb1f8345cacda333e2b8df4e03fc26c050cc9bcb8d	templates/middlewares/postgresql/template.toml
+template	postgresql	2.0.0	c43a3ba121764bd8198a8a65dd96be22c0142aae7937d7c1465dd602c596f653	templates/middlewares/postgresql/template.toml
 template	postgrest	0.1.0	d7b090b018ddb8dafd2f553ffd6b41c0f0f0748ffefd5219fa11326f23ae801f	templates/middlewares/postgrest/template.toml
 template	posting	1.0.0	c1c7874acae04371135af69b0568d0f2e91690f4886ae2114461ae0798a91fc2	templates/tools/posting/template.toml
 template	protobuf	1.0.0	349519f43d0d87a56498f4c87e5152dcf97de88f069902098b69a9b919ea86b8	templates/tools/protobuf/template.toml
@@ -521,9 +521,9 @@ template	puppeteer	1.0.0	ebe206c5dbbba9b04a7e879e8a1c9eb3ef07142d12a41ecb800c48f
 template	pycharm	1.0.0	fce6bf6b03601f0e8618b6f519961351f97547b57320d1f248d13aba3c624300	templates/ides/pycharm/template.toml
 template	python	1.0.0	0dc2730bbc6614dcf2639a09b87447b061c4b9ab9f740fc22d6c06f197b40cf2	templates/languages/python/template.toml
 template	r	1.0.0	2eb580f5013744ee35ea4718fe25cb8be3ec55aae1b40fb34e4572b6b01ab78f	templates/languages/r/template.toml
-template	rabbitmq	1.0.0	c7ada88ed8db0175f8c80aac0718cc8440b22cd0bede4086375fc3ca914bbc33	templates/middlewares/rabbitmq/template.toml
+template	rabbitmq	2.0.0	44890f0efa41e91d3e3e95240c6926d289588f318512622595d55b6fcfc7f092	templates/middlewares/rabbitmq/template.toml
 template	react	0.1.0	062f933af29662bb49fa653d33ee6ee96517a246f15ff0726dfd86be04f73ece	templates/frameworks/react/template.toml
-template	redis	1.0.0	378321d58792f800500207cac87c5fb8035183f650ac6a4c687060d15b184613	templates/middlewares/redis/template.toml
+template	redis	2.0.0	e99ac0557b6ec830bfaf1ce52f5cd7dbbeb0fe57fa643f57a29d382721d8cd56	templates/middlewares/redis/template.toml
 template	remotion	1.0.0	f08e3a873a8f8bbe3253a7c07c480dcce7fdcea9b4fe9206a6eb7d7b9aba0830	templates/tools/remotion/template.toml
 template	rescript	1.0.0	93b0370db615e69dd2eafb249f593a7230888a17062690ae36b329e3d37abeb7	templates/languages/rescript/template.toml
 template	rider	1.0.0	47637d65d1274db8830f20c20504c12fed2fc8f70aff38e670b406954c687903	templates/ides/rider/template.toml

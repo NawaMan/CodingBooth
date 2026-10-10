@@ -4,6 +4,33 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Service data volumes are per project — breaking for existing data.** The postgresql, mysql,
+  mongodb, redis, kafka, rabbitmq, floci and penpot templates used one machine-wide volume each
+  (`booth-pgdata`, …), so every project on the machine shared one database, and two booths running
+  at once opened the same data directory. They now mount `booth-pgdata-{project}` (and so on):
+  `{project}` in a run-args volume source is replaced with the project name when the booth starts,
+  so each project — each clone, each worktree — gets its own. Booth creates the volume labelled
+  `cb.project=<project>`, and `build/clean-examples.sh` now removes example data volumes.
+  - **Existing data is not moved.** It stays in `booth-pgdata`. The first start that creates the
+    new volume while the old one exists prints a notice with both ways to keep it: mount the old
+    volume (`booth config --add-mount booth-pgdata:/var/lib/postgresql`) or copy it across.
+  - Re-run `booth config` in a project to pick up the new name; a `config.toml` written before
+    keeps the old shared volume until then.
+- **`booth config --mount` can replace a template's mount.** A `--volume` on the same container
+  path as a template's `-v` now replaces it, instead of adding a duplicate mount point Docker
+  refuses; `--remove-mount` brings the template's back. This is how a project swaps a template's
+  data volume for its own.
+- **Fix: `booth config --set` no longer writes a key twice.** `--set` on a key `config.toml` writes
+  from its own field (`run-args`, `cmds`, `build-args`, `sudo`, `vm-*`) used to add a second line
+  for that key — invalid TOML, so the booth refused to start. It now merges: `--set run-args=<token>`
+  appends to the one `run-args` list, `--set cmds=…` replaces the command, the scalars overwrite.
+- **Fix: `--writable-booth` no longer drops `.booth/cache/` and `.booth/shared/`.** Both were
+  mounted only on the read-only `.booth/` path, so `--writable-booth` (or `writable-booth = true`)
+  silently started a booth without them — and skipped the check that the cache is gitignored.
+  They are now mounted either way.
+- **New doc: [In and Out of the Booth](IN-OUT.md)** — every way to put files into a booth, or
+  connect it to something, outside `/home/coder/code`.
+
 - **`booth just-init` — a starter Justfile whose recipes run in the booth.** It defines
   `{{run-in-booth}}` and `{{run-on-host}}`. On the host, a `{{run-in-booth}}` line runs through
   `./booth exec --run --`, starting the booth if it is not running; inside the booth it runs as

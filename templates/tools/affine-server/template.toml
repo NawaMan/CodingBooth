@@ -1,4 +1,4 @@
-cb-version = "0.1.0"
+cb-version = "0.1.1"
 display-name = "AFFiNE Server"
 display-disc = "Self-hosted AFFiNE web app (docs + whiteboard)"
 display-detail = """Installs the official self-hosted AFFiNE server by copying \
@@ -9,7 +9,7 @@ own — add +autostart to run it on boot, and +expose to reach it from the host.
 AFFINE_SERVER_DATA=clean (default) is a fresh workspace every booth; +seed \
 copies a snapshot from home-seed (writes do not stick); +persist is \
 .booth/cache (writes survive on this machine). Postgres is dumped into \
-~/.affine/dumps so persist does not share the global booth-pgdata volume.
+~/.affine/dumps so persist stays separate from the project's booth-pgdata-<project> volume.
 
 First browser visit creates the admin account at /admin/setup. Open \
 http://localhost:20100/ in a host tab — the globe pane cannot load Affine's \

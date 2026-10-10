@@ -704,6 +704,7 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 		addReadOnlyBoothDir(builder, codePath)
 		addReadOnlyBoothWrapper(builder, codePath, ctx.Engine())
 	}
+	addCacheAndSharedMounts(builder, codePath)
 
 	// Lifecycle management labels used by list/start/stop/restart/remove commands.
 	builder.CommonArgs.Append(ilist.NewList[string]("--label", "cb.managed=true"))
@@ -905,6 +906,16 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.RunArgs = rewriteAtCodeVolumeGroups(builder.RunArgs, codePath)
 	builder.CommonArgs = rewriteAtCodeVolumeGroups(builder.CommonArgs, codePath)
 
+	// Expand {project} in volume sources (booth-pgdata-{project}) and create any
+	// such volume that is new, labelled with its project.
+	runVolumes, commonVolumes := []projectVolume(nil), []projectVolume(nil)
+	builder.RunArgs, runVolumes = expandProjectVolumeGroups(builder.RunArgs, ctx.ProjectName())
+	builder.CommonArgs, commonVolumes = expandProjectVolumeGroups(builder.CommonArgs, ctx.ProjectName())
+	if !ctx.Dryrun() {
+		ensureProjectVolumes(append(runVolumes, commonVolumes...), ctx.ProjectName(),
+			engineOrDocker(ctx.Engine()), engineVolumeOps(ctx), os.Stderr)
+	}
+
 	return builder.Build()
 }
 
@@ -973,7 +984,8 @@ func appleWrapperCopy(codePath, wrapperPath string) (string, error) {
 	return copyPath, os.Chmod(copyPath, 0o755)
 }
 
-func addReadOnlyBoothDir(builder *appctx.AppContextBuilder, codePath string) {
+// boothHostDir returns the host .booth/ directory to mount from, or "" when there is none.
+func boothHostDir(builder *appctx.AppContextBuilder, codePath string) string {
 	hostPath := ""
 	if builder.BoothDir != "" {
 		hostPath = builder.BoothDir
@@ -981,10 +993,18 @@ func addReadOnlyBoothDir(builder *appctx.AppContextBuilder, codePath string) {
 		hostPath = filepath.Join(codePath, ".booth")
 	}
 	if hostPath == "" {
-		return
+		return ""
 	}
 	info, err := os.Stat(hostPath)
 	if err != nil || !info.IsDir() {
+		return ""
+	}
+	return hostPath
+}
+
+func addReadOnlyBoothDir(builder *appctx.AppContextBuilder, codePath string) {
+	hostPath := boothHostDir(builder, codePath)
+	if hostPath == "" {
 		return
 	}
 	builder.CommonArgs.Append(ilist.NewList[string]("-v", hostPath+":/home/coder/code/.booth:ro"))
@@ -993,6 +1013,16 @@ func addReadOnlyBoothDir(builder *appctx.AppContextBuilder, codePath string) {
 	tmpPath := filepath.Join(hostPath, ".tmp")
 	if info, err := os.Stat(tmpPath); err == nil && info.IsDir() {
 		builder.CommonArgs.Append(ilist.NewList[string]("-v", tmpPath+":/home/coder/code/.booth/.tmp"))
+	}
+}
+
+// addCacheAndSharedMounts mounts .booth/cache/ and .booth/shared/ onto their container paths.
+// It runs whether or not .booth/ itself is read-only: --writable-booth only changes how the
+// project's own .booth/ is seen, and must not drop these mounts (or the cache gitignore check).
+func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath string) {
+	hostPath := boothHostDir(builder, codePath)
+	if hostPath == "" {
+		return
 	}
 
 	// Ensure cache files/dirs declared in config.toml exist in .booth/cache/.
@@ -1609,6 +1639,10 @@ func volumeSource(spec string) string {
 	}
 	return spec
 }
+
+// VolumeTarget returns the container path of a -v/--volume spec ("src:dst[:opts]"),
+// with the same Windows-path handling the run pipeline uses.
+func VolumeTarget(spec string) string { return volumeTarget(spec) }
 
 // volumeTarget returns the container side of a Docker -v/--volume mount spec, with
 // any option suffix (":ro") removed. Booth runs Linux containers, so the target is

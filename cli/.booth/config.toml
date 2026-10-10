@@ -2,7 +2,7 @@
 
 
 run-args = [
-    "-v", "booth-rabbitmqdata:/opt/rabbitmq",
+    "-v", "booth-rabbitmqdata-{project}:/opt/rabbitmq",
     "-p", "15672:5672",
     "-p", "25672:15672"
 ]

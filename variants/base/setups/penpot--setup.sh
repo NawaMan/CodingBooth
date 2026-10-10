@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.1.1
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -391,7 +391,7 @@ echo "✅ Penpot installed."
 echo "   Location: ${PENPOT_DIR}"
 echo "   Port:     ${PENPOT_PORT}"
 echo "   Starter:  ${STARTER_FILE}"
-echo "   Assets:   ${ASSETS_DIR}  (volume booth-penpot-assets)"
+echo "   Assets:   ${ASSETS_DIR}  (per-project volume booth-penpot-assets-<project>)"
 echo ""
 echo "ℹ️ Ready to use:"
 echo "   start-penpot [PORT]"
