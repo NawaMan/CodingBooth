@@ -3,3 +3,8 @@
 port = "10000"
 
 run-args = ["-e", "PYTHONDONTWRITEBYTECODE=1"]
+
+cache-files = [
+    "home/coder/.bash_history",
+    "home/coder/.zsh_history"
+]

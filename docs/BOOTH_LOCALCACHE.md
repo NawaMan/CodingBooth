@@ -44,6 +44,9 @@ The directory is:
 
 The directory structure inside `.booth/cache/` mirrors the container's root filesystem. CodingBooth traverses the tree and creates bind mounts based on what it finds.
 
+A template's `cache-files` / `cache-dirs` are recorded in `config.toml`, and every start creates
+any that are missing — so a fresh clone, which has no `.booth/cache/`, gets the same mounts.
+
 ```
 .booth/cache/
   home/coder/

@@ -3,7 +3,9 @@
 # [files.cache-seed] / [files.shared-seed]. booth config writes the seeds to the
 # committed .booth/cache-seed/ and .booth/shared-seed/ and fills the paths they cover;
 # a later start re-seeds a path that is missing again, as on a fresh clone, where
-# .booth/cache/ is not in git. Uses no Docker: a --no-tui write, then a --dryrun run.
+# .booth/cache/ is not in git. The template's paths are recorded in config.toml, and
+# leave it again when the template is deselected. Uses no Docker: --no-tui writes,
+# then a --dryrun run.
 source "$(dirname "$0")/../test-helpers--source.sh"
 
 begin
@@ -40,10 +42,21 @@ echo '{"team": false}' >"$B/shared/home/coder/.config/tool/settings.json"
 run booth config "$prj" --no-tui --overwrite --select seeded
 assert-line "$B/shared/home/coder/.config/tool/settings.json" '{"team"' ': false}' "reconfigure keeps the edited Shared file"
 
+# --- config.toml records the template's Cache paths, as it does its Shared ones ---
+assert-line "$B/config.toml" 'cache-files = ' '[' "config.toml records the template's cache-files"
+assert-line "$B/config.toml" '    "home/coder/.tool_history"' '' "the cache-files entry with no seed is recorded too"
+
 # --- A fresh clone has no .booth/cache/; the start seeds it again ---
 rm -rf "$B/cache"
 (cd "$prj" && booth run --dryrun -- true) >"$prj/run.txt" 2>&1 || true
 assert-line "$B/cache/home/coder/.tool/state.json" '{"state"' ': 0}' "a start re-seeds a missing Cache path"
 assert-line "$prj/run.txt" "Seeded .booth/cache/home/coder/.tool/state.json" " from .booth/cache-seed/" "the start says what it seeded"
+
+# --- Deselected, the template's paths leave config.toml; the user's own stay ---
+run booth config "$prj" --no-tui --overwrite --select seeded --set shared-files=home/coder/.team.conf
+run booth config "$prj" --no-tui --overwrite --select python
+grep -cE 'tool|settings.json' "$B/config.toml" >"$prj/stale.txt" || true
+assert-line "$prj/stale.txt" "0" "" "a deselected template's Cache and Shared paths are gone"
+assert-line "$B/config.toml" 'shared-files = ' '["home/coder/.team.conf"]' "a path the user set is kept"
 
 finally

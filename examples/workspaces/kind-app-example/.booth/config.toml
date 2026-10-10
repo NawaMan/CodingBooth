@@ -19,3 +19,5 @@ run-args = [
     "-v", "~/.antigravity:/etc/cb-home-seed/.antigravity:ro",
     "--publish", "+-7000:3000"
 ]
+
+cache-dirs = ["home/coder/.claude"]

@@ -331,26 +331,34 @@ func (c *collector) build() (*output.BoothOutput, error) {
 	out.CacheSeed = c.cacheSeed
 	out.SharedSeed = c.sharedSeed
 
-	// Cache files (dedup, preserve order)
+	// Cache files (dedup, preserve order) — also recorded on Config, like Shared: a
+	// fresh clone has no .booth/cache/, and config.toml is all a start has to
+	// re-create the paths from (ensureCacheFromConfig).
 	if len(c.cacheFiles) > 0 {
 		seen := make(map[string]bool, len(c.cacheFiles))
+		var files []string
 		for _, cf := range c.cacheFiles {
 			if !seen[cf] {
 				seen[cf] = true
+				files = append(files, cf)
 				out.Cache = append(out.Cache, output.FileContent{RelPath: cf})
 			}
 		}
+		cfg.CacheFiles = files
 	}
 
 	// Cache dirs (dedup, preserve order)
 	if len(c.cacheDirs) > 0 {
 		seen := make(map[string]bool, len(c.cacheDirs))
+		var dirs []string
 		for _, cd := range c.cacheDirs {
 			if !seen[cd] {
 				seen[cd] = true
+				dirs = append(dirs, cd)
 				out.CacheDirs = append(out.CacheDirs, output.FileContent{RelPath: cd})
 			}
 		}
+		cfg.CacheDirs = dirs
 	}
 
 	// Shared files (dedup, preserve order) — also record on Config so config.toml

@@ -1,6 +1,10 @@
 # Configured by: booth config --no-tui --overwrite --set cache-files=home/coder/.my_app_history --set cache-dirs=home/coder/.my_app_data --select shell-history
 
 
-cache-files = ["home/coder/.my_app_history"]
+cache-files = [
+    "home/coder/.bash_history",
+    "home/coder/.zsh_history",
+    "home/coder/.my_app_history"
+]
 
 cache-dirs = ["home/coder/.my_app_data"]

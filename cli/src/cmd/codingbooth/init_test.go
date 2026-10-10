@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/output"
+	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -390,4 +391,27 @@ func TestRoundTrip_ApplyFlags_WriteConfig_ExtractUserRunArgs(t *testing.T) {
 		"only long-form --publish values should be extracted, reversed back to expose form")
 	assert.Equal(t, []string{"/data:/data"}, flags.mounts,
 		"only long-form --volume values should be extracted")
+}
+
+// Paths read back from config.toml that a template declares are dropped — the selected
+// templates add theirs again — so a deselected template's paths do not stay; the
+// user's own paths are kept.
+func TestWithoutTemplatePaths(t *testing.T) {
+	ext := &tmpl.Template{Name: "settings-shared", SharedFiles: []string{"home/coder/.config/x/settings.json"}}
+	registry := &tmpl.TemplateRegistry{ByName: map[string]*tmpl.Template{
+		"history": {Name: "history", CacheFiles: []string{"home/coder/.zsh_history"}, Extensions: []*tmpl.Template{ext}},
+		"gnupg":   {Name: "gnupg", CacheDirs: []string{"home/coder/.gnupg:0700"}},
+	}}
+	flags := initFlags{
+		cacheFiles:  []string{"home/coder/.zsh_history", "home/coder/.mine_history"},
+		cacheDirs:   []string{"home/coder/.gnupg:0700"},
+		sharedFiles: []string{"home/coder/.config/x/settings.json", "home/coder/.team.conf"},
+		sharedDirs:  []string{"home/coder/.snippets"},
+	}
+
+	got := withoutTemplatePaths(flags, registry)
+	assert.Equal(t, []string{"home/coder/.mine_history"}, got.cacheFiles)
+	assert.Empty(t, got.cacheDirs)
+	assert.Equal(t, []string{"home/coder/.team.conf"}, got.sharedFiles, "an extension's path is a template's too")
+	assert.Equal(t, []string{"home/coder/.snippets"}, got.sharedDirs)
 }
