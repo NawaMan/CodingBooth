@@ -20,13 +20,14 @@ import (
 // ListHomeVolume lists all CodingBooth home volumes.
 func ListHomeVolume(args []string, stdout io.Writer, stderr io.Writer) error {
 	flagSet := flag.NewFlagSet("home-volume-list", flag.ContinueOnError)
+	engineChoice := engineFlag(flagSet)
 	flagSet.SetOutput(stderr)
 
-	if err := flagSet.Parse(args); err != nil {
+	if err := parseLifecycleFlags(flagSet, args); err != nil {
 		return commandExit(2, "")
 	}
 
-	engine := resolveLifecycleEngine("")
+	engine := resolveLifecycleEngine("", *engineChoice)
 	output, err := docker.DockerOutput(docker.DockerFlags{Silent: true, Engine: engine}, "volume", ilist.NewList(
 		ilist.NewList("ls"),
 		ilist.NewList("--filter", "label=cb.managed=true"),
@@ -82,9 +83,10 @@ func exportUserNamespaceArgs(engine string, euid int) []string {
 // ExportHomeVolume exports a home volume to a tar.gz file.
 func ExportHomeVolume(args []string, stdout io.Writer, stderr io.Writer) error {
 	flagSet := flag.NewFlagSet("home-volume-export", flag.ContinueOnError)
+	engineChoice := engineFlag(flagSet)
 	flagSet.SetOutput(stderr)
 
-	if err := flagSet.Parse(args); err != nil {
+	if err := parseLifecycleFlags(flagSet, args); err != nil {
 		return commandExit(2, "")
 	}
 
@@ -96,7 +98,7 @@ func ExportHomeVolume(args []string, stdout io.Writer, stderr io.Writer) error {
 	containerName := positional[0]
 	outputFile := positional[1]
 	volName := "cb-home-" + containerName
-	engine := resolveLifecycleEngine("")
+	engine := resolveLifecycleEngine("", *engineChoice)
 
 	// Verify volume exists
 	if _, err := docker.DockerOutput(docker.DockerFlags{Silent: true, Engine: engine}, "volume", ilist.NewList(
@@ -141,9 +143,10 @@ func ExportHomeVolume(args []string, stdout io.Writer, stderr io.Writer) error {
 // ImportHomeVolume imports a tar.gz file into a home volume.
 func ImportHomeVolume(args []string, stdout io.Writer, stderr io.Writer) error {
 	flagSet := flag.NewFlagSet("home-volume-import", flag.ContinueOnError)
+	engineChoice := engineFlag(flagSet)
 	flagSet.SetOutput(stderr)
 
-	if err := flagSet.Parse(args); err != nil {
+	if err := parseLifecycleFlags(flagSet, args); err != nil {
 		return commandExit(2, "")
 	}
 
@@ -155,7 +158,7 @@ func ImportHomeVolume(args []string, stdout io.Writer, stderr io.Writer) error {
 	containerName := positional[0]
 	inputFile := positional[1]
 	volName := "cb-home-" + containerName
-	engine := resolveLifecycleEngine("")
+	engine := resolveLifecycleEngine("", *engineChoice)
 
 	// Create volume if it doesn't exist (idempotent)
 	_ = docker.Docker(docker.DockerFlags{Silent: true, Engine: engine}, "volume", ilist.NewList(

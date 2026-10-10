@@ -180,6 +180,9 @@ The detached command shares the booth's lifetime, not `exec`'s: stopping or remo
 
 ## Target Resolution
 
+Both commands accept `--engine docker|podman|apple`. This overrides config and
+`CB_ENGINE`, and is also forwarded when `--run` creates a missing booth.
+
 Both `shell` and `exec` resolve the target container using the same priority as other lifecycle commands:
 
 1. `--name <name>` — explicit container name

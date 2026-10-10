@@ -73,6 +73,12 @@ keep-alive = true
 
 ## Lifecycle Commands
 
+All commands below accept `--engine docker|podman|apple`, which overrides config and
+`CB_ENGINE`. Flags on start/stop/restart/remove may appear after the booth name too.
+
+File transfers and native inspection commands (`cp`, `inspect`, `stats`, `top`,
+`diff`, `wait`) are documented in [Booth tools](BOOTH_TOOLS.md).
+
 > **Podman and Apple container (experimental):** when you have not chosen an engine and more than one of Docker, Podman and Apple container is installed, these commands look at all of them and act on the engine that owns the booth (`booth list` then shows an `ENGINE` column). Set `CB_ENGINE=docker`, `podman` or `apple` (or `engine =` in the `.booth/config.toml` that `--code` points to) to use just one. `booth shell` and `booth exec` find their booth the same way. See [Container Engine](BOOTH_RUN.md#container-engine-experimental).
 
 ### `list`
@@ -83,6 +89,7 @@ Show all booth-managed containers.
 ./booth list              # all booths
 ./booth list --running    # only running
 ./booth list --stopped    # only stopped
+./booth list --json       # structured array; [] if empty
 ./booth list --name-only  # just container names
 ```
 

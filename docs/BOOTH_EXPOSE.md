@@ -173,6 +173,9 @@ on the mappings; each then adds what only its vantage point can see.
 
 ### From the host: `booth expose list`
 
+Add `--engine docker|podman|apple` to select an engine explicitly. `--json` returns
+an object with `name`, `engine`, and a `ports` array; see [JSON for scripts](BOOTH_TOOLS.md#json-for-scripts).
+
 Shows every port the booth publishes to the host — the booth front door, any
 published (`-p`) ports, and any runtime tunnels — and confirms each against
 `docker port` (the `LIVE` column). With no name, the booth for the current
