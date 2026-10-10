@@ -87,6 +87,8 @@ type collector struct {
 	setups      []output.FileContent
 	home        []output.FileContent
 	homeSeed    []output.FileContent
+	cacheSeed   []output.FileContent
+	sharedSeed  []output.FileContent
 	cacheFiles  []string
 	cacheDirs   []string
 	sharedFiles []string
@@ -226,6 +228,12 @@ func (c *collector) collectFiles(t *tmpl.Template) {
 	for _, f := range t.HomeSeed {
 		c.homeSeed = append(c.homeSeed, output.FileContent{SourcePath: f.SourcePath, RelPath: f.RelPath, Content: f.Content})
 	}
+	for _, f := range t.CacheSeed {
+		c.cacheSeed = append(c.cacheSeed, output.FileContent{SourcePath: f.SourcePath, RelPath: f.RelPath, Content: f.Content})
+	}
+	for _, f := range t.SharedSeed {
+		c.sharedSeed = append(c.sharedSeed, output.FileContent{SourcePath: f.SourcePath, RelPath: f.RelPath, Content: f.Content})
+	}
 	c.cacheFiles = append(c.cacheFiles, t.CacheFiles...)
 	c.cacheDirs = append(c.cacheDirs, t.CacheDirs...)
 	c.sharedFiles = append(c.sharedFiles, t.SharedFiles...)
@@ -320,6 +328,8 @@ func (c *collector) build() (*output.BoothOutput, error) {
 	out.Setups = c.setups
 	out.Home = c.home
 	out.HomeSeed = c.homeSeed
+	out.CacheSeed = c.cacheSeed
+	out.SharedSeed = c.sharedSeed
 
 	// Cache files (dedup, preserve order)
 	if len(c.cacheFiles) > 0 {

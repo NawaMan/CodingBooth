@@ -22,6 +22,7 @@ Back to [README](../README.md)
 - [Mount Rules](#mount-rules)
 - [Protected Paths](#protected-paths)
 - [Gitignore Requirement](#gitignore-requirement)
+- [Initial Content](#initial-content)
 - [Examples](#examples)
 - [Available Cache Templates](#available-cache-templates)
 - [User-Defined Cache in config.toml](#user-defined-cache-in-configtoml)
@@ -114,6 +115,42 @@ CodingBooth asks git, not the `.gitignore` file, and refuses to start on either 
 | Project is not a git repo | Check skipped (nothing to commit to) |
 
 The tracked case is the one that bites. **A gitignore rule does not untrack a file that is already committed** — git keeps committing it, and a check that only greps `.booth/.gitignore` for `cache/` would report everything as fine while your credentials go into every commit. If you hit it, untrack the files (they stay on disk) and **rotate any credential that was committed**.
+
+---
+
+## Initial Content
+
+A declared Cache path starts empty unless a **seed** covers it. `.booth/cache-seed/` holds the
+seeds; unlike `.booth/cache/` it is **committed**, so every clone gets them. It uses the same
+layout: the tree mirrors the container's root, a file stands for itself, and a folder holding a
+`.mount-this` marker stands for the whole folder.
+
+Before mounting, booth copies each seed into `.booth/cache/` where that path is still missing:
+
+| Seed | Copied when |
+|---|---|
+| A file | the Cache file is missing **or empty** — empty is what booth creates for a path with no seed, so a seed added later still reaches it |
+| A marked folder, whole | the Cache folder does not exist — once it does, it is the user's, and a file deleted from it stays deleted |
+
+A seed never replaces content, files at the seed's root (a `README.md`) are skipped, and the start
+says what it seeded. `booth config` does the same as soon as it writes the files, so a fresh
+configure already has the content.
+
+Put files in `.booth/cache-seed/` by hand, or let a template ship them — `[files.cache-seed]`
+inline, or a `cache-seed/` folder beside `template.toml`:
+
+```toml
+cache-files = ["home/coder/.config/tool/state.json"]
+
+[files.cache-seed]
+"home/coder/.config/tool/state.json" = '{"firstRun": false}'
+```
+
+`.booth/shared-seed/` and `[files.shared-seed]` do the same for [Shared](BOOTH_SHARED.md). There
+the file is committed anyway, so a seed matters for a template: it is how one gives a shared file
+its first content instead of an empty one.
+
+Never put a secret in a seed: both seed folders are committed.
 
 ---
 
@@ -296,7 +333,8 @@ booth config --no-tui . --select go --set cache-files=home/coder/.custom_history
 booth config --no-tui . --select go --set cache-dirs=home/coder/.custom_app_data
 ```
 
-- `cache-files` creates individual empty files that are bind-mounted as files
+- `cache-files` creates individual empty files that are bind-mounted as files — or, when
+  `.booth/cache-seed/` has that path, a copy of the seed ([Initial Content](#initial-content))
 - `cache-dirs` creates directories with `.mount-this` markers that are bind-mounted as whole directories
 - A `cache-dirs` entry may end in an octal mode — `home/coder/.gnupg:0700` — for a tool that refuses a folder others can read (gpg, ssh). The mode is set when the folder is created; an existing folder keeps its own
 - These paths are merged with any cache paths from selected templates — duplicates are automatically removed

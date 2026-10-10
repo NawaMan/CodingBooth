@@ -227,6 +227,14 @@ func collectFileChanges(t *Template) []fileChange {
 		label := fmt.Sprintf("home-seed/%s", f.RelPath)
 		changes = append(changes, fileChange{label, f.Content})
 	}
+	for _, f := range t.CacheSeed {
+		label := fmt.Sprintf("cache-seed/%s", f.RelPath)
+		changes = append(changes, fileChange{label, f.Content})
+	}
+	for _, f := range t.SharedSeed {
+		label := fmt.Sprintf("shared-seed/%s", f.RelPath)
+		changes = append(changes, fileChange{label, f.Content})
+	}
 
 	return changes
 }

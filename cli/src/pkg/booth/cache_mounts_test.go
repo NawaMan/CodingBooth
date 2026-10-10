@@ -182,3 +182,36 @@ func TestEnsureCacheFromConfig_DirModeSuffix(t *testing.T) {
 		t.Errorf("existing dir mode = %o, want it left at 750", got)
 	}
 }
+
+// At start, a seed in .booth/shared-seed/ fills a declared Shared path before it would
+// be created empty — on a fresh clone, and for an empty file a seed was added for later.
+func TestSeedFrom_BeforeEnsure(t *testing.T) {
+	boothDir := t.TempDir()
+	rel := filepath.Join("home", "coder", ".config", "tool", "settings.json")
+	config := "shared-files = [\"home/coder/.config/tool/settings.json\", \"home/coder/.other\"]\n"
+	if err := os.WriteFile(filepath.Join(boothDir, "config.toml"), []byte(config), 0644); err != nil {
+		t.Fatal(err)
+	}
+	seed := filepath.Join(boothDir, "shared-seed", rel)
+	if err := os.MkdirAll(filepath.Dir(seed), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(seed, []byte(`{"team": true}`), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	seedFrom(boothDir, "shared")
+	ensureSharedFromConfig(boothDir)
+
+	got, err := os.ReadFile(filepath.Join(boothDir, "shared", rel))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != `{"team": true}` {
+		t.Errorf("settings.json = %q, want the seed", got)
+	}
+	other, err := os.ReadFile(filepath.Join(boothDir, "shared", "home", "coder", ".other"))
+	if err != nil || len(other) != 0 {
+		t.Errorf(".other = %q, %v; want an empty file", other, err)
+	}
+}

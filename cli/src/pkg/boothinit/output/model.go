@@ -21,6 +21,8 @@ type BoothOutput struct {
 	Setups    []FileContent
 	Home      []FileContent
 	HomeSeed  []FileContent
+	CacheSeed  []FileContent // Initial content for Cache paths, in .booth/cache-seed/ (committed)
+	SharedSeed []FileContent // Initial content for Shared paths, in .booth/shared-seed/
 	Cache     []FileContent // Files to touch in .booth/cache/ (paths mirror container filesystem)
 	CacheDirs []FileContent // Directories to create in .booth/cache/ with .mount-this marker
 	Shared    []FileContent // Files to touch in .booth/shared/ (git-friendly, live bind mounts)

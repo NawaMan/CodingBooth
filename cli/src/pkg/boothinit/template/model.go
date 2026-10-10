@@ -78,6 +78,11 @@ type Template struct {
 	Home     []FileRef
 	HomeSeed []FileRef
 
+	// Initial content for Cache and Shared paths, written to .booth/cache-seed/ and
+	// .booth/shared-seed/ (paths mirror the container filesystem, like CacheFiles)
+	CacheSeed  []FileRef
+	SharedSeed []FileRef
+
 	// Cache files to touch in .booth/cache/ (paths mirror container filesystem)
 	CacheFiles []string
 
