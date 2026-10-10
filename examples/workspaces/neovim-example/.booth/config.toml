@@ -13,4 +13,6 @@ run-args = [
     "-v", "~/.antigravity:/etc/cb-home-seed/.antigravity:ro"
 ]
 
+cache-dirs = ["home/coder/.claude"]
+
 silence-build = true

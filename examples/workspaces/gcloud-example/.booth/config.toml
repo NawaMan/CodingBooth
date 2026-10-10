@@ -18,3 +18,5 @@ run-args = [
     "-v", "~/AppData/Roaming/gcloud/active_config:/etc/cb-home-seed/.config/gcloud/active_config:ro",
     "-e", "CLAUDE_CODE_OAUTH_TOKEN=${CLAUDE_CODE_OAUTH_TOKEN}"
 ]
+
+cache-dirs = ["home/coder/.claude"]

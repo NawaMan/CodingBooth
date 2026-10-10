@@ -13,3 +13,5 @@ run-args = [
     "--publish", "+-7000:3000",
     "--publish", "+-4827:5173"
 ]
+
+cache-dirs = ["home/coder/.claude"]

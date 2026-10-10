@@ -27,3 +27,5 @@ run-args = [
     "--volume", "~/.claude/settings.json:/etc/cb-home-seed/.claude/settings.json:ro",
     "--volume", "~/.codex/auth.json:/etc/cb-home-seed/.codex/auth.json:ro"
 ]
+
+cache-dirs = ["home/coder/.claude"]

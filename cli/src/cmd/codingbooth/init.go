@@ -549,6 +549,7 @@ func compileSelectionE(flags initFlags, projectRoot string, overrides map[string
 	if err != nil {
 		return nil, nil, fmt.Errorf("loading templates: %w", err)
 	}
+	flags = withoutTemplatePaths(flags, registry)
 
 	// Parse DSL
 	parsed, err := selection.ParseSelectDSL(rawInput)
@@ -1471,6 +1472,45 @@ func asStringList(value interface{}) []string {
 	default:
 		return nil
 	}
+}
+
+// withoutTemplatePaths drops the Cache and Shared paths a template declares from the
+// lists read back out of an existing config.toml (extractUserRunArgs). config.toml
+// records the selected templates' paths next to the user's own, and a reconfigure
+// reads all of them back as the user's: a template deselected since then kept its
+// paths for good. The templates still selected add theirs again when compiled, so
+// only paths no template declares — the user's own — are carried over. A path the
+// user also set with --set is in the header, and comes back through that.
+func withoutTemplatePaths(flags initFlags, registry *tmpl.TemplateRegistry) initFlags {
+	declared := map[string]bool{}
+	var add func(t *tmpl.Template)
+	add = func(t *tmpl.Template) {
+		for _, list := range [][]string{t.CacheFiles, t.CacheDirs, t.SharedFiles, t.SharedDirs} {
+			for _, p := range list {
+				declared[p] = true
+			}
+		}
+		for _, ext := range t.Extensions {
+			add(ext)
+		}
+	}
+	for _, t := range registry.ByName {
+		add(t)
+	}
+	keep := func(paths []string) []string {
+		var kept []string
+		for _, p := range paths {
+			if !declared[p] {
+				kept = append(kept, p)
+			}
+		}
+		return kept
+	}
+	flags.cacheFiles = keep(flags.cacheFiles)
+	flags.cacheDirs = keep(flags.cacheDirs)
+	flags.sharedFiles = keep(flags.sharedFiles)
+	flags.sharedDirs = keep(flags.sharedDirs)
+	return flags
 }
 
 // mergeConfigCache merges cache-files and cache-dirs from ConfigToml into

@@ -66,7 +66,7 @@ The directory structure inside `.booth/shared/` mirrors the container root. Codi
       --> -v .booth/shared/home/coder/.chrome-data/Default/Bookmarks:/home/coder/.chrome-data/Default/Bookmarks
 ```
 
-Templates declare `shared-files` and `shared-dirs`. On `booth config`, empty files / `.mount-this` markers are created under `.booth/shared/` (no-clobber). At start, booth also re-materializes any paths still listed in `config.toml` if files were deleted.
+Templates declare `shared-files` and `shared-dirs`. On `booth config`, empty files / `.mount-this` markers are created under `.booth/shared/` (no-clobber), and the paths are recorded in `config.toml`. At start, booth also re-materializes any paths still listed in `config.toml` if files were deleted. Deselecting the template removes its paths from `config.toml`; the files under `.booth/shared/` are left for you to delete.
 
 Unlike cache, there is **no** gitignore requirement. Shared state is expected to be versioned.
 

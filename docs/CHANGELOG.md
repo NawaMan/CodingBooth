@@ -46,6 +46,16 @@ This file contains a list of changes for each released version.
   creating it empty. Both seed folders are committed, so a fresh clone's Cache starts with the
   content too. Templates ship seeds with `[files.cache-seed]` / `[files.shared-seed]` or
   `cache-seed/` / `shared-seed/` folders; a project can also write them by hand.
+- **Fix: a template's Cache paths now work on a fresh clone.** `booth config` recorded a template's
+  `shared-files` / `shared-dirs` in `config.toml` but not its `cache-files` / `cache-dirs`, and
+  only created those paths in `.booth/cache/` — which is gitignored. A teammate's clone therefore
+  had no such path, nothing was mounted there, and what the booth wrote (shell history, a tool's
+  state) was lost when the booth was removed, until someone re-ran `booth config`. They are now
+  recorded too, and a start re-creates them. Re-run `booth config` in a project to record them.
+- **Fix: a deselected template's Cache and Shared paths leave `config.toml`.** A reconfigure read
+  every recorded path back as if the user had set it, so deselecting, say, `+settings-shared`
+  kept its mount for good. Paths a template declares now come only from the selection; paths no
+  template declares (your own) are still carried over.
 - **Fix: code-server no longer overwrites a shared or cached `settings.json`.** `start-codeserver`
   rewrote `settings.json` with its defaults on every launch. Under `+settings-shared` that file is
   `.booth/shared/…/settings.json`, so each start replaced the team's committed settings on the
