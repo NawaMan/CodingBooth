@@ -9,6 +9,8 @@ place, and links to the guide that covers each in depth.
 
 Setups and startup scripts are left out on purpose. They can do anything, so they are not a
 mechanism of their own — see [Customization](BOOTH_CUSTOMIZATION.md) and [Setups](BOOTH_SETUP.md).
+The one exception is [copying a file outside home](#copying-outside-home), which only a startup
+script can do.
 
 Back to [README](../README.md)
 
@@ -245,6 +247,31 @@ rebuilt image's new desktop launchers appear.
 
 See [Home Directory](BOOTH_HOME.md) for the exact precedence.
 
+### Copying outside home
+
+None of the four copies reaches outside `/home/coder`. For a file at a system path, use a startup
+script: it runs as `coder` on every start, and it may use `sudo` even with `--no-sudo`, which takes
+sudo away only after the startup scripts have run.
+
+```bash
+# .booth/startups/20-corp-conf--startup.sh
+sudo install -D -m 0644 -o root -g root \
+    "$HOME/code/.booth/files/etc/foo/corp.conf" /etc/foo/corp.conf
+```
+
+The source can be any project file; `.booth/files/` above is only a convention. Use `install`, not a
+link: `.booth/` is mounted read-only. Unlike the copies above, the script can also run a command
+after the copy, e.g. `sudo update-ca-certificates` for a CA certificate.
+
+Some paths have a better way:
+
+| Path | Use instead |
+|---|---|
+| `/etc/hosts` | `run-args = ["--add-host", "myapi.local:10.0.0.5"]`. Docker rewrites the file on every start; a startup script works too, because it runs again |
+| The same file for everyone, rarely changed | Boothfile `copy` — baked into the image |
+| A host file, read-only | `--mount '<host-path>:<path>:ro'` — a live link, but read-only it acts like a copy |
+| A file edited inside the booth and kept | Cache or Shared on that path |
+
 ---
 
 ## 4. Start Time — Environment and Connections
@@ -285,6 +312,7 @@ See [Connect](BOOTH_CONNECT.md), [Message](BOOTH_MESSAGE.md) and [booth tmp](BOO
 | Team settings that must always apply | `.booth/home/` |
 | A team file that is edited inside the booth and committed | **Shared** |
 | Personal state kept between runs of this project — history, profiles, tool logins | **Cache** |
+| A file copied to a system path, such as `/etc` | A startup script with `sudo install` ([Copying outside home](#copying-outside-home)) |
 | Personal credentials from the host, copied in | `/etc/cb-home-seed/` via a `credential` extension or `--mount …:ro` |
 | One host folder reused by every project — a package cache | **Bind mount** (`--mount ~/.m2:/home/coder/.m2`) |
 | The whole home kept, without listing paths | `--persist-home` |
@@ -310,8 +338,9 @@ Found while putting this map together; none is fixed yet.
   extension. They depend on the host's folder layout and are dropped when that folder is missing.
 - **Overlapping Cache and Shared paths are not detected** — e.g. `+profile-cache` with
   `+bookmarks-shared`.
-- **Copies reach only `/home/coder`.** Nothing copies into `/etc` or `/opt` at start, though Cache
-  and Shared can mount there.
+- **Copies reach only `/home/coder`.** There is no folder that copies into `/etc` or `/opt` at
+  start; a startup script does it instead
+  ([Copying outside home](#copying-outside-home)).
 - **Template `[files]` cannot fill Cache or Shared** — only `home`, `home-seed` and `setups`.
 - **No per-booth volume for concurrent booths of one folder.** `--add-mount` and profiles both
   cannot give one booth its own: `--add-mount` changes the config every booth of the folder reads,
