@@ -13,8 +13,8 @@ tags = [
 ]
 
 [params.ENVFOLIO_VERSION]
-default = "latest"
-suggests = ["latest", "0.2.0"]
+default = "0.3.0"
+suggests = ["0.3.0", "latest"]
 
 [segments]
 Boothfile = """
