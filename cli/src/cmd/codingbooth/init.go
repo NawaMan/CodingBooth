@@ -646,6 +646,20 @@ func printDryrun(out *output.BoothOutput) {
 		fmt.Println()
 	}
 
+	for _, seed := range []struct {
+		dir   string
+		files []output.FileContent
+	}{{"cache-seed", out.CacheSeed}, {"shared-seed", out.SharedSeed}} {
+		if len(seed.files) == 0 {
+			continue
+		}
+		fmt.Printf("=== %s/ ===\n", seed.dir)
+		for _, f := range seed.files {
+			fmt.Printf("  %s (from %s)\n", f.RelPath, f.SourcePath)
+		}
+		fmt.Println()
+	}
+
 	if len(out.Cache) > 0 || len(out.CacheDirs) > 0 {
 		fmt.Println("=== cache/ ===")
 		for _, f := range out.Cache {

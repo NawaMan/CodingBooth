@@ -296,6 +296,11 @@ booth config --no-tui . --set shared-dirs=home/coder/.config/myapp/snippets
 
 Paths are relative to the container root (`home/coder/.foo` → `/home/coder/.foo`).
 
+A declared path starts empty. To give it first content, put the file in `.booth/shared-seed/` at
+the same path, or have a template ship it with `[files.shared-seed]`: booth copies it in while the
+shared path is missing or empty, and never over content. Same rules as
+[Cache's seeds](BOOTH_LOCALCACHE.md#initial-content).
+
 ---
 
 ## Secrets and Hygiene

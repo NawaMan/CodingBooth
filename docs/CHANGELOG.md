@@ -39,6 +39,13 @@ This file contains a list of changes for each released version.
   mounted only on the read-only `.booth/` path, so `--writable-booth` (or `writable-booth = true`)
   silently started a booth without them — and skipped the check that the cache is gitignored.
   They are now mounted either way.
+- **Cache and Shared paths can start with content.** `.booth/cache-seed/` and `.booth/shared-seed/`
+  hold seeds in the Cache layout (container-root paths; a `.mount-this` folder is copied whole).
+  At start, and when `booth config` writes, booth copies a seed into `.booth/cache/` or
+  `.booth/shared/` while that path is missing or empty — never over content — instead of
+  creating it empty. Both seed folders are committed, so a fresh clone's Cache starts with the
+  content too. Templates ship seeds with `[files.cache-seed]` / `[files.shared-seed]` or
+  `cache-seed/` / `shared-seed/` folders; a project can also write them by hand.
 - **Fix: code-server no longer overwrites a shared or cached `settings.json`.** `start-codeserver`
   rewrote `settings.json` with its defaults on every launch. Under `+settings-shared` that file is
   `.booth/shared/…/settings.json`, so each start replaced the team's committed settings on the
