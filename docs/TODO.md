@@ -382,7 +382,7 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
       is mechanically checkable — decide whether prose coverage is required or best-effort. `site/more.html`
       is deliberately illustrative ("…and more"), so it should stay out of the check.
 - [ ] Java example: Lombok does not work in VS Code.
-- [ ] `remove`/`stop`/`start`/`restart` ignore flags placed *after* the positional name (e.g. `booth remove myproj --force` does not force) because they use plain `flag.Parse`, which stops at the first positional. `shell`/`exec` already work around this with `extractPositionalAndFlags`; apply the same handling to the other lifecycle commands so flag order doesn't matter.
+- [x] `remove`/`stop`/`start`/`restart` parse flags after positional names, using the registered flag definitions. They also accept explicit `--engine` selection.
 - [ ] ...
 
 ---

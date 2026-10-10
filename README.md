@@ -1,6 +1,6 @@
 # CodingBooth
 
-**Current Version:** v0.80.0--rc1 — [View Changelog](docs/CHANGELOG.md)
+**Current Version:** v0.80.0--booth-cp — [View Changelog](docs/CHANGELOG.md)
 
 ![Works On My Machine](docs/Works-On-My-Machine-small.png)
 
@@ -442,6 +442,7 @@ User-facing guides:
 - **[booth example](docs/BOOTH_EXAMPLE.md)** — Pre-built example workspaces
 - **[booth showcase](docs/BOOTH_SHOWCASE.md)** — Browse and import booths published on CodingBooths.online
 - **[booth lifecycle](docs/BOOTH_LIFECYCLE.md)** — Container lifecycle: keep-alive, start, stop, restart, remove, prune, logs
+- **[booth tools](docs/BOOTH_TOOLS.md)** — Copy files outside the shared project; inspect configuration, resources, processes, filesystem changes, and exit status
 - **[booth connect](docs/BOOTH_CONNECT.md)** — Connect to running booths: open a shell or run commands
 - **[booth variants](docs/BOOTH_VARIANTS.md)** — Variant details, aliases, desktop configuration, clipboard, and use cases
 - **[booth home](docs/BOOTH_HOME.md)** — Home directory customization: seeding, overrides, credentials

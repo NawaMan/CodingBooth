@@ -28,14 +28,20 @@ import (
 // resolveLifecycleEngine resolves the container engine for commands in this
 // package, none of which build a full AppContext. codeDir may be "" for
 // commands with no --code flag of their own (see docs/PODMAN_SUPPORT.md).
-func resolveLifecycleEngine(codeDir string) string {
+func resolveLifecycleEngine(codeDir string, explicit ...string) string {
+	if len(explicit) > 0 && explicit[0] != "" {
+		return explicit[0]
+	}
 	return appctx.ResolveEngineForPath(codeDir, false)
 }
 
 // resolveLifecycleEngines is resolveLifecycleEngine for commands that look a booth
 // up before acting on it. With no engine chosen and both docker and podman
 // installed it returns both, and each managedContainer records which one owns it.
-func resolveLifecycleEngines(codeDir string) []string {
+func resolveLifecycleEngines(codeDir string, explicit ...string) []string {
+	if len(explicit) > 0 && explicit[0] != "" {
+		return []string{explicit[0]}
+	}
 	return appctx.ResolveEnginesForPath(codeDir, false)
 }
 
@@ -169,25 +175,36 @@ func ExitCode(err error) int {
 
 func List(args []string, stdout io.Writer, stderr io.Writer) error {
 	flagSet := flag.NewFlagSet("list", flag.ContinueOnError)
+	engineChoice := engineFlag(flagSet)
 	runningOnly := flagSet.Bool("running", false, "Show only running booths")
 	stoppedOnly := flagSet.Bool("stopped", false, "Show only stopped booths")
 	nameOnly := flagSet.Bool("name-only", false, "Show only container names")
+	jsonOutput := flagSet.Bool("json", false, "Print a JSON array of booths")
 	flagSet.SetOutput(stderr)
 
-	if err := flagSet.Parse(args); err != nil {
+	if err := parseLifecycleFlags(flagSet, args); err != nil {
 		return commandExit(2, "")
+	}
+	if flagSet.NArg() != 0 {
+		return commandExit(2, "Error: booth list takes no positional arguments.")
+	}
+	if *jsonOutput && *nameOnly {
+		return commandExit(2, "Error: use either --json or --name-only, not both.")
 	}
 	if *runningOnly && *stoppedOnly {
 		return commandExit(1, "Error: --running and --stopped cannot be used together.")
 	}
 
-	engines := resolveLifecycleEngines("")
+	engines := resolveLifecycleEngines("", *engineChoice)
 	containers, err := managedContainersAcross(engines, false, stderr)
 	if err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to list booths: %v", err))
 	}
 
 	containers = filterByState(containers, *runningOnly, *stoppedOnly)
+	if *jsonOutput {
+		return writeBoothListJSON(containers, stdout)
+	}
 	if len(containers) == 0 {
 		if *runningOnly {
 			_, _ = fmt.Fprintln(stdout, "No running booth containers found.")
@@ -247,17 +264,18 @@ func List(args []string, stdout io.Writer, stderr io.Writer) error {
 
 func Start(args []string, stderr io.Writer) error {
 	flagSet := flag.NewFlagSet("start", flag.ContinueOnError)
+	engineChoice := engineFlag(flagSet)
 	name := flagSet.String("name", "", "Container name")
 	code := flagSet.String("code", "", "Code path used to find the container")
 	daemon := flagSet.Bool("daemon", false, "Start detached")
 	flagSet.BoolVar(daemon, "d", false, "Start detached")
 	flagSet.SetOutput(stderr)
 
-	if err := flagSet.Parse(args); err != nil {
+	if err := parseLifecycleFlags(flagSet, args); err != nil {
 		return commandExit(2, "")
 	}
 
-	containers, err := managedContainersAcross(resolveLifecycleEngines(*code), false, stderr)
+	containers, err := managedContainersAcross(resolveLifecycleEngines(*code, *engineChoice), false, stderr)
 	if err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
@@ -284,20 +302,21 @@ func Start(args []string, stderr io.Writer) error {
 
 func Stop(args []string, stderr io.Writer) error {
 	flagSet := flag.NewFlagSet("stop", flag.ContinueOnError)
+	engineChoice := engineFlag(flagSet)
 	name := flagSet.String("name", "", "Container name")
 	force := flagSet.Bool("force", false, "Force stop with SIGKILL")
 	flagSet.BoolVar(force, "f", false, "Force stop with SIGKILL")
 	timeout := flagSet.Int("timeout", 10, "Seconds to wait before force kill")
 	flagSet.SetOutput(stderr)
 
-	if err := flagSet.Parse(args); err != nil {
+	if err := parseLifecycleFlags(flagSet, args); err != nil {
 		return commandExit(2, "")
 	}
 	if *timeout < 0 {
 		return commandExit(1, "Error: --timeout must be a non-negative integer.")
 	}
 
-	containers, err := managedContainersAcross(resolveLifecycleEngines(""), false, stderr)
+	containers, err := managedContainersAcross(resolveLifecycleEngines("", *engineChoice), false, stderr)
 	if err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
@@ -360,18 +379,19 @@ func restartTimeoutFlag(engine string) string {
 
 func Restart(args []string, stderr io.Writer) error {
 	flagSet := flag.NewFlagSet("restart", flag.ContinueOnError)
+	engineChoice := engineFlag(flagSet)
 	name := flagSet.String("name", "", "Container name")
 	timeout := flagSet.Int("timeout", 10, "Seconds to wait before force kill")
 	flagSet.SetOutput(stderr)
 
-	if err := flagSet.Parse(args); err != nil {
+	if err := parseLifecycleFlags(flagSet, args); err != nil {
 		return commandExit(2, "")
 	}
 	if *timeout < 0 {
 		return commandExit(1, "Error: --timeout must be a non-negative integer.")
 	}
 
-	containers, err := managedContainersAcross(resolveLifecycleEngines(""), false, stderr)
+	containers, err := managedContainersAcross(resolveLifecycleEngines("", *engineChoice), false, stderr)
 	if err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
@@ -395,16 +415,17 @@ func Restart(args []string, stderr io.Writer) error {
 
 func Remove(args []string, stderr io.Writer) error {
 	flagSet := flag.NewFlagSet("remove", flag.ContinueOnError)
+	engineChoice := engineFlag(flagSet)
 	name := flagSet.String("name", "", "Container name")
 	force := flagSet.Bool("force", false, "Force remove even if running")
 	flagSet.BoolVar(force, "f", false, "Force remove even if running")
 	flagSet.SetOutput(stderr)
 
-	if err := flagSet.Parse(args); err != nil {
+	if err := parseLifecycleFlags(flagSet, args); err != nil {
 		return commandExit(2, "")
 	}
 
-	containers, err := managedContainersAcross(resolveLifecycleEngines(""), false, stderr)
+	containers, err := managedContainersAcross(resolveLifecycleEngines("", *engineChoice), false, stderr)
 	if err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
@@ -449,15 +470,16 @@ func Remove(args []string, stderr io.Writer) error {
 
 func Prune(args []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) error {
 	flagSet := flag.NewFlagSet("prune", flag.ContinueOnError)
+	engineChoice := engineFlag(flagSet)
 	yes := flagSet.Bool("yes", false, "Skip confirmation prompt")
 	flagSet.BoolVar(yes, "y", false, "Skip confirmation prompt")
 	flagSet.SetOutput(stderr)
 
-	if err := flagSet.Parse(args); err != nil {
+	if err := parseLifecycleFlags(flagSet, args); err != nil {
 		return commandExit(2, "")
 	}
 
-	engines := resolveLifecycleEngines("")
+	engines := resolveLifecycleEngines("", *engineChoice)
 	containers, err := managedContainersAcross(engines, false, stderr)
 	if err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))

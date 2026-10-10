@@ -32,6 +32,8 @@ booth picks Apple container when it is installed and running, then Docker, then 
 
 ## Features
 
+Native copy and inspection commands are covered in the [Booth tools engine table](BOOTH_TOOLS.md#filesystem-changes-and-exit-status).
+
 | Feature | Docker | Podman | Apple container |
 | --- | --- | --- | --- |
 | `--dind` (Docker-in-Docker sidecar) | yes | experimental (nested Podman sidecar) | no — refused, or another engine is picked |

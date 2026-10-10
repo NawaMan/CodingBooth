@@ -44,14 +44,15 @@ Values are `docker`, `podman` and `apple` (Apple container — see
 
 ### Which engine each command uses
 
-Only `booth` (run) and `booth build` take `--engine`. The other commands do not build
-the full application context, so they cannot see the flag:
+Run, build, lifecycle, connection, native tools, message, and home-volume commands
+accept `--engine`. An explicit flag overrides config and `CB_ENGINE`:
 
 | Command | Engine comes from |
 | --- | --- |
 | `booth` (run), `booth build` | `--engine` > config.toml > `CB_ENGINE` > default |
-| `booth list`, `stop`, `start`, `restart`, `remove`, `prune`, `message`, `expose list`, `shell`, `exec` | **Every installed engine** when none is chosen (see below). If `CB_ENGINE` is set — or, for `start`, `shell` and `exec`, `engine` in the `.booth/config.toml` under `--code` — only that engine. |
-| `booth home-volume-*` | `CB_ENGINE` only |
+| `booth list`, `stop`, `start`, `restart`, `remove`, `prune`, `message`, `expose list`, `shell`, `exec` | **Every installed engine** when none is chosen (see below). An explicit `--engine` wins. Otherwise, if `CB_ENGINE` is set — or, for `start`, `shell` and `exec`, `engine` in the `.booth/config.toml` under `--code` — only that engine. |
+| `booth cp`, `inspect`, `stats`, `top`, `diff`, `wait` | `--engine` > config under `--code` > `CB_ENGINE` > discovery |
+| `booth home-volume-*` | `--engine` > `CB_ENGINE` > default |
 
 ### Finding booths on either engine
 
@@ -450,9 +451,8 @@ The unverified items are **not done yet**; they are tracked, to be done incremen
 - **Tunnels need the booth running in the foreground**, exactly as under Docker
   ([BOOTH_EXPOSE.md](BOOTH_EXPOSE.md)). `booth--expose` inside the booth needs no engine
   setting: the host-side CLI that started the booth already knows it.
-- **Lifecycle commands do not take `--engine`** (table above); choose with `CB_ENGINE`.
-  `home-volume-*` looks at one engine only and needs `CB_ENGINE=podman` for a Podman
-  booth's volumes.
+- **`home-volume-*` looks at one engine only.** Use `--engine podman` (or
+  `CB_ENGINE=podman`) for a Podman booth's volumes.
 - **Podman's live build-progress line only understands Buildah's plain-text format.**
   If a future Buildah version changes its `STEP n/m:` / `-->` / `COMMIT` wording, the
   parser in `build_progress.go` falls silently back to no live line (same as an

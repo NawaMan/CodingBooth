@@ -94,6 +94,10 @@ From inside a booth, `BOOTH_ENGINE=apple`.
 
 ## Finding booths
 
+Lifecycle and native tool commands accept `--engine apple` to choose Apple explicitly.
+See [Booth tools](BOOTH_TOOLS.md) for `cp`, `inspect`, `stats`, and the commands
+that Apple does not provide (`top`, `diff`, `wait`).
+
 With no engine chosen (no `CB_ENGINE`, no `engine =` in the config), `list`, `stop`, `start`,
 `restart`, `remove`, `prune`, `logs`, `message`, `expose list`, `shell` and `exec` query **every
 installed engine** — `docker`, `podman`, and `apple` when the `container` binary is on
