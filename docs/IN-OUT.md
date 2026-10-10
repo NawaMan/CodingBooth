@@ -166,9 +166,18 @@ share one volume.
 So the six postgres examples share one database, and running two at once opens it twice. Appwrite
 is different: its Compose volumes live in its own Docker-in-Docker sidecar, not on the host.
 
-### Changing a named volume
+### Adding or changing a named volume
 
-Templates write their `-v` into `run-args` in `.booth/config.toml`:
+**Adding your own** works on any container path nothing else mounts. Use a name with no `/` as
+the source, and Docker creates the volume on the first start:
+
+```bash
+booth config --no-tui --select go --mount 'myproj-data:/home/coder/.mydata'
+# config.toml:  run-args = ["--volume", "myproj-data:/home/coder/.mydata"]
+```
+
+**Replacing a template's volume** is the hard case. Templates write their `-v` into `run-args`
+in `.booth/config.toml`:
 
 ```toml
 run-args = ["-v", "booth-pgdata:/var/lib/postgresql"]
