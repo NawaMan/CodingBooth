@@ -14,6 +14,10 @@
 # the same prompt never appears there either. This locks in that the key
 # lands, with the right value, in valid JSON -- a bare grep for the line would
 # not catch a dropped comma turning the file unparsable.
+#
+# The defaults go only into a missing or empty file. An existing one is the
+# user's, and under +settings-shared / +settings-cache it is a .booth mount, so
+# a rewrite on every launch would replace the team's committed file on the host.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -29,8 +33,10 @@ STUB=$(mktemp -d)
 trap 'rm -rf "$STUB"' EXIT
 
 # The settings.json generation block, lifted out of the setup script so the
-# root check, code-server install and dropins wiring do not have to run.
-sed -n '/^# Settings$/,/^JSON$/p' "$SETUP_SCRIPT" > "$STUB/fn.sh"
+# root check, code-server install and dropins wiring do not have to run. It ends
+# at the "fi" right after the heredoc that writes the file.
+awk '/^# Settings$/ {p=1} p {print} p && /^JSON$/ {getline; print; exit}' \
+  "$SETUP_SCRIPT" > "$STUB/fn.sh"
 
 if [ ! -s "$STUB/fn.sh" ]; then
   print_test_result "false" "$0" "1" "the settings.json generation block should be extractable"
@@ -72,6 +78,29 @@ sys.exit(0 if data.get('security.workspace.trust.enabled') is False else 1)
   print_test_result "true" "$0" "3" "security.workspace.trust.enabled is false"
 else
   print_test_result "false" "$0" "3" "security.workspace.trust.enabled should be false"
+  echo "  Contents: $(cat "$SETTINGS_JSON" 2>/dev/null)"
+  ALL_PASSED=false
+fi
+
+# --- Test 4: an existing settings.json is left as it is ----------------------
+echo '{"team.setting": 42}' > "$SETTINGS_JSON"
+bash -c "CSHOME='$CSHOME'; source '$STUB/fn.sh'"
+if [ "$(cat "$SETTINGS_JSON")" = '{"team.setting": 42}' ]; then
+  print_test_result "true" "$0" "4" "an existing settings.json is not overwritten"
+else
+  print_test_result "false" "$0" "4" "an existing settings.json should not be overwritten"
+  echo "  Contents: $(cat "$SETTINGS_JSON" 2>/dev/null)"
+  ALL_PASSED=false
+fi
+
+# --- Test 5: an empty settings.json gets the defaults -------------------------
+# booth creates a missing shared-files / cache-files entry as an empty file.
+: > "$SETTINGS_JSON"
+bash -c "CSHOME='$CSHOME'; source '$STUB/fn.sh'"
+if grep -q '"security.workspace.trust.enabled": false' "$SETTINGS_JSON"; then
+  print_test_result "true" "$0" "5" "an empty settings.json is filled with the defaults"
+else
+  print_test_result "false" "$0" "5" "an empty settings.json should be filled with the defaults"
   echo "  Contents: $(cat "$SETTINGS_JSON" 2>/dev/null)"
   ALL_PASSED=false
 fi

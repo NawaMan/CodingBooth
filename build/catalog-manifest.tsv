@@ -52,7 +52,7 @@ setup	clojure-code-extension	1.0.0	701ebfa9133409194342e7219aaad39716bf1ca824a1e
 setup	cloudbeaver	1.0.0	0fc166fe6e7c21963e73f5aef0374fbb404faffcaf38096c8d6e961e0d60f463	variants/base/setups/cloudbeaver--setup.sh
 setup	cmake	1.0.0	6c78f883af7e7367c66c10fc35f0cd73695221dc1114a549d45d827c9488b14b	variants/base/setups/cmake--setup.sh
 setup	cmake-code-extension	0.1.0	d5358d9ef2d2c44609ff9aa96529a4f4cb5ae2310424ade736b28ea12c920185	variants/base/setups/cmake-code-extension--setup.sh
-setup	codeserver	1.0.0	072830c79653c1d7e3667e0ecb9d66682252d2df7670c6d6c9ff2415d8f052ff	variants/base/setups/codeserver--setup.sh
+setup	codeserver	1.0.1	e2cece3e38c83131118801638129936d048b52ea99a5c6ec79b61942484331b7	variants/base/setups/codeserver--setup.sh
 setup	codex	1.0.0	a0f76155dd0b93e901a5b994393d68d545214b3b568d1de237febc9a36d0962c	variants/base/setups/codex--setup.sh
 setup	codex-code-extension	1.0.0	076be4c351d968b8775495057013581f1190d7f0f3557742beec8e8324a04ea1	variants/base/setups/codex-code-extension--setup.sh
 setup	conan	1.0.0	d33c16ec6dc96f8aca41e01f0ca4f5386b4fa0b78d9f80e0c95622aa6131a211	variants/base/setups/conan--setup.sh
