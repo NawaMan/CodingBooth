@@ -4,6 +4,20 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **git works in a booth opened on a git worktree.** A worktree's `.git` is a file pointing into
+  the main clone's `.git/worktrees/<name>`, outside the workspace mount, so in the booth `git
+  status`, `gh`, `lazygit`, commits from an agent, and any build step that calls `git ls-files`
+  found no repository. booth now also mounts the main clone's `.git/` at the path git looks for
+  it: the same absolute path, or where a relative gitdir (`git worktree add --relative-paths`)
+  resolves from `/home/coder/code`. It is the repository the booth already writes to, so it does
+  not ask for consent; see
+  [BOOTH_SECURITY.md](BOOTH_SECURITY.md#what-else-booth-asks-about). The booth also pins
+  `gc.worktreePruneExpire=never` (through `GIT_CONFIG_COUNT`), because the records of your other
+  worktrees hold host paths that do not exist in the container. Without it, the `git gc --auto`
+  a commit can trigger would delete the ones older than three months. A `git worktree prune` you
+  run in the booth still prunes them. If the main clone cannot be mounted, booth prints a warning
+  and starts as before. Submodules are not covered yet.
+
 - **Catalog version-pin sweep to n-1.** Defaults now sit on the release just before the newest
   stable one; pins already at or below n-1 are unchanged. Each new version was checked against its
   real download source. `gcc`, `go`, `mermaid`, `bluej`, and `mvn` were also installed for real.

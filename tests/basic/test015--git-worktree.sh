@@ -14,9 +14,11 @@
 # .booth/startup.sh, not even `echo`. The booth just reported "did not become
 # ready in time" with the container Exited (128).
 #
-# This test does not assert that git WORKS inside the booth -- the parent repo's
-# .git/worktrees/<name> is still outside the mount, so it does not. It asserts
-# only that a broken workspace repo cannot stop the booth from running.
+# Then git must WORK there: booth mounts the main clone's .git at its own path,
+# so the gitfile resolves. A commit made in the booth lands in the host repo.
+# And `git gc` in the booth must not prune the host's other worktrees -- their
+# records hold host paths that do not exist in the container, so without the
+# gc.worktreePruneExpire=never pin every old one would look stale and go.
 
 set -euo pipefail
 
@@ -75,5 +77,43 @@ else
   echo "Actual:"
   echo "$ACTUAL"
   echo "-------------------------------------------------------------------------------"
+  exit 1
+fi
+
+# --- git works in the booth ----------------------------------------------------
+# A second worktree, old enough that an unguarded `git gc` would prune it.
+git -C "$WORK_DIR/main-repo" worktree add -q "$WORK_DIR/other" -b other
+# git judges staleness by the record's index mtime, so backdate the whole record.
+touch -d '1 year ago' "$WORK_DIR/main-repo/.git/worktrees/other/"*
+
+ACTUAL=$("$BOOTH_BIN" --variant base -- bash -c '
+  echo "BRANCH=$(git rev-parse --abbrev-ref HEAD)"
+  git -c user.email=b@b -c user.name=booth commit -q --allow-empty -m from-booth && echo COMMITTED
+  git gc -q && echo GC-DONE
+' 2>&1) || true
+
+if [[ "$ACTUAL" == *"BRANCH=wt-test"* ]]; then
+  print_test_result "true" "$SCRIPT_PATH" "3" "git finds the worktree's repo in the booth"
+else
+  print_test_result "false" "$SCRIPT_PATH" "3" "git cannot find the worktree's repo in the booth"
+  echo "$ACTUAL"
+  exit 1
+fi
+
+if [[ "$ACTUAL" == *COMMITTED* ]] &&
+   [[ "$(git -C "$WORK_DIR/main-repo" log -1 --format=%s wt-test)" == "from-booth" ]]; then
+  print_test_result "true" "$SCRIPT_PATH" "4" "A commit made in the booth lands in the host repo"
+else
+  print_test_result "false" "$SCRIPT_PATH" "4" "A commit made in the booth did not land in the host repo"
+  echo "$ACTUAL"
+  exit 1
+fi
+
+if [[ "$ACTUAL" == *GC-DONE* ]] && [[ -d "$WORK_DIR/main-repo/.git/worktrees/other" ]] &&
+   git -C "$WORK_DIR/other" status > /dev/null 2>&1; then
+  print_test_result "true" "$SCRIPT_PATH" "5" "git gc in the booth leaves the host's other worktrees"
+else
+  print_test_result "false" "$SCRIPT_PATH" "5" "git gc in the booth pruned the host's other worktree"
+  echo "$ACTUAL"
   exit 1
 fi

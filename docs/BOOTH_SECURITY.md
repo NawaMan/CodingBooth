@@ -239,6 +239,14 @@ with any of these. The warning groups them by what untrusted code could do, and 
 | <a id="home-mounts"></a>**home mounts** | a **writable** mount of your home directory, `/home`, or a dotfile/dot-dir in it (`~/.bashrc`, `~/.ssh`, `~/.config`, `~/.m2`, …) | change files your account runs or loads — code **as you**, not root, e.g. the next time you log in or build |
 | <a id="host-network"></a>**host network** | `--network=host` | reach every service listening on the host, including ones bound only to localhost |
 
+**A booth on a git worktree does not ask either.** A worktree's `.git` is a file pointing into the
+main clone's `.git/`, outside the workspace, so booth also mounts that folder, writable, at the path
+git looks for it. That is the same exposure as a booth on a plain clone, whose `.git/` is inside the
+workspace mount: code in the booth can change refs and objects, and write `.git/hooks/` or
+`.git/config`, which run as you the next time you use git on the host. Treat it like any other
+writable workspace (§1). Submodules are not mounted this way, so git does not work in a booth
+opened on a submodule.
+
 Read-only mounts (`:ro`), like the credential seeds templates add, do not ask — they leak what they
 contain (§3) but do not let the booth run anything on the host. A `--device` the host does not have
 does not ask either: booth drops it before the run. Nor do the four devices the table excepts —

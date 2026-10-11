@@ -701,6 +701,7 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 
 	builder.CommonArgs.Append(ilist.NewList[string]("-v", codePath+":/home/coder/code"))
 	builder.CommonArgs.Append(ilist.NewList[string]("-w", "/home/coder/code"))
+	addGitWorktreeMount(builder, codePath)
 
 	if !ctx.WritableBooth() {
 		addReadOnlyBoothDir(builder, codePath)
