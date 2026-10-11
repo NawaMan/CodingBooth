@@ -435,7 +435,7 @@ template	flutter	0.1.0	d3c96cf81f4a7ce3750eabd1e8eb0f7bb1e901a09ec7acc3a6b4c0341
 template	fpc	1.0.0	833b92d6fb18707c1d678ee941562af8ccbe880c68abbe61bb4f0ec3f8604a62	templates/languages/fpc/template.toml
 template	freelens	0.1.0	8120af7df1f43318882fbe66b5f86b01da2cebe33cd66c431a1beacc07d8c41a	templates/tools/freelens/template.toml
 template	freeplane	1.0.0	68b6c0db16c41749e533797b2593263871ef318be6e049338b1b8091e3ba8a14	templates/tools/freeplane/template.toml
-template	fresh	0.1.0	b4cb2428621282621ca3f19dca666c8d161f1dc1a217aef04ebbeab86c79ec25	templates/tools/fresh/template.toml
+template	fresh	0.1.1	cd9543e82eb5af898448fcccd8ca86df161df04231616e2ec25297331a830503	templates/tools/fresh/template.toml
 template	fsharp	1.0.0	d6fb2e63c932dfa9610f0fba9c0e509847995529426c12727912ce59fd62700b	templates/languages/fsharp/template.toml
 template	fzf	1.0.0	05eb2cff0d7a101ba7c56b3f9afc385e307b59d03119ae54a097ede57864991f	templates/tools/fzf/template.toml
 template	gcc	1.0.0	5b8a6af9a5c06119ae8ecc82f3230cae4ef7777032aa4441698db2841c92c5f3	templates/languages/gcc/template.toml
@@ -666,6 +666,7 @@ extension	flutter+linux-desktop	0.1.0	a0d21868c9153250264974efe24bd185cc68eb0b51
 extension	flutter+vscode-ext	0.1.0	960dbb4948451317c93bf4702e9d4a6b9f75d693923e9b82f01a42779b159b06	templates/languages/flutter/vscode-ext--extension.toml
 extension	fpc+vscode-ext	1.0.0	3eff946a4e4eaa30869f8ae31814cb5a78541a0d46cbd1adb416761174244ae1	templates/languages/fpc/vscode-ext--extension.toml
 extension	fresh+config-shared	0.1.0	8c97c5790a3f6cdec5e371a3d8be33f62a2f680a39a8946f884f889a36cf3228	templates/tools/fresh/config-shared--extension.toml
+extension	fresh+theme	0.1.0	509e84af8b07d79373e8aa7ceba2b657be5a257d89385750c9f31227f441bc9b	templates/tools/fresh/theme--extension.toml
 extension	fsharp+vscode-ext	1.0.0	dc6ecfb458f479486a5bbfb6f5da2aeed82fe11485330800bd2c841fb8bb76b9	templates/languages/fsharp/vscode-ext--extension.toml
 extension	gcc+vscode-ext	1.0.0	f2a4fd981a7f306825555b0ce347c29b6deedac0594346ca1653dee4bacdbcd2	templates/languages/gcc/vscode-ext--extension.toml
 extension	gcloud+credential	1.0.0	d0fb957b01bf30dac1f6c989e8b3d1a5ee70f60b4ce6d7f75511281ff720ecc0	templates/tools/gcloud/credential--extension.toml

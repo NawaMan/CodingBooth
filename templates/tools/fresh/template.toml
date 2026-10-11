@@ -1,8 +1,8 @@
-cb-version = "0.1.0"
+cb-version = "0.1.1"
 display-name = "Fresh"
 primary = true
 display-disc = "Terminal text editor with familiar keybindings"
-display-detail = """Installs Fresh from the official GitHub release: the static musl build under /opt/fresh-editor, with fresh on PATH. Config is ~/.config/fresh/config.json. Select +config-shared to keep that directory in git. Pin a release with fresh:0.5.2; the default is latest, falling back to 0.5.2."""
+display-detail = """Installs Fresh from the official GitHub release: the static musl build under /opt/fresh-editor, with fresh on PATH. Config is ~/.config/fresh/config.json. Tokyo Night is selected automatically (fresh+theme); pick another built-in with fresh+theme:dracula, or fresh~theme for the factory theme. Select +config-shared to keep that directory in git. Pin a release with fresh:0.5.2; the default is latest, falling back to 0.5.2."""
 display-order = 23
 tags = [
     "fresh",
