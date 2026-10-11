@@ -2,6 +2,6 @@
 
 
 run-args = [
-    "-v", "booth-pgdata-{project}:/var/lib/postgresql",
+    "-v", "booth-pgdata-{name}:/var/lib/postgresql",
     "-p", "+3000:3000"
 ]

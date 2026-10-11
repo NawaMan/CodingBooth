@@ -1,7 +1,7 @@
 cb-version = "2.0.0"
 display-name = "MongoDB"
 display-disc = "MongoDB database with persistent volume"
-display-detail = "Installs MongoDB document database with a persistent Docker volume for data storage across container restarts. The volume is per project (booth-mongodata-<project>), so projects do not share data."
+display-detail = "Installs MongoDB document database with a persistent Docker volume for data storage across container restarts. The volume is per booth (booth-mongodata-<booth name>; the default booth name is the project folder), so projects, and two booths of one project, do not share data."
 display-order = 30
 tags = [
     "database",
@@ -11,7 +11,7 @@ tags = [
 
 run-args = [
     # Persist MongoDB data across container restarts
-    "-v", "booth-mongodata-{project}:/home/coder/.mongodb",
+    "-v", "booth-mongodata-{name}:/home/coder/.mongodb",
 ]
 
 [params.MONGO_VERSION]

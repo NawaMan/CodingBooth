@@ -2,6 +2,6 @@
 
 
 run-args = [
-    "-v", "booth-mysqldata-{project}:/var/lib/mysql",
+    "-v", "booth-mysqldata-{name}:/var/lib/mysql",
     "--publish", "+-1920:80"
 ]
