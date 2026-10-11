@@ -60,7 +60,7 @@ OTHER COMMANDS:
   BUILD     | Build and publish booth images   | build                                                                   | docs/BOOTH_BUILD.md
   LIFECYCLE | Manage kept-alive booths         | list, start, stop, restart, remove, prune, logs                         | docs/BOOTH_LIFECYCLE.md
   HOME VOL  | Manage persisted home volumes    | home-volume-list, home-volume-export, home-volume-import [Experimental] | docs/BOOTH_HOME.md
-  TOOLS     | Copy and inspect booth state    | cp, inspect, stats, top, diff, wait                                    | docs/BOOTH_TOOLS.md
+  TOOLS     | Copy files and inspect booths    | cp, inspect, stats, top, diff, wait                                     | docs/BOOTH_TOOLS.md
   CONNECT   | Connect to a running booth       | shell, exec                                                             | docs/BOOTH_CONNECT.md
   MESSAGE   | Send messages into a booth       | message                                                                 | docs/BOOTH_MESSAGE.md
   EXPOSE    | Inspect a booth's ports          | expose list                                                             | docs/BOOTH_EXPOSE.md
@@ -95,7 +95,11 @@ USAGE:
   %s shell [--name <n>] [--shell <s>]          (open interactive shell in booth)
   %s exec [--name <n>] -- <command>            (run a command in a running booth)
   %s cp [options] SOURCE DESTINATION          (copy between host and booth)
-  %s inspect|stats|top|diff|wait [name]        (native engine tools for a booth)
+  %s inspect [name] [--json|--format TEXT]    (show the booth's native configuration)
+  %s stats [name] [--no-stream]               (show resource usage)
+  %s top [name] [-- process-options ...]      (show running processes)
+  %s diff [name]                              (list changed container filesystem paths)
+  %s wait [name]                              (wait for the booth to stop; print its exit code)
   %s logs [--name <n>] [-f] [service ...]      (show a booth's output or service logs)
   %s expose list [--name <n>] [--json]         (list a booth's published ports)
   %s example <subcommand>                      (manage examples)
@@ -115,6 +119,13 @@ LIFECYCLE ENGINE SELECTION:
   --engine <docker|podman|apple>  Accepted by lifecycle, connection, copy, inspection,
                                   message and home-volume commands. Overrides config
                                   and CB_ENGINE; otherwise discover the owning engine.
+
+JSON OUTPUT FOR SCRIPTS:
+  list --json                   Print an array of booths; [] when none match.
+                                  Combine with --running or --stopped, not --name-only.
+  expose list [name] --json      Print the booth's name, engine, and ports array.
+  inspect [name] [--json]        Print the complete engine-native JSON (the default).
+                                  Its schema depends on the engine; --format is separate.
 
 BOOTSTRAP OPTIONS (CLI or defaults; evaluated before env and config file):
   --code <path>          Host code path to mount at /home/coder/code
@@ -290,9 +301,15 @@ EXAMPLES:
 `,
 		s, version,
 		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
+		s, s, s, s,
 		s,
 		s, s, s, s, s,
 	)
+	fmt.Println("\nCOPY AND INSPECTION COMMANDS:")
+	for _, command := range []string{"cp", "inspect", "stats", "top", "diff", "wait"} {
+		fmt.Println()
+		showHelpTools(command)
+	}
 }
 
 func showHelpExpress() {
