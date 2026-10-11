@@ -1058,7 +1058,14 @@ func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath, engine
 			fmt.Fprintf(os.Stderr, "Error: %v\n", protectedPathMountsError("cache", protected))
 			os.Exit(1)
 		}
-		cacheMounts = mounts
+		explicit := runArgVolumeTargets(builder.RunArgs)
+		for _, m := range mounts {
+			if explicit[m.containerPath] {
+				fmt.Fprint(os.Stderr, shadowedPathMountNotice("cache", m.containerPath))
+				continue
+			}
+			cacheMounts = append(cacheMounts, m)
+		}
 	}
 
 	// Same for .booth/shared/ and .booth/shared-seed/.
@@ -1076,10 +1083,16 @@ func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath, engine
 			fmt.Fprintf(os.Stderr, "Error: %v\n", protectedPathMountsError("shared", protected))
 			os.Exit(1)
 		}
+		explicit := runArgVolumeTargets(builder.RunArgs)
 		for _, m := range mounts {
-			if isMountableContainerPath(m.containerPath) {
-				sharedMounts = append(sharedMounts, m)
+			if !isMountableContainerPath(m.containerPath) {
+				continue
 			}
+			if explicit[m.containerPath] {
+				fmt.Fprint(os.Stderr, shadowedPathMountNotice("shared", m.containerPath))
+				continue
+			}
+			sharedMounts = append(sharedMounts, m)
 		}
 	}
 
@@ -1159,6 +1172,50 @@ func overlapEntries(cacheMounts, sharedMounts []cacheMount) []mountoverlap.Entry
 		entries = append(entries, mountoverlap.Entry{Kind: mountoverlap.Shared, Path: m.containerPath, Dir: m.dir})
 	}
 	return entries
+}
+
+// runArgVolumeTargets returns the container paths that run-args will bind-mount.
+//
+// A .booth/cache/ (or shared/) entry and a run-args mount can name the same target
+// -- rust's auto-selected registry-cache and the opt-in host cargo-cache both land
+// on ~/.cargo/registry -- and Docker refuses a duplicate mount point outright, so
+// the booth would not start. The run-args mount is the explicit choice, so it wins
+// and the cache entry steps aside. A run-args mount whose host path is missing is
+// dropped later (filterMissingVolumeMountItems) and does not count here, so the
+// cache still covers that path.
+func runArgVolumeTargets(runArgs *ilist.AppendableList[ilist.List[string]]) map[string]bool {
+	targets := make(map[string]bool)
+	if runArgs == nil {
+		return targets
+	}
+	homeDir, _ := os.UserHomeDir()
+	for _, group := range runArgs.Slice() {
+		items := group.Slice()
+		for i := 0; i+1 < len(items); i++ {
+			if !isVolumeFlag(items[i]) {
+				continue
+			}
+			spec := items[i+1]
+			i++ // skip the value
+			source := volumeSource(spec)
+			if isBindMountSource(source) {
+				if _, err := os.Stat(expandHostPath(os.ExpandEnv(source), homeDir)); err != nil {
+					continue
+				}
+			}
+			if target := volumeTarget(spec); target != "" {
+				targets[target] = true
+			}
+		}
+	}
+	return targets
+}
+
+// shadowedPathMountNotice words the skip of a cache/shared entry that run-args
+// already mount, so a cache that "does nothing" has an explanation.
+func shadowedPathMountNotice(kind, containerPath string) string {
+	return fmt.Sprintf("   Skipping .booth/%s mount of %s: run-args already mount that path\n",
+		kind, containerPath)
 }
 
 // cacheMount represents a bind mount derived from .booth/cache/.
