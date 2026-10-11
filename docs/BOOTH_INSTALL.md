@@ -50,9 +50,17 @@ strip `booth()` from your rc files (you may have other projects).
 ## 1. Shell convenience (`booth shell-config`)
 
 Install a central copy of the wrapper and a `booth()` function so you can type
-`booth` from any directory. The function walks up from `$PWD` for a project
-`./booth` and falls back to the central wrapper. Project commands still need a
+`booth` from any directory. The function calls the central wrapper, which walks
+up from `$PWD` to the project's `./booth` and hands off to it — so every command
+works from any subfolder of the project, as if typed at its root. Outside a
+project the central wrapper answers itself. Project commands still need a
 project booth (and `.booth/`); without one they fail with the usual messages.
+
+Any copy of the wrapper on `PATH` without a lock beside it behaves the same way,
+with no shell function at all — that is how a Homebrew-installed `booth` works
+(see [HOMEBREW.md](HOMEBREW.md)). Homebrew's `booth` declines `shell-config
+install`: it is on `PATH` already, and a central copy would not follow
+`brew upgrade`.
 
 ```bash
 ./booth shell-config install     # idempotent; bash + zsh + fish

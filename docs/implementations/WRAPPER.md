@@ -138,15 +138,49 @@ marked `booth()` function into the user's shell startup files:
 | macOS    | `~/Library/Application Support/codingbooth/booth` |
 | Windows  | `%LOCALAPPDATA%\codingbooth\booth` |
 
-The function walks up from `$PWD` looking for an executable `./booth`. If found, it runs that
-project wrapper. When the project root is **above** `$PWD` and the user did not already pass
-`--code`, the function appends `--code <project-root>` so the binary mounts and names the
-container after the project (not the subdirectory). If no project booth is found, it runs the
-central wrapper.
+The function only calls the central wrapper (`"$central" "$@"`); finding the project is the
+wrapper's job — see *Global mode* below. (Before wrapper 0.16.0 the function did the walk-up
+itself and appended `--code` to every command, which broke `config`, `list`, `template`, … from
+a subfolder.)
 
 **`booth install` via the central wrapper** copies this script to `$PWD/booth`, then re-execs
 that project wrapper so `.booth/tools/` is created in the project directory (not next to the
 central copy). Project wrappers keep location-based install into their own `SCRIPT_DIR`.
+
+### Global mode
+
+A wrapper with **no lock beside it** — Homebrew's, the shell-config central copy, any stray copy
+on `PATH` — is not a project's wrapper. Before handling any command, `GlobalDispatch` hands off
+to a project wrapper when there is one:
+
+1. `shell-config` → never handed off.
+2. `install` / `update` / `create` → always about `$PWD`: if `$PWD/booth` exists, it runs the
+   command; otherwise this wrapper does (and copies itself in). A foreign wrapper never copies
+   itself over an existing `./booth`.
+3. `--code <dir>` with an executable `<dir>/booth` → that wrapper, arguments untouched.
+4. Otherwise walk up from `$PWD` to the nearest executable `./booth` that is not this wrapper.
+   None → this wrapper serves the command as before ("not installed", `config`'s install offer).
+
+From the project root the command is passed through unchanged. From a subfolder, how the project
+root reaches the command depends on the subcommand (`project_command_mode`):
+
+| Mode   | Subcommands | Hand-off |
+|--------|-------------|----------|
+| `code` | run (bare `booth`, `run`, flag-first), `start`, `shell`, `exec`, `logs`, `build`, `emit-dockerfile`, `express` | `--code <root>` inserted right after the subcommand — relative paths and a trailing `-- cmd` keep working |
+| `here` | `home-volume-export` / `-import`, `example`, `showcase`, `tools-cache`, `config <path>` | from `$PWD`, unchanged — they take file paths of their own |
+| `root` | everything else (`config`, `list`, `stop`, `restart`, `remove`, `template`, `expose`, `message`, `uninstall`, `version`, …) | run from the project root, as if typed there |
+
+The root reaches the binary either as `--code` (only for commands that accept it) or as the
+working directory — never as a flag or variable a pinned binary may not know, so a new global
+wrapper works with every project's pinned version.
+
+`BOOTH_WRAPPER_HANDOFF=1` is exported on the first hand-off; a wrapper that sees it never hands
+off again. Without it, two lockless `./booth` files on the same path would exec each other
+forever.
+
+A wrapper whose real path contains `/Cellar/` is Homebrew's: `shell-config install` declines
+(Homebrew's booth is on `PATH` already, and a data-dir copy would never see `brew upgrade`), and
+`uninstall` outside a project refuses and points at `brew uninstall codingbooth`.
 
 Markers make the block easy to spot and delete:
 

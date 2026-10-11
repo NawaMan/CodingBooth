@@ -21,7 +21,7 @@ if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
     exit 0
 fi
 
-VERSION=0.15.3
+VERSION=0.16.0
 VERBOSE="${VERBOSE:-true}"
 
 # Resolve this wrapper's absolute path (follow symlinks). All project paths are
@@ -516,6 +516,14 @@ function UninstallBooth() {
                exit 1 ;;
         esac
     done
+
+    # Outside a project, Homebrew's booth has no project to uninstall from, and
+    # --wrapper would delete a file Homebrew owns.
+    if is_homebrew_wrapper && [[ ! -f "$LOCK_FILE" ]]; then
+        echo "No project here: run 'booth uninstall' inside the project to remove it from that project." >&2
+        echo "This booth is managed by Homebrew; to remove it: brew uninstall codingbooth" >&2
+        exit 1
+    fi
 
     local tools_dir="$TOOLS_DIR"
     local sha_file="$tools_dir/codingbooth.sha256"
@@ -1015,87 +1023,20 @@ shell_single_quote() {
 }
 
 # Write the bash/zsh function body (with markers) to stdout.
-# $1 = absolute path to the central booth wrapper.
+# $1 = absolute path to the central booth wrapper. The function only calls it:
+# the central wrapper finds the project itself (GlobalDispatch).
 emit_bash_zsh_shell_config_block() {
     local central="$1"
     local qcentral
     qcentral="$(shell_single_quote "$central")"
     cat <<EOF
 ${SHELL_CONFIG_BEGIN}
-# CodingBooth: type \`booth\` from any directory.
-# - --code <dir>: use <dir>/booth if present (lock lives with that wrapper)
-# - install/update: always this directory (\$PWD), never a parent booth
-# - else walk up for ./booth; from a subdir append --code <project>
-# - else central wrapper
+# CodingBooth: type \`booth\` from any directory. The central wrapper walks up
+# to the project's ./booth and hands off to it.
 booth() {
-  local _cb_dir _cb_central _cb_arg _cb_has_code _cb_code="" _cb_take=false _cb_code_abs
-  _cb_central='${qcentral}'
-
-  for _cb_arg in "\$@"; do
-    if \$_cb_take; then
-      _cb_code="\$_cb_arg"
-      _cb_take=false
-      continue
-    fi
-    case "\$_cb_arg" in
-      --code=*) _cb_code="\${_cb_arg#--code=}" ;;
-      --code)   _cb_take=true ;;
-    esac
-  done
-  if [[ -n "\$_cb_code" ]]; then
-    if _cb_code_abs="\$(cd "\$_cb_code" 2>/dev/null && pwd -P)"; then
-      if [[ -x "\$_cb_code_abs/booth" && -f "\$_cb_code_abs/booth" ]]; then
-        "\$_cb_code_abs/booth" "\$@"
-        return \$?
-      fi
-    fi
-  fi
-
-  case "\${1:-}" in
-    install|update|create)
-      if [[ -x "\$PWD/booth" && -f "\$PWD/booth" ]]; then
-        "\$PWD/booth" "\$@"
-      elif [[ -x "\$_cb_central" ]]; then
-        "\$_cb_central" "\$@"
-      else
-        echo "CodingBooth: no ./booth here and central wrapper missing: \$_cb_central" >&2
-        return 1
-      fi
-      return \$?
-      ;;
-  esac
-
-  _cb_dir="\$PWD"
-  while true; do
-    if [[ -x "\$_cb_dir/booth" && -f "\$_cb_dir/booth" ]]; then
-      _cb_dir="\$(cd "\$_cb_dir" && pwd -P)"
-      case "\${1:-}" in
-        uninstall|version|help|shell-config)
-          "\$_cb_dir/booth" "\$@"
-          return \$?
-          ;;
-      esac
-      _cb_has_code=false
-      for _cb_arg in "\$@"; do
-        case "\$_cb_arg" in
-          --code|--code=*) _cb_has_code=true; break ;;
-        esac
-      done
-      if ! \$_cb_has_code && [[ "\$(pwd -P)" != "\$_cb_dir" ]]; then
-        "\$_cb_dir/booth" "\$@" --code "\$_cb_dir"
-      else
-        "\$_cb_dir/booth" "\$@"
-      fi
-      return \$?
-    fi
-    case "\$_cb_dir" in
-      /) break ;;
-    esac
-    _cb_dir="\$(dirname "\$_cb_dir")"
-  done
+  local _cb_central='${qcentral}'
   if [[ ! -x "\$_cb_central" ]]; then
-    echo "CodingBooth: no project booth above \$PWD and central wrapper missing:" >&2
-    echo "  \$_cb_central" >&2
+    echo "CodingBooth: central wrapper missing: \$_cb_central" >&2
     echo "Re-run: ./booth shell-config install   (or codingbooth.io/install.sh)" >&2
     return 1
   fi
@@ -1113,89 +1054,12 @@ emit_fish_shell_config_block() {
     qcentral="$(shell_single_quote "$central")"
     cat <<EOF
 ${SHELL_CONFIG_BEGIN}
-# CodingBooth: type \`booth\` from any directory.
-# - --code <dir>: use <dir>/booth if present (lock lives with that wrapper)
-# - install/update: always this directory, never a parent booth
-# - else walk up for ./booth; from a subdir append --code <project>
-# - else central wrapper
+# CodingBooth: type \`booth\` from any directory. The central wrapper walks up
+# to the project's ./booth and hands off to it.
 function booth
-    # NOTE: fish command substitutions are NOT subshells — never use \`cd\` inside
-    # (...); it would change the caller's working directory. Use realpath instead.
     set -l _cb_central '${qcentral}'
-    set -l _cb_code ''
-    set -l _cb_take 0
-    for _cb_arg in \$argv
-        if test \$_cb_take -eq 1
-            set _cb_code \$_cb_arg
-            set _cb_take 0
-            continue
-        end
-        switch \$_cb_arg
-            case '--code=*'
-                set _cb_code (string replace -- '--code=' '' \$_cb_arg)
-            case '--code'
-                set _cb_take 1
-        end
-    end
-    if test -n "\$_cb_code"
-        set -l _cb_code_abs (realpath "\$_cb_code" 2>/dev/null)
-        if test -n "\$_cb_code_abs"; and test -x "\$_cb_code_abs/booth"; and test -f "\$_cb_code_abs/booth"
-            "\$_cb_code_abs/booth" \$argv
-            return \$status
-        end
-    end
-    if set -q argv[1]
-        switch \$argv[1]
-            case install update create
-                if test -x "./booth"; and test -f "./booth"
-                    ./booth \$argv
-                else if test -x "\$_cb_central"
-                    "\$_cb_central" \$argv
-                else
-                    echo "CodingBooth: no ./booth here and central wrapper missing: \$_cb_central" >&2
-                    return 1
-                end
-                return \$status
-        end
-    end
-    set -l _cb_dir (pwd -P)
-    while true
-        if test -x "\$_cb_dir/booth"; and test -f "\$_cb_dir/booth"
-            set -l _cb_resolved (realpath "\$_cb_dir" 2>/dev/null)
-            if test -n "\$_cb_resolved"
-                set _cb_dir \$_cb_resolved
-            end
-            if set -q argv[1]
-                switch \$argv[1]
-                    case uninstall version help shell-config
-                        "\$_cb_dir/booth" \$argv
-                        return \$status
-                end
-            end
-            set -l _cb_has_code 0
-            for _cb_arg in \$argv
-                switch \$_cb_arg
-                    case '--code' '--code=*'
-                        set _cb_has_code 1
-                        break
-                end
-            end
-            set -l _cb_cwd (pwd -P)
-            if test \$_cb_has_code -eq 0; and test "\$_cb_cwd" != "\$_cb_dir"
-                "\$_cb_dir/booth" \$argv --code \$_cb_dir
-            else
-                "\$_cb_dir/booth" \$argv
-            end
-            return \$status
-        end
-        if test "\$_cb_dir" = /
-            break
-        end
-        set _cb_dir (dirname \$_cb_dir)
-    end
     if not test -x "\$_cb_central"
-        echo "CodingBooth: no project booth above \$PWD and central wrapper missing:" >&2
-        echo "  \$_cb_central" >&2
+        echo "CodingBooth: central wrapper missing: \$_cb_central" >&2
         echo "Re-run: ./booth shell-config install   (or codingbooth.io/install.sh)" >&2
         return 1
     end
@@ -1265,6 +1129,15 @@ install_marked_block() {
 }
 
 ShellConfigInstall() {
+    # Homebrew's booth is already on PATH and finds projects itself. A copy in the
+    # data dir would never see `brew upgrade`.
+    if is_homebrew_wrapper; then
+        echo "This booth is managed by Homebrew ($WRAPPER_SELF)."
+        echo "It is on PATH and finds the project from any folder; no shell function is needed."
+        echo "To remove a shell function installed earlier: booth shell-config uninstall"
+        return 0
+    fi
+
     local central data_dir
     data_dir="$(get_data_dir)"
     central="$(get_central_booth_path)"
@@ -1309,9 +1182,9 @@ ShellConfigInstall() {
     echo "  source ~/.bashrc    # or ~/.zshrc"
     echo "  # fish autoloads ~/.config/fish/functions/booth.fish"
     echo ""
-    echo "Type 'booth' from any directory: walks up for a project wrapper,"
-    echo "or uses --code <dir>/booth when you pass --code. install/update always"
-    echo "target \$PWD. help/version work from central alone."
+    echo "Type 'booth' from any directory: the central wrapper walks up to the"
+    echo "project's ./booth (or uses <dir>/booth when you pass --code <dir>)."
+    echo "install/update/create always target \$PWD."
 }
 
 ShellConfigUninstall() {
@@ -1428,6 +1301,112 @@ CreateBooth() {
         (cd "$dir" && ./booth just-init) || true
     fi
 }
+
+# --- GLOBAL MODE (wrapper on PATH: Homebrew, the shell-config central copy) ---
+# A wrapper with no lock beside it is not a project's wrapper. From inside a
+# project it hands off to that project's ./booth, so `booth` on PATH works from
+# any folder of the project without the shell function.
+
+# Homebrew installs the wrapper under <prefix>/Cellar/<formula>/<version>/bin/.
+is_homebrew_wrapper() {
+    [[ "$WRAPPER_SELF" == */Cellar/* ]]
+}
+
+# Nearest folder at or above $PWD holding an executable ./booth that is not this
+# wrapper. Prints it; returns 1 if none.
+find_project_booth_dir() {
+    local dir
+    dir="$(pwd -P)"
+    while true; do
+        if [[ -x "$dir/booth" && -f "$dir/booth" \
+              && "$(realpath "$dir/booth")" != "$WRAPPER_SELF" ]]; then
+            printf '%s\n' "$dir"
+            return 0
+        fi
+        [[ "$dir" == / ]] && return 1
+        dir="$(dirname "$dir")"
+    done
+}
+
+# How a project command needs the project root, by subcommand:
+#   code     takes --code: add `--code <root>` right after the subcommand, so
+#            relative paths (--boothfile ./x) and a trailing `-- cmd` keep working
+#   here     takes file paths of its own: run from $PWD, unchanged
+#   root     everything else: run from the project root, as if typed there
+# Whatever a pinned binary supports, every case works: the root reaches it as
+# --code or as the working directory, never as a flag it may not know.
+project_command_mode() {
+    case "${1-}" in
+        ""|run|-h|--help|--version)
+            # bare `booth` is a run; -h/--help/--version are not
+            [[ "${1-}" == -* ]] && echo root || echo code ;;
+        -*)                                              echo code ;;
+        start|shell|exec|logs|build|emit-dockerfile|express) echo code ;;
+        home-volume-export|home-volume-import|example|showcase|tools-cache) echo here ;;
+        config|init)
+            # `config <path>` names its own target
+            [[ -n "${2-}" && "${2}" != -* ]] && echo here || echo root ;;
+        *)                                               echo root ;;
+    esac
+}
+
+GlobalDispatch() {
+    [[ -f "$LOCK_FILE" ]] && return 0                # a project's own wrapper
+    [[ -n "${BOOTH_WRAPPER_HANDOFF:-}" ]] && return 0   # already handed off once
+    export BOOTH_WRAPPER_HANDOFF=1
+
+    case "${1-}" in
+        shell-config) return 0 ;;
+        install|update|create)
+            # Always $PWD. A project wrapper there runs it; this one would copy
+            # itself over ./booth first (ensure_project_wrapper_for_install).
+            if [[ -x "$PWD/booth" && -f "$PWD/booth" \
+                  && "$(realpath "$PWD/booth")" != "$WRAPPER_SELF" ]]; then
+                exec "$PWD/booth" "$@"
+            fi
+            return 0 ;;
+    esac
+
+    # --code <dir> with <dir>/booth: that project's wrapper, args untouched.
+    local arg code="" take=false has_code=false code_abs
+    for arg in "$@"; do
+        if $take; then code="$arg"; take=false; continue; fi
+        case "$arg" in
+            --)       break ;;
+            --code=*) code="${arg#--code=}"; has_code=true ;;
+            --code)   take=true; has_code=true ;;
+        esac
+    done
+    if [[ -n "$code" ]] && code_abs="$(cd "$code" 2>/dev/null && pwd -P)" \
+       && [[ -x "$code_abs/booth" && -f "$code_abs/booth" \
+             && "$(realpath "$code_abs/booth")" != "$WRAPPER_SELF" ]]; then
+        exec "$code_abs/booth" "$@"
+    fi
+
+    local root
+    root="$(find_project_booth_dir)" || return 0     # no project: this wrapper serves
+
+    local mode
+    mode="$(project_command_mode "$@")"
+    if [[ "$(pwd -P)" == "$root" ]]; then
+        exec "$root/booth" "$@"
+    fi
+    case "$mode" in
+        code)
+            if $has_code; then
+                exec "$root/booth" "$@"
+            elif [[ $# -eq 0 || "$1" == -* ]]; then
+                exec "$root/booth" --code "$root" "$@"
+            else
+                local sub="$1"; shift
+                exec "$root/booth" "$sub" --code "$root" "$@"
+            fi ;;
+        here) exec "$root/booth" "$@" ;;
+        root) cd "$root" && exec "$root/booth" "$@" ;;
+    esac
+}
+
+GlobalDispatch "$@"
 
 # Early handling of version/help/shell-config so they don't require curl
 case "${COMMAND}" in
