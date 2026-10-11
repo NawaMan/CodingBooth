@@ -1,0 +1,15 @@
+cb-version = "0.1.0"
+display-name = "Registry Cache"
+display-disc = "Keep downloaded crates across booths, in .booth/cache/"
+display-detail = """Persists cargo's crate downloads (~/.cargo/registry and ~/.cargo/git) in the project's \
+gitignored .booth/cache/, so a fresh booth does not download every dependency again. Stays on this \
+machine and in this project, and touches nothing in your host home; delete .booth/cache/ to reset \
+it. To share the host's own ~/.cargo/registry instead, select cargo-cache."""
+display-order = 14
+auto-select = true
+tags = ["rust", "cargo", "cache"]
+
+cache-dirs = [
+    "home/coder/.cargo/registry",
+    "home/coder/.cargo/git",
+]

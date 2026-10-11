@@ -263,9 +263,10 @@ setup	roc-code-extension	1.0.0	7df93e3f6f14ce185099f56aaeaa165deed1c0d6dc6dfb2a4
 setup	ruby	1.0.0	1fd3945db32c71c9efce7295c9c0f14cb8aae74e580646b7c7c70d186d3d8f4a	variants/base/setups/ruby--setup.sh
 setup	ruby-code-extension	1.0.0	780ddb3632d0bd3c4d51480b03f7e9f57a07fe11a6e8e8c70d8ca9d3f638bc67	variants/base/setups/ruby-code-extension--setup.sh
 setup	ruby-nb-kernel	1.0.0	0cd5854ecbe3020b642f4220baa9fc10152a2d9d7f034fcdfe6b559c16bf693c	variants/base/setups/ruby-nb-kernel--setup.sh
-setup	rust	1.0.0	79b64221df7f25fd878cf426726d982256f2a571ecf94b8272ea5092f25fff33	variants/base/setups/rust--setup.sh
+setup	rust	1.1.0	794a3ebc52f438e35b2ba32f7b5dad4dbfdf509535c866ff5f2488fd144ecce1	variants/base/setups/rust--setup.sh
 setup	rust-code-extension	1.0.0	171449f2c52abd5add0a0062e8999a903884946349fae385b1e52dbdb94046bb	variants/base/setups/rust-code-extension--setup.sh
 setup	rust-nb-kernel	1.0.0	68e0ff75f57c016e4f6d1d9f2a61376a5fbd673751ff5a8f46b3ba55414ad277	variants/base/setups/rust-nb-kernel--setup.sh
+setup	rust-toolchain-file	0.1.0	d5e594812574e48e45f36ed0c85cf49ceb2158389c5fd8c662fe0f5d1e584881	variants/base/setups/rust-toolchain-file--setup.sh
 setup	sbt	1.0.0	a6361fbb0c96162b8730a1f6351edcaee867ff91a53f03d7d41c0b391653b227	variants/base/setups/sbt--setup.sh
 setup	scala	1.0.0	18b43d545d675e2971aedfb65413cb6ba6c57efd22201e8a84a5fcf789afa172	variants/base/setups/scala--setup.sh
 setup	scala-code-extension	1.0.0	f626327232a0c3dbf7660e08717170d0f545a9453256d26cc111d1e6f04d7ec1	variants/base/setups/scala-code-extension--setup.sh
@@ -327,6 +328,7 @@ install	npm	1.0.0	60dd3186f1fa122ab66f0ae61ffa07b6e272a2d05100b08ba4e5b051ca8dcd
 install	pecl	1.0.0	10f8728a1a8c4fd3eda484340ec53e938de18659504d14de5230037194ca3d69	variants/base/setups/pecl--install.sh
 install	pg-ext	0.1.0	f0eec31ac19347fc2241b0718d651eb6412abcfc23aa24bbded735e1f01a3ad3	variants/base/setups/pg-ext--install.sh
 install	pip	1.0.0	394290c20cee100e0ba26ad1292fa6aa8a92c72eede84fd5848f6fbc1ee3c257	variants/base/setups/pip--install.sh
+install	rustup	0.1.0	a14d69ac4fdfbbb714e46254e9434da32e53557a267422e3ab76ebaa68044fe2	variants/base/setups/rustup--install.sh
 install	uv	1.0.0	96850ee91ade44ee60d37f9d133603381f485fa169d2636b9d168a784a31c17c	variants/base/setups/uv--install.sh
 install	yarn	1.0.0	c7dae3e93b54c1052224c765e33748106f26da79adc97725b5c12a6134e0efce	variants/base/setups/yarn--install.sh
 helper	booth--envs	1.0.0	12d1b1092b570ba3129adcc326672f5fcfc828d6eefe6c5312f8bd8bce96d41d	variants/base/setups/booth--envs
@@ -530,7 +532,7 @@ template	rider	1.0.0	47637d65d1274db8830f20c20504c12fed2fc8f70aff38e670b406954c6
 template	roc	1.0.0	ab4333b667f1225111647280614366d7fc73fde905f5fea50488da176bf2280c	templates/languages/roc/template.toml
 template	ruby	1.0.0	48489658c5b070075ad806b1318be08ff8f1ef421bcf302e661243079ba5aa51	templates/languages/ruby/template.toml
 template	rubymine	1.0.0	49cda3742b718f48b8be4bcca72e462ddbc62f14563c041758c536f26d72b8a4	templates/ides/rubymine/template.toml
-template	rust	1.0.0	ff6fb315ca93fe152aca182119d99c83dd80c5fc32d36510b9b51ff99839681d	templates/languages/rust/template.toml
+template	rust	1.1.0	0ad7be3e1799483482d366e6b2187e8b925d1940c32ae8a298b78428353e2bc2	templates/languages/rust/template.toml
 template	sbt	1.0.0	87e66000613f33821a6ac5d3b0ed1e7a9a32fcbd184d2d1e25f8ed08f0dd7001	templates/tools/sbt/template.toml
 template	scala	1.0.0	d916f41afbd0950ce3636b3a3eb6058a0b0ac6239e077a9b2a02b687ed3bcab0	templates/languages/scala/template.toml
 template	scratch	1.0.0	25969a6f9678973d0c56db08fc423408f8c0e55fcab7c66b8c1002a0151d3275	templates/education/scratch/template.toml
@@ -854,11 +856,16 @@ extension	ruby+repl-history	1.0.0	cc7ad2748cd36c744a3f5b24d4c3abbfd868b1e416bfca
 extension	ruby+vscode-ext	1.0.0	1e4a2c606e02bc6a3c5c222805216a8f673c71fe380156f43fae62d678c0d684	templates/languages/ruby/vscode-ext--extension.toml
 extension	rubymine+import-project	0.1.0	438afec486b60da98bf93666f28f08f01254f0620f884a16aa5bbbc3980c7080	templates/ides/rubymine/import-project--extension.toml
 extension	rubymine+skip-first-run	0.1.0	50d40c26a677ea6eb1e37338d8211d439af1b560dcacafb19c5df494f7e146bc	templates/ides/rubymine/skip-first-run--extension.toml
-extension	rust+cargo-build	1.0.0	71dc02a311f19535a608bb199321c6d8c7d6427609086ce7f8dd4c4ee4a3d9f6	templates/languages/rust/cargo-build--extension.toml
-extension	rust+cargo-cache	1.0.0	26edcad72ce1901bb0befacd07d7252a832458c4bd152c82ebba1f26cb22838c	templates/languages/rust/cargo-cache--extension.toml
+extension	rust+cargo-build	1.0.1	f8aa22394f3e10b9c92f414e95937bc58c0920080a5906d1209ee854f4f49498	templates/languages/rust/cargo-build--extension.toml
+extension	rust+cargo-cache	2.0.0	99aa6f4f611c8e5edbd2ccfad0660f18133dac8ba1fbb3e32db6d040f1fa59e9	templates/languages/rust/cargo-cache--extension.toml
 extension	rust+cargo-pkg	1.0.0	09b37c1d8d60f8b9aabaa862b1a9ac70fb4ecdb2047781e54a4bba9a837eb967	templates/languages/rust/cargo-pkg--extension.toml
+extension	rust+components	0.1.0	d24f9fa618ac85d2cfe3079182db7be1502a7ff378d6e8940ccd53ffc3df29f1	templates/languages/rust/components--extension.toml
 extension	rust+credential	1.0.0	3fd1ceb95f631d2dff6341e0ac6496c6273c5e95e3f539c8fc76297327315247	templates/languages/rust/credential--extension.toml
+extension	rust+gui-deps	0.1.0	c5366964bc12dd48201c78d7b094bcdb54e8a7db0ad857957ce5a52c08a651a7	templates/languages/rust/gui-deps--extension.toml
 extension	rust+kernel	1.0.0	cf155d9cdb50820b319d46a2e1b893691f3c7a21452c5b90e635a0fcc9d06b2f	templates/languages/rust/kernel--extension.toml
+extension	rust+registry-cache	0.1.0	ae2f2b2b7483387e7a0d943e2b542a8877315aded2d20cec6b54174a30b057f7	templates/languages/rust/registry-cache--extension.toml
+extension	rust+targets	0.1.0	1d70eb3186b77d0227739a7e986edef879133769b70d3f222559dde1ce155ece	templates/languages/rust/targets--extension.toml
+extension	rust+toolchain-file	0.1.0	bafff60c104db384a6628510639fd348108c52460378e17f807d15097edb91d5	templates/languages/rust/toolchain-file--extension.toml
 extension	rust+vscode-ext	1.0.0	15d640d5ea6ba0de8dd9da2d254ef79144971819e7c6a79047c366b435df51a8	templates/languages/rust/vscode-ext--extension.toml
 extension	scala+kernel	0.1.0	0ddce958ad84105021bc925e95492a8a371b11c3bdea13820424a36ade21203f	templates/languages/scala/kernel--extension.toml
 extension	scala+vscode-ext	1.0.0	4b86a8868bc35a5e5e562f263853e9b9aa387130b71b3f5a863360828cc4286b	templates/languages/scala/vscode-ext--extension.toml

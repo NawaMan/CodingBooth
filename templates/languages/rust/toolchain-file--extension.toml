@@ -1,0 +1,17 @@
+cb-version = "0.1.0"
+display-name = "Toolchain File"
+display-disc = "Install the toolchain the project pins in rust-toolchain.toml"
+display-detail = """Bakes the toolchain a project pins in rust-toolchain.toml (or the older rust-toolchain file) \
+into the image, with the targets and components the file lists, plus rust-analyzer. Without it the \
+first `cargo` in every fresh booth stops to download the pin. Only those two files are copied into \
+the build, so editing source does not rebuild this step; changing the pin does. Does nothing in a \
+project without the file, so it is safe to leave selected."""
+display-order = 22
+auto-select = true
+tags = ["rust", "rustup", "toolchain"]
+
+[segments]
+"Boothfile--56" = """
+copy .booth/Boothfile rust-toolchai[n] rust-toolchain.tom[l] /tmp/cb-rust-toolchain/
+setup rust-toolchain-file /tmp/cb-rust-toolchain
+"""

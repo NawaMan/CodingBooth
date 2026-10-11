@@ -30,4 +30,6 @@ just test
 
 ## Cargo registry
 
-`rust+cargo-cache` is already selected. It bind-mounts this machine's `~/.cargo/registry` into the booth, so Cargo reuses downloads that are already on the host. A start that has no prompt needs `--privileged-allowed`, because the mount is a writable host dot-directory. The files live on the host at `~/.cargo/registry`.
+`rust+registry-cache` is selected by default. It keeps Cargo's `~/.cargo/registry` and `~/.cargo/git` in this project's gitignored `.booth/cache/`, so a fresh booth does not download every crate again. Delete `.booth/cache/home/coder/.cargo/` to reset it.
+
+To share the host's own `~/.cargo/registry` instead, select `rust+cargo-cache`. Its run-args mount takes the path, and the cache entry is skipped with a notice. The mount is a writable host dot-directory, so a start with no prompt needs `--privileged-allowed`.

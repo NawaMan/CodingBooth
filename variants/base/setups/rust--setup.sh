@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -44,8 +44,21 @@ curl --proto '=https' --tlsv1.2 -sSf --retry 5 --retry-delay 3 --retry-all-error
 sh "$RUSTUP_INIT" -y --no-modify-path --default-toolchain "${RUST_VERSION}"
 rm -f "$RUSTUP_INIT"
 
-# Make the shared installation readable
+# IDE support: rust-analyzer (the language server every editor uses) and rust-src
+# (the standard library source it needs to resolve std). Not in rustup's default
+# profile. A nightly can lack a component on a given day, so a miss is a warning,
+# not a failed build.
+for component in rust-analyzer rust-src; do
+    "${CARGO_HOME}/bin/rustup" component add "${component}" \
+        || echo "⚠️  rustup could not add ${component} to ${RUST_VERSION}; continuing without it"
+done
+
+# Make the shared installation readable, and the rustup home writable: `rustup
+# target add`, `rustup component add`, and a project's rust-toolchain.toml pin all
+# write there, as the booth user, at run time. Without this they fail with
+# "could not create temp file /opt/rust/rustup/tmp/...: Permission denied".
 chmod -R a+rX /opt/rust
+chmod -R a+rwX "${RUSTUP_HOME}"
 
 # Create symlinks for rustc, cargo, rustup in /usr/local/bin
 ln -sf "${CARGO_HOME}/bin/rustc" /usr/local/bin/rustc

@@ -286,6 +286,17 @@ Many templates include built-in cache extensions you can enable during `booth co
 | `codeserver+settings-cache` | `~/.local/share/code-server/` |
 | `neovim+data-cache` | `~/.local/share/nvim/`, `~/.local/state/nvim/` |
 
+### Package Caches (`cache-dirs`)
+
+| Template Selection | What's Cached |
+|--------------------|---------------|
+| `rust+registry-cache` (auto-selected) | `~/.cargo/registry/`, `~/.cargo/git/` |
+
+Downloaded crates survive the booth, so a fresh one does not fetch every dependency again. A
+`run-args` mount of the same path — `rust+cargo-cache` shares the host's `~/.cargo/registry` —
+wins over the cache entry, which is then skipped with a notice (Docker refuses two mounts on one
+path).
+
 ### Desktop Icons (`cache-dirs`)
 
 | Template Selection | What's Cached |

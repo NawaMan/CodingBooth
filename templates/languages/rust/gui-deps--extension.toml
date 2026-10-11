@@ -1,0 +1,15 @@
+cb-version = "0.1.0"
+display-name = "GUI Libraries"
+display-disc = "System libraries Rust GUI crates build against (winit, egui, wgpu, iced, bevy, slint)"
+display-detail = """Installs the development libraries the common Rust GUI stacks link to: X11, Wayland and \
+xkbcommon for windowing (winit), OpenGL/EGL and Vulkan loaders for rendering (glow, wgpu), fontconfig \
+and freetype for text, GTK 3 for native file dialogs (rfd), ALSA and udev for audio and gamepads \
+(bevy). Pair it with a desktop variant to see the window; on base it is enough to build and test."""
+display-order = 30
+auto-select = false
+tags = ["rust", "gui", "desktop", "egui", "bevy"]
+
+[segments]
+"Boothfile--45" = """
+install apt pkg-config,libx11-dev,libxcursor-dev,libxrandr-dev,libxi-dev,libxkbcommon-dev,libxkbcommon-x11-dev,libwayland-dev,libgl1-mesa-dev,libegl1-mesa-dev,libvulkan-dev,mesa-vulkan-drivers,libfontconfig1-dev,libfreetype-dev,libgtk-3-dev,libasound2-dev,libudev-dev
+"""

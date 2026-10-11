@@ -1,8 +1,8 @@
-cb-version = "1.0.0"
+cb-version = "1.1.0"
 display-name = "Rust"
 primary = true
 display-disc = "Rust toolchain with Cargo and rustup"
-display-detail = "Sets up the Rust development environment with rustup, Cargo package manager, and configurable version. Includes rust-analyzer for IDE integration."
+display-detail = "Sets up the Rust development environment with rustup, Cargo package manager, and configurable version. Includes rust-analyzer and rust-src for IDE integration. The toolchain is writable, so `rustup target add` and a rust-toolchain.toml pin work inside the booth."
 display-order = 40
 tags = [
     "rust",
@@ -26,7 +26,13 @@ suggests = [
     "1.84.0",
 ]
 
+# Image environment, not a shell profile. `booth exec` runs the command with no
+# shell, so /etc/profile.d never runs: without these, cargo cannot find its
+# toolchain ("rustup could not choose a version of cargo to run"), and rustfmt,
+# clippy and every `cargo install`ed tool are "not found".
 [segments]
 Boothfile = """
+env RUSTUP_HOME=/opt/rust/rustup
+env PATH=/home/coder/.cargo/bin:/opt/rust/cargo/bin:$PATH
 setup rust ${RUST_VERSION}
 """
