@@ -1,0 +1,4 @@
+# Configured by: booth config --no-tui --overwrite --mount booth-voltest-{name}:/home/coder/.voltest
+
+
+run-args = ["--volume", "booth-voltest-{name}:/home/coder/.voltest"]
