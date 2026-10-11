@@ -31,7 +31,7 @@ if [[ "$ACTUAL" == "/usr/local/bin/folio /usr/bin/pass " ]]; then
 else
   print_test_result "false" "$0" "1" "folio and pass are installed in the base image, envfolio is not"
   echo "  Actual output: ${ACTUAL:-<empty — the booth did not run>}"
-  echo "  Hint: the base image must carry folio (EnvFolio 0.4.0+). If a locally-built image has"
+  echo "  Hint: the base image must carry folio (EnvFolio 0.5.0+). If a locally-built image has"
   echo "        taken the ${CB_PREBUILD_REPO:-nawaman/codingbooth} tag, re-pull it."
   FAILED=$((FAILED + 1))
 fi
@@ -74,7 +74,7 @@ fi
 SCRIPT='
 set -e
 PW=booth-test-passphrase
-printf "%s\n" "$PW" | folio store init --new-key --name Test --email test@example.com --passphrase-stdin >/dev/null 2>&1
+printf "%s\n" "$PW" | folio init --new-key --name Test --email test@example.com --passphrase-stdin >/dev/null 2>&1
 printf "%s\n" "$PW" > /tmp/ef-pw
 printf "pinentry-mode loopback\npassphrase-file /tmp/ef-pw\n" >> ~/.gnupg/gpg.conf
 folio text insert -t hello-text app/greeting >/dev/null 2>&1

@@ -86,7 +86,7 @@ setup	elixir	1.0.0	74a623fabf1f5ecdaedcc789adb20913add82fda12198a616619b34e0155f
 setup	elixir-code-extension	1.0.0	1743fe565bbebf15186049e8fc3dee0bfedf050c56c3e26cdf7fa2e2c03b1cc4	variants/base/setups/elixir-code-extension--setup.sh
 setup	elm	1.0.0	462267a54b2007cf1c081a12ef078ccd908ef93c3907925659dfdfbe7caa76fa	variants/base/setups/elm--setup.sh
 setup	elm-code-extension	1.0.0	6e0caa93413bd80117a033e9a2f94c537a9867e775427f778347a4f8e312aedc	variants/base/setups/elm-code-extension--setup.sh
-setup	envfolio	2.0.0	c40a30ddd62e0656df1dda433fd4187dba1505a5b237aa2692e3f1409e239f13	variants/base/setups/envfolio--setup.sh
+setup	envfolio	2.1.0	259df49877efbb3a99feb142fbd1fbc3b0ac0f7be96de0cbac5816ddba4bd044	variants/base/setups/envfolio--setup.sh
 setup	erlang	1.0.0	24ad8e50ad69aef9725262acd39b14885d8007f85bacd31e360b75a39d6175ab	variants/base/setups/erlang--setup.sh
 setup	erlang-code-extension	1.0.0	6e5b09d75439bec5b67b899d850b0a99cb07c3fe72052e8061458843f60aff70	variants/base/setups/erlang-code-extension--setup.sh
 setup	excalidraw	1.0.1	59cc6f1fc07318765cb3ec8ef771f64c6814ed21b83f7202446a96f1a50f6841	variants/base/setups/excalidraw--setup.sh
@@ -424,7 +424,7 @@ template	duckdb	1.0.0	fed11260e9befae504889bdf6eb46719752d7a318931c926cc54ed22ea
 template	eclipse	1.0.0	8fde02948d8baddf95cf3e8e6c7bf46afa31300df5e1a66673ea3005adb73d9a	templates/ides/eclipse/template.toml
 template	elixir	1.0.0	ce2fbd0ff5084b159a6dc51d9935454db4995e608179f6c3042b923a4206d8c8	templates/languages/elixir/template.toml
 template	elm	1.0.0	a73f0bc337236f926b2ef5078cc50ccc211bc6c0ffb863fde96e4a02f530b0eb	templates/languages/elm/template.toml
-template	envfolio	2.0.0	43b822102280b9d2c1ce4220aac564cb9f8c6f4882c52393d6d02c601f1de9f0	templates/tools/envfolio/template.toml
+template	envfolio	2.1.0	2d5d26b80693d2ec206c31097a4f7c96a5b5031cebee5fbc27d088088a794daf	templates/tools/envfolio/template.toml
 template	erlang	1.0.0	7188a3322e8e5ab310d245c8db947f7228245d39d6c36b606676066ac8732ef4	templates/languages/erlang/template.toml
 template	excalidraw	1.0.0	86c9ad6816d3aba78628bce02322d8e9e91836adf368ec68b0c5d2567fd73459	templates/tools/excalidraw/template.toml
 template	exercism	1.0.0	0871fa644f331917e0e3bdbbba224a5f30501b42fd7805df64423ad4dd04fb13	templates/education/exercism/template.toml
@@ -649,7 +649,7 @@ extension	elixir+mix-deps	1.0.0	22616ac46a460263aa755b2639698546c95cba7e46a5e638
 extension	elixir+repl-history	1.0.0	3516d04cfa6733442c41993f050f6d0d58a8d2400c95c7b161c0342be94ed53a	templates/languages/elixir/repl-history--extension.toml
 extension	elixir+vscode-ext	1.0.0	3957ded1247420d09f277913d2598a7717d4d1d6dc16dee3d8c08bdc7b0df913	templates/languages/elixir/vscode-ext--extension.toml
 extension	elm+vscode-ext	1.0.0	e7db7995335a5c73a4a79143ee82c59ad8d021edea1037bea9f06dcdbb367d9e	templates/languages/elm/vscode-ext--extension.toml
-extension	envfolio+store-cache	2.0.0	9fedbb7d3bcba954f711cd34d3a5e478760626a6939132267077c6145f0d2332	templates/tools/envfolio/store-cache--extension.toml
+extension	envfolio+store-cache	2.0.1	2d792fe969aa23b617e8e32b3e6ffcf13d925e05cdeb425045e1d1702192a344	templates/tools/envfolio/store-cache--extension.toml
 extension	erlang+vscode-ext	1.0.0	34931fad7207f9b5f0c9305fc1fde92cb8279cad00888b2281c95d8ee61b68b7	templates/languages/erlang/vscode-ext--extension.toml
 extension	excalidraw+autostart	1.0.0	3f44a9a28ac8113581eedfee087e4ddb1c6e0078ee9e232af86320cee76955b3	templates/tools/excalidraw/autostart--extension.toml
 extension	excalidraw+expose	1.0.0	d707c54b8cbd220e3bf775b1e117756aec8d424e11b7fb4c931d053d7dbe4735	templates/tools/excalidraw/expose--extension.toml

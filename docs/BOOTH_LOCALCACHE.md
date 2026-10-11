@@ -324,9 +324,9 @@ For the team/git version of either, see [Shared State](BOOTH_SHARED.md).
 
 The EnvFolio store and the GPG keyring that holds its private key (still protected by its
 passphrase). The extension sets `FOLIO_STORE_DIR` to a folder *inside* the cached one: a
-mounted folder always holds the cache's `.mount-this` marker, and `folio store init` /
-`store restore` only take a folder that is missing or empty. `.booth/cache/` stays on this machine
-and out of git; `folio store backup` /
+mounted folder always holds the cache's `.mount-this` marker, and `folio init` /
+`folio restore` only take a folder that is missing or empty. `.booth/cache/` stays on this machine
+and out of git; `folio backup` /
 `restore` is the portable way to move a store.
 
 ### Browser Profiles (`cache-dirs`)
