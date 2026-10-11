@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.1.0"
 display-name = "Mermaid"
 primary = true
 display-disc = "Mermaid diagram CLI and live editor"

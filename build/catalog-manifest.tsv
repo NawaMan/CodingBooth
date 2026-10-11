@@ -17,7 +17,7 @@ setup	antigravity	1.0.0	4f2f3247caa24356b52052dcf53ad93587d45cdd8f4724012f338ff4
 setup	anythingllm	0.1.0	af41e4c5feeab4eb21c699fde6f1cc4b78b362ad39f0233813dcd05d07d90f97	variants/base/setups/anythingllm--setup.sh
 setup	apache	1.0.0	617e95ed26efe524963c5cf9a195cbf7a7131a6e70f446045a828e01d42fe72d	variants/base/setups/apache--setup.sh
 setup	appwrite-cli	0.1.0	bce1a8d838f509fc02cde39583d4fae8b55b51ceded7ed6dff86a0a04fea2d25	variants/base/setups/appwrite-cli--setup.sh
-setup	appwrite-server	0.1.0	be74a654cdfd7d7ff343e8b98d305cb79a51fe97f9d9276949689474c654e9a0	variants/base/setups/appwrite-server--setup.sh
+setup	appwrite-server	0.2.0	052841a1b44cfb2bc22cecb4effe37264fed5b9ec3b51f0faaee0bd44903d439	variants/base/setups/appwrite-server--setup.sh
 setup	aws-cdk	1.0.0	6c76de2df9e02b46ff7c48def02bdab16c6ee05f6c555a832c869711749058f9	variants/base/setups/aws-cdk--setup.sh
 setup	aws-cli	1.0.0	86f33b090048a34908a279d640b232f8f3b4d70d17347fbf7116a24181f2910d	variants/base/setups/aws-cli--setup.sh
 setup	aws-sam-cli	1.0.0	f9ea029f35792cdc088f459e6192efb3e140ae9c72e2b5ecf659b4f0e6d73c2a	variants/base/setups/aws-sam-cli--setup.sh
@@ -26,7 +26,7 @@ setup	base-code-extension	1.0.0	8442e7a6aa51c3423207d8172d170208a5696abad356505c
 setup	bash	0.1.1	d1717bbcce1980084f56794b8a45d135248ad6391f8a3c71ace8b2c3c065d0a3	variants/base/setups/bash--setup.sh
 setup	bash-code-extension	1.0.0	739b732e27d197027422df407be931c49db8b64c2ba1cbb5b33378ba0fda4635	variants/base/setups/bash-code-extension--setup.sh
 setup	bash-nb-kernel	1.0.0	7b99d4bb4f5c20b73ade9ec071e6b7051c7372bbc23f7f8d80ecf4aab51b70cb	variants/base/setups/bash-nb-kernel--setup.sh
-setup	bluej	1.0.0	1afcb7ad9ff53a0a2c0f10cd24894cd901e7ac05a9a9f727ea98efb6fcd37dcc	variants/base/setups/bluej--setup.sh
+setup	bluej	1.1.0	a36c1160117ebbd75b018a2ae5b219fd18a817330c914ef0af9b68e323128a21	variants/base/setups/bluej--setup.sh
 setup	booth-desktop-actions	1.0.0	b50ecaf9bd210ffc3205b61af3cac6388fc816a3a8d266a0251cf589cc2f326b	variants/base/setups/booth-desktop-actions--setup.sh
 setup	booth-message-codeserver-wrapped	1.0.0	c78340cbb22a400686bf4ccc5f99e42ea831576499dee5fd8dd0d669ea59adac	variants/base/setups/booth-message-codeserver-wrapped--setup.sh
 setup	booth-message-desktop-wrapped	1.0.1	67da9437cfdba5a02e3c9df5eeb660010ed53140ecbc8b1d634bfd9d0160a850	variants/base/setups/booth-message-desktop-wrapped--setup.sh
@@ -107,7 +107,7 @@ setup	freeplane	1.0.0	c99321c85fb689aa14c230aed89e2ed0f368a843697ea47076cf2e7b4a
 setup	fresh	0.1.0	418c0f44bad7ec3c1afbdb39dd26c18fc0173e0cceb984c215f2cc6a578546ef	variants/base/setups/fresh--setup.sh
 setup	fsharp-code-extension	1.0.0	2b2d956e31cf59c0240a4e457fc9bf6995b38555de0bac07e4cf49718a998388	variants/base/setups/fsharp-code-extension--setup.sh
 setup	fzf	1.0.0	146bce9168c8db7639bce92862d7c91e455279187ae80ad69a14d5c39626233f	variants/base/setups/fzf--setup.sh
-setup	gcc	1.0.0	0bafe3d32055784cfb85462d12157f4aa1e436eb2a81cd452f19c1fb7f9090f6	variants/base/setups/gcc--setup.sh
+setup	gcc	1.1.0	0c3ab4db99ac29698633aded554f44850fcb955d87b0e0180d9609f62f8c0787	variants/base/setups/gcc--setup.sh
 setup	gcc-code-extension	1.0.0	4bead0b7f116778815855e31ed6353762c6deb020517fa92ea9dda9c7e3a717f	variants/base/setups/gcc-code-extension--setup.sh
 setup	gcloud	1.0.0	a7d4650483f3f74d604619f844debedb72c33330b1a906355a5b52276de2538a	variants/base/setups/gcloud--setup.sh
 setup	gemini-cli	1.0.0	6102af714bff3e30b13dc002ae3c1a0a045741c9e971abf6e08a9e12c0aa4c87	variants/base/setups/gemini-cli--setup.sh
@@ -118,7 +118,7 @@ setup	ghostty-fancy	1.0.0	bc14a3b49c2cdae66514cdd66d3b874f0988728d8b3a831ce6490b
 setup	gimp	1.0.0	4b4effac44795f1c333af66c5f520921b98066c9dba84e8d5a3f096fd451b92a	variants/base/setups/gimp--setup.sh
 setup	gleam	0.1.0	a317faa2932885471191ed135455f3d35ac9205f94234b9e11fec72ce3899ca6	variants/base/setups/gleam--setup.sh
 setup	gleam-code-extension	0.1.0	3c69d444f944b4a29febf2da07ef1da671db38f78af0677b41e544aa26b7e0ec	variants/base/setups/gleam-code-extension--setup.sh
-setup	go	1.0.0	f4e6fe0495b7eb1c1883dd7dcc4216c7dbb067ddd6883fd9fcf20eda08c05a78	variants/base/setups/go--setup.sh
+setup	go	1.1.0	c97f35af6a3815a545e7fbdfe93fc0f89fa23c9b4c3cff27a3112f6753c3efb3	variants/base/setups/go--setup.sh
 setup	go-code-extension	1.0.0	14b5c05adef0b6e5f5eb1593ef84feca1320bdf1ad6150cf845e96b39c822371	variants/base/setups/go-code-extension--setup.sh
 setup	go-nb-kernel	1.0.0	641f7383ccc93feedc8e7c68f474e713806f756c22ed215f5d6305ede6e5d2ba	variants/base/setups/go-nb-kernel--setup.sh
 setup	google-chrome	1.1.0	4747c061f49b7eea76796abc4425f0e563611222452911f064464f8531b1a21b	variants/base/setups/google-chrome--setup.sh
@@ -195,7 +195,7 @@ setup	lxqt	1.0.1	693889a0c4c7de41ed61740c17fba0c3419809f12837fbb4b90db1c8d4eeed2
 setup	lxqt-wallpaper	1.0.0	3a642a29c4b1a945808776d90e2a40827631cd40ab35648220510cb289e606f5	variants/base/setups/lxqt-wallpaper--setup.sh
 setup	make	1.0.1	003cc302048699df8f78154881caf4d365a6f28e86ab86cc337bb81219360a72	variants/base/setups/make--setup.sh
 setup	material-cursors	1.0.0	8be1bb69e1da659faa6e7dc9b93b4b6b413466931764094f294661614f044021	variants/base/setups/material-cursors--setup.sh
-setup	mermaid	1.0.0	7d06620e83ea4827c94bed254ab3599b16a3af1db218726bd55571e204ca07d9	variants/base/setups/mermaid--setup.sh
+setup	mermaid	1.1.0	1c091454b3d1c7322d69dddd743dba7c2e538a03a8a07e7a324d806134b08f63	variants/base/setups/mermaid--setup.sh
 setup	mermaid-code-extension	0.1.0	b5ef19dba87af781749c4c3807897aab97566be4815ead5eebcbe71465684e0e	variants/base/setups/mermaid-code-extension--setup.sh
 setup	mkcert	1.0.0	5891d6a97efc33fbf2c826e39a2a0fde4bc36827b8c63a3ca7fa813d4a6b1d23	variants/base/setups/mkcert--setup.sh
 setup	mojo	0.1.0	96e0a03c9a939f019d7606267146e50cf00d55ac22febb72966797c65db17644	variants/base/setups/mojo--setup.sh
@@ -204,9 +204,9 @@ setup	mojo-nb-kernel	0.1.0	d495996f064cb6731d0893bc516a1208b3b61117bd1f12bc8aba2
 setup	mongodb	1.0.0	1be4a85e44d930d72d5f025e91525741b0d61f060395e5c169b40db86e138c35	variants/base/setups/mongodb--setup.sh
 setup	mongodb-code-extension	0.1.0	4a521a5b9662e8955c15cc2e1b607aa5f2204e17efa5ce1dae664dd3fba44ae3	variants/base/setups/mongodb-code-extension--setup.sh
 setup	mongodb-start	0.1.0	5b49cf16ade27cdceb45f8ef1206e8c977a997a1af65c344be6bc006d839b657	variants/base/setups/mongodb-start--setup.sh
-setup	mvn	1.0.0	54c7e0c871c9316d5990597d737e695d65e6e1f24002d6c5cd2e5bbbbe424dec	variants/base/setups/mvn--setup.sh
+setup	mvn	1.1.0	75b1fb85e84df3b85be1ec6a6055c846ae529b9986ec45d6516c491a04a7c201	variants/base/setups/mvn--setup.sh
 setup	mysql	1.0.0	60e0564af91ddf71101cf8022bb22c1c7979d1bf9dc60078aeaccd697ae04b92	variants/base/setups/mysql--setup.sh
-setup	n8n	0.1.0	684e56498bd13f222ac267cf818d013f9eea765fefa8364cf836add6e7ae740c	variants/base/setups/n8n--setup.sh
+setup	n8n	0.2.0	caaa53698aff9f66ba324bf33a8a00b3c1369ed92d30769871b279cdee68bb7e	variants/base/setups/n8n--setup.sh
 setup	nbgrader	1.0.0	07ab891bc09aae91e162808951150e06564731497b8f8affc3c018f1581ad218	variants/base/setups/nbgrader--setup.sh
 setup	neovim	1.0.0	bf81805049e5766eff3c6e6a2f2dde4658fa127d2257d1d0d383892fe74cc1b9	variants/base/setups/neovim--setup.sh
 setup	network-whitelist	1.0.0	3d02b83cba6adfce82951ef427f109d42eed6c3979f577c210f7c02ae32a1742	variants/base/setups/network-whitelist--setup.sh
@@ -240,7 +240,7 @@ setup	postgresql	1.0.1	d5e755bdd74013e8305c1de853192c4b8cd0fe9e364b807bcea9e1188
 setup	postgrest	0.1.0	948c17d3e0be2f9fd8a7a65624720474b4b387aa1f75766fdeb7937419fa4069	variants/base/setups/postgrest--setup.sh
 setup	posting	1.0.0	b88d852b924aacf6d4452bb9e09768637614fa2640103b9c43e362b50d018bfb	variants/base/setups/posting--setup.sh
 setup	protobuf-code-extension	0.1.0	1d6fa2c8084c0f4f1033469dd521ad95c6ab33f1ff5313d9df498d263f890e6d	variants/base/setups/protobuf-code-extension--setup.sh
-setup	protoc-gen-grpc-java	0.1.0	f0c3ab55be0b7dee4da41bd2798c2835f64b089b6f383a0d8020aed0aa74c0c2	variants/base/setups/protoc-gen-grpc-java--setup.sh
+setup	protoc-gen-grpc-java	0.2.0	9921b3a2c89ce1795328c6ec94eb9c46813c53fc29d024ca8d80d229f20f4a9a	variants/base/setups/protoc-gen-grpc-java--setup.sh
 setup	protoc-gen-grpc-web	0.1.0	8bfbd439133b6c5475c83a25119409c654982384fb69482cfe5345d32a98ba4c	variants/base/setups/protoc-gen-grpc-web--setup.sh
 setup	pulumi	1.0.0	bf6cf9071ea8fb0616f90e1ad611d8fdde40c30b14d02cedd842bc4c89daa1da	variants/base/setups/pulumi--setup.sh
 setup	puppeteer	1.0.0	517308d69698cc61a8ff6e95c59ec38cada967eee952534e4ab7b004a51eef4d	variants/base/setups/puppeteer--setup.sh
@@ -377,7 +377,7 @@ template	antigravity	1.0.0	28f8aaa3db7f6b2233e1b0104209a97ac32e8cf5a73761ae79c26
 template	anythingllm	0.1.0	bd0f0672370811a9450657271dfab4dcab21fcbd6e3fb5dedd8f41749c2ff8fd	templates/ai-tools/anythingllm/template.toml
 template	apache	1.0.0	b9f0d00ad3ff5f770177661cf4a2022603f410f88e0704da261bac53d40f87dc	templates/tools/apache/template.toml
 template	appwrite-cli	0.1.0	c5140173243894739da14761d775155d04f152ae08ddd2fdb673e1e81bc5ebd6	templates/tools/appwrite-cli/template.toml
-template	appwrite-server	0.1.0	a9df57f95d0b1033bdb1cf300348a5c035c8da574dfc4624f4237f1b4a3c0119	templates/tools/appwrite-server/template.toml
+template	appwrite-server	0.2.0	a1c88a4cadf6429c4f24df2ad4ec2f72a3e456d06ca7acb7232eb10c2c61e71e	templates/tools/appwrite-server/template.toml
 template	apt-pkg	1.0.0	067c354afcf28d91f8b398bd1bf5be712e260d67f1d3c7b87e3cec473935e0af	templates/tools/apt-pkg/template.toml
 template	aws-cdk	1.0.0	37b101a82ead64c22205a9866ef0c10bc219fa023818f829c8bbe8d1b97072e4	templates/tools/aws-cdk/template.toml
 template	aws-cli	1.0.0	72d55e433a599603f8c754be248a5e7339a795dfb8a57e78b9a65cca2621df80	templates/tools/aws-cli/template.toml
@@ -385,7 +385,7 @@ template	aws-sam-cli	1.0.0	68eb10612ae4e4fe9845df3497a4324d44664d10dfcc08619a92d
 template	azure-cli	1.0.0	769f7a261ff9687db05e14f43615d1a9d389961d8dcd907bf6a9cd5c470d76ff	templates/tools/azure-cli/template.toml
 template	bash	0.1.1	0745e8f0ccdc7dee5b03887769e7922553de764aace080fc6d525e248db0cf1a	templates/tools/bash/template.toml
 template	bash-nb-kernel	1.0.0	dbb76597b7fdce528c63c7e45ae18d7a287b460f23efed73409de544545ebf9c	templates/tools/bash-nb-kernel/template.toml
-template	bluej	1.0.0	adecc119a92051c07fc3b50cec3cfcb4ff8440ea5c0ad81dd767e009346a8712	templates/education/bluej/template.toml
+template	bluej	1.1.0	6e4639174dab73b35c7f8735080e9d4d63aadb0db6b5867f74d7d2282a6f6ebd	templates/education/bluej/template.toml
 template	brew-pkg	1.0.0	2af46f813c76f44e49fdc2c42d6520989ac389632145f642636614d22f85ee4c	templates/tools/brew-pkg/template.toml
 template	buf	1.0.0	33342524fd6c11a70fd2c7556849e725aeffcfce352f483fab0a4ee4dd4a5995	templates/tools/buf/template.toml
 template	build-essential	1.0.0	254c6538ac77b763ac57bc3376981463f62b56cf4de0e107debe05e85f456c8c	templates/tools/build-essential/template.toml
@@ -401,7 +401,7 @@ template	code-ext-pkg	1.0.0	5161e9075a8ab8c7407c3fcd641e3aa246fbdf0bdbfa8db25040
 template	codeserver	1.0.0	1489535058148132e2ccf07c265d8a7d29f78941be45c48dc506b06b7eac6eb5	templates/ides/codeserver/template.toml
 template	codex	1.0.0	e1f6b45932e1d0f92118d912a227f704406b094e779e1977c1ca5c639d263adf	templates/ai-tools/codex/template.toml
 template	conan	1.0.0	a1ba767acfc167a67d1d65ea91fe348836bbe2f69276790f55c5b2741ff8be95	templates/tools/conan/template.toml
-template	conda	1.0.0	3ee76abe87f448aea41f7da1b48110b8497995a4de345741a8bc75e2f19fb1a0	templates/tools/conda/template.toml
+template	conda	1.1.0	6db6ed920435f5e0651ac4dc116d7dbc656a15c47c6d1a6ed9a13a2d3aea0af0	templates/tools/conda/template.toml
 template	crystal	1.0.0	a39b3b18bfeb2e280bab82c8fe68d8dc8736e1ff0dae91f676598ef6e6a46fe5	templates/languages/crystal/template.toml
 template	csharp	1.0.0	af11808df5919b5d9a21013b6a398caec059e0c8cfc397119865f8aea20b5c73	templates/languages/csharp/template.toml
 template	cuda	0.1.0	c1011dad037d2baf270b52e572e8c314392ed87a1c10a8e886b2cbb79ebe5b8b	templates/tools/cuda/template.toml
@@ -438,7 +438,7 @@ template	freeplane	1.0.0	68b6c0db16c41749e533797b2593263871ef318be6e049338b1b809
 template	fresh	0.1.1	cd9543e82eb5af898448fcccd8ca86df161df04231616e2ec25297331a830503	templates/tools/fresh/template.toml
 template	fsharp	1.0.0	d6fb2e63c932dfa9610f0fba9c0e509847995529426c12727912ce59fd62700b	templates/languages/fsharp/template.toml
 template	fzf	1.0.0	05eb2cff0d7a101ba7c56b3f9afc385e307b59d03119ae54a097ede57864991f	templates/tools/fzf/template.toml
-template	gcc	1.0.0	5b8a6af9a5c06119ae8ecc82f3230cae4ef7777032aa4441698db2841c92c5f3	templates/languages/gcc/template.toml
+template	gcc	1.1.0	0e3c2ce9bc6d2ffc9c7b6993ae8fe81c84e08d669498db0eccad7b23986db453	templates/languages/gcc/template.toml
 template	gcloud	1.0.0	940e408cbacadb057a279e942fcacbd282b648212b27856597b8c47a7191cfea	templates/tools/gcloud/template.toml
 template	gemini-cli	1.0.0	8c65a1e0cc3cbc884b71bf3e577db765d23c54f49fe9a3fc6af14d8e8f25f7f7	templates/ai-tools/gemini-cli/template.toml
 template	gh	1.0.0	ed6289bdc5820f14c7495680b154d9ab5a8c3dd711f09549b6c3deec27cfce27	templates/tools/gh/template.toml
@@ -447,7 +447,7 @@ template	ghostty	1.0.0	dfd4b340de849325faebce647f64b0230fdea7b52208075fc01b4e050
 template	gimp	1.0.0	1855591e9d1aee68552d78e04c8f42d3c312421e8544d23f134f3ef53d82f85f	templates/desktops/gimp/template.toml
 template	git-credential	1.0.0	549e26c9ea8a3c7b95c9d4b859a0382020b0b273c57ab23216eb6f0d23a93148	templates/tools/git-credential/template.toml
 template	gleam	0.1.0	ea80483a07ee76e6e953d905248a5c9d47ca3e7b8831a15eb4a342d614355cac	templates/languages/gleam/template.toml
-template	go	1.0.0	e6aed728efbbbeb81be4e78af2b43eb648afab7e38d79cab14f61dff8dc568cc	templates/languages/go/template.toml
+template	go	1.1.0	2e878f0805dbc32d285a855d73e3c2845f7c52cba241d99438fa38daee9ed523	templates/languages/go/template.toml
 template	goland	1.0.0	e657667702b91cc74de699fc1a4fd329c253579685824186871c7f9d9aadc111	templates/ides/goland/template.toml
 template	google-chrome	1.0.0	135a1bce24ab8dd6420199954a5ba74a5ccb6170a62a4a0a981b185830c68e83	templates/desktops/google-chrome/template.toml
 template	goose	1.0.0	d38a963864204dcc5282c8e1eebdf3c7c8b8f383a15929b5a9ca4f6f64982295	templates/ai-tools/goose/template.toml
@@ -491,12 +491,12 @@ template	lua	1.0.0	280f87fd4a9f035ceb5a1c0590f601c9f2532088d3ef8d4a45a2afa039b88
 template	lxqt	1.0.0	963f393fa998d49aa47f27a28f0b6fe4f1143f63a18e2adc592ee7db70cd9765	templates/desktops/lxqt/template.toml
 template	make	1.0.0	5dff97e9c946d257c985f2398632f1df13fef45c13b73bd6f17f7ae95a36a6e9	templates/tools/make/template.toml
 template	material-cursors	1.0.0	8b64d5c27d3113f60d8769aef239be563621a3cc8336df406386c46773f2be0c	templates/desktops/material-cursors/template.toml
-template	mermaid	1.0.0	32a779e00e0dbef72353a5de2e4bc16e2bf8a638a672ff3fa73b959da2edf5bc	templates/tools/mermaid/template.toml
+template	mermaid	1.1.0	d7e95b2973aa9342af5bf56734296a1fef7a11879529f67bfc5670cda668f6af	templates/tools/mermaid/template.toml
 template	mkcert	1.0.0	23be3ef98c34aa99430fbf664f38c726c462871b2a38e250d30f5ae0b6cd0b5f	templates/tools/mkcert/template.toml
 template	mojo	0.1.0	27ab9f41480cdb2b361b178d5eec62b94ebb469a3a4a48eb579509cb16d42718	templates/languages/mojo/template.toml
 template	mongodb	2.0.0	ec12ba77fa333dbba7e92ac763d30403714250acde5997a5c9fe4e5c50bf7bed	templates/middlewares/mongodb/template.toml
 template	mysql	2.0.0	bfa3c51630773108ba4a32b31cd16a3c5df8cbababd4db058586549e5aae6e9d	templates/middlewares/mysql/template.toml
-template	n8n	0.1.0	3af60599015d4a227b98f0108d8c1958b7484195d0cec85c4b7f8148eade2e1c	templates/tools/n8n/template.toml
+template	n8n	0.2.0	bc4ee5088f79ceebe26923ac8dc50586e35c4c41426b571e42b2da8774291ec2	templates/tools/n8n/template.toml
 template	nbgrader	1.0.0	2e0765a2aa72972a73952ce75ac6a8333a943dae1c5110dc1ca7c863ceba1b8d	templates/education/nbgrader/template.toml
 template	neovim	1.0.0	64e255e62d166643992f9138358fc8eca3f1119f5dcf0fa58eba4646e5b19e19	templates/tools/neovim/template.toml
 template	nginx	1.0.0	ae357de64d5f1752798f6f237e6e273653040803c065118d2f365f3c62f70329	templates/tools/nginx/template.toml
@@ -511,7 +511,7 @@ template	ollama	1.0.0	5fdb875baa6eaf50f9441fd727fc92d3b2638de822e280b13d16b0e604
 template	opencode	1.0.0	2871adf254f8f249db6118eb8c330dd3321501b66f2769ee69b2c61b3b9bf470	templates/ai-tools/opencode/template.toml
 template	openssh	1.0.0	3f9a44c7fea93ca4024e7939267d8e200a8419bfda285dbc2e9a5f4e0db8ccd3	templates/tools/openssh/template.toml
 template	orchis-gtk	0.1.0	90d120c836c889c8ee0f98ab8f29f20dd873e3ee952951daa39d475082bc0116	templates/desktops/orchis-gtk/template.toml
-template	penpot	0.2.0	8f5e95f08b114c45dd434211efbbe619dd45a5fc05909adec88263b2b3416a10	templates/tools/penpot/template.toml
+template	penpot	0.3.0	d1ec68889245673eb0b0612d8e1644e65e407a05d56e6d23ccfaf59bcaaa405e	templates/tools/penpot/template.toml
 template	php	1.0.0	1c7bf5b149e8922242abac9d78935da6c45881f91a58268e3fdada08e5cbaa63	templates/languages/php/template.toml
 template	phpstorm	1.0.0	e3f9978b35ff7170c9e2bf825a5a5c09c1b42ca9e50e84b6861d102ca31cef18	templates/ides/phpstorm/template.toml
 template	plantuml	1.0.0	2ea1d2e1c098fadcbff7add437e7658f691d89a092f7b60a4cfd31a70e645b39	templates/tools/plantuml/template.toml
@@ -723,7 +723,7 @@ extension	java+jenv	1.0.0	b1ce9dce12fcbe01ac3f067e5e37741e0d0153680a4d60fc2a99c1
 extension	java+kernel	1.0.0	3e2a479be70fd0a54f075d7fc1ae832803fb15bff57bd56efacf7c388780c631	templates/languages/java/kernel--extension.toml
 extension	java+kernel-jjava	1.0.0	e1ef264d624f457567454d7b9c53328a892aaf5dcc5ddff273166fa4b7023a57	templates/languages/java/kernel-jjava--extension.toml
 extension	java+m2	1.0.0	a292c74f50f4ccb0a45ea74469fffaf8106eaa60826aa199bc15927940ee7b18	templates/languages/java/m2--extension.toml
-extension	java+maven	1.0.0	24b439b119c54b4d1b497ff9c698a731c9730056146b4e249a67fe9203cae957	templates/languages/java/maven--extension.toml
+extension	java+maven	1.1.0	a1c38b94a57bab46005ed79ad1b0c30c558ab4a56a97c78abe395651245aaffc	templates/languages/java/maven--extension.toml
 extension	java+mvn-install	1.0.0	6c2b0748394859c582a1588a53c04ddeaab015db0c212c230f3d156ab4b3f4f8	templates/languages/java/mvn-install--extension.toml
 extension	java+vscode-ext	1.0.0	244c70cd4511d7b3242d62e72619dc4a62682131cd0eacf40bf95439959960a3	templates/languages/java/vscode-ext--extension.toml
 extension	julia+vscode-ext	1.0.0	478d9046662ce50d86a7ccc30b36e1bef3dd2da3d83a89c1697c58c7ec405e08	templates/languages/julia/vscode-ext--extension.toml
@@ -761,8 +761,8 @@ extension	mysql+expose	1.0.0	43b8a76e984d5fe67914d964fdc1f89fdc5f6ce1b7d0ed022f6
 extension	n8n+autostart	0.1.0	9dd34dd4c2b1cb1dce87dd28b150550c2b345b93f5f315336fe4455025a264e2	templates/tools/n8n/autostart--extension.toml
 extension	n8n+expose	0.1.0	645aba7f690819bbb808d8ed0c5e408037a6c50c49f5198c4084f969ca9fd968	templates/tools/n8n/expose--extension.toml
 extension	n8n+persist	0.1.0	e6d85bf4b5e2d467f8256fa50f4e69e29d605d8074702c0d1e7db6991cb92dfe	templates/tools/n8n/persist--extension.toml
-extension	n8n+sandbox	0.1.0	e6a530c586f191667c027e7499f150ebd43d3dd6c114031a7fa4a8d527f355a7	templates/tools/n8n/sandbox--extension.toml
-extension	n8n+search	0.1.0	21056a9307ca687f9e6bf077348827a30f003158d2ca10fbdb37fb7476782b8c	templates/tools/n8n/search--extension.toml
+extension	n8n+sandbox	0.2.0	d448ed437dd185a7ff5727e55fc9e6054800eededa550196ec190272f156e295	templates/tools/n8n/sandbox--extension.toml
+extension	n8n+search	0.2.0	5c770448e45de19bd4b0aed762bfb057d7c4d4d2a21d11ad909225401cd76278	templates/tools/n8n/search--extension.toml
 extension	neovim+config	1.0.0	f34c817467bd276eb278b70d918f7be95fc309ca7c71d1f7a1d84237ecf69435	templates/tools/neovim/config--extension.toml
 extension	neovim+config-shared	1.0.0	d8091cefafd4ad7014c260c7adb69c378375592b5392d568a03534f6b6350ad9	templates/tools/neovim/config-shared--extension.toml
 extension	neovim+data-cache	1.0.0	d7dda185adfab3b1bcce23edfce01ea1b76633630b5c5fa6cd0ce318e685fb55	templates/tools/neovim/data-cache--extension.toml
@@ -822,7 +822,7 @@ extension	postgrest+expose	0.1.0	7276ce3fae93e69d1c1bf85851731f891da3fa8fe2c3a5f
 extension	protobuf+cpp	0.1.0	06679f209544c4b339916f9662d8c911aa5160d907d52db69d49eeb2c1b20c59	templates/tools/protobuf/cpp--extension.toml
 extension	protobuf+go	1.0.0	d9d8aa12aeec1265c498892e3b94e22d1b9f2b94403881e6e5b287ab63ae698d	templates/tools/protobuf/go--extension.toml
 extension	protobuf+grpc-web	0.1.0	222476cbb4aaec1d648a0d9e4c78407bb3bf9022fc8e7b24d6a747c22f733df2	templates/tools/protobuf/grpc-web--extension.toml
-extension	protobuf+java	0.1.0	ed84d674a191885b137295ed4a016fdfb6850029647527ffb54ee4f75f316e9b	templates/tools/protobuf/java--extension.toml
+extension	protobuf+java	0.2.0	bf2395a04cad8ad99a61b602beaeb76134934a76666fe19503ac1add5ea38b44	templates/tools/protobuf/java--extension.toml
 extension	protobuf+nodejs	0.1.0	142c4a818883486156a699823299e41a6442bb239f0e918c3c513f366d742b41	templates/tools/protobuf/nodejs--extension.toml
 extension	protobuf+python	0.1.0	57a947c3a9657ec28e79dc6f1593c11be18abdf31a69ac6368faa45b05d7a522	templates/tools/protobuf/python--extension.toml
 extension	protobuf+ruby	0.1.0	07cd5717d4803ecb9953af5ca8c25b45397a611643d0052b4248579edfdaa280	templates/tools/protobuf/ruby--extension.toml
