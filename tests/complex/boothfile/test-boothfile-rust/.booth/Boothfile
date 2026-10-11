@@ -1,0 +1,13 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --select rust
+
+env APT_SNAPSHOT=20261009T000000Z
+
+arg RUST_VERSION=stable
+
+env RUSTUP_HOME=/opt/rust/rustup
+env PATH=/home/coder/.cargo/bin:/opt/rust/cargo/bin:$PATH
+setup rust ${RUST_VERSION}
+copy .booth/Boothfile rust-toolchai[n] rust-toolchain.tom[l] /tmp/cb-rust-toolchain/
+setup rust-toolchain-file /tmp/cb-rust-toolchain
+setup rust-code-extension

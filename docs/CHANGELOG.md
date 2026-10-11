@@ -107,6 +107,49 @@ This file contains a list of changes for each released version.
   empty file.
 - **New doc: [In and Out of the Booth](IN-OUT.md)** — every way to put files into a booth, or
   connect it to something, outside `/home/coder/code`.
+- **Rust works from `booth exec`, and the toolchain is no longer read-only.** Two things made
+  Rust booths hard to use for anything beyond an interactive shell:
+  - *`booth exec` could not run cargo.* The rust setup set `RUSTUP_HOME` and the cargo `PATH`
+    only in `/etc/profile.d`, which `booth exec` never reads (it runs the command without a
+    shell). `booth exec -- cargo build` failed with "rustup could not choose a version of cargo
+    to run", and rustfmt, clippy and every `cargo install`ed tool were "not found" — so a
+    Justfile recipe had to wrap each line in `bash -lc`. The `rust` template now sets both on the
+    image environment, the same fix Homebrew got.
+  - *Nothing could be added to the toolchain at run time.* `/opt/rust/rustup` was read-only for
+    the booth user, so `rustup target add`, `rustup component add` and — worse — any project with
+    a `rust-toolchain.toml` pin failed with "could not create temp file ... Permission denied";
+    with a pin, even `cargo --version` failed. It is writable now.
+  - rust-analyzer and rust-src are installed. The template already said "includes rust-analyzer";
+    the binary was only a rustup proxy that failed with "Unknown binary".
+- **New Rust extensions.**
+  - `rust+toolchain-file` (auto-selected) installs the toolchain a project pins in
+    `rust-toolchain.toml` — with the targets and components it lists — into the image at build
+    time. Without it the first `cargo` in every fresh booth stops for ~10 s to download the pin.
+    It copies only that file into the build, never the whole project, so editing source does not
+    rebuild the step. A project without the file is unaffected.
+  - `rust+targets:"wasm32-unknown-unknown"` and `rust+components:"llvm-tools"` add rustup targets
+    and components to the default toolchain (`install rustup target|component …`).
+  - `rust+registry-cache` (auto-selected) keeps `~/.cargo/registry` and `~/.cargo/git` in the
+    project's `.booth/cache/`, so a fresh booth does not download every crate again.
+  - `rust+gui-deps` installs the system libraries Rust GUI crates link to (winit, egui/eframe,
+    wgpu, iced, bevy, slint): X11, Wayland, xkbcommon, GL/EGL, Vulkan, fontconfig, GTK 3, ALSA,
+    udev.
+- **`rust+cargo-cache` is no longer auto-selected.** It bind-mounts the host's
+  `~/.cargo/registry` writable, which booth treats as a way out of the container: every Rust
+  booth asked for consent before starting, and a non-interactive start (`booth exec --run`, CI)
+  refused outright. `registry-cache` replaces it as the default. Select `rust+cargo-cache` to
+  keep sharing the host's cache. A booth regenerated with `booth config` drops the host mount
+  unless the selection names it.
+- **A `.booth/cache/` entry no longer clashes with a `run-args` mount of the same path.** Docker
+  refuses a duplicate mount point, so a booth with both did not start. The explicit `run-args`
+  mount now wins and the cache entry is skipped with a notice. (Selecting `rust+cargo-cache`
+  with the auto-selected `registry-cache` is how you would hit it.) The same applies to
+  `.booth/shared/`.
+- **`rust+cargo-build` fetches for real.** It copied only the root `Cargo.toml` into a scratch
+  folder, so `cargo fetch` failed for a workspace (no member manifests) and for a single crate
+  (no `src/`), and it ran as root, filling `/root/.cargo`, which the booth user cannot read. It
+  now fetches in the mounted project into the booth user's `~/.cargo/registry`. Pair it as
+  `rust+cargo-build~registry-cache`: the cache would otherwise mount over what it baked in.
 
 - **`booth just-init` — a starter Justfile whose recipes run in the booth.** It defines
   `{{run-in-booth}}` and `{{run-on-host}}`. On the host, a `{{run-in-booth}}` line runs through
