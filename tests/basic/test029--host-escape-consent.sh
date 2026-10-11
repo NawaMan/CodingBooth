@@ -30,7 +30,17 @@ BOOTH="$(find_local_booth_build "$SCRIPT_DIR")"
 
 TEST_DIR=$(mktemp -d)
 NAME="cb-test029-consent-$$"
-trap 'rm -rf "$TEST_DIR"; docker rm -f "$NAME" "$NAME-dind" >/dev/null 2>&1 || true' EXIT
+# Containers first, then the directory, and neither step may fail the trap.
+# The last check leaves the booth running, and booth has $TEST_DIR/.booth and
+# $TEST_DIR/.booth/.tmp bind-mounted inside it: Docker Desktop refuses to let
+# the host remove a directory it is sharing with a live container (EACCES),
+# while Linux removes it without complaint. Deleting first therefore failed
+# only on a Mac — and under `set -e` a failure inside the trap both skips the
+# `docker rm` that would have released the mount (leaking the booth into the
+# next run) and becomes the script's exit status, failing a test whose own
+# seven checks all passed.
+trap 'docker rm -f "$NAME" "$NAME-dind" >/dev/null 2>&1 || true
+      rm -rf "$TEST_DIR" 2>/dev/null || true' EXIT
 mkdir -p "$TEST_DIR/.booth"
 
 FAILED=0

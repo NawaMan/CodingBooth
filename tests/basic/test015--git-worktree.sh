@@ -84,7 +84,7 @@ fi
 # A second worktree, old enough that an unguarded `git gc` would prune it.
 git -C "$WORK_DIR/main-repo" worktree add -q "$WORK_DIR/other" -b other
 # git judges staleness by the record's index mtime, so backdate the whole record.
-touch -d '1 year ago' "$WORK_DIR/main-repo/.git/worktrees/other/"*
+touch_year_ago "$WORK_DIR/main-repo/.git/worktrees/other/"*
 
 ACTUAL=$("$BOOTH_BIN" --variant base -- bash -c '
   echo "BRANCH=$(git rev-parse --abbrev-ref HEAD)"
