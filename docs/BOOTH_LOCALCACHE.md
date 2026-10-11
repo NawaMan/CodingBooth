@@ -67,7 +67,7 @@ CodingBooth walks `.booth/cache/` top-down. At each directory:
 
 1. **If `.mount-this` marker exists** — mount the entire directory at its corresponding container path. Stop traversing into it. The `.mount-this` file itself is not included in the mount content (it can be empty).
 
-2. **Otherwise** — mount any individual **files** in this directory as file bind mounts, then continue traversing into subdirectories.
+2. **Otherwise** — mount any individual **files** in this directory one by one (see [Single files](#single-files-are-kept-in-sync)), then continue traversing into subdirectories.
 
 ### Summary
 
@@ -75,11 +75,33 @@ CodingBooth walks `.booth/cache/` top-down. At each directory:
 |---------------------------------------|-------------------------------|-----------|
 | Directory with `.mount-this`          | Whole directory mount         | Stops     |
 | Directory without `.mount-this`       | Not mounted (structural only) | Continues |
-| File in a non-`.mount-this` directory | Individual file mount         | N/A       |
+| File in a non-`.mount-this` directory | Individual file, kept in sync | N/A       |
 
 ### Why `.mount-this`?
 
 Mounting individual files is the safe default — it never accidentally overrides container directories like `/home/coder/`. The `.mount-this` marker is an explicit opt-in for when you want an entire directory mounted (e.g., an app's data directory with many files).
+
+### Single files are kept in sync
+
+A folder is a real bind mount. A single file is not mounted at its own path, because a mounted
+file cannot be replaced: a tool that saves by writing a new file and renaming it over the old one
+gets `EBUSY` and loses the save. zsh saves its history that way, and so do GLib apps (xfconf) and
+readline's full rewrite.
+
+Instead the file is mounted under `/var/lib/codingbooth/file-sync/<path>`. At start the booth
+copies it to `<path>` as a plain file, and `booth--file-sync` copies it back every 2 seconds when
+the booth's copy changed, or brings a host-side edit in when only that side changed. The booth's
+side wins when both did. A clean stop, and the end of a one-shot `booth -- <cmd>`, copy once more.
+
+| What changes | Effect |
+|--------------|--------|
+| Rename-based saves | Work |
+| Edit on the host while the booth runs | Reaches the booth within 2 seconds |
+| Hard kill (`docker kill`, a crash) | Loses at most the last 2 seconds |
+| Two booths of one folder, one file | Last writer wins; a live mount would have interleaved appends |
+
+An image built before this (one without the `com.codingbooth.file-sync` label) gets the file
+mounted directly, as before.
 
 ---
 
@@ -93,6 +115,21 @@ The following container paths must **not** be overridden. **If `.booth/cache/` c
 | `/home/coder/code` | The bind-mounted project directory |
 
 So `.booth/cache/opt/codingbooth/` or `.booth/cache/home/coder/code/` is an error, and the message names every offending path at once. Booth refuses rather than skipping the entry, because a silently-dropped mount looks exactly like a cache that inexplicably does not work.
+
+### Cache and Shared on the same path
+
+[Shared](BOOTH_SHARED.md) mounts the same way from `.booth/shared/`, and the two trees are
+checked against each other at start:
+
+| What overlaps | Result |
+|---------------|--------|
+| One container path in both (`.booth/cache/home/coder/x` and `.booth/shared/home/coder/x`) | **Refuses to start**, naming both — Docker cannot mount two things on one path |
+| One inside the other (a Shared path inside a Cache folder, or the reverse) | Starts, with a one-line **notice** saying which part goes to git |
+
+The second is allowed because it is sometimes meant — but it is easy to do by accident.
+`google-chrome+profile-cache` (all of `.chrome-data`) with `google-chrome+bookmarks-shared`
+(`.chrome-data/Default`) sends `Default/` to git, and `Default/` also holds cookies and saved
+logins. `booth config` prints the same notice when the selection makes such a pair.
 
 ---
 

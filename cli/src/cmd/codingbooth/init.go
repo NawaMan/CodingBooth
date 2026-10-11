@@ -22,6 +22,7 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/compiler"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/output"
 	"github.com/nawaman/codingbooth/src/pkg/justinit"
+	"github.com/nawaman/codingbooth/src/pkg/mountoverlap"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/selection"
 	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
 	"github.com/nawaman/codingbooth/src/pkg/pathmode"
@@ -362,6 +363,7 @@ func runInitNew(version string, args []string) {
 
 	fmt.Printf("Initialized .booth/ in %s\n", targetPath)
 	printSummary(resolved)
+	printMountOverlaps(os.Stderr, out)
 
 	if flags.start {
 		fmt.Printf("Starting booth in %s ...\n", targetPath)
@@ -1262,6 +1264,40 @@ func applyMountFlags(cfg *output.ConfigToml, mounts []string) {
 }
 
 // printSummary prints a human-readable summary of the resolved selection.
+// printMountOverlaps warns about Cache and Shared paths the selection makes overlap: a
+// path that is both (the booth will refuse to start) and one inside the other (part of
+// a tool's data goes to git). It reads both places a path can come from — what the
+// templates materialize under .booth/cache|shared/ and the lists in config.toml. The
+// booth repeats the check at start, over what is actually in those folders.
+func printMountOverlaps(w io.Writer, out *output.BoothOutput) {
+	if out == nil {
+		return
+	}
+	relPaths := func(list []output.FileContent) []string {
+		paths := make([]string, 0, len(list))
+		for _, f := range list {
+			paths = append(paths, f.RelPath)
+		}
+		return paths
+	}
+	cacheFiles, cacheDirs := relPaths(out.Cache), relPaths(out.CacheDirs)
+	sharedFiles, sharedDirs := relPaths(out.Shared), relPaths(out.SharedDirs)
+	if cfg := out.Config; cfg != nil {
+		cacheFiles = append(cacheFiles, cfg.CacheFiles...)
+		cacheDirs = append(cacheDirs, cfg.CacheDirs...)
+		sharedFiles = append(sharedFiles, cfg.SharedFiles...)
+		sharedDirs = append(sharedDirs, cfg.SharedDirs...)
+	}
+	entries := mountoverlap.FromConfig(cacheFiles, cacheDirs, sharedFiles, sharedDirs, pathmode.Path)
+	duplicates, nested := mountoverlap.Find(entries)
+	for _, d := range duplicates {
+		fmt.Fprintf(w, "Warning: %s is both Cache and Shared; the booth will refuse to start. Drop one of the two selections.\n", d.Outer.Path)
+	}
+	for _, n := range nested {
+		fmt.Fprintln(w, mountoverlap.Notice(n))
+	}
+}
+
 func printSummary(resolved *selection.ResolvedSelection) {
 	for _, st := range resolved.Templates {
 		line := st.Template.DisplayName

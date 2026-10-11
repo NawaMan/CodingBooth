@@ -24,6 +24,7 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
 	"github.com/nawaman/codingbooth/src/pkg/docker"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/mountoverlap"
 	"github.com/nawaman/codingbooth/src/pkg/pathmode"
 	"github.com/nawaman/codingbooth/src/pkg/pathseed"
 	"golang.org/x/term"
@@ -705,7 +706,7 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 		addReadOnlyBoothDir(builder, codePath)
 		addReadOnlyBoothWrapper(builder, codePath, ctx.Engine())
 	}
-	addCacheAndSharedMounts(builder, codePath)
+	addCacheAndSharedMounts(builder, codePath, ctx.Engine(), ctx.Image())
 
 	// Lifecycle management labels used by list/start/stop/restart/remove commands.
 	builder.CommonArgs.Append(ilist.NewList[string]("--label", "cb.managed=true"))
@@ -1026,7 +1027,10 @@ func addReadOnlyBoothDir(builder *appctx.AppContextBuilder, codePath string) {
 // addCacheAndSharedMounts mounts .booth/cache/ and .booth/shared/ onto their container paths.
 // It runs whether or not .booth/ itself is read-only: --writable-booth only changes how the
 // project's own .booth/ is seen, and must not drop these mounts (or the cache gitignore check).
-func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath string) {
+//
+// A path that is both Cache and Shared stops the start; one inside the other earns a notice.
+// A single file is staged for booth--file-sync when the image has it (see fileSyncMountTarget).
+func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath, engine, image string) {
 	hostPath := boothHostDir(builder, codePath)
 	if hostPath == "" {
 		return
@@ -1038,6 +1042,7 @@ func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath string)
 	ensureCacheFromConfig(hostPath)
 
 	// Mount .booth/cache/ contents into the container based on directory structure.
+	var cacheMounts []cacheMount
 	cachePath := filepath.Join(hostPath, "cache")
 	if info, err := os.Stat(cachePath); err == nil && info.IsDir() {
 		// An explicit booth dir is outside the project, so the project's gitignore
@@ -1053,9 +1058,7 @@ func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath string)
 			fmt.Fprintf(os.Stderr, "Error: %v\n", protectedPathMountsError("cache", protected))
 			os.Exit(1)
 		}
-		for _, m := range mounts {
-			builder.CommonArgs.Append(ilist.NewList[string]("-v", m.hostPath+":"+m.containerPath))
-		}
+		cacheMounts = mounts
 	}
 
 	// Same for .booth/shared/ and .booth/shared-seed/.
@@ -1065,6 +1068,7 @@ func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath string)
 	// Mount .booth/shared/ contents (git-friendly team state). Same layout rules
 	// as cache, but intentionally NOT gitignored — live edits land in the repo.
 	// Skip doc files at the tree root (e.g. README.md → would mount as /README.md).
+	var sharedMounts []cacheMount
 	sharedPath := filepath.Join(hostPath, "shared")
 	if info, err := os.Stat(sharedPath); err == nil && info.IsDir() {
 		mounts, protected := collectCacheMounts(sharedPath)
@@ -1073,18 +1077,95 @@ func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath string)
 			os.Exit(1)
 		}
 		for _, m := range mounts {
-			if !isMountableContainerPath(m.containerPath) {
-				continue
+			if isMountableContainerPath(m.containerPath) {
+				sharedMounts = append(sharedMounts, m)
 			}
-			builder.CommonArgs.Append(ilist.NewList[string]("-v", m.hostPath+":"+m.containerPath))
 		}
 	}
+
+	duplicates, nested := mountoverlap.Find(overlapEntries(cacheMounts, sharedMounts))
+	if len(duplicates) > 0 {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", mountoverlap.DuplicateError(duplicates))
+		os.Exit(1)
+	}
+	for _, n := range nested {
+		fmt.Fprintln(os.Stderr, mountoverlap.Notice(n))
+	}
+
+	// Ask the image only when there is a file to stage: it costs an image inspect.
+	fileSync := hasFileMount(cacheMounts) || hasFileMount(sharedMounts)
+	if fileSync {
+		fileSync = imageHasFileSync(engine, image)
+	}
+	for _, m := range append(cacheMounts, sharedMounts...) {
+		builder.CommonArgs.Append(ilist.NewList[string]("-v", m.hostPath+":"+fileSyncMountTarget(m, fileSync)))
+	}
+}
+
+// FileSyncRoot is where a single Cache or Shared file is mounted when the image runs
+// booth--file-sync: the file for /home/coder/.zsh_history sits at
+// FileSyncRoot/home/coder/.zsh_history, and booth-entry copies it into place.
+//
+// A file bind mount cannot be replaced. Tools that save by writing a new file and
+// renaming it over the old one (zsh's history, GLib's g_file_set_contents, readline's
+// rewrite) get EBUSY and lose the save. The real path is therefore a plain file, and
+// booth--file-sync keeps it and the staged copy the same.
+const FileSyncRoot = "/var/lib/codingbooth/file-sync"
+
+// FileSyncLabel marks an image whose booth-entry stages files through FileSyncRoot.
+// An image without it (one built before booth--file-sync) gets the file mounted
+// directly, as before: staging it there would leave the real path empty.
+const FileSyncLabel = "com.codingbooth.file-sync"
+
+// fileSyncMountTarget is where m is mounted: its own path, or for a single file on an
+// image with booth--file-sync, the staging path under FileSyncRoot. Pure for unit tests.
+func fileSyncMountTarget(m cacheMount, fileSync bool) string {
+	if m.dir || !fileSync {
+		return m.containerPath
+	}
+	return FileSyncRoot + m.containerPath
+}
+
+func hasFileMount(mounts []cacheMount) bool {
+	for _, m := range mounts {
+		if !m.dir {
+			return true
+		}
+	}
+	return false
+}
+
+// imageHasFileSync reports whether image carries FileSyncLabel. A read-only query, so
+// it runs under --dryrun too; a missing or unreadable image answers false.
+func imageHasFileSync(engine, image string) bool {
+	if image == "" {
+		return false
+	}
+	out, err := docker.DockerOutput(docker.DockerFlags{Engine: engine, Silent: true}, "image", ilist.NewList(
+		ilist.NewList("inspect"),
+		ilist.NewList("--format", `{{index .Config.Labels "`+FileSyncLabel+`"}}`),
+		ilist.NewList(image),
+	))
+	return err == nil && strings.TrimSpace(out) == "1"
+}
+
+// overlapEntries turns the walked mounts into mountoverlap entries.
+func overlapEntries(cacheMounts, sharedMounts []cacheMount) []mountoverlap.Entry {
+	var entries []mountoverlap.Entry
+	for _, m := range cacheMounts {
+		entries = append(entries, mountoverlap.Entry{Kind: mountoverlap.Cache, Path: m.containerPath, Dir: m.dir})
+	}
+	for _, m := range sharedMounts {
+		entries = append(entries, mountoverlap.Entry{Kind: mountoverlap.Shared, Path: m.containerPath, Dir: m.dir})
+	}
+	return entries
 }
 
 // cacheMount represents a bind mount derived from .booth/cache/.
 type cacheMount struct {
 	hostPath      string
 	containerPath string
+	dir           bool // a whole folder (.mount-this), not a single file
 }
 
 // seedFrom copies .booth/<name>-seed/ into .booth/<name>/ where a path is still missing
@@ -1270,6 +1351,7 @@ func walkCacheDir(baseDir, dir string, mounts *[]cacheMount, protected *[]string
 			*mounts = append(*mounts, cacheMount{
 				hostPath:      dir,
 				containerPath: containerPath,
+				dir:           true,
 			})
 		}
 		return // stop traversal

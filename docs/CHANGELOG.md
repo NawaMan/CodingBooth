@@ -31,6 +31,21 @@ This file contains a list of changes for each released version.
   `docker volume rm booth-cache-gomod`. `java+m2` and `rust+cargo-cache` still bind-mount the
   host's own folders. The `*-install` extensions still bake dependencies into the image; these
   volumes are used when a tool downloads at run time.
+- **Fix: single Cache and Shared files survive rename-based saves.** A file under `.booth/cache/`
+  or `.booth/shared/` (outside a `.mount-this` folder) was bind-mounted at its path, and a mounted
+  file cannot be replaced, so a tool that saves by writing a new file and renaming it lost every
+  save with `EBUSY`. zsh's history (`tools/shell-history`) failed that way, as do GLib apps such
+  as xfconf (`xfce+keyboard-shortcuts-shared`) and readline's full rewrite. The file is now mounted
+  under `/var/lib/codingbooth/file-sync/`, copied into place at start, and copied back by
+  `booth--file-sync` every 2 seconds and at a clean stop or the end of a one-shot command; a host
+  edit made while the booth runs is brought in. A hard kill loses at most the last 2 seconds.
+  Needs the rebuilt base image; an older image gets the direct mount as before.
+- **Overlapping Cache and Shared paths are now caught.** A container path in both `.booth/cache/`
+  and `.booth/shared/` refuses to start with a message naming both, instead of Docker's
+  "Duplicate mount point". One inside the other — e.g. `google-chrome+profile-cache` with
+  `+bookmarks-shared`, which sends `Default/` (cookies, saved logins) to git — starts with a
+  one-line notice saying which part goes to git. `booth config` prints the same notice for the
+  selection.
 - **Service data volumes are per booth — breaking for existing data.** The postgresql, mysql,
   mongodb, redis, kafka, rabbitmq, floci and penpot templates used one machine-wide volume each
   (`booth-pgdata`, …), so every project on the machine shared one database, and two booths running
