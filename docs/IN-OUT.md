@@ -62,7 +62,7 @@ different places.
 |---|---|---|---|---|
 | **Host user** | `--mount` / run-args `-v $HOME/…` (`java+m2`, `rust+cargo-cache`) | `/etc/cb-home-seed/` (credential extensions, `npmrc`, `pip-config`) | `/etc/cb-home/` | — |
 | **Project, in git** | **Shared** — `.booth/shared/` | `.booth/home-seed/` | `.booth/home/` | Boothfile, `*-install` extensions |
-| **Project, not in git** | **Cache** — `.booth/cache/` | — | — | — |
+| **Project, not in git** | **Cache** — `.booth/cache/` (`rust+registry-cache`) | — | — | — |
 | **Docker storage** | `--persist-home` (one volume per booth); service volumes (one per booth); package caches (one per tool, every booth) | — | — | — |
 | **Image** | — | `/etc/skel` re-seed (desktop launchers) | — | variant, `--image`, `--dockerfile` |
 | **None** | the container's own layer | | | |
@@ -117,6 +117,12 @@ The two are checked against each other. A path in both refuses to start. One ins
 `+profile-cache` with `+bookmarks-shared` — starts with a notice saying which part goes to git;
 `booth config` prints the same notice. See
 [Cache and Shared on the same path](BOOTH_LOCALCACHE.md#cache-and-shared-on-the-same-path).
+
+A run-args mount of the same path wins over both: the Cache or Shared entry is skipped with a
+notice, since Docker refuses two mounts on one path. `rust+cargo-cache` (the host's
+`~/.cargo/registry`) over the auto-selected `rust+registry-cache` is the catalog's case. A run-args
+bind mount whose host path is missing is dropped anyway, so it does not count, and the entry still
+covers that path.
 
 See [Local Cache](BOOTH_LOCALCACHE.md), [Shared State](BOOTH_SHARED.md) and
 [Persist Home](BOOTH_PERSIST_HOME.md).
@@ -381,6 +387,7 @@ See [Connect](BOOTH_CONNECT.md), [Message](BOOTH_MESSAGE.md) and [booth tmp](BOO
 | Team settings that must always apply | `.booth/home/` |
 | A team file that is edited inside the booth and committed | **Shared** |
 | Personal state kept between runs of this project — history, profiles, tool logins | **Cache** |
+| Downloads kept for this project only, without touching the host | **Cache** (`rust+registry-cache`) |
 | A Cache or Shared path that starts with content, not empty | A seed — `.booth/cache-seed/`, `.booth/shared-seed/` |
 | A file copied to a system path, such as `/etc`, on every start | A startup script with `sudo install` ([Copying outside home](#copying-outside-home)) |
 | A one-time file transfer between host and an existing booth | [`booth cp`](BOOTH_TOOLS.md#copy-files-outside-the-shared-project) |
@@ -408,10 +415,11 @@ Found while putting this map together. The shared download caches are in the map
   itself.
 - **A single Cache or Shared file is synced, not live.** A hard kill loses up to its last 2
   seconds, and two booths of one folder overwrite each other's copy of it.
-- **Host package caches still follow the host.** `java+m2` and `rust+cargo-cache` bind-mount
-  `$HOME/.m2` and `$HOME/.cargo/registry`. The mount is dropped when that folder is missing, and
-  a writable mount of a host dot-directory needs consent (`--privileged-allowed` when there is
-  no terminal). The named-volume caches above do not.
+- **Host package caches still follow the host.** `java+m2` and the opt-in `rust+cargo-cache`
+  bind-mount `$HOME/.m2` and `$HOME/.cargo/registry`. The mount is dropped when that folder is
+  missing, and a writable mount of a host dot-directory needs consent (`--privileged-allowed`
+  when there is no terminal). The named-volume caches above do not, and neither does Rust's
+  default, `rust+registry-cache`, which keeps crates in Cache.
 - **The four startup copy folders reach only `/home/coder`.** There is no folder that copies
   into `/etc` or `/opt` at start; a startup script does it instead
   ([Copying outside home](#copying-outside-home)).

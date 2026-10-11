@@ -3,4 +3,4 @@
 # overwriting them. Commit it. Delete it to have those files treated
 # as hand-written (booth config will then refuse to clobber them).
 Boothfile=sha256:e9ce3fbfcb575822f7985f610d1d311b00fc1f6e8d9d1de6f51dd2f291fce81a
-config.toml=sha256:cbf2e3592ba799130db447a26cc2afa5df1e032602c08e77801ddb34ddf3fda0
+config.toml=sha256:4d9e9a387a9eb2f6f8f78799eb79ad23988e7db52dd2ef46d08a1301855e1bcd
