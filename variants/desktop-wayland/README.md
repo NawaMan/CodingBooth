@@ -36,8 +36,12 @@ top **waybar** panel (Apps button → `wofi`) or the labwc right-click menu.
 
 - **Software rendering** (wlroots pixman) when no GPU is present — fine for typical dev GUI
   use, not GPU/video-heavy workloads.
-- **No VNC password by default** (localhost model, like the other desktop variants). Password
-  auth for `--public` needs wayvnc TLS setup — a planned follow-up.
+- **Public access requires sign-in.** With `--public`, the booth's `coder` login
+  protects the desktop page, WebSocket, and control API over HTTPS. Wayvnc and
+  the wrapped noVNC service listen on container loopback; authentication runs
+  in the wrapper. Private booths remain password-free. A manually started
+  `start-wayland` has no wrapper login, so an extra published port needs its own
+  access controls (see [exposed-port security](../../docs/BOOTH_EXPOSE.md#security)).
 - Shell is **labwc** (lightweight), not GNOME/XFCE/KDE — or **sway**, the tiling compositor, with
   the `sway` template (`booth config --select sway`). `start-wayland` runs whichever
   `/opt/codingbooth/wayland-compositor` names (labwc when absent); `--env WAYLAND_COMPOSITOR=labwc`

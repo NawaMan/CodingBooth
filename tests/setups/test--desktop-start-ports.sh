@@ -93,7 +93,7 @@ run_launcher() {
     RUN_OUT=$(cd "$home" && env -i PATH="$WORK/bin:/usr/bin:/bin" HOME="$home" XDG_RUNTIME_DIR="$home/xdg" \
         BASH_ENV="$WORK/missing-is-noop.sh" STUB_LOG="$WORK/stub.log" "${envs[@]}" \
         timeout 20 bash "$launcher" "$@" 2>&1 </dev/null) && RUN_EXIT=0 || RUN_EXIT=$?
-    BOUND=$(awk '$1=="websockify"{for(i=2;i<=NF;i++) if($i ~ /^0\.0\.0\.0:/) print $i}' "$WORK/stub.log")
+    BOUND=$(awk '$1=="websockify"{for(i=2;i<=NF;i++) if($i ~ /^(0\.0\.0\.0|127\.0\.0\.1):/) print $i}' "$WORK/stub.log")
 }
 
 for desktop in xfce:14444 kde:15555 lxqt:16666 wayland:17777; do
@@ -131,9 +131,11 @@ $RUN_OUT"
 
     # Behind the desktop variants' wrapper: the wrapper exports INNER_PORT and is
     # itself reached on the booth port, so that is the URL to print.
+    wrapper_host=0.0.0.0
+    if [[ "$name" == lxqt || "$name" == wayland ]]; then wrapper_host=127.0.0.1; fi
     run_launcher "$launcher" INNER_PORT="$default" BOOTH_HOST_PORT=10000 -- "$default"
     check "start-$name behind the wrapper: prints the booth port, no expose hint" \
-        "$([[ "$BOUND" == "0.0.0.0:$default" && "$RUN_OUT" == *"localhost:10000/"* && "$RUN_OUT" != *"booth--expose"* ]] && echo true || echo false)" "$RUN_OUT"
+        "$([[ "$BOUND" == "$wrapper_host:$default" && "$RUN_OUT" == *"localhost:10000/"* && "$RUN_OUT" != *"booth--expose"* ]] && echo true || echo false)" "$RUN_OUT"
 
     run_launcher "$launcher" -- notaport
     check "start-$name notaport: refused with a usage line" \
