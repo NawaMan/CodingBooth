@@ -1,8 +1,8 @@
-cb-version = "1.0.0"
+cb-version = "2.0.0"
 display-name = "EnvFolio"
 primary = true
 display-disc = "Texts and secrets as environment variables, built on pass"
-display-detail = "Installs EnvFolio, a command-line store for plain texts and GPG-encrypted secrets built on pass, which loads them into a command or a shell as environment variables (secrets only with --secrets). Already in every booth; select this to pin a version, or with +store-cache to keep the store and its GPG key across container restarts."
+display-detail = "Installs EnvFolio (the `folio` command), a command-line store for plain texts and GPG-encrypted secrets built on pass, which loads them into a command or a shell as environment variables (secrets only with --secrets). Already in every booth; select this to pin a version, or with +store-cache to keep the store and its GPG key across container restarts."
 display-order = 66
 tags = [
     "cli",
@@ -13,8 +13,8 @@ tags = [
 ]
 
 [params.ENVFOLIO_VERSION]
-default = "0.3.0"
-suggests = ["0.3.0", "latest"]
+default = "0.4.0"
+suggests = ["0.4.0", "latest"]
 
 [segments]
 Boothfile = """
