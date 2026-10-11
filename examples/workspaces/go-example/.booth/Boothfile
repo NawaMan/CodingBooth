@@ -1,5 +1,5 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --variant xfce --select go+vscode-ext+kernel/python/notebook/codeserver
+# Configured by: booth config --no-tui --overwrite --variant xfce --select go:1.25.7+vscode-ext+kernel+mod-cache/python:3.13.12/notebook:18888/codeserver:19999
 
 env APT_SNAPSHOT=20260906T000000Z
 

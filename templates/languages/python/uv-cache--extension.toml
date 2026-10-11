@@ -1,0 +1,15 @@
+cb-version = "0.1.0"
+display-name = "uv Cache"
+display-disc = "Share the uv download cache across booths"
+display-detail = """Mounts the machine-wide volume booth-cache-uv on uv's cache (UV_CACHE_DIR, ~/.cache/uv). \
+uv's cache is content-addressed. Virtualenvs and installed packages stay out of the volume. The uv \
+requirements extension still installs into the image at build time; this volume does not feed that build. \
+Reset the cache with `docker volume rm booth-cache-uv`."""
+display-order = 11
+auto-select = false
+tags = ["python", "uv", "cache"]
+
+run-args = [
+    "-e", "UV_CACHE_DIR=/home/coder/.cache/uv",
+    "-v", "booth-cache-uv:/home/coder/.cache/uv",
+]

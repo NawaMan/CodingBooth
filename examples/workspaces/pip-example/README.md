@@ -17,6 +17,24 @@ pyfiglet codingbooth
 pytest --version
 ```
 
+## Shared download cache
+
+`python+pip-cache` mounts `booth-cache-pip` on `/opt/pip-cache` (mode 1777, the directory the Python setup creates). `python+uv-cache` mounts `booth-cache-uv` on the uv cache. The packages in the Boothfile are baked into the image at build time. A package that is not in that list is what fills the volumes:
+
+```bash
+./booth -- pip install six
+./booth -- uv pip install --system six
+```
+
+Copy this folder to a second path and run:
+
+```bash
+./booth -- pip install --no-index six
+./booth -- uv pip install --offline --system six
+```
+
+The second booth installs from the volumes. List them with `docker volume ls --filter label=cb.volume=cache`.
+
 ## What's included
 
 | Component | Details                                                                |

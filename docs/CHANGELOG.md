@@ -14,7 +14,15 @@ This file contains a list of changes for each released version.
   restart, and remove now also parse flags after positional names.
 - **JSON for automation:** `booth list --json` and `booth expose list --json` return
   structured output, with empty arrays for empty results.
-
+- **Shared package-download caches.** `go+mod-cache`, `nodejs+npm-cache`, `nodejs+pnpm-cache`,
+  `python+pip-cache`, `python+uv-cache`, and `java+gradle-cache` mount one machine-wide named
+  volume per tool (`booth-cache-gomod`, and so on). Every booth on the machine reuses the same
+  downloads. The volumes hold download caches and content-addressed stores, not `node_modules`,
+  virtualenvs, or build output. Booth creates a missing volume labelled `cb.volume=cache`.
+  List them with `docker volume ls --filter label=cb.volume=cache` and reset one with
+  `docker volume rm booth-cache-gomod`. `java+m2` and `rust+cargo-cache` still bind-mount the
+  host's own folders. The `*-install` extensions still bake dependencies into the image; these
+  volumes are used when a tool downloads at run time.
 - **Service data volumes are per booth — breaking for existing data.** The postgresql, mysql,
   mongodb, redis, kafka, rabbitmq, floci and penpot templates used one machine-wide volume each
   (`booth-pgdata`, …), so every project on the machine shared one database, and two booths running
