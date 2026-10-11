@@ -39,6 +39,13 @@ This file contains a list of changes for each released version.
   mounted only on the read-only `.booth/` path, so `--writable-booth` (or `writable-booth = true`)
   silently started a booth without them — and skipped the check that the cache is gitignored.
   They are now mounted either way.
+- **Browsers can start with the team's bookmarks: `google-chrome+bookmarks-seed` and
+  `firefox+bookmarks-seed`.** Each writes a sample bookmark bar to `.booth/shared-seed/` — Chrome's
+  `Bookmarks` JSON, and for Firefox a fixed `booth.default` profile that imports a `bookmarks.html`
+  once — for the team to edit and commit. A browser gets it only while it has no bookmarks yet.
+  The Firefox one sets `MOZ_LEGACY_PROFILES=1` so Firefox uses that profile, and does not work
+  together with `firefox+managed-policies` (see `docs/BOOTH_SHARED.md`).
+  `browser-shared-example` now starts both browsers with them.
 - **Cache and Shared paths can start with content.** `.booth/cache-seed/` and `.booth/shared-seed/`
   hold seeds in the Cache layout (container-root paths; a `.mount-this` folder is copied whole).
   At start, and when `booth config` writes, booth copies a seed into `.booth/cache/` or

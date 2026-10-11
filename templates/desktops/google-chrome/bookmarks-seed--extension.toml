@@ -1,0 +1,44 @@
+cb-version = "0.1.0"
+display-name = "Bookmarks Seed"
+display-disc = "Start Chrome with the team's bookmarks (.booth/shared-seed)"
+display-detail = """Gives Chrome a starting bookmark bar. booth config writes a sample Bookmarks file to .booth/shared-seed/home/coder/.chrome-data/Default/Bookmarks — edit it there and commit it. It is copied into the shared profile (.booth/shared/…/Default/, mounted like +bookmarks-shared) only while Chrome has no Bookmarks yet, and never over bookmarks already there. Chrome reads the file as is: no checksum needed, and it fills in ids and GUIDs itself on its first save."""
+display-order = 93
+tags = ["persistence", "shared", "browser", "bookmarks", "git", "seed"]
+
+# The whole Default/ is mounted, as +bookmarks-shared does: Chrome replaces Bookmarks
+# by renaming a new file over it, which a single-file mount cannot take.
+shared-dirs = [
+    "home/coder/.chrome-data/Default",
+]
+
+[files.shared-seed]
+"home/coder/.chrome-data/Default/Bookmarks" = '''
+{
+   "roots": {
+      "bookmark_bar": {
+         "children": [ {
+            "name": "CodingBooth",
+            "type": "url",
+            "url": "https://codingbooth.io/"
+         }, {
+            "name": "CodingBooth on GitHub",
+            "type": "url",
+            "url": "https://github.com/NawaMan/CodingBooth"
+         } ],
+         "name": "Bookmarks bar",
+         "type": "folder"
+      },
+      "other": {
+         "children": [ ],
+         "name": "Other bookmarks",
+         "type": "folder"
+      },
+      "synced": {
+         "children": [ ],
+         "name": "Mobile bookmarks",
+         "type": "folder"
+      }
+   },
+   "version": 1
+}
+'''
