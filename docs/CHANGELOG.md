@@ -20,6 +20,14 @@ This file contains a list of changes for each released version.
   - A Homebrew-installed wrapper declines `shell-config install` and, outside a project, refuses
     `uninstall` in favour of `brew uninstall codingbooth`. Plan: [HOMEBREW.md](HOMEBREW.md).
 
+- **Fix: public LXQt and Wayland desktops require sign-in.** Previously,
+  `--public` supplied a password that neither desktop enforced. Both variants
+  now use the Console's `coder` login before serving the desktop, its WebSocket,
+  or its control API. Their wrapped noVNC services and VNC backends listen only
+  on container loopback. Restarting revokes the previous session; a password
+  of `none` is treated as a password. Private booths remain password-free.
+  Rebuild the base and affected desktop images and recreate existing booths
+  to pick up this fix; updating the CLI alone does not change a running image.
 - **Native booth tools:** `booth cp`, `inspect`, `stats`, `top`, `diff`, and `wait`
   resolve a managed booth and invoke its owning engine. `cp` transfers files outside
   the shared project using `:PATH` or `NAME:PATH`; Docker/Podman also support stopped

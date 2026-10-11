@@ -29,9 +29,9 @@ setup	bash-nb-kernel	1.0.0	7b99d4bb4f5c20b73ade9ec071e6b7051c7372bbc23f7f8d80ecf
 setup	bluej	1.0.0	1afcb7ad9ff53a0a2c0f10cd24894cd901e7ac05a9a9f727ea98efb6fcd37dcc	variants/base/setups/bluej--setup.sh
 setup	booth-desktop-actions	1.0.0	b50ecaf9bd210ffc3205b61af3cac6388fc816a3a8d266a0251cf589cc2f326b	variants/base/setups/booth-desktop-actions--setup.sh
 setup	booth-message-codeserver-wrapped	1.0.0	c78340cbb22a400686bf4ccc5f99e42ea831576499dee5fd8dd0d669ea59adac	variants/base/setups/booth-message-codeserver-wrapped--setup.sh
-setup	booth-message-desktop-wrapped	1.0.0	048d24bf27662dc407ee1b268e2e8f668829f1621b4f880f23bdc2189719819b	variants/base/setups/booth-message-desktop-wrapped--setup.sh
+setup	booth-message-desktop-wrapped	1.0.1	67da9437cfdba5a02e3c9df5eeb660010ed53140ecbc8b1d634bfd9d0160a850	variants/base/setups/booth-message-desktop-wrapped--setup.sh
 setup	booth-message-notebook-wrapped	1.0.0	717106d8ed0bcdef0c3f5e8cb7bbd5dffde918a601124c18163a30378be408c5	variants/base/setups/booth-message-notebook-wrapped--setup.sh
-setup	booth-message-wrapper	1.0.0	23712480884607b35000518e95b39da157d360f48a598667a47dbc463ea1ddf2	variants/base/setups/booth-message-wrapper--setup.sh
+setup	booth-message-wrapper	1.0.1	047b4f8fa3f554133ce084c83d4caf34bb2748efb5529d1fcb6427385f4360fb	variants/base/setups/booth-message-wrapper--setup.sh
 setup	booth-restart-code-extension	1.0.0	6d7311954cb5c0869b7826bee302c2b0bdebe07cbcb2d6112699d16aa73c10fe	variants/base/setups/booth-restart-code-extension--setup.sh
 setup	booth-shutdown-code-extension	1.0.0	5b6f200990ef0ad2f80181dc489808eddc15a581bee3bc0750e3d1d33a638d89	variants/base/setups/booth-shutdown-code-extension--setup.sh
 setup	booth-web-preview-code-extension	0.1.0	62d0ee4f84454ef4efa09185c79b74f9a6ee98650de82ff8fa8ceb65fc4f3b87	variants/base/setups/booth-web-preview-code-extension--setup.sh
@@ -190,7 +190,7 @@ setup	lombok-idea	0.1.0	32ea8debd47df5ecd96f954a1bcc4721e53cfbd292528de1dc7ba5a2
 setup	lua	1.0.0	4d56b33de1f7e499b032ce34b3d65cb58cbfe3f04df322505aacab8f314771e9	variants/base/setups/lua--setup.sh
 setup	lua-code-extension	1.0.0	c9947d26ad809b5a768ffa27604ed277460d2e0ba548c9452cadb79e08be3337	variants/base/setups/lua-code-extension--setup.sh
 setup	lua-nb-kernel	1.0.0	001fd2f052a142a81f9fe60c5b88c71f53e73c3b2ed90b543458f685a5c95da3	variants/base/setups/lua-nb-kernel--setup.sh
-setup	lxqt	1.0.0	1796f036a89cfc480654f657def0fed432a9d6acb7577cc2c8c272c9cd0526a5	variants/base/setups/lxqt--setup.sh
+setup	lxqt	1.0.1	693889a0c4c7de41ed61740c17fba0c3419809f12837fbb4b90db1c8d4eeed23	variants/base/setups/lxqt--setup.sh
 setup	lxqt-wallpaper	1.0.0	3a642a29c4b1a945808776d90e2a40827631cd40ab35648220510cb289e606f5	variants/base/setups/lxqt-wallpaper--setup.sh
 setup	make	1.0.1	003cc302048699df8f78154881caf4d365a6f28e86ab86cc337bb81219360a72	variants/base/setups/make--setup.sh
 setup	material-cursors	1.0.0	8be1bb69e1da659faa6e7dc9b93b4b6b413466931764094f294661614f044021	variants/base/setups/material-cursors--setup.sh
@@ -301,7 +301,7 @@ setup	vue-code-extension	0.1.0	e75b46cd8553f1ee3b70b23d5b98f8ddc7215c1204f43180a
 setup	wails	0.1.0	acf83e169ca69ff0de411e541b0e5f80e6182168024b692d4bf1f06a84856361	variants/base/setups/wails--setup.sh
 setup	wails-android	0.1.0	4f4373e30df218c77731d7c37a8b7a260aae56831b6e0b5eb8f2875bb340e001	variants/base/setups/wails-android--setup.sh
 setup	warp	1.0.0	a7b2ea3c833b92cee4b52150e3d0be5bb7a7e290f045c40e2042ecc92441abbd	variants/base/setups/warp--setup.sh
-setup	wayland	1.0.0	70b420681e71f04d42f315e5a0415fe023d7f883975a65b96da195d2a42454de	variants/base/setups/wayland--setup.sh
+setup	wayland	1.0.1	747d3e8a63e3c66f281bfb1be44093a10344d7dcdf1f88263a99885131fc6dea	variants/base/setups/wayland--setup.sh
 setup	xfce	1.0.0	b767d43e8d75a62b44e8e69e25a87b8a2da65734e5122313b76669966a534dae	variants/base/setups/xfce--setup.sh
 setup	xfce-theme	0.1.0	2cadf22ba0c22a1550be2366b8ec486279a2750fd665f5ee0ad13bee846fa677	variants/base/setups/xfce-theme--setup.sh
 setup	xfce-wallpaper	1.0.0	90cef9dd780257750f474fbcfa0fb2f3a4fc5fb4c24b8e7e53e5cfee8d3bfe70	variants/base/setups/xfce-wallpaper--setup.sh
