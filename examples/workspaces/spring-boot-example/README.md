@@ -17,9 +17,20 @@ Then open:
 
 The first run downloads dependencies; subsequent runs are fast.
 
+## Shared Gradle cache
+
+The booth also installs Gradle and mounts `booth-cache-gradle` on `~/.gradle/caches/modules-2`. The Spring app still builds with Maven. `cache-try/` is a one-dependency Gradle build used only to fill that volume. The first start rebuilds the image so Gradle is on `PATH`.
+
+```bash
+./booth -- 'cd cache-try && gradle dependencies --no-daemon'
+```
+
+Copy this folder to a second path and run the same command. The second run resolves Guava from `booth-cache-gradle`. Gradle does not print a download line for this task. Run one Gradle booth at a time; two writers on `modules-2` can block each other. List the volume with `docker volume ls --filter label=cb.volume=cache`.
+
 ## What's inside
 
-- `.booth/Boothfile` — sets up the JDK (Temurin 21), Maven, and Java VS Code extension.
-- `.booth/config.toml` — exposes container port 8080 to the host.
+- `.booth/Boothfile` — sets up the JDK (Temurin 21), Maven, Gradle, and the Java VS Code extension.
+- `.booth/config.toml` — exposes container port 8080 to the host, and mounts `booth-cache-gradle`.
 - `pom.xml` — Spring Boot 3.4 parent + `spring-boot-starter-web`.
 - `src/main/java/com/example/DemoApplication.java` — entry point + `@RestController` with two routes.
+- `cache-try/` — small Gradle build (`com.google.guava:guava:33.4.8-jre`) for the shared cache.

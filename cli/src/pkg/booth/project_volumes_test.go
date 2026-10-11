@@ -195,3 +195,36 @@ func TestEnsureProjectVolumes_ProjectVolume_NoBoothLabel(t *testing.T) {
 		t.Fatalf("unexpected notice: %s", stderr.String())
 	}
 }
+
+func TestCollectCacheVolumes(t *testing.T) {
+	in := groupsOf(
+		[]string{"-v", "booth-cache-gomod:/home/coder/go/pkg/mod", "-e", "GOMODCACHE=/home/coder/go/pkg/mod"},
+		[]string{"-v", "booth-cache-gomod:/home/coder/go/pkg/mod"},
+		[]string{"-v", "booth-pgdata-{project}:/var/lib/postgresql"},
+		[]string{"-v", "$HOME/.m2:/home/coder/.m2"},
+		[]string{"-v", "booth-cache-npm:/home/coder/.npm"},
+	)
+	got := collectCacheVolumes(in)
+	want := []cacheVolume{
+		{name: "booth-cache-gomod", target: "/home/coder/go/pkg/mod"},
+		{name: "booth-cache-npm", target: "/home/coder/.npm"},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("volumes = %+v, want %+v", got, want)
+	}
+}
+
+func TestEnsureCacheVolumes_LabelsAndSkipsExisting(t *testing.T) {
+	engine := &fakeEngine{existing: map[string]bool{"booth-cache-npm": true}}
+	ensureCacheVolumes([]cacheVolume{
+		{name: "booth-cache-gomod", target: "/home/coder/go/pkg/mod"},
+		{name: "booth-cache-gomod", target: "/home/coder/go/pkg/mod"},
+		{name: "booth-cache-npm", target: "/home/coder/.npm"},
+	}, engine.ops())
+	if !reflect.DeepEqual(engine.created, []string{"booth-cache-gomod"}) {
+		t.Fatalf("created = %v", engine.created)
+	}
+	if !reflect.DeepEqual(engine.labels["booth-cache-gomod"], []string{"cb.volume=cache"}) {
+		t.Fatalf("labels = %v", engine.labels["booth-cache-gomod"])
+	}
+}

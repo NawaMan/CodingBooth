@@ -150,6 +150,7 @@ install go golang.org/x/tools/gopls@latest
 | `cache-dirs`    | []string   | Directories to persist in `.booth/cache/`                |
 | `shared-files`  | []string   | Files to bind-mount live from `.booth/shared/`           |
 | `shared-dirs`   | []string   | Directories to bind-mount live from `.booth/shared/`     |
+| `owner-permission` | array of tables | Mount points `booth-entry` updates on startup. Merged into `.booth/owner-permission.yaml`. `path` is absolute. `user`, `group`, and `mode` are optional; `mode` is a 3- or 4-digit octal string such as `"1777"`. A directory entry covers that directory and every directory under it. A path that is not a mount point is left alone. |
 | `unsupported-arch`      | []string | Architectures with no build (`"arm64"`, `"amd64"`)  |
 | `unsupported-arch-note` | string   | Why, and what to use instead — required with the above |
 

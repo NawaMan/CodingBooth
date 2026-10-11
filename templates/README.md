@@ -786,6 +786,20 @@ never becomes a Boothfile `arg` (which would rebuild the image):
 | `tools/ssh`             | SSH Config      | `run-args` seeding the host `~/.ssh` |
 | `tools/zsh`             | Zsh             | nothing on its own (zsh is in the base image); `+default` sets `USER_SHELL=/bin/zsh` |
 
+Machine-wide package-download caches are `run-args` only. Each one mounts a named volume
+`booth-cache-<tool>` (no `{project}`) and, where the tool would otherwise look elsewhere, pins
+the cache directory. They do not cache `node_modules`, virtualenvs, or build output. `java+m2`
+and `rust+cargo-cache` are the older host-folder mounts and are not in this list.
+
+| Extension                         | Display Name            | Volume |
+|-----------------------------------|-------------------------|--------|
+| `go/mod-cache--extension`         | Go Download Cache       | `booth-cache-gomod`, `booth-cache-gobuild` |
+| `nodejs/npm-cache--extension`     | npm Cache               | `booth-cache-npm` |
+| `nodejs/pnpm-cache--extension`    | pnpm Store              | `booth-cache-pnpm` |
+| `python/pip-cache--extension`     | pip Cache               | `booth-cache-pip` |
+| `python/uv-cache--extension`      | uv Cache                | `booth-cache-uv` |
+| `java/gradle-cache--extension`    | Gradle Dependency Cache | `booth-cache-gradle` |
+
 ### Keeping this reference complete
 
 `tests/config/catalog/test121-templates-readme-is-complete.sh` fails when a template directory is missing

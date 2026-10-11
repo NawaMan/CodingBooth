@@ -1,8 +1,12 @@
-# Configured by: booth config --no-tui --overwrite --variant xfce --select go+vscode-ext+kernel/python/notebook/codeserver
+# Configured by: booth config --no-tui --overwrite --variant xfce --select go:1.25.7+vscode-ext+kernel+mod-cache/python:3.13.12/notebook:18888/codeserver:19999
 
 variant = "xfce"
 
 run-args = [
+    "-e", "GOMODCACHE=/home/coder/go/pkg/mod",
+    "-e", "GOCACHE=/home/coder/.cache/go-build",
+    "-v", "booth-cache-gomod:/home/coder/go/pkg/mod",
+    "-v", "booth-cache-gobuild:/home/coder/.cache/go-build",
     "-e", "PYTHONDONTWRITEBYTECODE=1",
     "-v", "~/.config/pip:/etc/cb-home-seed/.config/pip:ro",
     "-v", "~/Library/Application Support/pip:/etc/cb-home-seed/.config/pip:ro",

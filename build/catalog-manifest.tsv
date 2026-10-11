@@ -675,6 +675,7 @@ extension	go+go-mod	1.0.0	d0ce534aaa86760a1384b2241206a294bec0fe086d52eadafd8390
 extension	go+go-pkg	1.0.0	9b7c75ede3885e70b0f33727564ff950e586a76adf8094fbc9c0c9a95da80053	templates/languages/go/go-pkg--extension.toml
 extension	go+kernel	1.0.0	d0578c4528c27c25379f3cc1e3dfc0c36affbea736633be93ddaefb1226513f2	templates/languages/go/kernel--extension.toml
 extension	go+linter	1.0.0	7c64fa4a74e3fa9d723f909f97c67aec172fd518e4742e8148d4f5cf642d284e	templates/languages/go/linter--extension.toml
+extension	go+mod-cache	0.1.0	ab84148577a6dce85375d27941006e54121a0dbb04731046363013d559a0af84	templates/languages/go/mod-cache--extension.toml
 extension	go+vscode-ext	1.0.0	19f0f4aebb35aa43293d3f6dacc9e1bd50471df2dba7f1ab0cb366792657543a	templates/languages/go/vscode-ext--extension.toml
 extension	goland+import-project	0.1.0	044f2d86d524a2f7897307480eebfb3d105a32228f9b1e1e14ee73d811291d19	templates/ides/goland/import-project--extension.toml
 extension	goland+skip-first-run	0.1.0	c33be5a3321462f3aa0e2b25efa26dc8a18cadc47c7a077706a5e3211ef1c374	templates/ides/goland/skip-first-run--extension.toml
@@ -709,6 +710,7 @@ extension	idea+lombok	0.1.0	3f58596fe1c1ca43c22a2867516bf5b911097152dfa1b72f2d6c
 extension	idea+skip-first-run	0.1.0	4b79cd131776ccd446074ad5735c66499ba65d92496df2e3bccbcb98babe13e3	templates/ides/idea/skip-first-run--extension.toml
 extension	java+ant	0.1.0	5abfb5e3d424c577464e57cf01653e1b9af5127d4ce05cd9373b98520d649ace	templates/languages/java/ant--extension.toml
 extension	java+gradle	1.0.0	b9bd2cc9dd18c2d24df55cf30a7f7a449adb2d3294b4140988f687116ec85395	templates/languages/java/gradle--extension.toml
+extension	java+gradle-cache	0.1.0	6f48585e62fbe03c5225b26e0e5f58a3e51bba2d2910ab2ff8bf5dbbb204c5e1	templates/languages/java/gradle-cache--extension.toml
 extension	java+gradle-deps	1.0.0	1c20f5ebef0b0f55d77007a922740ceb5ea9bbcba7f002302bffade152593cbd	templates/languages/java/gradle-deps--extension.toml
 extension	java+jbang	1.0.0	8527475b8033c37f9b83137cb6a2ae32e8a3320a7235c7b5a73e126c88906a72	templates/languages/java/jbang--extension.toml
 extension	java+jenv	1.0.0	b1ce9dce12fcbe01ac3f067e5e37741e0d0153680a4d60fc2a99c13f7abb4142	templates/languages/java/jenv--extension.toml
@@ -762,10 +764,12 @@ extension	nginx+expose	1.0.0	b252b85f50d4d1a1cf5624e94883d1e97fa7229358f6d01eedf
 extension	nginx+php-fpm	0.1.0	1e045eb9ebaecba69f237deab990543111b3a9344be06611799ba84d4b9b8879	templates/tools/nginx/php-fpm--extension.toml
 extension	nim+vscode-ext	1.0.0	eb2effd82a887dde6ef64c419d29f2dab4d2f47d4208c591cff79d1325d0f0b1	templates/languages/nim/vscode-ext--extension.toml
 extension	nodejs+kernel	1.0.0	cb9232648b0d536319ea86808f9878fa8e76685413880d0277c3584a9d5bfe81	templates/languages/nodejs/kernel--extension.toml
+extension	nodejs+npm-cache	0.1.0	5dca7ee4a7c1545ea7519de97cd33ff205eecae0096da18d521a1205bbffb6cf	templates/languages/nodejs/npm-cache--extension.toml
 extension	nodejs+npm-install	1.0.0	7675b2e3d733a3e88a8c6dd6a6917a94213c10c2c0837010cf8f2f214e31756a	templates/languages/nodejs/npm-install--extension.toml
 extension	nodejs+npm-pkg	1.0.0	5b36389551c086306f39a7deb1b74124d23d97f09e7c52f6cc451a7712d6e1e6	templates/languages/nodejs/npm-pkg--extension.toml
 extension	nodejs+npm-upgrade	1.0.0	4d508e177dab3e8b53d91f1c6afce8db35c21713a9ea1cda53606b9c7a11aff7	templates/languages/nodejs/npm-upgrade--extension.toml
 extension	nodejs+npmrc	1.0.0	b556f7f02973b95162084d943b83c2a34e58e098501e37b6d0bd42e5337bb299	templates/languages/nodejs/npmrc--extension.toml
+extension	nodejs+pnpm-cache	0.1.0	71063d79bc301628b8f38f75834cb6ace512f991ae4162b5c51d4b705a220ef0	templates/languages/nodejs/pnpm-cache--extension.toml
 extension	nodejs+pnpm-install	1.0.0	8c57b3e323ccbc352da7a3eb6a10281ed5b24c000c79819ac8831e5df8eadc2a	templates/languages/nodejs/pnpm-install--extension.toml
 extension	nodejs+repl-history	1.0.0	01424cc82be899421b3eddcaa51dc243dd5f5680e718ab592a032af5f76a3f0e	templates/languages/nodejs/repl-history--extension.toml
 extension	nodejs+vscode-ext	1.0.0	a89fe3aef7253783637c24425267ef11c6fb8f584f6830fad5e8a062d79ed8ef	templates/languages/nodejs/vscode-ext--extension.toml
@@ -824,10 +828,12 @@ extension	python+conda	1.0.0	acf07d4ae39ac333f95ded1bec90126f0d41ade81916920e76d
 extension	python+conda-pkg	1.0.0	3679659cf8f791e57774063f19239ca58bc52b9a39e6c8ed4ab2150f9e011929	templates/languages/python/conda-pkg--extension.toml
 extension	python+kernel	1.0.0	5e62a9054833c44cff823c07606fe468fca75fda95e3353c0eee143a69af9378	templates/languages/python/kernel--extension.toml
 extension	python+pip	1.0.0	a8d46c35f928d4c111f82a690ff819a0e8f9b4d1ba345808c7d63382d597ca1c	templates/languages/python/pip--extension.toml
+extension	python+pip-cache	0.2.0	ae8de34c6d874605618530169744679ef1e15ae690387dccc8349141dc14eb7b	templates/languages/python/pip-cache--extension.toml
 extension	python+pip-config	1.0.0	6bfb04c926b312da711e64da1247d523c01bce2516af549cb01cceae3720320a	templates/languages/python/pip-config--extension.toml
 extension	python+pip-pkg	1.0.0	cfaa9a63a630c72ea68b9018090032a4c6690d1f2e498f83ff592cea3ebbe15f	templates/languages/python/pip-pkg--extension.toml
 extension	python+repl-history	1.0.0	48e77b409f95e49f2f08c525dc76c21c41614327fd5c991277f81b4534c1cf06	templates/languages/python/repl-history--extension.toml
 extension	python+uv	1.0.0	aaba001521cec86597f8f93ae040c6b039929a8ffaebbd2864951d2f7d867bc8	templates/languages/python/uv--extension.toml
+extension	python+uv-cache	0.1.0	ac0e43298ea7439a0a024656c1977c141e9380f1c13a5f75c2f54580a76bdbfe	templates/languages/python/uv-cache--extension.toml
 extension	python+uv-pkg	1.0.0	40ba2939a060b13280595946547095a4435bd388395a91f8a8e76e32b2837088	templates/languages/python/uv-pkg--extension.toml
 extension	python+vscode-ext	1.0.0	947a98a895df9eaf8717ab4b417c62ac295ac4f6675c82eca6b283f42d370c7d	templates/languages/python/vscode-ext--extension.toml
 extension	r+kernel	1.0.0	17a579c7c35014634d260017cbc317eced10a6c11e0ab7942e915a26d5b846af	templates/languages/r/kernel--extension.toml

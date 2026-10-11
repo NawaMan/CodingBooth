@@ -18,6 +18,23 @@ just test
 #    or open VS Code, create a .ipynb and select the Go kernel
 ```
 
+## Shared download cache
+
+`go+mod-cache` mounts two volumes that every booth on this machine shares.
+
+| Volume | What it holds |
+| --- | --- |
+| `booth-cache-gomod` | Module downloads (`GOMODCACHE`) |
+| `booth-cache-gobuild` | Build cache (`GOCACHE`) |
+
+This example does not bake modules into the image, so the first `go test` fills the volumes:
+
+```bash
+./booth -- go test ./...
+```
+
+Copy this folder to a second path and run the same command with `GOPROXY=off`. That booth installs from the volumes. List them with `docker volume ls --filter label=cb.volume=cache`. While no booth is using one, `docker volume rm booth-cache-gomod` clears it.
+
 ## What's included
 
 | Component          | Details                              |
