@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.1
+# cb-version: 1.1.0
 
 # -----------------------------------------------------------------------------
 # booth-message-wrapper--setup.sh
@@ -76,12 +76,29 @@ ${BOOTH_KEYBOARD_CAPTURE_JS}
 // desktop itself when it can — whenever the booth comes up and on every window
 // resize (Full screen included). A booth without a resize hook answers
 // supported:false, and the page stops asking.
+//
+// Only one viewer may do either. Each tab used to fit the desktop to its own
+// window, so two tabs on one desktop took turns and the screen flickered
+// between their sizes. The booth holds a lease naming the viewer that fits it:
+// the tab last focused claims it, a heartbeat keeps it, and closing the tab
+// gives it up. Every other tab keeps noVNC on local scaling and does not
+// report its size.
 (function () {
   var inner = document.getElementById("booth-inner");
+  var isDesktop = /vnc\.html/.test(inner.dataset.boothSrc || "");
+  var id = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  var leader = null;   // null: no answer yet
   var supported = true, last = "", timer = null;
+
+  // Every tab starts scaled, so none resizes the desktop before the booth has
+  // said it may — after a booth--restart, every open tab reconnects at once.
+  if (isDesktop) {
+    inner.dataset.boothSrc = inner.dataset.boothSrc.replace("resize=remote", "resize=scale");
+  }
+
   function report() {
     var w = inner.clientWidth, h = inner.clientHeight, key = w + "x" + h;
-    if (!supported || !w || !h || key === last) return;
+    if (!supported || (isDesktop && leader !== true) || !w || !h || key === last) return;
     last = key;
     fetch("/booth-messages/api/display-size", {
       method: "POST",
@@ -98,8 +115,76 @@ ${BOOTH_KEYBOARD_CAPTURE_JS}
     clearTimeout(timer);
     timer = setTimeout(report, delay);
   }
+
+  // noVNC's own Scaling mode setting: changing it the way its settings panel
+  // does applies it to the live connection and to any reconnect. Only once
+  // noVNC is connected — before that its settings panel has no handler yet,
+  // and a change made then is silently lost — so wait for that, and remember
+  // what was applied: a reloaded frame starts from its URL again.
+  var applied = null, applyTimer = null;
+  function applyRole() {
+    clearTimeout(applyTimer);
+    if (leader === null) return;
+    var mode = leader ? "remote" : "scale";
+    if (applied === mode) return;
+    var doc = null;
+    try { doc = inner.contentDocument; } catch (e) {}
+    var select = doc && doc.getElementById("noVNC_setting_resize");
+    if (!select || !doc.documentElement.classList.contains("noVNC_connected")) {
+      applyTimer = setTimeout(applyRole, 500);
+      return;
+    }
+    select.value = mode;
+    select.dispatchEvent(new Event("change"));
+    applied = mode;
+    if (leader) { last = ""; schedule(0); }
+  }
+  function lease(claim) {
+    fetch("/booth-messages/api/display-lease", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: id, claim: !!claim })
+    }).then(function (r) {
+        // A booth from before the lease: fit the desktop, as every tab did then.
+        if (r.status === 404) return { leader: true };
+        return r.ok ? r.json() : null;
+      })
+      .then(function (j) {
+        if (!j || typeof j.leader !== "boolean" || j.leader === leader) return;
+        leader = j.leader;
+        applyRole();
+      })
+      .catch(function () {});   // not up yet: the heartbeat asks again
+  }
+  function claim() { if (leader !== true) lease(true); }
+
+  if (isDesktop) {
+    setInterval(function () { lease(false); }, 5000);
+    window.addEventListener("focus", claim);
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible") claim();
+    });
+    // Focus inside the desktop is focus in the frame, which the page never
+    // sees, so listen there too. Same origin, and re-attached on every load.
+    inner.addEventListener("load", function () {
+      applied = "scale";   // what the frame's URL starts it on
+      applyRole();
+      try {
+        inner.contentWindow.addEventListener("focus", claim);
+        inner.contentWindow.addEventListener("pointerdown", claim, true);
+      } catch (e) {}
+    });
+    window.addEventListener("pagehide", function () {
+      if (leader && navigator.sendBeacon) {
+        navigator.sendBeacon("/booth-messages/api/display-lease",
+                             JSON.stringify({ id: id, release: true }));
+      }
+    });
+  }
+
   window.addEventListener("resize", function () { schedule(400); });
   window.BoothReady.onUp(function () {
+    if (isDesktop) lease(document.hasFocus());
     last = "";
     schedule(0);
     // The desktop may still be starting when the booth first answers.

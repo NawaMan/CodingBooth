@@ -282,6 +282,25 @@ Existing examples:
 Each inner port is the same default the service uses when started by hand on another
 variant — see [Service Ports](BOOTH_VARIANTS.md#service-ports).
 
+### One viewer fits the desktop
+
+A desktop booth can have several viewers at once: two tabs, or two machines. If each one fitted
+the desktop to its own window, they would take turns, and the desktop would flicker between
+their sizes. So only one viewer fits it, and the others scale it to their window.
+
+- The wrapper page loads noVNC with `resize=scale` in place of the `resize=remote` above, whatever
+  `IFRAME_SRC` says. So no tab resizes the desktop before the booth says it may.
+- Each page asks `POST /booth-messages/api/display-lease` with its own random `id`. A `claim`
+  (sent when the page or the desktop inside it gets focus) takes the lease. A renewal every 5s
+  keeps it, and also takes it when it is free or nobody has renewed it for 15s. Closing the tab
+  sends a `release`. The lease is a file in the container's `/tmp`, so a restart clears it.
+- The holder switches noVNC to `remote` and reports its size to `display-size` (the Wayland
+  desktop's hook). Every other page stays on `scale` and does not report its size.
+
+So the tab you last clicked into fits the desktop. Switching tabs resizes the desktop once,
+to the new tab's window. A booth whose API server has no lease endpoint answers 404, and its page
+fits the desktop as before.
+
 The overlay infrastructure (`booth-message-wrapper--setup.sh`) must be installed first as a prerequisite setup.
 
 ---
