@@ -28,9 +28,16 @@ function assert-true() {
 
 # Every distinct setup name referenced from a template's Boothfile segment.
 # Skips names that are themselves a ${VAR} placeholder — those resolve per-param,
-# not to a fixed script.
-names="$(grep -rhoE '^[[:space:]]*setup +[A-Za-z0-9_.-]+' "$root/templates" --include="*.toml" \
-         | awk '{print $2}' | sort -u)"
+# not to a fixed script. Only lines under [segments] count: a wrapped
+# display-detail line can start with the word "setup" too (pip-cache's
+# "...Python \ setup points PIP_CACHE_DIR"). A "[" line closes the section only
+# outside a """ string.
+names="$(find "$root/templates" -name '*.toml' -exec awk '
+           FNR == 1 { seg = 0; inq = 0 }
+           !inq && /^\[/ { seg = ($0 ~ /^\[segments\]/) }
+           seg && /^[[:space:]]*setup +[A-Za-z0-9_.-]+/ { print $2 }
+           { n = gsub(/"""/, "&"); if (n % 2) inq = !inq }
+         ' {} + | sort -u)"
 
 begin
 for name in $names; do
