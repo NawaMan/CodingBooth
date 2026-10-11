@@ -61,9 +61,11 @@ type specToml struct {
 }
 
 type filesToml struct {
-	HomeSeed map[string]string `toml:"home-seed"`
-	Home     map[string]string `toml:"home"`
-	Setups   map[string]string `toml:"setups"`
+	HomeSeed   map[string]string `toml:"home-seed"`
+	Home       map[string]string `toml:"home"`
+	Setups     map[string]string `toml:"setups"`
+	CacheSeed  map[string]string `toml:"cache-seed"`
+	SharedSeed map[string]string `toml:"shared-seed"`
 }
 
 type paramToml struct {
@@ -273,9 +275,17 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 	if err != nil {
 		return nil, fmt.Errorf("loading home-seed/: %w", err)
 	}
+	tmpl.CacheSeed, err = collectFiles(filepath.Join(dir, "cache-seed"))
+	if err != nil {
+		return nil, fmt.Errorf("loading cache-seed/: %w", err)
+	}
+	tmpl.SharedSeed, err = collectFiles(filepath.Join(dir, "shared-seed"))
+	if err != nil {
+		return nil, fmt.Errorf("loading shared-seed/: %w", err)
+	}
 
 	// Parse inline files from [files] table and append to directory-based files
-	if err := appendInlineFiles(spec.Files, &tmpl.Setups, &tmpl.Home, &tmpl.HomeSeed); err != nil {
+	if err := appendInlineFiles(spec.Files, tmpl); err != nil {
 		return nil, err
 	}
 
@@ -320,7 +330,7 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 		extNames := make(map[string]bool) // track names to detect conflicts
 
 		// Pass 1: directory-based extensions
-		specialDirs := map[string]bool{"setups": true, "home": true, "home-seed": true}
+		specialDirs := map[string]bool{"setups": true, "home": true, "home-seed": true, "cache-seed": true, "shared-seed": true}
 		for _, entry := range entries {
 			if !entry.IsDir() || strings.HasPrefix(entry.Name(), ".") || specialDirs[entry.Name()] {
 				continue
@@ -424,7 +434,7 @@ func loadExtensionFile(filePath, name, categoryName string) (*Template, error) {
 	}
 
 	// Parse inline files (no directory-based files for inline extensions)
-	if err := appendInlineFiles(spec.Files, &tmpl.Setups, &tmpl.Home, &tmpl.HomeSeed); err != nil {
+	if err := appendInlineFiles(spec.Files, tmpl); err != nil {
 		return nil, err
 	}
 
@@ -647,22 +657,24 @@ func parseInlineFiles(fileMap map[string]string) ([]FileRef, error) {
 
 // appendInlineFiles parses inline file definitions from the [files] TOML table
 // and appends them to the corresponding file slices.
-func appendInlineFiles(files filesToml, setups, home, homeSeed *[]FileRef) error {
-	inlineSetups, err := parseInlineFiles(files.Setups)
-	if err != nil {
-		return fmt.Errorf("parsing inline setups files: %w", err)
+func appendInlineFiles(files filesToml, tmpl *Template) error {
+	for _, kind := range []struct {
+		name   string
+		inline map[string]string
+		into   *[]FileRef
+	}{
+		{"setups", files.Setups, &tmpl.Setups},
+		{"home", files.Home, &tmpl.Home},
+		{"home-seed", files.HomeSeed, &tmpl.HomeSeed},
+		{"cache-seed", files.CacheSeed, &tmpl.CacheSeed},
+		{"shared-seed", files.SharedSeed, &tmpl.SharedSeed},
+	} {
+		inline, err := parseInlineFiles(kind.inline)
+		if err != nil {
+			return fmt.Errorf("parsing inline %s files: %w", kind.name, err)
+		}
+		*kind.into = append(*kind.into, inline...)
 	}
-	inlineHome, err := parseInlineFiles(files.Home)
-	if err != nil {
-		return fmt.Errorf("parsing inline home files: %w", err)
-	}
-	inlineHomeSeed, err := parseInlineFiles(files.HomeSeed)
-	if err != nil {
-		return fmt.Errorf("parsing inline home-seed files: %w", err)
-	}
-	*setups = append(*setups, inlineSetups...)
-	*home = append(*home, inlineHome...)
-	*homeSeed = append(*homeSeed, inlineHomeSeed...)
 	return nil
 }
 

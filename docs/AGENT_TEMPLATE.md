@@ -53,7 +53,8 @@ templates/
 - Template name = folder name (must be unique across ALL categories)
 - Extensions are `<name>--extension.toml` files beside the parent's `template.toml`
   (a subdirectory with its own `template.toml` also works — see *Extensions*)
-- Special subdirectories (`setups/`, `home/`, `home-seed/`) are for files, not extensions
+- Special subdirectories (`setups/`, `home/`, `home-seed/`, `cache-seed/`, `shared-seed/`) are for
+  files, not extensions
 
 ---
 
@@ -208,8 +209,16 @@ set -Eeuo pipefail
 | `[files.setups]`   | `.booth/setups/`    | —                           |
 | `[files.home]`     | `.booth/home/`      | copied to `~` (override)    |
 | `[files.home-seed]`| `.booth/home-seed/` | copied to `~` (no-clobber)  |
+| `[files.cache-seed]` | `.booth/cache-seed/` | first content of a Cache path (no-clobber) |
+| `[files.shared-seed]` | `.booth/shared-seed/` | first content of a Shared path (no-clobber) |
 
-The directory equivalents (`setups/`, `home/`, `home-seed/` next to `template.toml`) do the same
+The two seed tables are keyed by container path, like `cache-files` (`"home/coder/.config/x.json"`),
+not by a path under `~`. A seed fills the Cache or Shared path while it is missing or empty, and
+never replaces content — see [Local Cache → Initial Content](BOOTH_LOCALCACHE.md#initial-content).
+Declare the path too (`cache-files` / `shared-files`); the seed only gives it content.
+
+The directory equivalents (`setups/`, `home/`, `home-seed/`, `cache-seed/`, `shared-seed/` next to
+`template.toml`) do the same
 thing from real files — see *File Directories* below. Directory-based files are unavailable to
 inline `*--extension.toml` extensions; use `[files.*]` there.
 
@@ -378,6 +387,8 @@ Templates can include files to copy into the generated `.booth/`:
 | `setups/`    | `.booth/setups/`   | Custom setup/install scripts              |
 | `home/`      | `.booth/home/`     | Files copied to `~` (override mode)       |
 | `home-seed/` | `.booth/home-seed/`| Files copied to `~` (no-clobber mode)     |
+| `cache-seed/` | `.booth/cache-seed/` | First content of Cache paths (container-root layout) |
+| `shared-seed/` | `.booth/shared-seed/` | First content of Shared paths (container-root layout) |
 
 ---
 

@@ -25,6 +25,7 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/docker"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 	"github.com/nawaman/codingbooth/src/pkg/pathmode"
+	"github.com/nawaman/codingbooth/src/pkg/pathseed"
 	"golang.org/x/term"
 )
 
@@ -1025,7 +1026,9 @@ func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath string)
 		return
 	}
 
-	// Ensure cache files/dirs declared in config.toml exist in .booth/cache/.
+	// Seed .booth/cache/ from .booth/cache-seed/, then ensure the cache files/dirs
+	// declared in config.toml exist there (empty when no seed covers them).
+	seedFrom(hostPath, "cache")
 	ensureCacheFromConfig(hostPath)
 
 	// Mount .booth/cache/ contents into the container based on directory structure.
@@ -1049,7 +1052,8 @@ func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath string)
 		}
 	}
 
-	// Ensure shared files/dirs declared in config.toml exist in .booth/shared/.
+	// Same for .booth/shared/ and .booth/shared-seed/.
+	seedFrom(hostPath, "shared")
 	ensureSharedFromConfig(hostPath)
 
 	// Mount .booth/shared/ contents (git-friendly team state). Same layout rules
@@ -1075,6 +1079,19 @@ func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath string)
 type cacheMount struct {
 	hostPath      string
 	containerPath string
+}
+
+// seedFrom copies .booth/<name>-seed/ into .booth/<name>/ where a path is still missing
+// (see package pathseed), and says which paths it filled. A failure only warns: the
+// booth still starts, with those paths empty as before.
+func seedFrom(boothDir, name string) {
+	seeded, err := pathseed.Apply(filepath.Join(boothDir, name+"-seed"), filepath.Join(boothDir, name))
+	for _, p := range seeded {
+		fmt.Fprintf(os.Stderr, "Seeded .booth/%s/%s from .booth/%s-seed/\n", name, filepath.ToSlash(p), name)
+	}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: seeding .booth/%s/ from .booth/%s-seed/: %v\n", name, name, err)
+	}
 }
 
 // ensureCacheFromConfig reads cache-files and cache-dirs from config.toml

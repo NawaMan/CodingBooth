@@ -11,3 +11,5 @@ run-args = [
     "-v", "~/.docker/config.json:/etc/cb-home-seed/.docker/config.json:ro",
     "--publish", "21200:21200"
 ]
+
+cache-dirs = ["home/coder/.n8n"]

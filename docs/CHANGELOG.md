@@ -39,6 +39,35 @@ This file contains a list of changes for each released version.
   mounted only on the read-only `.booth/` path, so `--writable-booth` (or `writable-booth = true`)
   silently started a booth without them — and skipped the check that the cache is gitignored.
   They are now mounted either way.
+- **Browsers can start with the team's bookmarks: `google-chrome+bookmarks-seed` and
+  `firefox+bookmarks-seed`.** Each writes a sample bookmark bar to `.booth/shared-seed/` — Chrome's
+  `Bookmarks` JSON, and for Firefox a fixed `booth.default` profile that imports a `bookmarks.html`
+  once — for the team to edit and commit. A browser gets it only while it has no bookmarks yet.
+  The Firefox one sets `MOZ_LEGACY_PROFILES=1` so Firefox uses that profile, and does not work
+  together with `firefox+managed-policies` (see `docs/BOOTH_SHARED.md`).
+  `browser-shared-example` now starts both browsers with them.
+- **Cache and Shared paths can start with content.** `.booth/cache-seed/` and `.booth/shared-seed/`
+  hold seeds in the Cache layout (container-root paths; a `.mount-this` folder is copied whole).
+  At start, and when `booth config` writes, booth copies a seed into `.booth/cache/` or
+  `.booth/shared/` while that path is missing or empty — never over content — instead of
+  creating it empty. Both seed folders are committed, so a fresh clone's Cache starts with the
+  content too. Templates ship seeds with `[files.cache-seed]` / `[files.shared-seed]` or
+  `cache-seed/` / `shared-seed/` folders; a project can also write them by hand.
+- **Fix: a template's Cache paths now work on a fresh clone.** `booth config` recorded a template's
+  `shared-files` / `shared-dirs` in `config.toml` but not its `cache-files` / `cache-dirs`, and
+  only created those paths in `.booth/cache/` — which is gitignored. A teammate's clone therefore
+  had no such path, nothing was mounted there, and what the booth wrote (shell history, a tool's
+  state) was lost when the booth was removed, until someone re-ran `booth config`. They are now
+  recorded too, and a start re-creates them. Re-run `booth config` in a project to record them.
+- **Fix: a deselected template's Cache and Shared paths leave `config.toml`.** A reconfigure read
+  every recorded path back as if the user had set it, so deselecting, say, `+settings-shared`
+  kept its mount for good. Paths a template declares now come only from the selection; paths no
+  template declares (your own) are still carried over.
+- **Fix: code-server no longer overwrites a shared or cached `settings.json`.** `start-codeserver`
+  rewrote `settings.json` with its defaults on every launch. Under `+settings-shared` that file is
+  `.booth/shared/…/settings.json`, so each start replaced the team's committed settings on the
+  host; under `+settings-cache` it reset the user's own. The defaults now go only into a missing or
+  empty file.
 - **New doc: [In and Out of the Booth](IN-OUT.md)** — every way to put files into a booth, or
   connect it to something, outside `/home/coder/code`.
 

@@ -1,0 +1,28 @@
+{
+   "roots": {
+      "bookmark_bar": {
+         "children": [ {
+            "name": "CodingBooth",
+            "type": "url",
+            "url": "https://codingbooth.io/"
+         }, {
+            "name": "CodingBooth on GitHub",
+            "type": "url",
+            "url": "https://github.com/NawaMan/CodingBooth"
+         } ],
+         "name": "Bookmarks bar",
+         "type": "folder"
+      },
+      "other": {
+         "children": [ ],
+         "name": "Other bookmarks",
+         "type": "folder"
+      },
+      "synced": {
+         "children": [ ],
+         "name": "Mobile bookmarks",
+         "type": "folder"
+      }
+   },
+   "version": 1
+}

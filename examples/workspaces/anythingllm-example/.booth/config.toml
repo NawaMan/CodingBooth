@@ -6,3 +6,8 @@ run-args = [
     "-v", "@code:/home/coder/.anythingllm/anythingllm-fs/code",
     "-e", "AUTH_TOKEN="
 ]
+
+cache-files = [
+    "home/coder/.bash_history",
+    "home/coder/.zsh_history"
+]

@@ -87,6 +87,8 @@ type collector struct {
 	setups      []output.FileContent
 	home        []output.FileContent
 	homeSeed    []output.FileContent
+	cacheSeed   []output.FileContent
+	sharedSeed  []output.FileContent
 	cacheFiles  []string
 	cacheDirs   []string
 	sharedFiles []string
@@ -226,6 +228,12 @@ func (c *collector) collectFiles(t *tmpl.Template) {
 	for _, f := range t.HomeSeed {
 		c.homeSeed = append(c.homeSeed, output.FileContent{SourcePath: f.SourcePath, RelPath: f.RelPath, Content: f.Content})
 	}
+	for _, f := range t.CacheSeed {
+		c.cacheSeed = append(c.cacheSeed, output.FileContent{SourcePath: f.SourcePath, RelPath: f.RelPath, Content: f.Content})
+	}
+	for _, f := range t.SharedSeed {
+		c.sharedSeed = append(c.sharedSeed, output.FileContent{SourcePath: f.SourcePath, RelPath: f.RelPath, Content: f.Content})
+	}
 	c.cacheFiles = append(c.cacheFiles, t.CacheFiles...)
 	c.cacheDirs = append(c.cacheDirs, t.CacheDirs...)
 	c.sharedFiles = append(c.sharedFiles, t.SharedFiles...)
@@ -320,27 +328,37 @@ func (c *collector) build() (*output.BoothOutput, error) {
 	out.Setups = c.setups
 	out.Home = c.home
 	out.HomeSeed = c.homeSeed
+	out.CacheSeed = c.cacheSeed
+	out.SharedSeed = c.sharedSeed
 
-	// Cache files (dedup, preserve order)
+	// Cache files (dedup, preserve order) — also recorded on Config, like Shared: a
+	// fresh clone has no .booth/cache/, and config.toml is all a start has to
+	// re-create the paths from (ensureCacheFromConfig).
 	if len(c.cacheFiles) > 0 {
 		seen := make(map[string]bool, len(c.cacheFiles))
+		var files []string
 		for _, cf := range c.cacheFiles {
 			if !seen[cf] {
 				seen[cf] = true
+				files = append(files, cf)
 				out.Cache = append(out.Cache, output.FileContent{RelPath: cf})
 			}
 		}
+		cfg.CacheFiles = files
 	}
 
 	// Cache dirs (dedup, preserve order)
 	if len(c.cacheDirs) > 0 {
 		seen := make(map[string]bool, len(c.cacheDirs))
+		var dirs []string
 		for _, cd := range c.cacheDirs {
 			if !seen[cd] {
 				seen[cd] = true
+				dirs = append(dirs, cd)
 				out.CacheDirs = append(out.CacheDirs, output.FileContent{RelPath: cd})
 			}
 		}
+		cfg.CacheDirs = dirs
 	}
 
 	// Shared files (dedup, preserve order) — also record on Config so config.toml

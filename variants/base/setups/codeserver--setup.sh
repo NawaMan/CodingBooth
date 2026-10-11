@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 
 # codeserver--setup.sh
 # Installs code-server + Jupyter (Python venv). Bash kernel is installed via external script.
@@ -384,6 +384,10 @@ if [ -n "${CB_VENV_DIR:-}" ]; then
   PYTHON_PATH="${CB_VENV_DIR}/bin/python"
 fi
 
+# Defaults only for a missing or empty file: an existing one is the user's, and may be
+# a .booth/shared or .booth/cache mount (+settings-shared, +settings-cache) that a
+# rewrite here would replace on the host at every launch.
+if [ ! -s "$SETTINGS_JSON" ]; then
 cat > "$SETTINGS_JSON" <<JSON
 {
   "python.defaultInterpreterPath": "${PYTHON_PATH}",
@@ -401,6 +405,7 @@ cat > "$SETTINGS_JSON" <<JSON
   "security.workspace.trust.enabled": false
 }
 JSON
+fi
 
 # -------- default shell for everything code-server launches (incl. Jupyter ext) --------
 DEFAULT_SHELL="/bin/bash"
