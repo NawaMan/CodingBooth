@@ -4,6 +4,22 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Wrapper `0.16.0` — `booth` on `PATH` finds the project itself, and every command works from
+  a subfolder.** A wrapper with no lock beside it — the shell-config central copy, or one
+  installed by a package manager such as Homebrew — walks up from the current folder to the
+  project's `./booth` and hands off to it. Commands that take `--code` (a run, `start`, `shell`,
+  `exec`, `logs`, `build`, `emit-dockerfile`) get the project root that way; the rest run from
+  the project root, as if typed there.
+  - **Fixed:** from a project subfolder, the shell function appended `--code` to every command,
+    so `config`, `list`, `stop`, `restart`, `remove`, `template`, `expose`, `message` and
+    `home-volume-list` failed with `unknown flag: --code` / `flag provided but not defined`. It
+    also put `--code` after a trailing `-- cmd`. The `booth()` function is now a single call to
+    the central wrapper; re-run `booth shell-config install` to replace the old one.
+  - Run from a project, a foreign wrapper's `install` / `update` now goes to the project's
+    `./booth` instead of copying itself over it.
+  - A Homebrew-installed wrapper declines `shell-config install` and, outside a project, refuses
+    `uninstall` in favour of `brew uninstall codingbooth`. Plan: [HOMEBREW.md](HOMEBREW.md).
+
 - **Native booth tools:** `booth cp`, `inspect`, `stats`, `top`, `diff`, and `wait`
   resolve a managed booth and invoke its owning engine. `cp` transfers files outside
   the shared project using `:PATH` or `NAME:PATH`; Docker/Podman also support stopped
