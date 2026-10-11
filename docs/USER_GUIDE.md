@@ -320,8 +320,9 @@ More: [booth profiles](https://github.com/NawaMan/CodingBooth/blob/main/docs/BOO
 ### Run two booths of the same code
 
 Starting a second booth from the same folder just works: it gets the next free port and the name
-`<project>-<port>`. Each git worktree is its own folder, so each gets its own booth. Plain
-lifecycle commands act on the first booth. Name the second one to target it:
+`<project>-<port>`. Each git worktree is its own folder, so each gets its own booth, and git works
+in it: booth also mounts the main clone's `.git/`. Plain lifecycle commands act on the first
+booth. Name the second one to target it:
 
 ```bash
 ./booth                               # second booth → e.g. myproj-12000

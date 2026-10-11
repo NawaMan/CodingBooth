@@ -152,7 +152,7 @@ Startup scripts must also **never abort the container**. They run before the use
 
 Two footguns worth calling out specifically:
 
-- **`git` does repo discovery before every subcommand**, including `git config --global`, which needs no repo at all. If the workspace `.git` is a dangling gitfile — a **git worktree** or **submodule** whose real git dir is outside the mount — *any* git call from the workspace exits `128`. Run git from `/` (the only directory with no possible `.git` ancestor) when the command does not need the repo: `(cd / && git config --global ...) || true`.
+- **`git` does repo discovery before every subcommand**, including `git config --global`, which needs no repo at all. If the workspace `.git` is a dangling gitfile — a **submodule**, or a **git worktree** whose main clone booth could not mount — *any* git call from the workspace exits `128`. (On a normal worktree booth mounts the main clone's `.git/`, and git works.) Run git from `/` (the only directory with no possible `.git` ancestor) when the command does not need the repo: `(cd / && git config --global ...) || true`.
 - **Assume the tool may be absent.** Guard with `command -v <tool> >/dev/null 2>&1 || exit 0` rather than assuming a variant ships it.
 
 #### 2. Profile Script
