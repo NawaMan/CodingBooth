@@ -1,0 +1,16 @@
+cb-version = "0.1.0"
+display-name = "npm Cache"
+display-disc = "Share the npm download cache across booths"
+display-detail = """Mounts the machine-wide volume booth-cache-npm on npm's cache (~/.npm, npm_config_cache). \
+A released version cannot be republished, and a lockfile records the sha512, so booths on this machine \
+can share the cache. This is the download cache, not node_modules. The npm-install extension still bakes \
+a project's node_modules into the image; this volume does not feed that build. Reset the cache with \
+`docker volume rm booth-cache-npm`."""
+display-order = 18
+auto-select = false
+tags = ["nodejs", "npm", "cache"]
+
+run-args = [
+    "-e", "npm_config_cache=/home/coder/.npm",
+    "-v", "booth-cache-npm:/home/coder/.npm",
+]

@@ -1,0 +1,17 @@
+cb-version = "0.1.0"
+display-name = "pnpm Store"
+display-disc = "Share the pnpm content-addressable store across booths"
+display-detail = """Mounts the machine-wide volume booth-cache-pnpm on pnpm's store. Both npm_config_store_dir \
+and pnpm_config_store_dir point at that path, so pnpm 10 and pnpm 11 use the same mount. The store is a \
+separate filesystem from the project, so pnpm copies packages into node_modules instead of hardlinking them. \
+The download still comes from the store. node_modules is not cached. Reset the store with \
+`docker volume rm booth-cache-pnpm`."""
+display-order = 19
+auto-select = false
+tags = ["nodejs", "pnpm", "cache"]
+
+run-args = [
+    "-e", "npm_config_store_dir=/home/coder/.local/share/pnpm/store",
+    "-e", "pnpm_config_store_dir=/home/coder/.local/share/pnpm/store",
+    "-v", "booth-cache-pnpm:/home/coder/.local/share/pnpm/store",
+]

@@ -1,0 +1,16 @@
+cb-version = "0.1.0"
+display-name = "pip Cache"
+display-disc = "Share the pip download cache across booths"
+display-detail = """Mounts the machine-wide volume booth-cache-pip on /opt/pip-cache. That is where the Python \
+setup points PIP_CACHE_DIR, including from its login profile, so the volume is the cache pip already uses. \
+The setup creates the directory mode 1777, and a new empty volume keeps that mode, so coder can write it. \
+This is the download cache, not a virtualenv. The pip requirements extension still installs into the image \
+at build time; this volume does not feed that build. Reset the cache with `docker volume rm booth-cache-pip`."""
+display-order = 13
+auto-select = false
+tags = ["python", "pip", "cache"]
+
+run-args = [
+    "-e", "PIP_CACHE_DIR=/opt/pip-cache",
+    "-v", "booth-cache-pip:/opt/pip-cache",
+]

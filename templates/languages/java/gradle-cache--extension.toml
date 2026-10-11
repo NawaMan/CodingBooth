@@ -1,0 +1,17 @@
+cb-version = "0.1.0"
+display-name = "Gradle Dependency Cache"
+display-disc = "Share Gradle's downloaded modules across booths"
+display-detail = """Mounts the machine-wide volume booth-cache-gradle on ~/.gradle/caches/modules-2, Gradle's \
+downloaded-module cache. The rest of GRADLE_USER_HOME (wrappers, daemons, transforms, build output) stays \
+in the booth. Gradle looks in this directory before it downloads, and writes new modules back into it. \
+GRADLE_RO_DEP_CACHE is a read-only cache Gradle never fills, so it is not used here. Two Gradle booths \
+should not resolve dependencies at the same time: Gradle locks this directory for a single writer. \
+Select java+gradle as well when the booth should install Gradle. Reset the cache with \
+`docker volume rm booth-cache-gradle`."""
+display-order = 12
+auto-select = false
+tags = ["java", "gradle", "cache"]
+
+run-args = [
+    "-v", "booth-cache-gradle:/home/coder/.gradle/caches/modules-2",
+]

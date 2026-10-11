@@ -1,4 +1,11 @@
-# Configured by: booth config --no-tui --overwrite --select nodejs+npm-pkg:typescript,ts-node,prettier,eslint,cowsay,figlet-cli
+# Configured by: booth config --no-tui --overwrite --select nodejs:22+npm-pkg:typescript,ts-node,prettier,eslint,cowsay,figlet-cli+npm-cache+pnpm-cache
 
 
-run-args = ["-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro"]
+run-args = [
+    "-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro",
+    "-e", "npm_config_cache=/home/coder/.npm",
+    "-v", "booth-cache-npm:/home/coder/.npm",
+    "-e", "npm_config_store_dir=/home/coder/.local/share/pnpm/store",
+    "-e", "pnpm_config_store_dir=/home/coder/.local/share/pnpm/store",
+    "-v", "booth-cache-pnpm:/home/coder/.local/share/pnpm/store"
+]

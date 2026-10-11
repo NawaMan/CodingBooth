@@ -31,6 +31,13 @@ const (
 	projectPlaceholder = "{project}"
 )
 
+// cacheVolumePrefix marks a machine-wide package-download volume
+// ("booth-cache-gomod"). There is no {name} or {project}: every booth on this
+// machine reuses the same downloads. The name is how the CLI knows to label it
+// cb.volume=cache, so `docker volume ls --filter label=cb.volume=cache` lists
+// the caches and `docker volume rm` resets one.
+const cacheVolumePrefix = "booth-cache-"
+
 // projectVolume is one named volume whose name came from a {name} or {project} pattern.
 type projectVolume struct {
 	pattern string // as written, e.g. booth-pgdata-{name}
@@ -138,6 +145,61 @@ func ensureProjectVolumes(volumes []projectVolume, booth, project, engine string
 			labels = append(labels, "cb.booth="+booth)
 		}
 		_ = ops.create(v.name, labels)
+	}
+}
+
+// cacheVolume is one machine-wide named volume (booth-cache-*).
+type cacheVolume struct {
+	name   string
+	target string
+}
+
+// collectCacheVolumes reports booth-cache-* named volumes in -v/--volume specs.
+// Bind mounts and per-project volumes are ignored: a cache name has no path
+// separator and no {project}. The same name listed twice is reported once.
+func collectCacheVolumes(args *ilist.AppendableList[ilist.List[string]]) []cacheVolume {
+	if args == nil {
+		return nil
+	}
+	var volumes []cacheVolume
+	seen := map[string]bool{}
+	args.ToList().Range(func(_ int, group ilist.List[string]) bool {
+		items := group.Slice()
+		for i := 0; i+1 < len(items); i++ {
+			if !isVolumeFlag(items[i]) {
+				continue
+			}
+			spec := items[i+1]
+			i++
+			source := volumeSource(spec)
+			if isBindMountSource(source) || !strings.HasPrefix(source, cacheVolumePrefix) {
+				continue
+			}
+			if seen[source] {
+				continue
+			}
+			seen[source] = true
+			volumes = append(volumes, cacheVolume{name: source, target: volumeTarget(spec)})
+		}
+		return true
+	})
+	return volumes
+}
+
+// ensureCacheVolumes creates each machine-wide cache volume that does not exist
+// yet, labelled cb.volume=cache. It does not set cb.managed or cb.project:
+// home-volume-list and prune key off cb.managed, and a cache is not one project's
+// data. docker volume create is idempotent; the exists check keeps a second
+// start quiet.
+func ensureCacheVolumes(volumes []cacheVolume, ops volumeOps) {
+	seen := map[string]bool{}
+	for _, v := range volumes {
+		if seen[v.name] || ops.exists(v.name) {
+			seen[v.name] = true
+			continue
+		}
+		seen[v.name] = true
+		_ = ops.create(v.name, []string{"cb.volume=cache"})
 	}
 }
 
