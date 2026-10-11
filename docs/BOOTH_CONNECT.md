@@ -81,6 +81,7 @@ The shell launched is the default shell configured for the `coder` user inside t
 | `--dind-allowed`             | With `--run`: start a `--dind` booth without asking; the warning still prints ([why](BOOTH_SECURITY.md)) |
 | `--privileged-allowed`       | With `--run`: allow `--privileged`-like run-args without asking; the warning still prints |
 | `--silence-build`, `--quiet`, `-q` | Hide `--run` bring-up and teardown                                     |
+| `--browser`                  | With `--run`: open the page of a booth it creates (off by default — see [below](#run-the-booth-if-it-is-not-running)) |
 | `-e <VAR=value>`             | Set environment variable for the session                                    |
 | `--envfile <path>`           | Load environment variables from a file                                      |
 | `--name <name>`              | Target container by name                                                    |
@@ -134,6 +135,7 @@ Everything after `--` is executed inside the container. The exit code is forward
 | `--dind-allowed`             | With `--run`: start a `--dind` booth without asking; the warning still prints ([why](BOOTH_SECURITY.md)) |
 | `--privileged-allowed`       | With `--run`: allow `--privileged`-like run-args without asking; the warning still prints |
 | `--silence-build`, `--quiet`, `-q` | Hide `--run` bring-up and teardown; command output only               |
+| `--browser`                  | With `--run`: open the page of a booth it creates (off by default — see [below](#run-the-booth-if-it-is-not-running)) |
 | `-e <VAR=value>`             | Set environment variable for the command                                    |
 | `--envfile <path>`           | Load environment variables from a file                                      |
 | `--dir <path>`               | Working directory inside the container (default: `/home/coder/code`)        |
@@ -254,6 +256,8 @@ When `--run` is given, the booth is made available in whatever way is needed:
 | **Does not exist** | Created from the current workspace with `booth run --daemon` (or from `--code`, if given) |
 
 On create, create-time flags such as **`--port`** and **`--name`** are forwarded to that run (along with **`--keep-alive`** when set), so the booth matches an equivalent `booth run` invocation.
+
+**No browser tab.** A booth `--run` creates does not open its page in a browser, whatever `browser` / `CB_BROWSER` say: `shell` and `exec` are terminal commands, and a `just` recipe that runs `exec --run` on every call would otherwise open a fresh tab each time. Pass **`--browser`** to open it anyway. `booth run` itself still opens the browser as before.
 
 `--name` accepts the same `{port}` / `{project}` / `{variant}` placeholders as `booth run` (see [Container Name](BOOTH_RUN.md#name-placeholders)). Combined with `--port NEXT`, this creates a uniquely named, non-colliding booth in one command — `exec` connects to the resolved container even though its final name is only known after the run:
 

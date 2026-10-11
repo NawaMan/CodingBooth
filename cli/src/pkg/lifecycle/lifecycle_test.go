@@ -466,48 +466,57 @@ func TestCheckCreateIntentAgainstExisting(t *testing.T) {
 
 func TestBuildConnectRunArgs(t *testing.T) {
 	got := buildConnectRunArgs("demo", true, connectCreateOpts{port: "9000"}, false)
-	want := []string{"run", "--daemon", "--keep-alive", "--name", "demo", "--port", "9000"}
+	want := []string{"run", "--daemon", "--no-browser", "--keep-alive", "--name", "demo", "--port", "9000"}
 	if strings.Join(got, " ") != strings.Join(want, " ") {
 		t.Fatalf("buildConnectRunArgs = %v, want %v", got, want)
 	}
 
 	got = buildConnectRunArgs("", false, connectCreateOpts{}, false)
-	want = []string{"run", "--daemon"}
+	want = []string{"run", "--daemon", "--no-browser"}
 	if strings.Join(got, " ") != strings.Join(want, " ") {
 		t.Fatalf("minimal buildConnectRunArgs = %v, want %v", got, want)
 	}
 
 	got = buildConnectRunArgs("", false, connectCreateOpts{port: "NEXT"}, false)
-	want = []string{"run", "--daemon", "--port", "NEXT"}
+	want = []string{"run", "--daemon", "--no-browser", "--port", "NEXT"}
 	if strings.Join(got, " ") != strings.Join(want, " ") {
 		t.Fatalf("NEXT port buildConnectRunArgs = %v, want %v", got, want)
 	}
 
 	got = buildConnectRunArgs("", false, connectCreateOpts{}, true)
-	want = []string{"run", "--daemon", "--quiet"}
+	want = []string{"run", "--daemon", "--quiet", "--no-browser"}
 	if strings.Join(got, " ") != strings.Join(want, " ") {
 		t.Fatalf("quiet buildConnectRunArgs = %v, want %v", got, want)
 	}
 
 	got = buildConnectRunArgs("demo", true, connectCreateOpts{port: "9000"}, true)
-	want = []string{"run", "--daemon", "--quiet", "--keep-alive", "--name", "demo", "--port", "9000"}
+	want = []string{"run", "--daemon", "--quiet", "--no-browser", "--keep-alive", "--name", "demo", "--port", "9000"}
 	if strings.Join(got, " ") != strings.Join(want, " ") {
 		t.Fatalf("quiet+create buildConnectRunArgs = %v, want %v", got, want)
 	}
 
 	// The consent overrides are forwarded, so `exec --run --dind-allowed` works without a terminal.
 	got = buildConnectRunArgs("", false, connectCreateOpts{dindAllowed: true, privilegedAllowed: true}, false)
-	want = []string{"run", "--daemon", "--dind-allowed", "--privileged-allowed"}
+	want = []string{"run", "--daemon", "--no-browser", "--dind-allowed", "--privileged-allowed"}
 	if strings.Join(got, " ") != strings.Join(want, " ") {
 		t.Fatalf("consent buildConnectRunArgs = %v, want %v", got, want)
+	}
+
+	// shell/exec are terminal commands: a booth they create opens no browser
+	// tab unless --browser asks for one.
+	got = buildConnectRunArgs("", false, connectCreateOpts{browser: true}, false)
+	want = []string{"run", "--daemon", "--browser"}
+	if strings.Join(got, " ") != strings.Join(want, " ") {
+		t.Fatalf("browser buildConnectRunArgs = %v, want %v", got, want)
 	}
 }
 
 func TestExecAcceptsSilenceBuildFlag(t *testing.T) {
 	// Before this flag existed, `exec --silence-build --run -- cmd` failed at
 	// flag.Parse with exit 2 ("flag provided but not defined"). A missing
-	// command is exit 1 — proof the flag was accepted.
-	for _, flagName := range []string{"--silence-build", "--quiet", "-q"} {
+	// command is exit 1 — proof the flag was accepted. --browser rides along:
+	// same check, same reason.
+	for _, flagName := range []string{"--silence-build", "--quiet", "-q", "--browser"} {
 		err := Exec([]string{flagName}, io.Discard)
 		if err == nil {
 			t.Fatalf("%s: expected error for missing command", flagName)
