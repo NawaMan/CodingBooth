@@ -1,0 +1,41 @@
+cb-version = "0.1.0"
+display-name = "Theme"
+display-disc = "Tokyo Night by default; pick any built-in Fresh theme"
+display-detail = """Writes the theme into ~/.config/fresh/config.json when the container starts. The default is Tokyo Night. Choose another built-in with fresh+theme:dracula (dark, gruvbox, high-contrast, light, nord, nostalgia, solarized-dark, terminal). fresh~theme leaves the factory theme, high-contrast. Other keys in that file stay. The selected theme is written again on the next start."""
+display-order = 30
+auto-select = true
+tags = ["fresh", "editor", "theme"]
+
+[params.FRESH_THEME]
+default = "tokyo-night"
+suggests = [
+    "tokyo-night",
+    "dark",
+    "dracula",
+    "gruvbox",
+    "high-contrast",
+    "light",
+    "nord",
+    "nostalgia",
+    "solarized-dark",
+    "terminal",
+]
+
+[segments]
+"startup--74.sh" = """
+# Apply the selected Fresh theme. Other keys in the user config stay.
+theme="${FRESH_THEME}"
+conf="${HOME}/.config/fresh/config.json"
+mkdir -p "$(dirname "$conf")"
+if [[ ! -s "$conf" ]]; then
+  jq -n --arg theme "$theme" '{version:1, theme:$theme}' > "$conf"
+else
+  tmp="$(mktemp)"
+  if jq --arg theme "$theme" '.theme = $theme' "$conf" > "$tmp"; then
+    mv "$tmp" "$conf"
+  else
+    rm -f "$tmp"
+    echo "⚠️  Fresh theme was not set; ${conf} is not JSON." >&2
+  fi
+fi
+"""

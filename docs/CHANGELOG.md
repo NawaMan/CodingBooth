@@ -4,6 +4,8 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Fresh is now in the catalog: `setup fresh` and a `fresh` tool template.** The script installs the official static musl release (the `fresh` binary, its install receipt, and icons) under `/opt/fresh-editor` for amd64 and arm64, and links `fresh` onto `PATH`. `--version X.Y.Z|latest` (fallback 0.5.2), checked against the release `.sha256`. Select `fresh` or `fresh:0.5.2`. `fresh+config-shared` bind-mounts `~/.config/fresh/` from `.booth/shared`. `fresh --cmd grammar list` and `fresh --cmd config show` are the checks that the editor runs.
+- **Fresh starts on Tokyo Night.** `fresh+theme` is selected with `fresh` and writes `theme` in `~/.config/fresh/config.json` at container start, leaving every other key alone. The default is `tokyo-night`. Pick another built-in with `fresh+theme:dracula` (`dark`, `gruvbox`, `high-contrast`, `light`, `nord`, `nostalgia`, `solarized-dark`, `terminal`). `fresh~theme` leaves the factory theme, `high-contrast`. The selected theme is written again on the next start.
 - **Wrapper `0.16.0` — `booth` on `PATH` finds the project itself, and every command works from
   a subfolder.** A wrapper with no lock beside it — the shell-config central copy, or one
   installed by a package manager such as Homebrew — walks up from the current folder to the

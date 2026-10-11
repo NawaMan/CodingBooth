@@ -406,6 +406,7 @@ fontconfig/GTK libraries Rust GUI crates link to), so it sits with the other sys
 | `tools/firebase`           | Firebase CLI |
 | `tools/floci`              | Floci (local AWS emulator) |
 | `tools/freelens`           | FreeLens |
+| `tools/fresh`              | Fresh |
 | `tools/fzf`                | fzf |
 | `tools/gcloud`             | Google Cloud SDK |
 | `tools/gh`                 | GitHub CLI |
