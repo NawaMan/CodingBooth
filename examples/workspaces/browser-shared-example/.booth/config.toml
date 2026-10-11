@@ -1,7 +1,9 @@
-# Configured by: booth config --no-tui --overwrite --variant xfce --port NEXT:25000 --select google-chrome+bookmarks-shared+settings-shared+extensions-shared+managed-policies/firefox+bookmarks-shared+settings-shared+extensions-shared+managed-policies
+# Configured by: booth config --no-tui --overwrite --variant xfce --port NEXT:25000 --select google-chrome+bookmarks-shared+settings-shared+extensions-shared+managed-policies+bookmarks-seed/firefox+bookmarks-shared+settings-shared+extensions-shared+bookmarks-seed
 
 variant = "xfce"
 port = "NEXT:25000"
+
+run-args = ["-e", "MOZ_LEGACY_PROFILES=1"]
 
 shared-dirs = [
     "home/coder/.chrome-data/Default",

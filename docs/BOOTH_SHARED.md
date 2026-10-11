@@ -135,6 +135,20 @@ gitignored) or **`--persist-home`**. Team-facing browser state uses **shared onl
 | `firefox+settings-shared` | `…/.mozilla/firefox/` | prefs.js etc. |
 | `firefox+extensions-shared` | `…/.mozilla/firefox/` | add-ons live in the profile |
 
+#### Starting bookmarks (`+bookmarks-seed`)
+
+| Selection | Seed under `.booth/shared-seed/` | Notes |
+|-----------|----------------------------------|--------|
+| `google-chrome+bookmarks-seed` | `…/.chrome-data/Default/Bookmarks` | Chrome's JSON; no checksum needed |
+| `firefox+bookmarks-seed` | `…/.mozilla/firefox/profiles.ini`, `booth.default/bookmarks.html`, `booth.default/prefs.js` | A fixed profile; Firefox imports `bookmarks.html` once. Sets `MOZ_LEGACY_PROFILES=1` |
+
+Each also mounts the browser's profile like `+bookmarks-shared`. `booth config` writes a sample bar
+(CodingBooth's site and repo); edit the seed and commit it. It reaches the profile only while the
+browser has no bookmarks there yet ([seeds](BOOTH_LOCALCACHE.md#initial-content)), so later
+changes are kept. **Not with `firefox+managed-policies`:** its `DisableTelemetry` policy stops
+current Firefox from creating its bookmarks toolbar on first start, so the import has nowhere to go.
+`examples/workspaces/browser-shared-example` uses both.
+
 Selecting bookmarks **or** settings for Chrome is enough for both (same `Default/`).
 Selecting bookmarks **or** settings **or** extensions for Firefox is enough for all
 three (same `firefox/` tree). Extensions-only Chrome mount is for sharing add-ons

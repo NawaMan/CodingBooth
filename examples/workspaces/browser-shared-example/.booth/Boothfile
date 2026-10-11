@@ -1,9 +1,8 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --variant xfce --port NEXT:25000 --select google-chrome+bookmarks-shared+settings-shared+extensions-shared+managed-policies/firefox+bookmarks-shared+settings-shared+extensions-shared+managed-policies
+# Configured by: booth config --no-tui --overwrite --variant xfce --port NEXT:25000 --select google-chrome+bookmarks-shared+settings-shared+extensions-shared+managed-policies+bookmarks-seed/firefox+bookmarks-shared+settings-shared+extensions-shared+bookmarks-seed
 
 env APT_SNAPSHOT=20260906T000000Z
 
 setup firefox
 setup google-chrome
-setup firefox-managed-policies
 setup chrome-managed-policies
