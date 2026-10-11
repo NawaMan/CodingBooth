@@ -63,7 +63,7 @@ different places.
 | **Host user** | `--mount` / run-args `-v $HOME/…` (`java+m2`, `rust+cargo-cache`) | `/etc/cb-home-seed/` (credential extensions, `npmrc`, `pip-config`) | `/etc/cb-home/` | — |
 | **Project, in git** | **Shared** — `.booth/shared/` | `.booth/home-seed/` | `.booth/home/` | Boothfile, `*-install` extensions |
 | **Project, not in git** | **Cache** — `.booth/cache/` | — | — | — |
-| **Docker storage** | `--persist-home` (one volume per booth); service volumes (one per booth) | — | — | — |
+| **Docker storage** | `--persist-home` (one volume per booth); service volumes (one per booth); package caches (one per tool, every booth) | — | — | — |
 | **Image** | — | `/etc/skel` re-seed (desktop launchers) | — | variant, `--image`, `--dockerfile` |
 | **None** | the container's own layer | | | |
 
@@ -172,6 +172,19 @@ same folder has its own too.
 | `booth-flocidata-{name}` | `tools/floci` | floci |
 | `booth-penpot-assets-{name}` | `tools/penpot` | — |
 | `cb-home-<booth name>` | the CLI, for `--persist-home` | — (one per booth) |
+| `booth-cache-gomod`, `booth-cache-gobuild` | `go+mod-cache` | go-example |
+| `booth-cache-npm` | `nodejs+npm-cache` | npm-example |
+| `booth-cache-pnpm` | `nodejs+pnpm-cache` | npm-example |
+| `booth-cache-pip` | `python+pip-cache` | pip-example |
+| `booth-cache-uv` | `python+uv-cache` | pip-example |
+| `booth-cache-gradle` | `java+gradle-cache` | spring-boot-example |
+
+A `booth-cache-*` volume is created the first time a booth mounts it, labelled `cb.volume=cache`
+and shared by every project on this machine. List them with `docker volume ls --filter
+label=cb.volume=cache` and reset one with `docker volume rm booth-cache-gomod` (the booth must not
+be using it). Podman keeps a separate store: `CB_ENGINE=podman` and `podman volume ls --filter
+label=cb.volume=cache`. With `--persist-home`, the cache mount sits inside the home volume, and
+the downloads live in the cache volume.
 
 Two placeholders work in a volume source:
 
@@ -340,7 +353,8 @@ See [Connect](BOOTH_CONNECT.md), [Message](BOOTH_MESSAGE.md) and [booth tmp](BOO
 | A file copied to a system path, such as `/etc`, on every start | A startup script with `sudo install` ([Copying outside home](#copying-outside-home)) |
 | A one-time file transfer between host and an existing booth | [`booth cp`](BOOTH_TOOLS.md#copy-files-outside-the-shared-project) |
 | Personal credentials from the host, copied in | `/etc/cb-home-seed/` via a `credential` extension or `--mount …:ro` |
-| One host folder reused by every project — a package cache | **Bind mount** (`--mount ~/.m2:/home/coder/.m2`) |
+| One host folder reused by every project — a package cache the host already has | **Bind mount** (`java+m2`, `rust+cargo-cache`) |
+| One download cache reused by every booth, with no host toolchain | **Named volume** (`go+mod-cache`, `nodejs+npm-cache`, `nodejs+pnpm-cache`, `python+pip-cache`, `python+uv-cache`, `java+gradle-cache`) |
 | The whole home kept, without listing paths | `--persist-home` |
 | Database data kept between runs | **Named volume** (the database templates) |
 
@@ -351,7 +365,7 @@ committed. Cache is gitignored, and the booth checks that.
 
 ## Known Gaps
 
-Found while putting this map together; what follows is still open.
+Found while putting this map together. The shared download caches are in the map above. What follows is still open.
 
 - **Nothing keeps secrets out of Shared.** Cache has a strict gitignore check; Shared has none,
   yet a browser's shared `Default/` folder also holds cookies and saved logins. The sample
@@ -362,8 +376,10 @@ Found while putting this map together; what follows is still open.
   itself.
 - **A single-file mount breaks for a tool that saves by writing a new file and renaming it.** KDE
   is known to fail this way; other `shared-files` entries need checking.
-- **Package caches are uneven.** Only Java (`+m2`) and Rust (`+cargo-cache`) have a host-cache
-  extension. They depend on the host's folder layout and are dropped when that folder is missing.
+- **Host package caches still follow the host.** `java+m2` and `rust+cargo-cache` bind-mount
+  `$HOME/.m2` and `$HOME/.cargo/registry`. The mount is dropped when that folder is missing, and
+  a writable mount of a host dot-directory needs consent (`--privileged-allowed` when there is
+  no terminal). The named-volume caches above do not.
 - **Overlapping Cache and Shared paths are not detected** — e.g. `+profile-cache` with
   `+bookmarks-shared`.
 - **The four startup copy folders reach only `/home/coder`.** There is no folder that copies

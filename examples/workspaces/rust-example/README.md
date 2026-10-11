@@ -27,3 +27,7 @@ just test
 | VS Code extensions | Rust language support                |
 | Desktop            | XFCE                                 |
 | AI                 | Claude Code                          |
+
+## Cargo registry
+
+`rust+cargo-cache` is already selected. It bind-mounts this machine's `~/.cargo/registry` into the booth, so Cargo reuses downloads that are already on the host. A start that has no prompt needs `--privileged-allowed`, because the mount is a writable host dot-directory. The files live on the host at `~/.cargo/registry`.

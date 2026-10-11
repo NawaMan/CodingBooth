@@ -1,0 +1,18 @@
+cb-version = "0.1.0"
+display-name = "Go Download Cache"
+display-disc = "Share Go module and build caches across booths"
+display-detail = """Mounts two machine-wide volumes: booth-cache-gomod on the module cache (GOMODCACHE) and \
+booth-cache-gobuild on the build cache (GOCACHE). Every booth on this machine reuses the same downloads. \
+Installed binaries stay in ~/go/bin, which is not mounted. A runtime volume hides modules that go-mod baked \
+into the image at the same path. List the volumes with `docker volume ls --filter label=cb.volume=cache` \
+and reset one with `docker volume rm booth-cache-gomod`."""
+display-order = 16
+auto-select = false
+tags = ["go", "cache"]
+
+run-args = [
+    "-e", "GOMODCACHE=/home/coder/go/pkg/mod",
+    "-e", "GOCACHE=/home/coder/.cache/go-build",
+    "-v", "booth-cache-gomod:/home/coder/go/pkg/mod",
+    "-v", "booth-cache-gobuild:/home/coder/.cache/go-build",
+]

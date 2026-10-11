@@ -909,13 +909,18 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 
 	// Expand {name} and {project} in volume sources (booth-pgdata-{name}) and
 	// create any such volume that is new, labelled with its project and booth.
-	// containerName is final here: EnsureContainerName ran before this step.
+	// booth-cache-* volumes are machine-wide download caches: create them
+	// labelled cb.volume=cache. containerName is final here: EnsureContainerName
+	// ran before this step.
 	runVolumes, commonVolumes := []projectVolume(nil), []projectVolume(nil)
 	builder.RunArgs, runVolumes = expandProjectVolumeGroups(builder.RunArgs, containerName, ctx.ProjectName())
 	builder.CommonArgs, commonVolumes = expandProjectVolumeGroups(builder.CommonArgs, containerName, ctx.ProjectName())
+	cacheVolumes := append(collectCacheVolumes(builder.RunArgs), collectCacheVolumes(builder.CommonArgs)...)
 	if !ctx.Dryrun() {
+		ops := engineVolumeOps(ctx)
 		ensureProjectVolumes(append(runVolumes, commonVolumes...), containerName, ctx.ProjectName(),
-			engineOrDocker(ctx.Engine()), engineVolumeOps(ctx), os.Stderr)
+			engineOrDocker(ctx.Engine()), ops, os.Stderr)
+		ensureCacheVolumes(cacheVolumes, ops)
 	}
 
 	return builder.Build()
