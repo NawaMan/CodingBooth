@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 
 # lxqt--setup.sh — root-only installer for LXQt + VNC + noVNC
 # Installs deps, configures defaults, creates /usr/local/bin/start-lxqt
@@ -472,14 +472,18 @@ fi
 # Behind the booth wrapper (the desktop variants' main service) the desktop is reached
 # through the booth port. Started on its own, it is on its own port, which the host
 # can only reach once that port is exposed.
+NOVNC_HOST=0.0.0.0
 if [[ "${INNER_PORT:-}" == "$NOVNC_PORT" ]]; then
   DISPLAY_PORT="${BOOTH_HOST_PORT:-${NOVNC_PORT}}"
+  # The wrapper authenticates public sessions. Do not expose a second route
+  # to the desktop that bypasses that gate on the container network.
+  NOVNC_HOST=127.0.0.1
 else
   DISPLAY_PORT="${NOVNC_PORT}"
   echo "ℹ️  To reach it from the host, run 'booth--expose ${NOVNC_PORT}' inside the booth."
 fi
 echo "🌐 noVNC: http://localhost:${DISPLAY_PORT}/vnc.html?autoconnect=1&host=localhost&port=${DISPLAY_PORT}&path=websockify&resize=scale"
-websockify --web=/usr/share/novnc "0.0.0.0:${NOVNC_PORT}" "localhost:${VNC_PORT}" &
+websockify --web=/usr/share/novnc "${NOVNC_HOST}:${NOVNC_PORT}" "localhost:${VNC_PORT}" &
 WS_PID=$!
 
 cleanup() {
