@@ -13,7 +13,8 @@
 # build entirely.
 #
 # Asserts: the first start builds; an unchanged second start skips; editing a
-# copied input (.booth/setups/) builds again; and the start after that skips.
+# copied input (.booth/setups/) builds again; the start after that skips; and a
+# skipped start, traced through a `docker` shim, makes no build or pull call.
 
 set -euo pipefail
 
@@ -77,3 +78,44 @@ check 4 "Editing a copied setup script builds again" \
 
 check 5 "The start after the rebuild skips again" \
   "$(start_booth)" "skipping the build" "building local image"
+
+# --- A skipped start makes no registry call ----------------------------------
+# The point of the skip is starting while Docker Hub is down, and the "skipping"
+# message alone does not prove that: a later change could add a pull, or a
+# build that hits the cache, back into the start. So log every engine command
+# through a `docker` shim on PATH and assert that none of them can reach a
+# registry. The remaining calls (info, image inspect, ps, run on a present
+# image) read only the local engine.
+SHIM_DIR="$WORK_DIR/shim"
+CALLS="$WORK_DIR/docker-calls.log"
+REAL_DOCKER="$(command -v docker)"
+mkdir -p "$SHIM_DIR"
+cat > "$SHIM_DIR/docker" <<EOF
+#!/bin/bash
+printf '%s\n' "\$*" >> "$CALLS"
+exec "$REAL_DOCKER" "\$@"
+EOF
+chmod +x "$SHIM_DIR/docker"
+: > "$CALLS"
+
+OUTPUT="$(PATH="$SHIM_DIR:$PATH" "$BOOTH_BIN" run --code "$CODE" -- 'echo OUT=$(cat /tmp/fingerprint)' 2>&1 || true)"
+check 6 "Traced start skips the build" "$OUTPUT" "skipping the build" "building local image"
+
+# An empty log means the shim was bypassed, and the next check would pass
+# without having looked at anything.
+if grep -q '^run ' "$CALLS"; then
+  print_test_result "true" "$0" "7" "Engine calls were traced through the shim"
+else
+  print_test_result "false" "$0" "7" "Engine calls were traced through the shim (log has no 'run')"
+  sed 's/^/  /' "$CALLS"
+  exit 1
+fi
+
+REGISTRY_CALLS="$(grep -E '^(build|buildx|pull|image pull|image build|builder|login|manifest|search) ' "$CALLS" || true)"
+if [[ -z "$REGISTRY_CALLS" ]]; then
+  print_test_result "true" "$0" "8" "Skipped start makes no build, pull, or other registry call"
+else
+  print_test_result "false" "$0" "8" "Skipped start makes no build, pull, or other registry call"
+  printf '%s\n' "$REGISTRY_CALLS" | cut -c1-200 | sed 's/^/  /'
+  exit 1
+fi
