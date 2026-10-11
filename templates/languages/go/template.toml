@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.1.0"
 display-name = "Go"
 primary = true
 display-disc = "Go toolchain with gopls LSP and Delve debugger"
