@@ -18,6 +18,12 @@ This file contains a list of changes for each released version.
   run in the booth still prunes them. If the main clone cannot be mounted, booth prints a warning
   and starts as before. Submodules are not covered yet.
 
+- **Fix: two tabs on one desktop booth no longer make it flicker.** Each viewer fitted the desktop
+  to its own window, so with two open they took turns resizing it. Now one viewer fits it: the
+  tab you last clicked into, held through a lease on the booth (`/booth-messages/api/display-lease`).
+  The others scale the desktop to their window. Closing that tab hands control to the next one.
+  Applies to every desktop variant (XFCE, KDE, LXQt, Wayland) and needs the rebuilt base image.
+  See [One viewer fits the desktop](BOOTH_UI_OVERLAY.md#one-viewer-fits-the-desktop).
 - **`shell --run` and `exec --run` no longer open a browser tab.** They are terminal commands,
   but a booth they had to create opened its page like `booth run` does. A `Justfile` runs every
   recipe line through `exec --run`, so each call could add another tab, and on a desktop booth
