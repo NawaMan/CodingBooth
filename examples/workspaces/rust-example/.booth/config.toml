@@ -12,4 +12,8 @@ run-args = [
     "-v", "~/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro"
 ]
 
-cache-dirs = ["home/coder/.claude"]
+cache-dirs = [
+    "home/coder/.cargo/registry",
+    "home/coder/.cargo/git",
+    "home/coder/.claude"
+]
