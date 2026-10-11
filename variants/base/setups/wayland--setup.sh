@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 
 # wayland--setup.sh — root-only installer for a Wayland-native desktop (labwc) streamed
 # to the browser over VNC/noVNC.
@@ -295,7 +295,7 @@ OUT="$(wlr-randr 2>/dev/null | awk 'NR==1{print $1}')"
 printf '%s\n' "$WAYLAND_DISPLAY" > "$XDG_RUNTIME_DIR/cb-wayland-display"
 
 # 3) wayvnc: wlr-screencopy -> RFB on localhost:$VNC_PORT
-wayvnc --render-cursor 0.0.0.0 "$VNC_PORT" >/tmp/cb-wayvnc.log 2>&1 &
+wayvnc --render-cursor 127.0.0.1 "$VNC_PORT" >/tmp/cb-wayvnc.log 2>&1 &
 WAYVNC_PID=$!
 sleep 1
 
@@ -303,14 +303,17 @@ sleep 1
 # Behind the booth wrapper (the desktop variants' main service) the desktop is reached
 # through the booth port. Started on its own, it is on its own port, which the host
 # can only reach once that port is exposed.
+NOVNC_HOST=0.0.0.0
 if [[ "${INNER_PORT:-}" == "$NOVNC_PORT" ]]; then
   DISPLAY_PORT="${BOOTH_HOST_PORT:-${NOVNC_PORT}}"
+  # Public sessions must enter through the wrapper's login gate.
+  NOVNC_HOST=127.0.0.1
 else
   DISPLAY_PORT="${NOVNC_PORT}"
   echo "ℹ️  To reach it from the host, run 'booth--expose ${NOVNC_PORT}' inside the booth."
 fi
 echo "🌐 noVNC: http://localhost:${DISPLAY_PORT}/vnc.html?autoconnect=1&resize=remote"
-websockify --web=/usr/share/novnc "0.0.0.0:${NOVNC_PORT}" "localhost:${VNC_PORT}" >/tmp/cb-websockify.log 2>&1 &
+websockify --web=/usr/share/novnc "${NOVNC_HOST}:${NOVNC_PORT}" "localhost:${VNC_PORT}" >/tmp/cb-websockify.log 2>&1 &
 WS_PID=$!
 
 cleanup() {

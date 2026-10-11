@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 
 # -----------------------------------------------------------------------------
 # booth-message-wrapper--setup.sh
@@ -134,6 +134,7 @@ http {
     sendfile on;
     tcp_nopush on;
     keepalive_timeout 65;
+    map_hash_bucket_size 128;
     client_max_body_size 50m;
     client_body_temp_path /tmp/nginx/body;
     proxy_temp_path /tmp/nginx/proxy;
@@ -167,10 +168,18 @@ http {
     # empty unless the variant names one.
     ${WRAPPER_PREVIEW_HTTP}
 
+    # Opt-in session gate for desktops without their own public login.
+    ${WRAPPER_AUTH_MAP}
+
     server {
         listen ${OUTER_PORT};
         server_name _;
         absolute_redirect off;
+
+        # At server scope so every path, including WebSocket upgrades and
+        # the control API, passes the gate before any location is handled.
+        ${WRAPPER_AUTH_GATE}
+        ${WRAPPER_LOGIN_LOCATIONS}
 
         # Tab icon. An exact location beats the catch-all that proxies
         # /favicon.ico to the inner service. Empty when no icon could be
@@ -316,6 +325,52 @@ IFRAME_SRC="${IFRAME_SRC:-/}"
 mkdir -p "$SERVE_DIR"
 mkdir -p /tmp/nginx/body /tmp/nginx/proxy /tmp/nginx/fastcgi /tmp/nginx/uwsgi /tmp/nginx/scgi
 
+# LXQt and Wayland use the Console login in front of noVNC. Other wrapped
+# services keep their own authentication. A public desktop must fail closed
+# if its launcher did not receive the password.
+export WRAPPER_AUTH_MAP="" WRAPPER_AUTH_GATE="" WRAPPER_LOGIN_LOCATIONS=""
+if [[ "${BOOTH_WRAPPER_LOGIN:-}" == true ]]; then
+  if [[ "${BOOTH_PUBLIC:-}" == true && -z "${PASSWORD:-}" ]]; then
+    echo "Public desktop requires PASSWORD; refusing to start." >&2
+    exit 1
+  fi
+  if [[ -n "${PASSWORD:-}" ]]; then
+    BOOTH_AUTH_TOKEN=$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')
+    export BOOTH_AUTH_TOKEN BOOTH_AUTH_USER=coder
+    export BOOTH_AUTH_COOKIE_SECURE=false
+    [[ "${BOOTH_TLS:-}" != true ]] || export BOOTH_AUTH_COOKIE_SECURE=true
+    WRAPPER_AUTH_MAP="map \$cookie_booth_auth \$booth_auth_ok {
+        default 0;
+        \"${BOOTH_AUTH_TOKEN}\" 1;
+    }
+    map \"\$booth_auth_ok:\$uri\" \$booth_login_required {
+        default 1;
+        ~^1: 0;
+        \"0:/login\" 0;
+        \"0:/booth-messages/api/login\" 0;
+        \"0:/__booth/health\" 0;
+    }
+    map \"\$booth_login_required:\$uri\" \$booth_api_unauthorized {
+        default 0;
+        ~^1:/booth-messages/api/ 1;
+        \"1:/websockify\" 1;
+    }"
+    WRAPPER_AUTH_GATE='if ($booth_api_unauthorized = 1) { return 401; }
+        if ($booth_login_required = 1) { return 302 /login; }'
+    WRAPPER_LOGIN_LOCATIONS="location = /login {
+            if (\$booth_auth_ok = 1) { return 302 /booth; }
+            alias ${SERVE_DIR}/login.html;
+            add_header Cache-Control \"no-store\" always;
+        }
+        location = /booth-messages/api/login {
+            proxy_pass http://127.0.0.1:${API_PORT};
+            proxy_http_version 1.1;
+            proxy_set_header Host \$http_host;
+            proxy_buffering off;
+        }"
+  fi
+fi
+
 # Generate wrapper HTML
 export BOOTH_CONTAINER_NAME="${BOOTH_CONTAINER_NAME:-CodingBooth}"
 export BOOTH_HOST_PORT="${BOOTH_HOST_PORT:-$OUTER_PORT}"
@@ -378,6 +433,12 @@ if [[ -x /opt/codingbooth/setups/cb-booth-favicon.sh ]]; then
 fi
 export BOOTH_FAVICON_LINK FAVICON_LOCATIONS
 
+if [[ -n "$WRAPPER_AUTH_GATE" ]]; then
+  # This asset is installed by the base image. Missing it must stop startup.
+  envsubst '${BOOTH_CONTAINER_NAME} ${BOOTH_FAVICON_LINK}' \
+    </usr/local/share/ttyd-split/login.html >"$SERVE_DIR/login.html"
+fi
+
 envsubst '${BOOTH_CONTAINER_NAME} ${BOOTH_HOST_PORT} ${IFRAME_SRC} ${BOOTH_SHOW_RUN_TIME} ${BOOTH_SHOW_COUNT_DOWN} ${BOOTH_IDLE_TIME} ${BOOTH_IDLE_SHUTDOWN_TIME} ${OVERLAY_HTML} ${PLUGINS_HTML} ${BOOTH_READY_JS} ${BOOTH_KEYBOARD_CAPTURE_JS} ${BOOTH_FAVICON_LINK}' \
   <"$WRAPPER_DIR/wrapper.html" >"$SERVE_DIR/index.html"
 
@@ -404,8 +465,10 @@ if [[ "${BOOTH_WEB_PREVIEW:-0}" == 1 ]]; then
     WRAPPER_PREVIEW_HTTP=$(cat "$WRAPPER_PREVIEW_HTTP_TEMPLATE")
   fi
 fi
-envsubst '${OUTER_PORT} ${INNER_PORT} ${API_PORT} ${SERVE_DIR} ${BOOTH_CONTAINER_NAME} ${BOOTH_VARIANT_TAG} ${BOOTH_VERSION_TAG} ${BOOTH_HOST_PORT} ${BOOTH_INSTANCE_ID} ${WRAPPER_HEAD_INJECT} ${WRAPPER_PREVIEW_LOCATIONS} ${WRAPPER_PREVIEW_HTTP} ${WRAPPER_HEALTH_PATH} ${FAVICON_LOCATIONS}' \
-  <"$WRAPPER_DIR/nginx.conf.template" >"$NGINX_CONFIG"
+# The generated config contains the session token when login is enabled.
+(umask 077; envsubst '${OUTER_PORT} ${INNER_PORT} ${API_PORT} ${SERVE_DIR} ${BOOTH_CONTAINER_NAME} ${BOOTH_VARIANT_TAG} ${BOOTH_VERSION_TAG} ${BOOTH_HOST_PORT} ${BOOTH_INSTANCE_ID} ${WRAPPER_HEAD_INJECT} ${WRAPPER_PREVIEW_LOCATIONS} ${WRAPPER_PREVIEW_HTTP} ${WRAPPER_HEALTH_PATH} ${FAVICON_LOCATIONS} ${WRAPPER_AUTH_MAP} ${WRAPPER_AUTH_GATE} ${WRAPPER_LOGIN_LOCATIONS}' \
+  <"$WRAPPER_DIR/nginx.conf.template" >"$NGINX_CONFIG")
+chmod 600 "$NGINX_CONFIG"
 
 # Propagate SIGTERM to all child processes for clean container shutdown
 cleanup() {

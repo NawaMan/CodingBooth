@@ -872,6 +872,15 @@ A booth started with `--public` greets you with its own sign-in page rather than
 
 **The username is always `coder`**, and the page fills it in for you — you only type the password. The field stays editable, but `coder` is the sole account a booth accepts. The eye button at the end of the password field shows what you typed, so you can fix a typo before signing in.
 
+The Console, LXQt, and Wayland variants use this sign-in page. For LXQt and
+Wayland, the wrapper checks the session before serving noVNC or upgrading a
+desktop WebSocket, and also protects the booth control API. The internal VNC
+and wrapped noVNC listeners stay on container loopback. The health probe remains
+accessible without a session. A public desktop refuses to start if its password
+is missing; without `--public` or an explicit `PASSWORD`, these desktops open
+without a login. Updating an older desktop requires rebuilt base and desktop
+images and a recreated booth, not only a new CLI.
+
 A few things worth knowing:
 
 - **The session lasts as long as the booth does.** Signing in sets a cookie tied to a token the booth generates at startup, so restarting a booth signs you out everywhere.

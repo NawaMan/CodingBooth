@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 
 # Creates start-xfce-wrapped, start-kde-wrapped and start-lxqt-wrapped: nginx wrapper around desktop.
 # The desktop's noVNC+websockify listens on an internal port, nginx on the booth port.
@@ -42,6 +42,7 @@ set -euo pipefail
 export INNER_PORT=$LXQT_INNER_PORT
 export INNER_CMD="start-lxqt $LXQT_INNER_PORT"
 export IFRAME_SRC="/vnc.html?autoconnect=true&resize=remote"
+export BOOTH_WRAPPER_LOGIN=true
 exec start-booth-wrapped
 EOF
 chmod +x /usr/local/bin/start-lxqt-wrapped
@@ -52,6 +53,7 @@ set -euo pipefail
 export INNER_PORT=$WAYLAND_INNER_PORT
 export INNER_CMD="start-wayland $WAYLAND_INNER_PORT"
 export IFRAME_SRC="/vnc.html?autoconnect=true&resize=remote"
+export BOOTH_WRAPPER_LOGIN=true
 exec start-booth-wrapped
 EOF
 chmod +x /usr/local/bin/start-wayland-wrapped
