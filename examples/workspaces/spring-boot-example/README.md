@@ -22,10 +22,10 @@ The first run downloads dependencies; subsequent runs are fast.
 The booth also installs Gradle and mounts `booth-cache-gradle` on `~/.gradle/caches/modules-2`. The Spring app still builds with Maven. `cache-try/` is a one-dependency Gradle build used only to fill that volume. The first start rebuilds the image so Gradle is on `PATH`.
 
 ```bash
-./booth -- bash -lc 'cd cache-try && gradle dependencies --no-daemon'
+./booth -- 'cd cache-try && gradle dependencies --no-daemon'
 ```
 
-Copy this folder to a second path and run the same command. The second run does not print `Downloading` for Guava. Run one Gradle booth at a time; two writers on `modules-2` can block each other. List the volume with `docker volume ls --filter label=cb.volume=cache`.
+Copy this folder to a second path and run the same command. The second run resolves Guava from `booth-cache-gradle`. Gradle does not print a download line for this task. Run one Gradle booth at a time; two writers on `modules-2` can block each other. List the volume with `docker volume ls --filter label=cb.volume=cache`.
 
 ## What's inside
 
