@@ -30,6 +30,19 @@ This file contains a list of changes for each released version.
   every tab resized the desktop to its own window. Pass `--browser` to get the tab back.
   `booth run` is unchanged. A `CB_BROWSER := "false"` line added to a Justfile to work around
   this can go.
+- **A booth whose image is already built starts without the registry.** Every start used to run
+  `docker build`, and even a fully cached build contacts Docker Hub first, for the
+  `docker/dockerfile` frontend and the `FROM` tag. During a Docker Hub outage (500/504 errors) a
+  booth that had nothing to rebuild still would not start. A local build is now fingerprinted: the
+  Dockerfile, build args, the local base image ID, and every file `COPY`/`ADD` reads from the
+  project (`.booth/setups/`, Boothfile `copy` sources). The fingerprint is stored as the
+  `cb.fingerprint` image label. When it matches, the start skips the build and says `is up to date,
+  skipping the build`. Remote `ADD`s, context bind mounts, a base image missing locally, more than
+  50 MB / 5,000 copied files, and `--pull` all build as before. See
+  [Skipping Unchanged Builds](BOOTH_RUN.md#skipping-unchanged-builds).
+  - **The generated Dockerfile pins its frontend by digest:**
+    `# syntax=docker/dockerfile:1.7@sha256:a57df69d…`. A bare tag is resolved against Docker Hub
+    on every build.
 - **Catalog version-pin sweep to n-1.** Defaults now sit on the release just before the newest
   stable one; pins already at or below n-1 are unchanged. Each new version was checked against its
   real download source. `gcc`, `go`, `mermaid`, `bluej`, and `mvn` were also installed for real.
