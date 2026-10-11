@@ -97,6 +97,7 @@ See [Build](BOOTH_BUILD.md), [Customization](BOOTH_CUSTOMIZATION.md) and
 | `--persist-home` | CLI / `config.toml` | Volume `cb-home-<name>` → the whole of `/home/coder`. Seeding stops after the first run |
 | `--tls-cert`, `--tls-key` | CLI | Host files → `/tmp/booth-tls-*.pem`, read-only |
 | Devices and GPUs | run-args `--device /dev/kvm`, `--gpus all` | Host hardware → the booth |
+| Owner and mode | `[[owner-permission]]` in a template → `.booth/owner-permission.yaml` | Sets the owner and mode of a mount point on every start. See [Owner and mode of a mount](#owner-and-mode-of-a-mount) |
 
 Cache and Shared follow the same layout rules: the folder tree mirrors the container's root; a file
 is mounted on its own; a folder holding a `.mount-this` marker is mounted whole. Neither may mount
@@ -175,7 +176,7 @@ same folder has its own too.
 | `booth-cache-gomod`, `booth-cache-gobuild` | `go+mod-cache` | go-example |
 | `booth-cache-npm` | `nodejs+npm-cache` | npm-example |
 | `booth-cache-pnpm` | `nodejs+pnpm-cache` | npm-example |
-| `booth-cache-pip` | `python+pip-cache` | pip-example |
+| `booth-cache-pip` | `python+pip-cache` (owner and mode set at start) | pip-example |
 | `booth-cache-uv` | `python+uv-cache` | pip-example |
 | `booth-cache-gradle` | `java+gradle-cache` | spring-boot-example |
 
@@ -239,6 +240,29 @@ The TUI's Mount field does the same. See
 
 To reset a booth's data, remove its volume while no booth uses it:
 `docker volume rm booth-pgdata-<booth name>`.
+
+### Owner and mode of a mount
+
+A volume that Docker creates, or one that an image build wrote into, can hold directories owned by
+root, which coder cannot write. A template lists `[[owner-permission]]` entries: `path` (absolute),
+and the optional `user`, `group` and `mode` (an octal string such as `"1777"`). `booth config`
+merges them into `.booth/owner-permission.yaml`. It is a generated file, fingerprinted in
+`.booth/.generated` like the Boothfile, so do not edit it by hand.
+
+```yaml
+- path: "/opt/pip-cache"
+  user: "coder"
+  group: "coder"
+  mode: "1777"
+```
+
+On every start, `booth-entry` applies each entry as root. A directory entry sets the owner and mode
+on that directory and every directory under it, and does not cross onto another filesystem. Files
+keep the mode they have. A path that is not a mount point, or does not exist, is skipped with a
+notice.
+
+Its one user is `python+pip-cache`: `/opt/pip-cache` becomes `coder:coder`, mode `1777`. See the
+`owner-permission` key in [Template schema](AGENT_TEMPLATE.md).
 
 ### Who uses `--persist-home`
 
