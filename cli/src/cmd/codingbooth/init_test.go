@@ -418,12 +418,15 @@ func TestWithoutTemplatePaths(t *testing.T) {
 
 func TestPrintMountOverlaps(t *testing.T) {
 	var b strings.Builder
-	printMountOverlaps(&b, &output.ConfigToml{
-		// chrome +profile-cache with +bookmarks-shared: Default/ goes to git.
-		CacheDirs:   []string{"home/coder/.chrome-data", "home/coder/.gnupg:0700"},
-		SharedDirs:  []string{"home/coder/.chrome-data/Default"},
-		CacheFiles:  []string{"home/coder/.zsh_history"},
-		SharedFiles: []string{"home/coder/.zsh_history"},
+	printMountOverlaps(&b, &output.BoothOutput{
+		// chrome +profile-cache with +bookmarks-shared: a template materializes the
+		// Cache folder, config.toml lists the Shared one (twice: template + --set).
+		CacheDirs: []output.FileContent{{RelPath: "home/coder/.chrome-data"}, {RelPath: "home/coder/.gnupg:0700"}},
+		Cache:     []output.FileContent{{RelPath: "home/coder/.zsh_history"}},
+		Config: &output.ConfigToml{
+			SharedDirs:  []string{"home/coder/.chrome-data/Default", "home/coder/.chrome-data/Default"},
+			SharedFiles: []string{"home/coder/.zsh_history"},
+		},
 	})
 	got := b.String()
 	assert.Contains(t, got, "Warning: /home/coder/.zsh_history is both Cache and Shared")
@@ -431,7 +434,7 @@ func TestPrintMountOverlaps(t *testing.T) {
 	assert.Equal(t, 2, strings.Count(got, "\n"), "one line per overlap, nothing for .gnupg: %q", got)
 
 	b.Reset()
-	printMountOverlaps(&b, &output.ConfigToml{CacheDirs: []string{"home/coder/.claude"}, SharedDirs: []string{"home/coder/.config/nvim"}})
+	printMountOverlaps(&b, &output.BoothOutput{Config: &output.ConfigToml{CacheDirs: []string{"home/coder/.claude"}, SharedDirs: []string{"home/coder/.config/nvim"}}})
 	assert.Empty(t, b.String())
 	printMountOverlaps(&b, nil)
 	assert.Empty(t, b.String())

@@ -107,18 +107,22 @@ func DuplicateError(duplicates []Overlap) error {
 // FromConfig builds entries from config.toml-style lists: paths relative to the
 // container root, a trailing ":0700" mode allowed on a folder. strip removes such a
 // suffix (pathmode.Path); it is passed in so this package stays dependency-free.
+// A path listed twice (by a template and again in config.toml) is one entry.
 func FromConfig(cacheFiles, cacheDirs, sharedFiles, sharedDirs []string, strip func(string) string) []Entry {
 	var entries []Entry
+	seen := map[Entry]bool{}
 	add := func(kind string, list []string, dir bool) {
 		for _, p := range list {
 			if dir {
 				p = strip(p)
 			}
 			p = "/" + strings.Trim(p, "/")
-			if p == "/" {
+			e := Entry{Kind: kind, Path: p, Dir: dir}
+			if p == "/" || seen[e] {
 				continue
 			}
-			entries = append(entries, Entry{Kind: kind, Path: p, Dir: dir})
+			seen[e] = true
+			entries = append(entries, e)
 		}
 	}
 	add(Cache, cacheFiles, false)

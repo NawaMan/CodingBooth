@@ -21,10 +21,10 @@ func TestFind_SameKindNeverOverlaps(t *testing.T) {
 	if len(dups) != 0 {
 		t.Fatalf("duplicates = %v, want none", dups)
 	}
-	// Both Default entries nest in the Cache folder; the Cache file inside the Cache
-	// folder is not reported.
-	if len(nested) != 2 {
-		t.Fatalf("nested = %v, want 2", nested)
+	// The Default entry, listed twice, is one entry and nests in the Cache folder once;
+	// the Cache file inside the Cache folder is not reported.
+	if len(nested) != 1 {
+		t.Fatalf("nested = %v, want 1", nested)
 	}
 }
 
