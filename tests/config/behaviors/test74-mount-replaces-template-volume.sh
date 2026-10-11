@@ -1,5 +1,5 @@
 #!/bin/bash
-# A template's named volume is per project, and a user's --mount on the same
+# A template's named volume is per booth, and a user's --mount on the same
 # container path replaces it.
 #
 # The service templates used to mount one machine-wide volume (booth-pgdata), and
@@ -37,27 +37,27 @@ function check() {
 }
 
 # ---------------------------------------------------------------------------
-# The template's volume is named per project
+# The template's volume is named per booth
 # ---------------------------------------------------------------------------
 run booth config $prj --no-tui --overwrite --select "postgresql"
-has "$config" '"-v", "booth-pgdata-{project}:/var/lib/postgresql"' ; check $? "postgresql mounts booth-pgdata-{project}"
+has "$config" '"-v", "booth-pgdata-{name}:/var/lib/postgresql"' ; check $? "postgresql mounts booth-pgdata-{name}"
 
 # ---------------------------------------------------------------------------
 # A user mount on the same path replaces it, and survives a reconfigure
 # ---------------------------------------------------------------------------
 run booth config $prj --no-tui --overwrite --add-mount "myproj-pgdata:/var/lib/postgresql"
 has   "$config" '"--volume", "myproj-pgdata:/var/lib/postgresql"' ; check $? "--add-mount puts the user's volume on the path"
-! has "$config" 'booth-pgdata-{project}'                         ; check $? "...and drops the template's volume on that path"
+! has "$config" 'booth-pgdata-{name}'                         ; check $? "...and drops the template's volume on that path"
 
 run booth config $prj --no-tui --overwrite
 has   "$config" '"--volume", "myproj-pgdata:/var/lib/postgresql"' ; check $? "a plain reconfigure keeps the user's volume"
-! has "$config" 'booth-pgdata-{project}'                         ; check $? "...and does not bring the template's back"
+! has "$config" 'booth-pgdata-{name}'                         ; check $? "...and does not bring the template's back"
 
 # ---------------------------------------------------------------------------
 # Removing the user mount brings the template's back
 # ---------------------------------------------------------------------------
 run booth config $prj --no-tui --overwrite --remove-mount "/var/lib/postgresql"
-has   "$config" '"-v", "booth-pgdata-{project}:/var/lib/postgresql"' ; check $? "--remove-mount restores the template's volume"
+has   "$config" '"-v", "booth-pgdata-{name}:/var/lib/postgresql"' ; check $? "--remove-mount restores the template's volume"
 ! has "$config" 'myproj-pgdata'                                    ; check $? "...and the user's volume is gone"
 
 # ---------------------------------------------------------------------------
@@ -66,6 +66,6 @@ has   "$config" '"-v", "booth-pgdata-{project}:/var/lib/postgresql"' ; check $? 
 run booth config $prj --no-tui --overwrite --set run-args=--cap-add --set run-args=SYS_PTRACE
 [[ "$(grep -c '^run-args' "$config")" == "1" ]] ; check $? "--set run-args leaves exactly one run-args key"
 has "$config" '"--cap-add", "SYS_PTRACE"'        ; check $? "...holding the --set entries"
-has "$config" 'booth-pgdata-{project}'           ; check $? "...next to the template's entries"
+has "$config" 'booth-pgdata-{name}'           ; check $? "...next to the template's entries"
 
 finally

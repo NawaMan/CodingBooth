@@ -60,7 +60,7 @@ func TestApplySetOverrides_CmdsReplace(t *testing.T) {
 
 func TestResolveRunArgs_UserMountReplacesTemplateMountOnSameTarget(t *testing.T) {
 	got := resolveRunArgs([]string{
-		"-v", "booth-pgdata-{project}:/var/lib/postgresql", // template
+		"-v", "booth-pgdata-{name}:/var/lib/postgresql", // template
 		"-p", "5432:5432",
 		"--volume", "myproj-pgdata:/var/lib/postgresql", // user --mount
 	})
@@ -101,7 +101,7 @@ func TestResolveRunArgs_UserMountReplacesAllTemplateAlternatives(t *testing.T) {
 
 func TestResolveRunArgs_DifferentTargetsAllKept(t *testing.T) {
 	in := []string{
-		"-v", "booth-pgdata-{project}:/var/lib/postgresql",
+		"-v", "booth-pgdata-{name}:/var/lib/postgresql",
 		"--volume", "myproj-data:/home/coder/.mydata",
 		"--pull=never",
 	}

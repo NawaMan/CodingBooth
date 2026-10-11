@@ -1,7 +1,7 @@
 cb-version = "2.0.0"
 display-name = "MySQL"
 display-disc = "MySQL database with persistent volume"
-display-detail = "Installs MySQL relational database with a persistent Docker volume for data storage across container restarts. The volume is per project (booth-mysqldata-<project>), so projects do not share data."
+display-detail = "Installs MySQL relational database with a persistent Docker volume for data storage across container restarts. The volume is per booth (booth-mysqldata-<booth name>; the default booth name is the project folder), so projects, and two booths of one project, do not share data."
 display-order = 22
 tags = [
     "database",
@@ -11,7 +11,7 @@ tags = [
 
 run-args = [
     # Persist MySQL data across container restarts
-    "-v", "booth-mysqldata-{project}:/var/lib/mysql",
+    "-v", "booth-mysqldata-{name}:/var/lib/mysql",
 ]
 
 [segments]
