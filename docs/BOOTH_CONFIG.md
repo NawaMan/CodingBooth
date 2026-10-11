@@ -1203,7 +1203,7 @@ These package managers store dependencies in a global cache that persists in the
 | Extension          | Manifest files          | Cache location       |
 |--------------------|-------------------------|----------------------|
 | `go/go-mod`        | `go.mod`, `go.sum`      | `$GOPATH/pkg/mod/`   |
-| `rust/cargo-build` | `Cargo.toml`, `Cargo.lock` | `~/.cargo/registry/` |
+| `rust/cargo-build` | `Cargo.toml`, `Cargo.lock` | `~/.cargo/registry/` (select as `rust+cargo-build~registry-cache`) |
 | `java/mvn-install` | `pom.xml`               | `~/.m2/repository/`  |
 | `java/gradle-deps` | `build.gradle[.kts]`    | `~/.gradle/caches/`  |
 
@@ -1320,7 +1320,7 @@ When there is no dedicated template, or you prefer a one-line package install:
 | Prisma | `nodejs+npm-pkg:prisma` | runtime `@prisma/client` is a project dep |
 | diesel / sqlx CLIs | `rust+cargo-pkg:diesel_cli` / `sqlx-cli` | diesel may need cargo features |
 | Entity Framework | `csharp+dotnet-pkg:dotnet-ef` | pin with `dotnet-ef@8.0.11` |
-| wasm-pack | `rust+cargo-pkg:wasm-pack` | |
+| wasm-pack | `rust+cargo-pkg:wasm-pack` | add the target too: `rust+targets:wasm32-unknown-unknown` |
 | Puppeteer (project dep only) | still select `puppeteer` for browsers | npm package alone is not enough |
 | Cypress (project dep only) | still select `cypress` for the binary | same |
 | Selenium language bindings | `selenium` + `python+pip-pkg:selenium` or `nodejs+npm-pkg:selenium-webdriver` | drivers ≠ bindings |

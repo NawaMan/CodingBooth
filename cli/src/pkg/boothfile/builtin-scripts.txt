@@ -267,6 +267,7 @@ setup ruby-nb-kernel
 setup rust
 setup rust-code-extension
 setup rust-nb-kernel
+setup rust-toolchain-file
 setup sbt
 setup scala
 setup scala-code-extension
@@ -328,5 +329,6 @@ install npm
 install pecl
 install pg-ext
 install pip
+install rustup
 install uv
 install yarn

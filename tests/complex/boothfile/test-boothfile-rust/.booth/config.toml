@@ -1,0 +1,7 @@
+# Configured by: booth config --no-tui --overwrite --select rust
+
+
+run-args = [
+    "-e", "CARGO_NET_GIT_FETCH_WITH_CLI=true",
+    "-v", "~/.cargo/credentials.toml:/etc/cb-home-seed/.cargo/credentials.toml:ro"
+]

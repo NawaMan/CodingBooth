@@ -325,10 +325,12 @@ Themes beyond the XFCE default are standalone, opt-in templates at order **60** 
 | `tools/ffmpeg`             | ffmpeg |
 | `tools/graphviz`           | Graphviz |
 | `tools/protobuf`           | Protocol Buffers |
+| `rust/gui-deps--extension` | GUI Libraries |
 
 These run ahead of every order-50 setup, so anything installed at 50 or later can already see
 them. The `protobuf/cpp--extension` is at 45 too; its other language extensions follow their
-language.
+language. `rust/gui-deps--extension` is a fixed `install apt` list (the X11/Wayland/GL/Vulkan/
+fontconfig/GTK libraries Rust GUI crates link to), so it sits with the other system libraries.
 
 ### Order 50 — Base setups (languages, tools, middlewares)
 
@@ -462,10 +464,19 @@ language.
 | `apache/php--extension`             | mod_php |
 | `nginx/php-fpm--extension`          | php-fpm |
 | `php/composer--extension`           | Composer |
+| `rust/targets--extension`           | Rust Targets |
+| `rust/components--extension`        | Rust Components |
+| `rust/toolchain-file--extension`    | Toolchain File (order 56) |
 
-The three extensions are a second pass of their parent's own script with an `--…-only` flag
+The first three extensions are a second pass of their parent's own script with an `--…-only` flag
 (`setup apache --php-only`, `setup nginx --fpm-only`, `setup php --composer-only`), so they must
 come after the parent's order-50 line and before the IDEs at 60.
+
+The rust extensions add to the toolchain `setup rust` just installed (`install rustup target …`,
+`install rustup component …`), so they too sit between it and the order-60 `install cargo` —
+which then builds with the targets in place. `toolchain-file` is at 56, after them, because it may
+switch the project to a pinned toolchain; it copies only `rust-toolchain(.toml)` into the build,
+never the whole context, so editing source does not invalidate its layer.
 
 ### Order 60 — Dependent setups (IDEs, browsers, desktop apps, derived languages)
 

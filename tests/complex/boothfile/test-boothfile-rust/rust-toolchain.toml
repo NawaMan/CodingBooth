@@ -1,0 +1,5 @@
+# The pin is what this test is about (rust+toolchain-file bakes it into the image),
+# so it is test data here, not catalog data. Any release other than the default works.
+[toolchain]
+channel = "1.90.0"
+targets = ["wasm32-unknown-unknown"]
