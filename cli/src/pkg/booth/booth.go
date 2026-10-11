@@ -200,8 +200,13 @@ func (booth *Booth) runAsDaemon() error {
 	userCmds := make([]string, 0, 64)
 
 	if booth.ctx.Cmds().Length() > 0 {
-		userCmds = append(userCmds, "bash", "-lc")
-		userCmds = append(userCmds, flattenArgs(booth.ctx.Cmds())...)
+		// One string, as runAsCommand does: `bash -lc` takes a single command
+		// and treats anything after it as $0, $1, ... So appending the words
+		// as separate arguments ran `bash -lc sleep 600` — the script was
+		// "sleep", with "600" as its $0 — and the booth's command died on
+		// "sleep: missing operand" while the container stayed up on its own
+		// services, so nothing but a line in `docker logs` said so.
+		userCmds = append(userCmds, "bash", "-lc", strings.Join(flattenArgs(booth.ctx.Cmds()), " "))
 	}
 
 	if !booth.ctx.Quiet() {
