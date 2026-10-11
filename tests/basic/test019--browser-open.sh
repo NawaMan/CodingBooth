@@ -17,6 +17,8 @@
 #   9) --browser-port <n> opens that absolute port instead of the booth's own
 #  10) --browser-port +OFFSET opens booth-port+OFFSET (offset-base defaults to
 #      the booth port)
+#  11) a booth that exec --run creates opens nothing — exec is a terminal command
+#  12) ...unless exec is given --browser
 #
 # Case 8 is numbered last but runs with case 2: both interrogate the booth that
 # case 1 opened, and each later case replaces that container with its own.
@@ -197,5 +199,41 @@ if [[ "$URL" == "http://localhost:$OFFSET_PORT" ]]; then
   print_test_result "true" "$0" "10" "--browser-port +80 opened http://localhost:$OFFSET_PORT"
 else
   print_test_result "false" "$0" "10" "--browser-port +80 should open http://localhost:$OFFSET_PORT, opened '$URL'"
+  exit 1
+fi
+
+# --- 11 & 12: a booth that exec --run creates --------------------------------
+# A Justfile runs every recipe line through `exec --run`, so a browser here meant
+# one more tab per recipe — each resizing a desktop booth to its own window.
+# config.toml carries the variant: exec has no --variant to forward.
+mkdir -p "$WORK/.booth"
+printf 'variant = "base"\n' > "$WORK/.booth/config.toml"
+
+exec_run() {
+  : > "$OPENED"
+  docker rm -f "$NAME" >/dev/null 2>&1 || true
+  {
+    echo "=== booth exec --run $* ==="
+    run_coding_booth exec --code "$WORK" --name "$NAME" --port "$PORT" --run --keep-alive "$@" -- echo exec-ran 2>&1
+  } >> "$LOG" || true
+  sleep 1
+  cat "$OPENED" 2>/dev/null | tr -d '\n'
+}
+
+URL="$(exec_run)"
+if [[ -z "$URL" ]] && grep -q '^exec-ran$' "$LOG"; then
+  print_test_result "true" "$0" "11" "A booth exec --run created opened nothing"
+else
+  print_test_result "false" "$0" "11" "exec --run should run the command and open nothing, opened '$URL'"
+  tail -30 "$LOG" >&2
+  exit 1
+fi
+
+URL="$(exec_run --browser)"
+if [[ "$URL" == "http://localhost:$PORT" ]]; then
+  print_test_result "true" "$0" "12" "exec --run --browser opened http://localhost:$PORT"
+else
+  print_test_result "false" "$0" "12" "exec --run --browser should open http://localhost:$PORT, opened '$URL'"
+  tail -30 "$LOG" >&2
   exit 1
 fi
