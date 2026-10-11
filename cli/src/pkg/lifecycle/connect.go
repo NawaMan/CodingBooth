@@ -44,6 +44,7 @@ type connectCreateOpts struct {
 	acceptExisting    bool   // --accept-existing: connect despite create-intent mismatch
 	dindAllowed       bool   // --dind-allowed: forwarded so a --run create need not ask
 	privilegedAllowed bool   // --privileged-allowed: forwarded likewise
+	browser           bool   // --browser: open the booth's page, which a --run create does not by default
 }
 
 // Shell opens a new interactive shell inside a running booth container.
@@ -64,6 +65,7 @@ func Shell(args []string, stderr io.Writer) error {
 	dindAllowed := flagSet.Bool("dind-allowed", false, "With --run: start a --dind booth without asking")
 	privilegedAllowed := flagSet.Bool("privileged-allowed", false, "With --run: allow --privileged-like run-args without asking")
 	silenceBuild := flagSet.Bool("silence-build", false, "Hide --run bring-up and teardown; command/shell only")
+	browser := flagSet.Bool("browser", false, "With --run: open the booth's page in a browser when creating it")
 	flagSet.BoolVar(silenceBuild, "quiet", false, "Alias for --silence-build")
 	flagSet.BoolVar(silenceBuild, "q", false, "Alias for --silence-build")
 	var envVars stringSliceFlag
@@ -78,7 +80,7 @@ func Shell(args []string, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	create := connectCreateOpts{engine: *engineChoice, port: *port, acceptExisting: *acceptExisting, dindAllowed: *dindAllowed, privilegedAllowed: *privilegedAllowed}
+	create := connectCreateOpts{engine: *engineChoice, port: *port, acceptExisting: *acceptExisting, dindAllowed: *dindAllowed, privilegedAllowed: *privilegedAllowed, browser: *browser}
 	target, cleanup, err := resolveConnectTarget(*name, positional, codePath, *run, *keepAlive, *silenceBuild, create, stderr)
 	if err != nil {
 		return err
@@ -130,6 +132,7 @@ func Exec(args []string, stderr io.Writer) error {
 	dindAllowed := flagSet.Bool("dind-allowed", false, "With --run: start a --dind booth without asking")
 	privilegedAllowed := flagSet.Bool("privileged-allowed", false, "With --run: allow --privileged-like run-args without asking")
 	silenceBuild := flagSet.Bool("silence-build", false, "Hide --run bring-up and teardown; command output only")
+	browser := flagSet.Bool("browser", false, "With --run: open the booth's page in a browser when creating it")
 	flagSet.BoolVar(silenceBuild, "quiet", false, "Alias for --silence-build")
 	flagSet.BoolVar(silenceBuild, "q", false, "Alias for --silence-build")
 	var envVars stringSliceFlag
@@ -152,7 +155,7 @@ func Exec(args []string, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	create := connectCreateOpts{engine: *engineChoice, port: *port, acceptExisting: *acceptExisting, dindAllowed: *dindAllowed, privilegedAllowed: *privilegedAllowed}
+	create := connectCreateOpts{engine: *engineChoice, port: *port, acceptExisting: *acceptExisting, dindAllowed: *dindAllowed, privilegedAllowed: *privilegedAllowed, browser: *browser}
 	target, cleanup, err := resolveConnectTarget(*name, positional, codePath, *run, *keepAlive, *silenceBuild, create, stderr)
 	if err != nil {
 		return err
@@ -896,12 +899,21 @@ func buildExecFlags(interactive, daemon bool, dir string, envVars stringSliceFla
 // buildConnectRunArgs builds the argv for `booth run` when shell/exec creates a
 // missing booth. Always daemon mode so the process returns and shell/exec can
 // attach. Pure for unit tests.
+//
+// No browser by default: shell and exec are terminal commands, and a desktop
+// booth that every `exec --run` opened another tab for ended up with several
+// viewers, each resizing the desktop to its own window. --browser asks for it.
 func buildConnectRunArgs(explicitName string, keepAlive bool, create connectCreateOpts, quiet bool) []string {
 	runArgs := []string{"run", "--daemon"}
 	if quiet {
 		// --quiet on run hides the daemon banner, implies --silence-build and
 		// --no-browser, and still dumps the build log if the image build fails.
 		runArgs = append(runArgs, "--quiet")
+	}
+	if create.browser {
+		runArgs = append(runArgs, "--browser")
+	} else {
+		runArgs = append(runArgs, "--no-browser")
 	}
 	if keepAlive {
 		runArgs = append(runArgs, "--keep-alive")

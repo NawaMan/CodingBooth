@@ -654,6 +654,9 @@ answers. This is on by default, in both foreground and daemon mode.
 - Environment variable: `CB_BROWSER=false`
 - Configuration file: `browser = false` in `.booth/config.toml`
 
+A booth that `shell --run` or `exec --run` creates does not open a browser unless that command is
+given `--browser` — see [BOOTH_CONNECT.md](BOOTH_CONNECT.md#run-the-booth-if-it-is-not-running).
+
 ```bash
 ./booth --variant codeserver              # opens http://localhost:<port> when it is up
 ./booth --variant codeserver --no-browser # prints the URL and leaves it to you

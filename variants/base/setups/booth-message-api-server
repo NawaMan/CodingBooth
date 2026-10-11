@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 # -----------------------------------------------------------------------------
 # booth-message-api-server
@@ -23,6 +23,7 @@
 #   POST /booth-messages/api/login         — trade the password for a session cookie
 #   POST /booth-messages/api/viewmd        — start viewmd --daemon if it is not already serving
 #   POST /booth-messages/api/display-size  — fit the desktop to the browser {"width": W, "height": H}
+#   POST /booth-messages/api/display-lease — which viewer fits the desktop {"id": ID, "claim"|"release": true}
 #   POST /booth-messages/api/session-reset — end a Console UI pane's tmux session {"session": 1-6}
 #
 # Usage: booth-message-api-server <port>
@@ -110,6 +111,9 @@ handle_request() {
                     ;;
                 /booth-messages/api/display-size)
                     handle_display_size "$body"
+                    ;;
+                /booth-messages/api/display-lease)
+                    handle_display_lease "$body"
                     ;;
                 /booth-messages/api/session-reset)
                     handle_session_reset "$body"
@@ -282,6 +286,50 @@ handle_display_size() {
     else
         send_response 503 '{"error":"no desktop to resize yet","supported":true}'
     fi
+}
+
+# How long a viewer keeps the display lease without renewing it. The page renews
+# every 5s, so this is a few missed beats — a closed tab, a frozen or throttled
+# one — before another viewer may take over.
+DISPLAY_LEASE_TTL=15
+
+handle_display_lease() {
+    # Every viewer of a desktop booth used to fit the desktop to its own window,
+    # so two tabs took turns resizing it and the screen flickered. The lease
+    # names the one viewer that may: the page asks with its own random id, and
+    # resizes only while the answer is leader:true — otherwise it scales.
+    #   claim:true   — take it (the viewer was just focused); the last one wins
+    #   release:true — give it up (the tab is closing), if it is ours
+    #   neither      — renew it if ours, take it if free or expired, else no
+    local body="$1"
+    local lease_file="${BOOTH_DISPLAY_LEASE_FILE:-/tmp/booth-display-lease}"
+    local id holder="" stamp="" now
+    id=$(echo "$body" | sed -n 's/.*"id" *: *"\([A-Za-z0-9_-]\{1,64\}\)".*/\1/p')
+    if [ -z "$id" ]; then
+        send_response 400 '{"error":"id must be 1-64 letters, digits, - or _"}'
+        return
+    fi
+    printf -v now '%(%s)T' -1
+    [ -r "$lease_file" ] && read -r holder stamp < "$lease_file"
+    [[ "$stamp" =~ ^[0-9]+$ ]] || stamp=0
+
+    if [[ "$body" =~ \"release\"\ *:\ *true ]]; then
+        [ "$holder" = "$id" ] && rm -f "$lease_file"
+        send_response 200 '{"ok":true,"leader":false}'
+        return
+    fi
+    if [[ "$body" =~ \"claim\"\ *:\ *true ]] || [ -z "$holder" ] || [ "$holder" = "$id" ] \
+            || [ $((now - stamp)) -gt "$DISPLAY_LEASE_TTL" ]; then
+        # Write-then-rename, so a concurrent request never reads half a line.
+        if printf '%s %s\n' "$id" "$now" > "$lease_file.$$" && mv -f "$lease_file.$$" "$lease_file"; then
+            send_response 200 '{"ok":true,"leader":true}'
+        else
+            rm -f "$lease_file.$$"
+            send_response 500 '{"error":"cannot write the display lease"}'
+        fi
+        return
+    fi
+    send_response 200 '{"ok":true,"leader":false}'
 }
 
 handle_idle_pause() {
