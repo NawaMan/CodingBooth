@@ -100,7 +100,10 @@ See [Build](BOOTH_BUILD.md), [Customization](BOOTH_CUSTOMIZATION.md) and
 | Owner and mode | `[[owner-permission]]` in a template → `.booth/owner-permission.yaml` | Sets the owner and mode of a mount point on every start. See [Owner and mode of a mount](#owner-and-mode-of-a-mount) |
 
 Cache and Shared follow the same layout rules: the folder tree mirrors the container's root; a file
-is mounted on its own; a folder holding a `.mount-this` marker is mounted whole. Neither may mount
+is synced on its own; a folder holding a `.mount-this` marker is mounted whole. A single file is not
+bind-mounted at its path, since a tool that saves by renaming a new file over it would fail: it is
+staged elsewhere, copied into place at start, and copied back every 2 seconds and at a clean stop
+([details](BOOTH_LOCALCACHE.md#single-files-are-kept-in-sync)). Neither may mount
 over `/opt/codingbooth` or `/home/coder/code`. Both are mounted whether or not `.booth/` itself is
 writable (`--writable-booth`).
 
@@ -109,6 +112,11 @@ A declared path starts empty unless a **seed** gives it content: `.booth/cache-s
 `.booth/shared/` while a path there is missing or empty — never over content. A template ships
 them with `[files.cache-seed]` / `[files.shared-seed]`. Because the Cache seed is in git, a fresh
 clone gets the content too. See [Initial Content](BOOTH_LOCALCACHE.md#initial-content).
+
+The two are checked against each other. A path in both refuses to start. One inside the other —
+`+profile-cache` with `+bookmarks-shared` — starts with a notice saying which part goes to git;
+`booth config` prints the same notice. See
+[Cache and Shared on the same path](BOOTH_LOCALCACHE.md#cache-and-shared-on-the-same-path).
 
 See [Local Cache](BOOTH_LOCALCACHE.md), [Shared State](BOOTH_SHARED.md) and
 [Persist Home](BOOTH_PERSIST_HOME.md).
@@ -394,18 +402,16 @@ Found while putting this map together. The shared download caches are in the map
 - **Nothing keeps secrets out of Shared.** Cache has a strict gitignore check; Shared has none,
   yet a browser's shared `Default/` folder also holds cookies and saved logins. The sample
   gitignores in [Shared State](BOOTH_SHARED.md#sample-gitignores) must be copied in by hand.
-- **A Cache or Shared file with no seed starts empty.** It is mounted over whatever the image put
+- **A Cache or Shared file with no seed starts empty.** It replaces whatever the image put
   at that path, hiding the image's own default. A seed fixes it per path
   ([Initial Content](BOOTH_LOCALCACHE.md#initial-content)); nothing copies the image's file in by
   itself.
-- **A single-file mount breaks for a tool that saves by writing a new file and renaming it.** KDE
-  is known to fail this way; other `shared-files` entries need checking.
+- **A single Cache or Shared file is synced, not live.** A hard kill loses up to its last 2
+  seconds, and two booths of one folder overwrite each other's copy of it.
 - **Host package caches still follow the host.** `java+m2` and `rust+cargo-cache` bind-mount
   `$HOME/.m2` and `$HOME/.cargo/registry`. The mount is dropped when that folder is missing, and
   a writable mount of a host dot-directory needs consent (`--privileged-allowed` when there is
   no terminal). The named-volume caches above do not.
-- **Overlapping Cache and Shared paths are not detected** — e.g. `+profile-cache` with
-  `+bookmarks-shared`.
 - **The four startup copy folders reach only `/home/coder`.** There is no folder that copies
   into `/etc` or `/opt` at start; a startup script does it instead
   ([Copying outside home](#copying-outside-home)).
