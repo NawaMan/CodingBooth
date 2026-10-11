@@ -7,7 +7,9 @@ package template
 import (
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"sort"
 	"strconv"
@@ -28,36 +30,44 @@ type metaToml struct {
 }
 
 type specToml struct {
-	CBVersion    string               `toml:"cb-version"`
-	DisplayName  string               `toml:"display-name"`
-	DisplayLabel string               `toml:"display-label"`
-	DisplayDesc   string               `toml:"display-disc"`
-	DisplayDetail string               `toml:"display-detail"`
-	DisplayOrder  int                  `toml:"display-order"`
-	Tags         []string             `toml:"tags"`
-	Primary      bool                 `toml:"primary"`
-	AutoSelect   *bool                `toml:"auto-select"`
-	UnsupportedArch     []string      `toml:"unsupported-arch"`
-	UnsupportedArchNote string        `toml:"unsupported-arch-note"`
-	Variant      string               `toml:"variant"`
-	Port         string               `toml:"port"`
-	Timezone     string               `toml:"timezone"`
-	Dind         *bool                `toml:"dind"`
-	Sudo         *bool                `toml:"sudo"`
-	VmMemory     string               `toml:"vm-memory"`
-	VmCpus       string               `toml:"vm-cpus"`
-	VmShmSize    string               `toml:"vm-shm-size"`
-	Cmds         []string             `toml:"cmds"`
-	BuildArgs    []string             `toml:"build-args"`
-	RunArgs      []string             `toml:"run-args"`
-	Requires     []string             `toml:"requires"`
-	Params       map[string]paramToml `toml:"params"`
-	Segments     map[string]string    `toml:"segments"`
-	Files        filesToml            `toml:"files"`
-	CacheFiles   []string             `toml:"cache-files"`
-	CacheDirs    []string             `toml:"cache-dirs"`
-	SharedFiles  []string             `toml:"shared-files"`
-	SharedDirs   []string             `toml:"shared-dirs"`
+	CBVersion           string               `toml:"cb-version"`
+	DisplayName         string               `toml:"display-name"`
+	DisplayLabel        string               `toml:"display-label"`
+	DisplayDesc         string               `toml:"display-disc"`
+	DisplayDetail       string               `toml:"display-detail"`
+	DisplayOrder        int                  `toml:"display-order"`
+	Tags                []string             `toml:"tags"`
+	Primary             bool                 `toml:"primary"`
+	AutoSelect          *bool                `toml:"auto-select"`
+	UnsupportedArch     []string             `toml:"unsupported-arch"`
+	UnsupportedArchNote string               `toml:"unsupported-arch-note"`
+	Variant             string               `toml:"variant"`
+	Port                string               `toml:"port"`
+	Timezone            string               `toml:"timezone"`
+	Dind                *bool                `toml:"dind"`
+	Sudo                *bool                `toml:"sudo"`
+	VmMemory            string               `toml:"vm-memory"`
+	VmCpus              string               `toml:"vm-cpus"`
+	VmShmSize           string               `toml:"vm-shm-size"`
+	Cmds                []string             `toml:"cmds"`
+	BuildArgs           []string             `toml:"build-args"`
+	RunArgs             []string             `toml:"run-args"`
+	Requires            []string             `toml:"requires"`
+	Params              map[string]paramToml `toml:"params"`
+	Segments            map[string]string    `toml:"segments"`
+	Files               filesToml            `toml:"files"`
+	CacheFiles          []string             `toml:"cache-files"`
+	CacheDirs           []string             `toml:"cache-dirs"`
+	SharedFiles         []string             `toml:"shared-files"`
+	SharedDirs          []string             `toml:"shared-dirs"`
+	OwnerPermission     []ownerPermToml      `toml:"owner-permission"`
+}
+
+type ownerPermToml struct {
+	Path  string `toml:"path"`
+	User  string `toml:"user"`
+	Group string `toml:"group"`
+	Mode  string `toml:"mode"`
 }
 
 type filesToml struct {
@@ -191,32 +201,32 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 	}
 
 	tmpl := &Template{
-		Name:          name,
-		CategoryName:  categoryName,
-		DisplayName:   spec.DisplayName,
-		DisplayLabel:  spec.DisplayLabel,
-		DisplayDesc:   spec.DisplayDesc,
-		DisplayDetail: spec.DisplayDetail,
-		DisplayOrder:  spec.DisplayOrder,
-		Tags:          spec.Tags,
-		Primary:       spec.Primary,
-		primarySet:    md.IsDefined("primary"),
-		AutoSelect:    spec.AutoSelect,
+		Name:                name,
+		CategoryName:        categoryName,
+		DisplayName:         spec.DisplayName,
+		DisplayLabel:        spec.DisplayLabel,
+		DisplayDesc:         spec.DisplayDesc,
+		DisplayDetail:       spec.DisplayDetail,
+		DisplayOrder:        spec.DisplayOrder,
+		Tags:                spec.Tags,
+		Primary:             spec.Primary,
+		primarySet:          md.IsDefined("primary"),
+		AutoSelect:          spec.AutoSelect,
 		UnsupportedArch:     spec.UnsupportedArch,
 		UnsupportedArchNote: spec.UnsupportedArchNote,
-		CBVersion:     spec.CBVersion,
-		Variant:       spec.Variant,
-		Port:          spec.Port,
-		Timezone:      spec.Timezone,
-		Dind:          spec.Dind,
-		Sudo:          spec.Sudo,
-		VmMemory:      spec.VmMemory,
-		VmCpus:        spec.VmCpus,
-		VmShmSize:     spec.VmShmSize,
-		Cmds:          spec.Cmds,
-		BuildArgs:     spec.BuildArgs,
-		RunArgs:       spec.RunArgs,
-		Requires:      spec.Requires,
+		CBVersion:           spec.CBVersion,
+		Variant:             spec.Variant,
+		Port:                spec.Port,
+		Timezone:            spec.Timezone,
+		Dind:                spec.Dind,
+		Sudo:                spec.Sudo,
+		VmMemory:            spec.VmMemory,
+		VmCpus:              spec.VmCpus,
+		VmShmSize:           spec.VmShmSize,
+		Cmds:                spec.Cmds,
+		BuildArgs:           spec.BuildArgs,
+		RunArgs:             spec.RunArgs,
+		Requires:            spec.Requires,
 	}
 
 	// Convert params, preserving declaration order from TOML
@@ -321,6 +331,11 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 	}
 	tmpl.SharedDirs = spec.SharedDirs
 
+	tmpl.OwnerPerms, err = assignOwnerPerms(spec.OwnerPermission)
+	if err != nil {
+		return nil, err
+	}
+
 	// Load extensions (subdirectories with template.toml that aren't special dirs)
 	if allowExtensions {
 		entries, err := os.ReadDir(dir)
@@ -383,32 +398,32 @@ func loadExtensionFile(filePath, name, categoryName string) (*Template, error) {
 	}
 
 	tmpl := &Template{
-		Name:          name,
-		CategoryName:  categoryName,
-		DisplayName:   spec.DisplayName,
-		DisplayLabel:  spec.DisplayLabel,
-		DisplayDesc:   spec.DisplayDesc,
-		DisplayDetail: spec.DisplayDetail,
-		DisplayOrder:  spec.DisplayOrder,
-		Tags:          spec.Tags,
-		Primary:       spec.Primary,
-		primarySet:    md.IsDefined("primary"),
-		AutoSelect:    spec.AutoSelect,
+		Name:                name,
+		CategoryName:        categoryName,
+		DisplayName:         spec.DisplayName,
+		DisplayLabel:        spec.DisplayLabel,
+		DisplayDesc:         spec.DisplayDesc,
+		DisplayDetail:       spec.DisplayDetail,
+		DisplayOrder:        spec.DisplayOrder,
+		Tags:                spec.Tags,
+		Primary:             spec.Primary,
+		primarySet:          md.IsDefined("primary"),
+		AutoSelect:          spec.AutoSelect,
 		UnsupportedArch:     spec.UnsupportedArch,
 		UnsupportedArchNote: spec.UnsupportedArchNote,
-		CBVersion:     spec.CBVersion,
-		Variant:       spec.Variant,
-		Port:          spec.Port,
-		Timezone:      spec.Timezone,
-		Dind:          spec.Dind,
-		Sudo:          spec.Sudo,
-		VmMemory:      spec.VmMemory,
-		VmCpus:        spec.VmCpus,
-		VmShmSize:     spec.VmShmSize,
-		Cmds:          spec.Cmds,
-		BuildArgs:     spec.BuildArgs,
-		RunArgs:       spec.RunArgs,
-		Requires:      spec.Requires,
+		CBVersion:           spec.CBVersion,
+		Variant:             spec.Variant,
+		Port:                spec.Port,
+		Timezone:            spec.Timezone,
+		Dind:                spec.Dind,
+		Sudo:                spec.Sudo,
+		VmMemory:            spec.VmMemory,
+		VmCpus:              spec.VmCpus,
+		VmShmSize:           spec.VmShmSize,
+		Cmds:                spec.Cmds,
+		BuildArgs:           spec.BuildArgs,
+		RunArgs:             spec.RunArgs,
+		Requires:            spec.Requires,
 	}
 
 	// Convert params, preserving declaration order from TOML
@@ -469,6 +484,11 @@ func loadExtensionFile(filePath, name, categoryName string) (*Template, error) {
 		}
 	}
 	tmpl.SharedDirs = spec.SharedDirs
+
+	tmpl.OwnerPerms, err = assignOwnerPerms(spec.OwnerPermission)
+	if err != nil {
+		return nil, err
+	}
 
 	return tmpl, nil
 }
@@ -595,6 +615,50 @@ func parseSegmentOrder(filename, prefix, suffix string) (int, bool) {
 		return 0, false
 	}
 	return order, true
+}
+
+var (
+	ownerPermModeRe = regexp.MustCompile(`^[0-7]{3,4}$`)
+	ownerPermNameRe = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_-]*$`)
+)
+
+// assignOwnerPerms checks [[owner-permission]] entries. The path is the mount
+// point booth-entry will update; user, group, and mode say what to set there.
+func assignOwnerPerms(entries []ownerPermToml) ([]OwnerPerm, error) {
+	if len(entries) == 0 {
+		return nil, nil
+	}
+	out := make([]OwnerPerm, 0, len(entries))
+	for _, e := range entries {
+		op, err := normalizeOwnerPerm(e)
+		if err != nil {
+			return nil, fmt.Errorf("invalid owner-permission: %w", err)
+		}
+		out = append(out, op)
+	}
+	return out, nil
+}
+
+func normalizeOwnerPerm(e ownerPermToml) (OwnerPerm, error) {
+	p := path.Clean(strings.TrimSpace(e.Path))
+	if p == "/" || !strings.HasPrefix(p, "/") || strings.Contains(e.Path, "..") || strings.ContainsAny(p, " \t") {
+		return OwnerPerm{}, fmt.Errorf("path %q must be an absolute mount path", e.Path)
+	}
+	mode := strings.Trim(strings.TrimSpace(e.Mode), `"'`)
+	if mode != "" && !ownerPermModeRe.MatchString(mode) {
+		return OwnerPerm{}, fmt.Errorf("mode %q must be 3 or 4 octal digits", e.Mode)
+	}
+	user := strings.TrimSpace(e.User)
+	group := strings.TrimSpace(e.Group)
+	if user == "" && group == "" && mode == "" {
+		return OwnerPerm{}, fmt.Errorf("path %q sets no user, group, or mode", p)
+	}
+	for _, name := range []string{user, group} {
+		if name != "" && !ownerPermNameRe.MatchString(name) {
+			return OwnerPerm{}, fmt.Errorf("name %q must be an account name", name)
+		}
+	}
+	return OwnerPerm{Path: p, User: user, Group: group, Mode: mode}, nil
 }
 
 // validateFilePath checks that a relative path is safe for use as a target file path.

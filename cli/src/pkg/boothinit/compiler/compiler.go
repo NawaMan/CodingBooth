@@ -93,6 +93,13 @@ type collector struct {
 	cacheDirs   []string
 	sharedFiles []string
 	sharedDirs  []string
+
+	ownerPerms map[string]ownerPermSeen
+}
+
+type ownerPermSeen struct {
+	perm   tmpl.OwnerPerm
+	source string
 }
 
 func (c *collector) collectTemplate(st selection.SelectedTemplate) error {
@@ -119,6 +126,9 @@ func (c *collector) collectTemplate(st selection.SelectedTemplate) error {
 
 	// Files
 	c.collectFiles(t)
+	if err := c.collectOwnerPerms(t, source); err != nil {
+		return err
+	}
 
 	// Extensions
 	for _, ext := range st.Extensions {
@@ -135,9 +145,33 @@ func (c *collector) collectTemplate(st selection.SelectedTemplate) error {
 		}
 
 		c.collectFiles(ext.Extension)
+		if err := c.collectOwnerPerms(ext.Extension, extSource); err != nil {
+			return err
+		}
 	}
 
 	return nil
+}
+
+func (c *collector) collectOwnerPerms(t *tmpl.Template, source string) error {
+	for _, p := range t.OwnerPerms {
+		if prev, ok := c.ownerPerms[p.Path]; ok {
+			if prev.perm != p {
+				return fmt.Errorf("conflicting owner-permission for %s: %s from %s, %s from %s",
+					p.Path, formatOwnerPerm(prev.perm), prev.source, formatOwnerPerm(p), source)
+			}
+			continue
+		}
+		if c.ownerPerms == nil {
+			c.ownerPerms = map[string]ownerPermSeen{}
+		}
+		c.ownerPerms[p.Path] = ownerPermSeen{perm: p, source: source}
+	}
+	return nil
+}
+
+func formatOwnerPerm(p tmpl.OwnerPerm) string {
+	return fmt.Sprintf("user=%s group=%s mode=%s", p.User, p.Group, p.Mode)
 }
 
 func (c *collector) collectParams(values map[string]string, source string) error {
@@ -330,6 +364,20 @@ func (c *collector) build() (*output.BoothOutput, error) {
 	out.HomeSeed = c.homeSeed
 	out.CacheSeed = c.cacheSeed
 	out.SharedSeed = c.sharedSeed
+	if len(c.ownerPerms) > 0 {
+		paths := make([]string, 0, len(c.ownerPerms))
+		for p := range c.ownerPerms {
+			paths = append(paths, p)
+		}
+		sort.Strings(paths)
+		out.OwnerPerms = make([]output.OwnerPerm, 0, len(paths))
+		for _, p := range paths {
+			seen := c.ownerPerms[p]
+			out.OwnerPerms = append(out.OwnerPerms, output.OwnerPerm{
+				Path: seen.perm.Path, User: seen.perm.User, Group: seen.perm.Group, Mode: seen.perm.Mode,
+			})
+		}
+	}
 
 	// Cache files (dedup, preserve order) — also recorded on Config, like Shared: a
 	// fresh clone has no .booth/cache/, and config.toml is all a start has to

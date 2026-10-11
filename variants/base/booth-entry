@@ -57,6 +57,96 @@ section() {
   fi
 }
 
+# Read .booth/owner-permission.yaml and apply each entry to its mount point.
+# The file is a short list written by booth config:
+#
+#   - path: "/opt/pip-cache"
+#     user: "coder"
+#     group: "coder"
+#     mode: "1777"
+#
+# A directory entry sets the owner and mode on that directory and every
+# directory under it, without crossing onto another filesystem. Files inside
+# the tree keep the mode they already have.
+apply_owner_permissions() {
+  local file="${CODE_DIR}/.booth/owner-permission.yaml"
+  [ -f "$file" ] || return 0
+  local path="" user="" group="" mode="" line key value
+  while IFS= read -r line || [ -n "$line" ]; do
+    line="${line%%#*}"
+    line="${line#"${line%%[![:space:]]*}"}"
+    line="${line%"${line##*[![:space:]]}"}"
+    [ -n "$line" ] || continue
+    if [[ "$line" == -* ]]; then
+      apply_one_owner_permission "$path" "$user" "$group" "$mode"
+      path="" user="" group="" mode=""
+      line="${line#-}"
+      line="${line#"${line%%[![:space:]]*}"}"
+    fi
+    key="${line%%:*}"
+    value="${line#*:}"
+    value="${value#"${value%%[![:space:]]*}"}"
+    value="${value%"${value##*[![:space:]]}"}"
+    value="${value#\"}"
+    value="${value%\"}"
+    value="${value#\'}"
+    value="${value%\'}"
+    case "$key" in
+      path)  path="$value" ;;
+      user)  user="$value" ;;
+      group) group="$value" ;;
+      mode)  mode="$value" ;;
+    esac
+  done < "$file"
+  apply_one_owner_permission "$path" "$user" "$group" "$mode"
+}
+
+apply_one_owner_permission() {
+  local path="$1" user="$2" group="$3" mode="$4" own=""
+  [ -n "$path" ] || return 0
+  case "$path" in
+    /*) ;;
+    *) printf '[cb-setup] owner-permission: skip %s (not absolute)\n' "$path" >&2; return 0 ;;
+  esac
+  case "$path" in
+    *..*) printf '[cb-setup] owner-permission: skip %s (refuses ..)\n' "$path" >&2; return 0 ;;
+  esac
+  if [ -n "$mode" ] && ! [[ "$mode" =~ ^[0-7]{3,4}$ ]]; then
+    printf '[cb-setup] owner-permission: skip %s (mode %s is not octal)\n' "$path" "$mode" >&2
+    return 0
+  fi
+  if ! awk -v p="$path" '$5 == p { found=1 } END { exit found ? 0 : 1 }' /proc/self/mountinfo; then
+    printf '[cb-setup] owner-permission: skip %s (not a mount point)\n' "$path" >&2
+    return 0
+  fi
+  if [ -n "$user" ] && [ -n "$group" ]; then
+    own="$user:$group"
+  elif [ -n "$user" ]; then
+    own="$user"
+  elif [ -n "$group" ]; then
+    own=":$group"
+  fi
+  if [ -d "$path" ]; then
+    if [ -n "$mode" ]; then
+      find "$path" -xdev -type d -exec chmod "$mode" {} + || true
+    fi
+    if [ -n "$own" ]; then
+      find "$path" -xdev -type d -exec chown "$own" {} + || true
+    fi
+    info "owner-permission: $path user=${user:-} group=${group:-} mode=${mode:-}"
+  elif [ -e "$path" ]; then
+    if [ -n "$mode" ]; then
+      chmod "$mode" "$path" || true
+    fi
+    if [ -n "$own" ]; then
+      chown "$own" "$path" || true
+    fi
+    info "owner-permission: $path user=${user:-} group=${group:-} mode=${mode:-}"
+  else
+    printf '[cb-setup] owner-permission: skip %s (missing)\n' "$path" >&2
+  fi
+}
+
 # Make host.docker.internal resolve on engines that cannot be asked to. Docker
 # and Podman map it themselves (--add-host ...:host-gateway); Apple container
 # has no such flag, so the CLI passes the network gateway as BOOTH_HOST_GATEWAY
@@ -255,6 +345,13 @@ info "5) Reconciling ownership of $HOME_DIR to $HOST_UID:$HOST_GID (skipping $CO
 # already differs keeps this cheap and idempotent on every start.
 find "$HOME_DIR" -xdev -path "$CODE_DIR" -prune -o ! -user  "$HOST_UID" -exec chown "$HOST_UID" {} + 2>/dev/null || true
 find "$HOME_DIR" -xdev -path "$CODE_DIR" -prune -o ! -group "$HOST_GID" -exec chgrp "$HOST_GID" {} + 2>/dev/null || true
+
+# .booth/owner-permission.yaml names mount points (a shared pip cache, for
+# example) whose directories should be writable by coder. The home sweep above
+# does not walk them: they are outside $HOME, and -xdev stops at the volume.
+# Apply after coder's uid exists, so a user name in the file resolves to the
+# host uid. A path that is not a mount point is left alone.
+apply_owner_permissions
 
 info "6) For Windows, find all mount point from the host and in each mount point, find all file/folder that is root:root and change them to coder:coder"
 if [ "${HOST_OS:-}" = "WIN" ]; then

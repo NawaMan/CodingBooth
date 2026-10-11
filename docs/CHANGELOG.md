@@ -14,6 +14,14 @@ This file contains a list of changes for each released version.
   restart, and remove now also parse flags after positional names.
 - **JSON for automation:** `booth list --json` and `booth expose list --json` return
   structured output, with empty arrays for empty results.
+- **Mount owner and mode.** Templates can list `[[owner-permission]]` entries.
+  `booth config` writes them to `.booth/owner-permission.yaml`. On startup,
+  `booth-entry` applies each entry to that mount point: a directory entry sets
+  the owner and mode on the directory and every directory under it. A path that
+  is not a mount point is left alone. `python+pip-cache` sets `/opt/pip-cache`
+  to `coder:coder` mode `1777`, so a root-owned `http-v2` left by the image
+  build does not block `coder` from storing downloads. This reader ships in the
+  base image, so an existing base image ignores the file until that image is rebuilt.
 - **Shared package-download caches.** `go+mod-cache`, `nodejs+npm-cache`, `nodejs+pnpm-cache`,
   `python+pip-cache`, `python+uv-cache`, and `java+gradle-cache` mount one machine-wide named
   volume per tool (`booth-cache-gomod`, and so on). Every booth on the machine reuses the same

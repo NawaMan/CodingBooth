@@ -1034,3 +1034,37 @@ shared-files = ["home/coder/.config/tool/settings.json"]
 	assert.Equal(t, filepath.Join("home", "coder", ".tool", "state.json"), seeded.CacheSeed[0].RelPath)
 	assert.Equal(t, seedFile, seeded.CacheSeed[0].SourcePath)
 }
+
+func TestLoadRegistry_OwnerPermission(t *testing.T) {
+	write := func(t *testing.T, body string) string {
+		tmpDir := t.TempDir()
+		catDir := filepath.Join(tmpDir, "languages")
+		tmplDir := filepath.Join(catDir, "python")
+		require.NoError(t, os.MkdirAll(tmplDir, 0755))
+		require.NoError(t, os.WriteFile(filepath.Join(catDir, "meta.toml"),
+			[]byte("display-name = \"Languages\"\norder = 1\n"), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "template.toml"),
+			[]byte("display-name = \"Python\"\ndisplay-order = 1\n"), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "pip-cache--extension.toml"),
+			[]byte("display-name = \"pip Cache\"\ndisplay-order = 13\n"+body), 0644))
+		return tmpDir
+	}
+
+	registry, err := LoadRegistry(write(t, `
+[[owner-permission]]
+path = "/opt/pip-cache"
+user = "coder"
+group = "coder"
+mode = "1777"
+`))
+	require.NoError(t, err)
+	ext := registry.ByName["python"].Extensions[0]
+	require.Len(t, ext.OwnerPerms, 1)
+	assert.Equal(t, OwnerPerm{Path: "/opt/pip-cache", User: "coder", Group: "coder", Mode: "1777"}, ext.OwnerPerms[0])
+
+	_, err = LoadRegistry(write(t, "[[owner-permission]]\npath = \"opt/pip-cache\"\nmode = \"1777\"\n"))
+	assert.ErrorContains(t, err, "absolute")
+
+	_, err = LoadRegistry(write(t, "[[owner-permission]]\npath = \"/opt/pip-cache\"\nmode = \"888\"\n"))
+	assert.ErrorContains(t, err, "octal")
+}

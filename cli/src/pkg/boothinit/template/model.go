@@ -95,8 +95,22 @@ type Template struct {
 	// Shared directories to create in .booth/shared/ with .mount-this marker
 	SharedDirs []string
 
+	// OwnerPerms are mount points booth-entry chowns and chmods on startup.
+	// booth config merges them into .booth/owner-permission.yaml.
+	OwnerPerms []OwnerPerm
+
 	// Extensions (sub-templates)
 	Extensions []*Template
+}
+
+// OwnerPerm is one entry of .booth/owner-permission.yaml.
+// User and Group are container account names. Mode is the octal digit string
+// chmod receives ("1777"), empty when the mode should stay unchanged.
+type OwnerPerm struct {
+	Path  string
+	User  string
+	Group string
+	Mode  string
 }
 
 // Param defines a template parameter with default and suggested values.
