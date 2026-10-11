@@ -2,7 +2,7 @@ cb-version = "2.0.0"
 display-name = "PostgreSQL"
 primary = true
 display-disc = "PostgreSQL database with persistent volume"
-display-detail = "Installs PostgreSQL relational database with a persistent Docker volume for data storage across container restarts. The volume is per project (booth-pgdata-<project>), so projects do not share data."
+display-detail = "Installs PostgreSQL relational database with a persistent Docker volume for data storage across container restarts. The volume is per booth (booth-pgdata-<booth name>; the default booth name is the project folder), so projects, and two booths of one project, do not share data."
 display-order = 20
 tags = [
     "database",
@@ -12,7 +12,7 @@ tags = [
 
 run-args = [
     # Persist PostgreSQL data across container restarts
-    "-v", "booth-pgdata-{project}:/var/lib/postgresql",
+    "-v", "booth-pgdata-{name}:/var/lib/postgresql",
 ]
 
 [params.PG_VERSION]

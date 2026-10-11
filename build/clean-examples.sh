@@ -13,8 +13,8 @@
 #   images      codingbooth-local:<example-folder>-<variant>-<version>
 #   volumes     cb-home-<example booth>  (persisted homes)
 #               data volumes labelled cb.volume=project, cb.project=<example>
-#               (booth-pgdata-<example>, ... — one per project since templates
-#               name them <service>-{project})
+#               (booth-pgdata-<example>, ... — one per booth since templates
+#               name them <service>-{name}, labelled with the project either way)
 #   networks    <example booth>-<port>-net / -egress-net  (DinD / egress)
 #
 # Never touched: running booths (and so their images / volumes / networks), the
@@ -118,7 +118,7 @@ VOLUMES="$("$ENGINE" volume ls -q --filter label=cb.managed=true \
     | awk -v re="^cb-home-($NAMES)(-[0-9]+)?$" '$0 ~ re')"
 
 # A project's data volumes carry its name as a label (cb.project), set by booth when
-# it creates <service>-{project}. Matching the label, not the name, cannot reach a
+# it creates <service>-{name}. Matching the label, not the name, cannot reach a
 # look-alike project. A volume a running booth uses is refused by the engine.
 DATA_VOLUMES=""
 for name in $RAW_NAMES; do

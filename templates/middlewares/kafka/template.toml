@@ -1,7 +1,7 @@
 cb-version = "2.0.0"
 display-name = "Kafka"
 display-disc = "Apache Kafka single-node KRaft broker"
-display-detail = "Installs Apache Kafka in single-node KRaft mode (broker + controller). Includes openjdk-17-jre. Data dir: /opt/kafkadata; install: /opt/kafka. Kept in a per-project Docker volume (booth-kafkadata-<project>)."
+display-detail = "Installs Apache Kafka in single-node KRaft mode (broker + controller). Includes openjdk-17-jre. Data dir: /opt/kafkadata; install: /opt/kafka. Kept in a Docker volume per booth (booth-kafkadata-<booth name>)."
 display-order = 40
 tags = [
     "kafka",
@@ -12,7 +12,7 @@ tags = [
 
 run-args = [
     # Persist Kafka data across container restarts
-    "-v", "booth-kafkadata-{project}:/opt/kafkadata",
+    "-v", "booth-kafkadata-{name}:/opt/kafkadata",
 ]
 
 [params.KAFKA_VERSION]
