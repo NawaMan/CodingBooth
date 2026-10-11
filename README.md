@@ -269,6 +269,7 @@ The `booth` script is a **wrapper** that manages the underlying `codingbooth` bi
 - **Templates & scaffolding:** `booth template list`, `booth config` — see **[booth config](docs/BOOTH_CONFIG.md)**
 - **Build & publish:** `booth build`, `booth build --push` — see **[booth build](docs/BOOTH_BUILD.md)**
 - **Container lifecycle:** `booth start`, `booth stop`, `booth list`, `booth prune` — see **[booth lifecycle](docs/BOOTH_LIFECYCLE.md)**
+- **Copy & inspect:** `booth cp`, `inspect`, `stats`, `top`, `diff`, `wait` — see **[booth tools](docs/BOOTH_TOOLS.md)** or `booth --help --detail`.
 - **Connect to running booth:** `booth shell`, `booth exec` — see **[booth connect](docs/BOOTH_CONNECT.md)**
 - **Messaging:** `booth message send`, `booth message list` — see **[booth message](docs/BOOTH_MESSAGE.md)**
 - **Examples:** `booth example list`, `booth example try` — see **[booth example](docs/BOOTH_EXAMPLE.md)**
@@ -442,7 +443,7 @@ User-facing guides:
 - **[booth example](docs/BOOTH_EXAMPLE.md)** — Pre-built example workspaces
 - **[booth showcase](docs/BOOTH_SHOWCASE.md)** — Browse and import booths published on CodingBooths.online
 - **[booth lifecycle](docs/BOOTH_LIFECYCLE.md)** — Container lifecycle: keep-alive, start, stop, restart, remove, prune, logs
-- **[booth tools](docs/BOOTH_TOOLS.md)** — Copy files outside the shared project; inspect configuration, resources, processes, filesystem changes, and exit status
+- **[booth tools](docs/BOOTH_TOOLS.md)** — Copy files and inspect booth state
 - **[booth connect](docs/BOOTH_CONNECT.md)** — Connect to running booths: open a shell or run commands
 - **[booth variants](docs/BOOTH_VARIANTS.md)** — Variant details, aliases, desktop configuration, clipboard, and use cases
 - **[booth home](docs/BOOTH_HOME.md)** — Home directory customization: seeding, overrides, credentials
