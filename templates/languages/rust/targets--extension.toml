@@ -1,0 +1,20 @@
+cb-version = "0.1.0"
+display-name = "Rust Targets"
+display-disc = "Add compile targets to the Rust toolchain (wasm32, cross-compiling)"
+display-detail = """Adds rustup targets to the toolchain baked into the image, with `rustup target add`: \
+`wasm32-unknown-unknown` for WebAssembly, `aarch64-unknown-linux-gnu` or `x86_64-pc-windows-gnu` to \
+cross-compile. Comma-separate several. A project that pins its own toolchain in rust-toolchain.toml \
+lists its targets there instead -- see the toolchain-file extension."""
+display-order = 20
+auto-select = false
+tags = ["rust", "rustup", "wasm", "cross-compile"]
+
+[params.RUST_TARGETS]
+default = ""
+variadic = true
+suggests = ["wasm32-unknown-unknown", "aarch64-unknown-linux-gnu", "x86_64-unknown-linux-musl"]
+
+[segments]
+"Boothfile--55" = """
+install rustup target ${RUST_TARGETS}
+"""

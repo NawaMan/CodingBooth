@@ -1,0 +1,20 @@
+cb-version = "0.1.0"
+display-name = "Rust Components"
+display-disc = "Add rustup components (llvm-tools, miri, ...)"
+display-detail = """Adds rustup components to the toolchain baked into the image, with `rustup component add`: \
+`llvm-tools` for coverage, `miri` (nightly), and so on. Comma-separate several. rust-analyzer, \
+rust-src, rustfmt and clippy are already installed. A project that pins its own toolchain in \
+rust-toolchain.toml lists its components there instead -- see the toolchain-file extension."""
+display-order = 21
+auto-select = false
+tags = ["rust", "rustup", "components"]
+
+[params.RUST_COMPONENTS]
+default = ""
+variadic = true
+suggests = ["llvm-tools", "miri", "rustc-dev"]
+
+[segments]
+"Boothfile--55" = """
+install rustup component ${RUST_COMPONENTS}
+"""

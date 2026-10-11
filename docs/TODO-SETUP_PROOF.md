@@ -60,7 +60,7 @@ started the audit. Each already has a test and a booth image — the gap is one 
 assertion, modelled on `test-boothfile-gcc`:
 
 > `crystal`, `dotnet`, `elixir`, `elm`, `go`, `haskell`, `jdk`, `julia`, `lua`, `nim`, `php`,
-> `rescript`, `roc`, `ruby`, `rust`, `swift`
+> `rescript`, `roc`, `ruby`, `swift`
 
 **Languages with no runtime test at all** — these need the fixture too, not just the assertion:
 

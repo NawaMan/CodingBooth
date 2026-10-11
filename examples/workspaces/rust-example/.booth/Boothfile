@@ -17,7 +17,11 @@ setup xfce-theme
 setup plank ${PLANK_VERSION}
 setup claude-code ${CLAUDE_CODE_VERSION}
 setup python ${PYTHON_VERSION}
+env RUSTUP_HOME=/opt/rust/rustup
+env PATH=/home/coder/.cargo/bin:/opt/rust/cargo/bin:$PATH
 setup rust ${RUST_VERSION}
+copy .booth/Boothfile rust-toolchai[n] rust-toolchain.tom[l] /tmp/cb-rust-toolchain/
+setup rust-toolchain-file /tmp/cb-rust-toolchain
 setup python-code-extension
 setup notebook ${NOTEBOOK_PORT}
 install cargo ${CARGO_PKGS}
