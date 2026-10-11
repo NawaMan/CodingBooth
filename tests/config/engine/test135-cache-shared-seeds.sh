@@ -1,0 +1,62 @@
+#!/bin/bash
+# A template gives Cache and Shared paths their initial content with
+# [files.cache-seed] / [files.shared-seed]. booth config writes the seeds to the
+# committed .booth/cache-seed/ and .booth/shared-seed/ and fills the paths they cover;
+# a later start re-seeds a path that is missing again, as on a fresh clone, where
+# .booth/cache/ is not in git. The template's paths are recorded in config.toml, and
+# leave it again when the template is deselected. Uses no Docker: --no-tui writes,
+# then a --dryrun run.
+source "$(dirname "$0")/../test-helpers--source.sh"
+
+begin
+
+mkdir -p "$prj/.booth/templates"
+cat > "$prj/.booth/templates/seeded.toml" <<'TOML'
+cache-files  = ["home/coder/.tool/state.json", "home/coder/.tool_history"]
+shared-files = ["home/coder/.config/tool/settings.json"]
+
+[files.cache-seed]
+"home/coder/.tool/state.json" = '{"state": 0}'
+
+[files.shared-seed]
+"home/coder/.config/tool/settings.json" = '{"team": true}'
+TOML
+
+# --- The dry run lists both seed folders ---
+booth config "$prj" --no-tui --dryrun --select seeded >"$prj/dry.txt" 2>&1 || true
+assert-line "$prj/dry.txt" "=== cache-seed/" " ===" "--dryrun lists cache-seed/"
+assert-line "$prj/dry.txt" "=== shared-seed/" " ===" "--dryrun lists shared-seed/"
+
+# --- The write lands the seeds and fills the paths ---
+run booth config "$prj" --no-tui --overwrite --select seeded
+B="$prj/.booth"
+assert-line "$B/shared-seed/home/coder/.config/tool/settings.json" '{"team"' ': true}' "shared-seed/ holds the template's seed"
+assert-line "$B/shared/home/coder/.config/tool/settings.json" '{"team"' ': true}' "the Shared path starts with the seed"
+assert-line "$B/cache-seed/home/coder/.tool/state.json" '{"state"' ': 0}' "cache-seed/ holds the template's seed"
+assert-line "$B/cache/home/coder/.tool/state.json" '{"state"' ': 0}' "the Cache path starts with the seed"
+wc -c <"$B/cache/home/coder/.tool_history" | tr -d ' ' >"$prj/history-size.txt"
+assert-line "$prj/history-size.txt" "0" "" "a Cache path with no seed is created empty"
+
+# --- A user's edit survives a reconfigure ---
+echo '{"team": false}' >"$B/shared/home/coder/.config/tool/settings.json"
+run booth config "$prj" --no-tui --overwrite --select seeded
+assert-line "$B/shared/home/coder/.config/tool/settings.json" '{"team"' ': false}' "reconfigure keeps the edited Shared file"
+
+# --- config.toml records the template's Cache paths, as it does its Shared ones ---
+assert-line "$B/config.toml" 'cache-files = ' '[' "config.toml records the template's cache-files"
+assert-line "$B/config.toml" '    "home/coder/.tool_history"' '' "the cache-files entry with no seed is recorded too"
+
+# --- A fresh clone has no .booth/cache/; the start seeds it again ---
+rm -rf "$B/cache"
+(cd "$prj" && booth run --dryrun -- true) >"$prj/run.txt" 2>&1 || true
+assert-line "$B/cache/home/coder/.tool/state.json" '{"state"' ': 0}' "a start re-seeds a missing Cache path"
+assert-line "$prj/run.txt" "Seeded .booth/cache/home/coder/.tool/state.json" " from .booth/cache-seed/" "the start says what it seeded"
+
+# --- Deselected, the template's paths leave config.toml; the user's own stay ---
+run booth config "$prj" --no-tui --overwrite --select seeded --set shared-files=home/coder/.team.conf
+run booth config "$prj" --no-tui --overwrite --select python
+grep -cE 'tool|settings.json' "$B/config.toml" >"$prj/stale.txt" || true
+assert-line "$prj/stale.txt" "0" "" "a deselected template's Cache and Shared paths are gone"
+assert-line "$B/config.toml" 'shared-files = ' '["home/coder/.team.conf"]' "a path the user set is kept"
+
+finally

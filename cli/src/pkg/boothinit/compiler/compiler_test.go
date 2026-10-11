@@ -1208,3 +1208,27 @@ func TestCompile_VmSizingConflict(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "vm-cpus")
 }
+
+// A template's Cache paths are recorded in config.toml, like its Shared paths: a fresh
+// clone has no .booth/cache/, and a start re-creates the paths from config.toml alone.
+func TestCompile_CachePathsRecordedInConfig(t *testing.T) {
+	resolved := &selection.ResolvedSelection{
+		Templates: []selection.SelectedTemplate{
+			{
+				Template: &tmpl.Template{
+					Name:       "history",
+					CacheFiles: []string{"home/coder/.zsh_history", "home/coder/.zsh_history"},
+					CacheDirs:  []string{"home/coder/.gnupg:0700"},
+				},
+				ParamValues: map[string]string{},
+			},
+		},
+	}
+
+	out, err := Compile(resolved)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"home/coder/.zsh_history"}, out.Config.CacheFiles, "deduplicated")
+	assert.Equal(t, []string{"home/coder/.gnupg:0700"}, out.Config.CacheDirs)
+	require.Len(t, out.Cache, 1)
+	require.Len(t, out.CacheDirs, 1)
+}

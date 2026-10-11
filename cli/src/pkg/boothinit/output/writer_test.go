@@ -405,3 +405,40 @@ func TestWriteOutput_CacheDirModeSuffix(t *testing.T) {
 	assert.Contains(t, OutputPaths(out, tmpDir),
 		filepath.Join(tmpDir, ".booth", "cache", "home", "coder", ".gnupg", ".mount-this"))
 }
+
+// booth config writes the seeds to .booth/cache-seed/ and .booth/shared-seed/ and fills
+// the Cache and Shared paths they cover; a declared path with no seed is still created
+// empty, and content already there is kept.
+func TestWriteOutput_CacheAndSharedSeeds(t *testing.T) {
+	tmpDir := t.TempDir()
+	booth := filepath.Join(tmpDir, ".booth")
+	kept := filepath.Join(booth, "shared", "home", "coder", ".kept")
+	require.NoError(t, os.MkdirAll(filepath.Dir(kept), 0755))
+	require.NoError(t, os.WriteFile(kept, []byte("mine"), 0644))
+
+	out := &BoothOutput{
+		Config: &ConfigToml{Variant: "base"},
+		Cache: []FileContent{
+			{RelPath: "home/coder/.tool/state.json"},
+			{RelPath: "home/coder/.history"},
+		},
+		Shared:     []FileContent{{RelPath: "home/coder/.kept"}},
+		CacheSeed:  []FileContent{{RelPath: "home/coder/.tool/state.json", Content: `{"state": 0}`}},
+		SharedSeed: []FileContent{{RelPath: "home/coder/.kept", Content: "team"}},
+	}
+	require.NoError(t, WriteOutput(out, tmpDir))
+
+	read := func(rel string) string {
+		data, err := os.ReadFile(filepath.Join(booth, rel))
+		require.NoError(t, err)
+		return string(data)
+	}
+	assert.Equal(t, `{"state": 0}`, read("cache-seed/home/coder/.tool/state.json"))
+	assert.Equal(t, "team", read("shared-seed/home/coder/.kept"))
+	assert.Equal(t, `{"state": 0}`, read("cache/home/coder/.tool/state.json"), "a seeded path starts with the seed")
+	assert.Equal(t, "", read("cache/home/coder/.history"), "a path with no seed is still created empty")
+	assert.Equal(t, "mine", read("shared/home/coder/.kept"), "existing content is never replaced")
+
+	assert.Contains(t, OutputPaths(out, tmpDir), filepath.Join(booth, "cache-seed", "home", "coder", ".tool", "state.json"))
+	assert.Contains(t, OutputPaths(out, tmpDir), filepath.Join(booth, "shared-seed", "home", "coder", ".kept"))
+}

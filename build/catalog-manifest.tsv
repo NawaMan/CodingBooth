@@ -52,7 +52,7 @@ setup	clojure-code-extension	1.0.0	701ebfa9133409194342e7219aaad39716bf1ca824a1e
 setup	cloudbeaver	1.0.0	0fc166fe6e7c21963e73f5aef0374fbb404faffcaf38096c8d6e961e0d60f463	variants/base/setups/cloudbeaver--setup.sh
 setup	cmake	1.0.0	6c78f883af7e7367c66c10fc35f0cd73695221dc1114a549d45d827c9488b14b	variants/base/setups/cmake--setup.sh
 setup	cmake-code-extension	0.1.0	d5358d9ef2d2c44609ff9aa96529a4f4cb5ae2310424ade736b28ea12c920185	variants/base/setups/cmake-code-extension--setup.sh
-setup	codeserver	1.0.0	072830c79653c1d7e3667e0ecb9d66682252d2df7670c6d6c9ff2415d8f052ff	variants/base/setups/codeserver--setup.sh
+setup	codeserver	1.0.1	e2cece3e38c83131118801638129936d048b52ea99a5c6ec79b61942484331b7	variants/base/setups/codeserver--setup.sh
 setup	codex	1.0.0	a0f76155dd0b93e901a5b994393d68d545214b3b568d1de237febc9a36d0962c	variants/base/setups/codex--setup.sh
 setup	codex-code-extension	1.0.0	076be4c351d968b8775495057013581f1190d7f0f3557742beec8e8324a04ea1	variants/base/setups/codex-code-extension--setup.sh
 setup	conan	1.0.0	d33c16ec6dc96f8aca41e01f0ca4f5386b4fa0b78d9f80e0c95622aa6131a211	variants/base/setups/conan--setup.sh
@@ -649,6 +649,7 @@ extension	erlang+vscode-ext	1.0.0	34931fad7207f9b5f0c9305fc1fde92cb8279cad00888b
 extension	excalidraw+autostart	1.0.0	3f44a9a28ac8113581eedfee087e4ddb1c6e0078ee9e232af86320cee76955b3	templates/tools/excalidraw/autostart--extension.toml
 extension	excalidraw+expose	1.0.0	d707c54b8cbd220e3bf775b1e117756aec8d424e11b7fb4c931d053d7dbe4735	templates/tools/excalidraw/expose--extension.toml
 extension	firebase+credential	1.0.0	986add42a0112fbb19c875ae6c408cb993cd0e4bef7d1f03e3f26d37d42add30	templates/tools/firebase/credential--extension.toml
+extension	firefox+bookmarks-seed	0.1.0	5601c28cbdc32ab14b18193a083957649b562a6117fe529e721a168049dc555f	templates/desktops/firefox/bookmarks-seed--extension.toml
 extension	firefox+bookmarks-shared	1.0.0	b3fbc67151f37749046065e794dbfae5404ef10d44327237f3899df4ef46f61b	templates/desktops/firefox/bookmarks-shared--extension.toml
 extension	firefox+extensions-shared	1.0.0	484f68ecffa32adc978f9985aae8566d089d9dd5126c6d2ed03db91e4beae228	templates/desktops/firefox/extensions-shared--extension.toml
 extension	firefox+managed-policies	1.0.0	32acfdacc5fd5aed34fd806d087b68ae61aca95f5529e45104588aae8a19297c	templates/desktops/firefox/managed-policies--extension.toml
@@ -677,6 +678,7 @@ extension	go+linter	1.0.0	7c64fa4a74e3fa9d723f909f97c67aec172fd518e4742e8148d4f5
 extension	go+vscode-ext	1.0.0	19f0f4aebb35aa43293d3f6dacc9e1bd50471df2dba7f1ab0cb366792657543a	templates/languages/go/vscode-ext--extension.toml
 extension	goland+import-project	0.1.0	044f2d86d524a2f7897307480eebfb3d105a32228f9b1e1e14ee73d811291d19	templates/ides/goland/import-project--extension.toml
 extension	goland+skip-first-run	0.1.0	c33be5a3321462f3aa0e2b25efa26dc8a18cadc47c7a077706a5e3211ef1c374	templates/ides/goland/skip-first-run--extension.toml
+extension	google-chrome+bookmarks-seed	0.1.0	296c0be5b3d0eb6cc4c886a305afc7fa60e92748f70288bc89deac781b8c070f	templates/desktops/google-chrome/bookmarks-seed--extension.toml
 extension	google-chrome+bookmarks-shared	1.0.0	d7a3aff5f550908c149e2456a32303f857f16d36c8e2863ffafc48619e3015f6	templates/desktops/google-chrome/bookmarks-shared--extension.toml
 extension	google-chrome+extensions-shared	1.0.0	61a8ec0f5ce4ce20cc88784317c2eb4df320f6657afbe0c3643d97629855a9e3	templates/desktops/google-chrome/extensions-shared--extension.toml
 extension	google-chrome+managed-policies	1.0.0	313e1bcc3e5472126cb1fc4e87ce20f388e1223be1752386ca301c9b6e3f8cb4	templates/desktops/google-chrome/managed-policies--extension.toml

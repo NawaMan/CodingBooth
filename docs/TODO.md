@@ -382,6 +382,33 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
       is mechanically checkable — decide whether prose coverage is required or best-effort. `site/more.html`
       is deliberately illustrative ("…and more"), so it should stay out of the check.
 - [ ] Java example: Lombok does not work in VS Code.
+- [ ] **`firefox+managed-policies` leaves Firefox without a bookmarks toolbar.** Its
+      `DisableTelemetry` policy (`variants/base/setups/firefox-managed-policies--setup.sh`) stops
+      Firefox 157 creating its bookmarks database on first start: `places.sqlite` gets only the root
+      and `menu` folders — no `toolbar`, `unfiled`, `mobile` or `tags`. Found 2026-10-10 by bisecting the
+      four policies one by one; deterministic, a 75 s wait does not finish it, a restart does not
+      repair it. Removing `DisableTelemetry` alone fixes it.
+      Why: every `+managed-policies` user has a toolbar the policy forces visible but nothing can be
+      saved to, and `firefox+bookmarks-seed` cannot import into it — so `browser-shared-example`
+      drops `+managed-policies` from Firefox for now.
+      Approach: replace the `DisableTelemetry` policy with the telemetry prefs it stands for, set
+      through the `Preferences` policy (`toolkit.telemetry.*`, `datareporting.*`), then check the
+      database is complete and the seed imports — the probe: on the host, count
+      `moz_bookmarks` rows with `fk IS NULL` in the profile's `places.sqlite` (6 is complete). Then put `+managed-policies` back in
+      `browser-shared-example`.
+      Open questions: whether the prefs route disables as much as the policy does; whether a newer
+      Firefox fixes it first.
+- [ ] **Chromium does not start in a booth: "No usable sandbox".** On the 0.80.0 XFCE image
+      `chromium-browser` (Debian Bookworm build, `variants/base/setups/chromium-browser--setup.sh`)
+      exits at once — the container has no unprivileged user namespaces for its sandbox, and the
+      launcher has no fallback. Chrome on the same image starts. Found 2026-10-10; it also kept a
+      `chromium+bookmarks-seed` from shipping, since it could not be shown to work.
+      Approach: compare with `google-chrome--setup.sh`'s launcher and the `chromium-sandbox`
+      package; failing that, a `--no-sandbox` launcher flag, stated as the tradeoff it is. A
+      `tests/complex/boothfile/test-boothfile-chromium` that actually opens a page would catch it.
+      Then add `chromium+bookmarks-seed` (a copy of Chrome's — same `~/.chrome-data`, same format).
+      Open questions: is `--no-sandbox` acceptable inside a booth, which is already the isolation
+      boundary?
 - [x] `remove`/`stop`/`start`/`restart` parse flags after positional names, using the registered flag definitions. They also accept explicit `--engine` selection.
 - [ ] ...
 

@@ -66,7 +66,7 @@ The directory structure inside `.booth/shared/` mirrors the container root. Codi
       --> -v .booth/shared/home/coder/.chrome-data/Default/Bookmarks:/home/coder/.chrome-data/Default/Bookmarks
 ```
 
-Templates declare `shared-files` and `shared-dirs`. On `booth config`, empty files / `.mount-this` markers are created under `.booth/shared/` (no-clobber). At start, booth also re-materializes any paths still listed in `config.toml` if files were deleted.
+Templates declare `shared-files` and `shared-dirs`. On `booth config`, empty files / `.mount-this` markers are created under `.booth/shared/` (no-clobber), and the paths are recorded in `config.toml`. At start, booth also re-materializes any paths still listed in `config.toml` if files were deleted. Deselecting the template removes its paths from `config.toml`; the files under `.booth/shared/` are left for you to delete.
 
 Unlike cache, there is **no** gitignore requirement. Shared state is expected to be versioned.
 
@@ -134,6 +134,20 @@ gitignored) or **`--persist-home`**. Team-facing browser state uses **shared onl
 | `firefox+bookmarks-shared` | `…/.mozilla/firefox/` | places.sqlite + profile |
 | `firefox+settings-shared` | `…/.mozilla/firefox/` | prefs.js etc. |
 | `firefox+extensions-shared` | `…/.mozilla/firefox/` | add-ons live in the profile |
+
+#### Starting bookmarks (`+bookmarks-seed`)
+
+| Selection | Seed under `.booth/shared-seed/` | Notes |
+|-----------|----------------------------------|--------|
+| `google-chrome+bookmarks-seed` | `…/.chrome-data/Default/Bookmarks` | Chrome's JSON; no checksum needed |
+| `firefox+bookmarks-seed` | `…/.mozilla/firefox/profiles.ini`, `booth.default/bookmarks.html`, `booth.default/prefs.js` | A fixed profile; Firefox imports `bookmarks.html` once. Sets `MOZ_LEGACY_PROFILES=1` |
+
+Each also mounts the browser's profile like `+bookmarks-shared`. `booth config` writes a sample bar
+(CodingBooth's site and repo); edit the seed and commit it. It reaches the profile only while the
+browser has no bookmarks there yet ([seeds](BOOTH_LOCALCACHE.md#initial-content)), so later
+changes are kept. **Not with `firefox+managed-policies`:** its `DisableTelemetry` policy stops
+current Firefox from creating its bookmarks toolbar on first start, so the import has nowhere to go.
+`examples/workspaces/browser-shared-example` uses both.
 
 Selecting bookmarks **or** settings for Chrome is enough for both (same `Default/`).
 Selecting bookmarks **or** settings **or** extensions for Firefox is enough for all
@@ -295,6 +309,11 @@ booth config --no-tui . --set shared-dirs=home/coder/.config/myapp/snippets
 ```
 
 Paths are relative to the container root (`home/coder/.foo` → `/home/coder/.foo`).
+
+A declared path starts empty. To give it first content, put the file in `.booth/shared-seed/` at
+the same path, or have a template ship it with `[files.shared-seed]`: booth copies it in while the
+shared path is missing or empty, and never over content. Same rules as
+[Cache's seeds](BOOTH_LOCALCACHE.md#initial-content).
 
 ---
 

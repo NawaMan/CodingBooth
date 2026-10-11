@@ -1,0 +1,51 @@
+cb-version = "0.1.0"
+display-name = "Bookmarks Seed"
+display-disc = "Start Firefox with the team's bookmarks (.booth/shared-seed)"
+display-detail = """Gives Firefox a starting bookmarks toolbar. booth config writes a fixed profile, booth.default, to .booth/shared-seed/home/coder/.mozilla/firefox/: profiles.ini naming it the default, a bookmarks.html with the bookmarks — edit it there and commit it — and a prefs.js telling Firefox to import that file once. They are copied into the shared tree (mounted like +bookmarks-shared) only while it has no profile yet, and never over one already there. Firefox imports on its first start, then turns the import off itself, so later bookmark changes are kept. Sets MOZ_LEGACY_PROFILES=1 so Firefox uses that profile rather than creating its own."""
+display-order = 93
+tags = ["persistence", "shared", "browser", "bookmarks", "git", "seed", "firefox"]
+
+# The whole firefox/ tree is mounted, as +bookmarks-shared does: the profile is a
+# folder of SQLite files, which file-level mounts break.
+shared-dirs = [
+    "home/coder/.mozilla/firefox",
+]
+
+# Firefox 67+ ignores profiles.ini's Default=1 and creates its own profile per install
+# (installs.ini). This makes it use the seeded default profile instead.
+run-args = ["-e", "MOZ_LEGACY_PROFILES=1"]
+
+# A fixed profile name, so the seed knows where the bookmarks go. Firefox names a
+# profile it creates itself at random.
+[files.shared-seed]
+"home/coder/.mozilla/firefox/profiles.ini" = '''
+[Profile0]
+Name=default
+IsRelative=1
+Path=booth.default
+Default=1
+
+[General]
+StartWithLastProfile=1
+Version=2
+'''
+
+# prefs.js, not user.js: user.js is applied on every start, so it would import over
+# the user's own changes each time. Firefox sets this back to false after importing.
+"home/coder/.mozilla/firefox/booth.default/prefs.js" = '''
+user_pref("browser.places.importBookmarksHTML", true);
+'''
+
+"home/coder/.mozilla/firefox/booth.default/bookmarks.html" = '''
+<!DOCTYPE NETSCAPE-Bookmark-file-1>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
+<TITLE>Bookmarks</TITLE>
+<H1>Bookmarks Menu</H1>
+<DL><p>
+    <DT><H3 PERSONAL_TOOLBAR_FOLDER="true">Bookmarks Toolbar</H3>
+    <DL><p>
+        <DT><A HREF="https://codingbooth.io/">CodingBooth</A>
+        <DT><A HREF="https://github.com/NawaMan/CodingBooth">CodingBooth on GitHub</A>
+    </DL><p>
+</DL>
+'''

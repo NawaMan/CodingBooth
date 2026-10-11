@@ -9,3 +9,5 @@ run-args = [
     "-v", "~/AppData/Roaming/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro",
     "-v", "~/.antigravity:/etc/cb-home-seed/.antigravity:ro"
 ]
+
+cache-dirs = ["home/coder/.claude"]

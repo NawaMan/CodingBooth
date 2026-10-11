@@ -997,3 +997,40 @@ func TestLoadRegistry_DirEntryModeSuffix(t *testing.T) {
 	_, err = LoadRegistry(write(t, "shared-dirs = [\"../x:0700\"]\n"))
 	assert.ErrorContains(t, err, "traversal")
 }
+
+// Cache and Shared seeds load from [files.cache-seed] / [files.shared-seed] and from the
+// cache-seed/ and shared-seed/ folders beside template.toml — and those folders are
+// not mistaken for extensions.
+func TestLoadRegistry_CacheAndSharedSeeds(t *testing.T) {
+	tmpDir := t.TempDir()
+	catDir := filepath.Join(tmpDir, "tools")
+	tmplDir := filepath.Join(catDir, "seeded")
+	seedFile := filepath.Join(tmplDir, "cache-seed", "home", "coder", ".tool", "state.json")
+	require.NoError(t, os.MkdirAll(filepath.Dir(seedFile), 0755))
+	require.NoError(t, os.WriteFile(seedFile, []byte(`{"state": 0}`), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(catDir, "meta.toml"),
+		[]byte("display-name = \"Tools\"\norder = 1\n"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "template.toml"),
+		[]byte(`display-name = "Seeded"
+display-order = 1
+shared-files = ["home/coder/.config/tool/settings.json"]
+
+[files.shared-seed]
+"home/coder/.config/tool/settings.json" = '{"team": true}'
+`), 0644))
+
+	registry, err := LoadRegistry(tmpDir)
+	require.NoError(t, err)
+
+	seeded := registry.ByName["seeded"]
+	require.NotNil(t, seeded)
+	assert.Empty(t, seeded.Extensions, "cache-seed/ and shared-seed/ are not extensions")
+
+	require.Len(t, seeded.SharedSeed, 1)
+	assert.Equal(t, filepath.Join("home", "coder", ".config", "tool", "settings.json"), seeded.SharedSeed[0].RelPath)
+	assert.Equal(t, `{"team": true}`, seeded.SharedSeed[0].Content)
+
+	require.Len(t, seeded.CacheSeed, 1)
+	assert.Equal(t, filepath.Join("home", "coder", ".tool", "state.json"), seeded.CacheSeed[0].RelPath)
+	assert.Equal(t, seedFile, seeded.CacheSeed[0].SourcePath)
+}

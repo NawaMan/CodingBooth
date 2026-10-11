@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/nawaman/codingbooth/src/pkg/pathmode"
+	"github.com/nawaman/codingbooth/src/pkg/pathseed"
 )
 
 // OutputPaths returns the list of file paths that WriteOutput would create
@@ -52,6 +53,14 @@ func OutputPaths(out *BoothOutput, targetPath string) []string {
 
 	for _, f := range out.HomeSeed {
 		paths = append(paths, filepath.Join(boothDir, "home-seed", f.RelPath))
+	}
+
+	for _, f := range out.CacheSeed {
+		paths = append(paths, filepath.Join(boothDir, "cache-seed", f.RelPath))
+	}
+
+	for _, f := range out.SharedSeed {
+		paths = append(paths, filepath.Join(boothDir, "shared-seed", f.RelPath))
 	}
 
 	for _, f := range out.Cache {
@@ -193,6 +202,23 @@ func writeOutput(out *BoothOutput, targetPath string, beside []string) error {
 		homeSeedDir := filepath.Join(boothDir, "home-seed")
 		if err := CopyFiles(out.HomeSeed, homeSeedDir); err != nil {
 			return fmt.Errorf("writing home-seed/: %w", err)
+		}
+	}
+
+	// Write the Cache and Shared seeds, and fill the paths they cover first, so the
+	// touches below create empty files only where no seed applies.
+	for _, seed := range []struct {
+		name  string
+		files []FileContent
+	}{{"cache", out.CacheSeed}, {"shared", out.SharedSeed}} {
+		seedDir := filepath.Join(boothDir, seed.name+"-seed")
+		if len(seed.files) > 0 {
+			if err := CopyFiles(seed.files, seedDir); err != nil {
+				return fmt.Errorf("writing %s-seed/: %w", seed.name, err)
+			}
+		}
+		if _, err := pathseed.Apply(seedDir, filepath.Join(boothDir, seed.name)); err != nil {
+			return fmt.Errorf("seeding %s/: %w", seed.name, err)
 		}
 	}
 

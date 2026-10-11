@@ -101,7 +101,7 @@ work itself — and generates `.booth/`:
   (40 desktops · 45 system libraries · 50 base · 55 second passes · 60 IDEs and dependents ·
   65 VS Code extensions · 70 kernels and JetBrains plugins · 90 post-setup);
 - **`config.toml` keys** — `variant`, `run-args` (credentials, ports, env), `cmds`, `requires`;
-- **paths and files** — `cache-*`, `shared-*`, `[files.setups|home|home-seed]`.
+- **paths and files** — `cache-*`, `shared-*`, `[files.setups|home|home-seed|cache-seed|shared-seed]`.
 
 Some templates emit no Boothfile line at all (`no-sudo`, `git-credential`, `shell-history`) — they
 only change config.
@@ -139,6 +139,7 @@ the generated files and the runtime state.
 | | `recipes/` | `@name` recipes |
 | | `startups/`, `startup.sh` | project startup hooks |
 | | `home/`, `home-seed/` | copied to `~` — `home/` overwrites, `home-seed/` does not overwrite |
+| | `cache-seed/`, `shared-seed/` | committed first content for `cache/` and `shared/` paths, copied in only while the path is missing or empty |
 | **Runtime / state** | `cache/` | machine-local, gitignored |
 | | `shared/` | committed, live bind mount |
 | | `.env`, `.<profile>--env` | secrets, gitignored |

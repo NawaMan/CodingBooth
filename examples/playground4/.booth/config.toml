@@ -5,3 +5,5 @@ run-args = [
     "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
     "-v", "~/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro"
 ]
+
+cache-dirs = ["home/coder/.claude"]
