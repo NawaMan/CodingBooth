@@ -105,6 +105,7 @@ setup fpc
 setup fpc-code-extension
 setup freelens
 setup freeplane
+setup fresh
 setup fsharp-code-extension
 setup fzf
 setup gcc
