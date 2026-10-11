@@ -232,6 +232,24 @@ func TestCollectCacheMounts_MarksFolders(t *testing.T) {
 	}
 }
 
+func TestFileSyncMountTarget(t *testing.T) {
+	file := cacheMount{hostPath: "/p/.booth/cache/home/coder/.zsh_history", containerPath: "/home/coder/.zsh_history"}
+	dir := cacheMount{hostPath: "/p/.booth/cache/home/coder/.claude", containerPath: "/home/coder/.claude", dir: true}
+
+	if got := fileSyncMountTarget(file, true); got != "/var/lib/codingbooth/file-sync/home/coder/.zsh_history" {
+		t.Errorf("file with sync -> %q, want the staging path", got)
+	}
+	// An image without booth--file-sync keeps the direct mount: staging would leave
+	// the real path empty.
+	if got := fileSyncMountTarget(file, false); got != "/home/coder/.zsh_history" {
+		t.Errorf("file without sync -> %q, want its own path", got)
+	}
+	// A folder mount survives a rename inside it, so it is never staged.
+	if got := fileSyncMountTarget(dir, true); got != "/home/coder/.claude" {
+		t.Errorf("folder -> %q, want its own path", got)
+	}
+}
+
 func TestOverlapEntries_CacheFolderHoldsSharedFile(t *testing.T) {
 	cache := []cacheMount{{containerPath: "/home/coder/.local/share/code-server", dir: true}}
 	shared := []cacheMount{{containerPath: "/home/coder/.local/share/code-server/User/settings.json"}}

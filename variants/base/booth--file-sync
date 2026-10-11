@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
+# -----------------------------------------------------------------------------
+# booth--file-sync
+#
+# Keeps single Cache and Shared files rename-safe.
+#
+# A single file bind-mounted into the booth cannot be replaced: rename(2) onto a
+# mount point fails with EBUSY. Tools that save by writing a new file and renaming
+# it over the old one — zsh's history, GLib's g_file_set_contents (xfconf),
+# readline's full rewrite — lose every such save.
+#
+# So the CLI mounts each such file under the staging root instead
+# (/var/lib/codingbooth/file-sync/<path>, mirroring the real path), and:
+#
+#   booth--file-sync init     (root, from booth-entry) copies each staged file to
+#                             its real path, as a plain file the tools can replace.
+#   booth--file-sync watch    (coder, in the background) copies it back whenever
+#                             either side changes: the booth's side wins when both
+#                             did. It copies once more on TERM, so a clean stop
+#                             loses nothing; a hard kill loses at most one interval.
+#
+# Writing back into the staged file is an in-place write, which a file mount allows.
+#
+# Env:
+#   BOOTH_FILE_SYNC_INTERVAL  seconds between checks (default 2)
+#   HOST_UID, HOST_GID        owner of a copied-in file (init)
+# -----------------------------------------------------------------------------
+
+set -uo pipefail
+
+# Fixed on purpose, like booth--as-coder's marker: init runs as root, and nothing
+# in the booth should be able to point it elsewhere. Tests run a copy with these
+# two lines rewritten.
+ROOT="/var/lib/codingbooth/file-sync"
+TARGET_ROOT=""
+INTERVAL="${BOOTH_FILE_SYNC_INTERVAL:-2}"
+
+# staged_files: every staged file, NUL-separated, as its path under ROOT.
+staged_files() {
+  [ -d "$ROOT" ] || return 0
+  ( cd "$ROOT" && find . -type f -printf '%P\0' 2>/dev/null )
+}
+
+# sum: content fingerprint of a file; empty when it is not a readable regular file.
+sum() {
+  [ -f "$1" ] && [ ! -L "$1" ] || return 0
+  cksum < "$1" 2>/dev/null
+}
+
+do_init() {
+  local rel stage target
+  while IFS= read -r -d '' rel; do
+    stage="$ROOT/$rel"
+    target="$TARGET_ROOT/$rel"
+    if [ -d "$target" ] && [ ! -L "$target" ]; then
+      echo "booth--file-sync: $target is a folder in the image; not replacing it with $rel" >&2
+      continue
+    fi
+    mkdir -p "$(dirname "$target")"
+    # Remove first, never write through: a symlink left at the target must not
+    # redirect a root-owned write.
+    rm -f "$target"
+    cat "$stage" > "$target"
+    chmod "$(stat -c '%a' "$stage")" "$target" 2>/dev/null || true
+    chown "${HOST_UID:-1000}:${HOST_GID:-1000}" "$target" 2>/dev/null || true
+  done < <(staged_files)
+}
+
+declare -a STAGES=()
+declare -a TARGETS=()
+declare -a LAST=()
+
+load() {
+  local rel
+  while IFS= read -r -d '' rel; do
+    STAGES+=("$ROOT/$rel")
+    TARGETS+=("$TARGET_ROOT/$rel")
+    LAST+=("$(sum "$ROOT/$rel")")
+  done < <(staged_files)
+}
+
+sync_all() {
+  local i stage target t s
+  for i in "${!STAGES[@]}"; do
+    stage="${STAGES[$i]}"
+    target="${TARGETS[$i]}"
+    t="$(sum "$target")"
+    # A tool that deleted its file, or replaced it with something else, has
+    # nothing to give back; the host copy is kept.
+    [ -n "$t" ] || continue
+    if [ "$t" != "${LAST[$i]}" ]; then
+      if cat "$target" > "$stage" 2>/dev/null; then
+        LAST[$i]="$t"
+      fi
+      continue
+    fi
+    s="$(sum "$stage")"
+    if [ -n "$s" ] && [ "$s" != "${LAST[$i]}" ]; then
+      # Changed on the host (an editor, a git pull): bring it in.
+      if cat "$stage" > "$target" 2>/dev/null; then
+        LAST[$i]="$s"
+      fi
+    fi
+  done
+}
+
+do_watch() {
+  load
+  [ "${#STAGES[@]}" -gt 0 ] || exit 0
+  trap 'sync_all; exit 0' TERM INT HUP
+  while :; do
+    sync_all
+    # Sleep in the background so a TERM is handled now, not after the sleep.
+    sleep "$INTERVAL" &
+    wait $! 2>/dev/null
+  done
+}
+
+case "${1:-}" in
+  init)  do_init ;;
+  watch) do_watch ;;
+  once)  load; sync_all ;;
+  *)     echo "Usage: booth--file-sync init|watch|once" >&2; exit 2 ;;
+esac

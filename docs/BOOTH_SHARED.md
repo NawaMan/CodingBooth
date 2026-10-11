@@ -47,7 +47,7 @@ Use **shared** when the team should edit the same file (bookmark bar, editor set
 
 | | **shared** | **cache** | **home / home-seed** |
 |--|------------|-----------|----------------------|
-| Container effect | Bind mount onto home/app path | Bind mount | Copy into `~` at start |
+| Container effect | Bind mount onto home/app path (a single file: a copy kept in sync) | Same as shared | Copy into `~` at start |
 | Survives restart | Yes | Yes | Seed once / override always |
 | Live write-back to project | Yes | Yes (local only) | No |
 | Git | Commit it | Must stay untracked | Commit it |
@@ -82,7 +82,7 @@ Same rules as [local cache](BOOTH_LOCALCACHE.md#mount-rules):
 | What's found | Mount behavior |
 |--------------|----------------|
 | Directory with `.mount-this` | Whole directory mount |
-| File in a non-marker directory | Individual file mount |
+| File in a non-marker directory | Individual file, kept in sync — [rename-safe](BOOTH_LOCALCACHE.md#single-files-are-kept-in-sync) |
 | Directory without marker | Structural only (not mounted itself) |
 
 ---
