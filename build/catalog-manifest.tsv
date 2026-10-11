@@ -235,7 +235,7 @@ setup	plantuml	1.0.0	d929a039b50ee7b0087b7fca824005a28e8fb8429e104a04b3357cab9bc
 setup	plantuml-code-extension	0.1.0	cbc444d18c725e8c48e6e0beb9a1a71c2b71a80bc72cc4a62ee1f0ab32ee1cd3	variants/base/setups/plantuml-code-extension--setup.sh
 setup	playwright	1.0.0	b1c66d74796b338a6bf5cfdab1ef6638b54b40b3ee81e0e025185030ef5c7892	variants/base/setups/playwright--setup.sh
 setup	playwright-code-extension	1.0.0	19ce485ba67bda927701ee3143a1e254743214cf58fcf5b0e963a7715d95a2e5	variants/base/setups/playwright-code-extension--setup.sh
-setup	postgresql	1.0.1	268c36bd11fed811535fb1fc6c4a9aa152525a5ba480d92110d2bbba2292756a	variants/base/setups/postgresql--setup.sh
+setup	postgresql	1.0.1	d5e755bdd74013e8305c1de853192c4b8cd0fe9e364b807bcea9e1188dfd6bd7	variants/base/setups/postgresql--setup.sh
 setup	postgrest	0.1.0	948c17d3e0be2f9fd8a7a65624720474b4b387aa1f75766fdeb7937419fa4069	variants/base/setups/postgrest--setup.sh
 setup	posting	1.0.0	b88d852b924aacf6d4452bb9e09768637614fa2640103b9c43e362b50d018bfb	variants/base/setups/posting--setup.sh
 setup	protobuf-code-extension	0.1.0	1d6fa2c8084c0f4f1033469dd521ad95c6ab33f1ff5313d9df498d263f890e6d	variants/base/setups/protobuf-code-extension--setup.sh
@@ -364,7 +364,7 @@ assets	booth-web-preview	0.1.0	b7777911fb75cb633a8aeaf373bd3e3ac579736797db2d8da
 assets	logo-files	0.1.0	72cdb4272e6be5df2ad0e959508803ba6ef927b6e040e4affa3dca1293409d4e	variants/base/setups/logo-files/.cb-version
 template	act	1.0.0	33cac4f54cb7ceebada109f40c0f846caf3615f230ac76e7724e6be1fadfd916	templates/tools/act/template.toml
 template	affine-desktop	0.1.0	6b4070ca55a0c5ccd37b2a7c95c9e3f5409423489d671f64e30f66b4a165b330	templates/tools/affine-desktop/template.toml
-template	affine-server	0.1.1	9e5440b287a83e7a9d41ef43333d3aa30c8da7748ce09c934b71ddf7d9615036	templates/tools/affine-server/template.toml
+template	affine-server	0.1.1	ecd4322046f76dcae6772d88c53068c948907e5583cfad54fe7387cdde5236b5	templates/tools/affine-server/template.toml
 template	aider	1.0.0	07ec35d83e2435528f7a84617d28dafebf3d12e3e202d30620c33e788db15c39	templates/ai-tools/aider/template.toml
 template	alacritty	1.0.0	dd6d86e867b51a6dfe0fb79c8190880c5e0030d01b4c03d343dec25d3aa0adaa	templates/desktops/alacritty/template.toml
 template	android-sdk	0.1.0	f194b7dcd13e80241455c5cebeaad4ad8009e9df9eec778cdbcb84be97a2a532	templates/tools/android-sdk/template.toml
