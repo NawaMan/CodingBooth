@@ -110,6 +110,11 @@ A declared path starts empty unless a **seed** gives it content: `.booth/cache-s
 them with `[files.cache-seed]` / `[files.shared-seed]`. Because the Cache seed is in git, a fresh
 clone gets the content too. See [Initial Content](BOOTH_LOCALCACHE.md#initial-content).
 
+The two are checked against each other. A path in both refuses to start. One inside the other —
+`+profile-cache` with `+bookmarks-shared` — starts with a notice saying which part goes to git;
+`booth config` prints the same notice. See
+[Cache and Shared on the same path](BOOTH_LOCALCACHE.md#cache-and-shared-on-the-same-path).
+
 See [Local Cache](BOOTH_LOCALCACHE.md), [Shared State](BOOTH_SHARED.md) and
 [Persist Home](BOOTH_PERSIST_HOME.md).
 
@@ -404,8 +409,6 @@ Found while putting this map together. The shared download caches are in the map
   `$HOME/.m2` and `$HOME/.cargo/registry`. The mount is dropped when that folder is missing, and
   a writable mount of a host dot-directory needs consent (`--privileged-allowed` when there is
   no terminal). The named-volume caches above do not.
-- **Overlapping Cache and Shared paths are not detected** — e.g. `+profile-cache` with
-  `+bookmarks-shared`.
 - **The four startup copy folders reach only `/home/coder`.** There is no folder that copies
   into `/etc` or `/opt` at start; a startup script does it instead
   ([Copying outside home](#copying-outside-home)).

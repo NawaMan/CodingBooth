@@ -24,6 +24,7 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
 	"github.com/nawaman/codingbooth/src/pkg/docker"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/mountoverlap"
 	"github.com/nawaman/codingbooth/src/pkg/pathmode"
 	"github.com/nawaman/codingbooth/src/pkg/pathseed"
 	"golang.org/x/term"
@@ -1026,6 +1027,8 @@ func addReadOnlyBoothDir(builder *appctx.AppContextBuilder, codePath string) {
 // addCacheAndSharedMounts mounts .booth/cache/ and .booth/shared/ onto their container paths.
 // It runs whether or not .booth/ itself is read-only: --writable-booth only changes how the
 // project's own .booth/ is seen, and must not drop these mounts (or the cache gitignore check).
+//
+// A path that is both Cache and Shared stops the start; one inside the other earns a notice.
 func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath string) {
 	hostPath := boothHostDir(builder, codePath)
 	if hostPath == "" {
@@ -1038,6 +1041,7 @@ func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath string)
 	ensureCacheFromConfig(hostPath)
 
 	// Mount .booth/cache/ contents into the container based on directory structure.
+	var cacheMounts []cacheMount
 	cachePath := filepath.Join(hostPath, "cache")
 	if info, err := os.Stat(cachePath); err == nil && info.IsDir() {
 		// An explicit booth dir is outside the project, so the project's gitignore
@@ -1053,9 +1057,7 @@ func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath string)
 			fmt.Fprintf(os.Stderr, "Error: %v\n", protectedPathMountsError("cache", protected))
 			os.Exit(1)
 		}
-		for _, m := range mounts {
-			builder.CommonArgs.Append(ilist.NewList[string]("-v", m.hostPath+":"+m.containerPath))
-		}
+		cacheMounts = mounts
 	}
 
 	// Same for .booth/shared/ and .booth/shared-seed/.
@@ -1065,6 +1067,7 @@ func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath string)
 	// Mount .booth/shared/ contents (git-friendly team state). Same layout rules
 	// as cache, but intentionally NOT gitignored — live edits land in the repo.
 	// Skip doc files at the tree root (e.g. README.md → would mount as /README.md).
+	var sharedMounts []cacheMount
 	sharedPath := filepath.Join(hostPath, "shared")
 	if info, err := os.Stat(sharedPath); err == nil && info.IsDir() {
 		mounts, protected := collectCacheMounts(sharedPath)
@@ -1073,18 +1076,43 @@ func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath string)
 			os.Exit(1)
 		}
 		for _, m := range mounts {
-			if !isMountableContainerPath(m.containerPath) {
-				continue
+			if isMountableContainerPath(m.containerPath) {
+				sharedMounts = append(sharedMounts, m)
 			}
-			builder.CommonArgs.Append(ilist.NewList[string]("-v", m.hostPath+":"+m.containerPath))
 		}
 	}
+
+	duplicates, nested := mountoverlap.Find(overlapEntries(cacheMounts, sharedMounts))
+	if len(duplicates) > 0 {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", mountoverlap.DuplicateError(duplicates))
+		os.Exit(1)
+	}
+	for _, n := range nested {
+		fmt.Fprintln(os.Stderr, mountoverlap.Notice(n))
+	}
+
+	for _, m := range append(cacheMounts, sharedMounts...) {
+		builder.CommonArgs.Append(ilist.NewList[string]("-v", m.hostPath+":"+m.containerPath))
+	}
+}
+
+// overlapEntries turns the walked mounts into mountoverlap entries.
+func overlapEntries(cacheMounts, sharedMounts []cacheMount) []mountoverlap.Entry {
+	var entries []mountoverlap.Entry
+	for _, m := range cacheMounts {
+		entries = append(entries, mountoverlap.Entry{Kind: mountoverlap.Cache, Path: m.containerPath, Dir: m.dir})
+	}
+	for _, m := range sharedMounts {
+		entries = append(entries, mountoverlap.Entry{Kind: mountoverlap.Shared, Path: m.containerPath, Dir: m.dir})
+	}
+	return entries
 }
 
 // cacheMount represents a bind mount derived from .booth/cache/.
 type cacheMount struct {
 	hostPath      string
 	containerPath string
+	dir           bool // a whole folder (.mount-this), not a single file
 }
 
 // seedFrom copies .booth/<name>-seed/ into .booth/<name>/ where a path is still missing
@@ -1270,6 +1298,7 @@ func walkCacheDir(baseDir, dir string, mounts *[]cacheMount, protected *[]string
 			*mounts = append(*mounts, cacheMount{
 				hostPath:      dir,
 				containerPath: containerPath,
+				dir:           true,
 			})
 		}
 		return // stop traversal
