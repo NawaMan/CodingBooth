@@ -94,6 +94,21 @@ The following container paths must **not** be overridden. **If `.booth/cache/` c
 
 So `.booth/cache/opt/codingbooth/` or `.booth/cache/home/coder/code/` is an error, and the message names every offending path at once. Booth refuses rather than skipping the entry, because a silently-dropped mount looks exactly like a cache that inexplicably does not work.
 
+### Cache and Shared on the same path
+
+[Shared](BOOTH_SHARED.md) mounts the same way from `.booth/shared/`, and the two trees are
+checked against each other at start:
+
+| What overlaps | Result |
+|---------------|--------|
+| One container path in both (`.booth/cache/home/coder/x` and `.booth/shared/home/coder/x`) | **Refuses to start**, naming both — Docker cannot mount two things on one path |
+| One inside the other (a Shared path inside a Cache folder, or the reverse) | Starts, with a one-line **notice** saying which part goes to git |
+
+The second is allowed because it is sometimes meant — but it is easy to do by accident.
+`google-chrome+profile-cache` (all of `.chrome-data`) with `google-chrome+bookmarks-shared`
+(`.chrome-data/Default`) sends `Default/` to git, and `Default/` also holds cookies and saved
+logins. `booth config` prints the same notice when the selection makes such a pair.
+
 ---
 
 ## Gitignore Requirement

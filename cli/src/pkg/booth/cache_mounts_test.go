@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/nawaman/codingbooth/src/pkg/mountoverlap"
 )
 
 // writeCacheTree materializes files (and .mount-this markers) under a fresh cache dir.
@@ -213,5 +215,28 @@ func TestSeedFrom_BeforeEnsure(t *testing.T) {
 	other, err := os.ReadFile(filepath.Join(boothDir, "shared", "home", "coder", ".other"))
 	if err != nil || len(other) != 0 {
 		t.Errorf(".other = %q, %v; want an empty file", other, err)
+	}
+}
+
+func TestCollectCacheMounts_MarksFolders(t *testing.T) {
+	cacheDir := writeCacheTree(t,
+		"home/coder/.zsh_history",
+		"home/coder/.claude/.mount-this",
+	)
+	mounts, _ := collectCacheMounts(cacheDir)
+	for _, m := range mounts {
+		wantDir := m.containerPath == "/home/coder/.claude"
+		if m.dir != wantDir {
+			t.Errorf("%s: dir = %v, want %v", m.containerPath, m.dir, wantDir)
+		}
+	}
+}
+
+func TestOverlapEntries_CacheFolderHoldsSharedFile(t *testing.T) {
+	cache := []cacheMount{{containerPath: "/home/coder/.local/share/code-server", dir: true}}
+	shared := []cacheMount{{containerPath: "/home/coder/.local/share/code-server/User/settings.json"}}
+	_, nested := mountoverlap.Find(overlapEntries(cache, shared))
+	if len(nested) != 1 || nested[0].Inner.Kind != "shared" {
+		t.Fatalf("nested = %+v, want the Shared file inside the Cache folder", nested)
 	}
 }

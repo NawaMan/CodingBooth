@@ -96,6 +96,10 @@ The following container paths must not be overridden. If `.booth/shared/` would 
 | `/opt/codingbooth` | CodingBooth install |
 | `/home/coder/code` | Project bind mount |
 
+A path that is in both `.booth/shared/` and `.booth/cache/` also refuses to start, and one inside
+the other starts with a notice — see
+[Cache and Shared on the same path](BOOTH_LOCALCACHE.md#cache-and-shared-on-the-same-path).
+
 ---
 
 ## What Belongs Here

@@ -31,6 +31,12 @@ This file contains a list of changes for each released version.
   `docker volume rm booth-cache-gomod`. `java+m2` and `rust+cargo-cache` still bind-mount the
   host's own folders. The `*-install` extensions still bake dependencies into the image; these
   volumes are used when a tool downloads at run time.
+- **Overlapping Cache and Shared paths are now caught.** A container path in both `.booth/cache/`
+  and `.booth/shared/` refuses to start with a message naming both, instead of Docker's
+  "Duplicate mount point". One inside the other — e.g. `google-chrome+profile-cache` with
+  `+bookmarks-shared`, which sends `Default/` (cookies, saved logins) to git — starts with a
+  one-line notice saying which part goes to git. `booth config` prints the same notice for the
+  selection.
 - **Service data volumes are per booth — breaking for existing data.** The postgresql, mysql,
   mongodb, redis, kafka, rabbitmq, floci and penpot templates used one machine-wide volume each
   (`booth-pgdata`, …), so every project on the machine shared one database, and two booths running

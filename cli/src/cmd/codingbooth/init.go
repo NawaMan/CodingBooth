@@ -22,6 +22,7 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/compiler"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/output"
 	"github.com/nawaman/codingbooth/src/pkg/justinit"
+	"github.com/nawaman/codingbooth/src/pkg/mountoverlap"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/selection"
 	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
 	"github.com/nawaman/codingbooth/src/pkg/pathmode"
@@ -362,6 +363,7 @@ func runInitNew(version string, args []string) {
 
 	fmt.Printf("Initialized .booth/ in %s\n", targetPath)
 	printSummary(resolved)
+	printMountOverlaps(os.Stderr, out.Config)
 
 	if flags.start {
 		fmt.Printf("Starting booth in %s ...\n", targetPath)
@@ -1262,6 +1264,24 @@ func applyMountFlags(cfg *output.ConfigToml, mounts []string) {
 }
 
 // printSummary prints a human-readable summary of the resolved selection.
+// printMountOverlaps warns about Cache and Shared paths the selection makes overlap: a
+// path that is both (the booth will refuse to start) and one inside the other (part of
+// a tool's data goes to git). The booth repeats the check at start, over what is
+// actually in .booth/cache/ and .booth/shared/.
+func printMountOverlaps(w io.Writer, cfg *output.ConfigToml) {
+	if cfg == nil {
+		return
+	}
+	entries := mountoverlap.FromConfig(cfg.CacheFiles, cfg.CacheDirs, cfg.SharedFiles, cfg.SharedDirs, pathmode.Path)
+	duplicates, nested := mountoverlap.Find(entries)
+	for _, d := range duplicates {
+		fmt.Fprintf(w, "Warning: %s is both Cache and Shared; the booth will refuse to start. Drop one of the two selections.\n", d.Outer.Path)
+	}
+	for _, n := range nested {
+		fmt.Fprintln(w, mountoverlap.Notice(n))
+	}
+}
+
 func printSummary(resolved *selection.ResolvedSelection) {
 	for _, st := range resolved.Templates {
 		line := st.Template.DisplayName
