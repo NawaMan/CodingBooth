@@ -13,11 +13,11 @@ Usage:
   $0 [VERSION]
 
 Arguments:
-  VERSION  BlueJ version (default: 5.3.0)
+  VERSION  BlueJ version (default: 6.0.0)
 
 Examples:
   $0             # install with default version
-  $0 5.3.0       # specific version
+  $0 6.0.0       # specific version
 
 Notes:
 - Downloads BlueJ .deb from bluej.org
@@ -43,7 +43,7 @@ if ! "$SCRIPT_DIR/cb-has-desktop.sh"; then
 fi
 
 # ---- defaults / args ----
-BLUEJ_VERSION="${1:-5.3.0}"
+BLUEJ_VERSION="${1:-6.0.0}"
 BLUEJ_DEB_TAG="${BLUEJ_VERSION//./}"
 
 export DEBIAN_FRONTEND=noninteractive
@@ -56,7 +56,24 @@ rm -rf /var/lib/apt/lists/*
 
 # ---- download BlueJ .deb ----
 DEB_FILE="/tmp/bluej_${BLUEJ_VERSION}.deb"
-DOWNLOAD_URL="https://www.bluej.org/download/files/BlueJ-linux-${BLUEJ_DEB_TAG}.deb"
+case "$(dpkg --print-architecture)" in
+  amd64) BLUEJ_ARCH="x64"   ;;
+  arm64) BLUEJ_ARCH="arm64" ;;
+  *)     BLUEJ_ARCH=""      ;;
+esac
+
+# Three download schemes: 6.x is on GitHub releases, 5.4.x is per-arch on
+# bluej.org, and anything older is one noarch .deb on bluej.org.
+IFS=. read -r BLUEJ_MAJOR BLUEJ_MINOR _ <<<"${BLUEJ_VERSION}"
+if (( BLUEJ_MAJOR >= 6 )); then
+  [[ -n "$BLUEJ_ARCH" ]] || { echo "❌ BlueJ ${BLUEJ_VERSION} has no build for $(dpkg --print-architecture)"; exit 1; }
+  DOWNLOAD_URL="https://github.com/k-pet-group/BlueJ-Greenfoot/releases/download/BLUEJ-RELEASE-${BLUEJ_VERSION}/BlueJ-linux-${BLUEJ_ARCH}-${BLUEJ_VERSION}.deb"
+elif (( BLUEJ_MAJOR == 5 && BLUEJ_MINOR >= 4 )); then
+  [[ -n "$BLUEJ_ARCH" ]] || { echo "❌ BlueJ ${BLUEJ_VERSION} has no build for $(dpkg --print-architecture)"; exit 1; }
+  DOWNLOAD_URL="https://www.bluej.org/download/files/BlueJ-linux-${BLUEJ_ARCH}-${BLUEJ_DEB_TAG}.deb"
+else
+  DOWNLOAD_URL="https://www.bluej.org/download/files/BlueJ-linux-${BLUEJ_DEB_TAG}.deb"
+fi
 
 echo "• Downloading BlueJ ${BLUEJ_VERSION} ..."
 echo "  From: ${DOWNLOAD_URL}"

@@ -13,16 +13,19 @@ Usage:
   $0 [VERSION] [PORT]
 
 Arguments:
-  VERSION  Mermaid CLI version (default: 11.17.2)
+  VERSION  Mermaid CLI version (default: 11.17.0)
   PORT     Port for the Mermaid live editor (default: 20700)
 
 Examples:
   $0                    # install with defaults
-  $0 11.17.2 20700       # specific version and port
+  $0 11.17.0 20700       # specific version and port
 
 Notes:
 - Installs Node.js (if not present), Mermaid CLI (mmdc), and Mermaid Live Editor
 - CLI available as 'mmdc' command for converting .mmd files to images
+- mmdc renders through a headless Chrome kept in /opt/mermaid/puppeteer, run
+  with --no-sandbox; a -p config of your own replaces that, so include
+  "args": ["--no-sandbox"] in it
 - Web UI available at http://localhost:<PORT>
 USAGE
 }
@@ -39,7 +42,7 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
 fi
 
 # ---- defaults / args ----
-MERMAID_VERSION="${1:-11.17.2}"
+MERMAID_VERSION="${1:-11.17.0}"
 MERMAID_PORT="${2:-20700}"
 MERMAID_DIR="/opt/mermaid"
 
@@ -64,12 +67,69 @@ else
 fi
 
 # ---- install Mermaid CLI ----
+# Puppeteer downloads its browser at npm-install time into the installing user's
+# ~/.cache — root's, during an image build — where the booth user's mmdc never
+# looks. Put it in a shared directory instead, and fetch only the headless shell
+# that mmdc launches, not a full Chrome as well.
+mkdir -p "$MERMAID_DIR"
+PUPPETEER_DIR="${MERMAID_DIR}/puppeteer"
 echo "• Installing Mermaid CLI (@mermaid-js/mermaid-cli@${MERMAID_VERSION}) ..."
-npm install -g "@mermaid-js/mermaid-cli@${MERMAID_VERSION}"
+PUPPETEER_CACHE_DIR="$PUPPETEER_DIR" PUPPETEER_CHROME_SKIP_DOWNLOAD=true \
+  npm install -g "@mermaid-js/mermaid-cli@${MERMAID_VERSION}"
+chmod -R a+rX "$PUPPETEER_DIR"
+
+# ---- install the headless shell's system libraries ----
+# The shell ships its Debian dependency list as deb.deps. Take the first
+# alternative of each line and drop the version bounds. Ubuntu's 64-bit time_t
+# rename left some names purely virtual (libasound2, with two providers), which
+# apt will not choose between, so a name with no candidate of its own becomes
+# its <name>t64 package.
+DEB_DEPS="$(find "$PUPPETEER_DIR" -name deb.deps -print -quit)"
+[[ -n "$DEB_DEPS" ]] || { echo "❌ No deb.deps under ${PUPPETEER_DIR}; puppeteer did not download its browser"; exit 1; }
+echo "• Installing headless Chrome libraries ..."
+# Not `apt-cache policy | grep -q`: under pipefail, grep closing early kills
+# apt-cache with SIGPIPE and the check reads as false for a real package.
+has_candidate() {
+  local policy
+  policy="$(apt-cache policy "$1" 2>/dev/null)"
+  [[ "$policy" =~ Candidate:\ [^\(] ]]
+}
+apt-get update
+CHROME_PKGS=()
+while read -r pkg; do
+  if ! has_candidate "$pkg" && has_candidate "${pkg}t64"; then
+    pkg="${pkg}t64"
+  fi
+  CHROME_PKGS+=("$pkg")
+done < <(sed -E 's/\|.*//; s/\(.*\)//; s/[[:space:]]+//g; /^$/d' "$DEB_DEPS")
+apt--install.sh "${CHROME_PKGS[@]}"
+
+# mmdc runs Chrome as the booth user inside a container, where Chrome's own
+# sandbox has no user namespace to start in.
+PUPPETEER_CONFIG="${MERMAID_DIR}/puppeteer-config.json"
+cat > "$PUPPETEER_CONFIG" <<'JSON'
+{ "args": ["--no-sandbox"] }
+JSON
+chmod 644 "$PUPPETEER_CONFIG"
+
+# Replace npm's mmdc link with a wrapper that points puppeteer at the shared
+# browser and the config above. A -p/--puppeteerConfigFile of the user's own
+# wins, since mmdc reads only one.
+MMDC_JS="$(npm root -g)/@mermaid-js/mermaid-cli/src/cli.js"
+MMDC_BIN="$(npm prefix -g)/bin/mmdc"
+rm -f "$MMDC_BIN"
+cat > "$MMDC_BIN" <<WRAPPER
+#!/usr/bin/env bash
+export PUPPETEER_CACHE_DIR="\${PUPPETEER_CACHE_DIR:-${PUPPETEER_DIR}}"
+for arg in "\$@"; do
+  case "\$arg" in -p|--puppeteerConfigFile|--puppeteerConfigFile=*) exec node "${MMDC_JS}" "\$@" ;; esac
+done
+exec node "${MMDC_JS}" -p "${PUPPETEER_CONFIG}" "\$@"
+WRAPPER
+chmod 755 "$MMDC_BIN"
 
 # ---- build Mermaid Live Editor ----
 echo "• Building Mermaid Live Editor ..."
-mkdir -p "$MERMAID_DIR"
 
 cat > "${MERMAID_DIR}/index.html" <<'HTML'
 <!DOCTYPE html>
@@ -186,5 +246,6 @@ echo "   Port:        ${MERMAID_PORT}"
 echo "   Starter:     ${STARTER_FILE}"
 echo ""
 echo "ℹ️  CLI usage:     mmdc -i diagram.mmd -o output.svg"
+echo "   Own -p config:  include \"args\": [\"--no-sandbox\"]"
 echo "   Web UI launch: start-mermaid [PORT]"
 echo "   Access:        http://localhost:${MERMAID_PORT}"

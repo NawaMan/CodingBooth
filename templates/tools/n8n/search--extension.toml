@@ -21,9 +21,9 @@ run-args = [
 # SearXNG ships dated rolling builds only. n8n's installer uses :latest; this
 # pins one build so a rebuild does not move it.
 [params.N8N_SEARXNG_VERSION]
-default = "2026.9.30-a9d990033"
+default = "2026.10.9-9f042d2f6"
 suggests = [
-    "2026.9.30-a9d990033",
+    "2026.10.9-9f042d2f6",
     "latest",
 ]
 

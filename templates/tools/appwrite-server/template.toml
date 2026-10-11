@@ -20,8 +20,8 @@ run-args = [
 ]
 
 [params.APPWRITE_VERSION]
-default = "1.9.6"
-suggests = ["1.9.6", "1.8.1"]
+default = "1.9.7"
+suggests = ["1.9.7", "1.8.1"]
 
 [params.APPWRITE_PORT]
 default = "8080"

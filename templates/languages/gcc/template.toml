@@ -14,8 +14,8 @@ tags = [
 ]
 
 [params.GCC_VERSION]
-default = "14"
-suggests = ["14", "13", "12", "11"]
+default = "15"
+suggests = ["15", "14", "13", "12"]
 
 [segments]
 Boothfile = """

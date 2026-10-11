@@ -13,8 +13,8 @@ Usage:
   $0 [--version <X.Y.Z>|latest] [--port <port>]
 
 Examples:
-  $0                                  # n8n 2.41.5 on port 21200
-  $0 --version 2.41.5 --port 5678     # pin both
+  $0                                  # n8n 2.42.5 on port 21200
+  $0 --version 2.42.5 --port 5678     # pin both
 
 Notes:
 - Installs n8n with npm into the catalog Node.js (engines: >= 24)
@@ -37,7 +37,7 @@ USAGE
 HOME=/root
 
 # ---- defaults / args ----
-N8N_FALLBACK_VER="2.41.5"
+N8N_FALLBACK_VER="2.42.5"
 N8N_PORT="21200"
 REQ_VER="$N8N_FALLBACK_VER"
 while [[ $# -gt 0 ]]; do
@@ -352,7 +352,7 @@ cat > "${SEARCH_STARTER_FILE}" <<'SEARCH'
 # start-n8n-search
 set -euo pipefail
 
-VERSION="${N8N_SEARXNG_VERSION:-2026.9.30-a9d990033}"
+VERSION="${N8N_SEARXNG_VERSION:-2026.10.9-9f042d2f6}"
 PORT="${N8N_SEARXNG_PORT:-21281}"
 DIR="${N8N_USER_FOLDER:-$HOME}/.n8n/searxng"
 mkdir -p "$DIR"

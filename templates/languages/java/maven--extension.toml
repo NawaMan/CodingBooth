@@ -12,9 +12,9 @@ tags = [
 ]
 
 [params.MAVEN_VERSION]
-default = "3.9.12"
+default = "3.9.16"
 suggests = [
-    "3.9.12", "3.9",
+    "3.9.16", "3.9",
     "4.0.0-rc-5",
 ]
 

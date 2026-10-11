@@ -4,6 +4,32 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Catalog version-pin sweep to n-1.** Defaults now sit on the release just before the newest
+  stable one; pins already at or below n-1 are unchanged. Each new version was checked against its
+  real download source. `gcc`, `go`, `mermaid`, `bluej`, and `mvn` were also installed for real.
+  Bumped: `go` 1.26.8→1.27.1, `gcc` 14→15, `java+maven` 3.9.12→3.9.16, `conda` Python 3.13→3.14,
+  `n8n` 2.41.5→2.42.5, `n8n+search` SearXNG 2026.9.30-a9d990033→2026.10.9-9f042d2f6, `penpot`
+  2.18.1→2.18.2, `protobuf+java` protoc-gen-grpc-java 1.84.0→1.84.1, `appwrite-server`
+  1.9.6→1.9.7 (latest of 1.x; 2.x is a separate decision), and `bluej` 5.3.0→6.0.0.
+  `n8n+sandbox` stays at 1.3.4, the version n8n 2.42.5's own installer pairs with it. JDK stays
+  on 25, the newest LTS.
+  - **Fix: `mermaid` installs again.** The default `11.17.2` exists for the `mermaid` library but
+    not for `@mermaid-js/mermaid-cli`, which the setup installs from the same version. The npm
+    step failed. The default is now `11.17.0`, which exists for both packages.
+  - **Fix: `mmdc` renders as the booth user.** Puppeteer downloaded its browser into root's
+    `~/.cache` during the image build, where the booth user's `mmdc` never looks. Chrome's system
+    libraries (`libnspr4` and others) were also missing. The browser now goes to
+    `/opt/mermaid/puppeteer`, and only the headless shell is fetched, not a full Chrome as well.
+    Its libraries are installed from the shell's own `deb.deps` through `apt--install.sh`, so the
+    apt snapshot pin applies. An `mmdc` wrapper points puppeteer there and runs Chrome with
+    `--no-sandbox`, which a container needs. A `-p` config of your own replaces it, so add
+    `"args": ["--no-sandbox"]` to that config.
+  - **Fix: Maven's two pins agree.** The template defaulted to 3.9.12 while `mvn--setup.sh` fell
+    back to 3.9.11. Both are now 3.9.16.
+  - **`bluej` installs 6.x.** BlueJ 6 ships per-arch `.deb`s on GitHub releases instead of
+    bluej.org. The setup picks the right source by version: 6.x on GitHub, 5.4.x per-arch on
+    bluej.org, and older versions as one `.deb`.
+
 - **Fresh is now in the catalog: `setup fresh` and a `fresh` tool template.** The script installs the official static musl release (the `fresh` binary, its install receipt, and icons) under `/opt/fresh-editor` for amd64 and arm64, and links `fresh` onto `PATH`. `--version X.Y.Z|latest` (fallback 0.5.2), checked against the release `.sha256`. Select `fresh` or `fresh:0.5.2`. `fresh+config-shared` bind-mounts `~/.config/fresh/` from `.booth/shared`. `fresh --cmd grammar list` and `fresh --cmd config show` are the checks that the editor runs.
 - **Fresh starts on Tokyo Night.** `fresh+theme` is selected with `fresh` and writes `theme` in `~/.config/fresh/config.json` at container start, leaving every other key alone. The default is `tokyo-night`. Pick another built-in with `fresh+theme:dracula` (`dark`, `gruvbox`, `high-contrast`, `light`, `nord`, `nostalgia`, `solarized-dark`, `terminal`). `fresh~theme` leaves the factory theme, `high-contrast`. The selected theme is written again on the next start.
 - **Wrapper `0.16.0` — `booth` on `PATH` finds the project itself, and every command works from
