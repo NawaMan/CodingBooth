@@ -706,7 +706,7 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 		addReadOnlyBoothDir(builder, codePath)
 		addReadOnlyBoothWrapper(builder, codePath, ctx.Engine())
 	}
-	addCacheAndSharedMounts(builder, codePath)
+	addCacheAndSharedMounts(builder, codePath, ctx.Engine(), ctx.Image())
 
 	// Lifecycle management labels used by list/start/stop/restart/remove commands.
 	builder.CommonArgs.Append(ilist.NewList[string]("--label", "cb.managed=true"))
@@ -1029,7 +1029,8 @@ func addReadOnlyBoothDir(builder *appctx.AppContextBuilder, codePath string) {
 // project's own .booth/ is seen, and must not drop these mounts (or the cache gitignore check).
 //
 // A path that is both Cache and Shared stops the start; one inside the other earns a notice.
-func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath string) {
+// A single file is staged for booth--file-sync when the image has it (see fileSyncMountTarget).
+func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath, engine, image string) {
 	hostPath := boothHostDir(builder, codePath)
 	if hostPath == "" {
 		return
@@ -1091,9 +1092,61 @@ func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath string)
 		fmt.Fprintln(os.Stderr, mountoverlap.Notice(n))
 	}
 
-	for _, m := range append(cacheMounts, sharedMounts...) {
-		builder.CommonArgs.Append(ilist.NewList[string]("-v", m.hostPath+":"+m.containerPath))
+	// Ask the image only when there is a file to stage: it costs an image inspect.
+	fileSync := hasFileMount(cacheMounts) || hasFileMount(sharedMounts)
+	if fileSync {
+		fileSync = imageHasFileSync(engine, image)
 	}
+	for _, m := range append(cacheMounts, sharedMounts...) {
+		builder.CommonArgs.Append(ilist.NewList[string]("-v", m.hostPath+":"+fileSyncMountTarget(m, fileSync)))
+	}
+}
+
+// FileSyncRoot is where a single Cache or Shared file is mounted when the image runs
+// booth--file-sync: the file for /home/coder/.zsh_history sits at
+// FileSyncRoot/home/coder/.zsh_history, and booth-entry copies it into place.
+//
+// A file bind mount cannot be replaced. Tools that save by writing a new file and
+// renaming it over the old one (zsh's history, GLib's g_file_set_contents, readline's
+// rewrite) get EBUSY and lose the save. The real path is therefore a plain file, and
+// booth--file-sync keeps it and the staged copy the same.
+const FileSyncRoot = "/var/lib/codingbooth/file-sync"
+
+// FileSyncLabel marks an image whose booth-entry stages files through FileSyncRoot.
+// An image without it (one built before booth--file-sync) gets the file mounted
+// directly, as before: staging it there would leave the real path empty.
+const FileSyncLabel = "com.codingbooth.file-sync"
+
+// fileSyncMountTarget is where m is mounted: its own path, or for a single file on an
+// image with booth--file-sync, the staging path under FileSyncRoot. Pure for unit tests.
+func fileSyncMountTarget(m cacheMount, fileSync bool) string {
+	if m.dir || !fileSync {
+		return m.containerPath
+	}
+	return FileSyncRoot + m.containerPath
+}
+
+func hasFileMount(mounts []cacheMount) bool {
+	for _, m := range mounts {
+		if !m.dir {
+			return true
+		}
+	}
+	return false
+}
+
+// imageHasFileSync reports whether image carries FileSyncLabel. A read-only query, so
+// it runs under --dryrun too; a missing or unreadable image answers false.
+func imageHasFileSync(engine, image string) bool {
+	if image == "" {
+		return false
+	}
+	out, err := docker.DockerOutput(docker.DockerFlags{Engine: engine, Silent: true}, "image", ilist.NewList(
+		ilist.NewList("inspect"),
+		ilist.NewList("--format", `{{index .Config.Labels "`+FileSyncLabel+`"}}`),
+		ilist.NewList(image),
+	))
+	return err == nil && strings.TrimSpace(out) == "1"
 }
 
 // overlapEntries turns the walked mounts into mountoverlap entries.

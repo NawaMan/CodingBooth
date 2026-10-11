@@ -332,6 +332,14 @@ if [ "$recorded_home" != "$HOME_DIR" ]; then
   UserMod -d "$HOME_DIR" "$USER_NAME"
 fi
 
+info "4b) Copying staged Cache/Shared files into place (booth--file-sync init)..."
+# A single .booth/cache or .booth/shared file arrives under the staging root, not
+# at its path: a file mount there would make every rename-based save fail with
+# EBUSY. Put a plain copy at the path before anything reads it — the dotfile and
+# home-seed steps below treat it as already present, as they did the mount. The
+# parent folders this creates in the home are handed to coder by step 5.
+booth--file-sync init
+
 info "5) Reconciling ownership of $HOME_DIR to $HOST_UID:$HOST_GID (skipping $CODE_DIR)..."
 # Reconcile UNCONDITIONALLY (not just when ORIG_UID/GID differ). Step 4 above
 # changes coder's uid/gid in /etc/passwd atomically, but this chown of the home
@@ -659,6 +667,17 @@ fi
 find "$HOME_DIR" -xdev -user root -exec chown "$HOST_UID:$HOST_GID" {} + 2>/dev/null || true
 
 
+info "13b) Starting the Cache/Shared file sync (booth--file-sync watch)..."
+# After the copies, so an override layer's write to a staged file reaches the
+# host, as it did through the mount. Same process group as tini's child, so the
+# TERM of a stop reaches it and it copies once more before exiting.
+FILE_SYNC_PID=""
+if [ -n "$(find /var/lib/codingbooth/file-sync -type f -print -quit 2>/dev/null)" ]; then
+  booth--as-coder -- booth--file-sync watch &
+  FILE_SYNC_PID=$!
+fi
+
+
 section "Pty ownership"
 
 # `docker run -t` allocates this pty while we are still root. The drop to coder
@@ -783,6 +802,31 @@ section "Execute the requested command"
 
 info "16) Executing the requested command as coder (default to login shell if none provided)"
 cd "$CODE_DIR"
+
+# With staged files, stay as the command's parent instead of exec-ing it. When the
+# command ends, tini (PID 1) exits and the container goes with it, killing the
+# watcher before it copies back what was written last — a shell's history is
+# written on exit. So wait for the command, then stop the watcher, which copies
+# once more, and leave with the command's status. A stop's TERM reaches the
+# command through tini -g; the trap only keeps this script alive to do the copy.
+if [ -n "$FILE_SYNC_PID" ]; then
+  set +e
+  trap ':' TERM INT HUP
+  if [ "$#" -eq 0 ]; then
+    info "No command provided; starting login shell for $USER_NAME..."
+    booth--as-coder --login
+  else
+    info "Executing as $USER_NAME: $*"
+    booth--as-coder -- "$@"
+  fi
+  status=$?
+  # Signal the watcher, not runuser above it: runuser answers a TERM with a
+  # "Session terminated" line, and exits on its own once the watcher has.
+  pkill -TERM -P "$FILE_SYNC_PID" 2>/dev/null || kill -TERM "$FILE_SYNC_PID" 2>/dev/null
+  wait "$FILE_SYNC_PID" 2>/dev/null
+  exit "$status"
+fi
+
 if [ "$#" -eq 0 ]; then
   info "No command provided; starting login shell for $USER_NAME..."
   exec booth--as-coder --login
