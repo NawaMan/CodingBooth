@@ -313,7 +313,7 @@ func runConfigCLI(version string, targetPath string, flags initFlags) {
 
 	fmt.Printf("Initialized .booth/ in %s\n", targetPath)
 	printSummary(resolved)
-	printMountOverlaps(os.Stderr, out.Config)
+	printMountOverlaps(os.Stderr, out)
 
 	if flags.start {
 		fmt.Printf("Starting booth in %s ...\n", targetPath)
@@ -743,7 +743,7 @@ func applyInteractiveResult(version, targetPath string, setup interactiveSetup, 
 
 	fmt.Printf("\nInitialized .booth/ in %s\n", targetPath)
 	printSummary(resolved)
-	printMountOverlaps(os.Stderr, out.Config)
+	printMountOverlaps(os.Stderr, out)
 
 	// Handle booth version update if changed
 	oldLockVersion := readLockFileVersion(targetPath, "")
