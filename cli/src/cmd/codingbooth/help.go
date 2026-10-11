@@ -699,6 +699,8 @@ OPTIONS:
                        With --run, allow --privileged-like run-args without asking
   --silence-build, --quiet, -q
                        Hide --run bring-up and teardown
+  --browser            With --run, open the page of a booth it creates
+                       (a --run create opens no browser by default)
   -e <VAR=value>       Set environment variable (repeatable)
   --envfile <path>     Load environment variables from a file
 
@@ -742,6 +744,8 @@ OPTIONS:
                        With --run, allow --privileged-like run-args without asking
   --silence-build, --quiet, -q
                        Hide --run bring-up and teardown; command output only
+  --browser            With --run, open the page of a booth it creates
+                       (a --run create opens no browser by default)
   -e <VAR=value>       Set environment variable (repeatable)
   --envfile <path>     Load environment variables from a file
 
