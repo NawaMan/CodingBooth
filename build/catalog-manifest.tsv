@@ -828,7 +828,7 @@ extension	python+conda	1.0.0	acf07d4ae39ac333f95ded1bec90126f0d41ade81916920e76d
 extension	python+conda-pkg	1.0.0	3679659cf8f791e57774063f19239ca58bc52b9a39e6c8ed4ab2150f9e011929	templates/languages/python/conda-pkg--extension.toml
 extension	python+kernel	1.0.0	5e62a9054833c44cff823c07606fe468fca75fda95e3353c0eee143a69af9378	templates/languages/python/kernel--extension.toml
 extension	python+pip	1.0.0	a8d46c35f928d4c111f82a690ff819a0e8f9b4d1ba345808c7d63382d597ca1c	templates/languages/python/pip--extension.toml
-extension	python+pip-cache	0.1.0	2e835fc6748ece029d79c69e348bc4e88672f190e995ca082e6f8879ebdcb143	templates/languages/python/pip-cache--extension.toml
+extension	python+pip-cache	0.2.0	ae8de34c6d874605618530169744679ef1e15ae690387dccc8349141dc14eb7b	templates/languages/python/pip-cache--extension.toml
 extension	python+pip-config	1.0.0	6bfb04c926b312da711e64da1247d523c01bce2516af549cb01cceae3720320a	templates/languages/python/pip-config--extension.toml
 extension	python+pip-pkg	1.0.0	cfaa9a63a630c72ea68b9018090032a4c6690d1f2e498f83ff592cea3ebbe15f	templates/languages/python/pip-pkg--extension.toml
 extension	python+repl-history	1.0.0	48e77b409f95e49f2f08c525dc76c21c41614327fd5c991277f81b4534c1cf06	templates/languages/python/repl-history--extension.toml

@@ -79,6 +79,10 @@ func OutputPaths(out *BoothOutput, targetPath string) []string {
 		paths = append(paths, filepath.Join(boothDir, "shared", pathmode.Path(d.RelPath), ".mount-this"))
 	}
 
+	if len(out.OwnerPerms) > 0 {
+		paths = append(paths, filepath.Join(boothDir, OwnerPermissionName))
+	}
+
 	return paths
 }
 
@@ -167,6 +171,18 @@ func writeOutput(out *BoothOutput, targetPath string, beside []string) error {
 		if err := writeGuarded("Boothfile", content); err != nil {
 			return fmt.Errorf("writing Boothfile: %w", err)
 		}
+	}
+
+	permContent := SerializeOwnerPermission(out.OwnerPerms, out.Command, out.AdjustCommand)
+	if permContent == "" {
+		permPath := filepath.Join(boothDir, OwnerPermissionName)
+		if isGeneratedFile(permPath) {
+			if err := os.Remove(permPath); err != nil {
+				return fmt.Errorf("removing %s: %w", OwnerPermissionName, err)
+			}
+		}
+	} else if err := writeGuarded(OwnerPermissionName, permContent); err != nil {
+		return fmt.Errorf("writing %s: %w", OwnerPermissionName, err)
 	}
 
 	if err := writeManifest(boothDir, written, out.TemplatesVersion); err != nil {

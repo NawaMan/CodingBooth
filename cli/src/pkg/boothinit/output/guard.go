@@ -36,7 +36,7 @@ const manifestTemplatesKey = "templates"
 // GuardedFiles are the files WriteOutput regenerates wholesale. They are the ones
 // whose hand-written content a reconfigure would silently destroy — the rest of
 // .booth/ is either copied, no-clobbered, or cleaned up by header.
-var GuardedFiles = []string{"Boothfile", "config.toml"}
+var GuardedFiles = []string{"Boothfile", "config.toml", "owner-permission.yaml"}
 
 // hashContent fingerprints generated content for the manifest.
 func hashContent(content string) string {

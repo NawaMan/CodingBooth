@@ -43,6 +43,17 @@ assert_has "python+pip-cache mounts /opt/pip-cache" "booth-cache-pip:/opt/pip-ca
 assert_has "python+pip-cache pins PIP_CACHE_DIR" "PIP_CACHE_DIR=/opt/pip-cache"
 assert_has "python+uv-cache mounts the uv cache" "booth-cache-uv:/home/coder/.cache/uv"
 assert_has "python+uv-cache pins UV_CACHE_DIR" "UV_CACHE_DIR=/home/coder/.cache/uv"
+TEST_COUNT=$((TEST_COUNT + 1))
+echo -n "Test ${TEST_COUNT}: python+pip-cache writes owner-permission.yaml ..."
+if grep -qF 'path: "/opt/pip-cache"' "$prj/.booth/owner-permission.yaml" \
+   && grep -qF 'mode: "1777"' "$prj/.booth/owner-permission.yaml"; then
+    PASS_COUNT=$((PASS_COUNT + 1))
+    echo -e "\033[32mPASSED\033[0m"
+else
+    FAIL_COUNT=$((FAIL_COUNT + 1))
+    FAIL_TESTS+=("${test_label}: Test ${TEST_COUNT}: owner-permission.yaml")
+    echo -e "\033[31mFAILED\033[0m"
+fi
 
 run rm -Rf $prj ; mkdir -p $prj
 run booth config $prj --no-tui --select 'java+gradle-cache'

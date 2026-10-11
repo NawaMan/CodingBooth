@@ -15,18 +15,29 @@ type BoothOutput struct {
 	// catalog. Empty for a local catalog (--templates-path / CB_TEMPLATES_PATH),
 	// which has no release to fetch again.
 	TemplatesVersion string
-	Config        *ConfigToml
-	Boothfile *BoothfileContent
-	Startups  []FileContent
-	Setups    []FileContent
-	Home      []FileContent
-	HomeSeed  []FileContent
-	CacheSeed  []FileContent // Initial content for Cache paths, in .booth/cache-seed/ (committed)
-	SharedSeed []FileContent // Initial content for Shared paths, in .booth/shared-seed/
-	Cache     []FileContent // Files to touch in .booth/cache/ (paths mirror container filesystem)
-	CacheDirs []FileContent // Directories to create in .booth/cache/ with .mount-this marker
-	Shared    []FileContent // Files to touch in .booth/shared/ (git-friendly, live bind mounts)
-	SharedDirs []FileContent // Directories to create in .booth/shared/ with .mount-this marker
+	Config           *ConfigToml
+	Boothfile        *BoothfileContent
+	Startups         []FileContent
+	Setups           []FileContent
+	Home             []FileContent
+	HomeSeed         []FileContent
+	CacheSeed        []FileContent // Initial content for Cache paths, in .booth/cache-seed/ (committed)
+	SharedSeed       []FileContent // Initial content for Shared paths, in .booth/shared-seed/
+	Cache            []FileContent // Files to touch in .booth/cache/ (paths mirror container filesystem)
+	CacheDirs        []FileContent // Directories to create in .booth/cache/ with .mount-this marker
+	Shared           []FileContent // Files to touch in .booth/shared/ (git-friendly, live bind mounts)
+	SharedDirs       []FileContent // Directories to create in .booth/shared/ with .mount-this marker
+	// OwnerPerms is written to .booth/owner-permission.yaml. booth-entry applies
+	// each entry to that mount point when the container starts.
+	OwnerPerms []OwnerPerm
+}
+
+// OwnerPerm is one mount point whose directories booth-entry updates.
+type OwnerPerm struct {
+	Path  string
+	User  string
+	Group string
+	Mode  string
 }
 
 // ConfigToml represents the content of .booth/config.toml.
@@ -42,7 +53,7 @@ type ConfigToml struct {
 	VmMemory  string
 	VmCpus    string
 	VmShmSize string
-	Cmds     []string
+	Cmds      []string
 	RunArgs   []string
 	BuildArgs []string
 
