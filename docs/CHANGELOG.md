@@ -15,13 +15,19 @@ This file contains a list of changes for each released version.
 - **JSON for automation:** `booth list --json` and `booth expose list --json` return
   structured output, with empty arrays for empty results.
 
-- **Service data volumes are per project — breaking for existing data.** The postgresql, mysql,
+- **Service data volumes are per booth — breaking for existing data.** The postgresql, mysql,
   mongodb, redis, kafka, rabbitmq, floci and penpot templates used one machine-wide volume each
   (`booth-pgdata`, …), so every project on the machine shared one database, and two booths running
-  at once opened the same data directory. They now mount `booth-pgdata-{project}` (and so on):
-  `{project}` in a run-args volume source is replaced with the project name when the booth starts,
-  so each project — each clone, each worktree — gets its own. Booth creates the volume labelled
-  `cb.project=<project>`, and `build/clean-examples.sh` now removes example data volumes.
+  at once opened the same data directory. They now mount `booth-pgdata-{name}` (and so on):
+  `{name}` in a run-args volume source is replaced with the booth's name when the booth starts.
+  The default booth name is the folder name, so each project — each clone, each worktree — gets
+  its own, and a second booth of the same folder (`--name`, or the automatic `<project>-<port>`)
+  gets its own too instead of opening the first one's database. `{project}` (the folder name) also
+  works, for a volume all booths of a folder share. Booth creates the volume labelled
+  `cb.project=<project>` and `cb.booth=<name>`, and `build/clean-examples.sh` now removes example
+  data volumes.
+  - **A second booth starts empty.** When the default booth already has data, its first start
+    prints the command to copy it. Data follows the name: a renamed booth gets a new volume.
   - **Existing data is not moved.** It stays in `booth-pgdata`. The first start that creates the
     new volume while the old one exists prints a notice with both ways to keep it: mount the old
     volume (`booth config --add-mount booth-pgdata:/var/lib/postgresql`) or copy it across.

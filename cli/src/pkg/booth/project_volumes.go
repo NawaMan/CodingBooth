@@ -14,29 +14,53 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
-// projectPlaceholder in the source of a run-args -v spec is replaced with the
-// project name at run time, so a template can give each project its own named
-// volume ("booth-pgdata-{project}") instead of one volume every project on the
-// machine shares. It is expanded here rather than when booth config writes the
-// file, so the same committed config.toml follows the folder: each clone and each
-// worktree gets its own data.
-const projectPlaceholder = "{project}"
+// Placeholders in the source of a run-args -v spec, replaced at run time so a
+// template can name a volume after its booth instead of one name every booth on
+// the machine shares. They are expanded here rather than when booth config writes
+// the file, so the same committed config.toml follows the folder and the booth:
+//
+//   - {name}    -> the booth's final container name. The service templates use it
+//     ("booth-pgdata-{name}"): a booth's default name is its folder name, so the
+//     usual single booth of a project keeps one volume per project, while a second
+//     booth of the same folder (--name, or the automatic <project>-<port> name)
+//     gets its own and never shares a database folder with the first.
+//   - {project} -> the project (folder) name, for a volume every booth of the
+//     folder should share.
+const (
+	namePlaceholder    = "{name}"
+	projectPlaceholder = "{project}"
+)
 
-// projectVolume is one named volume whose name came from a {project} pattern.
+// projectVolume is one named volume whose name came from a {name} or {project} pattern.
 type projectVolume struct {
-	pattern string // as written, e.g. booth-pgdata-{project}
+	pattern string // as written, e.g. booth-pgdata-{name}
 	name    string // expanded, e.g. booth-pgdata-myproj
 	target  string // container path
 }
 
-// expandProjectVolumeGroups replaces {project} in -v/--volume sources and reports
-// the named volumes it produced (bind-mount paths are expanded but not reported:
-// there is no volume to create).
-func expandProjectVolumeGroups(args *ilist.AppendableList[ilist.List[string]], project string) (*ilist.AppendableList[ilist.List[string]], []projectVolume) {
+// perBooth reports whether the volume is named after its booth ({name}), not
+// only after its project.
+func (v projectVolume) perBooth() bool {
+	return strings.Contains(v.pattern, namePlaceholder)
+}
+
+// scope names what the volume is per, for messages: "booth" or "project".
+func (v projectVolume) scope() string {
+	if v.perBooth() {
+		return "booth"
+	}
+	return "project"
+}
+
+// expandProjectVolumeGroups replaces {name} and {project} in -v/--volume sources
+// and reports the named volumes it produced (bind-mount paths are expanded but not
+// reported: there is no volume to create).
+func expandProjectVolumeGroups(args *ilist.AppendableList[ilist.List[string]], booth, project string) (*ilist.AppendableList[ilist.List[string]], []projectVolume) {
 	out := ilist.NewAppendableList[ilist.List[string]]()
 	if args == nil {
 		return out, nil
 	}
+	replacer := strings.NewReplacer(namePlaceholder, booth, projectPlaceholder, project)
 	var volumes []projectVolume
 	args.ToList().Range(func(_ int, group ilist.List[string]) bool {
 		items := append([]string(nil), group.Slice()...)
@@ -46,11 +70,11 @@ func expandProjectVolumeGroups(args *ilist.AppendableList[ilist.List[string]], p
 			}
 			spec := items[i+1]
 			source := volumeSource(spec)
-			if !strings.Contains(source, projectPlaceholder) {
+			if !strings.Contains(source, namePlaceholder) && !strings.Contains(source, projectPlaceholder) {
 				i++
 				continue
 			}
-			expanded := strings.ReplaceAll(source, projectPlaceholder, project)
+			expanded := replacer.Replace(source)
 			items[i+1] = expanded + spec[len(source):]
 			if !isBindMountSource(expanded) {
 				volumes = append(volumes, projectVolume{pattern: source, name: expanded, target: volumeTarget(spec)})
@@ -63,10 +87,12 @@ func expandProjectVolumeGroups(args *ilist.AppendableList[ilist.List[string]], p
 	return out, volumes
 }
 
-// legacyVolumeName is the machine-wide name a {project} pattern replaced:
-// booth-pgdata-{project} -> booth-pgdata. Empty when the pattern has no such form.
+// legacyVolumeName is the machine-wide name a {name} or {project} pattern
+// replaced: booth-pgdata-{name} -> booth-pgdata. Empty when the pattern has no
+// such form.
 func legacyVolumeName(pattern string) string {
-	legacy := strings.ReplaceAll(pattern, "-"+projectPlaceholder, "")
+	legacy := strings.ReplaceAll(pattern, "-"+namePlaceholder, "")
+	legacy = strings.ReplaceAll(legacy, "-"+projectPlaceholder, "")
 	if legacy == pattern || strings.Contains(legacy, "{") || legacy == "" {
 		return ""
 	}
@@ -79,25 +105,39 @@ type volumeOps struct {
 	create func(name string, labels []string) error
 }
 
-// ensureProjectVolumes creates each per-project volume that does not exist yet,
-// labelled with its project so it can be found and cleaned up later. When the
-// machine-wide volume it replaces still exists, the new one starts empty while the
-// old data sits next to it — say so once, at the moment the new volume is made,
-// with the two ways to keep the old data.
-func ensureProjectVolumes(volumes []projectVolume, project, engine string, ops volumeOps, stderr io.Writer) {
+// ensureProjectVolumes creates each named volume that does not exist yet,
+// labelled with its project (and booth, for a {name} volume) so it can be found
+// and cleaned up later. A new volume starts empty; when older data sits next to
+// it, say so once, at the moment the new volume is made:
+//   - a booth not named after its folder, while the folder's default booth has
+//     data: how to start from a copy of it;
+//   - otherwise, the machine-wide volume from before: the two ways to keep it.
+func ensureProjectVolumes(volumes []projectVolume, booth, project, engine string, ops volumeOps, stderr io.Writer) {
 	for _, v := range volumes {
 		if ops.exists(v.name) {
 			continue
 		}
-		if legacy := legacyVolumeName(v.pattern); legacy != "" && ops.exists(legacy) {
+		sibling := strings.NewReplacer(namePlaceholder, project, projectPlaceholder, project).Replace(v.pattern)
+		if v.perBooth() && booth != project && ops.exists(sibling) {
 			fmt.Fprintf(stderr,
-				"Notice: %s is now one volume per project. This booth uses %s, which is new and empty;\n"+
+				"Notice: booth %s has its own %s, which is new and empty;\n"+
+					"        the data of booth %s (this folder's default) is in %s.\n"+
+					"        To start from a copy, stop booth %s, then:\n"+
+					"            %s run --rm -v %s:/from -v %s:/to alpine cp -a /from/. /to/\n",
+				booth, v.name, project, sibling, project, engine, sibling, v.name)
+		} else if legacy := legacyVolumeName(v.pattern); legacy != "" && ops.exists(legacy) {
+			fmt.Fprintf(stderr,
+				"Notice: %s is now one volume per %s. This booth uses %s, which is new and empty;\n"+
 					"        data from before is still in %s (shared by every project on this machine).\n"+
 					"        To keep using it:  booth config --add-mount %s:%s\n"+
 					"        To copy it over:   %s run --rm -v %s:/from -v %s:/to alpine cp -a /from/. /to/\n",
-				legacy, v.name, legacy, legacy, v.target, engine, legacy, v.name)
+				legacy, v.scope(), v.name, legacy, legacy, v.target, engine, legacy, v.name)
 		}
-		_ = ops.create(v.name, []string{"cb.project=" + project, "cb.volume=project"})
+		labels := []string{"cb.project=" + project, "cb.volume=project"}
+		if v.perBooth() {
+			labels = append(labels, "cb.booth="+booth)
+		}
+		_ = ops.create(v.name, labels)
 	}
 }
 

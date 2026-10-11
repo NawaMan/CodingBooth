@@ -3,7 +3,7 @@
 
 run-args = [
     "-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro",
-    "-v", "booth-pgdata-{project}:/var/lib/postgresql",
+    "-v", "booth-pgdata-{name}:/var/lib/postgresql",
     "--publish", "+-7000:3000",
     "--publish", "+-4827:5173"
 ]

@@ -427,7 +427,7 @@ template	exercism	1.0.0	0871fa644f331917e0e3bdbbba224a5f30501b42fd7805df64423ad4
 template	ffmpeg	1.0.0	c2df74ca40d15edbbbc161d19794ba58d7ad47b22e69b19e0009717792aef13c	templates/tools/ffmpeg/template.toml
 template	firebase	1.0.0	dc0e54f22dee9bc7241799bace704d20794388f1b7433d139edb2e5db3c8a07a	templates/tools/firebase/template.toml
 template	firefox	1.0.0	f66cae6754afb97560e80091f722fb74be336a468fa56769423ba963d0300557	templates/desktops/firefox/template.toml
-template	floci	0.2.0	273eb53b10fd51dcc893c50ea2bbde99ed9b93394565113c948b57290f63b063	templates/tools/floci/template.toml
+template	floci	0.2.0	e70ad623c6096679e100087e9071bbe43c2f605d2033641f6f9ce49919dd9b7c	templates/tools/floci/template.toml
 template	flutter	0.1.0	d3c96cf81f4a7ce3750eabd1e8eb0f7bb1e901a09ec7acc3a6b4c0341f127054	templates/languages/flutter/template.toml
 template	fpc	1.0.0	833b92d6fb18707c1d678ee941562af8ccbe880c68abbe61bb4f0ec3f8604a62	templates/languages/fpc/template.toml
 template	freelens	0.1.0	8120af7df1f43318882fbe66b5f86b01da2cebe33cd66c431a1beacc07d8c41a	templates/tools/freelens/template.toml
@@ -468,7 +468,7 @@ template	julia	1.0.0	6848f363b2573b14b73ae17b6500d2b16dd3f1d5bbae5584961dac2fedd
 template	just	1.0.0	9c8992b0eeb6463f626a6af1d7d5eff30c64ad90bf151f656563409d98d36b0f	templates/tools/just/template.toml
 template	k3d	1.0.0	71932187da528c0251e8ba067e6930cd4c9c889d8448b7cb055b6ffba2a1103d	templates/tools/k3d/template.toml
 template	k9s	1.0.0	62fe58c37caa6f310b4e92e30bb144593b3dbc5326f93221c43ea5b3759a19de	templates/tools/k9s/template.toml
-template	kafka	2.0.0	2893ec3797b23e46f737c3a98dc0b7ef7703ff97d41823804b6ea64bcf02bec7	templates/middlewares/kafka/template.toml
+template	kafka	2.0.0	b4449fe4d0b8a60e0b6d90f0a8e9a781913777bd45f44bca9353725388acb033	templates/middlewares/kafka/template.toml
 template	kde	1.0.0	a621763911b76074097a34b23459e29b7ab0c59be09f8338587ad6dac0741123	templates/desktops/kde/template.toml
 template	kind	1.0.0	f9cc7f96cfc67b101332adfe48e06451ad861504164cd66c8d77a30e489f7263	templates/tools/kind/template.toml
 template	kitty	1.0.0	e375e45cf5277047592572b73860628a8c1ab0998cd8d9c677d02fa2cd41b611	templates/desktops/kitty/template.toml
@@ -490,8 +490,8 @@ template	material-cursors	1.0.0	8b64d5c27d3113f60d8769aef239be563621a3cc8336df40
 template	mermaid	1.0.0	32a779e00e0dbef72353a5de2e4bc16e2bf8a638a672ff3fa73b959da2edf5bc	templates/tools/mermaid/template.toml
 template	mkcert	1.0.0	23be3ef98c34aa99430fbf664f38c726c462871b2a38e250d30f5ae0b6cd0b5f	templates/tools/mkcert/template.toml
 template	mojo	0.1.0	27ab9f41480cdb2b361b178d5eec62b94ebb469a3a4a48eb579509cb16d42718	templates/languages/mojo/template.toml
-template	mongodb	2.0.0	66b6775db7600001579c0fb3a443071dcb76077fa663d58c9b73cac39a3b14a7	templates/middlewares/mongodb/template.toml
-template	mysql	2.0.0	25faf49db9d10755edd0e217967cad9001d88fd2e1c3d3cfaa0413f6b2628d91	templates/middlewares/mysql/template.toml
+template	mongodb	2.0.0	ec12ba77fa333dbba7e92ac763d30403714250acde5997a5c9fe4e5c50bf7bed	templates/middlewares/mongodb/template.toml
+template	mysql	2.0.0	bfa3c51630773108ba4a32b31cd16a3c5df8cbababd4db058586549e5aae6e9d	templates/middlewares/mysql/template.toml
 template	n8n	0.1.0	3af60599015d4a227b98f0108d8c1958b7484195d0cec85c4b7f8148eade2e1c	templates/tools/n8n/template.toml
 template	nbgrader	1.0.0	2e0765a2aa72972a73952ce75ac6a8333a943dae1c5110dc1ca7c863ceba1b8d	templates/education/nbgrader/template.toml
 template	neovim	1.0.0	64e255e62d166643992f9138358fc8eca3f1119f5dcf0fa58eba4646e5b19e19	templates/tools/neovim/template.toml
@@ -507,12 +507,12 @@ template	ollama	1.0.0	5fdb875baa6eaf50f9441fd727fc92d3b2638de822e280b13d16b0e604
 template	opencode	1.0.0	2871adf254f8f249db6118eb8c330dd3321501b66f2769ee69b2c61b3b9bf470	templates/ai-tools/opencode/template.toml
 template	openssh	1.0.0	3f9a44c7fea93ca4024e7939267d8e200a8419bfda285dbc2e9a5f4e0db8ccd3	templates/tools/openssh/template.toml
 template	orchis-gtk	0.1.0	90d120c836c889c8ee0f98ab8f29f20dd873e3ee952951daa39d475082bc0116	templates/desktops/orchis-gtk/template.toml
-template	penpot	0.2.0	45f3c73c59571d0dd41cfc6e98760ccf8229c0f25a13a605716d1deef65fbad7	templates/tools/penpot/template.toml
+template	penpot	0.2.0	8f5e95f08b114c45dd434211efbbe619dd45a5fc05909adec88263b2b3416a10	templates/tools/penpot/template.toml
 template	php	1.0.0	1c7bf5b149e8922242abac9d78935da6c45881f91a58268e3fdada08e5cbaa63	templates/languages/php/template.toml
 template	phpstorm	1.0.0	e3f9978b35ff7170c9e2bf825a5a5c09c1b42ca9e50e84b6861d102ca31cef18	templates/ides/phpstorm/template.toml
 template	plantuml	1.0.0	2ea1d2e1c098fadcbff7add437e7658f691d89a092f7b60a4cfd31a70e645b39	templates/tools/plantuml/template.toml
 template	playwright	1.0.0	ce10be322839dd6bf6648078e9b808b560994be2a8e18f0e5cd49bdad48a4d1d	templates/tools/playwright/template.toml
-template	postgresql	2.0.0	c43a3ba121764bd8198a8a65dd96be22c0142aae7937d7c1465dd602c596f653	templates/middlewares/postgresql/template.toml
+template	postgresql	2.0.0	28af9041e2355bb1ec03ccfd92698b5d03ddcca8519c41b92db23908ce2df49a	templates/middlewares/postgresql/template.toml
 template	postgrest	0.1.0	d7b090b018ddb8dafd2f553ffd6b41c0f0f0748ffefd5219fa11326f23ae801f	templates/middlewares/postgrest/template.toml
 template	posting	1.0.0	c1c7874acae04371135af69b0568d0f2e91690f4886ae2114461ae0798a91fc2	templates/tools/posting/template.toml
 template	protobuf	1.0.0	349519f43d0d87a56498f4c87e5152dcf97de88f069902098b69a9b919ea86b8	templates/tools/protobuf/template.toml
@@ -521,9 +521,9 @@ template	puppeteer	1.0.0	ebe206c5dbbba9b04a7e879e8a1c9eb3ef07142d12a41ecb800c48f
 template	pycharm	1.0.0	fce6bf6b03601f0e8618b6f519961351f97547b57320d1f248d13aba3c624300	templates/ides/pycharm/template.toml
 template	python	1.0.0	0dc2730bbc6614dcf2639a09b87447b061c4b9ab9f740fc22d6c06f197b40cf2	templates/languages/python/template.toml
 template	r	1.0.0	2eb580f5013744ee35ea4718fe25cb8be3ec55aae1b40fb34e4572b6b01ab78f	templates/languages/r/template.toml
-template	rabbitmq	2.0.0	44890f0efa41e91d3e3e95240c6926d289588f318512622595d55b6fcfc7f092	templates/middlewares/rabbitmq/template.toml
+template	rabbitmq	2.0.0	2cb26d93d9230c5c534b30a18aea5a30bb2c05e3e2c2688a144c335d5a624d9e	templates/middlewares/rabbitmq/template.toml
 template	react	0.1.0	062f933af29662bb49fa653d33ee6ee96517a246f15ff0726dfd86be04f73ece	templates/frameworks/react/template.toml
-template	redis	2.0.0	e99ac0557b6ec830bfaf1ce52f5cd7dbbeb0fe57fa643f57a29d382721d8cd56	templates/middlewares/redis/template.toml
+template	redis	2.0.0	bce6b7208d78be504c7b11d6e7b6c9ce0fe5184f95481a816ec6ea12fcc760b6	templates/middlewares/redis/template.toml
 template	remotion	1.0.0	f08e3a873a8f8bbe3253a7c07c480dcce7fdcea9b4fe9206a6eb7d7b9aba0830	templates/tools/remotion/template.toml
 template	rescript	1.0.0	93b0370db615e69dd2eafb249f593a7230888a17062690ae36b329e3d37abeb7	templates/languages/rescript/template.toml
 template	rider	1.0.0	47637d65d1274db8830f20c20504c12fed2fc8f70aff38e670b406954c687903	templates/ides/rider/template.toml

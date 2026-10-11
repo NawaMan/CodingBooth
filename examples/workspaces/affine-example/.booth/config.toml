@@ -6,6 +6,6 @@ run-args = [
     "-e", "AFFINE_SERVER_PORT=13010",
     "-e", "AFFINE_SERVER_DATA=clean",
     "-p", "13010:13010",
-    "-v", "booth-pgdata-{project}:/var/lib/postgresql",
-    "-v", "booth-redisdata-{project}:/home/coder/.redis"
+    "-v", "booth-pgdata-{name}:/var/lib/postgresql",
+    "-v", "booth-redisdata-{name}:/home/coder/.redis"
 ]

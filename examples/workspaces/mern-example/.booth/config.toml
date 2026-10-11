@@ -3,7 +3,7 @@
 
 run-args = [
     "-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro",
-    "-v", "booth-mongodata-{project}:/home/coder/.mongodb",
+    "-v", "booth-mongodata-{name}:/home/coder/.mongodb",
     "--publish", "+-7000:3000",
     "--publish", "+-4827:5173"
 ]

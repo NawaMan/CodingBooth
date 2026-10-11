@@ -15,7 +15,7 @@ tags = [
 
 run-args = [
     "-e", "FLOCI_PORT=${FLOCI_PORT}",
-    "-v", "booth-flocidata-{project}:/home/coder/.floci",
+    "-v", "booth-flocidata-{name}:/home/coder/.floci",
 ]
 
 [params.FLOCI_VERSION]

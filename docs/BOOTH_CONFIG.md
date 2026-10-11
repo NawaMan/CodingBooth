@@ -809,7 +809,7 @@ one path, and the user's is the one that was asked for. This is how a project sw
 data volume for its own:
 
 ```bash
-booth config --no-tui --add-mount 'myproj-pgdata:/var/lib/postgresql'   # replaces booth-pgdata-{project}
+booth config --no-tui --add-mount 'myproj-pgdata:/var/lib/postgresql'   # replaces booth-pgdata-{name}
 booth config --no-tui --remove-mount /var/lib/postgresql                # the template's comes back
 ```
 

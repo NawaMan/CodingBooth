@@ -63,7 +63,7 @@ different places.
 | **Host user** | `--mount` / run-args `-v $HOME/…` (`java+m2`, `rust+cargo-cache`) | `/etc/cb-home-seed/` (credential extensions, `npmrc`, `pip-config`) | `/etc/cb-home/` | — |
 | **Project, in git** | **Shared** — `.booth/shared/` | `.booth/home-seed/` | `.booth/home/` | Boothfile, `*-install` extensions |
 | **Project, not in git** | **Cache** — `.booth/cache/` | — | — | — |
-| **Docker storage** | `--persist-home` (one volume per booth); service volumes (one per project) | — | — | — |
+| **Docker storage** | `--persist-home` (one volume per booth); service volumes (one per booth) | — | — | — |
 | **Image** | — | `/etc/skel` re-seed (desktop launchers) | — | variant, `--image`, `--dockerfile` |
 | **None** | the container's own layer | | | |
 
@@ -93,7 +93,7 @@ See [Build](BOOTH_BUILD.md), [Customization](BOOTH_CUSTOMIZATION.md) and
 | **Shared** | `shared-files` / `shared-dirs`; or files placed in `.booth/shared/` by hand | `.booth/shared/<path>` → `/<path>`. Read-write. **Meant for git** |
 | **Bind mount** | `booth config --mount` / `--add-mount` (each adds a `-v`); `run-args = ["-v", …]` in `config.toml` or a template | Any host path → any container path, read-write or `:ro`. An entry whose host path does not exist is dropped with a notice |
 | `@code` source | run-args `-v @code:<path>` (`anythingllm+project-fs`) | The project folder, mounted a second time at another path |
-| **Named volume** | run-args `-v <name>:<path>` (`postgresql`, `mysql`, `redis`, `mongodb`, `penpot`, …) | Docker storage → path. `{project}` in the name makes it one volume per project |
+| **Named volume** | run-args `-v <name>:<path>` (`postgresql`, `mysql`, `redis`, `mongodb`, `penpot`, …) | Docker storage → path. `{name}` in the name makes it one volume per booth, `{project}` one per project |
 | `--persist-home` | CLI / `config.toml` | Volume `cb-home-<name>` → the whole of `/home/coder`. Seeding stops after the first run |
 | `--tls-cert`, `--tls-key` | CLI | Host files → `/tmp/booth-tls-*.pem`, read-only |
 | Devices and GPUs | run-args `--device /dev/kvm`, `--gpus all` | Host hardware → the booth |
@@ -156,33 +156,46 @@ inside that folder.
 
 ### Named volumes in use
 
-The service templates name their volume `<prefix>-{project}`. `{project}` stays literal in
-`config.toml` and becomes the project name (its folder name) when the booth starts, so each
-project — each clone, each worktree — has its own data.
+The service templates name their volume `<prefix>-{name}`. `{name}` stays literal in
+`config.toml` and becomes the booth's name when the booth starts. A booth's default name is its
+folder name, so a project — each clone, each worktree — has its own data, and a second booth of the
+same folder has its own too.
 
 | Volume | Template | Examples using it |
 |---|---|---|
-| `booth-pgdata-{project}` | `middlewares/postgresql` | affine, rails, data, pern, postgrest, `examples/demo` |
-| `booth-mysqldata-{project}` | `middlewares/mysql` | lamp, lemp, wordpress |
-| `booth-mongodata-{project}` | `middlewares/mongodb` | mean, mern |
-| `booth-redisdata-{project}` | `middlewares/redis` | affine |
-| `booth-kafkadata-{project}` | `middlewares/kafka` | — |
-| `booth-rabbitmqdata-{project}` | `middlewares/rabbitmq` | — |
-| `booth-flocidata-{project}` | `tools/floci` | floci |
-| `booth-penpot-assets-{project}` | `tools/penpot` | — |
+| `booth-pgdata-{name}` | `middlewares/postgresql` | affine, rails, data, pern, postgrest, `examples/demo` |
+| `booth-mysqldata-{name}` | `middlewares/mysql` | lamp, lemp, wordpress |
+| `booth-mongodata-{name}` | `middlewares/mongodb` | mean, mern |
+| `booth-redisdata-{name}` | `middlewares/redis` | affine |
+| `booth-kafkadata-{name}` | `middlewares/kafka` | — |
+| `booth-rabbitmqdata-{name}` | `middlewares/rabbitmq` | — |
+| `booth-flocidata-{name}` | `tools/floci` | floci |
+| `booth-penpot-assets-{name}` | `tools/penpot` | — |
 | `cb-home-<booth name>` | the CLI, for `--persist-home` | — (one per booth) |
 
-Booth creates a `{project}` volume the first time it is needed, labelled `cb.project=<project>` and
-`cb.volume=project`, so `docker volume ls --filter label=cb.project=myproj` lists a project's data.
+Two placeholders work in a volume source:
 
-Two folders with the same name share a project name, and so a volume. Two booths started from the
-*same* folder also share it, whatever their `--name` — `{project}` comes from the folder, not the
-booth. Do not run two database booths on one volume at once: two servers writing one data folder
-can corrupt it. For a second booth with its own data, start it from its own folder — a worktree
-(`git worktree add ../myproj-2`) or another clone — whose folder name gives it its own volume.
+| Placeholder | Becomes | So the volume is |
+|---|---|---|
+| `{name}` | the booth's final name — `--name`, or the folder name by default | one per booth |
+| `{project}` | the project (folder) name | shared by every booth of the folder |
 
-**Before per-project names** these volumes had one fixed name (`booth-pgdata`, …) shared by every
-project. The first start that creates a project's new volume while the old one exists prints a
+Booth creates such a volume the first time it is needed, labelled `cb.project=<project>` and
+`cb.volume=project`, plus `cb.booth=<name>` for a `{name}` volume. `docker volume ls --filter
+label=cb.project=myproj` lists all of a project's data, from every booth.
+
+**A second booth of the same folder** gets its own volume, because it must have another name:
+`--name other`, `--name '{project}-{port}'`, or the automatic `<project>-<port>` booth gives it
+when the default name is taken. It starts empty. When the default booth already has data, the first
+start prints where it is and the command to copy it — stop the default booth first. Data follows
+the name: a booth you rename, or one whose name holds `{port}` and gets a new port, starts with a
+new volume, and the old one stays.
+
+Two folders with the same name share a default booth name, and so a volume, when their booths
+run at different times. Run at once, the second booth is named `<project>-<port>` and gets its own.
+
+**Before per-booth names** these volumes had one fixed name (`booth-pgdata`, …) shared by every
+project. The first start that creates a booth's new volume while the old one exists prints a
 notice with both ways to keep the old data: mount it (`booth config --add-mount
 booth-pgdata:/var/lib/postgresql`) or copy it into the new volume. The old volume is never removed
 by booth.
@@ -192,8 +205,8 @@ host.
 
 ### Adding or changing a named volume
 
-**Adding your own** works on any container path. Use a name with no `/` as the source; `{project}`
-works here too. Docker creates the volume on the first start:
+**Adding your own** works on any container path. Use a name with no `/` as the source; `{name}`
+and `{project}` work here too. Docker creates the volume on the first start:
 
 ```bash
 booth config --no-tui --select go --mount 'myproj-data:/home/coder/.mydata'
@@ -211,8 +224,8 @@ booth config --no-tui --remove-mount /var/lib/postgresql                # back t
 The TUI's Mount field does the same. See
 [Run-Args Ownership](BOOTH_CONFIG.md#a-user-mount-replaces-the-templates-on-the-same-path).
 
-To reset a project's data, remove its volume while no booth uses it:
-`docker volume rm booth-pgdata-<project>`.
+To reset a booth's data, remove its volume while no booth uses it:
+`docker volume rm booth-pgdata-<booth name>`.
 
 ### Who uses `--persist-home`
 
@@ -338,7 +351,7 @@ committed. Cache is gitignored, and the booth checks that.
 
 ## Known Gaps
 
-Found while putting this map together; none is fixed yet.
+Found while putting this map together; what follows is still open.
 
 - **Nothing keeps secrets out of Shared.** Cache has a strict gitignore check; Shared has none,
   yet a browser's shared `Default/` folder also holds cookies and saved logins. The sample
@@ -356,10 +369,6 @@ Found while putting this map together; none is fixed yet.
 - **The four startup copy folders reach only `/home/coder`.** There is no folder that copies
   into `/etc` or `/opt` at start; a startup script does it instead
   ([Copying outside home](#copying-outside-home)).
-- **No per-booth volume for concurrent booths of one folder.** `--add-mount` and profiles both
-  cannot give one booth its own: `--add-mount` changes the config every booth of the folder reads,
-  and a profile can only add a mount, so one on the template's path is a duplicate Docker refuses.
-  Only a second folder separates them.
 
 ---
 

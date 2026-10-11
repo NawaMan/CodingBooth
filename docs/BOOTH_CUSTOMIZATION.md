@@ -677,7 +677,7 @@ dind = true
 
 # Array values — combined and deduplicated across all templates
 run-args = [
-    "-v", "booth-pgdata-{project}:/var/lib/postgresql",
+    "-v", "booth-pgdata-{name}:/var/lib/postgresql",
     "-e", "PGDATA=/var/lib/postgresql/data",
 ]
 build-args = [
