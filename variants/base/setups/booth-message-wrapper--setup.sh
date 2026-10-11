@@ -276,10 +276,16 @@ http {
         # before any application content reaches the browser.
         ${WRAPPER_PREVIEW_LOCATIONS}
 
-        # Wrapper page
+        # Wrapper page. Must never be heuristically cached: with no
+        # Cache-Control at all, a browser can serve it straight from disk cache
+        # on a reused port — an earlier booth's page, carrying that booth's
+        # BOOTH_INSTANCE_ID. The readiness gate then sees a stranger, reloads,
+        # gets the same cached page back, and stops with the frame never
+        # loaded: a black screen. Same fix as web-ttyd-split's /index.html.
         location = /booth {
             alias ${SERVE_DIR}/index.html;
             default_type text/html;
+            add_header Cache-Control "no-store" always;
         }
 
         # Booth liveness — proxies to inner service; 2xx/3xx/4xx → 200, 5xx/timeout → unhealthy.
