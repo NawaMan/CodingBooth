@@ -4,6 +4,13 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Fresh is the default editor; tilde is gone from the base image.** `$EDITOR` and `editor` now
+  open [Fresh](https://getfresh.dev) 0.5.2, which the base image installs (the welcome banner says
+  `editor  Text editor (fresh)`). Fresh checks for upgrades and sends anonymous telemetry by
+  default, so the shell profile sets `"check_for_updates": false` in `~/.config/fresh/config.json`
+  when that file does not decide; set it to `true` to opt in. Select the `fresh` template to pick
+  another release or a theme. `nano` stays as the simple fallback. Needs a rebuilt base image.
+
 - **Console UI: the mouse works in terminal programs, and a tmux copy reaches the host clipboard.**
   A Console UI pane used to throw away every left-button event so that a drag stayed a browser
   selection. As a result, Fresh, vim, htop and other programs that use the mouse got no clicks or
