@@ -1,1 +1,1 @@
-0.80.0--single-viewer-resize
+0.80.0--rc1
