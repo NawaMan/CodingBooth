@@ -11,9 +11,8 @@
 # must return the tab size just written there. The auto-selected theme startup
 # writes tokyo-night into that file before the editor runs.
 #
-# fresh--setup.sh is supplied under .booth/setups/ until the base image ships
-# it. That copy shadows the image script; remove it once the image has the
-# script, then re-run this test.
+# fresh--setup.sh is not on the Docker Hub base image yet. The build uses a
+# locally rebuilt base, which is where that script lives.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -22,6 +21,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 source ../../../common--source.sh
+
+use_local_base_image || exit 0
 
 echo "=== Test: Boothfile Fresh Installation ==="
 
