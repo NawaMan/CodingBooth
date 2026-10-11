@@ -17,7 +17,7 @@ HOME=/root
 
 
 # --- Defaults ---
-GO_VERSION="${1:-1.26.8}"         # Replace with desired Go version
+GO_VERSION="${1:-1.27.1}"         # Replace with desired Go version
 
 LEVEL=57                          # See README.md - Profile Ordering
 

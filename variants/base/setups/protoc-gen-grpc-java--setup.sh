@@ -12,7 +12,7 @@ Usage:
   $0 [VERSION]
 
 Arguments:
-  VERSION  protoc-gen-grpc-java version to install (default: 1.84.0)
+  VERSION  protoc-gen-grpc-java version to install (default: 1.84.1)
 
 Examples:
   $0            # install the default pinned version
@@ -34,7 +34,7 @@ case "${1:-}" in
   -h|--help) usage; exit 0 ;;
 esac
 
-VERSION="${1:-1.84.0}"
+VERSION="${1:-1.84.1}"
 
 dpkgArch="$(dpkg --print-architecture)"
 case "$dpkgArch" in

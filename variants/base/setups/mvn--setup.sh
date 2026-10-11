@@ -19,7 +19,7 @@ HOME=/root
 
 PROFILE_FILE="/etc/profile.d/62-cb-maven--profile.sh"
 
-MAVEN_VERSION=${1:-3.9.11}
+MAVEN_VERSION=${1:-3.9.16}
 
 # Optional override (e.g., corporate mirror): export MAVEN_MIRROR_BASE="https://my-mirror.example.com/maven"
 PRIMARY_BASE="${MAVEN_MIRROR_BASE:-https://downloads.apache.org}/maven/maven-3"

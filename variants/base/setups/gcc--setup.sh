@@ -31,7 +31,7 @@ USAGE
 HOME=/root
 
 # ---- defaults / args ----
-GCC_DEFAULT=14
+GCC_DEFAULT=15
 REQ_VER=""
 
 while [[ $# -gt 0 ]]; do

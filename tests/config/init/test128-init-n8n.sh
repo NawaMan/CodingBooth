@@ -31,7 +31,7 @@ node_before_n8n() {
 # --- bare n8n: pinned default, nodejs comes along ----------------------------
 run booth config $prj --no-tui --select 'n8n'
 assert-line "$boothfile" "setup n8n" " --version \${N8N_VERSION} --port \${N8N_PORT}" "n8n wires version and port"
-assert-line "$boothfile" "arg N8N_VERSION=" "2.41.5" "N8N_VERSION defaults to 2.41.5"
+assert-line "$boothfile" "arg N8N_VERSION=" "$(template-default n8n N8N_VERSION)" "N8N_VERSION uses the catalog default"
 assert-line "$boothfile" "arg N8N_PORT=" "21200" "N8N_PORT defaults to 21200"
 assert-line "$boothfile" "setup nodejs" " \${NODE_VERSION}" "n8n pulls in the nodejs template"
 check "setup nodejs runs before setup n8n" node_before_n8n
@@ -114,7 +114,7 @@ assert-line "$boothfile" "setup dind" ''                 "search auto-selects di
 assert-line "$boothfile" "setup docker-compose" ''       "search auto-selects docker-compose"
 assert-line "$config" "dind = " 'true'                   "search sets dind = true"
 assert-line "$config" '    "-e", "N8N_SEARXNG_PORT=' '21281",'                   "search passes N8N_SEARXNG_PORT"
-assert-line "$config" '    "-e", "N8N_SEARXNG_VERSION=' '2026.9.30-a9d990033",'  "search passes N8N_SEARXNG_VERSION"
+assert-line "$config" '    "-e", "N8N_SEARXNG_VERSION=' "$(template-default n8n+search N8N_SEARXNG_VERSION)\","  "search passes N8N_SEARXNG_VERSION"
 search_startup="$prj/.booth/startups/64-n8n-search--startup.sh"
 assert-line "$search_startup" '  > /tmp/n8n-search.log' ' 2>&1 &' "search startup starts SearXNG in the background"
 search_before_autostart() {
