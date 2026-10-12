@@ -84,10 +84,17 @@ This file contains a list of changes for each released version.
   sccache (0.17.0 by default) and makes it cargo's `RUSTC_WRAPPER`, with the host's
   `~/.cache/sccache` as the cache, so a crate compiled in one booth is a cache hit in the next.
   Your own crates still compile incrementally; dependencies are what gets cached. The cache folder
-  is a writable host mount, so it asks for consent the way `cargo-cache` does. Create it once with
-  `mkdir -p ~/.cache/sccache`: booth skips a mount whose host folder is missing, and the first
-  compile then warns that the cache is not shared. Select it as `--select rust+sccache`;
+  is a writable host mount, so it asks for consent the way `cargo-cache` does, and booth creates
+  it when it is missing (see `:create` below). If the cache still is not mounted, the first
+  compile warns that nothing is shared. Select it as `--select rust+sccache`;
   `sccache --show-stats` shows the hits.
+- **`:create` on a bind mount makes a missing host folder instead of skipping the mount.** booth
+  skips a `-v` whose host path does not exist, which is right for per-platform credential paths
+  and wrong for a host cache that simply has not been made yet: `rust+cargo-cache` quietly did
+  nothing on a machine without `~/.cargo/registry`. Add the booth-only option `create`
+  (`-v ~/.cache/x:/dst:create`, or `:ro,create`) and booth creates the folder (mode 700) before
+  starting; the option never reaches Docker, and `--dryrun` creates nothing. `rust+sccache` and
+  `rust+cargo-cache` now use it.
 
 - **Catalog version-pin sweep to n-1.** Defaults now sit on the release just before the newest
   stable one; pins already at or below n-1 are unchanged. Each new version was checked against its

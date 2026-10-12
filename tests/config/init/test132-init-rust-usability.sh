@@ -75,11 +75,11 @@ assert-line "$boothfile" "setup sccache " '--version ${SCCACHE_VERSION}' "setup 
 {
     echo "wrapper-env=$(count-lines "$config" '"RUSTC_WRAPPER=sccache"')"
     echo "wrapper-image=$(count-lines "$boothfile" 'RUSTC_WRAPPER')"
-    echo "host-cache=$(count-lines "$config" '$HOME/.cache/sccache:/home/coder/.cache/sccache')"
+    echo "host-cache=$(count-lines "$config" '$HOME/.cache/sccache:/home/coder/.cache/sccache:create')"
 } > "$counts"
 assert-line "$counts" "wrapper-env="   "1" "RUSTC_WRAPPER is set on the container environment"
 assert-line "$counts" "wrapper-image=" "0" "RUSTC_WRAPPER is not on the image environment (build-time cargo install)"
-assert-line "$counts" "host-cache="    "1" "the host's ~/.cache/sccache is the cache"
+assert-line "$counts" "host-cache="    "1" "the host's ~/.cache/sccache is the cache, created when missing"
 
 run booth config $prj --no-tui --overwrite --select 'rust+sccache:0.18.0'
 assert-line "$boothfile" "arg SCCACHE_VERSION=" "0.18.0" "sccache version pin"
