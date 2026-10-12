@@ -38,24 +38,26 @@ VERBOSE=false
 for arg in "$@"; do case "$arg" in --verbose) VERBOSE=true ;; esac ; done
 
 # ── Repo / binary discovery ─────────────────────────────────────────
-# Walk up to the directory that holds both the `codingbooth` binary and the
-# `templates/` directory (same approach as tests/config/test-helpers--source.sh).
+# The local build, from the shared resolver — which knows the platform's binary
+# name, where this walk did not: on Windows the build is `codingbooth.exe` and
+# the extensionless file beside it is the Linux cross-build, so the walk found
+# nothing and the suite reported "missing: codingbooth-binary" on a checkout
+# that had just been built (see tests/README.md).
+# shellcheck disable=SC1091
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/booth-bin--source.sh"
+
 REPO_ROOT=""
 BOOTH_BIN=""
 TEMPLATES_PATH=""
 _discover_repo() {
-    local dir
-    dir="$(pwd)"
-    while [[ "$dir" != "/" ]]; do
-        if [[ -x "$dir/codingbooth" && -d "$dir/templates" ]]; then
-            REPO_ROOT="$dir"
-            BOOTH_BIN="$dir/codingbooth"
-            TEMPLATES_PATH="$dir/templates"
-            return 0
-        fi
-        dir="$(dirname "$dir")"
-    done
-    return 1
+    local booth_bin dir
+    booth_bin="$(find_local_booth_build "$(pwd)")" || return 1
+    dir="$(dirname "$booth_bin")"
+    [[ -d "$dir/templates" ]] || return 1
+    REPO_ROOT="$dir"
+    BOOTH_BIN="$booth_bin"
+    TEMPLATES_PATH="$dir/templates"
+    return 0
 }
 
 # ── Availability guard ──────────────────────────────────────────────

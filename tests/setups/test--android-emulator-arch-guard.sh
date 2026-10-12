@@ -140,7 +140,11 @@ assert_contains "the force override is acknowledged, proceeding past the guard" 
 WITH_SCRIPT_DIR="$WORK/with-device-connect"
 mkdir -p "$WITH_SCRIPT_DIR"
 DEVICE_CONNECT="$WITH_SCRIPT_DIR/device-connect.sh"
-: > "$DEVICE_CONNECT"
+# A shebang, not an empty file: the launcher only names a helper it finds
+# executable, and under Git Bash `chmod +x` on an empty file does not make it
+# so — MSYS reads executability off the content, where Windows has no bit to
+# set. A project's helper has a shebang anyway.
+printf '#!/bin/sh\n' > "$DEVICE_CONNECT"
 chmod +x "$DEVICE_CONNECT"
 run_launcher "$PRESENT" "$WORK/no-home" "$WITH_SCRIPT_DIR"
 assert_contains "names the project's device-connect.sh" "$RUN_OUT" "$DEVICE_CONNECT"

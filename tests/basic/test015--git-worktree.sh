@@ -92,6 +92,23 @@ ACTUAL=$("$BOOTH_BIN" --variant base -- bash -c '
   git gc -q && echo GC-DONE
 ' 2>&1) || true
 
+# Tests 3-5 need the .git mirror, which only works where the host's own
+# absolute path is also a path a container can hold. A Windows gitdir
+# ("C:/proj/.git") is not, so booth declines the mount and says so (same
+# limitation as dryrun/test047; recorded under Problems in docs/TODO.md). What
+# holds there is the regression this file opens with: the booth still starts and
+# still runs the command, with a warning instead of a broken mount.
+if [[ "$HOST_OS" == "WIN" ]]; then
+  if [[ "$ACTUAL" == *"git will not work in this booth"* ]]; then
+    print_test_result "true" "$SCRIPT_PATH" "3" "the booth starts and says why git will not work (no .git mirror on this host)"
+  else
+    print_test_result "false" "$SCRIPT_PATH" "3" "the booth should warn that git will not work on this host"
+    echo "$ACTUAL"
+    exit 1
+  fi
+  exit 0
+fi
+
 if [[ "$ACTUAL" == *"BRANCH=wt-test"* ]]; then
   print_test_result "true" "$SCRIPT_PATH" "3" "git finds the worktree's repo in the booth"
 else

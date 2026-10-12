@@ -20,6 +20,14 @@ source ../common--source.sh
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 API="$REPO_ROOT/variants/base/setups/booth-message-api-server"
 
+# handle_session_reset reads the request body with jq, which every booth has and
+# a host may not. Without it the endpoint answers 400 to everything and the
+# refusal cases would pass for the wrong reason.
+if ! command -v jq >/dev/null 2>&1; then
+  echo "SKIP: jq not installed on this host, and booth-message-api-server parses its body with it"
+  exit 0
+fi
+
 WORK=$(mktemp -d)
 trap "rm -rf $WORK" EXIT
 

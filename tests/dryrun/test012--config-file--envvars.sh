@@ -20,6 +20,7 @@ fi
 
 HERE="$CURRENT_PATH"
 VERSION="$(get_booth_version)"
+SCRIPT_NAME="$(booth_script_name)"
 
 function realpath() {
   local target="$1"
@@ -66,7 +67,7 @@ PORT_GENERATED: true
 PREBUILD_REPO:  nawaman/codingbooth
 RUN_ARGS:   
 SCRIPT_DIR:     $(realpath "$HERE/../..")
-SCRIPT_NAME:    codingbooth
+SCRIPT_NAME:    ${SCRIPT_NAME}
 VARIANT:        base
 VERSION:        $VERSION"
 
@@ -129,7 +130,7 @@ PORT_GENERATED: false
 PREBUILD_REPO:  nawaman/codingbooth
 RUN_ARGS:   
 SCRIPT_DIR:     $(realpath "$HERE/../..")
-SCRIPT_NAME:    codingbooth
+SCRIPT_NAME:    ${SCRIPT_NAME}
 VARIANT:        codeserver
 VERSION:        ${VERSION}"
 

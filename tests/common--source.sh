@@ -100,9 +100,41 @@ sidecars_supported() {
     return 1
 }
 
+# have_python3 reports whether `python3` is a Python that actually runs here.
+#
+# `command -v python3` does not answer that question on Windows. A stock PATH
+# carries the App Execution Aliases in %LOCALAPPDATA%\Microsoft\WindowsApps —
+# stubs named `python3` and `python` whose only job is to send whoever runs them
+# to the Microsoft Store:
+#
+#     $ python3 -c 'print(1)'
+#     Python was not found; run without arguments to install from the Microsoft
+#     Store, or disable this shortcut from Settings > Apps > ...
+#     $ echo $?
+#     49
+#
+# `command -v` finds that, so every caller that only asked whether python3
+# exists took the python3 branch and then watched it fail — the same "green (or
+# red) for the wrong reason" trap as the ROOT_RUN and setsid notes above.
+# port_is_bindable read exit 49 as "that port is taken", for all 100 candidates,
+# and pick_free_port gave up on a host with twelve thousand free ports — taking
+# every port-publishing test in basic/ with it. Ask for a Python that runs.
+#
+# The probe runs once per shell; the answer is cached for the rest of the suite.
+have_python3() {
+    if [[ -z "${_CB_HAVE_PYTHON3:-}" ]]; then
+        if python3 -c '' >/dev/null 2>&1; then
+            _CB_HAVE_PYTHON3=yes
+        else
+            _CB_HAVE_PYTHON3=no
+        fi
+    fi
+    [[ "$_CB_HAVE_PYTHON3" == yes ]]
+}
+
 no_tty_supported() {
     command -v setsid  >/dev/null 2>&1 && return 0
-    command -v python3 >/dev/null 2>&1 && return 0
+    have_python3 && return 0
     command -v perl    >/dev/null 2>&1 && return 0
     echo "SKIP: no setsid, python3 or perl here — cannot run a booth without a controlling terminal." >&2
     return 1
@@ -111,7 +143,7 @@ no_tty_supported() {
 no_tty_run() {
     if command -v setsid >/dev/null 2>&1; then
         setsid -w "$@"
-    elif command -v python3 >/dev/null 2>&1; then
+    elif have_python3; then
         python3 -c '
 import os, sys
 pid = os.fork()
@@ -310,7 +342,7 @@ ephemeral_port_floor() {
 port_is_bindable() {
   local port="$1"
 
-  if command -v python3 >/dev/null 2>&1; then
+  if have_python3; then
     # A bind with no listen and no connect leaves nothing behind when it closes,
     # so asking this question does not itself make the port unavailable.
     if python3 -c '
@@ -335,8 +367,14 @@ finally:
     ! lsof -iTCP:"$port" -sTCP:LISTEN -Pn 2>/dev/null | grep -q .
   elif command -v ss >/dev/null 2>&1; then
     ! ss -ltn "( sport = :$port )" 2>/dev/null | grep -q ":$port"
+  elif command -v nc >/dev/null 2>&1; then
+    ! nc -z 127.0.0.1 "$port" >/dev/null 2>&1
   else
-    ! (command -v nc >/dev/null 2>&1 && nc -z 127.0.0.1 "$port" >/dev/null 2>&1)
+    # Git Bash has none of the three, which is where a Windows host lands. Bash
+    # asks the same question itself: a connect to 127.0.0.1:<port> that succeeds
+    # means something is listening there. The subshell closes the descriptor on
+    # its way out, so the probe leaves nothing behind either.
+    ! (exec 3<>/dev/tcp/127.0.0.1/"$port") 2>/dev/null
   fi
 }
 
@@ -690,6 +728,26 @@ run_coding_booth() {
 
   trace_cmd '1;33' "> codingbooth $*"
 
+  # Container paths in the booth's own command have to survive this shell.
+  # Git Bash rewrites an argument that looks like a Unix absolute path into a
+  # Windows one, which is what makes `--code /tmp/x` reach the engine as
+  # `C:/Users/.../Temp/x` — and what turned
+  #
+  #     run_coding_booth -- ls /usr/local/bin/kubectx
+  #
+  # into `ls C:/Program Files/Git/usr/local/bin/kubectx`, so the test saw no
+  # output and blamed the setup. MSYS2_ARG_CONV_EXCL names prefixes to leave
+  # alone: the roots below exist only inside a booth, never as a host path a
+  # test would pass (a host path here is /c/… or /tmp/…). /tmp is deliberately
+  # absent — it is both, so a test that means the booth's /tmp says so itself,
+  # per command, as basic/test008 does. A caller's own value is kept.
+  #
+  # Set for the booth command only, not exported into the rest of the test.
+  local conv_excl="/usr;/opt;/etc;/var;/srv;/root;/home/coder;/bin;/sbin;/lib;/lib64;/dev;/proc;/sys;/booth;/workspace"
+  if [[ -n "${MSYS2_ARG_CONV_EXCL:-}" ]]; then
+    conv_excl="${MSYS2_ARG_CONV_EXCL};${conv_excl}"
+  fi
+
   # Optional forensics (CB_DIAG_LOG). Tests capture booth with `2>/dev/null`, so a
   # run that intermittently produces nothing leaves no evidence of why — the test
   # either sees an empty string or, with no `||` guard, `set -e` kills the script
@@ -711,7 +769,7 @@ run_coding_booth() {
     local _rc=0 _errfile
     _errfile=$(mktemp "${TMPDIR:-/tmp}/cb-diag-stderr.XXXXXX")
     printf '%s  === codingbooth %s\n' "$(date '+%H:%M:%S')" "$*" >>"$CB_DIAG_LOG"
-    "$booth_path" ${version_args[@]+"${version_args[@]}"} "$@" \
+    MSYS2_ARG_CONV_EXCL="$conv_excl" "$booth_path" ${version_args[@]+"${version_args[@]}"} "$@" \
       2>"$_errfile" || _rc=$?
     cat "$_errfile" >>"$CB_DIAG_LOG"
     cat "$_errfile" >&2
@@ -721,7 +779,204 @@ run_coding_booth() {
   fi
 
   # Safe expansion: avoids "unbound variable" under `set -u` with Bash 3.2 when the array is empty.
-  "$booth_path" ${version_args[@]+"${version_args[@]}"} "$@"
+  MSYS2_ARG_CONV_EXCL="$conv_excl" "$booth_path" ${version_args[@]+"${version_args[@]}"} "$@"
+}
+
+# ── Container paths survive the shell (Windows) ──────────────────────────────
+#
+# Git Bash rewrites an argument that looks like a Unix absolute path into a
+# Windows one before the program sees it. That is right for a Windows program
+# being handed a host path — it is how `booth --code /tmp/x` reaches docker as
+# `C:/Users/.../Temp/x` — and wrong for every path that belongs to the
+# *container*:
+#
+#     docker exec -u coder "$NAME" cat /home/coder/code/file
+#     cat: 'C:/Program Files/Git/home/coder/code/file': No such file or directory
+#
+# `docker exec` takes no host paths at all, and `docker run`'s host paths (a -v
+# source) are understood by Docker Desktop in the shell's own `/c/Users/...`
+# form, so for those two subcommands the rewriting is pure loss. MSYS_NO_PATHCONV
+# turns it off, and wrapping docker here rather than at each call site covers
+# every test that sources this file without touching one of them.
+#
+# Not for the others: `docker build -f <path>` and `docker cp`'s host side are
+# resolved by the CLI itself, locally, where a `/c/Users/...` path is not one.
+#
+# Defined only when there is a real docker to wrap, so `command -v docker` still
+# answers "no docker here" on a host without one — several tests skip on exactly
+# that. A test that wants the binary's own path must ask `type -P docker`:
+# `command -v` would name this function instead.
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]] && type -P docker >/dev/null 2>&1; then
+    docker() {
+        case "${1:-}" in
+            exec|run) MSYS_NO_PATHCONV=1 command docker "$@" ;;
+            *)        command docker "$@" ;;
+        esac
+    }
+    export -f docker
+fi
+
+# ── What this host can and cannot do ─────────────────────────────────────────
+#
+# The helpers below answer that, so a test does not assume the host is the one
+# it was written on. The suites run on Linux, macOS and Windows (Git Bash) —
+# booth is installed on all three — and each of these marks a place where one
+# of them cannot do what a test took for granted: hold a port open, keep a
+# permission bit, make a symlink, run an MSYS tool off a stubbed PATH, resolve
+# a Unix path. See also have_python3 above, the GNU-tool shims, and
+# tests/README.md.
+
+# occupy_port holds a port open for a while, for a case about what booth does
+# when a port is taken. It prints the PID of the holder, which the caller kills
+# when it is done, and returns 1 when this host has nothing that can listen —
+# the case then has to skip rather than assert on a port nobody is holding.
+#
+#     BUSY_PID="$(occupy_port "$port" 30)" || { echo "SKIP: ..."; exit 0; }
+#     # it returns as soon as the holder is started, so wait for the port to answer
+#     for _ in $(seq 1 50); do (exec 3<>"/dev/tcp/127.0.0.1/$port") 2>/dev/null && break; sleep 0.1; done
+#     ...
+#     kill "$BUSY_PID" 2>/dev/null || true
+#
+# python3 where it is real (see have_python3), else PowerShell, which a Windows
+# host always has and which is the only listener Git Bash can reach: it ships no
+# nc, and bash itself cannot listen, only connect.
+occupy_port() {
+  local port="$1" seconds="${2:-30}"
+  if have_python3; then
+    # Both streams to /dev/null, or the holder keeps the caller's command
+    # substitution open — PID="$(occupy_port …)" would wait out the whole
+    # sleep instead of returning the PID.
+    python3 -c "
+import socket, sys, time
+sock = socket.socket()
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+sock.bind(('127.0.0.1', int(sys.argv[1])))
+sock.listen()
+time.sleep(float(sys.argv[2]))
+" "$port" "$seconds" >/dev/null 2>&1 &
+    echo $!
+    return 0
+  fi
+  if command -v powershell.exe >/dev/null 2>&1; then
+    powershell.exe -NoProfile -Command "
+\$listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Parse('127.0.0.1'), $port)
+\$listener.Start()
+Start-Sleep -Seconds $seconds
+\$listener.Stop()" >/dev/null 2>&1 &
+    echo $!
+    return 0
+  fi
+  return 1
+}
+
+# have_symlinks reports whether this host makes real symbolic links, for a case
+# about what a script does when it finds one. Under Git Bash `ln -s` copies the
+# file instead unless MSYS was configured for native symlinks — and Windows only
+# allows those to an administrator or with Developer Mode on — so the "symlink"
+# a test laid down would be an ordinary file, and the case would quietly assert
+# the opposite of what it says. The only honest check is to try one.
+have_symlinks() {
+  local dir result=1
+  dir="$(mktemp -d)" || return 1
+  : > "$dir/target"
+  ln -s "$dir/target" "$dir/link" 2>/dev/null
+  [[ -L "$dir/link" ]] && result=0
+  rm -rf "$dir"
+  return $result
+}
+
+# is_link_or_copy reports whether a script put what it was asked to at path: the
+# symlink it made, or — on a host where `ln -s` copies instead (see
+# have_symlinks) — the copy that landed there. Insisting on -L there asserts
+# what the host can do, not what the script did.
+is_link_or_copy() {
+  if have_symlinks; then
+    [[ -L "$1" ]]
+  else
+    [[ -e "$1" ]]
+  fi
+}
+
+# unix_modes reports whether a file's permission bits mean what they say on this
+# host, so a case about 0600 or the exec bit can say what it is doing:
+#
+#     if unix_modes; then
+#       check 4 "init: keeps the staged file's mode" "600" "$(stat -c '%a' "$file")"
+#     fi
+#
+# Windows has no permission bits. `chmod` there sets a read-only flag at best,
+# a mode read back is whatever MSYS chooses to report (0644 for a plain file),
+# and `chmod +x` on an empty file does not even make it executable — MSYS reads
+# executability off the content, so a shebang or a PE header is what counts.
+# This is the shell side of cli/src/internal/hostskip, which the Go tests use
+# for the same reason.
+unix_modes() { [[ "$HOST_OS" != "WIN" ]]; }
+
+# stub_path assembles the PATH for a setup script run against stubbed tools:
+# the given directories, and on Windows the one directory a stub cannot do
+# without.
+#
+#     OUT=$(env -i EUID=0 PATH="$(stub_path "$STUB/bin")" bash "$SETUPS/x--setup.sh")
+#
+# A setups test hands the script a PATH holding nothing but what it wants the
+# script to find, which is how the guard branches ("skips without XFCE") are
+# reached at all. On Linux and macOS that is the whole story. Under Git Bash it
+# is not: every tool in /usr/bin is an MSYS program that loads msys-2.0.dll, and
+# Windows resolves a program's DLLs through PATH — so `basename` copied into a
+# stub directory and run with `env -i PATH=<stub>` dies on
+#
+#     error while loading shared libraries: ?: cannot open shared object file
+#
+# before it can do anything, and every case in the file fails on its first line
+# of setup. /usr/bin goes on the *end*, after the stubs, so a tool the test put
+# there still wins and anything the test wanted missing (xfce4-session, i3,
+# apt-get) stays missing — none of them is a thing Git Bash ships.
+stub_path() {
+  local path
+  path="$(IFS=:; echo "$*")"
+  if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+    path="$path:$(dirname "$(command -v bash)")"
+  fi
+  echo "$path"
+}
+
+# host_path prints an existing directory the way the host's container engine
+# expects to be handed it: unchanged on Linux and macOS, and in Windows form
+# ("C:/Users/...") under Git Bash, where a source written the shell's way
+# ("/c/Users/...", "/tmp/...") is not a path Windows itself can resolve — booth
+# stats a mount source and drops the mount when it is missing, so such a path
+# never reaches docker at all.
+#
+#     mkdir -p "$TMP/data"
+#     run-args = ["-v", "$(host_path "$TMP/data"):/data"]
+host_path() {
+  local dir="$1"
+  if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+    (cd "$dir" && pwd -W)
+  else
+    (cd "$dir" && pwd)
+  fi
+}
+
+# booth_script_name is the name booth will call itself by in its own output:
+# the basename of the binary a test actually ran (ScriptName in the CLI, which
+# is filepath.Base(os.Args[0])).
+#
+# It is `codingbooth` on Linux and macOS and `codingbooth.exe` on Windows, where
+# `cli-build.sh` writes the host build. A dryrun expectation that spells it out
+# is therefore wrong on one platform or the other — it reaches the booth as
+# BOOTH_SCRIPT_NAME, and the "To open an interactive shell instead" hint prints
+# it. Use this instead of the literal:
+#
+#     SCRIPT_NAME="$(booth_script_name)"
+booth_script_name() {
+  local script_dir booth_path
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[1]}")" && pwd)"
+  if booth_path="$(find_local_booth_build "$script_dir")"; then
+    basename "$booth_path"
+  else
+    echo "codingbooth"
+  fi
 }
 
 # Get the version reported by the booth binary itself, so tests stay correct

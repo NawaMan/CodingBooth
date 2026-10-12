@@ -48,13 +48,17 @@ missing=()
 for tool in vhs ttyd ffmpeg; do
     command -v "$tool" >/dev/null 2>&1 || missing+=("$tool")
 done
-# Find a built codingbooth binary by walking up from here.
+# Find a built codingbooth binary with the shared resolver, which knows the
+# platform's binary name — this walk looked only for `codingbooth`, which on
+# Windows is the Linux cross-build and never executable there, so a freshly
+# built checkout still reported the binary missing (see tests/README.md).
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/../booth-bin--source.sh"
 have_binary=false
-dir="$SCRIPT_DIR"
-while [[ "$dir" != "/" ]]; do
-    if [[ -x "$dir/codingbooth" && -d "$dir/templates" ]]; then have_binary=true; break; fi
-    dir="$(dirname "$dir")"
-done
+if booth_bin="$(find_local_booth_build "$SCRIPT_DIR")" \
+   && [[ -d "$(dirname "$booth_bin")/templates" ]]; then
+    have_binary=true
+fi
 $have_binary || missing+=("codingbooth-binary")
 
 if [[ ${#missing[@]} -gt 0 ]]; then

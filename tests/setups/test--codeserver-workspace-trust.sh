@@ -60,7 +60,19 @@ else
 fi
 
 # --- Test 2: it is valid JSON -------------------------------------------------
-if python3 -m json.tool "$SETTINGS_JSON" > /dev/null 2>&1; then
+# Parsing is the whole point of this case (a dropped comma is what a grep would
+# miss), so it needs a parser on the host: python3 when it is real — see
+# have_python3 in common--source.sh for why being on PATH is not enough — else
+# jq. With neither, say so rather than report a pass or a failure of the file.
+JSON_PARSE=""
+if have_python3; then
+  JSON_PARSE="python3 -m json.tool"
+elif command -v jq >/dev/null 2>&1; then
+  JSON_PARSE="jq -e ."
+fi
+if [[ -z "$JSON_PARSE" ]]; then
+  echo "SKIP: no JSON parser on this host (python3 or jq); settings.json parsability not checked"
+elif $JSON_PARSE "$SETTINGS_JSON" > /dev/null 2>&1; then
   print_test_result "true" "$0" "2" "settings.json is valid JSON"
 else
   print_test_result "false" "$0" "2" "settings.json should be valid JSON"
@@ -69,12 +81,24 @@ else
 fi
 
 # --- Test 3: workspace trust is disabled --------------------------------------
-if python3 -c "
+# The key and its value, read back from the parsed file where there is a parser
+# and matched as written otherwise — the same line Test 5 looks for. Test 2 is
+# the one that answers whether the file as a whole parses.
+trust_is_disabled() {
+  if have_python3; then
+    python3 -c "
 import json, sys
 with open('$SETTINGS_JSON') as f:
     data = json.load(f)
 sys.exit(0 if data.get('security.workspace.trust.enabled') is False else 1)
-"; then
+"
+  elif command -v jq >/dev/null 2>&1; then
+    [[ "$(jq -r '."security.workspace.trust.enabled"' "$SETTINGS_JSON" 2>/dev/null)" == "false" ]]
+  else
+    grep -q '"security.workspace.trust.enabled": false' "$SETTINGS_JSON"
+  fi
+}
+if trust_is_disabled; then
   print_test_result "true" "$0" "3" "security.workspace.trust.enabled is false"
 else
   print_test_result "false" "$0" "3" "security.workspace.trust.enabled should be false"

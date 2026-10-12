@@ -26,6 +26,7 @@ ACTUAL=$(run_coding_booth --variant base --dryrun --daemon -- tree -C)
 
 HERE="$CURRENT_PATH"
 VERSION="$(get_booth_version)"
+SCRIPT_NAME="$(booth_script_name)"
 
 EXPECT="\
 docker \\
@@ -36,7 +37,7 @@ docker \\
 📦 Running booth in daemon mode.
 👉 Stop with Ctrl+C. The container will be removed (--rm) when stop.
 👉 Visit 'http://localhost:10000'
-👉 To open an interactive shell instead: codingbooth -- bash
+👉 To open an interactive shell instead: ${SCRIPT_NAME} -- bash
 👉 To stop the running container:
 
       docker stop dryrun
@@ -79,7 +80,7 @@ docker \\
     -e 'BOOTH_CODE_PORT=10000' \\
     -e 'BOOTH_VERSION=${VERSION}' \\
     -e 'BOOTH_CONFIG_FILE=' \\
-    -e 'BOOTH_SCRIPT_NAME=codingbooth' \\
+    -e 'BOOTH_SCRIPT_NAME=${SCRIPT_NAME}' \\
     -e 'BOOTH_SCRIPT_DIR=${SCRIPT_DIR}' \\
     -e 'BOOTH_LIB_DIR=${LIB_DIR}' \\
     -e 'BOOTH_KEEP_ALIVE=false' \\

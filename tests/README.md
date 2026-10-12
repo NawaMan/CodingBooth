@@ -26,6 +26,48 @@ report with `print_test_result`; `config/` and `config-tui/` open with `begin` a
 `assert-file-contains` / `skip`; `wrapper/` uses `run_in_container` with `assert_not_contains`.
 Match the suite you are in rather than importing a habit from another one.
 
+## The Go suite runs on every host booth runs on
+
+`unit/` is the one suite that runs on Linux, macOS **and** Windows, because the CLI it tests is
+installed on all three. Two helpers in `cli/src/internal/` are what keep it that way; read their
+package comments before writing a test that reaches outside its own process.
+
+**A fake engine is a copy of the test binary, not a shell script** —
+`cli/src/internal/fakebin`. `exec.LookPath("docker")` on Windows only considers the extensions in
+`PATHEXT`, so an extensionless file with `#!/bin/sh` on the first line is not an executable there
+and the engine is simply never found: a test that installed one exercised the "no engine installed"
+path instead of the one it named, and the cases whose expectation happened to be the fallback
+passed while proving nothing. A stub installed by `fakebin` is a hard link to the running test
+binary, which re-enters its own `TestMain`, where `fakebin.Serve` hands it to the package's handler:
+
+```go
+func TestMain(m *testing.M) {
+    fakebin.Serve(fakeEngineMain)   // returns at once in the test process
+    os.Exit(m.Run())
+}
+```
+
+What the stub answers belongs to the package that installs it, driven by whatever the test put in
+the environment. Nothing is interpreted by a shell on the way, so the handler sees exactly the
+arguments the CLI passed — which a `cmd.exe` shim forwarding to `sh` cannot promise: it eats the
+braces in `--format {{.Names}}`.
+
+**Skip what a host does not have, by name** — `cli/src/internal/hostskip`. `hostskip.NoUnixModes`,
+`NoUnixPaths` and `NoSymlinks` skip a test whose *subject* only exists on a Unix host: a permission
+bit (Windows has none — `os.Chmod` toggles one read-only flag and `Stat` reports 0666 or 0777
+whatever was asked), `/etc` and `/dev`, a symlink this host will not create. Where only one
+assertion needs it, keep the rest of the test running:
+
+```go
+if hostskip.UnixModes() {
+    // the mode assertion only
+}
+```
+
+Reach for one only when the behaviour cannot exist there. A test that merely *expects* a Unix
+answer — a `/`-joined path, a host-native separator — belongs on every platform, with the
+expectation written so it holds on each (`filepath.Join`, `filepath.FromSlash`).
+
 ## Picking the booth to run
 
 Never resolve the binary inline. `booth-bin--source.sh` does it, `common--source.sh` already sources
@@ -81,6 +123,65 @@ calls to `pick_free_port` can return the same number. Say what you mean with
 `pick_free_port_other_than`. What breaks otherwise depends on the test — two booths racing for one
 port, one container asked to publish the same host port twice, or a case that passes while proving
 nothing because the "other" port was the same one.
+
+## `command -v python3` is not "python3 works"
+
+Ask `have_python3` from `common--source.sh`, never `command -v python3`:
+
+```bash
+have_python3 || { echo "SKIP: needs python3"; exit 0; }
+```
+
+A stock Windows PATH carries the App Execution Aliases in
+`%LOCALAPPDATA%\Microsoft\WindowsApps` — stubs named `python3` and `python` whose only job is to
+send whoever runs them to the Microsoft Store:
+
+```
+$ python3 -c 'print(1)'
+Python was not found; run without arguments to install from the Microsoft Store, ...
+$ echo $?
+49
+```
+
+`command -v` finds that. Every caller that only asked whether python3 *exists* took the python3
+branch and watched it fail: `port_is_bindable` read exit 49 as "that port is taken" — for all 100
+candidates — so `pick_free_port` gave up on a host with twelve thousand free ports, and every
+port-publishing test in `basic/` went down with it. `have_python3` runs `python3 -c ''` once and
+caches the answer.
+
+## What the host can and cannot do
+
+The rest of `common--source.sh`'s host helpers, for the same reason: a test that assumes the host
+is the one it was written on fails there for a reason that has nothing to do with booth. Each has
+the full story in its own comment.
+
+| Helper | Use it for | What it saves you from |
+|--------|-----------|------------------------|
+| `booth_script_name` | the name booth calls itself by in its output (`BOOTH_SCRIPT_NAME`, the "open a shell instead" hint) | the literal `codingbooth`, which is `codingbooth.exe` on Windows |
+| `host_path <dir>` | a `-v` source a test writes into a config | `/tmp/x` and `/c/Users/x`, which Windows cannot resolve, so booth drops the mount |
+| `stub_path <dir>…` | the PATH for a setup script run against stubbed tools | an MSYS tool that cannot load `msys-2.0.dll` because PATH no longer holds `/usr/bin` |
+| `occupy_port <port> [s]` | holding a port open for an "already in use" case | an inline `python3` listener that never started; it returns at once, so poll until the port answers |
+| `unix_modes` | a case about `0600` or the exec bit | a mode read back as `0644` on a host that has no modes |
+| `have_symlinks` | a case about what a script does *at* a symlink | `ln -s` copying the file instead, which proves the opposite |
+| `is_link_or_copy <path>` | asserting a script put its link there | `-L` being false for the copy `ln -s` left |
+
+Two more things the shell does to a *container* path on Windows, both handled in
+`common--source.sh` so no test has to think about them: `docker exec` and `docker run` go through a
+wrapper that sets `MSYS_NO_PATHCONV=1` (without it, `docker exec … cat /home/coder/code/f` asks for
+`C:/Program Files/Git/home/coder/code/f`), and `run_coding_booth` excludes the booth's own roots
+from argument rewriting (`-- ls /usr/local/bin/x` reached the container as a Windows path). `/tmp`
+is excluded from that list on purpose — it is a host path *and* a booth path — so a test that means
+the booth's `/tmp` says so itself, per command: `MSYS2_ARG_CONV_EXCL='/tmp' run_booth exec … --dir /tmp`.
+
+A missing host *tool* is different: say so and skip the case, as `tests/setups` does for `jq`,
+`node` and `zip`. A skip names what is missing; a silent pass does not.
+
+```bash
+if ! command -v jq >/dev/null 2>&1; then
+  echo "SKIP: jq not installed on this host, and <script> parses its body with it"
+  exit 0
+fi
+```
 
 ## Running a booth with no controlling terminal
 
