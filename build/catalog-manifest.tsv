@@ -272,7 +272,7 @@ setup	sbt	1.0.0	a6361fbb0c96162b8730a1f6351edcaee867ff91a53f03d7d41c0b391653b227
 setup	scala	1.0.0	18b43d545d675e2971aedfb65413cb6ba6c57efd22201e8a84a5fcf789afa172	variants/base/setups/scala--setup.sh
 setup	scala-code-extension	1.0.0	f626327232a0c3dbf7660e08717170d0f545a9453256d26cc111d1e6f04d7ec1	variants/base/setups/scala-code-extension--setup.sh
 setup	scala-nb-kernel	1.0.0	cbccc4bcc4b9128b18f5eefde1fff288c8e4eb0fd43e6f7dd7e7c3d8e6db6b29	variants/base/setups/scala-nb-kernel--setup.sh
-setup	sccache	0.1.0	d4019e25915c034fe2646eb7d1b2f04ea6e3b7f2a3171499e65d29d7bbb07ccd	variants/base/setups/sccache--setup.sh
+setup	sccache	0.1.0	69cd5ad3f2889b8869e8e9722e7669f9890c3b33b12e4ef05e370108e1b6f7fb	variants/base/setups/sccache--setup.sh
 setup	scratch	1.0.0	96e25f80c6d0c3a05a58192352d09eec065d62f41e95ff59d2ef58695a973d9d	variants/base/setups/scratch--setup.sh
 setup	selenium	1.0.0	ad338354b6932063d168eae2085ddd53ecdc1f265933d1baf7ef965cb0ca5cf3	variants/base/setups/selenium--setup.sh
 setup	spring-boot-code-extension	0.1.0	b71ef395a19b1959a071eaae1aacb9587828b2d365f11afbdfea1de4491e0489	variants/base/setups/spring-boot-code-extension--setup.sh
@@ -869,7 +869,7 @@ extension	rust+credential	1.0.0	3fd1ceb95f631d2dff6341e0ac6496c6273c5e95e3f539c8
 extension	rust+gui-deps	0.1.0	c5366964bc12dd48201c78d7b094bcdb54e8a7db0ad857957ce5a52c08a651a7	templates/languages/rust/gui-deps--extension.toml
 extension	rust+kernel	1.0.0	cf155d9cdb50820b319d46a2e1b893691f3c7a21452c5b90e635a0fcc9d06b2f	templates/languages/rust/kernel--extension.toml
 extension	rust+registry-cache	0.1.0	ae2f2b2b7483387e7a0d943e2b542a8877315aded2d20cec6b54174a30b057f7	templates/languages/rust/registry-cache--extension.toml
-extension	rust+sccache	0.1.0	9ed3bd67c30ae6ce76309bb2fa14ba6ab31f64dd94dc3d969104d7c73a36b8cc	templates/languages/rust/sccache--extension.toml
+extension	rust+sccache	0.1.0	bc5e2f3593d75501d54c493eb04e52cb106bb64efedcaae5ebf4462cd93687bb	templates/languages/rust/sccache--extension.toml
 extension	rust+targets	0.1.0	1d70eb3186b77d0227739a7e986edef879133769b70d3f222559dde1ce155ece	templates/languages/rust/targets--extension.toml
 extension	rust+toolchain-file	0.1.0	bafff60c104db384a6628510639fd348108c52460378e17f807d15097edb91d5	templates/languages/rust/toolchain-file--extension.toml
 extension	rust+vscode-ext	1.0.0	15d640d5ea6ba0de8dd9da2d254ef79144971819e7c6a79047c366b435df51a8	templates/languages/rust/vscode-ext--extension.toml
