@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Fixed: another booth exiting could make `booth list`, `logs`, `stop` and the rest fail.** These
+  commands list every booth and then inspect each one. A booth removed between those two steps,
+  such as a `--rm` booth exiting or a `booth remove` in another terminal, failed the whole command
+  with `failed to inspect container "<name>"`, even when the booth named in the command was fine.
+  A booth that is gone by the time it is inspected is now skipped.
+
 - **Fresh is the default editor; tilde is gone from the base image.** `$EDITOR` and `editor` now
   open [Fresh](https://getfresh.dev) 0.5.2, which the base image installs (the welcome banner says
   `editor  Text editor (fresh)`). Fresh checks for upgrades and sends anonymous telemetry by
