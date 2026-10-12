@@ -414,7 +414,7 @@ template	datagrip	1.0.0	41dcf00b2fdb288079ae12d0c7d2b7e9b13413e3f3e5334dec4ed754
 template	dbeaver	1.0.0	9a6b7e2cf1207078797494e6299da6ab3def54ae587c64fc0e32595939ee9bfd	templates/ides/dbeaver/template.toml
 template	dblab	0.1.0	c3579457835a9652de02d55f82ba7f8a480842b33863eab2170cc316522e0982	templates/tools/dblab/template.toml
 template	deno	1.1.0	fb2f939bc2f658ddbc7d1fa9cc63dd94819a9544384902d850d804a8ab31ee72	templates/languages/deno/template.toml
-template	differ	0.1.0	e734c6fbc2695ed64ea7a48029add1a984f8a47bd397e24a5d8bb2e29ffded93	templates/ai-tools/differ/template.toml
+template	differ	0.1.1	47c13097b97399764c8e31dc05e070bf9125162ba6502386fd987d82e7364bd0	templates/ai-tools/differ/template.toml
 template	dind	1.0.0	161056c65c1dc9aa8061d30bf40302952a00ee6fa029449d5c51ea291454525d	templates/tools/dind/template.toml
 template	direnv	1.0.0	37ee50a7cf5e643d444eb8bf6be17ac10b0c490cd5e85bb396266584a9ec25fe	templates/tools/direnv/template.toml
 template	dive	1.0.0	a1b366ad07d23aaa671bfb1c8d910e92620300202955adbaf20adcb9246968f6	templates/tools/dive/template.toml
@@ -550,7 +550,7 @@ template	sqlite	1.0.0	acb431a561235cd8e3a1aa4440602eae54201f1058767e97e2273c62c5
 template	sqluv	0.1.0	2ca235a1be79ace871a862f26ba71382222a6b7d24a51de0de3909b9c89294be	templates/tools/sqluv/template.toml
 template	ssh	1.0.0	799d6d517963cfca52189f35818190cbbc8ac088ab4068a71f581810ccd845a8	templates/tools/ssh/template.toml
 template	stern	1.0.0	f9651b9141a4d7c4870e46426794ad0f5b6dd5c0c31d0bf82a42a7f99be0eeda	templates/tools/stern/template.toml
-template	superfile	0.1.0	f5bbc7f59c2819ad6c9819d2e91e2a0df109ae506aceaba4aa1da95043b6d9be	templates/tools/superfile/template.toml
+template	superfile	0.1.1	f290897c549ea6a0db6f1b94993c5f903683434dfa33b2fb298c1c82bd477c7b	templates/tools/superfile/template.toml
 template	svelte	0.1.0	2ef837e43415e3798d32fbe342d88e9073abab5be2ee0261c6e0ce3e4734b862	templates/frameworks/svelte/template.toml
 template	sway	0.1.1	73aede41360cf6557b64d58f994563e678a2a339650bc595a9283b86378f1c75	templates/desktops/sway/template.toml
 template	swift	1.0.0	d0a4704c99d83b46d452be8d2a2ac6d2899f990c3306ab5d36557bc1db66216d	templates/languages/swift/template.toml

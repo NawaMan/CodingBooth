@@ -13,6 +13,16 @@ This file contains a list of changes for each released version.
   the count. Pages are counted, not people, and SSH, `booth exec` and inner URLs opened directly
   are not counted. See [Viewer Count](BOOTH_UI_OVERLAY.md#viewer-count).
 
+- **superfile replaces Midnight Commander as the file manager, and differ is in every booth.**
+  The base image no longer installs `mc`. `$EXPLORER` and `explorer` now open
+  [superfile](https://github.com/yorukot/superfile) 1.6.0 (`spf`), which shows Nerd Font icons;
+  the Console UI and the desktop terminals already have the font, and a host terminal needs its
+  own. [differ](https://github.com/JanSmrcka/differ) 1.8.1 is installed too, so `differ review`
+  works in any booth. The welcome banner lists both. Select the `superfile` or `differ` template
+  to pick another release. If you used `mcedit` or mc's SFTP browsing, `sudo apt-get install mc`
+  in a booth, or `install apt mc` in a Boothfile, brings it back. The base image grows
+  by about 24 MB. Needs a rebuilt base image.
+
 - **differ is now in the catalog: `setup differ` and a `differ` AI-tools template.**
   [differ](https://github.com/JanSmrcka/differ) reviews what a coding agent changed: `differ review`
   in a git repository, comment on lines, and `S` sends the comments to an agent (claude, codex,
