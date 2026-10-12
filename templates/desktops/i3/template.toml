@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.0.1"
 display-name = "Tiling Window Manager (i3)"
 primary = true
 display-label = "i3 (Tiling)"
@@ -13,7 +13,7 @@ Help dialog gets an "i3 Shortcuts (Tiling)" tab. Alt is the mod key by default \
 desktop variant or the xfce / lxqt template — so it is safe to select on any \
 booth. Its extensions (all on by default): +default logs in on i3, +ctrl-alt \
 adds a Ctrl+Alt twin of every shortcut (for Firefox, which keeps Alt), +gaps \
-puts an 8px gap between windows. Customize by copying /etc/xdg/i3/config to \
+puts a 4px gap between windows. Customize by copying /etc/xdg/i3/config to \
 ~/.config/i3/config."""
 display-order = 16
 tags = [

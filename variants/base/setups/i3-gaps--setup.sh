@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 2.0.0
 
 # i3-gaps--setup.sh — a small gap between i3 windows, and between the windows
 # and the panel/dock, so the wallpaper shows at their edges.
@@ -10,7 +10,7 @@
 # Run after i3--setup.sh (the i3 template's +gaps extension). Writes
 # /etc/xdg/i3/config.d/gaps.conf; i3 4.22+ has gaps built in.
 #
-# Usage: i3-gaps--setup.sh [PIXELS]      (default: 8)
+# Usage: i3-gaps--setup.sh [PIXELS]      (default: 4)
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO" >&2; exit 1' ERR
 
@@ -28,7 +28,7 @@ if ! command -v i3 &>/dev/null || [[ ! -f "$I3_CONFIG" ]]; then
   skip_setup "$SCRIPT_NAME" "i3 is not set up (i3--setup.sh skipped or has not run)"
 fi
 
-GAP="${1:-8}"
+GAP="${1:-4}"
 if [[ ! "$GAP" =~ ^[0-9]+$ ]]; then
   echo "❌ Gap must be a number of pixels, got '${GAP}'" >&2
   exit 1
