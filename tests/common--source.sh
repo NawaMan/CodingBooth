@@ -912,6 +912,32 @@ is_link_or_copy() {
 # for the same reason.
 unix_modes() { [[ "$HOST_OS" != "WIN" ]]; }
 
+# utf8_locale prints a UTF-8 locale this host actually has, for the one kind of
+# command that needs one: GNU grep refuses `-P` unless the locale is unibyte or
+# UTF-8, and several product scripts read a version with `grep -oP`. Returns 1
+# when the host has none, so the caller can skip rather than run a script that
+# will die on its first version probe.
+#
+#     LANG="$(utf8_locale)" bash "$SETUPS/x--install.sh"     # or skip
+#
+# Deliberately *not* exported for the whole suite, and do not be tempted: MSYS
+# grep in a UTF-8 locale cannot match a character outside the BMP, so a UTF-8
+# LANG makes every emoji assertion silently stop matching while ASCII ones keep
+# working — dryrun/test031 greps for "📦 Running booth in daemon mode" and went
+# red for exactly that reason, on a line that was right there in the output.
+# With no LANG, MSYS grep compares bytes and the emoji matches.
+utf8_locale() {
+  local candidate available
+  available="$(locale -a 2>/dev/null || true)"
+  for candidate in C.utf8 C.UTF-8 en_US.utf8 en_US.UTF-8; do
+    if printf '%s\n' "$available" | grep -qix -- "$candidate"; then
+      echo "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
 # stub_path assembles the PATH for a setup script run against stubbed tools:
 # the given directories, and on Windows the one directory a stub cannot do
 # without.
