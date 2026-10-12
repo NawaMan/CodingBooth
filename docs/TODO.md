@@ -223,6 +223,66 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
       whenever a sibling `templates/` exists? The second is friendlier but means a repo checkout silently
       ignores the released bundle — probably right for this repo, and worth a one-line "using local
       templates from …" notice either way.
+- [ ] **A Rust desktop-app recipe (`@rust-desktop`) and a Rust-aware `booth just-init`** — from P6 in
+      `docs/TODO-0.80.0.md`. Nine Rust desktop-app projects each assembled the same selection and the same
+      Justfile by hand. Recipes as a feature need more design first (2026-10-11), so this is parked until
+      then.
+      Approach:
+      - *Recipe:* `rust+targets:wasm32-unknown-unknown+gui-deps+cargo-pkg:--locked,trunk`, `gh`, on
+        desktop-xfce, selectable as `--select @rust-desktop/claude-code+…`. The `@a/b` combining already
+        works (`OpenExternalSelect` in `cli/src/pkg/boothinit/selection/recipe.go`).
+      - *just-init:* keep the generic starter (`cli/src/pkg/justinit/Justfile`, kept byte-identical to
+        `docs/just/Justfile` by `TestStarterMatchesDocs`). When `Cargo.toml` is present, append a Rust
+        block: `build`/`test`/`run`/`clippy` as `{{run-in-booth}} cargo …`, plus `ci` (`cargo xtask ci`)
+        when an `xtask/` crate or a `.cargo/config.toml` `xtask` alias exists, and `web`
+        (`trunk serve --address 0.0.0.0`) when `Trunk.toml` exists. It also runs on create and on the
+        first configure, so detection applies there too.
+      What the 2026-10-11 research found:
+      - **There are no built-in recipes.** A bare `@name` resolves only from the project's own
+        `.booth/recipes/` (`readRecipeRef`, and `expandRecipeSelection` in `cli/src/cmd/codingbooth/config.go`).
+        A catalog recipe means a second lookup, for example `<templates>/recipes/<name>.recipe` after the
+        project's copy, a Recipes-tab listing, and a place under catalog versioning (cb-version, manifest,
+        release check).
+      - **A recipe can't pick a variant.** The selection language has no variant syntax, and the `xfce`
+        template only does `setup xfce`. The options are a variant line in the recipe language, a
+        template or extension that sets the `variant` scalar, or documenting `--variant desktop-xfce`.
+      - **There's no trunk template.** `cargo-pkg:--locked,trunk` covers it, but the compile is slow.
+      - **`run` depends on P5.** `exec` has no `DISPLAY`, so a GUI `run` either waits for P5
+        (`DISPLAY=:1` on desktop images, and `exec --run` waiting for the desktop) or gets an interim
+        `DISPLAY=${DISPLAY:-:1}` wrapper.
+      Open questions: what built-in recipes look like in general (location, listing, versioning) before
+      adding the first one; how a recipe chooses a variant; whether P5 lands first.
+- [?] **Support setup scripts copied from a newer CodingBooth (`booth vendor`)**, from P7 in
+      `docs/TODO-0.80.0.md`. Low priority: it matters once many projects pin older versions. Projects
+      pinned to 0.79.0 needed newer setup scripts, so three were copied into `.booth/setups/` by hand.
+      Nothing records where they came from. Once a release catches up they keep overriding the image's
+      own scripts without a word, because `.booth/setups/` comes first on `PATH`
+      (`cli/src/pkg/boothfile/compiler.go`, `ProjectSetupsPath`). A 0.79.0 `booth config` also rejects
+      the newer extensions (`rust+targets`, `rust+gui-deps`) with a bare `unknown extension`.
+      Approach:
+      - `booth vendor <setup> [--from <version>]` (default: latest release) fetches the script at that
+        release tag and writes it to `.booth/setups/` with a header such as
+        `# cb-vendored-from: CodingBooth 0.81.0 (variants/base/setups/rust--setup.sh) sha256=…`. It
+        warns about the `cb-has-*` / `libs/` helpers the script uses, since a newer script can need a
+        newer helper.
+      - At Boothfile compile time, a vendored copy whose release is the same as or older than the
+        booth's own version gets a "safe to delete" warning. A sha256 mismatch shows it was edited
+        after vendoring. A copy with no header is the project's own script, so it gets no warning.
+      - `unknown extension` / `unknown template` (`selection/resolver.go`) says the name isn't in
+        this version's catalog but is in a newer release (latest: X). The release workflow
+        publishes `build/catalog-manifest.tsv` as an asset, fetched once and cached. With no network
+        it falls back to an offline "may need a newer CodingBooth".
+      What the 2026-10-11 research found:
+      - **`cb-version` and the manifest landed after the `0.79.0` tag.** 0.79.0 scripts have no version
+        header, and only `templates.zip` is a release asset today.
+      - **A project-local extension can't attach to a stock parent** (`template/merge.go`), so making
+        `rust+targets` selectable under an old pin means overriding the whole `rust` template
+        locally.
+      - **It can't help a project whose binary stays at 0.79.0.** It helps from the next pin on, or
+        when the binary is newer than the image.
+      Open questions: whether `booth vendor` also copies whole template folders (so newer extensions
+      become selectable) or only scripts; an exact "added in X" would need a `since` column in the
+      manifest rather than only "latest has it". Suggested worktree: `worktree/vendor-scripts`.
 - [ ] ...
 
 - [x] **i3 on KDE.** `i3--setup.sh` covers XFCE and LXQt; Plasma 5.27 can run another window
