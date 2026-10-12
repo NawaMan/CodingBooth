@@ -69,6 +69,20 @@ This file contains a list of changes for each released version.
   run in the booth still prunes them. If the main clone cannot be mounted, booth prints a warning
   and starts as before. Submodules are not covered yet.
 
+- **Fix: git works in a booth's code folder on a VM-based engine.** On an engine that shares the
+  host folder through a VM — Docker Desktop (macOS, Windows, and on Linux), Podman machine,
+  Colima; observed on Docker Desktop for Mac — the mount root
+  `/home/coder/code` arrives owned by `0:0` however the host owns it — the files under it map to
+  your uid correctly, but git checks the owner of the repository directory before every command.
+  So in a booth whose project is a git repo, every git call failed with *"detected dubious
+  ownership"*: `git status`, `gh`, `lazygit`, an agent's commit, a build step calling
+  `git ls-files`. The ownership cannot be changed from inside the booth (a `chown` of a mount root
+  is silently ignored), so booth now names the code folder in git's system config as a
+  `safe.directory` on every start. Only that folder, and only in the system config, which nothing
+  in the project can write — a cloned repo cannot grant itself the same trust. A repo in a
+  subfolder never needed it. See
+  [BOOTH_ENGINES.md](BOOTH_ENGINES.md#who-owns-the-mounted-files).
+
 - **Fix: two tabs on one desktop booth no longer make it flicker.** Each viewer fitted the desktop
   to its own window, so with two open they took turns resizing it. Now one viewer fits it: the
   tab you last clicked into, held through a lease on the booth (`/booth-messages/api/display-lease`).
