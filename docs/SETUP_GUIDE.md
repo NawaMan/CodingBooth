@@ -191,7 +191,8 @@ booth config --no-tui --select go --mount '~/datasets:/home/coder/datasets'
 ```
 
 A mount whose host path does not exist is skipped with a notice, so it is safe to list paths that
-only some machines have.
+only some machines have. To have booth create a missing host folder instead, add `:create`
+(`--mount '~/.cache/mytool:/home/coder/.cache/mytool:create'`).
 
 ### Credentials
 

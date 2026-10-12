@@ -84,9 +84,10 @@ install -m 755 "${TMP_DIR}/${NAME}/sccache" /usr/local/lib/sccache/sccache
 rm -rf "${TMP_DIR}"
 
 # ---- starter: warn when the shared cache is not mounted ----
-# rust+sccache sets SCCACHE_DIR and bind-mounts the host's ~/.cache/sccache there.
-# booth skips a mount whose host folder does not exist, and sccache then caches
-# inside the container -- it works, shares nothing, and is gone with the booth.
+# rust+sccache sets SCCACHE_DIR and bind-mounts the host's ~/.cache/sccache there
+# (`:create`, so booth makes the folder). If the mount still did not happen -- the
+# folder could not be created, or SCCACHE_DIR was pointed elsewhere -- sccache
+# caches inside the container: it works, shares nothing, and is gone with the booth.
 # Startup hooks only log to /tmp/startups.log, so the warning goes where it is
 # seen: the first compile, once per container. No SCCACHE_DIR, no expectation.
 # Only a real crate compile counts: cargo discards the stderr of its probes
@@ -100,7 +101,7 @@ if [[ -n "${SCCACHE_DIR:-}" && " $* " == *" --crate-name "* && " $* " != *" --cr
     cat >&2 <<WARN
 ⚠️  sccache: $SCCACHE_DIR is not mounted from the host, so compiled crates are
    cached in this booth only and are not shared with other projects.
-   Create the host folder once, then restart the booth:  mkdir -p ~/.cache/sccache
+   Check that the host folder exists and is yours (~/.cache/sccache), then restart the booth.
 WARN
   fi
 fi
