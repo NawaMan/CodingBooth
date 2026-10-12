@@ -46,7 +46,11 @@ has_bind() {
 # so they have to differ or docker is asked to bind one host port twice.
 UI_PORT="$(pick_free_port)"
 EXTRA_PORT="$(pick_free_port_other_than "$UI_PORT")"
-BIND_ARG="${HOST_DIR}:/tmp/lifecycle-extra"
+# The -v source in host form: on Git Bash a "/c/...:/tmp/..." argument looks
+# like a POSIX path list and is rewritten to "C:\...;C:\...\Temp\..." before
+# booth sees it, so booth finds no such source and silently drops the mount.
+# host_path gives "C:/..." there, which MSYS leaves alone (unchanged elsewhere).
+BIND_ARG="$(host_path "$HOST_DIR"):/tmp/lifecycle-extra"
 
 diag() { sed 's/^/    /' >&2; }
 
