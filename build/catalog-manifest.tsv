@@ -495,7 +495,7 @@ template	lua	1.0.0	280f87fd4a9f035ceb5a1c0590f601c9f2532088d3ef8d4a45a2afa039b88
 template	lxqt	1.0.0	963f393fa998d49aa47f27a28f0b6fe4f1143f63a18e2adc592ee7db70cd9765	templates/desktops/lxqt/template.toml
 template	make	1.1.0	e14353ff4845d12fd1d4ee812f474c0347134a7ab1886c4a01672428a169a209	templates/tools/make/template.toml
 template	material-cursors	1.0.0	8b64d5c27d3113f60d8769aef239be563621a3cc8336df406386c46773f2be0c	templates/desktops/material-cursors/template.toml
-template	mc	0.1.0	7f58b762ff808e8f5aaee0a93694af2d50f1edc0c5a81c8b12cc1bda2e42a0a8	templates/tools/mc/template.toml
+template	mc	0.1.1	c05a3bba09bd291337ef98565eb38f97a976e96974e12fce5fc921d96b956893	templates/tools/mc/template.toml
 template	mermaid	1.1.0	d7e95b2973aa9342af5bf56734296a1fef7a11879529f67bfc5670cda668f6af	templates/tools/mermaid/template.toml
 template	mkcert	1.0.0	23be3ef98c34aa99430fbf664f38c726c462871b2a38e250d30f5ae0b6cd0b5f	templates/tools/mkcert/template.toml
 template	mojo	0.1.0	27ab9f41480cdb2b361b178d5eec62b94ebb469a3a4a48eb579509cb16d42718	templates/languages/mojo/template.toml
@@ -551,7 +551,7 @@ template	sqlite	1.0.0	acb431a561235cd8e3a1aa4440602eae54201f1058767e97e2273c62c5
 template	sqluv	0.1.0	2ca235a1be79ace871a862f26ba71382222a6b7d24a51de0de3909b9c89294be	templates/tools/sqluv/template.toml
 template	ssh	1.0.0	799d6d517963cfca52189f35818190cbbc8ac088ab4068a71f581810ccd845a8	templates/tools/ssh/template.toml
 template	stern	1.0.0	f9651b9141a4d7c4870e46426794ad0f5b6dd5c0c31d0bf82a42a7f99be0eeda	templates/tools/stern/template.toml
-template	superfile	0.1.1	f290897c549ea6a0db6f1b94993c5f903683434dfa33b2fb298c1c82bd477c7b	templates/tools/superfile/template.toml
+template	superfile	0.1.2	b4719fbf3db32ebd0fc8291d15a23db317402a492e48969b75508b7321e1b573	templates/tools/superfile/template.toml
 template	svelte	0.1.0	2ef837e43415e3798d32fbe342d88e9073abab5be2ee0261c6e0ce3e4734b862	templates/frameworks/svelte/template.toml
 template	sway	0.1.1	73aede41360cf6557b64d58f994563e678a2a339650bc595a9283b86378f1c75	templates/desktops/sway/template.toml
 template	swift	1.0.0	d0a4704c99d83b46d452be8d2a2ac6d2899f990c3306ab5d36557bc1db66216d	templates/languages/swift/template.toml
