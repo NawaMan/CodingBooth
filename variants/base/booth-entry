@@ -361,6 +361,40 @@ find "$HOME_DIR" -xdev -path "$CODE_DIR" -prune -o ! -group "$HOST_GID" -exec ch
 # host uid. A path that is not a mount point is left alone.
 apply_owner_permissions
 
+info "5b) Telling git the code folder is trustworthy (git safe.directory)..."
+# Step 5 skips $CODE_DIR because it cannot chown a bind mount -- and on an
+# engine that shares the host folder through a VM (Docker Desktop, Colima,
+# Podman machine) the mount ROOT arrives owned by 0:0 no matter who owns it on
+# the host, while everything *under* it maps to HOST_UID correctly. git checks
+# the owner of the repository directory before every command, so a booth whose
+# code folder is a git repo answered every git call with "detected dubious
+# ownership": git unusable in the project, on every Mac.
+#
+# safe.directory is the only lever left. The ownership cannot be fixed (a chown
+# on the mount root is silently ignored), and git reads this key only from
+# protected configuration -- the system file, never coder's own, so a repo
+# cannot grant it to itself. The code folder alone needs naming: a repo in a
+# subfolder is owned by HOST_UID like any other file there.
+#
+# What it gives up: git will work in the code folder even when it is genuinely
+# owned by someone else, not only when the engine made it look that way. In a
+# booth that folder is the user's own project, mounted by their own command, so
+# that trust is already given. On Linux the ownership matches and git never
+# consults the entry; it is set unconditionally rather than per engine so there
+# is one behaviour to reason about. See docs/BOOTH_ENGINES.md.
+#
+# Never fatal (this script runs under `set -e`): the system config is a file
+# like any other, and a booth started with a read-only root filesystem cannot
+# be written to. git not working in the project is worth a line in the log; a
+# booth that refuses to start over it is not.
+if command -v git >/dev/null 2>&1; then
+  if ! git config --system --get-all safe.directory 2>/dev/null | grep -qxF "$CODE_DIR"; then
+    git config --system --add safe.directory "$CODE_DIR" \
+      || printf '[cb-setup] could not record %s as a git safe.directory; git may refuse to run there\n' \
+         "$CODE_DIR" >&2
+  fi
+fi
+
 info "6) For Windows, find all mount point from the host and in each mount point, find all file/folder that is root:root and change them to coder:coder"
 if [ "${HOST_OS:-}" = "WIN" ]; then
   info "Detected Windows host - fixing ownership recursively for root:root files in mount points..."
