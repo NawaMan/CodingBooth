@@ -153,16 +153,26 @@ the whole list, so you don't have to restate everything else:
 ./booth config --no-tui --overwrite --add-env FOO=2          # was FOO=1
 ./booth config --no-tui --overwrite --add-mount /other:/app/data
 
-# Drop one entry by that same key.
+# Drop one entry by that same key — or by the whole entry, which must then match.
 ./booth config --no-tui --overwrite --remove-expose 8080
 ./booth config --no-tui --overwrite --remove-env FOO
+./booth config --no-tui --overwrite --remove-env FOO=1       # only if FOO is 1
 ./booth config --no-tui --overwrite --remove-mount /app/data
 ```
 
 `--remove-*` and `--add-*` for the same field can combine in one run — a
 `--remove-select go --add-select go:1.25` replaces `go`'s params by dropping it
-and adding it back, in one step. A name `--remove-select` doesn't find is a
-no-op with a warning, not an error, so repeating a removal is harmless.
+and adding it back, in one step.
+
+A removal that matches nothing is an error, and nothing is written. That is
+almost always a typo or a stale value, and carrying on would leave the booth
+holding what you meant to drop. When the key exists with a different value, the
+error shows the recorded entry:
+
+```
+Error: --remove-env "FOO=2" did not match anything in the existing booth (it has "FOO=1")
+Nothing was written.
+```
 
 Combining a field's plain (replace) flag with its own `--remove-*` in the same
 run is refused: the plain flag already discards the whole baseline for that
@@ -518,11 +528,12 @@ to the end of the line. A recipe does not contain another recipe.
 | `--remove-expose <port>`   | Reconfigure only: drop one expose mapping by container port (repeatable) |
 | `--env <KEY=VALUE>`        | Set container environment variable (produces long-form `--env` in run-args to distinguish from template-contributed `-e`; repeatable) |
 | `--add-env <KEY=VALUE>`    | Reconfigure only: add or update one env var, keyed on KEY (repeatable) |
-| `--remove-env <KEY>`       | Reconfigure only: drop one env var by KEY (repeatable) |
+| `--remove-env <KEY>`       | Reconfigure only: drop one env var by KEY, or by `KEY=VALUE` when the value matches (repeatable) |
 | `--mount <host:container>` | Mount volume (produces long-form `--volume` in run-args to distinguish from template-contributed `-v`; repeatable) |
 | `--add-mount <host:container>` | Reconfigure only: add or update one mount, keyed on the container path (repeatable) |
 | `--remove-mount <container>` | Reconfigure only: drop one mount by container path (repeatable) |
 | `--set <key=value>`        | Set a config.toml value (repeatable; bare key = boolean true). See [Setting config values](#setting-config-values) |
+| `--unset <key>`            | Reconfigure only: drop a recorded config.toml key (repeatable). See [Reconfiguring with `--set` and `--unset`](#reconfiguring-with---set-and---unset) |
 | `--version <ver>`          | Use templates from a specific release version                  |
 | `--templates-path <dir>`   | Use local templates directory                                  |
 | `--overwrite`              | Overwrite existing files without prompting — including [hand-written](#hand-written-files) ones, which are kept as `<name>.bak` (`--no-tui` only) |
@@ -543,11 +554,45 @@ booth config --no-tui --select go \
     --set keep-alive=false \            # explicit boolean
     --set timezone=Asia/Bangkok \       # string
     --set idle-time=30 \                # integer — written unquoted
-    --set egress-allowlist=example.com  # list — repeat the flag to add more
+    --set egress-allowlist=example.com  # list — repeat the flag, or separate with commas
 ```
 
 A bare key means "turn this on", which only reads as an intent for a boolean —
 `--set timezone` is an error, not an empty string.
+
+A list key takes one value per `--set`, or several separated by commas:
+`--set egress-allowlist=a.com,b.com` is the same as two `--set`s, and is
+recorded in the header as two. The argv lists — `run-args`, `build-args`,
+`common-args` and `cmds` — never split on commas, because a comma is ordinary
+text in a docker flag or a command (`--mount type=bind,src=…`). Each of their
+`--set`s is exactly one token.
+
+### Reconfiguring with `--set` and `--unset`
+
+On an existing booth, `--set` replaces only the keys it names. Every other key
+recorded in the header is kept:
+
+```bash
+# Was: --set timezone=Asia/Bangkok --set egress-allowlist=a.com
+booth config --no-tui --overwrite --set egress-allowlist=b.com
+# Now: --set timezone=Asia/Bangkok --set egress-allowlist=b.com
+```
+
+A key given again replaces its whole recorded value, list keys included, so
+restate every value you want to keep. The header always records the full value,
+so regenerating from the header alone reproduces the booth.
+
+`--unset <key>` drops a recorded key: its `--set`s, the `variant`/`port`/`cmds`
+it names, and any `cache-*`/`shared-*` paths read back from `config.toml` (paths
+a selected template declares come back from the template):
+
+```bash
+booth config --no-tui --overwrite --unset timezone --unset cache-dirs
+```
+
+Unsetting a key the booth does not record is an error, like a `--remove-*` that
+matches nothing. So is an unknown key, and so is `--set` and `--unset` of the
+same key in one run.
 
 ### Keys are checked
 
@@ -827,7 +872,8 @@ booth config --no-tui --set run-args=--cap-add --set run-args=SYS_PTRACE
 
 The tokens go after the template's and the `--env`/`--expose`/`--mount` ones. The same holds for
 every key `config.toml` writes from its own field (`cmds`, `build-args`, `sudo`, `vm-*`): a `--set`
-merges into that key and never writes it a second time.
+merges into that key and never writes it a second time. On a reconfigure, `--set run-args=…`
+replaces every `run-args` token the header records, so restate a flag and its value together.
 
 ### Example config.toml with mixed forms
 

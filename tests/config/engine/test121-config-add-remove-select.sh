@@ -80,16 +80,19 @@ has "$boothfile" "# Configured by: booth config --no-tui --overwrite --select py
 check $? "go's version was replaced by remove+add in one run"
 
 # ---------------------------------------------------------------------------
-# --remove-select for a name that matches nothing is a no-op with a warning,
-# not an error.
+# --remove-select for a name that matches nothing is an error, and nothing is
+# written — it is almost always a typo, and the booth would keep what the user
+# meant to drop.
 # ---------------------------------------------------------------------------
 run rm -Rf $prj/.booth
 run booth config $prj --no-tui --select "go"
-booth config $prj --no-tui --overwrite --remove-select rust 2> "$warning" >/dev/null
-has "$boothfile" "# Configured by: booth config --no-tui --overwrite --select go"
-check $? "the selection is unchanged"
+cp "$boothfile" "$prj/Boothfile.before"
+if booth config $prj --no-tui --overwrite --remove-select rust 2> "$warning" >/dev/null; then ok=1; else ok=0; fi
+check $ok "a --remove-select name matching nothing is refused"
+cmp -s "$boothfile" "$prj/Boothfile.before"
+check $? "the booth was not rewritten"
 has "$warning" 'did not match anything'
-check $? "a --remove-select name matching nothing only warns"
+check $? "the error names the unmatched name"
 
 # ---------------------------------------------------------------------------
 # --select combined with --remove-select is refused: --select already
