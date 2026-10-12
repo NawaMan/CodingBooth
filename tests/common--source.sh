@@ -132,6 +132,68 @@ have_python3() {
     [[ "$_CB_HAVE_PYTHON3" == yes ]]
 }
 
+# serve_dir_http DIR : serve DIR's files over HTTP on 127.0.0.1, on a free port,
+# until killed. Run it in the background and read the port with http_port_of:
+#
+#     serve_dir_http "$dir" & server_pid=$!
+#     port=$(http_port_of "$dir") || { kill $server_pid; ...; }
+#
+# `python3 -m http.server` was the only server the tests stood up, and on a
+# Windows host python3 is usually the Store stub (see have_python3), so the URL
+# came out as http://localhost:/x and the test failed on something it was not
+# testing. perl is the fallback for the reason no_tty_run reaches for it: Git
+# Bash and macOS both ship it. GET of a plain file is all a test needs.
+#
+# The port goes to DIR/.http-port. The server runs from inside DIR so neither
+# side has to translate a /tmp path for a native Windows Python. It execs, so
+# killing the background job's pid kills the server itself.
+serve_dir_http() {
+    cd "$1" || return 1
+    rm -f .http-port
+    if have_python3; then
+        exec python3 -c '
+import http.server, socketserver, os
+s = socketserver.TCPServer(("127.0.0.1", 0), http.server.SimpleHTTPRequestHandler)
+with open(".http-port.tmp", "w") as f: f.write(str(s.server_address[1]))
+os.replace(".http-port.tmp", ".http-port")
+s.serve_forever()
+'
+    fi
+    exec perl -MIO::Socket::INET -e '
+my $s = IO::Socket::INET->new(LocalAddr => "127.0.0.1", LocalPort => 0,
+                              Listen => 5, ReuseAddr => 1) or die "listen: $!\n";
+open(my $f, ">", ".http-port.tmp") or die; print $f $s->sockport; close $f;
+rename(".http-port.tmp", ".http-port") or die;
+while (my $c = $s->accept) {
+    my $req = <$c> // "";
+    while (my $line = <$c>) { last if $line =~ /^\r?\n$/ }
+    my ($path) = $req =~ m{^GET\s+/([^\s?]*)};
+    my $body;
+    if (defined $path && $path !~ m{\.\.} && -f $path && open(my $in, "<:raw", $path)) {
+        local $/; $body = <$in>; close $in;
+        print $c "HTTP/1.0 200 OK\r\nContent-Length: " . length($body) . "\r\nConnection: close\r\n\r\n$body";
+    } else {
+        print $c "HTTP/1.0 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+    }
+    close $c;
+}
+'
+}
+
+# http_port_of DIR : the port serve_dir_http DIR is listening on, waiting up to
+# 10s for it to come up. Fails (and prints nothing) if it never does.
+http_port_of() {
+    local i
+    for i in $(seq 1 50); do
+        if [[ -s "$1/.http-port" ]]; then
+            cat "$1/.http-port"
+            return 0
+        fi
+        sleep 0.2
+    done
+    return 1
+}
+
 no_tty_supported() {
     command -v setsid  >/dev/null 2>&1 && return 0
     have_python3 && return 0
