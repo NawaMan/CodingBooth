@@ -26,6 +26,10 @@ type fakeEngine struct {
 	Fail   bool
 	// LowPorts (container only): every booth carries cb.apple-low-ports=true.
 	LowPorts bool
+	// Vanished (docker/podman only): booths the listing `ps` still reports but
+	// that are gone by the time they are inspected — inspect exits 1 and a
+	// name-filtered `ps` no longer finds them.
+	Vanished []string
 }
 
 // envFakeEngines carries the engines map to the stubs, which look up the name
@@ -97,12 +101,33 @@ func fakeEnginesMain(name string, args []string) int {
 		return 0
 	}
 
+	vanished := func(booth string) bool {
+		for _, gone := range engine.Vanished {
+			if gone == booth {
+				return true
+			}
+		}
+		return false
+	}
 	switch subcommand {
 	case "ps":
+		for i, arg := range args {
+			if arg == "--filter" && i+1 < len(args) && strings.HasPrefix(args[i+1], "name=^") {
+				booth := strings.TrimSuffix(strings.TrimPrefix(args[i+1], "name=^"), "$")
+				if !vanished(booth) {
+					fmt.Println(booth)
+				}
+				return 0
+			}
+		}
 		// One name per line, and a bare newline when there are none — what
 		// `printf '%s\n'` with no arguments printed.
-		fmt.Println(strings.Join(engine.Booths, "\n"))
+		fmt.Println(strings.Join(append(append([]string{}, engine.Booths...), engine.Vanished...), "\n"))
 	case "inspect":
+		if vanished(lastArg(args)) {
+			fmt.Fprintf(os.Stderr, "Error: No such object: %s\n", lastArg(args))
+			return 1
+		}
 		fmt.Printf(`{"Name":"/%s","State":{"Status":"running"},"Config":{"Labels":{"cb.managed":"true","cb.variant":"base"}}}`+"\n", lastArg(args))
 	}
 	return 0
@@ -139,6 +164,23 @@ func TestManagedContainersAcrossMergesAndTagsEngine(t *testing.T) {
 	}
 	if stderr.Len() != 0 {
 		t.Errorf("unexpected warning: %q", stderr.String())
+	}
+}
+
+// A booth removed between the listing and its inspect (another suite's --rm
+// booth exiting) used to fail the whole lookup, so `booth logs --name x` broke
+// on a booth that had nothing to do with x.
+func TestManagedContainersSkipsBoothRemovedDuringListing(t *testing.T) {
+	installFakeEngines(t, map[string]fakeEngine{
+		"docker": {Booths: []string{"web"}, Vanished: []string{"tmp-gone"}},
+	})
+
+	got, err := managedContainers("docker", false)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(got) != 1 || got[0].Name != "web" {
+		t.Errorf("containers = %+v, want only web", got)
 	}
 }
 
