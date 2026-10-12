@@ -283,7 +283,7 @@ setup	stern	1.0.0	34ea4d09b559d24efa60cde0b1f79536d24bce1a33904c40f08648f1fc095f
 setup	svelte-code-extension	1.0.0	72a89f4990116bf86fe62a09ae0269fbd5f6e1aa73519b10b2d1beb5a47c7999	variants/base/setups/svelte-code-extension--setup.sh
 setup	sway	0.1.1	a84990c34c0f35888fe43de5bd99a5311033b2a39253e27ce8aa1a76f1f81113	variants/base/setups/sway--setup.sh
 setup	sway-ctrl-alt	0.1.0	1b80287d9197d0d069db5d6cde174e867424365c7bd9e2679c45d8c0e31770b5	variants/base/setups/sway-ctrl-alt--setup.sh
-setup	sway-gaps	0.1.0	aa90a76b4a70f9101732cbe73e53ec787a234aa5ce5e302e8976ed3735b4b28e	variants/base/setups/sway-gaps--setup.sh
+setup	sway-gaps	0.2.0	05743af72ea9f12733b3dbcb4f7777da66112a510fafb10d7501cd8516d06292	variants/base/setups/sway-gaps--setup.sh
 setup	swift	1.0.0	150c74d312e00bf96d45f04c66d58d01fbd59be3d3b0e81443db915a42c40cd6	variants/base/setups/swift--setup.sh
 setup	swift-code-extension	1.0.0	dda9e07c68f3915a8990c89b681de5911f93e2776783a5d9748e443b7203ee4b	variants/base/setups/swift-code-extension--setup.sh
 setup	tailwind-code-extension	0.1.0	6be1805f868ec0ca1d201294545e8bdfd32590ffdb3f3079291eb6ffe743d480	variants/base/setups/tailwind-code-extension--setup.sh
@@ -548,7 +548,7 @@ template	sqluv	0.1.0	2ca235a1be79ace871a862f26ba71382222a6b7d24a51de0de3909b9c89
 template	ssh	1.0.0	799d6d517963cfca52189f35818190cbbc8ac088ab4068a71f581810ccd845a8	templates/tools/ssh/template.toml
 template	stern	1.0.0	f9651b9141a4d7c4870e46426794ad0f5b6dd5c0c31d0bf82a42a7f99be0eeda	templates/tools/stern/template.toml
 template	svelte	0.1.0	2ef837e43415e3798d32fbe342d88e9073abab5be2ee0261c6e0ce3e4734b862	templates/frameworks/svelte/template.toml
-template	sway	0.1.0	1ff0f546300d29db49a70ed935145e13f1731f4eca72fffbc39843fd98de1f0f	templates/desktops/sway/template.toml
+template	sway	0.1.1	73aede41360cf6557b64d58f994563e678a2a339650bc595a9283b86378f1c75	templates/desktops/sway/template.toml
 template	swift	1.0.0	d0a4704c99d83b46d452be8d2a2ac6d2899f990c3306ab5d36557bc1db66216d	templates/languages/swift/template.toml
 template	tailwind	0.1.0	bb0ef9fede7cf622fa9e8f2980823836ce159361d22a3d4a634e5c8c2a445d36	templates/frameworks/tailwind/template.toml
 template	tela-icons	0.1.0	bc9fb120c9a2a35da5e4078832bc039a940fdefacc925f99eb66e6c3d55450f7	templates/desktops/tela-icons/template.toml
@@ -879,7 +879,7 @@ extension	scratch+autostart	1.0.0	5cff76db94dc49f44b0b34c37881bc4934832ca599145f
 extension	scratch+expose	1.0.0	454b614da91c15ad57397208ca98a2aff6f93d7b2b6c187b68226ddbdb71e503	templates/education/scratch/expose--extension.toml
 extension	sqlite+cli-history	1.0.0	8cf7c3f85aeab4d515c9e9f1dd0f10744d946434aaa4290366c1b7e8f4355c3b	templates/middlewares/sqlite/cli-history--extension.toml
 extension	sway+ctrl-alt	0.1.0	cc789939fc6e24738068644041470b81a7d065364da363a09bb8797654f8fc8c	templates/desktops/sway/ctrl-alt--extension.toml
-extension	sway+gaps	0.1.0	e6d6c6625e887830c53b7997271b6363973d3dc0ac6455a04c3cc5cf41a348ec	templates/desktops/sway/gaps--extension.toml
+extension	sway+gaps	0.2.0	7262c863d0cebb6e392bb0ce8e982c3e426976b80f8692b6d8c65354eead9dd0	templates/desktops/sway/gaps--extension.toml
 extension	swift+vscode-ext	1.0.0	6cc024ba78d2963fe83b4e3d1c7171daa911be52ecd01d47b09baed3df3fd119	templates/languages/swift/vscode-ext--extension.toml
 extension	terraform+vscode-ext	0.1.0	8694236fe71c28f470b9de9c0d1004a5de0e6484f9d820f3b934523c3673bd8c	templates/tools/terraform/vscode-ext--extension.toml
 extension	wails+android	0.1.0	9969ceb831f5dc53121d16794e2c3811fb630db50e2654ff1f3dec9a389bffcc	templates/languages/wails/android--extension.toml
