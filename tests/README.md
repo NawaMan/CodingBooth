@@ -164,6 +164,14 @@ the full story in its own comment.
 | `unix_modes` | a case about `0600` or the exec bit | a mode read back as `0644` on a host that has no modes |
 | `have_symlinks` | a case about what a script does *at* a symlink | `ln -s` copying the file instead, which proves the opposite |
 | `is_link_or_copy <path>` | asserting a script put its link there | `-L` being false for the copy `ln -s` left |
+| `utf8_locale` | the one command that needs a UTF-8 locale (`grep -oP` in a product script) | a script dying on its version probe where the shell has no locale |
+
+**Do not set a UTF-8 `LANG` for a whole run on Windows.** It looks like a fix — GNU grep refuses
+`-P` without a unibyte or UTF-8 locale, so `tests/setups/test--pg-ext-install` needs one for the
+script it runs — but MSYS grep *in* a UTF-8 locale cannot match a character outside the BMP. Set
+one, and `dryrun/test031`'s `grep '📦 Running booth in daemon mode'` stops matching a line that is
+right there in the output, while every ASCII pattern keeps working. `utf8_locale` exists so the one
+command that needs it gets it, and nothing else does.
 
 Two more things the shell does to a *container* path on Windows, both handled in
 `common--source.sh` so no test has to think about them: `docker exec` and `docker run` go through a
