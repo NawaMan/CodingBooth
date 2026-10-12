@@ -1,0 +1,35 @@
+cb-version = "0.1.0"
+display-name = "sccache"
+display-disc = "Share compiled crates across every project, via the host's ~/.cache/sccache"
+display-detail = """Installs sccache and makes it cargo's RUSTC_WRAPPER, so a crate compiled once -- serde, \
+tokio, the whole dependency tree -- is reused by every other booth that builds the same crate at the \
+same version with the same flags, instead of being rebuilt into each project's target/. The cache is \
+the host's ~/.cache/sccache, bind-mounted, so it survives a booth's removal and is shared by every \
+booth that selects this. The mount is writable, so booth asks for consent before starting (code in \
+the booth can write to your host home) and a non-interactive start needs --privileged-allowed. \
+Dependencies are what gets cached; your own crates in a debug build compile incrementally and are not. \
+`sccache --show-stats` shows the hits. The cache is capped at 10G; set SCCACHE_CACHE_SIZE to change it."""
+display-order = 16
+auto-select = false
+tags = ["rust", "cargo", "cache", "sccache"]
+
+# On the container environment, not the image's: `cargo install` at build time
+# (cargo-pkg) keeps compiling without a wrapper whose cache is not mounted yet.
+run-args = [
+    "-e", "RUSTC_WRAPPER=sccache",
+    "-e", "SCCACHE_DIR=/home/coder/.cache/sccache",
+    "-v", "$HOME/.cache/sccache:/home/coder/.cache/sccache"
+]
+
+[params.SCCACHE_VERSION]
+default = "0.17.0"
+suggests = [
+    "0.17.0",
+    "0.18.0",
+    "latest",
+]
+
+[segments]
+Boothfile = """
+setup sccache --version ${SCCACHE_VERSION}
+"""

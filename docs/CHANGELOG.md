@@ -79,6 +79,13 @@ This file contains a list of changes for each released version.
     does not put on the image env. The exceptions are listed in
     `tests/config/catalog/profile-only-exports.txt`, each with its reason: services, desktops, and
     values computed per shell.
+- **`rust+sccache`: share compiled crates across every Rust project.** Each project used to
+  rebuild its whole dependency tree into its own `target/`. The new opt-in extension installs
+  sccache (0.17.0 by default) and makes it cargo's `RUSTC_WRAPPER`, with the host's
+  `~/.cache/sccache` as the cache, so a crate compiled in one booth is a cache hit in the next.
+  Your own crates still compile incrementally; dependencies are what gets cached. The cache folder
+  is a writable host mount, so it asks for consent the way `cargo-cache` does. Select it as
+  `--select rust+sccache`; `sccache --show-stats` shows the hits.
 
 - **Catalog version-pin sweep to n-1.** Defaults now sit on the release just before the newest
   stable one; pins already at or below n-1 are unchanged. Each new version was checked against its
