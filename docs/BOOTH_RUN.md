@@ -18,6 +18,7 @@ Back to [README](../README.md)
 
 - [Express](#express)
 - [Image Selection](#image-selection)
+  - [Skipping Unchanged Builds](#skipping-unchanged-builds)
 - [Container Name](#container-name)
 - [Config Files](#config-files)
 - [Environment Variables](#environment-variables)
@@ -87,6 +88,46 @@ Command-line arguments > config file > environment variables > built-in defaults
 > When both `--image` and `--dockerfile` are provided, `--image` takes precedence. Use `--dockerfile` when you want to build locally; otherwise, CodingBooth automatically pulls prebuilt images.
 >
 > **Tip:** Use [`booth build`](BOOTH_BUILD.md) to build and optionally push your booth image to a registry, then run it with `--image`.
+
+### Skipping Unchanged Builds
+
+A booth with a `.booth/Boothfile` or `.booth/Dockerfile` builds a local image
+(`codingbooth-local:<project>-<variant>-<version>`). Once that image exists, a later start skips
+`docker build` entirely when nothing the build reads has changed:
+
+```text
+Info: image 'codingbooth-local:myproject-base-0.80.0' is up to date, skipping the build.
+```
+
+That matters beyond speed. Even a fully cached build contacts Docker Hub first, to resolve the
+Dockerfile frontend and the `FROM` tag. Skipping the build means a booth whose image is already
+built still starts while the registry is down.
+
+The skip uses a fingerprint, stored on the image as the `cb.fingerprint` label. It covers:
+
+- the Dockerfile text, as generated from the Boothfile or as written;
+- the build arguments, labels, and `--platform`;
+- the local image ID of the `FROM` base and of every `COPY --from` image, so a base image rebuilt
+  under the same tag triggers a build;
+- the content, mode, and presence of every file a `COPY`/`ADD` reads from the project: `.booth/setups/`,
+  and the sources of each Boothfile `copy`. A glob that matches nothing is recorded too, so a new
+  `rust-toolchain.toml` triggers a build.
+
+A start builds as before, without the fingerprint check, when:
+
+- `--pull` is set;
+- the base image is not present locally;
+- an `ADD` fetches a URL or a git repository;
+- a `RUN --mount` binds the project;
+- a variable in a source cannot be resolved;
+- the copied sources exceed 50 MB or 5,000 files. A `copy . /somewhere` is not hashed on every
+  start.
+
+`--verbose` says which of these applied.
+
+Things *inside* a `RUN` step are not inputs: a `run curl … | sh` that would fetch something newer
+today is not re-run while the fingerprint matches, and neither does the build cache re-run it.
+Use `--pull` to force a fresh build.
 
 ---
 
