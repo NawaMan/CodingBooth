@@ -1,15 +1,15 @@
-cb-version = "0.1.0"
+cb-version = "0.2.0"
 display-name = "Theme"
-display-disc = "Tokyo Night by default; pick any built-in Fresh theme"
-display-detail = """Writes the theme into ~/.config/fresh/config.json when the container starts. The default is Tokyo Night. Choose another built-in with fresh+theme:dracula (dark, gruvbox, high-contrast, light, nord, nostalgia, solarized-dark, terminal). fresh~theme leaves the factory theme, high-contrast. Other keys in that file stay. The selected theme is written again on the next start."""
+display-disc = "The terminal's own colors by default; pick any built-in Fresh theme"
+display-detail = """Writes the theme into ~/.config/fresh/config.json when the container starts. The default is terminal, which uses the terminal's own colors. Choose another built-in with fresh+theme:dracula (dark, gruvbox, high-contrast, light, nord, nostalgia, solarized-dark, tokyo-night). fresh~theme leaves the factory theme, high-contrast. Other keys in that file stay. The selected theme is written again on the next start."""
 display-order = 30
 auto-select = true
 tags = ["fresh", "editor", "theme"]
 
 [params.FRESH_THEME]
-default = "tokyo-night"
+default = "terminal"
 suggests = [
-    "tokyo-night",
+    "terminal",
     "dark",
     "dracula",
     "gruvbox",
@@ -18,7 +18,7 @@ suggests = [
     "nord",
     "nostalgia",
     "solarized-dark",
-    "terminal",
+    "tokyo-night",
 ]
 
 [segments]

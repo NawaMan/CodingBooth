@@ -3,7 +3,7 @@
 
 env APT_SNAPSHOT=20261011T000000Z
 
-arg FRESH_THEME=tokyo-night
+arg FRESH_THEME=terminal
 arg FRESH_VERSION=latest
 
 setup fresh --version ${FRESH_VERSION}
