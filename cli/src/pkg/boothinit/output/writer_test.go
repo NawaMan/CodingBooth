@@ -11,6 +11,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nawaman/codingbooth/src/internal/hostskip"
 )
 
 func TestWriteOutput_CreatesBoothDir(t *testing.T) {
@@ -62,13 +64,17 @@ func TestWriteOutput_OverwritesExistingFiles(t *testing.T) {
 	assert.NotContains(t, string(data), "old content")
 }
 
+// wantPath spells a path the way the host does, which is how OutputPaths builds
+// one (filepath.Join): "/tmp/proj/.booth" is "\tmp\proj\.booth" on Windows.
+func wantPath(path string) string { return filepath.FromSlash(path) }
+
 func TestOutputPaths_Basic(t *testing.T) {
 	out := &BoothOutput{
 		Config: &ConfigToml{Variant: "base"},
 	}
 	paths := OutputPaths(out, "/tmp/proj")
-	assert.Contains(t, paths, "/tmp/proj/.booth/.gitignore")
-	assert.Contains(t, paths, "/tmp/proj/.booth/config.toml")
+	assert.Contains(t, paths, wantPath("/tmp/proj/.booth/.gitignore"))
+	assert.Contains(t, paths, wantPath("/tmp/proj/.booth/config.toml"))
 	assert.Len(t, paths, 2)
 }
 
@@ -82,13 +88,13 @@ func TestOutputPaths_Full(t *testing.T) {
 		HomeSeed:  []FileContent{{RelPath: ".config/myapp/config.yaml"}},
 	}
 	paths := OutputPaths(out, "/tmp/proj")
-	assert.Contains(t, paths, "/tmp/proj/.booth/.gitignore")
-	assert.Contains(t, paths, "/tmp/proj/.booth/config.toml")
-	assert.Contains(t, paths, "/tmp/proj/.booth/Boothfile")
-	assert.Contains(t, paths, "/tmp/proj/.booth/startups/50-myapp--startup.sh")
-	assert.Contains(t, paths, "/tmp/proj/.booth/setups/myapp--setup.sh")
-	assert.Contains(t, paths, "/tmp/proj/.booth/home/.bashrc")
-	assert.Contains(t, paths, "/tmp/proj/.booth/home-seed/.config/myapp/config.yaml")
+	assert.Contains(t, paths, wantPath("/tmp/proj/.booth/.gitignore"))
+	assert.Contains(t, paths, wantPath("/tmp/proj/.booth/config.toml"))
+	assert.Contains(t, paths, wantPath("/tmp/proj/.booth/Boothfile"))
+	assert.Contains(t, paths, wantPath("/tmp/proj/.booth/startups/50-myapp--startup.sh"))
+	assert.Contains(t, paths, wantPath("/tmp/proj/.booth/setups/myapp--setup.sh"))
+	assert.Contains(t, paths, wantPath("/tmp/proj/.booth/home/.bashrc"))
+	assert.Contains(t, paths, wantPath("/tmp/proj/.booth/home-seed/.config/myapp/config.yaml"))
 	assert.Len(t, paths, 7)
 }
 
@@ -96,7 +102,7 @@ func TestOutputPaths_SkipsNilFields(t *testing.T) {
 	out := &BoothOutput{}
 	paths := OutputPaths(out, "/tmp/proj")
 	// Only .gitignore
-	assert.Equal(t, []string{"/tmp/proj/.booth/.gitignore"}, paths)
+	assert.Equal(t, []string{wantPath("/tmp/proj/.booth/.gitignore")}, paths)
 }
 
 func TestFindConflicts_NoConflicts(t *testing.T) {
@@ -184,10 +190,12 @@ func TestWriteOutput_WritesStartups(t *testing.T) {
 	assert.Contains(t, content, "#!/bin/bash")
 	assert.Contains(t, content, "echo hello")
 
-	// Verify executable permission
-	info, err := os.Stat(path)
-	require.NoError(t, err)
-	assert.True(t, info.Mode()&0100 != 0, "startup file should be executable")
+	// Verify executable permission, where a host has one to verify
+	if hostskip.UnixModes() {
+		info, err := os.Stat(path)
+		require.NoError(t, err)
+		assert.True(t, info.Mode()&0100 != 0, "startup file should be executable")
+	}
 }
 
 func TestWriteOutput_SkipsNilFields(t *testing.T) {
@@ -393,14 +401,22 @@ func TestWriteOutput_CacheDirModeSuffix(t *testing.T) {
 	require.NoError(t, WriteOutput(out, tmpDir))
 
 	cache := filepath.Join(tmpDir, ".booth", "cache", "home", "coder")
-	info, err := os.Stat(filepath.Join(cache, ".gnupg"))
-	require.NoError(t, err)
-	assert.Equal(t, os.FileMode(0o700), info.Mode().Perm())
+	assert.DirExists(t, filepath.Join(cache, ".gnupg"))
 	assert.FileExists(t, filepath.Join(cache, ".gnupg", ".mount-this"))
+	assert.DirExists(t, filepath.Join(cache, ".envfolio"))
 
-	info, err = os.Stat(filepath.Join(cache, ".envfolio"))
-	require.NoError(t, err)
-	assert.NotEqual(t, os.FileMode(0o700), info.Mode().Perm(), "no suffix keeps the default mode")
+	// The ":0700" suffix is a Unix mode, so only a Unix host can be asked
+	// whether it took (see internal/hostskip). The folders above are made
+	// either way, which is what the booth mounts.
+	if hostskip.UnixModes() {
+		info, err := os.Stat(filepath.Join(cache, ".gnupg"))
+		require.NoError(t, err)
+		assert.Equal(t, os.FileMode(0o700), info.Mode().Perm())
+
+		info, err = os.Stat(filepath.Join(cache, ".envfolio"))
+		require.NoError(t, err)
+		assert.NotEqual(t, os.FileMode(0o700), info.Mode().Perm(), "no suffix keeps the default mode")
+	}
 
 	assert.Contains(t, OutputPaths(out, tmpDir),
 		filepath.Join(tmpDir, ".booth", "cache", "home", "coder", ".gnupg", ".mount-this"))

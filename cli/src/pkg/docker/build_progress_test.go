@@ -208,10 +208,16 @@ func TestBuildProgress_ClockRestartsOnlyOnANewStep(t *testing.T) {
 		t.Errorf("name = %q, want the rename applied", progress.name)
 	}
 
+	// "The clock restarted" cannot be read off two readings of time.Now():
+	// Windows' clock ticks about every half-millisecond, so two writes in a row
+	// land inside one tick and the second time equals the first. Backdate it
+	// instead — a restart has to replace an hour-old reading, whatever the
+	// resolution.
+	progress.started = started.Add(-time.Hour)
 	if _, err := progress.Write([]byte("#13 [6/6] RUN elixir-code-extension--setup.sh\n")); err != nil {
 		t.Fatalf("Write failed: %v", err)
 	}
-	if progress.started.Equal(started) {
+	if !progress.started.After(started.Add(-time.Hour)) {
 		t.Error("a new step did not restart the clock")
 	}
 }
@@ -587,10 +593,14 @@ func TestBuildProgress_Podman_ClockRestartsOnlyOnANewStep(t *testing.T) {
 		t.Errorf("detail = %q, want the step's latest output line", progress.detail)
 	}
 
+	// Backdated for the same reason as the BuildKit case above: a clock whose
+	// tick is coarser than two consecutive writes cannot show a restart as a
+	// difference between two readings of time.Now().
+	progress.started = started.Add(-time.Hour)
 	if _, err := progress.Write([]byte("STEP 4/4: RUN next-thing.sh\n")); err != nil {
 		t.Fatalf("Write failed: %v", err)
 	}
-	if progress.started.Equal(started) {
+	if !progress.started.After(started.Add(-time.Hour)) {
 		t.Error("a new step did not restart the clock")
 	}
 }

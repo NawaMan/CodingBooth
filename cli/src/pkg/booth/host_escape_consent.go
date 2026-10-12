@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -439,9 +440,13 @@ func dangerousMount(source string, readOnly bool, env consentEnv) hostescape.Rea
 	if !strings.HasPrefix(source, "/") {
 		return none // a named volume, not a host path
 	}
-	source = filepath.Clean(source)
+	// Judged as the POSIX path it is. A mount source reaches the engine as a
+	// Linux path whatever the host is, and on Windows filepath.Clean would
+	// rewrite "/etc" as "\etc" — which then matches nothing below, so every
+	// dangerous mount would pass unremarked.
+	source = path.Clean(source)
 
-	base := filepath.Base(source)
+	base := path.Base(source)
 	if strings.HasSuffix(base, ".sock") &&
 		(strings.Contains(base, "docker") || strings.Contains(base, "podman") || strings.Contains(base, "containerd")) {
 		return hostescape.Reason{Kind: hostescape.KindEngineSocket, What: "container engine socket mount (" + source + ")"}
@@ -461,11 +466,11 @@ func dangerousMount(source string, readOnly bool, env consentEnv) hostescape.Rea
 	// Writing the home directory or its dotfiles (~/.bashrc, ~/.ssh, ~/.config/...) runs code as
 	// the user the next time they log in.
 	if env.home != "" {
-		home := filepath.Clean(env.home)
-		if source == home || source == filepath.Dir(home) {
+		home := path.Clean(filepath.ToSlash(env.home))
+		if source == home || source == path.Dir(home) {
 			return homeMount("writable mount of host " + source)
 		}
-		if rel, err := filepath.Rel(home, source); err == nil && strings.HasPrefix(rel, ".") && !strings.HasPrefix(rel, "..") {
+		if rest, inside := strings.CutPrefix(source, home+"/"); inside && strings.HasPrefix(rest, ".") {
 			return homeMount("writable mount of host " + source)
 		}
 	}

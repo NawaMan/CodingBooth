@@ -7,10 +7,14 @@ package lifecycle
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/nawaman/codingbooth/src/internal/fakebin"
 )
 
 // The fake keeps argument boundaries and supplies both native inspect schemas.
@@ -38,28 +42,54 @@ func installCopyEngine(t *testing.T, engine, name, codePath, state string) strin
 	t.Setenv("CB_TEST_CALLS", log)
 	t.Setenv("CB_TEST_EXIT", "0")
 	t.Setenv("CB_ENGINE", engine)
+	t.Setenv(envFakeMode, fakeModeCopy)
 	binary := engine
 	if binary == "apple" {
 		binary = "container"
 	}
-	script := `#!/bin/sh
-printf '<%s>' "$@" >> "$CB_TEST_CALLS"
-printf '\n' >> "$CB_TEST_CALLS"
-case "$1" in
-  ps) printf '%s\n' "$CB_TEST_NAME" ;;
-  ls) printf '%s\n' "$CB_TEST_INSPECT_ARRAY" ;;
-  inspect)
-    if [ "$2" = '--format' ]; then printf '%s\n' "$CB_TEST_INSPECT";
-    else printf '%s\n' "$CB_TEST_INSPECT_ARRAY"; fi ;;
-  port) printf '8080/tcp -> 127.0.0.1:12345\n' ;;
-  *) printf 'native-output\n'; printf 'native-stderr\n' >&2; exit "$CB_TEST_EXIT" ;;
-esac
-`
-	if err := os.WriteFile(filepath.Join(dir, binary), []byte(script), 0o755); err != nil {
-		t.Fatal(err)
-	}
+	fakebin.InstallInto(t, dir, binary)
 	t.Setenv("PATH", dir)
 	return log
+}
+
+// fakeCopyMain is what a stub installed by installCopyEngine does. Each
+// argument is logged inside angle brackets, so a test can see exactly where
+// the boundaries fell — a path with a space in it stays one argument.
+func fakeCopyMain(name string, args []string) int {
+	var line strings.Builder
+	for _, arg := range args {
+		line.WriteString("<" + arg + ">")
+	}
+	line.WriteString("\n")
+	appendCall("CB_TEST_CALLS", line.String())
+
+	subcommand := ""
+	if len(args) > 0 {
+		subcommand = args[0]
+	}
+	switch {
+	case subcommand == "ps":
+		fmt.Println(os.Getenv("CB_TEST_NAME"))
+	case subcommand == "ls":
+		fmt.Println(os.Getenv("CB_TEST_INSPECT_ARRAY"))
+	case subcommand == "inspect":
+		if len(args) > 1 && args[1] == "--format" {
+			fmt.Println(os.Getenv("CB_TEST_INSPECT"))
+		} else {
+			fmt.Println(os.Getenv("CB_TEST_INSPECT_ARRAY"))
+		}
+	case subcommand == "port":
+		fmt.Println("8080/tcp -> 127.0.0.1:12345")
+	default:
+		fmt.Println("native-output")
+		fmt.Fprintln(os.Stderr, "native-stderr")
+		code, err := strconv.Atoi(os.Getenv("CB_TEST_EXIT"))
+		if err != nil {
+			return 127
+		}
+		return code
+	}
+	return 0
 }
 
 func TestCopyEndpointPaths(t *testing.T) {
@@ -98,12 +128,12 @@ func TestCopyRoutingAndPathSemantics(t *testing.T) {
 		args                []string
 		call                string
 	}{
-		{"upload", "docker", "running", []string{"file with spaces", "demo:tmp/"}, "<cp><./file with spaces><demo:/tmp/>"},
+		{"upload", "docker", "running", []string{"file with spaces", "demo:tmp/"}, "<cp><{rel}file with spaces><demo:/tmp/>"},
 		{"stopped download", "docker", "exited", []string{"--name", "demo", ":/tmp/dir/.", "./output/"}, "<cp><demo:/tmp/dir/.><./output/>"},
-		{"podman", "podman", "running", []string{"data/.", "demo:/tmp"}, "<cp><./data/.><demo:/tmp>"},
-		{"apple", "apple", "running", []string{"file", "demo:/tmp"}, "<cp><./file><demo:/tmp>"},
+		{"podman", "podman", "running", []string{"data/.", "demo:/tmp"}, "<cp><{rel}data/.><demo:/tmp>"},
+		{"apple", "apple", "running", []string{"file", "demo:/tmp"}, "<cp><{rel}file><demo:/tmp>"},
 		{"tar output", "docker", "running", []string{"demo:/tmp/data", "-"}, "<cp><demo:/tmp/data><->"},
-		{"protected filename", "docker", "running", []string{"--name=demo", "--", "-q", ":/tmp/-q"}, "<cp><./-q><demo:/tmp/-q>"},
+		{"protected filename", "docker", "running", []string{"--name=demo", "--", "-q", ":/tmp/-q"}, "<cp><{rel}-q><demo:/tmp/-q>"},
 		{"literal shell metacharacters", "docker", "running", []string{"./$(touch sentinel)", "demo:/tmp/a;echo b"}, "<cp><./$(touch sentinel)><demo:/tmp/a;echo b>"},
 	}
 	for _, test := range cases {
@@ -113,8 +143,14 @@ func TestCopyRoutingAndPathSemantics(t *testing.T) {
 			if err := Copy(test.args, &stdout, &stderr); err != nil {
 				t.Fatalf("Copy: %v (%s)", err, stderr.String())
 			}
-			if calls := readLog(t, log); !strings.Contains(calls, test.call+"\n") {
-				t.Fatalf("calls = %s; want %s", calls, test.call)
+			// "{rel}" stands for the prefix copy.go puts in front of a relative
+			// host path: "." and the host's own separator, so "./" here and
+			// ".\" on Windows, which is the form docker.exe there takes. A path
+			// the caller already wrote as "./x" keeps its own prefix, and says
+			// so above by carrying no "{rel}".
+			want := strings.ReplaceAll(test.call, "{rel}", "."+string(filepath.Separator))
+			if calls := readLog(t, log); !strings.Contains(calls, want+"\n") {
+				t.Fatalf("calls = %s; want %s", calls, want)
 			}
 			if stdout.String() != "native-output\n" || stderr.String() != "native-stderr\n" {
 				t.Fatalf("native output not forwarded: %q, %q", stdout.String(), stderr.String())
