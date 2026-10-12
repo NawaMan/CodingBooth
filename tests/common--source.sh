@@ -197,22 +197,55 @@ exit(($? & 127) ? 128 + ($? & 127) : $? >> 8);
 
 # timeout_run [-s SIG] SECONDS CMD... : run CMD, signalling it after SECONDS.
 # Exits with CMD's status, or 124 when the time ran out (as timeout does).
+#
+# The signal is put back to its default disposition in CMD before CMD starts,
+# because the suite runner may have taken it away. run-automate-tests.sh runs
+# each suite as an asynchronous job — `( … ) &` — and POSIX has a shell with no
+# job control ignore SIGINT and SIGQUIT in such a job. SIG_IGN survives exec, so
+# every descendant inherits it: the suite runner, the test, and CMD. Nothing
+# downstream can lift it either — a signal ignored on entry to a shell can
+# neither be trapped nor reset there — so `-s INT` is simply swallowed, and a
+# test that interrupts `booth logs -f` waits for a CLI that cannot die (which is
+# what parked basic/test032--logs.sh for an hour and a half). GNU timeout
+# un-ignores the signal itself; the uutils timeout and a bare fork do not, so the
+# shim goes in front of all three rather than only where it is known to be
+# missing.
+#
+# GRACE seconds after the signal, CMD is killed outright: a CMD that will not
+# answer should fail its test, not hold up the suite behind it. That case exits
+# 137, as timeout's own -k does, to tell "it died of the signal" (124) from "it
+# had to be killed" (137).
 timeout_run() {
     local signal=TERM
     if [[ "${1:-}" == "-s" ]]; then
         signal="$2"; shift 2
     fi
-    local seconds="$1"; shift
+    signal="${signal#SIG}"   # INT, not SIGINT: a perl %SIG key, and what -s takes
+    local seconds="$1" grace=5; shift
+
+    # perl -e '…' SIG CMD… : un-ignore SIG, then *become* CMD, so the pid the
+    # watchdog signals is still CMD's own.
+    local -a unignore=()
+    if command -v perl >/dev/null 2>&1; then
+        unignore=(perl -e '
+my $signal = shift;
+$SIG{$signal} = "DEFAULT";
+exec { $ARGV[0] } @ARGV;
+print STDERR "$ARGV[0]: $!\n";
+exit(127);
+' "$signal")
+    fi
+    set -- ${unignore[@]+"${unignore[@]}"} "$@"
 
     if command -v timeout >/dev/null 2>&1; then
-        timeout -s "$signal" "$seconds" "$@"
+        timeout -s "$signal" -k "$grace" "$seconds" "$@"
     elif command -v gtimeout >/dev/null 2>&1; then
-        gtimeout -s "$signal" "$seconds" "$@"
+        gtimeout -s "$signal" -k "$grace" "$seconds" "$@"
     elif command -v perl >/dev/null 2>&1; then
         # The signal goes to the child itself, which is what `timeout` does
         # without --foreground: a test that interrupts `booth logs -f` wants the
         # CLI to see the SIGINT, not the process group the harness sits in.
-        SIG="$signal" SECS="$seconds" perl -e '
+        SIG="$signal" SECS="$seconds" GRACE="$grace" perl -e '
 my $pid = fork();
 defined $pid or die "fork: $!\n";
 if ($pid == 0) {
@@ -221,10 +254,17 @@ if ($pid == 0) {
     exit(127);
 }
 my $timedout = 0;
-$SIG{ALRM} = sub { $timedout = 1; kill $ENV{SIG}, $pid; };
+my $killed = 0;
+$SIG{ALRM} = sub {
+    if ($timedout) { $killed = 1; kill "KILL", $pid; return; }
+    $timedout = 1;
+    kill $ENV{SIG}, $pid;
+    alarm $ENV{GRACE};
+};
 alarm $ENV{SECS};
 waitpid($pid, 0);
 alarm 0;
+exit(137) if $killed;
 exit(124) if $timedout;
 exit(($? & 127) ? 128 + ($? & 127) : $? >> 8);
 ' "$@"
