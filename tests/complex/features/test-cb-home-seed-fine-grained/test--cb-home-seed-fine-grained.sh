@@ -146,10 +146,24 @@ fi
 # Test 9: Seed marker-free dir — symlinks are dereferenced into real files.
 # A link is copied as its target's content, never as a link: the target path
 # generally does not exist inside the container, so a preserved link would dangle.
-ACTUAL=$(run_coding_booth -- bash -c 'test -L /home/coder/.testdir-plain/link.txt && echo LINK || cat /home/coder/.testdir-plain/link.txt' 2>/dev/null | tr -d '\r\n')
+#
+# The fixture seed-content/.testdir-plain/link.txt is committed as a symlink (mode
+# 120000) to data.txt. Git for Windows checks it out with core.symlinks=false by
+# default (real symlinks need Developer Mode or admin), and then the "link" is a
+# plain 8-byte file whose content is the target name, "data.txt". There is no link
+# left for smart_copy to dereference, so the assertion cannot mean anything there:
+# skip it whenever the checkout did not produce a real symlink.
+if [[ -L "$SCRIPT_DIR/seed-content/.testdir-plain/link.txt" ]]; then
+  ACTUAL=$(run_coding_booth -- bash -c 'test -L /home/coder/.testdir-plain/link.txt && echo LINK || cat /home/coder/.testdir-plain/link.txt' 2>/dev/null | tr -d '\r\n')
+else
+  ACTUAL="SKIPPED"
+fi
 EXPECTED="FROM_SEED_PLAIN"
 
-if [[ "$ACTUAL" == "$EXPECTED" ]]; then
+if [[ "$ACTUAL" == "SKIPPED" ]]; then
+  echo "SKIP: Test 9: seed-content/.testdir-plain/link.txt is not a symlink in this checkout" \
+       "(git core.symlinks=false, the Git for Windows default) — nothing to dereference."
+elif [[ "$ACTUAL" == "$EXPECTED" ]]; then
   print_test_result "true" "$0" "9" "seed marker-free dir: dereferences symlinks"
 else
   print_test_result "false" "$0" "9" "seed marker-free dir: should dereference symlinks, not preserve them"
