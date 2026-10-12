@@ -19,8 +19,8 @@ This file contains a list of changes for each released version.
   the Console UI and the desktop terminals already have the font, and a host terminal needs its
   own. [differ](https://github.com/JanSmrcka/differ) 1.8.1 is installed too, so `differ review`
   works in any booth. The welcome banner lists both. Select the `superfile` or `differ` template
-  to pick another release. If you used `mcedit` or mc's SFTP browsing, `sudo apt-get install mc`
-  in a booth, or `install apt mc` in a Boothfile, brings it back. The base image grows
+  to pick another release. If you used `mcedit` or mc's SFTP browsing, select the new `mc`
+  template (it runs `install apt mc`), or `sudo apt-get install mc` in a running booth. The base image grows
   by about 24 MB. Needs a rebuilt base image.
 
 - **differ is now in the catalog: `setup differ` and a `differ` AI-tools template.**

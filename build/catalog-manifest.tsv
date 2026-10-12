@@ -495,6 +495,7 @@ template	lua	1.0.0	280f87fd4a9f035ceb5a1c0590f601c9f2532088d3ef8d4a45a2afa039b88
 template	lxqt	1.0.0	963f393fa998d49aa47f27a28f0b6fe4f1143f63a18e2adc592ee7db70cd9765	templates/desktops/lxqt/template.toml
 template	make	1.1.0	e14353ff4845d12fd1d4ee812f474c0347134a7ab1886c4a01672428a169a209	templates/tools/make/template.toml
 template	material-cursors	1.0.0	8b64d5c27d3113f60d8769aef239be563621a3cc8336df406386c46773f2be0c	templates/desktops/material-cursors/template.toml
+template	mc	0.1.0	7f58b762ff808e8f5aaee0a93694af2d50f1edc0c5a81c8b12cc1bda2e42a0a8	templates/tools/mc/template.toml
 template	mermaid	1.1.0	d7e95b2973aa9342af5bf56734296a1fef7a11879529f67bfc5670cda668f6af	templates/tools/mermaid/template.toml
 template	mkcert	1.0.0	23be3ef98c34aa99430fbf664f38c726c462871b2a38e250d30f5ae0b6cd0b5f	templates/tools/mkcert/template.toml
 template	mojo	0.1.0	27ab9f41480cdb2b361b178d5eec62b94ebb469a3a4a48eb579509cb16d42718	templates/languages/mojo/template.toml
