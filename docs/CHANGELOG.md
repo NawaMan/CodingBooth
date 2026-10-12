@@ -4,10 +4,11 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
-- **i3 and sway: the window gap is 4px by default, down from 8px.** The `i3+gaps` and `sway+gaps`
-  extensions (selected automatically) and their `i3-gaps--setup.sh` / `sway-gaps--setup.sh` all
-  default to 4 now. An existing booth keeps the value its Boothfile already pins (`arg I3_GAPS=8`,
-  `arg SWAY_GAPS=8`) until it is reconfigured with `i3+gaps:4` / `sway+gaps:4`.
+- **i3, sway and Krohnkite: the window gap is 4px by default, down from 8px.** The `i3+gaps`,
+  `sway+gaps` and `krohnkite+gaps` extensions (selected automatically) and their `*-gaps--setup.sh`
+  scripts all default to 4 now. An existing booth keeps the value its Boothfile already pins (for
+  example `arg I3_GAPS=8`) until it is reconfigured with `i3+gaps:4`, `sway+gaps:4` or
+  `krohnkite+gaps:4`.
 
 - **Fixed: another booth exiting could make `booth list`, `logs`, `stop` and the rest fail.** These
   commands list every booth and then inspect each one. A booth removed between those two steps,
