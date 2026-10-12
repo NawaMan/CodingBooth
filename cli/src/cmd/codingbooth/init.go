@@ -52,7 +52,8 @@ type initFlags struct {
 	mounts            []string // --mount volume mounts
 	addMounts         []string // --add-mount: unioned onto the baseline, by container path
 	removeMounts      []string // --remove-mount: container paths dropped from the baseline
-	sets              []string // raw --set key=value strings
+	sets              []string // raw --set key=value strings, one per list item
+	unsets            []string // --unset: config.toml keys dropped from the baseline
 	cacheFiles    []string // cache-files read back from existing config.toml
 	cacheDirs     []string // cache-dirs read back from existing config.toml
 	sharedFiles   []string // shared-files read back from existing config.toml
@@ -269,7 +270,19 @@ func parseInitFlags(args []string) initFlags {
 				fmt.Fprintln(os.Stderr, "Error: --set requires a value")
 				os.Exit(1)
 			}
-			flags.sets = append(flags.sets, args[i+1])
+			expanded, err := expandSet(args[i+1])
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+			flags.sets = append(flags.sets, expanded...)
+			i++
+		case "--unset":
+			if i+1 >= len(args) || args[i+1] == "" {
+				fmt.Fprintln(os.Stderr, "Error: --unset requires a key")
+				os.Exit(1)
+			}
+			flags.unsets = append(flags.unsets, args[i+1])
 			i++
 		default:
 			fmt.Fprintf(os.Stderr, "Error: unknown flag: %s\n", args[i])
@@ -1427,7 +1440,13 @@ func coerceSetValue(spec appctx.KeySpec, raw string) (interface{}, error) {
 		return n, nil
 
 	case appctx.KeyList:
-		return []string{raw}, nil
+		// Values split on commas (see splitListValue); a header written before
+		// they did, or a TUI list item typed as "a,b", reads back as separate items.
+		items := splitListValue(spec.Key, raw)
+		if len(items) == 0 {
+			return nil, fmt.Errorf("--set %s=%s: no values between the commas", spec.Key, raw)
+		}
+		return items, nil
 
 	default:
 		return raw, nil

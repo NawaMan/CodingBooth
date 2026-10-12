@@ -4,6 +4,23 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth config`: `--set` replaces only the key it names, and `--unset` drops one.** On a
+  reconfigure, one `--set` used to replace every `--set` recorded in the header, so
+  `--set egress-allowlist=b.com` silently dropped `timezone` and any other recorded key. Each key
+  is now merged on its own. A key given again replaces its whole recorded value, list keys
+  included. For `cache-*` and `shared-*` the new value used to be appended to the old one, and the
+  old value never reached the header. Now the header always records the key's full value, so
+  regenerating from the header alone reproduces the files.
+  - **Commas separate list values.** `--set egress-allowlist=a.com,b.com` writes two entries,
+    recorded as one `--set` each. The argv lists `run-args`, `build-args`, `common-args` and `cmds`
+    keep one token per `--set` and never split, because a comma is ordinary text in a docker flag.
+  - **`--unset <key>`** removes a recorded key from the header and `config.toml`. This includes
+    `variant`, `port` and `cmds`, and `cache-*`/`shared-*` paths read back from the file.
+  - **A `--remove-*` or `--unset` that matches nothing is now an error, and nothing is written.**
+    It used to print a note and carry on. `--remove-env KEY=VALUE` used to match nothing at all.
+    It now drops the entry when the value matches, and when it does not, the error shows the
+    recorded entry.
+
 - **git works in a booth opened on a git worktree.** A worktree's `.git` is a file pointing into
   the main clone's `.git/worktrees/<name>`, outside the workspace mount, so in the booth `git
   status`, `gh`, `lazygit`, commits from an agent, and any build step that calls `git ls-files`
