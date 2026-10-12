@@ -29,6 +29,10 @@ source ../common--source.sh
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 SETUP_SCRIPT="$REPO_ROOT/variants/base/setups/android-emulator--setup.sh"
 
+# The launcher edits the AVD's config.ini with `sed -i`; BSD sed reads the
+# script as a backup suffix instead and leaves the file alone.
+require_host_tools "cb-android-emulator edits the AVD's config.ini with sed -i" gnu-sed
+
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 

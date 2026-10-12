@@ -23,6 +23,9 @@ source ../common--source.sh
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 SYNC_SRC="$REPO_ROOT/variants/base/booth--file-sync"
 
+require_host_tools "booth--file-sync finds its staged files with find -printf and carries modes over with stat -c" \
+                   gnu-find gnu-stat
+
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 

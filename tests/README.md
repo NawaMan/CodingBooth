@@ -165,6 +165,7 @@ the full story in its own comment.
 | `have_symlinks` | a case about what a script does *at* a symlink | `ln -s` copying the file instead, which proves the opposite |
 | `is_link_or_copy <path>` | asserting a script put its link there | `-L` being false for the copy `ln -s` left |
 | `utf8_locale` | the one command that needs a UTF-8 locale (`grep -oP` in a product script) | a script dying on its version probe where the shell has no locale |
+| `require_host_tools <subject> <feature>…` | a setups case whose *subject* needs bash 4 or GNU userland (`${x,,}`, `mapfile`, `sed -i`, `find -printf`, `stat -c`, `grep -P`) | eight red tests on macOS for scripts that are right about the image they run in; it prints the SKIP and exits |
 
 **Do not set a UTF-8 `LANG` for a whole run on Windows.** It looks like a fix — GNU grep refuses
 `-P` without a unibyte or UTF-8 locale, so `tests/setups/test--pg-ext-install` needs one for the

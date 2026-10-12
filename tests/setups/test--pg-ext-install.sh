@@ -26,6 +26,8 @@ source ../common--source.sh
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PG_EXT_SCRIPT="$REPO_ROOT/variants/base/setups/pg-ext--install.sh"
 
+require_host_tools "pg-ext--install.sh reads the Postgres major version with grep -oP" grep-P
+
 STUB=$(mktemp -d)
 trap "rm -rf $STUB" EXIT
 mkdir -p "$STUB/bin" "$STUB/conf"
