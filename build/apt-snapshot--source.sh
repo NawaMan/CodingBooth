@@ -62,7 +62,11 @@ resolve_apt_snapshot() {
     APT_SNAPSHOT="$CB_APT_SNAPSHOT"
     APT_SNAPSHOT_FROM="CB_APT_SNAPSHOT"
     fix="Unset CB_APT_SNAPSHOT to use ${APT_SNAPSHOT_FILE}, or set it to a snapshot id (e.g. 20260601T000000Z) or today."
-    case "${APT_SNAPSHOT,,}" in
+    # tr, not ${APT_SNAPSHOT,,}: that expansion is bash 4, and this file is
+    # sourced by docker-build.sh on the developer's own machine, where macOS
+    # still ships bash 3.2 — the same reason apt_snapshot_check above carries a
+    # BSD date fallback.
+    case "$(printf '%s' "$APT_SNAPSHOT" | tr '[:upper:]' '[:lower:]')" in
       today) APT_SNAPSHOT="$today" ;;
       none)
         echo "❌ CB_APT_SNAPSHOT=none: images are always built against a snapshot." >&2
