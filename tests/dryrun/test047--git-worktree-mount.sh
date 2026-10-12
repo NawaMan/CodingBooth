@@ -15,6 +15,11 @@
 # Test 2: worktree     -> GIT_CONFIG_KEY_0=gc.worktreePruneExpire
 # Test 3: main clone   -> no extra git mount
 # Test 4: main clone   -> no git env
+#
+# The mount only works where the host's own absolute path is also a path the
+# booth can hold, which a Windows gitdir ("C:/proj/.git") is not: booth declines
+# it there and says so, and tests 1-2 assert that refusal instead. The gap is
+# recorded under Problems in docs/TODO.md.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -48,10 +53,17 @@ check() { # test-number, description, expect (yes|no), pattern, code dir
     fi
 }
 
-check 1 "Worktree mounts the main clone's .git at its own path" \
-    yes "-v $WORK/main/.git:$WORK/main/.git" "$WORK/wt"
-check 2 "Worktree pins gc.worktreePruneExpire" \
-    yes "GIT_CONFIG_KEY_0=gc.worktreePruneExpire" "$WORK/wt"
+if [[ "$HOST_OS" == "WIN" ]]; then
+    check 1 "Worktree on Windows: the mount is declined, with a reason" \
+        yes "git will not work in this booth" "$WORK/wt"
+    check 2 "Worktree on Windows: no half-made git mount or env" \
+        no "GIT_CONFIG_KEY_0" "$WORK/wt"
+else
+    check 1 "Worktree mounts the main clone's .git at its own path" \
+        yes "-v $WORK/main/.git:$WORK/main/.git" "$WORK/wt"
+    check 2 "Worktree pins gc.worktreePruneExpire" \
+        yes "GIT_CONFIG_KEY_0=gc.worktreePruneExpire" "$WORK/wt"
+fi
 check 3 "Main clone gets no extra git mount" \
     no "$WORK/main/.git:" "$WORK/main"
 check 4 "Main clone gets no git env" \

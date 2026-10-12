@@ -57,6 +57,16 @@ report() {  # report <ok> <desc> [detail-lines...]
 # Scan once; the two rules read the result. A "real" invocation is `curl` followed
 # by a flag, a URL or a variable — which excludes the many `apt-get install ... curl`
 # package lists, `command -v curl` probes, and curl inside a comment.
+#
+# The scanner is that regex pair, so this file is python3 or nothing. Where
+# `python3` is only the Microsoft Store's stub (see have_python3 in
+# common--source.sh) it exits 49 and, under `set -e`, took the whole test with
+# it — reported as a failure with no assertion behind it.
+if ! have_python3; then
+    echo "SKIP: python3 is not available to scan the setups for unretried curl calls"
+    exit 0
+fi
+
 SCAN=$(mktemp)
 trap "rm -f $SCAN" EXIT
 

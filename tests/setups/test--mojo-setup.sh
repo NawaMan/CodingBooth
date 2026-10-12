@@ -91,7 +91,7 @@ out=$(run_mojo_setup "") && rc=0 || rc=$?
 if [[ $rc -eq 0 ]] \
     && grep -qE "STUB_PIP install mojo==[0-9]+\.[0-9]+" "$STUB/log" \
     && grep -q "STUB_APT install" "$STUB/log" \
-    && [[ -L "$STUB/bindir/mojo" ]]; then
+    && is_link_or_copy "$STUB/bindir/mojo"; then
     print_test_result "true" "$0" "1" "default installs a pinned mojo and links the binary"
 else
     print_test_result "false" "$0" "1" "default installs a pinned mojo and links the binary"

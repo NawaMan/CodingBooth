@@ -46,6 +46,15 @@ else
 fi
 
 # Run the wrapper's Python (extracted from the setup) against a throwaway HOME.
+# It needs a real python3 — where `python3` is only the Microsoft Store's stub
+# (see have_python3 in common--source.sh) it exits 49, which under `set -e`
+# ended this file right here: both cases above passed and the suite still
+# counted the test as failed.
+if ! have_python3; then
+    echo "SKIP: python3 is not available to run the wrapper's own Python block"
+    exit 0
+fi
+
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 PY_BLOCK=$(python3 - "$SETUP" <<'PY'

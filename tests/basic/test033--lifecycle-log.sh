@@ -87,7 +87,11 @@ fi
 # Test 2: --list names it
 # -------------------------------------------------------
 OUT=$(run_booth logs --name "$NAME" --list || true)
-if echo "$OUT" | grep -qE "^lifecycle[[:space:]].*/\.booth/\.tmp/lifecycle\.log$"; then
+# Either separator in the FILE column: this log lives on the host, not in the
+# booth, so booth prints the host's own spelling of it —
+# "C:\…\.booth\.tmp\lifecycle.log" under Git Bash. The SERVICE column is
+# "lifecycle" everywhere.
+if echo "$OUT" | grep -qE "^lifecycle[[:space:]].*[/\]\.booth[/\]\.tmp[/\]lifecycle\.log$"; then
   print_test_result "true" "$0" "2" "booth logs --list names the lifecycle log"
 else
   print_test_result "false" "$0" "2" "booth logs --list should name the lifecycle log (output below)"

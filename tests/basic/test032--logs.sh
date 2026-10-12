@@ -144,14 +144,22 @@ fi
 # -------------------------------------------------------
 # Test 6: an interrupted follow leaves no tail in the booth
 # -------------------------------------------------------
-OUT=$(timeout_run -s INT 3 "$BOOTH_BIN" logs --name "$NAME" ticker -f -n 1 || true)
-sleep 2
-LEFT=$(docker exec "$NAME" ps -eo args | grep -c '^tail ' || true)
-if [[ "$OUT" == *"tick"* && "$LEFT" == "0" ]]; then
-  print_test_result "true" "$0" "6" "booth logs -f follows, and Ctrl+C stops the tail in the booth"
+# The interrupt is a POSIX signal sent to booth itself. Git Bash cannot deliver
+# one to a native Windows process: timeout_run leaves the follow running, and
+# the command substitution below then waits for a process that never returns —
+# a hung test rather than a failing one. Skipped there; Test 7 still runs.
+if [[ "$HOST_OS" != "WIN" ]]; then
+    OUT=$(timeout_run -s INT 3 "$BOOTH_BIN" logs --name "$NAME" ticker -f -n 1 || true)
+    sleep 2
+    LEFT=$(docker exec "$NAME" ps -eo args | grep -c '^tail ' || true)
+    if [[ "$OUT" == *"tick"* && "$LEFT" == "0" ]]; then
+      print_test_result "true" "$0" "6" "booth logs -f follows, and Ctrl+C stops the tail in the booth"
+    else
+      print_test_result "false" "$0" "6" "booth logs -f (leftover tails: $LEFT, output: $OUT)"
+      exit 1
+    fi
 else
-  print_test_result "false" "$0" "6" "booth logs -f (leftover tails: $LEFT, output: $OUT)"
-  exit 1
+    echo "SKIP: this shell cannot send SIGINT to a native Windows process; the interrupted follow is not checked"
 fi
 
 # -------------------------------------------------------

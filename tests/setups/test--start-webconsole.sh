@@ -85,14 +85,19 @@ check "start-webconsole 65530: refused, its API port (+7) would not exist" \
     "$([[ "$RUN_EXIT" != 0 && "$RUN_OUT" != *"start-ttyd"* ]] && echo true || echo false)" "$RUN_OUT"
 
 # A port already taken is refused up front, rather than failing inside nginx.
+# The holder comes from occupy_port (common--source.sh), which knows what can
+# listen on this host — an inline python3 starts nothing where python3 is only
+# the Microsoft Store's stub, and the case then fails on a port that was free.
 busy=$(free_port)
-python3 -c "import socket,time;s=socket.socket();s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1);s.bind(('127.0.0.1',$busy));s.listen();time.sleep(30)" &
-LISTENER=$!
-for _ in $(seq 1 50); do (exec 3<>"/dev/tcp/127.0.0.1/$busy") 2>/dev/null && break; sleep 0.1; done
-run_webconsole "$busy"
-kill "$LISTENER" 2>/dev/null || true
-check "start-webconsole on a port in use: refused" \
-    "$([[ "$RUN_EXIT" != 0 && "$RUN_OUT" == *"already in use"* && "$RUN_OUT" != *"start-ttyd"* ]] && echo true || echo false)" "$RUN_OUT"
+if LISTENER="$(occupy_port "$busy" 30)"; then
+    for _ in $(seq 1 50); do (exec 3<>"/dev/tcp/127.0.0.1/$busy") 2>/dev/null && break; sleep 0.1; done
+    run_webconsole "$busy"
+    kill "$LISTENER" 2>/dev/null || true
+    check "start-webconsole on a port in use: refused" \
+        "$([[ "$RUN_EXIT" != 0 && "$RUN_OUT" == *"already in use"* && "$RUN_OUT" != *"start-ttyd"* ]] && echo true || echo false)" "$RUN_OUT"
+else
+    echo "SKIP: nothing on this host can hold a port open; the in-use refusal is not checked"
+fi
 
 # ---- the console's own helpers sit above its port, not on fixed ones --------
 TEMPLATE="$BASE/web-ttyd-split/nginx.conf.template"

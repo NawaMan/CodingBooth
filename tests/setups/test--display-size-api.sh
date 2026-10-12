@@ -56,7 +56,7 @@ post() {
     local path="$1" body="$2"
     OUT=$(printf 'POST /booth-messages/api/display-size HTTP/1.1\r\nContent-Type: application/json\r\nContent-Length: %s\r\n\r\n%s' \
             "${#body}" "$body" \
-          | env -i HOME="$STUB" PATH="$path" "$BASH_BIN" "$API" --handle 2>&1 | tr -d '\r')
+          | env -i HOME="$STUB" PATH="$(stub_path "$path")" "$BASH_BIN" "$API" --handle 2>&1 | tr -d '\r')
 }
 
 # ---- no hook: supported:false, nothing run ----
