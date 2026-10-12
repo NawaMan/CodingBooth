@@ -907,9 +907,10 @@ run_coding_booth() {
 #     docker exec -u coder "$NAME" cat /home/coder/code/file
 #     cat: 'C:/Program Files/Git/home/coder/code/file': No such file or directory
 #
-# `docker exec` takes no host paths at all, and `docker run`'s host paths (a -v
-# source) are understood by Docker Desktop in the shell's own `/c/Users/...`
-# form, so for those two subcommands the rewriting is pure loss. MSYS_NO_PATHCONV
+# `docker exec` takes no host paths at all, and the host paths of `docker run`
+# and `docker create` (a -v source) are understood by Docker Desktop in the
+# shell's own `/c/Users/...` form, so for those subcommands the rewriting is
+# pure loss. MSYS_NO_PATHCONV
 # turns it off, and wrapping docker here rather than at each call site covers
 # every test that sources this file without touching one of them.
 #
@@ -923,7 +924,7 @@ run_coding_booth() {
 if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]] && type -P docker >/dev/null 2>&1; then
     docker() {
         case "${1:-}" in
-            exec|run) MSYS_NO_PATHCONV=1 command docker "$@" ;;
+            exec|run|create) MSYS_NO_PATHCONV=1 command docker "$@" ;;
             *)        command docker "$@" ;;
         esac
     }
