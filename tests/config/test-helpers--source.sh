@@ -53,6 +53,9 @@ _repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # that knows the difference (see tests/README.md).
 # shellcheck disable=SC1091
 source "$_repo_root/tests/booth-bin--source.sh"
+# pick_free_port, for port_args below.
+# shellcheck disable=SC1091
+source "$_repo_root/tests/common--source.sh"
 
 # test_label: this test's path relative to tests/, used to prefix a failure
 # message so it survives being flattened into a suite-wide log alongside every
@@ -99,13 +102,27 @@ function run() {
     "$@" >> $log 2>&1
 }
 
+# port_args: fill PORT_ARGS with a --port for the booth about to run in $prj,
+# taken from pick_free_port. Left to the CLI, every booth here took its NEXT
+# scan from 12000 -- the same port the other suites' booths were scanning for
+# at the same moment, so one of them lost the bind:
+#   Bind for 127.0.0.1:12000 failed: port is already allocated
+# A port the test itself put in config.toml is the test's choice, so it stays.
+function port_args() {
+    PORT_ARGS=()
+    if ! grep -qE '^[[:space:]]*port[[:space:]]*=' "$prj/.booth/config.toml" 2>/dev/null; then
+        PORT_ARGS=(--port "$(pick_free_port)")
+    fi
+}
+
 function booth-collect() {
     local cmd="$1"
     if [[ "$VERBOSE" == "true" ]]; then
         echo "  > booth ${BUILD_ARGS[@]+${BUILD_ARGS[@]} }-- ${cmd}"
     fi
     cd $prj
-    booth ${BUILD_ARGS[@]+"${BUILD_ARGS[@]}"} -- "$cmd" > "$tmpfile"
+    port_args
+    booth ${BUILD_ARGS[@]+"${BUILD_ARGS[@]}"} ${PORT_ARGS[@]+"${PORT_ARGS[@]}"} -- "$cmd" > "$tmpfile"
     cd ..
     cat "$tmpfile" >> $log
     if [[ "$VERBOSE" == "true" ]]; then
@@ -119,7 +136,8 @@ function booth-collect-dind() {
         echo "  > booth ${BUILD_ARGS[@]+${BUILD_ARGS[@]} }--dind --dind-allowed -- ${cmd}"
     fi
     cd $prj
-    booth ${BUILD_ARGS[@]+"${BUILD_ARGS[@]}"} --dind --dind-allowed -- "$cmd" > "$tmpfile"
+    port_args
+    booth ${BUILD_ARGS[@]+"${BUILD_ARGS[@]}"} ${PORT_ARGS[@]+"${PORT_ARGS[@]}"} --dind --dind-allowed -- "$cmd" > "$tmpfile"
     cd ..
     cat "$tmpfile" >> $log
     if [[ "$VERBOSE" == "true" ]]; then
@@ -197,7 +215,8 @@ function assert-last() {
     echo "## Test ${TEST_COUNT} ###########################" >> $log
     run cd $prj
 
-    run booth -- "${CMD}"
+    port_args
+    run booth ${PORT_ARGS[@]+"${PORT_ARGS[@]}"} -- "${CMD}"
     FOUND="$(tail $log -n 1)"
     if [[ "${FOUND}" != "${EXPECTED}" ]]; then
         FAIL_COUNT=$((FAIL_COUNT + 1))
