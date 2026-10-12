@@ -26,6 +26,8 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 API="$REPO_ROOT/variants/base/setups/booth-message-api-server"
 BASH_BIN="$(command -v bash)"
 
+require_host_tools "booth-message-api-server matches its request headers with \${line,,}" bash4
+
 STUB=$(mktemp -d)
 trap 'rm -rf "$STUB"' EXIT
 mkdir -p "$STUB/bin" "$STUB/hook" "$STUB/failing"

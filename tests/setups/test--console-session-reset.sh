@@ -20,6 +20,8 @@ source ../common--source.sh
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 API="$REPO_ROOT/variants/base/setups/booth-message-api-server"
 
+require_host_tools "booth-message-api-server matches its request headers with \${line,,}" bash4
+
 # handle_session_reset reads the request body with jq, which every booth has and
 # a host may not. Without it the endpoint answers 400 to everything and the
 # refusal cases would pass for the wrong reason.

@@ -990,6 +990,60 @@ utf8_locale() {
   return 1
 }
 
+# ── A script written for the image, run on this host ─────────────────────────
+#
+# The setups suite runs real setup and launcher scripts on the host with their
+# tools stubbed, which is what makes it fast and image-free. Those scripts are
+# written for the one place they ever run — the image: Ubuntu, bash 5, GNU
+# userland — and a handful of them use something a macOS host has not got:
+# `${x,,}`, mapfile, `sed -i` with no suffix, `find -printf`, `stat -c`,
+# `grep -P`. The script is not wrong, and rewriting shipped container code so a
+# BSD host can run it would be churn for no gain, so the test asks the host
+# first and skips. Linux keeps the coverage, which is where CI runs it.
+#
+#     require_host_tools "booth--file-sync lists its staged files with find -printf" \
+#                        gnu-find gnu-stat
+#
+# Each feature is probed, never version-tested, so a Mac carrying Homebrew's
+# coreutils/gnu-sed takes the real branch and runs the case for real. See also
+# sed_inplace, which shims the one GNU-ism the tests themselves need, and
+# test--desktop-start-ports.sh, which probes the bash its *subject* will get
+# rather than the one running the test.
+#
+# missing_host_tools prints the named features this host lacks, "" when it has
+# them all. require_host_tools is the guard built on it: it prints the SKIP line
+# and exits the test, so it reads as one statement at the top of a file.
+missing_host_tools() {
+  local feature label missing=""
+  for feature in "$@"; do
+    case "$feature" in
+      bash4)    label="bash 4 (\${x,,}, mapfile)"
+                bash -c 'x=A; : "${x,,}"; mapfile -t _ </dev/null' ;;
+      gnu-sed)  label="GNU sed"
+                sed --version ;;
+      gnu-find) label="GNU find (-printf)"
+                find . -maxdepth 0 -printf '' ;;
+      gnu-stat) label="GNU stat (-c)"
+                stat -c '%a' . ;;
+      grep-P)   label="grep -P"
+                printf 'a1\n' | grep -qP '\d' ;;
+      *)        label="$feature"
+                echo "missing_host_tools: unknown feature \"$feature\"" >&2
+                false ;;
+    esac >/dev/null 2>&1 || missing+="${missing:+, }$label"
+  done
+  printf '%s' "$missing"
+}
+
+require_host_tools() {
+  local subject="$1"; shift
+  local missing
+  missing="$(missing_host_tools "$@")"
+  [[ -z "$missing" ]] && return 0
+  echo "SKIP: $subject, and this host has no $missing (bash ${BASH_VERSION%%(*} on $(uname -s))"
+  exit 0
+}
+
 # stub_path assembles the PATH for a setup script run against stubbed tools:
 # the given directories, and on Windows the one directory a stub cannot do
 # without.
