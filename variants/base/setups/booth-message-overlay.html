@@ -1,5 +1,5 @@
 <!-- Booth Message Overlay — shared across all variants -->
-<!-- cb-version: 1.0.0 -->
+<!-- cb-version: 1.1.0 -->
 <style>
   .msg-overlay {
     display: none;
@@ -522,6 +522,29 @@
     50% {
       opacity: 0.2;
     }
+  }
+
+  /* Viewer count: how many pages are viewing this booth */
+  .bl-viewers {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 2px 0;
+    font-family: -apple-system, "Segoe UI", sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    color: #94a3b8;
+    cursor: default;
+  }
+
+  .bl-viewers.visible {
+    display: flex;
+  }
+
+  .bl-viewers.bl-viewers-many {
+    color: #facc15;
   }
 
   /* Idle-monitor status chip */
@@ -1090,6 +1113,7 @@
         title="Total time this booth session has been running"></div>
       <div class="bl-timer bl-timer-green" id="bl-count-down" data-priority="20" style="display:none"
         title="Time remaining before the booth session ends"></div>
+      <div class="bl-viewers" id="bl-viewers" data-priority="40"></div>
       <div class="bl-idle-chip bl-idle-chip-active" id="bl-idle-chip" data-priority="50"
         title="Idle shutdown is active — click to pause or disable"></div>
       <button class="bl-btn bl-btn-capture" id="bl-help-btn" data-priority="60"
@@ -2988,5 +3012,72 @@
     document.addEventListener("mousedown", reportActivity, true);
     document.addEventListener("wheel", reportActivity, true);
     document.addEventListener("touchstart", reportActivity, true);
+  })();
+  // Viewer count. Every page that loads this overlay beats every 5s with its
+  // own random id; the booth counts the pages that beat recently and answers
+  // with the count, which shows in the Booth panel. Closing the tab sends a
+  // release, so the count drops on the other pages' next beat; a page whose
+  // release never arrives (a crash, a lost network) drops out when its beats
+  // stop. Each beat says whether the page is in view: a hidden tab's timers
+  // are slowed to about once a minute, and the booth gives it longer.
+  (function () {
+    var el = document.getElementById("bl-viewers") || document.createElement("div");
+    var apiBase = window.BOOTH_MSG_API_BASE || "booth-messages/api";
+    var url = apiBase + "/presence";
+    var id = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    var stopped = false;   // a booth from before presence: stop asking
+    var gone = false;      // released: the page is closing or being left
+
+    function render(j) {
+      var n = parseInt(j.viewers, 10) || 0, bg = parseInt(j.background, 10) || 0;
+      if (n < 1) n = 1;    // this page is viewing, whatever a sweep raced
+      var text = "\u{1F441} " + n + (n === 1 ? " viewer" : " viewers");
+      if (bg > 0) text += " \u00B7 " + bg + " in background";
+      el.textContent = text;
+      el.title = n === 1
+        ? "Only this page is viewing the booth"
+        : n + " pages (tabs, windows or machines) are viewing this booth"
+          + (bg > 0 ? ", " + bg + " of them in a background tab" : "");
+      el.classList.toggle("bl-viewers-many", n > 1);
+      el.classList.add("visible");
+    }
+
+    function beat() {
+      if (stopped || gone) return;
+      fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, visible: document.visibilityState === "visible" })
+      }).then(function (r) {
+          if (r.status === 404) { stopped = true; el.classList.remove("visible"); return null; }
+          return r.ok ? r.json() : null;
+        })
+        .then(function (j) { if (j && j.ok) render(j); })
+        .catch(function () { });   // not up yet: the next beat asks again
+    }
+
+    // Leaving fires pagehide and then visibilitychange to hidden. Without the
+    // gone flag, that second event beat again and put the page straight back,
+    // counted in the background until its allowance ran out.
+    function release() {
+      gone = true;
+      if (stopped || !navigator.sendBeacon) return;
+      navigator.sendBeacon(url, JSON.stringify({ id: id, release: true }));
+    }
+
+    beat();
+    setInterval(beat, 5000);
+    // Tell the booth straight away when the page goes into or out of view, so
+    // a page going hidden gets the longer allowance before its timers slow.
+    document.addEventListener("visibilitychange", beat);
+    // A page frozen by the browser stops beating and drops out; it is back on
+    // the next beat once it resumes.
+    document.addEventListener("resume", beat);
+    // Closing the tab, or leaving the page. A page kept in the back/forward
+    // cache comes back without reloading, so it registers again on pageshow.
+    window.addEventListener("pagehide", release);
+    window.addEventListener("pageshow", function (e) {
+      if (e.persisted) { gone = false; beat(); }
+    });
   })();
 </script>

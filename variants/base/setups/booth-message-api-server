@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.1.0
+# cb-version: 1.2.0
 
 # -----------------------------------------------------------------------------
 # booth-message-api-server
@@ -24,6 +24,8 @@
 #   POST /booth-messages/api/viewmd        — start viewmd --daemon if it is not already serving
 #   POST /booth-messages/api/display-size  — fit the desktop to the browser {"width": W, "height": H}
 #   POST /booth-messages/api/display-lease — which viewer fits the desktop {"id": ID, "claim"|"release": true}
+#   GET  /booth-messages/api/presence      — how many pages are viewing this booth
+#   POST /booth-messages/api/presence      — a page's heartbeat {"id": ID, "visible": true|false} or {"id": ID, "release": true}
 #   POST /booth-messages/api/session-reset — end a Console UI pane's tmux session {"session": 1-6}
 #
 # Usage: booth-message-api-server <port>
@@ -67,6 +69,7 @@ handle_request() {
             case "$path" in
                 /booth-messages/api/list) handle_list ;;
                 /booth-messages/api/idle/state) handle_idle_state ;;
+                /booth-messages/api/presence) handle_presence "" ;;
                 *) send_response 404 '{"error":"not found"}' ;;
             esac
             ;;
@@ -117,6 +120,9 @@ handle_request() {
                     ;;
                 /booth-messages/api/session-reset)
                     handle_session_reset "$body"
+                    ;;
+                /booth-messages/api/presence)
+                    handle_presence "$body"
                     ;;
                 *) send_response 404 '{"error":"not found"}' ;;
             esac
@@ -330,6 +336,66 @@ handle_display_lease() {
         return
     fi
     send_response 200 '{"ok":true,"leader":false}'
+}
+
+# How long a page counts as viewing without a heartbeat. The page beats every 5s,
+# so a visible page drops out after a few missed beats — a crash, a lost network,
+# a laptop lid — when the release it sends on closing never arrives. A hidden
+# page gets longer: browsers slow a background tab's timers down to about once a
+# minute, and a tab that is still open must not blink out of the count.
+PRESENCE_TTL_VISIBLE=15
+PRESENCE_TTL_HIDDEN=90
+
+handle_presence() {
+    # Counts the pages viewing this booth: every page that loads the overlay
+    # beats with its own random id, one file per id in the presence dir.
+    #   visible:true|false — renew this page, and record whether it is in view
+    #   release:true       — the page is closing; drop it now
+    #   empty body (GET)   — only read the count
+    # Pages that skip the overlay (an inner URL opened directly), SSH and
+    # `booth exec` are not counted.
+    local body="$1"
+    local dir="${BOOTH_PRESENCE_DIR:-/tmp/booth-presence}"
+    local id="" now state stamp f viewers=0 background=0
+    printf -v now '%(%s)T' -1
+
+    if [ -n "$body" ]; then
+        id=$(echo "$body" | sed -n 's/.*"id" *: *"\([A-Za-z0-9_-]\{1,64\}\)".*/\1/p')
+        if [ -z "$id" ]; then
+            send_response 400 '{"error":"id must be 1-64 letters, digits, - or _"}'
+            return
+        fi
+        if [[ "$body" =~ \"release\"\ *:\ *true ]]; then
+            rm -f "$dir/$id"
+        else
+            state=visible
+            [[ "$body" =~ \"visible\"\ *:\ *false ]] && state=hidden
+            # Write-then-rename, so a concurrent count never reads half a line.
+            if ! { mkdir -p "$dir" && printf '%s %s\n' "$state" "$now" > "$dir/.$id.$$" \
+                    && mv -f "$dir/.$id.$$" "$dir/$id"; }; then
+                rm -f "$dir/.$id.$$"
+                send_response 500 '{"error":"cannot record the viewer"}'
+                return
+            fi
+        fi
+    fi
+
+    # Count, and sweep out pages that stopped beating. A page renewed between
+    # the read and the rm here is lost for one beat, and back on its next.
+    for f in "$dir"/*; do
+        [ -f "$f" ] || continue
+        state="" stamp=""
+        read -r state stamp < "$f" 2>/dev/null || true
+        [[ "$stamp" =~ ^[0-9]+$ ]] || stamp=0
+        if [ "$state" = hidden ]; then
+            if [ $((now - stamp)) -gt "$PRESENCE_TTL_HIDDEN" ]; then rm -f "$f"; continue; fi
+            background=$((background + 1))
+        else
+            if [ $((now - stamp)) -gt "$PRESENCE_TTL_VISIBLE" ]; then rm -f "$f"; continue; fi
+        fi
+        viewers=$((viewers + 1))
+    done
+    send_response 200 "{\"ok\":true,\"viewers\":${viewers},\"background\":${background}}"
 }
 
 handle_idle_pause() {
