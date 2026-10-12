@@ -33,6 +33,21 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# json_check <file> <jq args...> — jq -e on a file. Uses the host's jq when there is one,
+# else the booth's own (the base image ships jq; the booth is running for every
+# caller), so a host without jq — stock Git Bash on Windows — keeps the checks.
+# Values go through --arg without a leading "/": a native jq.exe would get it
+# rewritten by MSYS into a Windows path.
+json_check() {
+  local file="$1"
+  shift
+  if command -v jq >/dev/null 2>&1; then
+    jq -e "$@" < "$file" >/dev/null
+  else
+    docker exec -i "$NAME" jq -e "$@" < "$file" >/dev/null
+  fi
+}
+
 check() {
   local number="$1" description="$2"
   shift 2
@@ -83,11 +98,11 @@ run_coding_booth cp --engine docker "$NAME:/tmp/nested/data" "$WORK/from-tar"
 check 6 "Tar stdin extracts into the booth" cmp "$WORK/source/nested/data" "$WORK/from-tar"
 
 run_coding_booth inspect "$NAME" --engine docker --json > "$WORK/inspect.json"
-check 7 "Inspect retains native mounts and container identity" jq -e --arg name "/$NAME" '.[0].Name == $name and (.[0].Mounts | length > 0)' "$WORK/inspect.json"
+check 7 "Inspect retains native mounts and container identity" json_check "$WORK/inspect.json" --arg name "$NAME" '(.[0].Name | ltrimstr("/")) == $name and (.[0].Mounts | length > 0)'
 run_coding_booth list --engine docker --json > "$WORK/list.json"
-check 8 "List JSON identifies the owning engine" jq -e --arg name "$NAME" 'any(.[]; .name == $name and .engine == "docker")' "$WORK/list.json"
+check 8 "List JSON identifies the owning engine" json_check "$WORK/list.json" --arg name "$NAME" 'any(.[]; .name == $name and .engine == "docker")'
 run_coding_booth expose list "$NAME" --engine docker --json > "$WORK/ports.json"
-check 9 "Expose JSON includes the live published port" jq -e --argjson port "$PORT" 'any(.ports[]; .host_port == $port and .live)' "$WORK/ports.json"
+check 9 "Expose JSON includes the live published port" json_check "$WORK/ports.json" --argjson port "$PORT" 'any(.ports[]; .host_port == $port and .live)'
 run_coding_booth stats "$NAME" --engine docker --no-stream --format '{{.Name}}' > "$WORK/stats"
 check 10 "One-shot statistics target this booth" grep -Fx "$NAME" "$WORK/stats"
 run_coding_booth top "$NAME" --engine docker > "$WORK/top"
