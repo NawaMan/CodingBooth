@@ -53,7 +53,8 @@ if [[ "${1:-}" == "--inner" ]]; then
   exit $?
 fi
 
-SHELL=/bin/bash timeout 300 script -qec "bash $(printf '%q' "$0") --inner $(printf '%q' "$WORK") $NAME $PORT" /dev/null \
+SHELL=/bin/bash pty_run -t 300 /dev/null \
+  bash "$0" --inner "$WORK" "$NAME" "$PORT" \
   > "$LOG" 2>&1 < /dev/null
 
 OUT="$(tr -d '\r' < "$LOG")"

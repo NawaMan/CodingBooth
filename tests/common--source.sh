@@ -144,6 +144,115 @@ exit(($? & 127) ? 128 + ($? & 127) : $? >> 8);
     fi
 }
 
+# ── GNU tools a Mac does not have ────────────────────────────────────────────
+#
+# The suites were written against GNU userland, and three of the tools they
+# reach for behave differently (or are simply absent) on macOS. Each one failed
+# the same way: not "assertion false" but the test dying, or comparing against
+# an empty string, which reads as a product bug until you look at stderr.
+#
+#   timeout        util-linux; macOS ships nothing. `timeout: command not
+#                  found` under `set -e` takes the whole line with it, so the
+#                  variable the test was going to assert on is "".
+#   script         both have it, with incompatible syntax: util-linux takes
+#                  `script -qec CMD FILE`, BSD takes `script -q -e FILE CMD…`.
+#   touch -d       GNU parses relative dates ("1 year ago"); BSD wants an
+#                  absolute stamp via -t, and rejects the rest outright.
+#
+# Homebrew's coreutils, when installed, provides gtimeout; the fallback below
+# does not assume it. perl is the last resort for the same reason no_tty_run
+# uses it: macOS ships it, and alarm(2) plus a fork is all a watchdog needs.
+
+# timeout_run [-s SIG] SECONDS CMD... : run CMD, signalling it after SECONDS.
+# Exits with CMD's status, or 124 when the time ran out (as timeout does).
+timeout_run() {
+    local signal=TERM
+    if [[ "${1:-}" == "-s" ]]; then
+        signal="$2"; shift 2
+    fi
+    local seconds="$1"; shift
+
+    if command -v timeout >/dev/null 2>&1; then
+        timeout -s "$signal" "$seconds" "$@"
+    elif command -v gtimeout >/dev/null 2>&1; then
+        gtimeout -s "$signal" "$seconds" "$@"
+    elif command -v perl >/dev/null 2>&1; then
+        # The signal goes to the child itself, which is what `timeout` does
+        # without --foreground: a test that interrupts `booth logs -f` wants the
+        # CLI to see the SIGINT, not the process group the harness sits in.
+        SIG="$signal" SECS="$seconds" perl -e '
+my $pid = fork();
+defined $pid or die "fork: $!\n";
+if ($pid == 0) {
+    exec { $ARGV[0] } @ARGV;
+    print STDERR "$ARGV[0]: $!\n";
+    exit(127);
+}
+my $timedout = 0;
+$SIG{ALRM} = sub { $timedout = 1; kill $ENV{SIG}, $pid; };
+alarm $ENV{SECS};
+waitpid($pid, 0);
+alarm 0;
+exit(124) if $timedout;
+exit(($? & 127) ? 128 + ($? & 127) : $? >> 8);
+' "$@"
+    else
+        echo "timeout_run: no timeout, gtimeout or perl here." >&2
+        return 1
+    fi
+}
+
+# pty_run [-t SECONDS] LOGFILE CMD... : run CMD on a pty of its own, with the
+# typescript in LOGFILE (/dev/null to discard). Exits with CMD's status.
+#
+# A test needs this when what it measures is the terminal itself — who owns the
+# pty a foreground booth starts on, say — which no redirect can fake.
+#
+# -t takes the deadline here rather than leaving it to the caller: timeout_run
+# can only wrap a real command, and the command here is `script`, which only
+# pty_run knows how to spell on this OS.
+pty_run() {
+    local limit=""
+    if [[ "${1:-}" == "-t" ]]; then
+        limit="$2"; shift 2
+    fi
+    local log="$1"; shift
+
+    local argv
+    if [[ "$HOST_OS" == "MAC" ]]; then
+        argv=(script -q -e "$log" "$@")
+    else
+        argv=(script -qec "$(quote_args "$@")" "$log")
+    fi
+
+    if [[ -n "$limit" ]]; then
+        timeout_run "$limit" "${argv[@]}"
+    else
+        "${argv[@]}"
+    fi
+}
+
+# quote_args CMD... : the arguments as one shell-quotable string, for the tools
+# that take a command line rather than an argument vector (util-linux script).
+quote_args() {
+    local out="" arg
+    for arg in "$@"; do
+        out+="${out:+ }$(printf '%q' "$arg")"
+    done
+    printf '%s' "$out"
+}
+
+# touch_year_ago PATH... : backdate PATH... by a year, for a test that needs a
+# file old enough to look stale (git's gc horizon, a cache's expiry).
+touch_year_ago() {
+    local stamp
+    if stamp=$(date -v-1y +%Y%m%d%H%M 2>/dev/null) && [[ -n "$stamp" ]]; then
+        touch -t "$stamp" "$@"          # BSD
+    else
+        touch -d '1 year ago' "$@"      # GNU
+    fi
+}
+
 # Clear .booth/.tmp/ between booth runs — the contents, never the directory.
 #
 # `rm -rf .booth/.tmp` looks equivalent and is not. That directory is a bind

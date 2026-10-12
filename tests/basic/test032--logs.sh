@@ -144,7 +144,7 @@ fi
 # -------------------------------------------------------
 # Test 6: an interrupted follow leaves no tail in the booth
 # -------------------------------------------------------
-OUT=$(timeout -s INT 3 "$BOOTH_BIN" logs --name "$NAME" ticker -f -n 1 || true)
+OUT=$(timeout_run -s INT 3 "$BOOTH_BIN" logs --name "$NAME" ticker -f -n 1 || true)
 sleep 2
 LEFT=$(docker exec "$NAME" ps -eo args | grep -c '^tail ' || true)
 if [[ "$OUT" == *"tick"* && "$LEFT" == "0" ]]; then
