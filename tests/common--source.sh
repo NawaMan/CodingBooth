@@ -1037,9 +1037,13 @@ unix_modes() { [[ "$HOST_OS" != "WIN" ]]; }
 # Deliberately *not* exported for the whole suite, and do not be tempted: MSYS
 # grep in a UTF-8 locale cannot match a character outside the BMP, so a UTF-8
 # LANG makes every emoji assertion silently stop matching while ASCII ones keep
-# working — dryrun/test031 greps for "📦 Running booth in daemon mode" and went
+# working — dryrun/test031 grepped for "📦 Running booth in daemon mode" and went
 # red for exactly that reason, on a line that was right there in the output.
 # With no LANG, MSYS grep compares bytes and the emoji matches.
+#
+# Not exporting one is not enough, though: mintty, Git Bash's own terminal, sets
+# a UTF-8 LANG itself, so a suite started from it inherits one anyway. Match on
+# the text beside an emoji (or any non-BMP character), never the emoji itself.
 utf8_locale() {
   local candidate available
   available="$(locale -a 2>/dev/null || true)"
