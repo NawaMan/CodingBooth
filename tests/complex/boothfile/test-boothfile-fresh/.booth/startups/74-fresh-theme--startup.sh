@@ -3,7 +3,7 @@ set -e
 # Configured by: booth config --no-tui --overwrite --variant base --select fresh
 
 # Apply the selected Fresh theme. Other keys in the user config stay.
-theme="${FRESH_THEME:-tokyo-night}"
+theme="${FRESH_THEME:-terminal}"
 conf="${HOME}/.config/fresh/config.json"
 mkdir -p "$(dirname "$conf")"
 if [[ ! -s "$conf" ]]; then
