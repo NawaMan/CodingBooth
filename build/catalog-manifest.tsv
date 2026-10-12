@@ -141,7 +141,7 @@ setup	hoppscotch	0.1.0	08109dde5ef1e4c1043ce0376217c0b71a3461a7f9b71a25b7f34764c
 setup	i3	1.0.1	bcca0cdb191c67604054bce6d9382da0f91b6626450d7009a7849fb7d0ce4d55	variants/base/setups/i3--setup.sh
 setup	i3-ctrl-alt	1.0.0	2b1946eff53514fefe4d0943cffbf80f988833350a36f0b537dc9473a5ae48e4	variants/base/setups/i3-ctrl-alt--setup.sh
 setup	i3-default	1.0.0	9d1e51d1d23899ee8753b204850a4a4cb45c5637b44e2ad3c6c2c735071811a1	variants/base/setups/i3-default--setup.sh
-setup	i3-gaps	1.0.0	8208dea4d1bc6888fac64c764457889541f852a6abde98ad4690f7e2a2f10aad	variants/base/setups/i3-gaps--setup.sh
+setup	i3-gaps	2.0.0	623e93ad9de6253390070a56c18f19a95a290b1014d81bce1863cbc150113c47	variants/base/setups/i3-gaps--setup.sh
 setup	idea	1.0.0	0343e418cc4d1351876942b9c64682efd880d5795bcb018cf75145e489b7957b	variants/base/setups/idea--setup.sh
 setup	idea-import-project	0.1.0	11c81558e5772651d36b1eb278c6ea4bdbb51e2992a562d3806c4b76c9dc9a9b	variants/base/setups/idea-import-project--setup.sh
 setup	inkscape	1.0.0	fa8885b0c921ffbc224a4577265504628ff7d8ba81dea6012895037b1be4bc71	variants/base/setups/inkscape--setup.sh
@@ -464,7 +464,7 @@ template	helm	1.0.0	1725432a241ae95ba680fc15db74ff0e51e0ed1b5ddc1a54f617cb9a10bd
 template	herdr	1.0.0	44e6a32a890708bfae97115341dee82f1c5ab8be3902b43d8c1c7fac68abacef	templates/ai-tools/herdr/template.toml
 template	homebrew	1.0.0	25823f5e1a7ac70264af470f88c32e20218416e365c82fbec92cb3421211193d	templates/tools/homebrew/template.toml
 template	hoppscotch	0.1.0	34491e84948073be853896dbbfcc861c4a4d54eb7831b28b45593d30cd697a1a	templates/tools/hoppscotch/template.toml
-template	i3	1.0.0	d9d60e4b99c318909b39a744fd37adb0c242abb5b3fcbd913266230c24ab0def	templates/desktops/i3/template.toml
+template	i3	1.0.1	c2d597408fb59a0e9820b20b7cb4e7c1e0031d826a8c749982583f8f76378b86	templates/desktops/i3/template.toml
 template	idea	1.0.0	881e489d9b240ec1be6d52754fa9219070aad4023a77b6aee50dda118566696a	templates/ides/idea/template.toml
 template	inkscape	1.0.0	b7d51ef89c00cb734281a52a4cf9629c1971152ee6520998a5afe863049481b1	templates/desktops/inkscape/template.toml
 template	java	1.1.0	f7219f2a4f9ed237663c6624137dab3d88475c18daf3a7d0f2d078841b05661b	templates/languages/java/template.toml
@@ -710,7 +710,7 @@ extension	hoppscotch+autostart	0.1.0	324d97b3c81575f5805560d5446033563e3b805dfd2
 extension	hoppscotch+expose	1.0.0	214626527e482a4fa11bc243924724a6bae5d08b634f7a3ba29e365354976e73	templates/tools/hoppscotch/expose--extension.toml
 extension	i3+ctrl-alt	1.0.0	f20edb2606a30fd2d8e68779606709b47eae2466618e8d3ef46281fbebbe215b	templates/desktops/i3/ctrl-alt--extension.toml
 extension	i3+default	1.0.0	b218fc0cd28092d0a8eaf6fa553444751b160cca6a6a186a4719d9d731099651	templates/desktops/i3/default--extension.toml
-extension	i3+gaps	1.0.0	a3b0883015a61b1e654f0deb6e9dc744560fcfa49a77d3d7df57fe4cff63ceda	templates/desktops/i3/gaps--extension.toml
+extension	i3+gaps	1.1.0	146de0937e6773658a8d279436fae9fb01ac91873d939b9c6ed2ca2c7652d466	templates/desktops/i3/gaps--extension.toml
 extension	idea+import-project	0.1.0	0e80154bdfd5598e1a61e2814ad169a3e3c3539fc932dd683671c52541164ee7	templates/ides/idea/import-project--extension.toml
 extension	idea+jdk-sdk	0.1.0	9976a8f5eed49d92de1dcf12031cb48ed1b4c99ff8d2937bbe4941e9b4169c88	templates/ides/idea/jdk-sdk--extension.toml
 extension	idea+lombok	0.1.0	3f58596fe1c1ca43c22a2867516bf5b911097152dfa1b72f2d6c9db5ad799174	templates/ides/idea/lombok--extension.toml
