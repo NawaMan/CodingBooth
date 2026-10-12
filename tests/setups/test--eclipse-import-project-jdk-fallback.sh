@@ -32,6 +32,18 @@ source ../common--source.sh
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 SETUP_SCRIPT="$REPO_ROOT/variants/base/setups/eclipse-import-project--setup.sh"
 
+require_host_tools "eclipse-import-project reads javac's version with a GNU sed script" gnu-sed
+
+# The download these cases assert is the linux/x64 compiler JDK, and the setup
+# builds that from `uname -m`: x86_64 takes the x64 branch, aarch64 its own, and
+# anything else — a Mac's "arm64" among them — makes the setup skip the compiler
+# JDK altogether, so there is no URL to assert on.
+case "$(uname -m)" in
+  x86_64|amd64) ;;
+  *) echo "SKIP: these cases assert the linux/x64 compiler JDK, and this host is $(uname -m)"
+     exit 0 ;;
+esac
+
 STUB=$(mktemp -d)
 trap 'rm -rf "$STUB"' EXIT
 mkdir -p "$STUB/bin"
