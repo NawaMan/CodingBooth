@@ -25,9 +25,11 @@ This file contains a list of changes for each released version.
     substitution, and bash 5.2 reads `&` in the replacement as the matched text, so every `&&`
     became `<head><head>`.
 
-- **EnvFolio 0.4.0: the command is now `folio`.** The base image and `tools/envfolio` install
-  EnvFolio 0.4.0, whose command is `folio` (`folio store init`, `folio exec --secrets <entry> --
-  <cmd>`); `envfolio` is gone, with no alias. The app, the setup (`setup envfolio`), the template
+- **EnvFolio 0.5.0: the command is now `folio`.** The base image and `tools/envfolio` install
+  EnvFolio 0.5.0, whose command is `folio` (`folio init`, `folio exec --secrets <entry> --
+  <cmd>`); `envfolio` is gone, with no alias. The store commands are top level since 0.5.0:
+  `folio init`, `path`, `backup`, `restore`, `export` and `import` (`folio store …` now stops
+  and names the new command). The app, the setup (`setup envfolio`), the template
   (`tools/envfolio`, `+store-cache`) and its `ENVFOLIO_VERSION` param keep their names. EnvFolio
   renamed its own names with no fallback: the default store is `~/.folio` (was `~/.envfolio`), the
   store variable is `FOLIO_STORE_DIR` (was `ENVFOLIO_STORE_DIR`), and backups and exports end in
