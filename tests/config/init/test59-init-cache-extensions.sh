@@ -27,7 +27,11 @@ assert_mode() {
     local want="$2"
     local label="$3"
     local got
-    got=$(stat -c %a "$path" 2>/dev/null || echo "missing")
+    # GNU stat, then BSD (macOS), as test51 and test52 read a size. Without the
+    # second form `stat -c` fails, the error goes to /dev/null, and a directory
+    # that is right there reports "missing" — which is what Tests 28 and 29 said
+    # one line after Tests 26 and 27 had found the very same paths.
+    got=$(stat -c %a "$path" 2>/dev/null || stat -f %Lp "$path" 2>/dev/null || echo "missing")
     TEST_COUNT=$((TEST_COUNT + 1))
     local pad=$(printf '%*s' $((64 - ${#label} - 1)) '' | tr ' ' '.')
     echo -n "Test ${TEST_COUNT}: ${label} ${pad} "
