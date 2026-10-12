@@ -104,7 +104,6 @@ RUN set -euo pipefail \
   nano   \
   nginx  \
   socat  \
-  tilde    \
   tig      \
   tmux     \
   tree     \
@@ -192,11 +191,10 @@ RUN set -euo pipefail \
 ENV DONT_PROMPT_WSL_INSTALL=1
 
 # Set common tools aliases
-ENV EDITOR=tilde
+ENV EDITOR=fresh
 ENV EXPLORER=mc
 ENV GITVIEW=tig
 RUN set -euo pipefail                             \
-  ; ln -sf /usr/bin/tilde /usr/local/bin/editor   \
   ; ln -sf /usr/bin/mc    /usr/local/bin/explorer \
   ; ln -sf /usr/bin/tig   /usr/local/bin/gitview
 
@@ -251,6 +249,10 @@ RUN just--setup.sh
 
 # Git TUI (lazygit) - every booth can manage git from the terminal
 RUN lazygit--setup.sh
+
+# Default text editor (Fresh) - pinned; the fresh template picks another release
+RUN fresh--setup.sh --version 0.5.2 \
+  && ln -sf /usr/local/bin/fresh /usr/local/bin/editor
 
 # Fira Code Nerd Font - lets the built-in web terminal (ttyd) render icon
 # glyphs. ttyd's terminal renders client-side in the visitor's own browser, so
