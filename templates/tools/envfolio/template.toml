@@ -1,4 +1,4 @@
-cb-version = "2.0.0"
+cb-version = "2.1.0"
 display-name = "EnvFolio"
 primary = true
 display-disc = "Texts and secrets as environment variables, built on pass"
@@ -13,8 +13,8 @@ tags = [
 ]
 
 [params.ENVFOLIO_VERSION]
-default = "0.4.0"
-suggests = ["0.4.0", "latest"]
+default = "0.5.0"
+suggests = ["0.5.0", "latest"]
 
 [segments]
 Boothfile = """

@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 2.0.0
+# cb-version: 2.1.0
 
 set -Eeuo pipefail
 
@@ -13,9 +13,9 @@ Usage:
   $0 [<X.Y.Z>|latest]
 
 Examples:
-  $0                         # install the pinned default (0.4.0)
-  $0 --version 0.4.0         # pin a specific version
-  $0 0.4.0                   # same, in the form a Boothfile emits
+  $0                         # install the pinned default (0.5.0)
+  $0 --version 0.5.0         # pin a specific version
+  $0 0.5.0                   # same, in the form a Boothfile emits
   $0 --version latest        # install the latest GitHub release
 
 Notes:
@@ -33,13 +33,13 @@ USAGE
 # No version given means the pinned default, not 'latest': the base image then
 # gets the same EnvFolio on every build, and an upstream release that is not out
 # yet (a draft is invisible to the API) cannot silently pick an older one.
-ENVFOLIO_DEFAULT_VER="0.4.0"   # also the fallback when 'latest' cannot be resolved
+ENVFOLIO_DEFAULT_VER="0.5.0"   # also the fallback when 'latest' cannot be resolved
 REQ_VER="$ENVFOLIO_DEFAULT_VER"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --version) shift; REQ_VER="${1:-latest}"; shift ;;
     -h|--help) usage; exit 0 ;;
-    # `setup envfolio 0.4.0` in a Boothfile compiles to a positional argument,
+    # `setup envfolio 0.5.0` in a Boothfile compiles to a positional argument,
     # so accept that spelling too.
     -*) echo "❌ Unknown arg: $1" >&2; usage; exit 2 ;;
     *) REQ_VER="$1"; shift ;;
@@ -116,15 +116,15 @@ echo -n "   folio → "; folio version 2>/dev/null || true
 
 cat <<'EON'
 ℹ️ Ready to use:
-- Create the store:          folio store init
+- Create the store:          folio init
 - Add a text / a secret:     folio text insert gh/user   |   folio secret insert gh/token
 - Run with them as env vars: folio exec --secrets gh -- gh auth status
-- Move items to another booth: folio store export   |   folio store import
+- Move items to another booth: folio export   |   folio import
 
 Notes:
 - The store is ~/.folio (or $FOLIO_STORE_DIR) and its GPG key lives in
   ~/.gnupg; both are lost when the container is recreated. Select
   tools/envfolio+store-cache to keep them in .booth/cache/, or use
-  `folio store backup` / `restore`.
+  `folio backup` / `restore`.
 - See: https://github.com/NawaMan/EnvFolio
 EON

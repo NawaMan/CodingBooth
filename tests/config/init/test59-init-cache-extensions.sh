@@ -163,7 +163,7 @@ assert_file "$prj/.booth/cache/home/coder/.config/pcmanfm-qt/.mount-this" "lxqt+
 # 0700 — gpg and EnvFolio warn on a folder others can open, so the ":0700" suffix
 # must reach disk and must not reach the folder name. The store itself is a
 # folder inside the cached one (FOLIO_STORE_DIR), because a mounted folder
-# holds .mount-this and `folio store init` only takes an empty one.
+# holds .mount-this and `folio init` only takes an empty one.
 run rm -Rf $prj ; mkdir -p $prj
 run booth config $prj --no-tui --select "envfolio+store-cache"
 assert_file "$prj/.booth/cache/home/coder/.local/share/envfolio/.mount-this" "envfolio+store-cache creates the store's parent dir"
