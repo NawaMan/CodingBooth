@@ -59,6 +59,10 @@ func runConfig(version, buildDate string) {
 		fmt.Fprintf(os.Stderr, "Error parsing --set: %v\n", err)
 		os.Exit(1)
 	}
+	if err := validateUnsets(flags); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
 	if err := checkAptSnapshotEnv(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
@@ -679,8 +683,10 @@ func applyInteractiveResult(version, targetPath string, setup interactiveSetup, 
 			}
 		case tui.ConfigFieldList:
 			for _, v := range result.ListFields[key] {
-				if v != "" {
-					flags.sets = append(flags.sets, key+"="+v)
+				for _, item := range splitListValue(key, v) {
+					if item != "" {
+						flags.sets = append(flags.sets, key+"="+item)
+					}
 				}
 			}
 		}
@@ -1080,9 +1086,16 @@ func mergeFlags(existing, cli initFlags, projectRoot string) initFlags {
 	merged.exposes = mergeKeyedList(existing.exposes, cli.exposes, cli.addExposes, cli.removeExposes, "expose", exposeKey)
 	merged.envs = mergeKeyedList(existing.envs, cli.envs, cli.addEnvs, cli.removeEnvs, "env", envKey)
 	merged.mounts = mergeKeyedList(existing.mounts, cli.mounts, cli.addMounts, cli.removeMounts, "mount", mountKey)
-	if len(cli.sets) > 0 {
-		merged.sets = cli.sets
+	// Key by key, not wholesale: a --set replaces only the keys it names. A list
+	// key it names also loses the values read back from config.toml, so the
+	// header ends up holding the key's whole value.
+	merged.sets = mergeSets(existing.sets, cli.sets)
+	dropReadBackForSets(&merged, cli.sets)
+	if err := applyUnsets(&merged, cli.unsets); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\nNothing was written.\n", err)
+		os.Exit(1)
 	}
+	merged.unsets = nil
 	if cli.templatesPath != "" {
 		merged.templatesPath = cli.templatesPath
 	}
@@ -1140,8 +1153,12 @@ func mergeSelectDSLs(existing, cli initFlags, projectRoot string) []string {
 	if len(cli.removeSelectNames) > 0 {
 		var unmatched []string
 		base, unmatched = selection.RemoveFromSelection(base, cli.removeSelectNames)
-		for _, name := range unmatched {
-			fmt.Fprintf(os.Stderr, "Note: --remove-select %q did not match anything in the existing selection.\n", name)
+		if len(unmatched) > 0 {
+			for _, name := range unmatched {
+				fmt.Fprintf(os.Stderr, "Error: --remove-select %q did not match anything in the existing selection.\n", name)
+			}
+			fmt.Fprintln(os.Stderr, "Nothing was written.")
+			os.Exit(1)
 		}
 	}
 
@@ -1188,7 +1205,11 @@ func mergeKeyedList(existing, plain, add, remove []string, flagName string, keyF
 
 	result := existing
 	if len(remove) > 0 {
-		result = removeByKey(result, remove, keyFn, flagName)
+		var err error
+		if result, err = removeByKey(result, remove, keyFn, flagName); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\nNothing was written.\n", err)
+			os.Exit(1)
+		}
 	}
 	if len(add) > 0 {
 		result = addByKey(result, add, keyFn)
@@ -1214,33 +1235,6 @@ func addByKey(base, add []string, keyFn func(string) string) []string {
 		}
 		if !replaced {
 			result = append(result, a)
-		}
-	}
-	return result
-}
-
-// removeByKey drops every entry of base whose key matches one of removeKeys,
-// warning (not erroring — a repeated removal is a no-op) about any key that
-// matched nothing.
-func removeByKey(base, removeKeys []string, keyFn func(string) string, flagName string) []string {
-	matched := make(map[string]bool, len(removeKeys))
-	var result []string
-	for _, b := range base {
-		k := keyFn(b)
-		dropped := false
-		for _, rk := range removeKeys {
-			if rk == k {
-				dropped = true
-				matched[rk] = true
-			}
-		}
-		if !dropped {
-			result = append(result, b)
-		}
-	}
-	for _, rk := range removeKeys {
-		if !matched[rk] {
-			fmt.Fprintf(os.Stderr, "Note: --remove-%s %q did not match anything in the existing booth.\n", flagName, rk)
 		}
 	}
 	return result
@@ -1709,22 +1703,30 @@ Flags:
                            +expose:+9000, or +expose:${APP_PORT:-19000}
   --env <KEY=VALUE>        Set environment variable (repeatable)
   --mount <host:container> Mount volume (repeatable)
-  --set <key=value>        Set config.toml value (repeatable)
+  --set <key=value>        Set config.toml value (repeatable). Replaces that key's
+                            recorded value; other keys are kept. A list key takes
+                            one value per --set or comma-separated values
+                            (run-args, build-args, common-args and cmds take
+                            one token per --set and never split on commas).
 
 Reconfiguring an existing booth (edit one entry instead of restating the list):
   --add-select <dsl>       Add onto the existing selection (repeatable). An
                             extension merges onto an already-selected template
                             instead of selecting it a second time.
-  --remove-select <name>   Drop a template or extension by name (repeatable).
-                            A name matching nothing only warns.
+  --remove-select <name>   Drop a template or extension by name (repeatable)
   --add-expose <port>      Add or update one expose mapping, keyed on the
                             container port (repeatable)
   --remove-expose <port>   Drop one expose mapping by container port (repeatable)
   --add-env <KEY=VALUE>    Add or update one env var, keyed on KEY (repeatable)
-  --remove-env <KEY>       Drop one env var by KEY (repeatable)
+  --remove-env <KEY>       Drop one env var by KEY, or by KEY=VALUE only when
+                            the value matches too (repeatable)
   --add-mount <host:container>  Add or update one mount, keyed on the
                                  container path (repeatable)
   --remove-mount <container>    Drop one mount by container path (repeatable)
+  --unset <key>            Drop a config.toml key the booth records (repeatable)
+
+  A --remove-* or --unset that matches nothing is an error, and nothing is
+  written.
 
   A plain flag (--select/--expose/--env/--mount) combined with its own
   --remove-* in the same run is refused: the plain flag already replaces the
