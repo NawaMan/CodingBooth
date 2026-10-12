@@ -509,6 +509,8 @@ run-args = ["-v", "/host/path:/container/path"]
 # Named Docker volumes (bare names like "myvol:/data") are never skipped.
 # Missing host paths are logged to stderr so multi-OS credential paths are safe:
 # list Linux, macOS, and Windows locations; only existing ones are mounted.
+# Add the booth-only option `create` to make a missing host folder instead of skipping:
+#   "-v", "~/.cache/sccache:/home/coder/.cache/sccache:create"
 
 # Devices
 run-args = ["--device", "/dev/kvm"]

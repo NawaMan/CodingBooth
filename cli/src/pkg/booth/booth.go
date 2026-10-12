@@ -1633,19 +1633,25 @@ func rewriteAtCodeVolumeItems(items []string, codePath string) []string {
 // On Mac and Windows, Docker creates an empty directory when the host path is missing,
 // which breaks container startup. Named volumes and non-path sources are left untouched.
 // Applies to both RunArgs and CommonArgs (e.g. TLS cert mounts added in PrepareCommonArgs).
+//
+// A bind mount marked with the booth-only option `create` ("~/.cache/x:/dst:create",
+// or alongside others, ":ro,create") is the exception: its host folder is created
+// when missing, and the option is stripped before Docker sees the spec. That is for
+// caches meant to be shared from the host, which simply do not exist yet on a fresh
+// machine -- unlike a credential seed, whose absence means "this user has none".
 func FilterMissingVolumeMounts(ctx appctx.AppContext) appctx.AppContext {
 	builder := ctx.ToBuilder()
 	homeDir, _ := os.UserHomeDir()
-	builder.RunArgs = filterMissingVolumeMountGroups(ctx.RunArgs(), homeDir)
-	builder.CommonArgs = filterMissingVolumeMountGroups(ctx.CommonArgs(), homeDir)
+	builder.RunArgs = filterMissingVolumeMountGroups(ctx.RunArgs(), homeDir, ctx.Dryrun())
+	builder.CommonArgs = filterMissingVolumeMountGroups(ctx.CommonArgs(), homeDir, ctx.Dryrun())
 	return builder.Build()
 }
 
-func filterMissingVolumeMountGroups(args ilist.List[ilist.List[string]], homeDir string) *ilist.AppendableList[ilist.List[string]] {
+func filterMissingVolumeMountGroups(args ilist.List[ilist.List[string]], homeDir string, dryrun bool) *ilist.AppendableList[ilist.List[string]] {
 	filtered := ilist.NewAppendableList[ilist.List[string]]()
 	args.Range(func(_ int, group ilist.List[string]) bool {
-		items := group.Slice()
-		kept := filterMissingVolumeMountItems(items, homeDir)
+		items, assumed := createMarkedVolumeSources(group.Slice(), homeDir, dryrun)
+		kept := filterMissingVolumeMountItemsAssuming(items, homeDir, assumed)
 		if len(kept) > 0 {
 			filtered.Append(ilist.NewListFromSlice(kept))
 		}
@@ -1654,8 +1660,93 @@ func filterMissingVolumeMountGroups(args ilist.List[ilist.List[string]], homeDir
 	return filtered
 }
 
+// createVolumeOption is the booth-only mount option that creates a missing host folder.
+const createVolumeOption = "create"
+
+// createMarkedVolumeSources strips the `create` option from every -v/--volume spec
+// and creates the host folder of each marked bind mount that is missing. A dry run
+// creates nothing; it returns those paths as assumed to exist, so the printed
+// command shows the mount the real run would make. A folder that cannot be created
+// is reported and left to the missing-mount filter, which then skips it.
+func createMarkedVolumeSources(items []string, homeDir string, dryrun bool) ([]string, map[string]bool) {
+	assumed := make(map[string]bool)
+	out := make([]string, 0, len(items))
+	for i := 0; i < len(items); i++ {
+		flag := items[i]
+		if !isVolumeFlag(flag) || i+1 >= len(items) {
+			out = append(out, flag)
+			continue
+		}
+		spec, create := stripCreateVolumeOption(items[i+1])
+		out = append(out, flag, spec)
+		i++
+		if !create {
+			continue
+		}
+		source := volumeSource(spec)
+		if !isBindMountSource(source) {
+			continue
+		}
+		path := expandHostPath(source, homeDir)
+		if _, err := os.Stat(path); err == nil {
+			continue
+		}
+		if dryrun {
+			assumed[path] = true
+			continue
+		}
+		// 0700: a folder booth makes in the user's home is theirs alone; the
+		// container user is aligned to the host UID, so the booth can still use it.
+		if err := os.MkdirAll(path, 0o700); err != nil {
+			fmt.Fprintf(os.Stderr, "   Could not create host folder for volume mount: %s: %v\n", path, err)
+		}
+	}
+	return out, assumed
+}
+
+// stripCreateVolumeOption removes `create` from a -v spec's option field
+// ("src:dst:ro,create" -> "src:dst:ro", "src:dst:create" -> "src:dst") and reports
+// whether it was there. The option field is whatever follows the target.
+func stripCreateVolumeOption(spec string) (string, bool) {
+	source := volumeSource(spec)
+	target := volumeTarget(spec)
+	prefixLen := len(source) + 1 + len(target)
+	if target == "" || len(spec) <= prefixLen+1 || spec[prefixLen] != ':' {
+		return spec, false
+	}
+	var kept []string
+	found := false
+	for _, opt := range strings.Split(spec[prefixLen+1:], ",") {
+		if opt == createVolumeOption {
+			found = true
+			continue
+		}
+		kept = append(kept, opt)
+	}
+	if !found {
+		return spec, false
+	}
+	if len(kept) == 0 {
+		return spec[:prefixLen], true
+	}
+	return spec[:prefixLen] + ":" + strings.Join(kept, ","), true
+}
+
 func filterMissingVolumeMountItems(items []string, homeDir string) []string {
-	alt := indexVolumeAlternatives(items, homeDir)
+	return filterMissingVolumeMountItemsAssuming(items, homeDir, nil)
+}
+
+// filterMissingVolumeMountItemsAssuming is filterMissingVolumeMountItems with a set of
+// host paths to treat as existing (a dry run's not-yet-created `create` folders).
+func filterMissingVolumeMountItemsAssuming(items []string, homeDir string, assumed map[string]bool) []string {
+	exists := func(path string) bool {
+		if assumed[path] {
+			return true
+		}
+		_, err := os.Stat(path)
+		return err == nil
+	}
+	alt := indexVolumeAlternatives(items, homeDir, exists)
 	mounted := make(map[string]bool) // targets already given a host path
 	reported := make(map[string]bool)
 
@@ -1679,7 +1770,7 @@ func filterMissingVolumeMountItems(items []string, homeDir string) []string {
 
 		target := volumeTarget(mountSpec)
 		expandedPath := expandHostPath(source, homeDir)
-		if _, err := os.Stat(expandedPath); err != nil {
+		if !exists(expandedPath) {
 			if !alt.satisfied[target] && !reported[target] {
 				reported[target] = true
 				fmt.Fprint(os.Stderr, missingVolumeMountNotice(target, alt.candidates[target]))
@@ -1720,7 +1811,7 @@ type volumeAlternatives struct {
 	satisfied  map[string]bool     // target -> at least one of them exists
 }
 
-func indexVolumeAlternatives(items []string, homeDir string) volumeAlternatives {
+func indexVolumeAlternatives(items []string, homeDir string, exists func(string) bool) volumeAlternatives {
 	alt := volumeAlternatives{
 		candidates: make(map[string][]string),
 		satisfied:  make(map[string]bool),
@@ -1738,7 +1829,7 @@ func indexVolumeAlternatives(items []string, homeDir string) volumeAlternatives 
 		}
 		target := volumeTarget(mountSpec)
 		alt.candidates[target] = append(alt.candidates[target], source)
-		if _, err := os.Stat(expandHostPath(source, homeDir)); err == nil {
+		if exists(expandHostPath(source, homeDir)) {
 			alt.satisfied[target] = true
 		}
 	}

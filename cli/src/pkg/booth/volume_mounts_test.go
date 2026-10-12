@@ -353,3 +353,77 @@ func containsSubstring(items []string, sub string) bool {
 	}
 	return false
 }
+
+func TestStripCreateVolumeOption(t *testing.T) {
+	tests := []struct {
+		name, spec, want string
+		found            bool
+	}{
+		{"Alone", "~/.cache/sccache:/home/coder/.cache/sccache:create", "~/.cache/sccache:/home/coder/.cache/sccache", true},
+		{"WithOthers", "/a:/b:ro,create,z", "/a:/b:ro,z", true},
+		{"Absent", "/a:/b:ro", "/a:/b:ro", false},
+		{"NoOptions", "/a:/b", "/a:/b", false},
+		{"TargetNamedCreate", "/a:/create", "/a:/create", false},
+		{"WindowsDrive", `C:\Users\u\cache:/dst:create`, `C:\Users\u\cache:/dst`, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, found := stripCreateVolumeOption(tt.spec)
+			if got != tt.want || found != tt.found {
+				t.Fatalf("stripCreateVolumeOption(%q) = (%q, %v), want (%q, %v)", tt.spec, got, found, tt.want, tt.found)
+			}
+		})
+	}
+}
+
+// A `create` mount whose host folder is missing gets the folder made and is
+// mounted; an unmarked missing mount is still skipped; Docker never sees `create`.
+func TestFilterMissingVolumeMounts_CreateMarker(t *testing.T) {
+	home := t.TempDir()
+	created := filepath.Join(home, ".cache", "sccache")
+
+	builder := &appctx.AppContextBuilder{
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+		Cmds:       ilist.NewAppendableList[ilist.List[string]](),
+	}
+	builder.RunArgs.Append(ilist.NewList(
+		"-v", created+":/home/coder/.cache/sccache:create",
+		"-v", filepath.Join(home, "nope")+":/skip/me",
+	))
+
+	ctx := FilterMissingVolumeMounts(builder.Build())
+	flat := flattenArgGroups(ctx.RunArgs())
+
+	info, err := os.Stat(created)
+	if err != nil || !info.IsDir() {
+		t.Fatalf("expected %s to be created: %v", created, err)
+	}
+	if info.Mode().Perm() != 0o700 {
+		t.Errorf("created folder mode = %o, want 700", info.Mode().Perm())
+	}
+	if !containsPair(flat, "-v", created+":/home/coder/.cache/sccache") {
+		t.Fatalf("expected the create mount kept without its marker; got %v", flat)
+	}
+	if containsSubstring(flat, ":create") {
+		t.Fatalf("`create` must not reach Docker; got %v", flat)
+	}
+	if containsSubstring(flat, "/skip/me") {
+		t.Fatalf("an unmarked missing mount must still be skipped; got %v", flat)
+	}
+}
+
+// A dry run creates nothing but still shows the mount the real run would make.
+func TestCreateMarkedVolumeSources_DryrunCreatesNothing(t *testing.T) {
+	home := t.TempDir()
+	path := filepath.Join(home, "cache")
+	items, assumed := createMarkedVolumeSources([]string{"-v", path + ":/dst:create"}, home, true)
+	if _, err := os.Stat(path); err == nil {
+		t.Fatalf("dry run created %s", path)
+	}
+	got := filterMissingVolumeMountItemsAssuming(items, home, assumed)
+	if !containsPair(got, "-v", path+":/dst") {
+		t.Fatalf("dry run should still show the mount; got %v", got)
+	}
+}
