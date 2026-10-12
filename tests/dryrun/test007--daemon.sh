@@ -102,7 +102,7 @@ docker \\
     '--pull=never' \\
     -e 'TZ=America/Toronto' \\
     nawaman/codingbooth:base-${VERSION} \\
-    bash -lc tree -C"
+    bash -lc 'tree -C'"
 
 if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then
   print_test_result "true" "$0" "1" "Daemon output matches expected"
