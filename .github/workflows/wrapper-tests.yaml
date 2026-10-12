@@ -4,7 +4,9 @@
 # published CodingBooth binary. The tests `cp /booth/booth ./booth` and then run
 # install / uninstall / version / passthrough against it, so a wrapper
 # regression fails here while the binary itself is treated as a payload — it is
-# downloaded from GitHub Releases the same way a user's machine would.
+# downloaded from GitHub Releases the same way a user's machine would. The one
+# exception is 097-create-adds-starter-justfile: the released binary may predate
+# the command it tests, so it swaps in this checkout's binary, built below.
 #
 # The suite builds its own Ubuntu image (docker-ce, gh, a non-root tester user)
 # and runs each test in a fresh container off it. One test (040-list-empty)
@@ -64,6 +66,20 @@ jobs:
           load: true
           cache-from: type=gha,scope=wrapper-tests
           cache-to: type=gha,scope=wrapper-tests,mode=max
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: cli/go.mod
+          cache-dependency-path: cli/go.sum
+
+      # 097 swaps this checkout's binary into the cache: the released one may
+      # predate the command it tests. Static, so it runs in the test image as is.
+      - name: Build the CLI
+        working-directory: cli
+        run: |
+          CGO_ENABLED=0 go build \
+            -ldflags "-X main.version=$(tr -d ' \t\n\r' < ../version.txt)" \
+            -o ../codingbooth ./src/cmd/codingbooth
 
       - name: Run suite
         run: tests/wrapper/run-all.sh
