@@ -3,7 +3,7 @@
 
 env APT_SNAPSHOT=20260926T000000Z
 
-arg I3_GAPS=8
+arg I3_GAPS=4
 arg I3_MOD=alt
 
 setup i3 ${I3_MOD}

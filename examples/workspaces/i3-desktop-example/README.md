@@ -48,7 +48,7 @@ Desktop icons are hidden while i3 runs — i3 has no desktop layer — and come 
 | i3, `start-i3` / `stop-i3`, desktop icon, Help tab | `i3` template (`setup i3`) |
 | i3 at login | `i3+default` (auto) — drop with `i3~default` to log in on xfwm4 |
 | Ctrl+Alt twin of every shortcut | `i3+ctrl-alt` (auto) |
-| 8px window gaps | `i3+gaps` (auto) — `i3+gaps:12` for more |
+| 4px window gaps | `i3+gaps` (auto) — `i3+gaps:8` for more |
 
 The same `i3` selection works on the LXQt desktop (`--variant lxqt`), and does nothing on a booth
 with no XFCE or LXQt. To change bindings, copy `/etc/xdg/i3/config` to `~/.config/i3/config`.
