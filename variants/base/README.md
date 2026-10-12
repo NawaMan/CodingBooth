@@ -15,7 +15,7 @@ The foundation variant containing core CodingBooth functionality and setup scrip
 - `viewmd` -- browse the project's Markdown files in a browser (`viewmd --md README.md --expose`)
 - `just` -- run project recipes from a Justfile (`just --list`, `just <recipe>`)
 - `lazygit` -- terminal UI for git (`lazygit` inside a repository)
-- `envfolio` -- keep texts and secrets, load them as env vars (`envfolio store init`, `envfolio exec --secrets <entry> -- <cmd>`)
+- `folio` (EnvFolio) -- keep texts and secrets, load them as env vars (`folio store init`, `folio exec --secrets <entry> -- <cmd>`)
 
 **Usage:**
 ```bash

@@ -330,7 +330,7 @@ These essentials are preinstalled so you can start working immediately — no ex
   `fresh`, `nano`, `ranger`, `less`, `viewmd` (Markdown viewer in a browser)
 
 - **Secrets & Environment**
-  `envfolio` (texts and secrets as environment variables, on `pass`)
+  `folio` (EnvFolio: texts and secrets as environment variables, on `pass`)
 
 - **Task runners**
   `just` (run recipes from a Justfile)

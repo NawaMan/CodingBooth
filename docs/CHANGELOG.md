@@ -25,6 +25,17 @@ This file contains a list of changes for each released version.
     substitution, and bash 5.2 reads `&` in the replacement as the matched text, so every `&&`
     became `<head><head>`.
 
+- **EnvFolio 0.4.0: the command is now `folio`.** The base image and `tools/envfolio` install
+  EnvFolio 0.4.0, whose command is `folio` (`folio store init`, `folio exec --secrets <entry> --
+  <cmd>`); `envfolio` is gone, with no alias. The app, the setup (`setup envfolio`), the template
+  (`tools/envfolio`, `+store-cache`) and its `ENVFOLIO_VERSION` param keep their names. EnvFolio
+  renamed its own names with no fallback: the default store is `~/.folio` (was `~/.envfolio`), the
+  store variable is `FOLIO_STORE_DIR` (was `ENVFOLIO_STORE_DIR`), and backups and exports end in
+  `--folio.tar.gz` / `.folio`. `+store-cache` now sets `FOLIO_STORE_DIR` and keeps the same cached
+  folder, so a store already in `.booth/cache/` is found after a reconfigure (`booth config`) —
+  until then the old `ENVFOLIO_STORE_DIR` in `config.toml` is ignored. Elsewhere, move
+  `~/.envfolio` to `~/.folio` and rename any `ENVFOLIO_STORE_DIR` you set yourself.
+
 - **`booth config`: `--set` replaces only the key it names, and `--unset` drops one.** On a
   reconfigure, one `--set` used to replace every `--set` recorded in the header, so
   `--set egress-allowlist=b.com` silently dropped `timezone` and any other recorded key. Each key
