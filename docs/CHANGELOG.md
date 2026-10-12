@@ -20,8 +20,10 @@ This file contains a list of changes for each released version.
   open [Fresh](https://getfresh.dev) 0.5.2, which the base image installs (the welcome banner says
   `editor  Text editor (fresh)`). Fresh checks for upgrades and sends anonymous telemetry by
   default, so the shell profile sets `"check_for_updates": false` in `~/.config/fresh/config.json`
-  when that file does not decide; set it to `true` to opt in. Select the `fresh` template to pick
-  another release or a theme. `nano` stays as the simple fallback. Needs a rebuilt base image.
+  when that file does not decide; set it to `true` to opt in. Fresh starts on the `terminal` theme
+  (the terminal's own colors) the same way: the profile writes `"theme": "terminal"` when the file
+  has no theme, and a theme already there is kept. Select the `fresh` template to pick another
+  release or a theme. `nano` stays as the simple fallback. Needs a rebuilt base image.
 
 - **Console UI: the mouse works in terminal programs, and a tmux copy reaches the host clipboard.**
   A Console UI pane used to throw away every left-button event so that a drag stayed a browser
@@ -193,7 +195,7 @@ This file contains a list of changes for each released version.
     bluej.org, and older versions as one `.deb`.
 
 - **Fresh is now in the catalog: `setup fresh` and a `fresh` tool template.** The script installs the official static musl release (the `fresh` binary, its install receipt, and icons) under `/opt/fresh-editor` for amd64 and arm64, and links `fresh` onto `PATH`. `--version X.Y.Z|latest` (fallback 0.5.2), checked against the release `.sha256`. Select `fresh` or `fresh:0.5.2`. `fresh+config-shared` bind-mounts `~/.config/fresh/` from `.booth/shared`. `fresh --cmd grammar list` and `fresh --cmd config show` are the checks that the editor runs.
-- **Fresh starts on the `terminal` theme, so it uses the terminal's own colors.** `fresh+theme` is selected with `fresh` and writes `theme` in `~/.config/fresh/config.json` at container start, leaving every other key alone. The default is `terminal`. Pick another built-in with `fresh+theme:dracula` (`dark`, `gruvbox`, `high-contrast`, `light`, `nord`, `nostalgia`, `solarized-dark`, `tokyo-night`). `fresh~theme` leaves the factory theme, `high-contrast`. The selected theme is written again on the next start.
+- **Fresh starts on the `terminal` theme, so it uses the terminal's own colors.** `fresh+theme` is selected with `fresh` and writes `theme` in `~/.config/fresh/config.json` at container start, leaving every other key alone. The default is `terminal`. Pick another built-in with `fresh+theme:dracula` (`dark`, `gruvbox`, `high-contrast`, `light`, `nord`, `nostalgia`, `solarized-dark`, `tokyo-night`). The selected theme is written again on the next start. `fresh~theme` leaves the theme to the user: the base image still starts Fresh on `terminal`, and a theme picked inside Fresh is kept.
 - **Wrapper `0.16.0` — `booth` on `PATH` finds the project itself, and every command works from
   a subfolder.** A wrapper with no lock beside it — the shell-config central copy, or one
   installed by a package manager such as Homebrew — walks up from the current folder to the
