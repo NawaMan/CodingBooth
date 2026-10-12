@@ -436,7 +436,7 @@ template	flutter	0.2.0	4b5c851865080a267ac5439a37bd7ee0082bfc59a943a3028122cf5c8
 template	fpc	1.0.0	833b92d6fb18707c1d678ee941562af8ccbe880c68abbe61bb4f0ec3f8604a62	templates/languages/fpc/template.toml
 template	freelens	0.1.0	8120af7df1f43318882fbe66b5f86b01da2cebe33cd66c431a1beacc07d8c41a	templates/tools/freelens/template.toml
 template	freeplane	1.0.0	68b6c0db16c41749e533797b2593263871ef318be6e049338b1b8091e3ba8a14	templates/tools/freeplane/template.toml
-template	fresh	0.1.2	50759f74cc6483707859b110e3a55ddb6a3b7eb20a5675ea3d84f148aa2a511c	templates/tools/fresh/template.toml
+template	fresh	0.1.3	2083904461034ea83ecbcecaf1bf908f48dbbcdd5e074276aea08889d766c823	templates/tools/fresh/template.toml
 template	fsharp	1.0.0	d6fb2e63c932dfa9610f0fba9c0e509847995529426c12727912ce59fd62700b	templates/languages/fsharp/template.toml
 template	fzf	1.0.0	05eb2cff0d7a101ba7c56b3f9afc385e307b59d03119ae54a097ede57864991f	templates/tools/fzf/template.toml
 template	gcc	1.1.0	23d421cf4f83970ad83ca73302257f994f00a1d2281c09e9589eb2869b296c8b	templates/languages/gcc/template.toml

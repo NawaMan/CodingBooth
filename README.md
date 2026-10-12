@@ -327,7 +327,7 @@ These essentials are preinstalled so you can start working immediately — no ex
   `git`, `gh` (GitHub CLI), `tig`, `lazygit` (terminal UI for git)
 
 - **Editors & File Browsers**
-  `nano`, `tilde`, `ranger`, `less`, `viewmd` (Markdown viewer in a browser)
+  `fresh`, `nano`, `ranger`, `less`, `viewmd` (Markdown viewer in a browser)
 
 - **Secrets & Environment**
   `envfolio` (texts and secrets as environment variables, on `pass`)
