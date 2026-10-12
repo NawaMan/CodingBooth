@@ -217,6 +217,16 @@ with `setsid: command not found` — and the weakest of them *passed* on it, bec
 and no container" is satisfied just as well by a missing binary as by booth refusing. A test that
 asserts a refusal must assert on the refusal's own text, or a broken harness reads as green.
 
+## A deadline never takes the terminal
+
+`timeout_run` (and `capture_codingbooth` under `CB_CALL_TIMEOUT`, which uses it) runs its command
+in a process group of its own. When the caller's stdin is a terminal, it gives the command
+`/dev/null` instead. A read of the terminal from a group that is not in the foreground stops the
+whole group with SIGTTIN, the watchdog included, and a stopped watchdog never fires. Run from a
+shell, booth sees the terminal, starts `docker run -i`, and the call waits forever. CI has no
+terminal, so only local runs ever hit this. A stdin you pipe in is passed through unchanged. A test
+that needs a terminal makes its own with `pty_run`.
+
 ## `set -euo pipefail` will eat your test
 
 Every suite runs under it, and it silently skips cases rather than failing loudly. Both of these
