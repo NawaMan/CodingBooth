@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/nawaman/codingbooth/src/internal/hostskip"
 )
 
 const fingerprintTestDockerfile = `# syntax=docker/dockerfile:1.7
@@ -133,6 +135,9 @@ func TestBuildFingerprint_ChangesWithEachInput(t *testing.T) {
 			return fingerprintOf(t, fingerprintTestDockerfile, fingerprintTestFlags, changed, fingerprintTestImages)
 		},
 		"setup script mode": func(t *testing.T) string {
+			// The mode is part of the fingerprint, so only a host with modes
+			// can change it (see internal/hostskip).
+			hostskip.NoUnixModes(t)
 			changed := fingerprintTestContext(t)
 			if err := os.Chmod(filepath.Join(changed, ".booth/setups/demo--setup.sh"), 0o755); err != nil {
 				t.Fatal(err)
@@ -198,6 +203,8 @@ func TestBuildFingerprint_JSONFormSources(t *testing.T) {
 }
 
 func TestBuildFingerprint_SymlinkedSourceRootIsFollowed(t *testing.T) {
+	hostskip.NoSymlinks(t)
+
 	dir := fingerprintTestContext(t)
 	writeTestFile(t, dir, "real/config.txt", "one\n")
 	if err := os.Symlink("real", filepath.Join(dir, "linked")); err != nil {

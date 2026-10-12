@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/nawaman/codingbooth/src/internal/hostskip"
 )
 
 func TestSplit(t *testing.T) {
@@ -58,6 +60,8 @@ func TestPathFallsBackToEntry(t *testing.T) {
 }
 
 func TestMkdirAllSetsModeOnCreate(t *testing.T) {
+	hostskip.NoUnixModes(t)
+
 	dir := filepath.Join(t.TempDir(), "home", "coder", ".gnupg")
 	if err := MkdirAll(dir, 0o700); err != nil {
 		t.Fatal(err)
@@ -77,6 +81,8 @@ func TestMkdirAllSetsModeOnCreate(t *testing.T) {
 }
 
 func TestMkdirAllLeavesExistingDirAlone(t *testing.T) {
+	hostskip.NoUnixModes(t)
+
 	dir := filepath.Join(t.TempDir(), ".gnupg")
 	if err := os.Mkdir(dir, 0o755); err != nil {
 		t.Fatal(err)

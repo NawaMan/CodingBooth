@@ -668,14 +668,18 @@ func validateFilePath(relPath string) error {
 	if relPath == "" {
 		return fmt.Errorf("empty file path")
 	}
-	if filepath.IsAbs(relPath) {
+	// Rooted in anyone's terms, not just this host's. A template is written
+	// once and read on every platform, and the path it names lands inside a
+	// Linux booth — where "/etc/passwd" is as absolute as it gets, while
+	// Windows' filepath.IsAbs says no to it for want of a drive letter.
+	if filepath.IsAbs(relPath) || strings.HasPrefix(relPath, "/") || strings.HasPrefix(relPath, `\`) {
 		return fmt.Errorf("absolute path not allowed: %s", relPath)
 	}
-	cleaned := filepath.Clean(relPath)
+	cleaned := path.Clean(filepath.ToSlash(relPath))
 	if cleaned == "." {
 		return fmt.Errorf("path resolves to current directory: %s", relPath)
 	}
-	for _, part := range strings.Split(cleaned, string(filepath.Separator)) {
+	for _, part := range strings.Split(cleaned, "/") {
 		if part == ".." {
 			return fmt.Errorf("path traversal not allowed: %s", relPath)
 		}
@@ -712,6 +716,8 @@ func parseInlineFiles(fileMap map[string]string) ([]FileRef, error) {
 			return nil, fmt.Errorf("invalid file path %q: %w", relPath, err)
 		}
 		files = append(files, FileRef{
+			// Host-native, like the RelPath of a file found by walking a
+			// template's own folders (filepath.Rel there).
 			RelPath: filepath.Clean(relPath),
 			Content: fileMap[relPath],
 		})

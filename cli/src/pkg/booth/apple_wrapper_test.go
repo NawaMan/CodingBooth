@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/nawaman/codingbooth/src/internal/hostskip"
 )
 
 func TestAppleWrapperCopy(t *testing.T) {
@@ -34,8 +36,10 @@ func TestAppleWrapperCopy(t *testing.T) {
 	if err != nil || string(data) != "#!/bin/sh\necho wrapper\n" {
 		t.Errorf("copy content = %q, %v", data, err)
 	}
-	if info, _ := os.Stat(got); info == nil || info.Mode().Perm() != 0o755 {
-		t.Errorf("copy must be executable, got %v", info)
+	if hostskip.UnixModes() {
+		if info, _ := os.Stat(got); info == nil || info.Mode().Perm() != 0o755 {
+			t.Errorf("copy must be executable, got %v", info)
+		}
 	}
 
 	// Refreshed on the next run, at the same place.

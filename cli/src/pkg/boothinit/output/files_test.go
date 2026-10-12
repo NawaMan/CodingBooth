@@ -11,6 +11,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nawaman/codingbooth/src/internal/hostskip"
 )
 
 func TestCopyFiles_Empty(t *testing.T) {
@@ -60,6 +62,8 @@ func TestCopyFiles_NestedRelPath(t *testing.T) {
 }
 
 func TestCopyFiles_PreservesPermissions(t *testing.T) {
+	hostskip.NoUnixModes(t)
+
 	srcDir := t.TempDir()
 	dstDir := t.TempDir()
 
@@ -142,6 +146,8 @@ func TestCopyFiles_InlineContentNested(t *testing.T) {
 }
 
 func TestCopyFiles_InlineContentPermissions(t *testing.T) {
+	hostskip.NoUnixModes(t)
+
 	dstDir := t.TempDir()
 	files := []FileContent{
 		{RelPath: "test.txt", Content: "hello"},

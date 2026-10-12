@@ -6,6 +6,8 @@ package booth
 
 import (
 	"testing"
+
+	"github.com/nawaman/codingbooth/src/internal/hostskip"
 )
 
 func TestDeviceHostPath(t *testing.T) {
@@ -30,19 +32,23 @@ func TestDeviceHostPath(t *testing.T) {
 }
 
 func TestFilterMissingDeviceItems(t *testing.T) {
-	// /dev/null exists everywhere this runs; the bogus path never does.
+	// /dev/null exists on every Unix host; the bogus path never does. Windows
+	// has neither, so a case that needs a device to be *there* is skipped on it
+	// (see internal/hostskip) — the dropping and pass-through cases still run.
 	const present = "/dev/null"
 	const missing = "/dev/definitely-not-a-real-device-cb"
 
 	tests := []struct {
-		name  string
-		items []string
-		want  []string
+		name     string
+		items    []string
+		want     []string
+		needsDev bool
 	}{
 		{
-			name:  "KeepsPresentDevice",
-			items: []string{"--device", present},
-			want:  []string{"--device", present},
+			name:     "KeepsPresentDevice",
+			items:    []string{"--device", present},
+			want:     []string{"--device", present},
+			needsDev: true,
 		},
 		{
 			name:  "DropsMissingDevice",
@@ -57,14 +63,16 @@ func TestFilterMissingDeviceItems(t *testing.T) {
 			want:  []string{"-p", "8080:80", "-e", "FOO=bar"},
 		},
 		{
-			name:  "KeepsPresentDropsMissing",
-			items: []string{"--device", present, "--device", missing},
-			want:  []string{"--device", present},
+			name:     "KeepsPresentDropsMissing",
+			items:    []string{"--device", present, "--device", missing},
+			want:     []string{"--device", present},
+			needsDev: true,
 		},
 		{
-			name:  "KeepsPermissionSuffixForm",
-			items: []string{"--device", present + ":" + present + ":rwm"},
-			want:  []string{"--device", present + ":" + present + ":rwm"},
+			name:     "KeepsPermissionSuffixForm",
+			items:    []string{"--device", present + ":" + present + ":rwm"},
+			want:     []string{"--device", present + ":" + present + ":rwm"},
+			needsDev: true,
 		},
 		{
 			// Not an absolute path, so not checkable — passed through rather than
@@ -88,6 +96,9 @@ func TestFilterMissingDeviceItems(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.needsDev {
+				hostskip.NoUnixPaths(t)
+			}
 			got := filterMissingDeviceItems(tt.items)
 			if len(got) != len(tt.want) {
 				t.Fatalf("filterMissingDeviceItems(%v) = %v, want %v", tt.items, got, tt.want)
