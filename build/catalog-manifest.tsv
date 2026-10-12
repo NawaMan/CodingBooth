@@ -31,7 +31,7 @@ setup	booth-desktop-actions	1.0.0	b50ecaf9bd210ffc3205b61af3cac6388fc816a3a8d266
 setup	booth-message-codeserver-wrapped	1.0.0	c78340cbb22a400686bf4ccc5f99e42ea831576499dee5fd8dd0d669ea59adac	variants/base/setups/booth-message-codeserver-wrapped--setup.sh
 setup	booth-message-desktop-wrapped	1.0.1	67da9437cfdba5a02e3c9df5eeb660010ed53140ecbc8b1d634bfd9d0160a850	variants/base/setups/booth-message-desktop-wrapped--setup.sh
 setup	booth-message-notebook-wrapped	1.0.0	717106d8ed0bcdef0c3f5e8cb7bbd5dffde918a601124c18163a30378be408c5	variants/base/setups/booth-message-notebook-wrapped--setup.sh
-setup	booth-message-wrapper	1.1.0	96546b4315f78570ee562bf1db66e68d488ec353c8e899e8e8390ad71fb04301	variants/base/setups/booth-message-wrapper--setup.sh
+setup	booth-message-wrapper	1.1.1	14a62adc8ecf617730cff701efb580adba0f4381584f9ff4961afb705f2f6670	variants/base/setups/booth-message-wrapper--setup.sh
 setup	booth-restart-code-extension	1.0.0	6d7311954cb5c0869b7826bee302c2b0bdebe07cbcb2d6112699d16aa73c10fe	variants/base/setups/booth-restart-code-extension--setup.sh
 setup	booth-shutdown-code-extension	1.0.0	5b6f200990ef0ad2f80181dc489808eddc15a581bee3bc0750e3d1d33a638d89	variants/base/setups/booth-shutdown-code-extension--setup.sh
 setup	booth-web-preview-code-extension	0.1.0	62d0ee4f84454ef4efa09185c79b74f9a6ee98650de82ff8fa8ceb65fc4f3b87	variants/base/setups/booth-web-preview-code-extension--setup.sh
@@ -346,7 +346,7 @@ helper	booth-keyboard-capture.js	0.1.0	1b8bdf5a1dd143bb693efb5d01ff2fc1ac227a91f
 helper	booth-lifecycle-watcher	1.0.0	2542a0cbd246097ec7b16b5c30d14769abf02bcc8190b8755b1bb0db4dad2b7f	variants/base/setups/booth-lifecycle-watcher
 helper	booth-message-api-server	1.1.0	5449e6ea36c948694320667c191503dcf48fec6f9a09e57a19cc176a19b73a85	variants/base/setups/booth-message-api-server
 helper	booth-message-overlay.html	1.0.0	0d12449adf0f8197e389d5cf0c1360149b81dee3d569c2beafd1a83276d743cc	variants/base/setups/booth-message-overlay.html
-helper	booth-ready.js	0.1.0	66741f953e9c87f3a3604b6f56f4a301a41cc80ca716b50ddc993d0c96097c4f	variants/base/setups/booth-ready.js
+helper	booth-ready.js	0.1.1	7f34aa1fc35ab3436a405bb4d037746e60fd207aaf857a16838a889378205d0a	variants/base/setups/booth-ready.js
 helper	booth-timer-notifier	1.0.0	989957246822c338cb8d8d99c3be2e9d8fede407bc75b68469e3981635d620c1	variants/base/setups/booth-timer-notifier
 helper	cb-booth-favicon.sh	0.1.0	1a58ecdc1b85acfb1cc1bf8e775dc533308ed7520611c0c8b62e51d22e31690e	variants/base/setups/cb-booth-favicon.sh
 helper	cb-desktop-icon.sh	1.0.0	de75acb980c5690bdb777a63656ea771e5fda50345c5f7aaa45e5b3a34cc18a7	variants/base/setups/cb-desktop-icon.sh
