@@ -1,0 +1,8 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --variant base --select differ
+
+env APT_SNAPSHOT=20261012T000000Z
+
+arg DIFFER_VERSION=latest
+
+setup differ --version ${DIFFER_VERSION}
