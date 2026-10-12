@@ -5,12 +5,21 @@
 #       <dir> is left alone when there is no terminal to ask about a backup.
 #
 #       The release in the cache may predate just-init, so the test swaps in this
-#       checkout's binary (/booth/codingbooth) and, for the old-binary case, a stub
-#       that knows no commands — re-signing the cached sha256 each time, and
-#       creating with that cached version pinned so nothing re-downloads it.
+#       checkout's binary and, for the old-binary case, a stub that knows no
+#       commands — re-signing the cached sha256 each time, and creating with that
+#       cached version pinned so nothing re-downloads it.
+#
+#       The binary it swaps in comes from bin/codingbooth-linux-*, the Linux
+#       cross-builds `cli-build.sh` writes whatever the host is. The repo-root
+#       `codingbooth` it used to take is the *host's* build: a Mach-O binary on
+#       macOS, which cannot run in the container either, and on Windows a file
+#       cli-build.sh never writes (it writes codingbooth.exe) and that `-x` calls
+#       false anyway, since Git Bash reads executability off the content. So the
+#       test refused to run at all there. See tests/README.md.
 source "$(dirname "$0")/_lib.sh"
 
-[[ -x "$REPO_ROOT/codingbooth" ]] || { echo "Build the CLI first: ./build/cli-build.sh" >&2; exit 2; }
+[[ -s "$REPO_ROOT/bin/codingbooth-linux-amd64" && -s "$REPO_ROOT/bin/codingbooth-linux-arm64" ]] \
+    || { echo "Build the CLI first: ./build/cli-build.sh" >&2; exit 2; }
 
 LAST_OUTPUT=$(run_in_container <<'BASH'
 set -euo pipefail
@@ -33,7 +42,10 @@ swap() {
 }
 
 # --- a binary with just-init ---
-swap /booth/codingbooth
+case "$(uname -m)" in
+    aarch64|arm64) swap /booth/bin/codingbooth-linux-arm64 ;;
+    *)             swap /booth/bin/codingbooth-linux-amd64 ;;
+esac
 ./booth create app "$ver" </dev/null 2>&1
 [[ -f app/Justfile ]] && echo "app: Justfile" || echo "app: no Justfile"
 grep -q 'run-in-booth := ' app/Justfile && echo "app: starter"

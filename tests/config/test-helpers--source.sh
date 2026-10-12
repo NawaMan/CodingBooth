@@ -46,6 +46,14 @@ if [[ "$VERBOSE" == "true" ]]; then BUILD_ARGS=(); fi
 # above): every call to booth() happens from inside $prj, after `cd $prj`.
 _repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
+# booth() below runs the local build, and which file that is depends on the
+# host: `cli-build.sh` writes `codingbooth.exe` on Windows, where the
+# extensionless `codingbooth` beside it is the Linux cross-build and every
+# attempt to run it ends at exit 126. booth-bin--source.sh is the one place
+# that knows the difference (see tests/README.md).
+# shellcheck disable=SC1091
+source "$_repo_root/tests/booth-bin--source.sh"
+
 # test_label: this test's path relative to tests/, used to prefix a failure
 # message so it survives being flattened into a suite-wide log alongside every
 # other category's files (see assert-line's comment below) -- "catalog/test91-…"
@@ -64,12 +72,13 @@ else
 fi
 
 function booth() {
-    if [[ ! -d "$_repo_root/templates" || ! -x "$_repo_root/codingbooth" ]]; then
+    local booth_bin
+    if [[ ! -d "$_repo_root/templates" ]] || ! booth_bin="$(find_local_booth_build "$_repo_root")"; then
         echo "Error: templates directory or codingbooth binary not found under $_repo_root" >&2
         return 1
     fi
     CB_TEMPLATES_PATH="$_repo_root/templates" \
-    "$_repo_root/codingbooth" "$@"
+    "$booth_bin" "$@"
 }
 
 # template-default <template> <PARAM>: the param's default, as the catalog

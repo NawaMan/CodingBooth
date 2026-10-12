@@ -28,8 +28,25 @@ mkdir -p "$TMP/.booth"
 run() { run_coding_booth --variant base --dryrun --code "$TMP" "$@" 2>&1 || true; }
 fail() { print_test_result "false" "$0" "$1" "$2"; echo "Actual:"; echo "$3"; exit 1; }
 
-base() { printf 'variant = "base"\nrun-args = %s\n' "$1" > "$TMP/.booth/config.toml"; }
-overlay() { printf 'run-args = %s\n' "$2" > "$TMP/.booth/$1--config.toml"; }
+# Two host folders that exist, in the form this host's engine takes. A mount
+# whose source is missing is dropped before docker is called — and on Windows
+# "/etc" is both missing and not a path the engine could resolve — so a case
+# asserting that a mount survived would be asserting on one booth had already
+# removed. {cfg} and {data} in the run-args below stand for these, so the JSON
+# stays single-quoted and readable.
+mkdir -p "$TMP/cfg" "$TMP/data"
+SRC_CFG="$(host_path "$TMP/cfg")"
+SRC_DATA="$(host_path "$TMP/data")"
+
+sources() {
+    local json="$1"
+    json="${json//\{cfg\}/$SRC_CFG}"
+    json="${json//\{data\}/$SRC_DATA}"
+    printf '%s' "$json"
+}
+
+base() { printf 'variant = "base"\nrun-args = %s\n' "$(sources "$1")" > "$TMP/.booth/config.toml"; }
+overlay() { printf 'run-args = %s\n' "$(sources "$2")" > "$TMP/.booth/$1--config.toml"; }
 
 # ---- 1. Same -e variable, different value ----
 base   '["-e", "LOG=info"]'
@@ -44,8 +61,8 @@ grep -q 'BOOTH_HOST_PORT' <<<"$OUT" && fail 1 "a refused run must not print a do
 print_test_result "true" "$0" "1" "-e LOG=info in the base and -e LOG=debug in a profile is refused, naming both"
 
 # ---- 2. Same container mount target ----
-base   '["-v", "/etc:/cfg"]'
-overlay dev '["-v", "/usr:/cfg"]'
+base   '["-v", "{cfg}:/cfg"]'
+overlay dev '["-v", "{data}:/cfg"]'
 OUT="$(run --profile dev)"
 grep -q 'mount target /cfg' <<<"$OUT" || fail 2 "a second mount on one target is refused, not silently dropped" "$OUT"
 print_test_result "true" "$0" "2" "a base mount and a profile mount on one target is refused"
@@ -64,8 +81,8 @@ grep -q 'host port 39200/tcp' <<<"$OUT" || fail 4 "a host port claimed twice is 
 print_test_result "true" "$0" "4" "-p 39200:80 then -p 39200:81 is refused"
 
 # ---- 5. Distinct claims and exact repeats pass, and are combined ----
-base   '["-e", "TZ=UTC", "-v", "/etc:/cfg", "-p", "39200:80"]'
-overlay dev '["-e", "LOG=debug", "-v", "/usr:/data", "-p", "39300:81", "-e", "TZ=UTC"]'
+base   '["-e", "TZ=UTC", "-v", "{cfg}:/cfg", "-p", "39200:80"]'
+overlay dev '["-e", "LOG=debug", "-v", "{data}:/data", "-p", "39300:81", "-e", "TZ=UTC"]'
 OUT="$(run --profile dev)"
 grep -q 'collides' <<<"$OUT" && fail 5 "distinct claims and an exact repeat must be accepted" "$OUT"
 grep -q "LOG=debug" <<<"$OUT" || fail 5 "the overlay's entries reach docker" "$OUT"
@@ -93,7 +110,7 @@ grep -q 'collides' <<<"$OUT" && fail 7 "an unselected profile must not be checke
 print_test_result "true" "$0" "7" "a colliding profile that is not selected is not checked"
 
 # ---- 8. No profile selected: nothing changes, even for a repeat within the base ----
-base   '["-e", "LOG=info", "-e", "LOG=debug", "-v", "/etc:/cfg", "-v", "/usr:/cfg"]'
+base   '["-e", "LOG=info", "-e", "LOG=debug", "-v", "{cfg}:/cfg", "-v", "{data}:/cfg"]'
 rm -f "$TMP/.booth/"*--config.toml
 OUT="$(run)"
 grep -q 'collides' <<<"$OUT" && fail 8 "without a profile there is no layer to collide with" "$OUT"

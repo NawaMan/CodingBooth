@@ -63,16 +63,21 @@ expect_contains "$LOGIN" "#submit {" \
 
 # Masking again on submit has to happen inside the submit handler, before the
 # request goes out.
+#
+# Done with bash's own substring search rather than python3: the three indices
+# are all this needs, and a host where `python3` is the Microsoft Store's stub
+# (see have_python3 in common--source.sh) would have failed the case instead of
+# checking it. A ${var#...} that matches nothing returns the string unchanged,
+# so each needle's presence is asserted before its offset is compared.
 NUM=$((NUM + 1))
-if python3 - "$LOGIN" <<'PY'
-import sys
-src = open(sys.argv[1]).read()
-h = src.index("form.addEventListener('submit'")
-m = src.index("setRevealed(false);", h)
-f = src.index("fetch(", h)
-sys.exit(0 if m < f else 1)
-PY
-then
+LOGIN_FLAT="$(tr '\n' ' ' < "$LOGIN")"
+AFTER_SUBMIT="${LOGIN_FLAT#*form.addEventListener(\'submit\'}"
+MASK_OFFSET="${AFTER_SUBMIT%%setRevealed(false);*}"
+FETCH_OFFSET="${AFTER_SUBMIT%%fetch(*}"
+if [[ "$AFTER_SUBMIT" != "$LOGIN_FLAT" ]] \
+   && [[ "$AFTER_SUBMIT" == *"setRevealed(false);"* ]] \
+   && [[ "$AFTER_SUBMIT" == *"fetch("* ]] \
+   && (( ${#MASK_OFFSET} < ${#FETCH_OFFSET} )); then
     print_test_result "true" "$0" "$NUM" "login: field is masked again on submit, before the request"
 else
     print_test_result "false" "$0" "$NUM" "login: field is masked again on submit, before the request"
@@ -95,7 +100,7 @@ expect_contains "$OVR" 'btn.setAttribute("aria-pressed", shown ? "true" : "false
 for f in "$LOGIN" "$OVR"; do
     NUM=$((NUM + 1))
     name="$(basename "$f")"
-    if command -v node >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
+    if command -v node >/dev/null 2>&1 && have_python3; then
         JS="$(mktemp --suffix=.js)"
         python3 - "$f" "$JS" <<'PY'
 import re, sys

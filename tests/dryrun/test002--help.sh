@@ -23,13 +23,14 @@ ACTUAL=$(printf '%s\n' "$ACTUAL" | head -45)
 
 HERE="$PWD"
 VERSION="$(get_booth_version)"
+SCRIPT_NAME="$(booth_script_name)"
 
 EXPECT="\
-codingbooth $VERSION — launch a Docker-based development booth.
+${SCRIPT_NAME} $VERSION — launch a Docker-based development booth.
 
 USAGE:
-  codingbooth [options]                    Run the current booth.
-  codingbooth [options] [-- command ...]   Run the command inside the current booth.
+  ${SCRIPT_NAME} [options]                    Run the current booth.
+  ${SCRIPT_NAME} [options] [-- command ...]   Run the command inside the current booth.
 
 OPTIONS
   --build-arg <KEY=VAL>   Add a Docker build-arg which customize the booth image.
@@ -54,9 +55,9 @@ OPTIONS
                           docs/PODMAN_SUPPORT.md and docs/CONTAINER_SUPPORT.md)
 
 EXAMPLES:
-  codingbooth --variant codeserver       Run the booth to use codeserver on localhost:<port>.
-  codingbooth --daemon --port RANDOM     Run the booth in daemon mode on a random port.
-  codingbooth -- 'mvn install'           Run 'mvn install' inside the booth.
+  ${SCRIPT_NAME} --variant codeserver       Run the booth to use codeserver on localhost:<port>.
+  ${SCRIPT_NAME} --daemon --port RANDOM     Run the booth in daemon mode on a random port.
+  ${SCRIPT_NAME} -- 'mvn install'           Run 'mvn install' inside the booth.
 
 OTHER COMMANDS:
   BUILD     | Build and publish booth images   | build                                                                   | docs/BOOTH_BUILD.md
@@ -69,7 +70,7 @@ OTHER COMMANDS:
   PROJECT   | Set up and scaffold new projects | example, config, just-init, template, showcase                          | docs/BOOTH_EXAMPLE.md
   EXPRESS   | Run from arguments, ignoring the project's .booth | express                                                      | docs/BOOTH_RUN.md
 
-Run 'codingbooth --help <command>'   for command-specific help."
+Run '${SCRIPT_NAME} --help <command>'   for command-specific help."
 
 if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then
   print_test_result "true" "$0" "1" "Help output matches expected"

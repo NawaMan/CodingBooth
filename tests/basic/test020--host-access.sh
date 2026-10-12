@@ -30,7 +30,7 @@ set -euo pipefail
 
 source ../common--source.sh
 
-if ! command -v python3 >/dev/null 2>&1; then
+if ! have_python3; then
     echo "SKIP: python3 is not available to stand up a host-side service"
     exit 0
 fi

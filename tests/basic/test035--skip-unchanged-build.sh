@@ -88,7 +88,10 @@ check 5 "The start after the rebuild skips again" \
 # image) read only the local engine.
 SHIM_DIR="$WORK_DIR/shim"
 CALLS="$WORK_DIR/docker-calls.log"
-REAL_DOCKER="$(command -v docker)"
+# type -P, not `command -v`: the suite wraps docker in a shell function on
+# Windows (see common--source.sh), and `command -v` would name that function
+# rather than the binary this shim has to forward to.
+REAL_DOCKER="$(type -P docker)"
 mkdir -p "$SHIM_DIR"
 cat > "$SHIM_DIR/docker" <<EOF
 #!/bin/bash
@@ -96,6 +99,22 @@ printf '%s\n' "\$*" >> "$CALLS"
 exec "$REAL_DOCKER" "\$@"
 EOF
 chmod +x "$SHIM_DIR/docker"
+
+# booth is a Windows program here, and it resolves `docker` the way Windows
+# does: through PATHEXT. The extensionless script above is not an executable to
+# it — it walked past the shim to the real docker.exe, the log stayed empty, and
+# the check below reported a bypassed shim. A .cmd in the same directory is
+# found first (PATH order wins before the extension list), and Docker Desktop
+# ships docker.exe beside the POSIX `docker` wrapper the shell uses.
+if [[ "$HOST_OS" == "WIN" ]]; then
+  CALLS_WIN="$(host_path "$WORK_DIR" | tr '/' '\\')\\$(basename "$CALLS")"
+  REAL_DOCKER_WIN="$(host_path "$(dirname "$REAL_DOCKER")" | tr '/' '\\')\\docker.exe"
+  {
+    printf '@echo off\r\n'
+    printf '>>"%s" echo %%*\r\n' "$CALLS_WIN"
+    printf '"%s" %%*\r\n' "$REAL_DOCKER_WIN"
+  } > "$SHIM_DIR/docker.cmd"
+fi
 : > "$CALLS"
 
 OUTPUT="$(PATH="$SHIM_DIR:$PATH" "$BOOTH_BIN" run --code "$CODE" -- 'echo OUT=$(cat /tmp/fingerprint)' 2>&1 || true)"

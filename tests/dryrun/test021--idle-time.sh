@@ -102,10 +102,10 @@ rm -f "$CFG"
 # ---------------------------------------------------------------------------
 # Not using run_coding_booth here because we want to capture the non-zero exit
 # and stderr without the wrapper's stdout tee getting in the way.
-BINARY=""
-for d in "../.." "../../.." "../../../.." "../../../../.."; do
-  if [[ -x "$d/codingbooth" ]]; then BINARY="$d/codingbooth"; break; fi
-done
+# The binary comes from the shared resolver — the walk this used to do by hand
+# picked `codingbooth` on Windows, which is the Linux cross-build sitting beside
+# `codingbooth.exe`, and every run of it ended at exit 126 (see tests/README.md).
+BINARY="$(find_local_booth_build)" || BINARY=""
 
 if [[ -z "$BINARY" ]]; then
   print_test_result "false" "$0" "5" "Could not locate codingbooth binary for error-path test"

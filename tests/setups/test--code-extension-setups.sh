@@ -65,6 +65,27 @@ EOF
 chmod +x "$STUB/bin/code-server"
 cp "$STUB/bin/code-server" "$STUB/bin/code"
 
+# One setup packs its extension with `zip`, which every booth image has and a
+# host may not (Windows does not). What this file checks is that each script
+# runs and reaches an install call with a real id, not what is inside the
+# archive, so a stub that just creates the file it was asked for is enough — in
+# the same spirit as the editor CLIs above. Used only when the host has no zip,
+# so a host that does keeps exercising the real thing.
+if ! command -v zip >/dev/null 2>&1; then
+    cat > "$STUB/bin/zip" << 'EOF'
+#!/bin/bash
+# zip [-qr] <archive> <paths…> — the archive is all this has to produce.
+for arg in "$@"; do
+  case "$arg" in
+    -*) ;;
+    *) : > "$arg"; exit 0 ;;
+  esac
+done
+exit 0
+EOF
+    chmod +x "$STUB/bin/zip"
+fi
+
 ALL_PASSED=true
 TEST_NUM=0
 CHECKED=0
