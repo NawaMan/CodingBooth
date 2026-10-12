@@ -10,6 +10,7 @@ arg NODE_VERSION=20
 
 setup bun ${BUN_VERSION}
 setup claude-code ${CLAUDE_CODE_VERSION}
+env PATH=/home/coder/.deno/bin:$PATH
 setup deno ${DENO_VERSION}
 setup nodejs ${NODE_VERSION}
 setup antigravity

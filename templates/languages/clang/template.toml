@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.1.0"
 display-name = "Clang (C/C++)"
 primary = true
 display-disc = "LLVM/Clang toolchain for C and C++"
@@ -17,7 +17,13 @@ tags = [
 default = "22"
 suggests = ["22", "21", "20", "18"]
 
+# Image environment, not a shell profile. `booth exec` runs the command with no
+# shell, so /etc/profile.d never runs: these mirror what the setup's profile sets.
 [segments]
 Boothfile = """
+env CLANG_HOME=/opt/clang-stable
+env PATH=/opt/clang-stable/bin:$PATH
+env CC=clang
+env CXX=clang++
 setup clang --version ${LLVM_VERSION}
 """

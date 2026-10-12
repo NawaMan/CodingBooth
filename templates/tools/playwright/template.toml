@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.1.0"
 display-name = "Playwright"
 primary = true
 display-disc = "Playwright browser automation and end-to-end testing framework"
@@ -27,7 +27,11 @@ suggests = ["chromium", "chromium,firefox", "chromium,firefox,webkit", "all"]
 default = "latest"
 suggests = ["latest", "1.63.0"]
 
+# Image environment, not a shell profile. `booth exec` runs the command with no
+# shell, so /etc/profile.d never runs: these mirror what the setup's profile sets.
 [segments]
 "Boothfile--60" = """
+env PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
+env PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 setup playwright ${PLAYWRIGHT_BROWSERS} --version ${PLAYWRIGHT_VERSION}
 """

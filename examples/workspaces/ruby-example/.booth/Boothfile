@@ -8,7 +8,18 @@ arg NOTEBOOK_PORT=18888
 arg PYTHON_VERSION=3.13.12
 arg RUBY_VERSION=3.3
 
+env CB_PYENV_ROOT=/opt/pyenv
+env CB_PY_STABLE=/opt/python
+env CB_VENV_ROOT=/opt/venvs
+env PIP_CACHE_DIR=/opt/pip-cache
+env PIP_DISABLE_PIP_VERSION_CHECK=1
+env PYTHONUNBUFFERED=1
+env VIRTUAL_ENV=/opt/python
+env PATH=/usr/local/uv/bin:/usr/local/uv:/opt/pyenv/bin:/opt/python/bin:$PATH
 setup python ${PYTHON_VERSION}
+env RBENV_ROOT=/opt/rbenv
+env GEM_HOME=/home/coder/.gem
+env PATH=/home/coder/.gem/bin:/opt/rbenv/shims:/opt/rbenv/bin:$PATH
 setup ruby ${RUBY_VERSION}
 setup python-code-extension
 setup notebook ${NOTEBOOK_PORT}

@@ -1,4 +1,4 @@
-cb-version = "0.1.0"
+cb-version = "0.2.0"
 display-name = "Ant"
 display-disc = "Apache Ant build tool for Java projects"
 display-detail = """Installs Ant itself, since the Java template ships no default build tool -- pick this, \
@@ -20,7 +20,11 @@ suggests = [
     "1.10.15",
 ]
 
+# Image environment, not a shell profile. `booth exec` runs the command with no
+# shell, so /etc/profile.d never runs: these mirror what the setup's profile sets.
 [segments]
 Boothfile = """
+env ANT_HOME=/opt/ant-stable
+env PATH=/opt/ant-stable/bin:$PATH
 setup ant ${ANT_VERSION}
 """

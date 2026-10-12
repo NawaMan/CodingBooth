@@ -8,6 +8,9 @@ arg PG_VERSION=latest
 arg RUBY_VERSION=3.3
 
 setup postgresql --version ${PG_VERSION}
+env RBENV_ROOT=/opt/rbenv
+env GEM_HOME=/home/coder/.gem
+env PATH=/home/coder/.gem/bin:/opt/rbenv/shims:/opt/rbenv/bin:$PATH
 setup ruby ${RUBY_VERSION}
 install gem ${GEM_PKGS}
 setup ruby-code-extension

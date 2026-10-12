@@ -11,5 +11,7 @@ arg PLAYWRIGHT_VERSION=1.63.0
 setup nodejs ${NODE_VERSION}
 run npm install -g npm@${NPM_VERSION}
 setup nodejs-code-extension
+env PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
+env PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 setup playwright ${PLAYWRIGHT_BROWSERS} --version ${PLAYWRIGHT_VERSION}
 setup playwright-code-extension

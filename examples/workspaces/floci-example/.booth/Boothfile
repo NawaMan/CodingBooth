@@ -10,5 +10,9 @@ arg FLOCI_VERSION=latest
 
 setup aws-cli --version ${AWS_CLI_VERSION}
 setup dind
+env AWS_ENDPOINT_URL=http://localhost:${FLOCI_PORT}
+env AWS_ACCESS_KEY_ID=test
+env AWS_SECRET_ACCESS_KEY=test
+env AWS_DEFAULT_REGION=us-east-1
 setup floci --version ${FLOCI_VERSION}
 setup docker-code-extension

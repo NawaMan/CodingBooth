@@ -25,6 +25,8 @@ CodingBooth setup scripts follow a simple pattern that produces **three artifact
    - Path: `/etc/profile.d/<LEVEL>-cb-<thing>--profile.sh`  
    - Purpose: lightweight per-shell setup.  
    - Example tasks: export env vars, update `PATH`, define aliases.
+   - Not read by `booth exec`, which runs with no shell: the template repeats these exports as
+     `env` lines (see `templates/README.md` → *Image Environment*; `test137` checks it).
 
 3. **Starter wrapper** (a user-invoked command wrapper)  
    - Path: `/usr/local/bin/<thing>`  

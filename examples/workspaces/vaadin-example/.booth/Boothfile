@@ -8,7 +8,13 @@ arg JDK_VERSION=21
 arg MAVEN_VERSION=3.9.11
 arg NODE_VERSION=22
 
+env JAVA_HOME=/opt/jdk${JDK_VERSION}
+env CB_JAVA_HOME=/opt/jdk${JDK_VERSION}
+env CB_JDK_VERSION=${JDK_VERSION}
+env PATH=$PATH:/opt/jdk${JDK_VERSION}/bin
 setup jdk ${JDK_VERSION} ${JDK_VENDOR}
+env MAVEN_HOME=/opt/maven-stable
+env PATH=/opt/maven-stable/bin:$PATH
 setup mvn ${MAVEN_VERSION}
 setup nodejs ${NODE_VERSION}
 setup java-code-extension

@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.1.0"
 display-name = "Cypress"
 display-disc = "End-to-end testing with a pre-baked Cypress binary"
 display-detail = "Installs the Cypress npm package and downloads its Electron/browser binary into a shared cache at /opt/cypress (CYPRESS_CACHE_FOLDER). Installs Linux GUI libraries Cypress needs. Requires Node.js. Use `cypress run` for headless CI; interactive `cypress open` needs a display (desktop variant)."
@@ -18,7 +18,10 @@ requires = ["nodejs"]
 default = "latest"
 suggests = ["latest"]
 
+# Image environment, not a shell profile. `booth exec` runs the command with no
+# shell, so /etc/profile.d never runs: these mirror what the setup's profile sets.
 [segments]
 "Boothfile--60" = """
+env CYPRESS_CACHE_FOLDER=/opt/cypress
 setup cypress --version ${CYPRESS_VERSION}
 """

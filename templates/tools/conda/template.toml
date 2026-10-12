@@ -19,7 +19,18 @@ suggests = [
     "3.11",
 ]
 
+# Image environment, not a shell profile. `booth exec` runs the command with no
+# shell, so /etc/profile.d never runs: these mirror what the setup's profile sets.
 [segments]
 Boothfile = """
+env CONDA_PREFIX=/opt/conda
+env CONDA_ENVS_DIRS=/opt/conda-envs
+env CONDA_PKGS_DIRS=/opt/conda-pkgs
+env CONDA_AUTO_ACTIVATE_BASE=false
+env PY_STABLE=/opt/python
+env PIP_CACHE_DIR=/opt/pip-cache
+env PIP_DISABLE_PIP_VERSION_CHECK=1
+env PYTHONUNBUFFERED=1
+env PATH=/opt/python/bin:/opt/conda/bin:$PATH
 setup conda ${PYTHON_VERSION}
 """
