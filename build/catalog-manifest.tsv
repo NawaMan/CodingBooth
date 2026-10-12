@@ -607,7 +607,7 @@ extension	chromium+profile-cache	1.0.0	2e7002fd8a1dbc2e165f5bb0c61765d337d3500bb
 extension	chromium+settings-shared	1.0.0	33fe695587edc092034b0ac1b62b670fdd22320eb03eda36f199629e7392f7aa	templates/desktops/chromium/settings-shared--extension.toml
 extension	clang+kernel	0.1.0	3bef4c40bad58baa080bc2e2169b2b4fc24f03696ae745fc4767c7c1616dfe29	templates/languages/clang/kernel--extension.toml
 extension	clang+vscode-ext	1.0.0	d1ede4d93e33b9976673ceab0df1b67e30e42e72854613478250ede00e584746	templates/languages/clang/vscode-ext--extension.toml
-extension	claude-code+auto-accept	1.0.0	0565dbab5b3c46c522c37aca1c61d891850f7671a05071d996806c2307025343	templates/ai-tools/claude-code/auto-accept--extension.toml
+extension	claude-code+auto-accept	1.0.1	483ea02ca3084adfb2ca3bd2b9ae47f58a3639bf09750ff1fe8f8c134999824c	templates/ai-tools/claude-code/auto-accept--extension.toml
 extension	claude-code+credential	1.0.0	d907bc19eea81fd8c5de7cef976d07755fb49b0ffb6331d9f6f36ab9ca64fe0f	templates/ai-tools/claude-code/credential--extension.toml
 extension	claude-code+settings-cache	1.0.0	07a0146644ba58c2cbcd8946944b659f2a2e2d5486c3a0b7fac09597a7a2d2fd	templates/ai-tools/claude-code/settings-cache--extension.toml
 extension	claude-code+token-credential	0.1.0	517cf543218b2f4fff81ccf3ede33f7d875eb5225085fb0941636f5dc60d3c37	templates/ai-tools/claude-code/token-credential--extension.toml

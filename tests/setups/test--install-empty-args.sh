@@ -42,7 +42,7 @@ trap "rm -rf $STUB" EXIT
 # call and succeeds, so reaching one is observable instead of fatal.
 STUBBED_COMMANDS=(
     apt-get brew bun cabal cargo code-server conan conda deno dotnet gem go
-    luarocks mix npm pecl pip pip3 python python3 sudo uv yarn
+    luarocks mix npm pecl pip pip3 python python3 rustup sudo uv yarn
 )
 for cmd in "${STUBBED_COMMANDS[@]}"; do
     cat > "$STUB/$cmd" << EOF
@@ -62,6 +62,8 @@ run_install() {
     LUA_HOME="$STUB/luahome" \
     MIX_HOME="$STUB/mixhome" \
     ELIXIR_HOME="$STUB/elixirhome" \
+    RUSTUP_BIN="$STUB/rustup" \
+    RUSTUP_HOME="$STUB/rustuphome" \
     SETUP_LIBS_DIR="$STUB/libs" \
         ${ROOT_RUN[@]+"${ROOT_RUN[@]}"} bash "$script" "$@" 2>&1
 }
@@ -133,11 +135,20 @@ if [ ${#MANAGERS[@]} -eq 0 ]; then
     exit 1
 fi
 
+# Scripts whose first argument is a kind, not a package: the empty-list cases run
+# after it, as the templates emit them (`install rustup target ${RUST_TARGETS}`).
+declare -A LEAD_ARGS=( [rustup]="target" )
+
 for mgr in "${MANAGERS[@]}"; do
-    assert_noop "$mgr" "no arguments is a no-op"
-    assert_noop "$mgr" "an empty argument is a no-op" ""
-    assert_noop "$mgr" "a comma-only list is a no-op" ",,"
+    lead=()
+    [ -n "${LEAD_ARGS[$mgr]:-}" ] && lead=("${LEAD_ARGS[$mgr]}")
+    assert_noop "$mgr" "no arguments is a no-op"      ${lead[@]+"${lead[@]}"}
+    assert_noop "$mgr" "an empty argument is a no-op" ${lead[@]+"${lead[@]}"} ""
+    assert_noop "$mgr" "a comma-only list is a no-op" ${lead[@]+"${lead[@]}"} ",,"
 done
+
+# ---- rustup: the other kind no-ops too -------------------------------------
+assert_noop "rustup" "an empty component list is a no-op" "component" ""
 
 # ---- cargo: flags without crates is also a no-op --------------------------
 # `install cargo --locked ${CARGO_PKGS}` with an empty CARGO_PKGS reaches the
@@ -150,6 +161,9 @@ assert_installs "npm"   "a real package still installs" "npm install -g somepkg"
 assert_installs "yarn"  "a real package still installs" "yarn global add somepkg" "somepkg"
 assert_installs "cargo" "a real crate still installs"   "ripgrep"                 "ripgrep"
 assert_installs "cargo" "flags plus a crate still installs" "ripgrep" "--locked" "ripgrep"
+mkdir -p "$STUB/rustuphome"
+assert_installs "rustup" "a real target still installs" \
+    "rustup target add wasm32-unknown-unknown" "target" "wasm32-unknown-unknown"
 
 TEST_NUM=$((TEST_NUM + 1))
 print_test_result "true" "$0" "$TEST_NUM" "checked ${#MANAGERS[@]} install scripts"
