@@ -38,6 +38,16 @@ This file contains a list of changes for each released version.
   until then the old `ENVFOLIO_STORE_DIR` in `config.toml` is ignored. Elsewhere, move
   `~/.envfolio` to `~/.folio` and rename any `ENVFOLIO_STORE_DIR` you set yourself.
 
+- **Fix: `booth --daemon -- <command>` ran only the command's first word.** `--` takes command
+  words and runs them with `bash -lc`, which takes a single command string and treats anything
+  after it as `$0`, `$1`, … The daemon path handed over the words as separate arguments, so
+  `booth --daemon -- sleep 600` ran `bash -lc sleep 600` — the script was `sleep`, with `600` as
+  its `$0` — and the command died immediately on `sleep: missing operand`. In daemon mode the
+  container stays up on the booth's own services, so the only trace was a line in
+  `docker logs`. A single-word command (`--daemon -- bash`) was unaffected, as were foreground
+  and command mode, which already joined the words. `booth exec --daemon` hands its command to the
+  engine as an argument vector, with no shell wrapper, so it was never affected.
+
 - **`booth config`: `--set` replaces only the key it names, and `--unset` drops one.** On a
   reconfigure, one `--set` used to replace every `--set` recorded in the header, so
   `--set egress-allowlist=b.com` silently dropped `timezone` and any other recorded key. Each key

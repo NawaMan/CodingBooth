@@ -1238,3 +1238,73 @@ func TestPrintHomeVolumeWarning_DefaultsToDocker(t *testing.T) {
 		t.Errorf("Expected docker volume-rm hint, got: %q", output)
 	}
 }
+
+// TestUserCommandReachesBashAsOneString pins the shape of the command booth
+// hands the container, in every run mode that takes one.
+//
+// `bash -lc` takes a SINGLE command string and treats anything after it as
+// $0, $1, ... The daemon path appended the command words as separate
+// arguments, so `--daemon -- sleep 600` ran `bash -lc sleep 600`: the script
+// was "sleep", with "600" as its $0, and the command died on "sleep: missing
+// operand". Nothing noticed — in daemon mode the container stays up on the
+// booth's own services, and the basic tests asserted only its lifecycle.
+//
+// The older assertions nearby look for "bash" and "-lc" anywhere in the
+// output, which both shapes satisfy; this one looks for the joined string.
+func TestUserCommandReachesBashAsOneString(t *testing.T) {
+	// Each mode gets the same two-word command, which must arrive joined.
+	modes := map[string]struct {
+		daemon bool
+		run    func(*Booth) error
+	}{
+		"command mode": {daemon: false, run: func(b *Booth) error { return b.runAsCommand() }},
+		"daemon mode":  {daemon: true, run: func(b *Booth) error { return b.runAsDaemon() }},
+	}
+
+	for name, mode := range modes {
+		t.Run(name, func(t *testing.T) {
+			oldStdout := os.Stdout
+			reader, writer, _ := os.Pipe()
+			os.Stdout = writer
+
+			builder := &appctx.AppContextBuilder{
+				CbVersion:  getTestVersion(),
+				CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+				BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+				RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+				Cmds:       ilist.NewAppendableList[ilist.List[string]](),
+			}
+			builder.Config.Dryrun = nillable.NewNillableBool(true)
+			builder.Config.Quiet = true
+			builder.Config.Timezone = "America/New_York"
+			builder.Config.Image = "test-image:latest"
+			builder.Config.Name = "test-container"
+			builder.Config.Port = "10000"
+			builder.PortNumber = 10000
+			builder.Config.Daemon = mode.daemon
+			builder.Cmds.Append(ilist.NewList("sleep", "600"))
+
+			err := mode.run(NewBooth(builder.Build()))
+
+			writer.Close()
+			os.Stdout = oldStdout
+
+			var buf bytes.Buffer
+			io.Copy(&buf, reader)
+			output := normalizeOutput(buf.String())
+
+			if err != nil {
+				t.Fatalf("%s returned error: %v", name, err)
+			}
+
+			// The printer quotes an argument that holds a space, so the joined
+			// command shows as one argument and a split one does not.
+			if !strings.Contains(output, "bash -lc 'sleep 600'") {
+				t.Errorf("%s should hand bash -lc the command as one string; got: %q", name, output)
+			}
+			if strings.Contains(output, "bash -lc sleep 600") {
+				t.Errorf("%s split the command into separate arguments; got: %q", name, output)
+			}
+		})
+	}
+}
