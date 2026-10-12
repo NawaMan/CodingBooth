@@ -79,8 +79,34 @@ TMP_DIR=$(mktemp -d)
 curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL \
   "https://github.com/mozilla/sccache/releases/download/v${VERSION}/${NAME}.tar.gz" -o "${TMP_DIR}/sccache.tar.gz"
 tar -xzf "${TMP_DIR}/sccache.tar.gz" -C "${TMP_DIR}"
-install -m 755 "${TMP_DIR}/${NAME}/sccache" /usr/local/bin/sccache
+install -d /usr/local/lib/sccache
+install -m 755 "${TMP_DIR}/${NAME}/sccache" /usr/local/lib/sccache/sccache
 rm -rf "${TMP_DIR}"
+
+# ---- starter: warn when the shared cache is not mounted ----
+# rust+sccache sets SCCACHE_DIR and bind-mounts the host's ~/.cache/sccache there.
+# booth skips a mount whose host folder does not exist, and sccache then caches
+# inside the container -- it works, shares nothing, and is gone with the booth.
+# Startup hooks only log to /tmp/startups.log, so the warning goes where it is
+# seen: the first compile, once per container. No SCCACHE_DIR, no expectation.
+# Only a real crate compile counts: cargo discards the stderr of its probes
+# (`rustc -vV`, `--crate-name ___`), which would otherwise use up the one warning.
+cat > /usr/local/bin/sccache <<'EOF'
+#!/bin/bash
+# cargo compiles crates in parallel: mkdir is atomic, so exactly one of them warns.
+if [[ -n "${SCCACHE_DIR:-}" && " $* " == *" --crate-name "* && " $* " != *" --crate-name ___ "* ]] \
+   && mkdir /tmp/.cb-sccache-checked 2>/dev/null; then
+  if ! mountpoint -q "$SCCACHE_DIR" 2>/dev/null; then
+    cat >&2 <<WARN
+⚠️  sccache: $SCCACHE_DIR is not mounted from the host, so compiled crates are
+   cached in this booth only and are not shared with other projects.
+   Create the host folder once, then restart the booth:  mkdir -p ~/.cache/sccache
+WARN
+  fi
+fi
+exec /usr/local/lib/sccache/sccache "$@"
+EOF
+chmod 755 /usr/local/bin/sccache
 
 # ---- friendly summary ----
 echo "✅ sccache installed."

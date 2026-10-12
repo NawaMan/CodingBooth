@@ -84,8 +84,10 @@ This file contains a list of changes for each released version.
   sccache (0.17.0 by default) and makes it cargo's `RUSTC_WRAPPER`, with the host's
   `~/.cache/sccache` as the cache, so a crate compiled in one booth is a cache hit in the next.
   Your own crates still compile incrementally; dependencies are what gets cached. The cache folder
-  is a writable host mount, so it asks for consent the way `cargo-cache` does. Select it as
-  `--select rust+sccache`; `sccache --show-stats` shows the hits.
+  is a writable host mount, so it asks for consent the way `cargo-cache` does. Create it once with
+  `mkdir -p ~/.cache/sccache`: booth skips a mount whose host folder is missing, and the first
+  compile then warns that the cache is not shared. Select it as `--select rust+sccache`;
+  `sccache --show-stats` shows the hits.
 
 - **Catalog version-pin sweep to n-1.** Defaults now sit on the release just before the newest
   stable one; pins already at or below n-1 are unchanged. Each new version was checked against its
