@@ -9,8 +9,16 @@ arg LLVM_VERSION=18
 arg MAKE_VERSION=apt
 
 install apt ${APT_PKGS}
+env CLANG_HOME=/opt/clang-stable
+env PATH=/opt/clang-stable/bin:$PATH
+env CC=clang
+env CXX=clang++
 setup clang --version ${LLVM_VERSION}
+env CMAKE_HOME=/opt/cmake
+env PATH=/opt/cmake/bin:$PATH
 setup cmake --version ${CMAKE_VERSION}
+env MAKE_HOME=/opt/make-stable
+env PATH=/opt/make-stable/bin:$PATH
 setup make --version ${MAKE_VERSION}
 setup clang-code-extension
 setup cmake-code-extension

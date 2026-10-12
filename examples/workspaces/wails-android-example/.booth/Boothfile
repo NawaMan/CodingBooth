@@ -14,15 +14,24 @@ arg JDK_VERSION=25
 arg NODE_VERSION=22
 arg WAILS_VERSION=v3.0.0-beta.16
 
+env GOPATH=/home/coder/go
+env GOBIN=/home/coder/go/bin
+env PATH=/home/coder/go/bin:/usr/local/go-current/bin:$PATH
 setup go ${GO_VERSION}                                # GO tool chain
 install go golang.org/x/tools/gopls@latest            # GO language server
 install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
+env JAVA_HOME=/opt/jdk${JDK_VERSION}
+env CB_JAVA_HOME=/opt/jdk${JDK_VERSION}
+env CB_JDK_VERSION=${JDK_VERSION}
+env PATH=$PATH:/opt/jdk${JDK_VERSION}/bin
 setup jdk ${JDK_VERSION} ${JDK_VENDOR}
 setup nodejs ${NODE_VERSION}
 setup java-code-extension
 setup android-sdk --cmdline-tools ${ANDROID_CMDLINE_TOOLS} --api ${ANDROID_API} --build-tools ${ANDROID_BUILD_TOOLS}
 setup go-code-extension
 setup nodejs-code-extension
+env WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1
+env WEBKIT_DISABLE_DMABUF_RENDERER=1
 setup wails --version ${WAILS_VERSION}
 setup android-emulator --api ${ANDROID_API} --tag ${ANDROID_IMAGE_TAG} --abi ${ANDROID_IMAGE_ABI}
 setup wails-android

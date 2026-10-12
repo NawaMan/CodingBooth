@@ -6,6 +6,14 @@ env APT_SNAPSHOT=20261002T000000Z
 arg PYTHON_VERSION=3.13.15
 arg XONSH_VERSION=0.24.2
 
+env CB_PYENV_ROOT=/opt/pyenv
+env CB_PY_STABLE=/opt/python
+env CB_VENV_ROOT=/opt/venvs
+env PIP_CACHE_DIR=/opt/pip-cache
+env PIP_DISABLE_PIP_VERSION_CHECK=1
+env PYTHONUNBUFFERED=1
+env VIRTUAL_ENV=/opt/python
+env PATH=/usr/local/uv/bin:/usr/local/uv:/opt/pyenv/bin:/opt/python/bin:$PATH
 setup python ${PYTHON_VERSION}
 setup python-code-extension
 setup xonsh --version ${XONSH_VERSION}

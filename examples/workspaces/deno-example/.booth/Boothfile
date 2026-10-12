@@ -6,6 +6,7 @@ env APT_SNAPSHOT=20260906T000000Z
 arg DENO_PKGS=npm:cowsay,npm:figlet
 arg DENO_VERSION=latest
 
+env PATH=/home/coder/.deno/bin:$PATH
 setup deno ${DENO_VERSION}
 install deno-pkg ${DENO_PKGS}
 setup deno-code-extension

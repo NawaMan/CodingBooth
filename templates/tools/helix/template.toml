@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.1.0"
 display-name = "Helix"
 primary = true
 display-disc = "Modal terminal editor (hx) with tree-sitter runtime"
@@ -16,7 +16,10 @@ tags = [
 default = "latest"
 suggests = ["latest", "25.07.1"]
 
+# Image environment, not a shell profile. `booth exec` runs the command with no
+# shell, so /etc/profile.d never runs: these mirror what the setup's profile sets.
 [segments]
 Boothfile = """
+env HELIX_RUNTIME=/opt/helix/runtime
 setup helix --version ${HELIX_VERSION}
 """

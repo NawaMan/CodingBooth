@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.1.0"
 display-name = "sbt"
 display-disc = "Scala build tool for JVM projects"
 display-detail = "Installs sbt build tool for Scala, Java, and other JVM languages."
@@ -11,7 +11,11 @@ requires = ["java"]
 default = "latest"
 suggests = ["latest"]
 
+# Image environment, not a shell profile. `booth exec` runs the command with no
+# shell, so /etc/profile.d never runs: these mirror what the setup's profile sets.
 [segments]
 Boothfile = """
+env SBT_HOME=/opt/sbt
+env PATH=/opt/sbt/bin:$PATH
 setup sbt --version ${SBT_VERSION}
 """

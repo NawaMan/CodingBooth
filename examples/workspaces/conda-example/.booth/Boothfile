@@ -6,7 +6,24 @@ env APT_SNAPSHOT=20260906T000000Z
 arg CONDA_PKGS=numpy
 arg PYTHON_VERSION=3.12
 
+env CB_PYENV_ROOT=/opt/pyenv
+env CB_PY_STABLE=/opt/python
+env CB_VENV_ROOT=/opt/venvs
+env PIP_CACHE_DIR=/opt/pip-cache
+env PIP_DISABLE_PIP_VERSION_CHECK=1
+env PYTHONUNBUFFERED=1
+env VIRTUAL_ENV=/opt/python
+env PATH=/usr/local/uv/bin:/usr/local/uv:/opt/pyenv/bin:/opt/python/bin:$PATH
 setup python ${PYTHON_VERSION}
+env CONDA_PREFIX=/opt/conda
+env CONDA_ENVS_DIRS=/opt/conda-envs
+env CONDA_PKGS_DIRS=/opt/conda-pkgs
+env CONDA_AUTO_ACTIVATE_BASE=false
+env PY_STABLE=/opt/python
+env PIP_CACHE_DIR=/opt/pip-cache
+env PIP_DISABLE_PIP_VERSION_CHECK=1
+env PYTHONUNBUFFERED=1
+env PATH=/opt/python/bin:/opt/conda/bin:$PATH
 setup conda
 install conda ${CONDA_PKGS}
 setup python-code-extension

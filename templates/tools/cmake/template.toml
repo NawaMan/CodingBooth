@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.1.0"
 display-name = "CMake"
 display-disc = "CMake build system generator"
 display-detail = "Installs CMake for building, testing, and packaging C/C++ and other projects."
@@ -9,7 +9,11 @@ tags = ["cmake", "build", "cpp", "c"]
 default = "latest"
 suggests = ["latest"]
 
+# Image environment, not a shell profile. `booth exec` runs the command with no
+# shell, so /etc/profile.d never runs: these mirror what the setup's profile sets.
 [segments]
 Boothfile = """
+env CMAKE_HOME=/opt/cmake
+env PATH=/opt/cmake/bin:$PATH
 setup cmake --version ${CMAKE_VERSION}
 """

@@ -1,4 +1,4 @@
-cb-version = "0.1.0"
+cb-version = "0.2.0"
 display-name = "Wails [experimental]"
 display-disc = "Experimental — Wails v3, Go desktop apps with a web frontend"
 display-detail = """EXPERIMENTAL — new, not yet battle-tested; expect rough edges. \
@@ -46,8 +46,12 @@ run-args = [
 default = "latest"
 suggests = ["latest", "v3.0.0-beta.27"]
 
+# Image environment, not a shell profile. `booth exec` runs the command with no
+# shell, so /etc/profile.d never runs: these mirror what the setup's profile sets.
 # Order 60: after Go and Node.js, which land in the base band at 50.
 [segments]
 "Boothfile--60" = """
+env WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1
+env WEBKIT_DISABLE_DMABUF_RENDERER=1
 setup wails --version ${WAILS_VERSION}
 """

@@ -10,6 +10,14 @@ arg PYTHON_VERSION=3.13.12
 
 setup claude-code ${CLAUDE_CODE_VERSION}
 setup nodejs ${NODE_VERSION}
+env CB_PYENV_ROOT=/opt/pyenv
+env CB_PY_STABLE=/opt/python
+env CB_VENV_ROOT=/opt/venvs
+env PIP_CACHE_DIR=/opt/pip-cache
+env PIP_DISABLE_PIP_VERSION_CHECK=1
+env PYTHONUNBUFFERED=1
+env VIRTUAL_ENV=/opt/python
+env PATH=/usr/local/uv/bin:/usr/local/uv:/opt/pyenv/bin:/opt/python/bin:$PATH
 setup python ${PYTHON_VERSION}
 setup python-code-extension
 setup notebook ${NOTEBOOK_PORT}

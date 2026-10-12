@@ -7,6 +7,10 @@ arg CLAUDE_CODE_VERSION=latest
 arg HERDR_VERSION=latest
 arg LLVM_VERSION=18
 
+env CLANG_HOME=/opt/clang-stable
+env PATH=/opt/clang-stable/bin:$PATH
+env CC=clang
+env CXX=clang++
 setup clang --version ${LLVM_VERSION}
 setup claude-code ${CLAUDE_CODE_VERSION}
 setup herdr --version ${HERDR_VERSION}

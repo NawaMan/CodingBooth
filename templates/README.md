@@ -90,6 +90,28 @@ setup kotlin ${KOTLIN_VERSION}
 Scripts that **do** accept a bare positional version (simple `$1` capture without a while loop):
 `python`, `nodejs`, `bun`, `deno`, `ruby`, `neovim`, `jdk`.
 
+## Image Environment (`env` lines)
+
+`booth exec -- <cmd>` runs the command with no shell, so a setup's
+`/etc/profile.d/*--profile.sh` never runs there. Whatever the profile exports — a `PATH` entry,
+a `*_HOME`, a cache directory — the template repeats as an `env` line just before its `setup`:
+
+```
+env GOPATH=/home/coder/go
+env PATH=/home/coder/go/bin:/usr/local/go-current/bin:$PATH
+setup go ${GO_VERSION}
+```
+
+Keep `$PATH` literal so Docker expands it. A param may appear in the value
+(`env JAVA_HOME=/opt/jdk${JDK_VERSION}`): it is declared as an `arg` above, so Docker expands it
+too. The profile stays — interactive shells still read it.
+
+`tests/config/catalog/test137` enforces this: every name a setup's profile exports must be an
+`env` line in each template that emits that setup, or be listed with a reason in
+`tests/config/catalog/profile-only-exports.txt`. That list is for what is right to keep
+shell-only: a service whose `start-*` script sets its own env, a desktop session, a prompt, a value
+computed per shell.
+
 ## Run Args & Persistent Volumes
 
 Templates can specify `run-args` to add Docker flags when the container starts.

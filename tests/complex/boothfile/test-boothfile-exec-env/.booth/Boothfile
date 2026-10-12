@@ -1,0 +1,38 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --select go/julia/java/conda
+
+env APT_SNAPSHOT=20261011T000000Z
+
+arg GO_VERSION=1.27.1
+arg JDK_VENDOR=temurin
+arg JDK_VERSION=25
+arg JULIA_VERSION=1.13.1
+arg PYTHON_VERSION=3.14
+
+env CONDA_PREFIX=/opt/conda
+env CONDA_ENVS_DIRS=/opt/conda-envs
+env CONDA_PKGS_DIRS=/opt/conda-pkgs
+env CONDA_AUTO_ACTIVATE_BASE=false
+env PY_STABLE=/opt/python
+env PIP_CACHE_DIR=/opt/pip-cache
+env PIP_DISABLE_PIP_VERSION_CHECK=1
+env PYTHONUNBUFFERED=1
+env PATH=/opt/python/bin:/opt/conda/bin:$PATH
+setup conda ${PYTHON_VERSION}
+env GOPATH=/home/coder/go
+env GOBIN=/home/coder/go/bin
+env PATH=/home/coder/go/bin:/usr/local/go-current/bin:$PATH
+setup go ${GO_VERSION}                                # GO tool chain
+install go golang.org/x/tools/gopls@latest            # GO language server
+install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
+env JAVA_HOME=/opt/jdk${JDK_VERSION}
+env CB_JAVA_HOME=/opt/jdk${JDK_VERSION}
+env CB_JDK_VERSION=${JDK_VERSION}
+env PATH=$PATH:/opt/jdk${JDK_VERSION}/bin
+setup jdk ${JDK_VERSION} ${JDK_VENDOR}
+env JULIA_DEPOT_PATH=/home/coder/.julia
+env PATH=/opt/julia/bin:$PATH
+setup julia ${JULIA_VERSION}
+setup go-code-extension
+setup java-code-extension
+setup julia-code-extension
