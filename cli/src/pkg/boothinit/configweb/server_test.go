@@ -64,14 +64,22 @@ func TestRun_ToggleAndSaveReturnsDSL(t *testing.T) {
 		if done.result.SelectDSL != "go+linter" {
 			t.Fatalf("DSL = %q, want go+linter", done.result.SelectDSL)
 		}
-	case <-time.After(2 * time.Second):
+	case <-time.After(serverBudget):
 		t.Fatal("Run did not return after save")
 	}
 }
 
+// serverBudget is how long a test here waits for the server to answer, and for
+// Run to return once it has. It is a failure budget, not a measurement: the
+// test normally finishes in milliseconds, so a generous number only changes how
+// long a genuinely broken case takes to report. Two seconds was not generous
+// enough — `go test ./...` builds and runs several packages at once, and on a
+// loaded machine this test lost that race about one run in five.
+const serverBudget = 30 * time.Second
+
 func waitForServer(t *testing.T, url, token string) {
 	t.Helper()
-	deadline := time.Now().Add(2 * time.Second)
+	deadline := time.Now().Add(serverBudget)
 	for {
 		request, _ := http.NewRequest(http.MethodGet, url, nil)
 		request.Header.Set(tokenHeader, token)

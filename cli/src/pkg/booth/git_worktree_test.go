@@ -8,8 +8,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/nawaman/codingbooth/src/internal/hostskip"
 )
 
 // gitRepo makes a repo with one commit at dir. It skips the test when git is not installed.
@@ -41,6 +44,24 @@ func writeFile(t *testing.T, path, content string) {
 	}
 }
 
+// declinedOffUnix handles the hosts this feature cannot serve. The booth
+// mirrors the main repository's .git at the host's own absolute path, which
+// only works where that path is also a path a container can hold: a Windows
+// gitdir ("C:/proj/.git") is not, so resolveGitWorktreeMount declines it and
+// says why, rather than building a mount that cannot work (see
+// git_worktree.go). That refusal is what there is to assert there.
+func declinedOffUnix(t *testing.T, ok bool, warning string) bool {
+	t.Helper()
+	if hostskip.UnixPaths() {
+		return false
+	}
+	if ok || warning == "" {
+		t.Fatalf("ok=%v warning=%q, want the mount declined with a reason on %s",
+			ok, warning, runtime.GOOS)
+	}
+	return true
+}
+
 func TestGitWorktreeMount_AbsoluteWorktree(t *testing.T) {
 	root, _ := filepath.EvalSymlinks(t.TempDir())
 	main := filepath.Join(root, "main")
@@ -49,6 +70,9 @@ func TestGitWorktreeMount_AbsoluteWorktree(t *testing.T) {
 	runGit(t, main, "worktree", "add", "-q", wt, "-b", "wt")
 
 	mount, ok, warning := resolveGitWorktreeMount(wt)
+	if declinedOffUnix(t, ok, warning) {
+		return
+	}
 	if !ok || warning != "" {
 		t.Fatalf("ok=%v warning=%q, want a mount", ok, warning)
 	}
@@ -72,6 +96,9 @@ func TestGitWorktreeMount_RelativeWorktree(t *testing.T) {
 	}
 
 	mount, ok, warning := resolveGitWorktreeMount(wt)
+	if declinedOffUnix(t, ok, warning) {
+		return
+	}
 	if !ok || warning != "" {
 		t.Fatalf("ok=%v warning=%q, want a mount", ok, warning)
 	}

@@ -83,12 +83,20 @@ func TestStartTunnelPublicIsReachableOffLoopback(t *testing.T) {
 		t.Errorf("listener bound to %q, want every interface", addr)
 	}
 
-	host := nonLoopbackIPv4(t)
-	conn, err := net.Dial("tcp", net.JoinHostPort(host, strconv.Itoa(port)))
-	if err != nil {
-		t.Fatalf("public tunnel not reachable on %s: %v", host, err)
+	// One of this machine's addresses is enough: a host can have several, and
+	// a firewall or a virtual adapter may refuse one of them while the bind
+	// itself is fine.
+	hosts := nonLoopbackIPv4s(t)
+	var lastErr error
+	for _, host := range hosts {
+		conn, err := net.Dial("tcp", net.JoinHostPort(host, strconv.Itoa(port)))
+		if err == nil {
+			conn.Close()
+			return
+		}
+		lastErr = fmt.Errorf("%s: %w", host, err)
 	}
-	conn.Close()
+	t.Fatalf("public tunnel not reachable on any of %v: %v", hosts, lastErr)
 }
 
 func TestStartTunnelPrivateRefusesOffLoopback(t *testing.T) {
@@ -103,11 +111,12 @@ func TestStartTunnelPrivateRefusesOffLoopback(t *testing.T) {
 		tunnel.listener.Close()
 	}()
 
-	host := nonLoopbackIPv4(t)
-	conn, err := net.Dial("tcp", net.JoinHostPort(host, strconv.Itoa(port)))
-	if err == nil {
-		conn.Close()
-		t.Errorf("private tunnel accepted a connection on %s; it must stay on loopback", host)
+	for _, host := range nonLoopbackIPv4s(t) {
+		conn, err := net.Dial("tcp", net.JoinHostPort(host, strconv.Itoa(port)))
+		if err == nil {
+			conn.Close()
+			t.Errorf("private tunnel accepted a connection on %s; it must stay on loopback", host)
+		}
 	}
 }
 
@@ -232,19 +241,46 @@ func TestStartTcpTunnelWatcher_OpenedLineUnguardedOutsideForeground(t *testing.T
 	}
 }
 
-func nonLoopbackIPv4(t *testing.T) string {
+// nonLoopbackIPv4s lists this machine's own IPv4 addresses that something can
+// actually be dialled on — what a listener bound to every interface should
+// answer at.
+//
+// Interfaces that are down, and link-local addresses (169.254/16, which
+// Windows leaves on a disconnected or virtual adapter and which route
+// nowhere), are left out. Taking simply the first address InterfaceAddrs
+// returned picked one of those here, and the test failed on the address rather
+// than on the tunnel.
+func nonLoopbackIPv4s(t *testing.T) []string {
 	t.Helper()
-	addrs, err := net.InterfaceAddrs()
+	interfaces, err := net.Interfaces()
 	if err != nil {
 		t.Skipf("cannot list interfaces: %v", err)
 	}
-	for _, a := range addrs {
-		if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.IP.To4() != nil {
-			return ipnet.IP.String()
+	var usable []string
+	for _, iface := range interfaces {
+		if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 {
+			continue
+		}
+		addrs, err := iface.Addrs()
+		if err != nil {
+			continue
+		}
+		for _, addr := range addrs {
+			ipnet, ok := addr.(*net.IPNet)
+			if !ok {
+				continue
+			}
+			ip := ipnet.IP.To4()
+			if ip == nil || ip.IsLoopback() || ip.IsLinkLocalUnicast() {
+				continue
+			}
+			usable = append(usable, ip.String())
 		}
 	}
-	t.Skip("no non-loopback IPv4 address on this machine")
-	return ""
+	if len(usable) == 0 {
+		t.Skip("no routable IPv4 address on this machine")
+	}
+	return usable
 }
 
 func TestStartTcpTunnelWatcher_ErrorPrintedOnceWhileUnchanged(t *testing.T) {

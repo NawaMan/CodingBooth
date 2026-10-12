@@ -5,9 +5,10 @@
 package lifecycle
 
 import (
-	"os"
-	"path/filepath"
+	"fmt"
 	"testing"
+
+	"github.com/nawaman/codingbooth/src/internal/fakebin"
 )
 
 func TestParseDockerPortLine(t *testing.T) {
@@ -139,22 +140,29 @@ func TestBuildExposeRows_LivePortNotInManifestStillListed(t *testing.T) {
 	}
 }
 
-// fakeEngines puts a "docker" and a "podman" script on PATH, each printing its own
+// fakeEngines puts a "docker" and a "podman" on PATH, each printing its own
 // `port` output, so a test can tell which binary readLivePorts actually ran.
 func fakeEngines(t *testing.T) {
 	t.Helper()
-	dir := t.TempDir()
-	scripts := map[string]string{
-		"docker": "echo '3000/tcp -> 0.0.0.0:3111'",
-		"podman": "echo '3000/tcp -> 0.0.0.0:3222'",
+	t.Setenv(envFakeMode, fakeModePort)
+	fakebin.OnPath(t, "docker", "podman")
+}
+
+// fakePortMain answers `port` with a mapping that names the engine it came
+// from, and refuses anything else.
+func fakePortMain(name string, args []string) int {
+	if len(args) == 0 || args[0] != "port" {
+		return 1
 	}
-	for name, body := range scripts {
-		script := "#!/bin/sh\n[ \"$1\" = port ] || exit 1\n" + body + "\n"
-		if err := os.WriteFile(filepath.Join(dir, name), []byte(script), 0o755); err != nil {
-			t.Fatal(err)
-		}
+	switch name {
+	case "docker":
+		fmt.Println("3000/tcp -> 0.0.0.0:3111")
+	case "podman":
+		fmt.Println("3000/tcp -> 0.0.0.0:3222")
+	default:
+		return 1
 	}
-	t.Setenv("PATH", dir)
+	return 0
 }
 
 func TestReadLivePortsUsesChosenEngine(t *testing.T) {

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/nawaman/codingbooth/src/internal/hostskip"
 	"github.com/nawaman/codingbooth/src/pkg/mountoverlap"
 )
 
@@ -157,12 +158,17 @@ func TestEnsureCacheFromConfig_DirModeSuffix(t *testing.T) {
 	ensureCacheFromConfig(boothDir)
 
 	gnupg := filepath.Join(boothDir, "cache", "home", "coder", ".gnupg")
-	info, err := os.Stat(gnupg)
-	if err != nil {
+	if _, err := os.Stat(gnupg); err != nil {
 		t.Fatal(err)
 	}
-	if got := info.Mode().Perm(); got != 0o700 {
-		t.Errorf(".gnupg mode = %o, want 700", got)
+	if hostskip.UnixModes() {
+		info, err := os.Stat(gnupg)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := info.Mode().Perm(); got != 0o700 {
+			t.Errorf(".gnupg mode = %o, want 700", got)
+		}
 	}
 	if _, err := os.Stat(filepath.Join(gnupg, ".mount-this")); err != nil {
 		t.Errorf(".mount-this missing: %v", err)
@@ -174,14 +180,17 @@ func TestEnsureCacheFromConfig_DirModeSuffix(t *testing.T) {
 		}
 	}
 
-	// A second start does not re-chmod a dir the user changed.
-	if err := os.Chmod(gnupg, 0o750); err != nil {
-		t.Fatal(err)
-	}
-	ensureCacheFromConfig(boothDir)
-	info, _ = os.Stat(gnupg)
-	if got := info.Mode().Perm(); got != 0o750 {
-		t.Errorf("existing dir mode = %o, want it left at 750", got)
+	// A second start does not re-chmod a dir the user changed. Only a host with
+	// modes can show that; the rest of this case runs everywhere.
+	if hostskip.UnixModes() {
+		if err := os.Chmod(gnupg, 0o750); err != nil {
+			t.Fatal(err)
+		}
+		ensureCacheFromConfig(boothDir)
+		info, _ := os.Stat(gnupg)
+		if got := info.Mode().Perm(); got != 0o750 {
+			t.Errorf("existing dir mode = %o, want it left at 750", got)
+		}
 	}
 }
 
