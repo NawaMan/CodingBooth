@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.1.0"
 display-name = "Puppeteer"
 display-disc = "Headless Chrome automation for Node.js"
 display-detail = "Installs the Puppeteer npm package and pre-downloads Chrome for Testing into a shared cache at /opt/puppeteer (PUPPETEER_CACHE_DIR). Installs Chromium system libraries for headless runs. Requires Node.js. Prefer Playwright when you need multi-browser or multi-language support."
@@ -19,7 +19,10 @@ requires = ["nodejs"]
 default = "latest"
 suggests = ["latest"]
 
+# Image environment, not a shell profile. `booth exec` runs the command with no
+# shell, so /etc/profile.d never runs: these mirror what the setup's profile sets.
 [segments]
 "Boothfile--60" = """
+env PUPPETEER_CACHE_DIR=/opt/puppeteer
 setup puppeteer --version ${PUPPETEER_VERSION}
 """

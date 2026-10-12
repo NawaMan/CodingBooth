@@ -7,5 +7,7 @@ arg CLAUDE_CODE_VERSION=latest
 arg NEOVIM_VERSION=stable
 
 setup claude-code ${CLAUDE_CODE_VERSION}
+env EDITOR=nvim
+env VISUAL=nvim
 setup neovim ${NEOVIM_VERSION}
 setup antigravity

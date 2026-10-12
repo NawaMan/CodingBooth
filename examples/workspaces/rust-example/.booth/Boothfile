@@ -16,6 +16,14 @@ setup gruppled-cursors
 setup xfce-theme
 setup plank ${PLANK_VERSION}
 setup claude-code ${CLAUDE_CODE_VERSION}
+env CB_PYENV_ROOT=/opt/pyenv
+env CB_PY_STABLE=/opt/python
+env CB_VENV_ROOT=/opt/venvs
+env PIP_CACHE_DIR=/opt/pip-cache
+env PIP_DISABLE_PIP_VERSION_CHECK=1
+env PYTHONUNBUFFERED=1
+env VIRTUAL_ENV=/opt/python
+env PATH=/usr/local/uv/bin:/usr/local/uv:/opt/pyenv/bin:/opt/python/bin:$PATH
 setup python ${PYTHON_VERSION}
 env RUSTUP_HOME=/opt/rust/rustup
 env PATH=/home/coder/.cargo/bin:/opt/rust/cargo/bin:$PATH

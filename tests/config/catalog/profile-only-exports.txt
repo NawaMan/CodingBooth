@@ -1,0 +1,44 @@
+# Profile exports that are right to keep out of the image environment.
+# Read by test137-profile-exports-on-image-env.sh.
+#
+# Format: <setup> <NAME | *> # <reason>   — the reason is required.
+# Everything a setup's profile exports and is not listed here must be an
+# `env NAME=` line in each template that emits `setup <name>`, because
+# `booth exec` runs with no shell and never reads /etc/profile.d.
+
+# --- Services: the start-<name> script sets the env it needs ----------------
+affine-server   *   # start-affine-server sets its own env; the exports only describe the service to a shell
+anythingllm     *   # start-anythingllm sets its own env; the exports only describe the service to a shell
+appwrite-server *   # APPWRITE_ENDPOINT is computed per shell from the port; the service does not read it
+cloudbeaver     *   # start-cloudbeaver puts its bundled JRE on PATH itself
+hoppscotch      *   # start-hoppscotch sets its own env; the exports only describe the service to a shell
+n8n             *   # start-n8n sets N8N_PORT and the user folder itself
+opensshd        *   # CB_SSH_PORT only describes the service to a shell
+penpot          *   # start-penpot sets JAVA_HOME, PATH and LD_LIBRARY_PATH for its own JRE and ImageMagick
+penpot-exporter *   # started by penpot, which sets the exporter's Node and browser paths
+sql-studio      *   # SQLSTUDIO_PORT only describes the service to a shell
+
+# --- Desktops: the display belongs to the desktop session (exec: see P5) ----
+kde             *   # session env (DISPLAY, VNC, geometry) is set by the desktop's own startup
+lxqt            *   # session env (DISPLAY, VNC, geometry) is set by the desktop's own startup
+wayland         *   # session env (VNC, geometry, session type) is set by the desktop's own startup
+xfce            *   # session env (DISPLAY, VNC, geometry) is set by the desktop's own startup
+
+# --- Computed per shell, or GUI-launcher-only --------------------------------
+eclipse         *   # GTK scaling for the Eclipse launcher; on the image env it would rescale every GUI app
+jenv            *   # JAVA_HOME follows the jenv version chosen in that shell; the java template sets the default
+remotion        *   # the Chrome path is detected at shell start from whichever browser is installed
+warp            *   # set only when the shell finds a Wayland session
+gcc             CC  # cc already resolves to gcc via update-alternatives; an image CC=gcc would override clang's
+gcc             CXX # c++ already resolves to g++ via update-alternatives; an image CXX=g++ would override clang's
+selenium        SE_MANAGER_PATH          # exported empty, only so it is defined
+puppeteer       NODE_PATH                # npm root -g of whichever Node is installed, resolved at build time
+puppeteer       PUPPETEER_EXECUTABLE_PATH # arm64 only: the system Chromium, chosen at build time
+puppeteer       PUPPETEER_SKIP_DOWNLOAD  # defaults to false; true only with the arm64 Chromium fallback
+python          CB_PY_VERSION            # read from /opt/python at shell start
+python          BOOTH_INSTALLED_PYTHON_VERSION # read from /opt/python at shell start
+python          CB_PY_SERIES             # derived from CB_PY_VERSION per shell
+python          CB_VENV_DIR              # derived from CB_PY_VERSION per shell
+python          CB_VENV_SERIES_DIR       # derived from CB_PY_VERSION per shell
+python          PS1                      # interactive prompt
+python          PROMPT                   # interactive prompt (zsh)

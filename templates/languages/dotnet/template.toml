@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.1.0"
 display-name = ".NET"
 display-disc = ".NET SDK with C# and F# support"
 display-detail = "Sets up a .NET development environment with the SDK, NuGet package manager, and configurable channel version."
@@ -18,7 +18,14 @@ suggests = [
     "8.0",
 ]
 
+# Image environment, not a shell profile. `booth exec` runs the command with no
+# shell, so /etc/profile.d never runs: these mirror what the setup's profile sets.
 [segments]
 Boothfile = """
+env DOTNET_ROOT=/opt/dotnet-stable
+env NUGET_PACKAGES=/opt/nuget-packages
+env DOTNET_CLI_TELEMETRY_OPTOUT=1
+env DOTNET_NOLOGO=1
+env PATH=/home/coder/.dotnet/tools:/opt/dotnet-stable:$PATH
 setup dotnet ${DOTNET_CHANNEL}
 """

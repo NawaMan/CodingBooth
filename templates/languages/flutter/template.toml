@@ -1,4 +1,4 @@
-cb-version = "0.1.0"
+cb-version = "0.2.0"
 display-name = "Flutter"
 display-disc = "Flutter SDK for building apps from one Dart codebase — brings Dart with it"
 display-detail = """Installs the Flutter SDK under /usr/local/flutter-<version>, with the Dart SDK it bundles, \
@@ -35,7 +35,14 @@ is skipped and no Flutter app can be built in it."""
 default = "latest"
 suggests = ["latest", "3.47.6", "3.44.9", "3.41.9", "3.38.10"]
 
+# Image environment, not a shell profile. `booth exec` runs the command with no
+# shell, so /etc/profile.d never runs: these mirror what the setup's profile sets.
+# flutter-current/bin stays off PATH on purpose: the flutter and dart wrappers in
+# /usr/local/bin load the per-target drop-ins (/etc/cb-flutter.d) first.
 [segments]
 Boothfile = """
+env FLUTTER_ROOT=/usr/local/flutter-current
+env FLUTTER_SUPPRESS_ANALYTICS=true
+env PATH=/home/coder/.pub-cache/bin:$PATH
 setup flutter --version ${FLUTTER_VERSION}
 """

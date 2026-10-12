@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.1.0"
 display-name = "Neovim"
 primary = true
 display-disc = "Neovim text editor with Lua-based configuration"
@@ -13,7 +13,11 @@ tags = [
 default = "stable"
 suggests = ["stable", "nightly"]
 
+# Image environment, not a shell profile. `booth exec` runs the command with no
+# shell, so /etc/profile.d never runs: these mirror what the setup's profile sets.
 [segments]
 Boothfile = """
+env EDITOR=nvim
+env VISUAL=nvim
 setup neovim ${NEOVIM_VERSION}
 """

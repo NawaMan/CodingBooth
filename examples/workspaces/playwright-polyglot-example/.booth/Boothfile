@@ -13,16 +13,45 @@ arg PLAYWRIGHT_BROWSERS=chromium
 arg PLAYWRIGHT_VERSION=1.58.0
 arg PYTHON_VERSION=3.13.12
 
+env DOTNET_ROOT=/opt/dotnet-stable
+env NUGET_PACKAGES=/opt/nuget-packages
+env DOTNET_CLI_TELEMETRY_OPTOUT=1
+env DOTNET_NOLOGO=1
+env PATH=/home/coder/.dotnet/tools:/opt/dotnet-stable:$PATH
 setup dotnet --channel ${DOTNET_CHANNEL}
+env DOTNET_ROOT=/opt/dotnet-stable
+env NUGET_PACKAGES=/opt/nuget-packages
+env DOTNET_CLI_TELEMETRY_OPTOUT=1
+env DOTNET_NOLOGO=1
+env PATH=/home/coder/.dotnet/tools:/opt/dotnet-stable:$PATH
 setup dotnet ${DOTNET_CHANNEL}
+env GOPATH=/home/coder/go
+env GOBIN=/home/coder/go/bin
+env PATH=/home/coder/go/bin:/usr/local/go-current/bin:$PATH
 setup go ${GO_VERSION}                                # GO tool chain
 install go golang.org/x/tools/gopls@latest            # GO language server
 install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
+env JAVA_HOME=/opt/jdk${JDK_VERSION}
+env CB_JAVA_HOME=/opt/jdk${JDK_VERSION}
+env CB_JDK_VERSION=${JDK_VERSION}
+env PATH=$PATH:/opt/jdk${JDK_VERSION}/bin
 setup jdk ${JDK_VERSION} ${JDK_VENDOR}
+env MAVEN_HOME=/opt/maven-stable
+env PATH=/opt/maven-stable/bin:$PATH
 setup mvn ${MAVEN_VERSION}
 setup nodejs ${NODE_VERSION}
+env CB_PYENV_ROOT=/opt/pyenv
+env CB_PY_STABLE=/opt/python
+env CB_VENV_ROOT=/opt/venvs
+env PIP_CACHE_DIR=/opt/pip-cache
+env PIP_DISABLE_PIP_VERSION_CHECK=1
+env PYTHONUNBUFFERED=1
+env VIRTUAL_ENV=/opt/python
+env PATH=/usr/local/uv/bin:/usr/local/uv:/opt/pyenv/bin:/opt/python/bin:$PATH
 setup python ${PYTHON_VERSION}
 setup nodejs-code-extension
+env PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
+env PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 setup playwright ${PLAYWRIGHT_BROWSERS} --version ${PLAYWRIGHT_VERSION}
 setup dotnet-code-extension
 setup dotnet-code-extension

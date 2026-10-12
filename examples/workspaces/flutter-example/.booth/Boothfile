@@ -5,5 +5,8 @@ env APT_SNAPSHOT=20260916T000000Z
 
 arg FLUTTER_VERSION=latest
 
+env FLUTTER_ROOT=/usr/local/flutter-current
+env FLUTTER_SUPPRESS_ANALYTICS=true
+env PATH=/home/coder/.pub-cache/bin:$PATH
 setup flutter --version ${FLUTTER_VERSION}
 setup flutter-code-extension

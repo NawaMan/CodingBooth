@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.1.0"
 display-name = "Selenium drivers"
 display-disc = "Chrome for Testing + chromedriver (and optional geckodriver)"
 display-detail = "Installs Selenium browser drivers and Chrome for Testing under /opt/selenium (on PATH). Does not install language bindings — pair with python+pip-pkg:selenium or nodejs+npm-pkg:selenium-webdriver. Default browser is chromium; use firefox or all for geckodriver too. Ubuntu apt chromium/firefox are snap stubs and are not used."
@@ -21,7 +21,14 @@ suggests = ["chromium", "firefox", "all"]
 default = "Stable"
 suggests = ["Stable", "latest"]
 
+# Image environment, not a shell profile. `booth exec` runs the command with no
+# shell, so /etc/profile.d never runs: these mirror what the setup's profile sets.
 [segments]
 "Boothfile--60" = """
+env PATH=/opt/selenium/bin:$PATH
+env SE_CHROME_PATH=/opt/selenium/bin/chrome
+env CHROME_BIN=/opt/selenium/bin/chrome
+env CHROMEDRIVER_PATH=/opt/selenium/bin/chromedriver
+env GECKODRIVER_PATH=/opt/selenium/bin/geckodriver
 setup selenium ${SELENIUM_BROWSERS} --chrome-version ${SELENIUM_CHROME_VERSION}
 """

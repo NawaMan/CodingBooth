@@ -18,7 +18,11 @@ suggests = [
     "4.0.0-rc-5",
 ]
 
+# Image environment, not a shell profile. `booth exec` runs the command with no
+# shell, so /etc/profile.d never runs: these mirror what the setup's profile sets.
 [segments]
 Boothfile = """
+env MAVEN_HOME=/opt/maven-stable
+env PATH=/opt/maven-stable/bin:$PATH
 setup mvn ${MAVEN_VERSION}
 """
