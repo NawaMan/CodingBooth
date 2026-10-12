@@ -58,6 +58,7 @@
   var upCallbacks = [];
   var splash = null;
   var splashMessage = null;
+  var splashSpinner = null;
   var splashAllowedAt = Date.now() + SPLASH_DELAY_MS;
   var waitingForBody = false;
 
@@ -79,6 +80,7 @@
     style.textContent = "@keyframes booth-ready-spin{to{transform:rotate(360deg)}}";
 
     var spinner = document.createElement("div");
+    splashSpinner = spinner;
     spinner.style.cssText = [
       "width:26px", "height:26px", "border-radius:50%",
       "border:3px solid rgba(231,237,245,0.18)", "border-top-color:#2f8dff",
@@ -116,8 +118,19 @@
       splash = buildSplash();
     }
     splashMessage.textContent = message;
+    splashSpinner.style.display = "";
     if (!splash.parentNode) {
       document.body.appendChild(splash);
+    }
+  }
+
+  // showStuck puts up a message that is not waiting on anything — no spinner,
+  // no grace period, and nothing will take it down again.
+  function showStuck(message) {
+    splashAllowedAt = 0;
+    showSplash(message);
+    if (splashSpinner) {
+      splashSpinner.style.display = "none";
     }
   }
 
@@ -182,7 +195,10 @@
   //
   // Guarded so it can happen at most once per booth: if the reloaded page comes
   // back still claiming a different id, something upstream is wrong and looping
-  // on it would only make that harder to see.
+  // on it would only make that harder to see. The usual culprit is the browser
+  // handing back its cached copy of the old page, which only a hard reload
+  // gets past — so say that, rather than leave the frames empty and the page
+  // black.
   function reloadForStranger(instance) {
     try {
       if (window.sessionStorage.getItem(RELOADED_FOR_KEY) === instance) {
@@ -191,6 +207,10 @@
             "booth-ready: this page is from another booth, and reloading did not replace it"
           );
         }
+        showStuck(
+          "This tab is showing a page from another booth. " +
+          "Press Ctrl+Shift+R (Cmd+Shift+R on macOS) to reload it."
+        );
         return;
       }
       window.sessionStorage.setItem(RELOADED_FOR_KEY, instance);
