@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.1.0"
 display-name = "Deno"
 display-disc = "Deno runtime for JavaScript and TypeScript"
 display-detail = "Installs the Deno runtime, a secure runtime for JavaScript and TypeScript with built-in tooling including formatter, linter, and test runner."
@@ -13,7 +13,10 @@ tags = [
 default = "latest"
 suggests = ["latest"]
 
+# Image environment, not a shell profile. `booth exec` runs the command with no
+# shell, so /etc/profile.d never runs: these mirror what the setup's profile sets.
 [segments]
 Boothfile = """
+env PATH=/home/coder/.deno/bin:$PATH
 setup deno ${DENO_VERSION}
 """

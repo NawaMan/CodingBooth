@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.1.0"
 display-name = "Julia"
 display-disc = "Julia for high-performance scientific and numerical computing"
 display-detail = "Sets up a Julia development environment with configurable version. Ideal for scientific computing, data science, and numerical analysis."
@@ -18,7 +18,11 @@ default = "1.13.1"
 # are unaffected. Re-check with readelf before reintroducing an older release.
 suggests = ["1.13.1", "1.12.7"]
 
+# Image environment, not a shell profile. `booth exec` runs the command with no
+# shell, so /etc/profile.d never runs: these mirror what the setup's profile sets.
 [segments]
 Boothfile = """
+env JULIA_DEPOT_PATH=/home/coder/.julia
+env PATH=/opt/julia/bin:$PATH
 setup julia ${JULIA_VERSION}
 """

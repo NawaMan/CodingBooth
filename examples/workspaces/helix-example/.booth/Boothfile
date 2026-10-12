@@ -5,4 +5,5 @@ env APT_SNAPSHOT=20261002T000000Z
 
 arg HELIX_VERSION=25.07.1
 
+env HELIX_RUNTIME=/opt/helix/runtime
 setup helix --version ${HELIX_VERSION}

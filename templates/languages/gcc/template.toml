@@ -17,7 +17,13 @@ tags = [
 default = "15"
 suggests = ["15", "14", "13", "12"]
 
+# Image environment, not a shell profile. `booth exec` runs the command with no
+# shell, so /etc/profile.d never runs: these mirror what the setup's profile sets.
+# CC/CXX stay unset: cc resolves to gcc through update-alternatives, and clang's
+# own CC must win when both are selected.
 [segments]
 Boothfile = """
+env GCC_HOME=/opt/gcc-stable
+env PATH=/opt/gcc-stable/bin:$PATH
 setup gcc --version ${GCC_VERSION}
 """

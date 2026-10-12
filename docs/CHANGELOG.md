@@ -43,6 +43,26 @@ This file contains a list of changes for each released version.
   - **The generated Dockerfile pins its frontend by digest:**
     `# syntax=docker/dockerfile:1.7@sha256:a57df69d…`. A bare tag is resolved against Docker Hub
     on every build.
+
+- **Language and tool setups work from `booth exec`.** `booth exec -- <cmd>` runs with no shell,
+  so it never reads `/etc/profile.d`. Many setups put their `PATH` entries and variables only
+  there, as homebrew and rust once did. `julia`, `ruby`, `gem`, `conda` and `go install`ed tools
+  such as `gopls` were "command not found", and `JAVA_HOME`, `GOPATH`, `DOTNET_ROOT` and `CC` were
+  unset. These templates now repeat their profile's exports as image `env` lines: `clang`, `gcc`,
+  `cmake`, `conda` (and `python+conda`), `deno`, `dotnet`, `csharp`, `flutter`, `go`, `gradle`
+  (and `java+gradle`), `java`, `java+maven`, `java+ant`, `julia`, `make`, `ruby`, `sbt`,
+  `selenium`, `playwright`, `puppeteer`, `cypress`, `floci`, `helix`, `neovim`, `wails` and
+  `python`. In practice:
+  - Playwright, Puppeteer and Cypress find their preinstalled browsers.
+  - `aws` in a floci booth talks to floci instead of real AWS.
+  - The default `EDITOR` is `nvim` when `neovim` is selected.
+  - A Boothfile written by hand with a bare `setup <name>` does not get these lines; add them
+    yourself, or regenerate it with `booth config`.
+  - A new catalog guard (`test137`) fails when a setup's profile exports something its template
+    does not put on the image env. The exceptions are listed in
+    `tests/config/catalog/profile-only-exports.txt`, each with its reason: services, desktops, and
+    values computed per shell.
+
 - **Catalog version-pin sweep to n-1.** Defaults now sit on the release just before the newest
   stable one; pins already at or below n-1 are unchanged. Each new version was checked against its
   real download source. `gcc`, `go`, `mermaid`, `bluej`, and `mvn` were also installed for real.

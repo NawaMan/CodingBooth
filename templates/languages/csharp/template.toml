@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.1.0"
 display-name = "C#"
 display-disc = "C# programming language with .NET SDK"
 display-detail = "Installs the .NET SDK (dotnet) using the official installer with configurable channel version. Includes the dotnet CLI, C# compiler, and NuGet package manager. Telemetry is disabled by default in the container environment."
@@ -20,7 +20,14 @@ suggests = [
     "current",
 ]
 
+# Image environment, not a shell profile. `booth exec` runs the command with no
+# shell, so /etc/profile.d never runs: these mirror what the setup's profile sets.
 [segments]
 Boothfile = """
+env DOTNET_ROOT=/opt/dotnet-stable
+env NUGET_PACKAGES=/opt/nuget-packages
+env DOTNET_CLI_TELEMETRY_OPTOUT=1
+env DOTNET_NOLOGO=1
+env PATH=/home/coder/.dotnet/tools:/opt/dotnet-stable:$PATH
 setup dotnet --channel ${DOTNET_CHANNEL}
 """
