@@ -4,6 +4,11 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **i3: the window gap is 4px by default, down from 8px.** The `i3+gaps` extension (selected
+  automatically) and `i3-gaps--setup.sh` both default to 4 now. An existing booth keeps the value
+  its Boothfile already pins (`arg I3_GAPS=8`) until it is reconfigured with `i3+gaps:4`. Sway's
+  gap is unchanged.
+
 - **Fixed: another booth exiting could make `booth list`, `logs`, `stop` and the rest fail.** These
   commands list every booth and then inspect each one. A booth removed between those two steps,
   such as a `--rm` booth exiting or a `booth remove` in another terminal, failed the whole command
