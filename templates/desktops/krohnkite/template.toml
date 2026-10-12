@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.0.1"
 display-name = "Tiling for KDE (Krohnkite)"
 primary = true
 display-label = "Krohnkite (Tiling)"
@@ -14,7 +14,7 @@ browser or your own desktop usually keeps, so they are moved to Ctrl+Alt by \
 default (krohnkite:meta keeps Krohnkite's own). Does nothing unless KDE Plasma 6 \
 is installed — by the desktop-kde variant or the kde template — so it is safe \
 to select on any booth. Its extensions (both on by default): +default tiles \
-from login, +gaps puts an 8px gap between windows. Layouts and window rules are \
+from login, +gaps puts a 4px gap between windows. Layouts and window rules are \
 in System Settings → Window Management → KWin Scripts → Krohnkite."""
 display-order = 17
 tags = [

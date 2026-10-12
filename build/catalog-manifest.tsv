@@ -174,7 +174,7 @@ setup	kotlin-code-extension	1.0.0	df900e891adbeeddcb789ba8e0025bc0378244e2fa5e0c
 setup	kotlin-nb-kernel	1.0.0	48f7e51e99e51cf8b2c98ac524265d3e2e76cffe40b7ac06a3b3ca00f1e9e26d	variants/base/setups/kotlin-nb-kernel--setup.sh
 setup	krohnkite	1.0.0	8688e9a05355ac0ffc3c6acaecd108ff65c25bf8945e4bbc6420a15f01e22a32	variants/base/setups/krohnkite--setup.sh
 setup	krohnkite-default	1.0.0	4e7e67d4522ef901ba48c9bd39d2fae88981a0d103a61ee0817f185a812c562c	variants/base/setups/krohnkite-default--setup.sh
-setup	krohnkite-gaps	1.0.0	775d36f66b14290647fbf6304d5f562b32011158448eaf9156a0953f31a72d52	variants/base/setups/krohnkite-gaps--setup.sh
+setup	krohnkite-gaps	2.0.0	5f08476718e1cfc7da66a0ba3ef4da871c1cb1cc50ec4a22a15406caa09e47ee	variants/base/setups/krohnkite-gaps--setup.sh
 setup	kubectl	1.0.0	eb9bde879b0c6c66ef7a9905e64fbb129df5331539f2299f0e4c6a260f9a52fe	variants/base/setups/kubectl--setup.sh
 setup	kubectx	1.0.0	485f0a94dfba86a2b37e3c1c6429633ac79c40f7547bfc55f5bd41b2fe111e05	variants/base/setups/kubectx--setup.sh
 setup	kubernetes-code-extension	0.1.0	3439d0cfd28cbd1d4d4a37e1714725a83103a0719a915b4cfbca89d1f7f7e06c	variants/base/setups/kubernetes-code-extension--setup.sh
@@ -478,7 +478,7 @@ template	kde	1.0.0	a621763911b76074097a34b23459e29b7ab0c59be09f8338587ad6dac0741
 template	kind	1.0.0	f9cc7f96cfc67b101332adfe48e06451ad861504164cd66c8d77a30e489f7263	templates/tools/kind/template.toml
 template	kitty	1.0.0	e375e45cf5277047592572b73860628a8c1ab0998cd8d9c677d02fa2cd41b611	templates/desktops/kitty/template.toml
 template	kotlin	1.0.0	2a9560b156017c8c46849d374554bc35bbebf465a9bc6c2eda3ca1d19ee29396	templates/languages/kotlin/template.toml
-template	krohnkite	1.0.0	20462f3967333e47d31c886f09bec83dbf3ce05658a38900b4003c63186bf61b	templates/desktops/krohnkite/template.toml
+template	krohnkite	1.0.1	e3f3ab5f38ae9d8eae33ce773eb9027f28a430f0af4fcec907fbf4f03b55b1a6	templates/desktops/krohnkite/template.toml
 template	kubectl	1.0.0	080bd2968fa3dbea25f120d42c7b7043652362aad8a70825e9272eeb8e9a3b7f	templates/tools/kubectl/template.toml
 template	kubectx	1.0.0	ea49d5aa2b0b2c75a730848858eac03bd649672f86d2f14e6acd39d97690f166	templates/tools/kubectx/template.toml
 template	kustomize	1.0.0	a0bfbfae90ba824771c02ff65585f14584c6befec839eac888a2e879089dfa80	templates/tools/kustomize/template.toml
@@ -736,7 +736,7 @@ extension	kitty+fancy	1.0.0	6444f82a89903db0ee29fa1eaabd5448106b824683231ed63a8d
 extension	kotlin+kernel	1.0.0	996c46218ace135bb689755f70ecf4bb87bd9e9730638fbdbb52b31e41424c0c	templates/languages/kotlin/kernel--extension.toml
 extension	kotlin+vscode-ext	1.0.0	a17f34de6cd89c18e921b2af192e10ae1e1053a80678657a2eb33b55803eef83	templates/languages/kotlin/vscode-ext--extension.toml
 extension	krohnkite+default	1.0.0	689dbefc82ba3c3a9ad3e83074f1d272bee8ba2c33af804c3225c0ee4ab522d3	templates/desktops/krohnkite/default--extension.toml
-extension	krohnkite+gaps	1.0.0	a9e6ac49c9037bed6329b25a55b3926abccef094bccf528dea9336ab3e88c71f	templates/desktops/krohnkite/gaps--extension.toml
+extension	krohnkite+gaps	1.1.0	c3073af9e0251c1a338e161ec8258de32bb8f8bf0b40a45ef2b1df661f269335	templates/desktops/krohnkite/gaps--extension.toml
 extension	kubectl+credential	1.0.0	cfe5dfe318edf1a5bfd1e3c8b2aada1aaf69d098e7edab5a480d332ff657f79f	templates/tools/kubectl/credential--extension.toml
 extension	kubectl+vscode-ext	0.1.0	58eb9fda83ce456b5859c7812651cd5d31a9a88bc1f753f31b33f645bde9121b	templates/tools/kubectl/vscode-ext--extension.toml
 extension	latex+texstudio	0.1.0	b250edd359daa8f2cfbb8e66b024d4a2a201402fce28e86e987f74d7b38957e1	templates/tools/latex/texstudio--extension.toml
