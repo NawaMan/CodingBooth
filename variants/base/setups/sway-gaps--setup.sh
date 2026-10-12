@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 # sway-gaps--setup.sh — a small gap between sway windows, and between the
 # windows and the panel, so the wallpaper shows at their edges.
@@ -10,7 +10,7 @@
 # Run after sway--setup.sh (the sway template's +gaps extension). Writes
 # /etc/sway/config.d/gaps.conf.
 #
-# Usage: sway-gaps--setup.sh [PIXELS]      (default: 8)
+# Usage: sway-gaps--setup.sh [PIXELS]      (default: 4)
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO" >&2; exit 1' ERR
 
@@ -28,7 +28,7 @@ if ! command -v sway &>/dev/null || [[ ! -f /opt/codingbooth/wayland-compositor 
   skip_setup "$SCRIPT_NAME" "sway is not set up (sway--setup.sh skipped or has not run)"
 fi
 
-GAP="${1:-8}"
+GAP="${1:-4}"
 if [[ ! "$GAP" =~ ^[0-9]+$ ]]; then
   echo "❌ Gap must be a number of pixels, got '${GAP}'" >&2
   exit 1
