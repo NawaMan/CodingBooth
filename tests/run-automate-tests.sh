@@ -220,9 +220,16 @@ status_icon() {
 # prints one such block per attempt) says what is still broken after retries
 # — same insight already used below to build FAILED_LOG, extracted here so
 # sync_counts can use it too.
+#
+# A suite's closing "All ... tests passed" outranks any block before it: CONFIG
+# echoes each sub-test's own report into the suite log, so a sub-test that failed
+# and then passed on its retry leaves its first attempt's "Failed tests:" block
+# behind — the last one in a log that ends in a pass. That block read as the
+# verdict and a green run summed to "Failed: 2".
 last_failed_tests_block() {
     awk '
         /^Failed tests:/ { n = 0; capturing = 1; next }
+        /All .* tests? passed/ { n = 0; capturing = 0; next }
         capturing && /^[[:space:]]*$/ { capturing = 0 }
         capturing { lines[n++] = $0 }
         END { for (i = 0; i < n; i++) print lines[i] }
