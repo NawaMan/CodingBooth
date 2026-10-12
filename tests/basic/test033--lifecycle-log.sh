@@ -98,9 +98,14 @@ fi
 # -------------------------------------------------------
 # Test 3: a pane killed from outside is logged
 # -------------------------------------------------------
-# docker top prints host pids: the kill comes from the host, as the stray one did.
-S2_PID=$(docker top "$NAME" -eo pid,args | awk '/ttyd .*-p 10002 /{print $1; exit}')
-kill -TERM "$S2_PID"
+# The kill comes from outside the pane, as the stray one did — but from inside
+# the booth, not from the host. `docker top` prints host pids, and on an engine
+# that runs in a VM (Docker Desktop, Colima, Podman machine) those are pids in
+# that VM, which the host cannot signal: the kill died with "No such process"
+# on every Mac. The booth's own pid namespace is the one place the pid is
+# always real, and ttyd cannot tell who sent the SIGTERM either way.
+S2_PID=$(docker exec "$NAME" ps -eo pid,args | awk '/ttyd .*-p 10002 /{print $1; exit}')
+docker exec "$NAME" kill -TERM "$S2_PID"
 PANE_LINE=""
 for i in {1..20}; do
   PANE_LINE=$(grep -E " $NAME console-pane-exited pane=s2 port=10002 " "$LOG" 2>/dev/null || true)
