@@ -189,6 +189,12 @@ run-args = [
 > skipped. You can list Linux, macOS, and Windows credential locations together; only paths
 > that exist on this machine are passed to Docker, so Docker Desktop will not create empty
 > host directories for the others.
+>
+> **`:create` makes the folder instead.** A mount meant to share a host cache — one that simply
+> does not exist yet on a fresh machine — takes the booth-only option `create`
+> (`-v ~/.cache/sccache:/home/coder/.cache/sccache:create`, or `:ro,create` with others). booth
+> creates the missing host folder (mode 700, owned by you) and mounts it; the option is removed
+> before Docker sees the spec. `rust+sccache` and `rust+cargo-cache` use it.
 
 ## Live Team State (`.booth/shared/`)
 

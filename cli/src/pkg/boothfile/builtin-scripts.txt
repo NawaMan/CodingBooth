@@ -273,6 +273,7 @@ setup sbt
 setup scala
 setup scala-code-extension
 setup scala-nb-kernel
+setup sccache
 setup scratch
 setup selenium
 setup spring-boot-code-extension

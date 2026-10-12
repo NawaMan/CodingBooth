@@ -8,6 +8,8 @@
 #    project, into the build.
 #  - registry-cache (project-local, .booth/cache/) is auto-selected; cargo-cache (a writable
 #    host mount that needs consent) is not.
+#  - sccache is opt-in: it installs sccache and sets RUSTC_WRAPPER on the container
+#    environment (never the image's), with the host's ~/.cache/sccache as the cache.
 #  - targets / components / gui-deps emit their install lines.
 source "$(dirname "$0")/../test-helpers--source.sh"
 
@@ -33,11 +35,13 @@ assert-line "$boothfile" "copy .booth/Boothfile " "rust-toolchai[n] rust-toolcha
     echo "registry-cache=$([[ -f $prj/.booth/cache/home/coder/.cargo/registry/.mount-this ]] && echo yes || echo no)"
     echo "git-cache=$([[ -f $prj/.booth/cache/home/coder/.cargo/git/.mount-this ]] && echo yes || echo no)"
     echo "context-mount=$(count-lines "$boothfile" 'type=bind,target=/tmp/ctx')"
+    echo "sccache=$(count-lines "$boothfile" 'setup sccache')"
 } > "$counts"
 assert-line "$counts" "host-registry="  "0"   "cargo-cache (host mount) is not auto-selected"
 assert-line "$counts" "registry-cache=" "yes" "registry-cache persists ~/.cargo/registry"
 assert-line "$counts" "git-cache="      "yes" "registry-cache persists ~/.cargo/git"
 assert-line "$counts" "context-mount="  "0"   "no step mounts the whole project by default"
+assert-line "$counts" "sccache="        "0"   "sccache is not auto-selected"
 
 # --- targets / components / gui-deps -----------------------------------------
 run booth config $prj --no-tui --overwrite \
@@ -62,5 +66,22 @@ run booth config $prj --no-tui --overwrite --select 'rust+cargo-cache~toolchain-
 } > "$counts"
 assert-line "$counts" "host-registry="  "1" "cargo-cache still mounts the host registry when selected"
 assert-line "$counts" "toolchain-file=" "0" "~toolchain-file drops the toolchain step"
+
+# --- sccache ---------------------------------------------------------------------
+run booth config $prj --no-tui --overwrite --select 'rust+sccache'
+assert-line "$boothfile" "arg SCCACHE_VERSION=" "$(template-default rust+sccache SCCACHE_VERSION)" \
+                                                                        "sccache default version is the catalog's"
+assert-line "$boothfile" "setup sccache " '--version ${SCCACHE_VERSION}' "setup sccache line"
+{
+    echo "wrapper-env=$(count-lines "$config" '"RUSTC_WRAPPER=sccache"')"
+    echo "wrapper-image=$(count-lines "$boothfile" 'RUSTC_WRAPPER')"
+    echo "host-cache=$(count-lines "$config" '$HOME/.cache/sccache:/home/coder/.cache/sccache:create')"
+} > "$counts"
+assert-line "$counts" "wrapper-env="   "1" "RUSTC_WRAPPER is set on the container environment"
+assert-line "$counts" "wrapper-image=" "0" "RUSTC_WRAPPER is not on the image environment (build-time cargo install)"
+assert-line "$counts" "host-cache="    "1" "the host's ~/.cache/sccache is the cache, created when missing"
+
+run booth config $prj --no-tui --overwrite --select 'rust+sccache:0.18.0'
+assert-line "$boothfile" "arg SCCACHE_VERSION=" "0.18.0" "sccache version pin"
 
 finally
