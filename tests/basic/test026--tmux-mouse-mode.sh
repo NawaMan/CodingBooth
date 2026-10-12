@@ -16,12 +16,12 @@
 # is running in the pane. At an idle prompt that's bash's readline: scrolling
 # pages through command history instead of scrolling the overflowed output.
 # The fix is a system-wide /etc/tmux.conf (`set -g mouse on`) so tmux claims
-# wheel events itself. Mouse mode also captures left-drag as
-# copy-pipe-and-cancel (highlight, then drop it on mouse-up); ttyd has no
-# OSC 52, so that copy never reaches the host clipboard. The same config
-# unbinds left-drag / double-click / triple-click, and the pane page injects
-# cbForceTermSelect so xterm.js native-selects on a regular drag. This locks
-# in the file, the live session, and the injected script.
+# wheel events itself. The left button keeps tmux's default bindings, which
+# forward a click or drag to an app that asked for the mouse (Fresh, vim) and
+# copy-mode-select otherwise. Copies leave tmux as OSC 52 (`set-clipboard
+# on`), and the pane page injects cbTermClipboard, an OSC 52 handler that
+# writes the host clipboard, since ttyd has none. This locks in the file, the
+# live session, and the injected script.
 # -----------------------------------------------------------------------------
 
 set -uo pipefail
@@ -73,15 +73,13 @@ else
 fi
 
 # -------------------------------------------------------
-# Test 2: left-drag is unbound so tmux does not copy-pipe-and-cancel a
-# selection the browser can never copy (ttyd has no OSC 52).
+# Test 2: copies leave tmux as OSC 52, an app's own included, and no mouse
+# binding is removed (an unbound drag never reaches an app like Fresh).
 # -------------------------------------------------------
-if grep -qx 'unbind -T copy-mode MouseDragEnd1Pane' <<<"$CONF" \
-   && grep -qx 'unbind -T copy-mode-vi MouseDragEnd1Pane' <<<"$CONF" \
-   && grep -qx 'unbind -T root MouseDrag1Pane' <<<"$CONF"; then
-  print_test_result "true" "$0" "2" "/etc/tmux.conf unbinds left-drag copy-mode"
+if grep -qx 'set -g set-clipboard on' <<<"$CONF" && ! grep -q 'unbind' <<<"$CONF"; then
+  print_test_result "true" "$0" "2" "/etc/tmux.conf sets set-clipboard on and unbinds nothing"
 else
-  print_test_result "false" "$0" "2" "/etc/tmux.conf should unbind left-drag copy-mode"
+  print_test_result "false" "$0" "2" "/etc/tmux.conf should set set-clipboard on and unbind nothing"
   echo "  Actual: $CONF"
   FAILED=$((FAILED + 1))
 fi
@@ -109,12 +107,15 @@ else
   FAILED=$((FAILED + 1))
 fi
 
-DRAG_END=$(docker exec -u coder "$NAME" tmux list-keys -T copy-mode 2>/dev/null | grep MouseDragEnd1Pane || true)
-if [[ -z "$DRAG_END" ]]; then
-  print_test_result "true" "$0" "4" "Live copy-mode has no MouseDragEnd1Pane (no copy-pipe-and-cancel)"
+# tmux's default left-drag sends the drag on (send-keys -M) when the app
+# asked for the mouse — the path a Fresh selection takes.
+DRAG=$(docker exec -u coder "$NAME" tmux list-keys -T root 2>/dev/null | grep -w MouseDrag1Pane || true)
+CLIP=$(docker exec -u coder "$NAME" tmux show-options -g set-clipboard 2>/dev/null || echo "error")
+if [[ "$DRAG" == *"send-keys -M"* && "$CLIP" == "set-clipboard on" ]]; then
+  print_test_result "true" "$0" "4" "Live root forwards left-drag to mouse apps, and set-clipboard is on"
 else
-  print_test_result "false" "$0" "4" "Live copy-mode should not bind MouseDragEnd1Pane"
-  echo "  Actual: $DRAG_END"
+  print_test_result "false" "$0" "4" "Live root should forward left-drag to mouse apps with set-clipboard on"
+  echo "  Actual: $DRAG / $CLIP"
   FAILED=$((FAILED + 1))
 fi
 
@@ -130,15 +131,17 @@ fi
 
 # -------------------------------------------------------
 # Test 6: a real browser's request (gzip'd) to a split-mode pane gets the
-# script that forces xterm.js native selection on left-drag. Plain curl
-# would miss a sub_filter that silently no-ops on a compressed body.
+# OSC 52 clipboard script, and no longer the old hook that dropped every
+# left-button event before tmux saw it. Plain curl would miss a sub_filter
+# that silently no-ops on a compressed body.
 # -------------------------------------------------------
 PANE_HTML=$(curl -s --compressed "http://127.0.0.1:${PORT}/s1/")
 
-if [[ "$PANE_HTML" == *"cbForceTermSelect"* ]]; then
-  print_test_result "true" "$0" "6" "split-mode pane /s1/ injects cbForceTermSelect even when gzip'd"
+if [[ "$PANE_HTML" == *"cbTermClipboard"* && "$PANE_HTML" == *"registerOscHandler(52"* \
+      && "$PANE_HTML" != *"cbForceTermSelect"* ]]; then
+  print_test_result "true" "$0" "6" "split-mode pane /s1/ injects cbTermClipboard even when gzip'd"
 else
-  print_test_result "false" "$0" "6" "split-mode pane /s1/ should inject cbForceTermSelect when gzip'd"
+  print_test_result "false" "$0" "6" "split-mode pane /s1/ should inject cbTermClipboard when gzip'd"
   echo "  First 300 chars of response: ${PANE_HTML:0:300}"
   FAILED=$((FAILED + 1))
 fi
@@ -148,10 +151,17 @@ fi
 # (no nginx sits in front to sub_filter). The file is generated at image
 # build, so a live booth is enough — no second container.
 # -------------------------------------------------------
-if docker exec "$NAME" grep -q cbForceTermSelect /usr/local/share/ttyd-nerd-font-index.html 2>/dev/null; then
-  print_test_result "true" "$0" "7" "non-split ttyd index bakes in cbForceTermSelect"
+# The && check catches a splice that mangles the script: bash 5.2's
+# patsub_replacement once turned every && into <head><head>, which left the
+# name present but the script a syntax error.
+INDEX=/usr/local/share/ttyd-nerd-font-index.html
+if docker exec "$NAME" grep -q cbTermClipboard "$INDEX" 2>/dev/null \
+   && docker exec "$NAME" grep -qF 'c=t&&t._core' "$INDEX" 2>/dev/null \
+   && ! docker exec "$NAME" grep -q '<head><head>' "$INDEX" 2>/dev/null \
+   && ! docker exec "$NAME" grep -q cbForceTermSelect "$INDEX" 2>/dev/null; then
+  print_test_result "true" "$0" "7" "non-split ttyd index bakes in cbTermClipboard"
 else
-  print_test_result "false" "$0" "7" "non-split ttyd index should bake in cbForceTermSelect"
+  print_test_result "false" "$0" "7" "non-split ttyd index should bake in cbTermClipboard"
   FAILED=$((FAILED + 1))
 fi
 

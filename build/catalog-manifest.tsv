@@ -293,7 +293,7 @@ setup	terraform-code-extension	0.1.0	6b5ba52674ba1a5ae08cd54502c01f7ab11526ed973
 setup	texstudio	0.1.0	470bc74505458309fe2cce3d15c2022606cc460c0136f293a1fadf7a6a70767b	variants/base/setups/texstudio--setup.sh
 setup	thonny	1.0.0	a14c0b5793457d929adfcb899ee169b3dd57ea2efa6eb3a6a400ff7a9f7168d7	variants/base/setups/thonny--setup.sh
 setup	tls	1.0.0	719a92dd7d6975d798ad20ebd76a45d0e35af17ee6a440ce44cc437e3aa48b94	variants/base/setups/tls--setup.sh
-setup	ttyd-nerd-font-index	0.1.0	ffb88a4f1e9d294779db629a9368974b2401e2657593a69b6af1613e84117996	variants/base/setups/ttyd-nerd-font-index--setup.sh
+setup	ttyd-nerd-font-index	0.2.0	7695b34cf707159cbeb1f5e6f3ebaf836b0f808efe824bcdbeb565f6ca6ec6e9	variants/base/setups/ttyd-nerd-font-index--setup.sh
 setup	vhs	1.0.0	a5ed3a8d5ae5e152d8907f9f6bb2c398e40d52c3e2b3b4eda5a8b9429416b9dd	variants/base/setups/vhs--setup.sh
 setup	viewmd	1.0.0	d86fb47a1ec9db20bf39a717ee94ea9e03c4418894db2da8fcd7abfd77cb5dfd	variants/base/setups/viewmd--setup.sh
 setup	viewmd-desktop-icon	1.0.1	2e3381d469cd79bad5cb3f24203fdc55107c2d0f94d7fa0365db66c370852be4	variants/base/setups/viewmd-desktop-icon--setup.sh

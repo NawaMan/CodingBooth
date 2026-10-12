@@ -4,6 +4,20 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Console UI: the mouse works in terminal programs, and a tmux copy reaches the host clipboard.**
+  A Console UI pane used to throw away every left-button event so that a drag stayed a browser
+  selection. As a result, Fresh, vim, htop and other programs that use the mouse got no clicks or
+  drags. tmux now gets every mouse event: it passes it to the program when the program asked for
+  the mouse, and starts a copy-mode selection when it did not. A finished selection, and a program's
+  own copy when it copies by OSC 52 (Fresh's Ctrl+C), leaves tmux as OSC 52 and the pane page
+  writes it to the host clipboard. **Shift+drag** still makes the browser's own selection. Use it
+  when a program has the mouse, or when the browser blocks the clipboard write, which is likely
+  over plain http to a remote host.
+  - **The scripts in the non-split terminal page work again.** That page's font-width fix and mouse
+    hook were syntax errors on Ubuntu 26.04 images. Its build step spliced them in with a bash
+    substitution, and bash 5.2 reads `&` in the replacement as the matched text, so every `&&`
+    became `<head><head>`.
+
 - **`booth config`: `--set` replaces only the key it names, and `--unset` drops one.** On a
   reconfigure, one `--set` used to replace every `--set` recorded in the header, so
   `--set egress-allowlist=b.com` silently dropped `timezone` and any other recorded key. Each key

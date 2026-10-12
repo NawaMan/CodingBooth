@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 # ttyd-nerd-font-index--setup.sh — bakes a custom ttyd index.html that embeds
 # the Fira Code Nerd Font Mono (regular + bold) as inline @font-face data URIs.
@@ -105,14 +105,23 @@ STYLE+="</style>"
 # (zero side effects) and compares that to xterm's cached cell width, only
 # dispatching the resize when they actually disagree.
 STYLE+='<script>document.fonts.ready.then(function(){var checks=0;function check(){checks++;var t=window.term,s=t&&t._core&&t._core._charSizeService;if(s){try{var c=document.createElement("canvas").getContext("2d");c.font=(t.options.fontSize||15)+"px "+t.options.fontFamily;var want=c.measureText("W").width;if(Math.abs(s.width-want)>2){window.dispatchEvent(new Event("resize"));}}catch(e){}}if(checks<30){setTimeout(check,500);}}check();});</script>'
-# tmux mouse mode is on so the wheel scrolls pane history, which also makes
-# xterm.js send left-drag to tmux. shouldForceSelection always true (native
-# selection on a trusted drag); triggerMouseEvent ignores button 0 so a
-# mouseup does not redraw the pane and wipe the highlight. Wheel is 4/5.
-STYLE+='<script>(function(){function cbForceTermSelect(){var t=window.term,c=t&&t._core,ss=c&&c._selectionService,cms=c&&c.coreMouseService;if(!ss||!cms)return false;if(ss.__cbForce)return true;ss.__cbForce=1;ss.shouldForceSelection=function(){return true};var orig=cms.triggerMouseEvent.bind(cms);cms.triggerMouseEvent=function(ev){if(ev&&ev.button===0)return false;return orig(ev)};return true}var n=0;function wait(){n++;if(cbForceTermSelect())return;if(n<50)setTimeout(wait,100)}if(document.readyState==="complete")wait();else window.addEventListener("load",wait)})();</script>'
+# tmux mouse mode is on, so every mouse event goes to tmux, which hands it to
+# the app when the app asked for the mouse and selects in copy-mode when not.
+# A tmux copy (or an app's own) arrives as OSC 52; ttyd has no handler, so
+# this adds one that writes the host clipboard. Shift+drag still forces
+# xterm.js's native selection, which ttyd copies itself.
+STYLE+='<script>(function(){function cbToast(msg,ms){var d=document.createElement("div");d.textContent=msg;d.style.cssText="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);padding:6px 14px;border-radius:12px;background:rgba(0,0,0,.75);color:#fff;font:18px sans-serif;z-index:9999;pointer-events:none";document.body.appendChild(d);setTimeout(function(){d.remove()},ms)}function cbCopy(text){var t=window.term;function fallback(){var a=document.createElement("textarea"),ok=false;a.value=text;a.style.cssText="position:fixed;top:0;left:0;opacity:0";document.body.appendChild(a);a.select();try{ok=document.execCommand("copy")}catch(e){}a.remove();if(t)t.focus();if(ok)cbToast("✂",300);else cbToast("Copy blocked by the browser: hold Shift and drag",2500)}if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(text).then(function(){cbToast("✂",300)},fallback)}else{fallback()}}function cbTermClipboard(){var t=window.term,c=t&&t._core,ss=c&&c._selectionService;if(!t||!t.parser||!ss)return false;if(t.__cbClip)return true;t.__cbClip=1;t.parser.registerOscHandler(52,function(data){var i=data.indexOf(";"),b=i<0?"":data.slice(i+1);if(!b||b==="?")return true;try{var s=atob(b),u=new Uint8Array(s.length);for(var k=0;k<s.length;k++)u[k]=s.charCodeAt(k);cbCopy(new TextDecoder().decode(u))}catch(e){}return true});var orig=ss.shouldForceSelection.bind(ss);ss.shouldForceSelection=function(e){return !!(e&&e.shiftKey)||orig(e)};return true}var n=0;function wait(){n++;if(cbTermClipboard())return;if(n<50)setTimeout(wait,100)}if(document.readyState==="complete")wait();else window.addEventListener("load",wait)})();</script>'
 
 DEFAULT_HTML_CONTENT="$(cat "$DEFAULT_HTML")"
-printf '%s' "${DEFAULT_HTML_CONTENT/<head>/<head>$STYLE}" > "$OUT"
+# Split around the first <head> rather than ${var/<head>/<head>$STYLE}: bash
+# 5.2 (patsub_replacement) reads every & in a replacement as the matched text,
+# which turned each && in the scripts above into <head><head>.
+printf '%s' "${DEFAULT_HTML_CONTENT%%<head>*}<head>${STYLE}${DEFAULT_HTML_CONTENT#*<head>}" > "$OUT"
+if grep -q '<head><head>' "$OUT"; then
+  echo "❌ Splicing into ttyd's index.html mangled the injected scripts" >&2
+  rm -f "$OUT"
+  exit 1
+fi
 rm -f "$DEFAULT_HTML"
 
 if ! grep -q "FiraCode Nerd Font Mono" "$OUT"; then
