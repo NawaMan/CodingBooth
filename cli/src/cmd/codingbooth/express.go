@@ -45,6 +45,7 @@ var expressRefused = map[string]string{
 	"--remove-env":        "express has no existing env to remove",
 	"--add-mount":         "express has no existing mounts to add to; pass --mount",
 	"--remove-mount":      "express has no existing mounts to remove",
+	"--unset":             "express has no existing settings to unset",
 	"--overwrite":         "express does not edit a project .booth",
 	"--beside":            "express does not edit a project .booth",
 	"--no-tui":            "express does not open booth config",
