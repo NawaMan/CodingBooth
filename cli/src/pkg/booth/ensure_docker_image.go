@@ -224,21 +224,17 @@ func compileBoothfile(ctx appctx.AppContext, boothfilePath string) string {
 
 // buildLocalImage builds a local Docker image.
 func buildLocalImage(ctx appctx.AppContext) {
-	if !ctx.SilenceBuild() {
-		LogFprintf(os.Stderr, "Info: building local image '%s' from '%s'...\n",
-			ctx.Image(), ctx.Dockerfile())
-	}
-
 	if ctx.Verbose() {
 		fmt.Println()
 		LogPrintf("Build local image: %s\n", ctx.Image())
 		LogPrintf("  - SILENCE_BUILD: %t\n", ctx.SilenceBuild())
 	}
 
-	// Build arguments
+	// Build arguments. -f goes on last, with the context: the generated
+	// Dockerfile sits at a fresh temp path on every start, so the path must stay
+	// out of the fingerprint.
 	args := ilist.NewList[ilist.List[string]]()
 	args = args.ExtendByLists(ilist.NewList(ilist.NewList(
-		"-f", ctx.Dockerfile(),
 		"-t", ctx.Image(),
 	)))
 	// Same cb.managed=true convention every container already carries (see
@@ -291,8 +287,33 @@ func buildLocalImage(ctx appctx.AppContext) {
 	// Add user's build args
 	args = args.ExtendByLists(ctx.BuildArgs())
 
-	// Add context path
-	args = args.ExtendByLists(ilist.NewList(ilist.NewList(ctx.Code())))
+	// Skip the build when nothing it reads has changed since the existing image
+	// was built. A dryrun prints the build as before; --pull asks for a fresh one.
+	if !ctx.Dryrun() && !ctx.Pull() {
+		fingerprint := localBuildFingerprint(ctx, args)
+		if fingerprint != "" {
+			if imageFingerprint(ctx, ctx.Image()) == fingerprint {
+				if !ctx.SilenceBuild() {
+					LogFprintf(os.Stderr, "Info: image '%s' is up to date, skipping the build.\n", ctx.Image())
+				}
+				return
+			}
+			args = args.ExtendByLists(ilist.NewList(ilist.NewList(
+				"--label", FingerprintLabel+"="+fingerprint,
+			)))
+		}
+	}
+
+	if !ctx.SilenceBuild() {
+		LogFprintf(os.Stderr, "Info: building local image '%s' from '%s'...\n",
+			ctx.Image(), ctx.Dockerfile())
+	}
+
+	// Add the Dockerfile and the context path
+	args = args.ExtendByLists(ilist.NewList(ilist.NewList(
+		"-f", ctx.Dockerfile(),
+		ctx.Code(),
+	)))
 
 	// Build the image
 	flags := docker.DockerFlags{
@@ -306,6 +327,55 @@ func buildLocalImage(ctx appctx.AppContext) {
 		fmt.Fprintf(os.Stderr, "Error: failed to build image\n")
 		os.Exit(1)
 	}
+}
+
+// localBuildFingerprint fingerprints the local build described by args (the
+// build flags, without -f and the context). It returns "" when the build
+// cannot be fingerprinted safely, and says why under --verbose.
+func localBuildFingerprint(ctx appctx.AppContext, args ilist.List[ilist.List[string]]) string {
+	content, err := os.ReadFile(ctx.Dockerfile())
+	if err != nil {
+		return ""
+	}
+	var buildFlags []string
+	args.Range(func(_ int, group ilist.List[string]) bool {
+		buildFlags = append(buildFlags, group.Slice()...)
+		return true
+	})
+	flags := docker.DockerFlags{
+		Silent: true,
+		Engine: ctx.Engine(),
+	}
+	fingerprint, reason := ComputeBuildFingerprint(BuildFingerprintInput{
+		Dockerfile: string(content),
+		BuildFlags: buildFlags,
+		ContextDir: ctx.Code(),
+		ImageID: func(ref string) (string, bool) {
+			id, err := docker.DockerOutput(flags, "image", ilist.NewList(ilist.NewList(
+				"inspect", "--format", "{{.Id}}", ref)))
+			id = strings.TrimSpace(id)
+			return id, err == nil && id != ""
+		},
+	})
+	if reason != "" && ctx.Verbose() {
+		LogFprintf(os.Stderr, "Info: not fingerprinting the build (%s); building.\n", reason)
+	}
+	return fingerprint
+}
+
+// imageFingerprint returns the fingerprint label of a local image, or "" when
+// the image is missing or was built without one.
+func imageFingerprint(ctx appctx.AppContext, image string) string {
+	flags := docker.DockerFlags{
+		Silent: true,
+		Engine: ctx.Engine(),
+	}
+	out, err := docker.DockerOutput(flags, "image", ilist.NewList(ilist.NewList(
+		"inspect", "--format", `{{index .Config.Labels "`+FingerprintLabel+`"}}`, image)))
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(out)
 }
 
 // extractPlatformFlag scans the given argument groups (in order) for a

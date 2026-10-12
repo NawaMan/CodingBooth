@@ -15,6 +15,12 @@ import (
 // DefaultRepo is the default Docker repository for CodingBooth images.
 const DefaultRepo = "nawaman/codingbooth"
 
+// DockerfileFrontend is the BuildKit frontend a generated Dockerfile asks for,
+// pinned by the digest of its multi-platform index. A bare tag is resolved
+// against Docker Hub on every build; a digest is content-addressed, so a
+// frontend BuildKit already holds needs no registry lookup to match it.
+const DockerfileFrontend = "docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e"
+
 // repoPattern matches a docker repository reference. The repo value flows
 // verbatim into a generated Dockerfile FROM line and a docker buildx -t
 // argument, so we reject anything outside the docker reference grammar —
@@ -224,7 +230,7 @@ func (c *Compiler) writePrologue(sb *strings.Builder) {
 	if repo == "" {
 		repo = DefaultRepo
 	}
-	prologue := fmt.Sprintf(`# syntax=docker/dockerfile:1.7
+	prologue := fmt.Sprintf(`# syntax=%s
 ARG BOOTH_VARIANT_TAG=base
 ARG BOOTH_VERSION_TAG=latest
 FROM %s:${BOOTH_VARIANT_TAG}-${BOOTH_VERSION_TAG}
@@ -232,7 +238,7 @@ FROM %s:${BOOTH_VARIANT_TAG}-${BOOTH_VERSION_TAG}
 ARG BOOTH_VARIANT_TAG=base
 ARG BOOTH_VERSION_TAG=latest
 
-`, repo)
+`, DockerfileFrontend, repo)
 	sb.WriteString(prologue)
 
 	// If custom setups directory exists, copy it and prepend to PATH
