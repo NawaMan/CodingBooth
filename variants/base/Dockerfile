@@ -127,22 +127,16 @@ RUN set -euo pipefail \
 # matter which user or session starts the tmux server; a project's own
 # ~/.tmux.conf (if any) is read after this and can still override it.
 #
-# Mouse mode also captures left-drag. tmux 3.4's default MouseDragEnd1Pane is
-# copy-pipe-and-cancel: a reverse-video selection that vanishes on mouse-up.
-# ttyd 1.7.4 never honours OSC 52, so that copy never reaches the host
-# clipboard. Unbind left-drag / double-click / triple-click so xterm.js can
-# own selection. The pane page sets xterm.js shouldForceSelection so a
-# regular drag native-selects (trusted events) while mouse reporting stays
-# on for the wheel.
+# Mouse mode leaves the left button to tmux's own default bindings: a click
+# or drag goes to the app when the app asked for the mouse (Fresh, vim, htop),
+# and selects in copy-mode when it did not. tmux's copy, and an app's own copy,
+# reach the browser as OSC 52 (set-clipboard on lets an app's through too).
+# ttyd's xterm.js has no OSC 52 handler, so the pane page adds one that writes
+# the host clipboard (cbTermClipboard in nginx.conf.template and
+# ttyd-nerd-font-index--setup.sh). Shift+drag is the browser's own selection.
 RUN printf '%s\n' \
   'set -g mouse on' \
-  'unbind -T root MouseDrag1Pane' \
-  'unbind -T copy-mode MouseDrag1Pane' \
-  'unbind -T copy-mode-vi MouseDrag1Pane' \
-  'unbind -T copy-mode MouseDragEnd1Pane' \
-  'unbind -T copy-mode-vi MouseDragEnd1Pane' \
-  'unbind -T root DoubleClick1Pane' \
-  'unbind -T root TripleClick1Pane' \
+  'set -g set-clipboard on' \
   > /etc/tmux.conf
 
 RUN  set -euo pipefail \
