@@ -21,6 +21,12 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# The session id booth wrote to the host side, or "" while there is none yet.
+# grep finding nothing is an answer here, not an error for set -e.
+session_id() {
+  { grep session-id "$WORKSPACE/.booth/.tmp/booth-startup.txt" 2>/dev/null || true; } | awk '{print $3}'
+}
+
 # --- Set up workspace with .booth/ config and a startup.sh ---
 mkdir -p "$WORKSPACE/.booth"
 cat > "$WORKSPACE/.booth/config.toml" <<TOML
@@ -72,7 +78,7 @@ fi
 # -------------------------------------------------------
 # Test 1: Capture initial session ID
 # -------------------------------------------------------
-SESSION_BEFORE=$(cat "$WORKSPACE/.booth/.tmp/booth-startup.txt" 2>/dev/null | grep session-id | awk '{print $3}')
+SESSION_BEFORE=$(session_id)
 
 if [[ -n "$SESSION_BEFORE" ]]; then
   print_test_result "true" "$0" "1" "Initial session ID captured: $SESSION_BEFORE"
@@ -95,20 +101,25 @@ fi
 # -------------------------------------------------------
 docker exec "$NAME" bash -c 'booth--restart --yes' > "$LOG.restart" 2>&1 || true
 
-# Wait for the container to come back up with a new stamp
+# Wait for the restart to show on both sides: a new stamp inside the container
+# and a new session id in booth-startup.txt on the host. They are written at
+# different moments, and the host file comes through a bind mount, so waiting
+# on the stamp alone read the session file before it was rewritten.
+#
+# Every read here tolerates failing. The container is down for part of the
+# loop, and under set -e an unguarded `X=$(docker exec …)` that lands in that
+# window ended the script with no result printed at all.
+STAMP_AFTER=""
+SESSION_AFTER=""
 for i in {1..60}; do
-  if docker inspect --format '{{.State.Running}}' "$NAME" 2>/dev/null | grep -q true; then
-    if docker exec "$NAME" test -f /tmp/.booth-start-stamp 2>/dev/null; then
-      STAMP_AFTER=$(docker exec "$NAME" cat /tmp/.booth-start-stamp 2>/dev/null)
-      if [[ -n "$STAMP_AFTER" && "$STAMP_AFTER" != "$STAMP_BEFORE" ]]; then
-        break
-      fi
-    fi
+  STAMP_AFTER=$(docker exec "$NAME" cat /tmp/.booth-start-stamp 2>/dev/null) || STAMP_AFTER=""
+  SESSION_AFTER=$(session_id)
+  if [[ -n "$STAMP_AFTER" && "$STAMP_AFTER" != "$STAMP_BEFORE" \
+     && -n "$SESSION_AFTER" && "$SESSION_AFTER" != "$SESSION_BEFORE" ]]; then
+    break
   fi
   sleep 1
 done
-
-SESSION_AFTER=$(cat "$WORKSPACE/.booth/.tmp/booth-startup.txt" 2>/dev/null | grep session-id | awk '{print $3}')
 
 if [[ -n "$SESSION_AFTER" && "$SESSION_AFTER" != "$SESSION_BEFORE" ]]; then
   print_test_result "true" "$0" "3" "Restart produced new session ID: $SESSION_BEFORE -> $SESSION_AFTER"
@@ -120,7 +131,7 @@ fi
 # -------------------------------------------------------
 # Test 4: startup.sh ran again after restart
 # -------------------------------------------------------
-STAMP_AFTER=$(docker exec "$NAME" cat /tmp/.booth-start-stamp 2>/dev/null)
+STAMP_AFTER=$(docker exec "$NAME" cat /tmp/.booth-start-stamp 2>/dev/null) || STAMP_AFTER=""
 
 if [[ -n "$STAMP_AFTER" && "$STAMP_AFTER" != "$STAMP_BEFORE" ]]; then
   print_test_result "true" "$0" "4" "startup.sh ran again after restart (stamp changed)"
