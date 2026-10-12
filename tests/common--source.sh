@@ -765,11 +765,22 @@ run_coding_booth() {
   # tee form failed the call outright — a diagnostic that breaks the command
   # it is tracing. The temp file buffers stderr until the command exits
   # instead of streaming it; the log content is identical either way.
+  #
+  # CB_CALL_TIMEOUT (seconds) puts a deadline on the booth binary itself. It has
+  # to be applied here: this is a shell function, which timeout_run cannot wrap,
+  # so a caller's deadline only bites at the point a real program starts. Unset
+  # means no deadline, as before. Exits 124 when the time ran out.
+  local launch=()
+  if [[ -n "${CB_CALL_TIMEOUT:-}" ]]; then
+    launch=(timeout_run "$CB_CALL_TIMEOUT")
+  fi
+
   if [[ -n "${CB_DIAG_LOG:-}" ]]; then
     local _rc=0 _errfile
     _errfile=$(mktemp "${TMPDIR:-/tmp}/cb-diag-stderr.XXXXXX")
     printf '%s  === codingbooth %s\n' "$(date '+%H:%M:%S')" "$*" >>"$CB_DIAG_LOG"
-    MSYS2_ARG_CONV_EXCL="$conv_excl" "$booth_path" ${version_args[@]+"${version_args[@]}"} "$@" \
+    MSYS2_ARG_CONV_EXCL="$conv_excl" ${launch[@]+"${launch[@]}"} \
+      "$booth_path" ${version_args[@]+"${version_args[@]}"} "$@" \
       2>"$_errfile" || _rc=$?
     cat "$_errfile" >>"$CB_DIAG_LOG"
     cat "$_errfile" >&2
@@ -779,7 +790,8 @@ run_coding_booth() {
   fi
 
   # Safe expansion: avoids "unbound variable" under `set -u` with Bash 3.2 when the array is empty.
-  MSYS2_ARG_CONV_EXCL="$conv_excl" "$booth_path" ${version_args[@]+"${version_args[@]}"} "$@"
+  MSYS2_ARG_CONV_EXCL="$conv_excl" ${launch[@]+"${launch[@]}"} \
+    "$booth_path" ${version_args[@]+"${version_args[@]}"} "$@"
 }
 
 # ── Container paths survive the shell (Windows) ──────────────────────────────
@@ -1028,19 +1040,42 @@ get_booth_version() {
 # Each attempt is preceded by a marker line so the two retries stay separable.
 # The caller is responsible for creating the log's parent directory.
 #
+# Each attempt has a deadline: CB_CAPTURE_TIMEOUT seconds, 1800 by default —
+# room for a cold `setup kde` build on a slow network. Without one, a booth call
+# that never returns (a BuildKit build wedged on a broken Docker Desktop store
+# sat at step 0/0 indefinitely) hangs the whole suite rather than failing the
+# one test. A timed-out attempt is reported on stderr and is not retried: the
+# retry is for a transient empty result, and a second wait would only double
+# the hang. Killing the CLI does not cancel a build the engine is running.
+#
 # Usage:
 #   ACTUAL=$(capture_codingbooth "head -1" --silence-build -- gcc --version)
 capture_codingbooth() {
   local pipeline="${1:-cat}"
   shift
   local errdest="${CB_STDERR_LOG:-/dev/null}"
-  local out
+  local limit="${CB_CAPTURE_TIMEOUT:-1800}"
+  local out rc started
 
   _capture_attempt() {
     local n="$1"; shift
     if [[ "$errdest" != "/dev/null" ]]; then
       echo "=== capture_codingbooth attempt ${n}: codingbooth $* ===" >>"$errdest"
     fi
+    rc=0
+    started=$SECONDS
+    out=$(CB_CALL_TIMEOUT="$limit" run_coding_booth "$@" 2>>"$errdest") || rc=$?
+    # 124 alone could be the booth command's own exit status; the clock says
+    # whether it was ours.
+    if [[ $rc -eq 124 ]] && (( SECONDS - started >= limit )); then
+      local msg="capture_codingbooth: timed out after ${limit}s: codingbooth $*"
+      echo "$msg" >&2
+      [[ "$errdest" != "/dev/null" ]] && echo "$msg" >>"$errdest"
+      out=""
+      return 1
+    fi
+    [[ $rc -eq 0 ]] || out=""
+    out=$(printf '%s\n' "$out" | eval "$pipeline")
   }
 
   # Capture booth's output in full, THEN apply the pipeline to the captured text.
@@ -1049,14 +1084,9 @@ capture_codingbooth() {
   # under `set -o pipefail` the whole capture collapses to "". That race is timing
   # dependent, so it only fires on a loaded machine — the failure then looks like
   # flakiness and the retry below hides it instead of fixing it.
-  _capture_attempt 1 "$@"
-  out=$(run_coding_booth "$@" 2>>"$errdest") || out=""
-  out=$(printf '%s\n' "$out" | eval "$pipeline")
-  if [[ -z "$out" ]]; then
+  if _capture_attempt 1 "$@" && [[ -z "$out" ]]; then
     sleep 2
-    _capture_attempt 2 "$@"
-    out=$(run_coding_booth "$@" 2>>"$errdest") || out=""
-    out=$(printf '%s\n' "$out" | eval "$pipeline")
+    _capture_attempt 2 "$@" || true
   fi
   printf '%s\n' "$out"
 }
