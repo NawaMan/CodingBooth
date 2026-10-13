@@ -116,7 +116,17 @@ else
 fi
 
 # Test 4: the fix hands over ownership without widening the mode
-if [[ "$OVERRIDE_MODE" == "600" ]]; then
+#
+# Skipped on a Windows host: the precondition cannot be set up there. The
+# `chmod 600` above is a no-op on NTFS under Git Bash, and Docker Desktop
+# presents a single-file bind from NTFS as 0777 (no stored metadata), so
+# /etc/cb-home/.claude/.credentials.json is 777 in the container and its copy
+# comes out 755 (777 & ~umask 022) — "preserved" from a source that was never
+# 0600. The destination cache mount itself does keep modes (9p/drvfs with
+# metadata); it is the source mode that is missing.
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+  echo "SKIP: Test 4 (credential mode stays 0600) — a Windows host cannot give the bind-mounted source credential a Unix mode (it appears as 0777 in the container)."
+elif [[ "$OVERRIDE_MODE" == "600" ]]; then
   print_test_result "true" "$0" "4" "credential mode stays 0600"
 else
   print_test_result "false" "$0" "4" "credential mode should stay 0600"
