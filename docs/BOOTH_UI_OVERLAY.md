@@ -21,6 +21,7 @@ Back to [README](../README.md)
 - [API Server](#api-server)
 - [Overlay HTML Injection](#overlay-html-injection)
 - [Attention Signals](#attention-signals)
+- [Viewer Count](#viewer-count)
 - [Adding a Variant](#adding-a-variant)
 - [Extending the Overlay](#extending-the-overlay)
 
@@ -201,6 +202,8 @@ The API server (`booth-message-api-server`) is a lightweight HTTP server built w
 |--------|------|-------------|
 | GET | `/booth-messages/api/list` | Returns pending items as a JSON array |
 | POST | `/booth-messages/api/respond/<id>` | Writes a response file for the given ID |
+| GET | `/booth-messages/api/presence` | How many pages are viewing the booth — see [Viewer Count](#viewer-count) |
+| POST | `/booth-messages/api/presence` | A page's heartbeat (`{"id", "visible"}`) or its release on closing (`{"id", "release": true}`) |
 
 The server reads and writes JSON files in `.booth/.tmp/messages/` (bind-mounted from the host). This file-based approach means the CLI on the host and the API server inside the container share state without any network communication between host and container.
 
@@ -252,6 +255,41 @@ A message that shows up while the booth's tab is hidden or unfocused would other
 - **Browsers only allow audio and the permission prompt during a user action**, and alerts fire later without one, so both are armed ahead of time. Audio is unlocked on any key press, mouse press or touch, in the wrapper page and in every same-origin iframe (the wrapped service, the console UI's panes and web tabs), since that is where typing happens. The notification-permission prompt is only asked on a click in the booth's own UI (the Booth panel's idle chip, Help or collapse button, a message dialog or banner), at most once per page load, so it never interrupts typing. On the desktop variants, which show the **CodingBooth Help** button, its General tab shows the current state and an **Enable desktop notifications** button.
 - **Permission is per origin.** On a booth with a stable hostname you allow it once; on `localhost:<port>` each port is its own origin. Desktop notifications need HTTPS or `localhost`; over plain HTTP to another host only the chime and title work.
 - Every step fails silently, so a missing API drops only that one signal.
+
+---
+
+## Viewer Count
+
+The Booth panel shows how many pages are viewing the booth right now: `👁 1 viewer`, or
+`👁 3 viewers · 1 in background`, in yellow once there is more than one. A second tab, a second
+window, and someone else on another machine all count, so it shows whether anyone else is in
+the booth.
+
+Every page that loads the overlay (the Console UI and the wrapper page of every variant) picks a
+random id and beats `POST /booth-messages/api/presence` every 5s, saying whether it is in view.
+The API server keeps one file per id in `/tmp/booth-presence/` (`BOOTH_PRESENCE_DIR`), counts the
+ones that beat recently, and answers each beat with the count, which the panel then shows.
+
+| Event | What the count does |
+|-------|---------------------|
+| A tab opens | Counted on its first beat. The other pages show it on their next beat, within 5s. |
+| A tab closes, or navigates away | On `pagehide` the page sends a release (`navigator.sendBeacon`), which drops it at once. The other pages show it on their next beat. |
+| The release never arrives (a crash, a lost network, a sleeping laptop) | The page drops out 15s after its last beat. |
+| A tab goes into the background | It beats straight away with `visible:false`, and stays counted, as "in background", for 90s after its last beat. Browsers slow a background tab's timers to about once a minute, and a 15s allowance would make a tab that is still open drop out of the count and come back. |
+| The browser freezes the tab | It stops beating and drops out. It beats again on `resume`. |
+| Back/forward cache | A page restored with **Back** registers again on `pageshow`. |
+
+After `pagehide` a page sends no more beats until `pageshow`. Leaving a page fires
+`visibilitychange` to hidden after `pagehide`, and a beat from that event would put the page
+straight back as a background viewer.
+
+What is counted is pages, not people. Two tabs in one browser are two viewers. Anything that does
+not load the overlay is not counted: an inner URL opened directly, an exposed port, SSH, and
+`booth exec`. The heartbeat does not count as activity for [idle shutdown](BOOTH_IDLE.md), which
+listens only to `/activity`.
+
+A booth whose API server has no presence endpoint answers 404, and the page hides the count and
+stops asking.
 
 ---
 
