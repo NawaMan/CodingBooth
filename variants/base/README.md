@@ -15,6 +15,8 @@ The foundation variant containing core CodingBooth functionality and setup scrip
 - `viewmd` -- browse the project's Markdown files in a browser (`viewmd --md README.md --expose`)
 - `just` -- run project recipes from a Justfile (`just --list`, `just <recipe>`)
 - `lazygit` -- terminal UI for git (`lazygit` inside a repository)
+- `spf` (superfile) -- modern terminal file manager (`spf`, `spf <dir>`); `explorer` stays `mc`
+- `differ` -- review what a coding agent changed and send it line comments (`differ review`)
 - `folio` (EnvFolio) -- keep texts and secrets, load them as env vars (`folio init`, `folio exec --secrets <entry> -- <cmd>`)
 
 **Usage:**

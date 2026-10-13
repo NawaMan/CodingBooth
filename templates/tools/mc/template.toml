@@ -1,0 +1,18 @@
+cb-version = "0.1.1"
+display-name = "Midnight Commander"
+primary = true
+display-disc = "Classic two-panel file manager (mc), with mcedit and SFTP browsing"
+display-detail = "Installs Midnight Commander (mc) from the distro packages: the two-panel file manager with its own editor (mcedit) and virtual filesystems for SFTP, FTP and archives. mc is already in the base image as the default file manager ($EXPLORER, explorer); this template installs it on images built without it."
+display-order = 62
+tags = [
+    "mc",
+    "file-manager",
+    "files",
+    "tui",
+    "cli",
+]
+
+[segments]
+"Boothfile--45" = """
+install apt mc
+"""
