@@ -58,8 +58,11 @@ Builds Docker images for all CodingBooth variants.
 
 **Apt snapshot:** every image's own `apt-get` is pinned to one Ubuntu archive snapshot,
 taken from `CB_APT_SNAPSHOT` (an id like `20260601T000000Z`, or `today`), else from
-`apt-snapshot.txt` — the pin the release workflow commits for each release — else today.
-A rebuild of a release commit therefore gets the archive that release was built against.
+`apt-snapshot.txt` — the pin committed when each release is cut — else today. `today` is
+always a week back (UTC), a day the snapshot service has certainly published, whatever the
+timezone. A rebuild of a release commit therefore gets the archive that release was built
+against. `build/cli-build.sh` stamps the same id into the CLI, where it is the snapshot a new
+booth is frozen to, so a fresh booth is never older than its own image.
 A malformed, impossible, pre-2023-03-01 or future value stops the build before anything
 runs, saying which source it came from. The logic is in `build/apt-snapshot--source.sh`.
 

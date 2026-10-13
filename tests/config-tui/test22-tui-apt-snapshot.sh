@@ -2,7 +2,7 @@
 # TUI: the Apt Snapshot field shows the snapshot the booth already freezes apt to,
 # keeps it on a save that does not touch it, moves it with TODAY, and clearing it
 # turns the freeze off — written as an empty `env APT_SNAPSHOT=` line that the
-# next save keeps, rather than re-stamping today's date.
+# next save keeps, rather than stamping a snapshot again.
 #
 # Left switches to the Config tab; Down×8 lands on Apt Snapshot. The stops are
 # Booth Version, Variant, Port, Offset Base, Name, Container Engine, Templates
@@ -55,13 +55,14 @@ assert-frame '✗ "2026-01-01" is not a snapshot id' "Ctrl+S with a malformed id
 assert-file-contains "$boothfile" "env APT_SNAPSHOT=20250101T000000Z" \
     "Ctrl+S with a malformed id saves nothing"
 
-today="$(date -u +%Y%m%d)T000000Z"
+# TODAY is a week back, so it never names a day the snapshot service has not reached.
+today="$(date -u -d '7 days ago' +%Y%m%d 2>/dev/null || date -u -v-7d +%Y%m%d)T000000Z"
 run-tui save "${to_field[@]}" \
     'Enter' 'Sleep 400ms' \
     'Backspace 20' 'Sleep 300ms' \
     'Type "TODAY"' 'Sleep 400ms' \
     'Enter' 'Sleep 400ms'
-assert-file-contains "$boothfile" "env APT_SNAPSHOT=${today}" "TODAY moves the snapshot to today"
+assert-file-contains "$boothfile" "env APT_SNAPSHOT=${today}" "TODAY moves the snapshot a week back"
 
 run-tui save "${to_field[@]}" \
     'Enter' 'Sleep 400ms' \

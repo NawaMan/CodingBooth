@@ -104,7 +104,7 @@ var fieldDisplays = []fieldDisplay{
 	// Like templates-version, this is not a config.toml key: it is written to the
 	// Boothfile as `env APT_SNAPSHOT=<id>`, and read back from there.
 	{Key: "apt-snapshot", Label: "Apt Snapshot", Group: "General", TUIOnly: true, Kind: fieldKindString,
-		Detail:    "Freeze apt installs to an Ubuntu archive\nsnapshot, so a rebuild gets the same package\nversions.\n\nShows the snapshot this booth already uses, or\ntoday's for a new booth. It only moves when you\nchange it here.\n\n<id>: that snapshot, e.g. 20260601T000000Z\nTODAY: move it to today\nempty: no freeze, apt uses the live archive\n\nCovers `install apt` lines and setups that\ninstall through apt. amd64 only: other\narchitectures have no Ubuntu snapshots and\nuse the live archive.",
+		Detail:    "Freeze apt installs to an Ubuntu archive\nsnapshot, so a rebuild gets the same package\nversions.\n\nShows the snapshot this booth already uses, or\nthe one this release's images were built\nagainst, for a new booth. It only moves when\nyou change it here.\n\n<id>: that snapshot, e.g. 20260601T000000Z\nTODAY: move it to a week ago, a day every\ntimezone has a snapshot for\nempty: no freeze, apt uses the live archive\n\nCovers `install apt` lines and setups that\ninstall through apt. amd64 only: other\narchitectures have no Ubuntu snapshots and\nuse the live archive.",
 		Validate:  validateAptSnapshot,
 		ValidHint: "Use a snapshot id (e.g. 20260601T000000Z),\nTODAY, or leave it empty for no freeze."},
 

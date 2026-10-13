@@ -373,7 +373,7 @@ if [ "$CONFIG_CHECK" = true ] && [ -x "$ENSURE_CONFIG" ]; then
         CONFIG_CHECK_RESULT=FAILED
         while read -r name; do
             config_check_failed+=("$name")
-        done < <(awk '$2 == "COLLISION" || $2 == "ERROR" { print $1 }' "$CONFIG_CHECK_LOG")
+        done < <(awk '$2 == "COLLISION" || $2 == "ERROR" || $2 == "STALE-APT" { print $1 }' "$CONFIG_CHECK_LOG")
     fi
     CONFIG_CHECK_DURATION=$(( $(date +%s) - CONFIG_CHECK_START ))
     CONFIG_CHECK_SUMMARY=$(grep '^Total ' "$CONFIG_CHECK_LOG" | tail -1)
