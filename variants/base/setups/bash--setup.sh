@@ -72,7 +72,7 @@ BIN_DIR=/usr/local/bin
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y --no-install-recommends \
-  build-essential bison libncurses-dev curl ca-certificates
+  build-essential bison libncurses-dev curl ca-certificates autotools-dev
 rm -rf /var/lib/apt/lists/*
 
 mkdir -p /usr/local/src
@@ -112,6 +112,26 @@ cd "$SRC_DIR"
 # The 3.2.57 tarball ships a y.tab.c from 2006. parse.y is newer and calls
 # expand_prompt_string with three arguments. bison (installed above) regenerates
 # the parser because parse.y is newer. Do not touch y.tab.c ahead of make.
+
+# A release cannot name a machine newer than itself. 3.2.57 ships
+# support/config.guess from 2002, which has never heard of aarch64, so on an
+# arm64 host — an Apple Silicon Mac, an arm64 runner — it gives up and configure
+# stops at "cannot guess build type" before a line is compiled. autotools-dev
+# (installed above) carries a current pair. Both are needed: config.sub is as old
+# and would reject the triplet config.guess now returns.
+#
+# Asking the shipped script is the whole test: it exits 0 and prints the triplet
+# when it knows the host, 1 and nothing when it does not. So a release new enough
+# to recognise the machine keeps its own, whatever the architecture.
+#
+# Through `sh`, not as a program: 3.2.57 ships config.guess executable and 5.3
+# does not, so running it directly answers 126 for the newer release and would
+# swap the files on every host. configure reaches them through $SHELL too, which
+# is why the missing bit costs 5.3 nothing.
+if ! sh support/config.guess >/dev/null 2>&1; then
+  echo "   support/config.guess ($(uname -m)) is older than this architecture; using autotools-dev's"
+  cp /usr/share/misc/config.guess /usr/share/misc/config.sub support/
+fi
 
 if [[ -n "$CFLAGS_PIN" ]]; then
   export CFLAGS="$CFLAGS_PIN"
