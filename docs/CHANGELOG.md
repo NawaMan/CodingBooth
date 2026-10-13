@@ -13,15 +13,14 @@ This file contains a list of changes for each released version.
   the count. Pages are counted, not people, and SSH, `booth exec` and inner URLs opened directly
   are not counted. See [Viewer Count](BOOTH_UI_OVERLAY.md#viewer-count).
 
-- **superfile replaces Midnight Commander as the file manager, and differ is in every booth.**
-  The base image no longer installs `mc`. `$EXPLORER` and `explorer` now open
-  [superfile](https://github.com/yorukot/superfile) 1.6.0 (`spf`), which shows Nerd Font icons;
-  the Console UI and the desktop terminals already have the font, and a host terminal needs its
-  own. [differ](https://github.com/JanSmrcka/differ) 1.8.1 is installed too, so `differ review`
-  works in any booth. The welcome banner lists both. Select the `superfile` or `differ` template
-  to pick another release. If you used `mcedit` or mc's SFTP browsing, select the new `mc`
-  template (it runs `install apt mc`), or `sudo apt-get install mc` in a running booth. The base image grows
-  by about 24 MB. Needs a rebuilt base image.
+- **superfile and differ are in every booth.** The base image now installs
+  [superfile](https://github.com/yorukot/superfile) 1.6.0 (`spf`), a modern file manager with Nerd
+  Font icons (the Console UI and the desktop terminals already have the font; a host terminal
+  needs its own), and [differ](https://github.com/JanSmrcka/differ) 1.8.1, so `differ review` works
+  in any booth. Midnight Commander stays the default: `$EXPLORER` and `explorer` still open `mc`.
+  The welcome banner lists `spf` and `differ`. Select the `superfile` or `differ` template to pick
+  another release; a new `mc` template installs Midnight Commander from apt on an image built
+  without it. The base image grows by about 36 MB. Needs a rebuilt base image.
 
 - **differ is now in the catalog: `setup differ` and a `differ` AI-tools template.**
   [differ](https://github.com/JanSmrcka/differ) reviews what a coding agent changed: `differ review`
