@@ -10,11 +10,15 @@ source ../common--source.sh
 # --quiet hides the daemon banner / visit URL / container-id line, but still
 # prints the docker command in dryrun. --silence-build alone does not hide them:
 # a `booth --silence-build --daemon` still needs the URL.
+#
+# The banner is matched on its text, not its 📦: Git Bash's grep cannot match a
+# character outside the BMP under a UTF-8 LANG, so the emoji form failed Test 5
+# and passed Test 1 for the wrong reason (see utf8_locale in common--source.sh).
 
 QUIET_OUT=$(run_coding_booth --variant base --dryrun --daemon --quiet -- tree -C)
 SILENCE_OUT=$(run_coding_booth --variant base --dryrun --daemon --silence-build -- tree -C)
 
-if printf '%s\n' "$QUIET_OUT" | grep -q '📦 Running booth in daemon mode'; then
+if printf '%s\n' "$QUIET_OUT" | grep -q 'Running booth in daemon mode'; then
   print_test_result "false" "$0" "1" "--quiet hides the daemon banner"
   echo "Actual:"; echo "$QUIET_OUT"
   exit 1
@@ -43,7 +47,7 @@ else
   exit 1
 fi
 
-if printf '%s\n' "$SILENCE_OUT" | grep -q '📦 Running booth in daemon mode'; then
+if printf '%s\n' "$SILENCE_OUT" | grep -q 'Running booth in daemon mode'; then
   print_test_result "true" "$0" "5" "--silence-build --daemon still prints the banner"
 else
   print_test_result "false" "$0" "5" "--silence-build --daemon still prints the banner"
