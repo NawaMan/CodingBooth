@@ -4,6 +4,15 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The Booth panel shows how many pages are viewing the booth.** It reads `👁 1 viewer`, or
+  `👁 3 viewers · 1 in background`, in yellow once there is more than one, so a second tab or
+  someone else on another machine shows up. Every page with the overlay (the Console UI and every
+  wrapped variant) beats `POST /booth-messages/api/presence` every 5s. A tab that closes drops out
+  at once, one that crashed or lost its network drops out after 15s, and a background tab, whose
+  timers the browser slows down, stays counted for 90s. `GET /booth-messages/api/presence` reads
+  the count. Pages are counted, not people, and SSH, `booth exec` and inner URLs opened directly
+  are not counted. See [Viewer Count](BOOTH_UI_OVERLAY.md#viewer-count).
+
 - **differ is now in the catalog: `setup differ` and a `differ` AI-tools template.**
   [differ](https://github.com/JanSmrcka/differ) reviews what a coding agent changed: `differ review`
   in a git repository, comment on lines, and `S` sends the comments to an agent (claude, codex,
