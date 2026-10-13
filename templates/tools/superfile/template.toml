@@ -1,8 +1,8 @@
-cb-version = "0.1.1"
+cb-version = "0.1.2"
 display-name = "superfile"
 primary = true
 display-disc = "Modern terminal file manager (spf)"
-display-detail = """superfile 1.6.0 is already in the base image as the file manager ($EXPLORER, explorer); select this template to pick another release. Installs superfile from the official GitHub release as spf (also superfile) in /usr/local/bin, checked against the release checksums. The first start seeds ~/.config/superfile/config.toml from superfile's own default config with update checks turned off; a config already there is left alone. Icons use a Nerd Font, which the Console UI already has. Pin a release with superfile:1.6.0; the default is latest, falling back to 1.6.0. Releases before 1.6.0 publish no checksums and are refused."""
+display-detail = """superfile 1.6.0 is already in the base image as spf ($EXPLORER and explorer stay Midnight Commander); select this template to pick another release. Installs superfile from the official GitHub release as spf (also superfile) in /usr/local/bin, checked against the release checksums. The first start seeds ~/.config/superfile/config.toml from superfile's own default config with update checks turned off; a config already there is left alone. Icons use a Nerd Font, which the Console UI already has. Pin a release with superfile:1.6.0; the default is latest, falling back to 1.6.0. Releases before 1.6.0 publish no checksums and are refused."""
 display-order = 61
 tags = ["file-manager", "files", "tui", "cli"]
 
