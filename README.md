@@ -324,10 +324,10 @@ These essentials are preinstalled so you can start working immediately — no ex
   `curl`, `wget`, `httpie`
 
 - **Source Control & GitHub Integration**
-  `git`, `gh` (GitHub CLI), `tig`, `lazygit` (terminal UI for git)
+  `git`, `gh` (GitHub CLI), `tig`, `lazygit` (terminal UI for git), `differ` (review what an agent changed)
 
 - **Editors & File Browsers**
-  `fresh`, `nano`, `ranger`, `less`, `viewmd` (Markdown viewer in a browser)
+  `fresh`, `nano`, `spf` (superfile, file manager), `less`, `viewmd` (Markdown viewer in a browser)
 
 - **Secrets & Environment**
   `folio` (EnvFolio: texts and secrets as environment variables, on `pass`)

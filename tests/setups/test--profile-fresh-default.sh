@@ -9,6 +9,7 @@
 # Sources the real 99z-cb--profile.sh in an interactive bash with a scratch
 # HOME, and asserts:
 #   - EDITOR defaults to fresh, and the welcome banner names it
+#   - the banner names spf as explorer (not mc) and lists differ
 #   - no Fresh config -> one is written with check_for_updates false (no
 #     upgrade checks, no telemetry) and theme "terminal"
 #   - a config without the key (e.g. only a theme) gets it added, other keys kept
@@ -44,6 +45,9 @@ out="$(run_profile)"
 grep -q '^EDITOR=fresh$'                     <<<"$out" || fail "EDITOR is not fresh: $out"
 grep -q 'editor  *Text editor (fresh)'       <<<"$out" || fail "welcome does not name fresh: $out"
 grep -q 'tilde'                              <<<"$out" && fail "welcome still mentions tilde: $out"
+grep -q 'explorer  *File manager (spf)'      <<<"$out" || fail "welcome does not name spf as explorer: $out"
+grep -q '(mc)'                               <<<"$out" && fail "welcome still mentions mc: $out"
+grep -q 'differ  *Review what an agent'      <<<"$out" || fail "welcome does not list differ: $out"
 [[ "$(jq -r '.check_for_updates' "$CONF")" == "false" ]] || fail "fresh config not seeded: $(cat "$CONF")"
 [[ "$(jq -r '.theme' "$CONF")" == "terminal" ]]           || fail "theme not seeded: $(cat "$CONF")"
 

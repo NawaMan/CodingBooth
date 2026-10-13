@@ -100,7 +100,6 @@ RUN set -euo pipefail \
   ; apt-get install -y --no-install-recommends "${SNAPSHOT_ARGS[@]}" \
   direnv \
   jq     \
-  mc     \
   nano   \
   nginx  \
   socat  \
@@ -192,11 +191,11 @@ ENV DONT_PROMPT_WSL_INSTALL=1
 
 # Set common tools aliases
 ENV EDITOR=fresh
-ENV EXPLORER=mc
+ENV EXPLORER=spf
 ENV GITVIEW=tig
-RUN set -euo pipefail                             \
-  ; ln -sf /usr/bin/mc    /usr/local/bin/explorer \
-  ; ln -sf /usr/bin/tig   /usr/local/bin/gitview
+RUN set -euo pipefail                                 \
+  ; ln -sf /usr/local/bin/spf /usr/local/bin/explorer \
+  ; ln -sf /usr/bin/tig       /usr/local/bin/gitview
 
 
 # Copy setup scripts and work in that directory
@@ -249,6 +248,14 @@ RUN just--setup.sh
 
 # Git TUI (lazygit) - every booth can manage git from the terminal
 RUN lazygit--setup.sh
+
+# File manager (superfile) - pinned; $EXPLORER and `explorer` open it. The
+# superfile template picks another release.
+RUN superfile--setup.sh --version 1.6.0
+
+# Agent change review (differ) - pinned; review what an agent changed and send
+# it line comments in its tmux pane. The differ template picks another release.
+RUN differ--setup.sh --version 1.8.1
 
 # Default text editor (Fresh) - pinned; the fresh template picks another release
 RUN fresh--setup.sh --version 0.5.2 \
