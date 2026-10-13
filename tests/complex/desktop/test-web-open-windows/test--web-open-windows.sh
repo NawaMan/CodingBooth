@@ -68,7 +68,13 @@ OUT=$(docker run --rm \
     sleep 2   # viewmd opens its browser right after it starts listening
     [ -e /tmp/browser-called ] && echo "viewmd-browser=opened" || echo "viewmd-browser=none"
 
-    python3 -c "import json; print(\"chrome-flag-warnings=%s\" % json.load(open(\"/etc/opt/chrome/policies/managed/codingbooth.json\"))[\"CommandLineFlagSecurityWarningsEnabled\"])" 2>&1
+    # No policy file at all on arm64, where the setup installs no Chrome: say so
+    # rather than letting python raise FileNotFoundError into the output.
+    if [ -f /etc/opt/chrome/policies/managed/codingbooth.json ]; then
+        python3 -c "import json; print(\"chrome-flag-warnings=%s\" % json.load(open(\"/etc/opt/chrome/policies/managed/codingbooth.json\"))[\"CommandLineFlagSecurityWarningsEnabled\"])" 2>&1
+    else
+        echo "chrome-policy=absent"
+    fi
 ' < /dev/null 2>&1) || true   # a failed step is reported by the checks below, not by set -e
 
 for s in viewmd-desktop-icon google-chrome; do
@@ -77,8 +83,16 @@ done
 has "$OUT" "viewmd=serving" && has "$OUT" "viewmd-browser=none" \
     && check "true" "start-viewmd serves without opening a browser of its own" \
     || check "false" "start-viewmd serves without opening a browser of its own" "$OUT"
-has "$OUT" "chrome-flag-warnings=False" \
-    && check "true" "Chrome policy hides the --no-sandbox warning bar" \
-    || check "false" "Chrome policy hides the --no-sandbox warning bar" "$OUT"
+# Google publishes no linux/arm64 build of Chrome, so on arm64 (the default on
+# Apple Silicon) google-chrome--setup.sh warns, installs a stub that explains
+# itself, and exits 0 — by design, see the setup. It writes no policy there, so
+# this case has nothing to read: the file it wants was never meant to exist.
+if [[ "$(docker_server_arch)" == "arm64" ]]; then
+    echo "SKIP: no linux/arm64 Chrome, so google-chrome--setup.sh installs no policy here; the flag-warnings policy is not checked"
+else
+    has "$OUT" "chrome-flag-warnings=False" \
+        && check "true" "Chrome policy hides the --no-sandbox warning bar" \
+        || check "false" "Chrome policy hides the --no-sandbox warning bar" "$OUT"
+fi
 
 [[ "$FAILED" -eq 0 ]] || exit 1

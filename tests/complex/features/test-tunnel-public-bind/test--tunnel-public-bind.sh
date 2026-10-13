@@ -91,7 +91,16 @@ tcp_open() {
 # listener exists on the port.
 tcp_read() {
   local host="$1" port="$2"
-  timeout 2 bash -c "exec 3<>/dev/tcp/$host/$port 2>/dev/null; cat <&3" 2>/dev/null || true
+  # timeout_run, not `timeout`: macOS ships neither it nor gtimeout, and with
+  # stderr on /dev/null and `|| true` after it, a missing binary read exactly
+  # like a port that answered nothing. Tests 2 and 5 failed that way, and Test
+  # 3 — which wants an empty answer — passed for the same reason, so it would
+  # have stayed green with the tunnel wide open.
+  #
+  # Test 6 is not this: it still fails on macOS with the read working, and with
+  # retries, so a --public booth's tunnel really is unreachable off loopback
+  # here while Test 5 reaches the same listener on loopback. Still open.
+  timeout_run 2 bash -c "exec 3<>/dev/tcp/$host/$port 2>/dev/null; cat <&3" 2>/dev/null || true
 }
 
 # tcp_read_retry re-tries tcp_read for a few seconds. The control file

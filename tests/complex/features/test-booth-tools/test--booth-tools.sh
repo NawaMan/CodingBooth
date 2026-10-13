@@ -72,7 +72,12 @@ check 4 "Directory contents copy recursively without extra nesting" cmp "$WORK/s
 run_coding_booth cp --engine docker "$NAME:/tmp/booth-tools-file" - > "$WORK/result.tar"
 tar -xf "$WORK/result.tar" -C "$WORK/download"
 check 5 "Tar stdout is unpolluted" cmp "$WORK/returned.txt" "$WORK/download/booth-tools-file"
-tar -cf "$WORK/input.tar" -C "$WORK/source" nested
+# --no-xattrs because macOS 15 stamps every file with com.apple.provenance and
+# BSD tar stores xattrs by default, which the daemon then refuses to apply in a
+# Linux container: `lsetxattr /tmp/nested: xattr "com.apple.provenance":
+# operation not supported`, and the copy never happens. --no-mac-metadata, the
+# flag that sounds right, does not drop it. GNU tar takes the same flag.
+tar --no-xattrs -cf "$WORK/input.tar" -C "$WORK/source" nested
 run_coding_booth cp --engine docker - "$NAME:/tmp/" < "$WORK/input.tar"
 run_coding_booth cp --engine docker "$NAME:/tmp/nested/data" "$WORK/from-tar"
 check 6 "Tar stdin extracts into the booth" cmp "$WORK/source/nested/data" "$WORK/from-tar"
