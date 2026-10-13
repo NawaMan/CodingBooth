@@ -23,7 +23,10 @@ FAILED=0
 
 # Test 1: The custom setup script ran (marker file exists)
 # Use --silence-build to suppress build output, redirect stderr to /dev/null
-MARKER=$(run_coding_booth --silence-build -- cat /tmp/mytool-marker.txt 2>/dev/null | tr -d '\r\n')
+# MSYS2_ARG_CONV_EXCL: /tmp is the booth's /tmp; Git Bash would otherwise
+# rewrite it to the Windows temp dir before codingbooth.exe sees it.
+# `|| true`: a failed cat must report as a failed test, not kill the script.
+MARKER=$(MSYS2_ARG_CONV_EXCL='/tmp' run_coding_booth --silence-build -- cat /tmp/mytool-marker.txt 2>/dev/null | tr -d '\r\n') || true
 
 if [[ "$MARKER" == "MYTOOL_INSTALLED" ]]; then
     print_test_result "true" "$0" "1" "Custom setup script executed during build"
@@ -34,7 +37,7 @@ else
 fi
 
 # Test 2: The custom command is available
-TOOL_OUT=$(run_coding_booth --silence-build -- mytool 2>/dev/null | tr -d '\r\n')
+TOOL_OUT=$(run_coding_booth --silence-build -- mytool 2>/dev/null | tr -d '\r\n') || true
 
 if echo "$TOOL_OUT" | grep -qF "mytool version 1.0.0"; then
     print_test_result "true" "$0" "2" "Custom tool command is available"
@@ -46,7 +49,7 @@ fi
 
 # Test 3: The profile script set the environment variable
 # Wrap entire command in quotes so it's passed as single argument after --
-ENV_OUT=$(run_coding_booth --silence-build -- 'bash -lc "echo \$MYTOOL_HOME"' 2>/dev/null | tr -d '\r\n')
+ENV_OUT=$(run_coding_booth --silence-build -- 'bash -lc "echo \$MYTOOL_HOME"' 2>/dev/null | tr -d '\r\n') || true
 
 if [[ "$ENV_OUT" == "/opt/mytool" ]]; then
     print_test_result "true" "$0" "3" "Profile script set MYTOOL_HOME"

@@ -121,7 +121,7 @@ booth_run() {
   capture_codingbooth "$pipeline" --version "$BOOTH_IMG_VERSION" --silence-build -- "$@"
 }
 
-T_MARK=$(booth_run "tr -d '\r\n'" cat /tmp/cb-local-template-marker.txt) || true
+T_MARK=$(MSYS2_ARG_CONV_EXCL='/tmp' booth_run "tr -d '\r\n'" cat /tmp/cb-local-template-marker.txt) || true
 if [[ "$T_MARK" == "CB_DETECT_TEMPLATE_v1" ]]; then
   print_test_result "true" "$0" "5" "Template setup ran (marker CB_DETECT_TEMPLATE_v1)"
 else
@@ -131,7 +131,7 @@ else
   FAILED=$((FAILED + 1))
 fi
 
-E_MARK=$(booth_run "tr -d '\r\n'" cat /tmp/cb-local-extension-marker.txt) || true
+E_MARK=$(MSYS2_ARG_CONV_EXCL='/tmp' booth_run "tr -d '\r\n'" cat /tmp/cb-local-extension-marker.txt) || true
 if [[ "$E_MARK" == "CB_DETECT_EXTENSION_v1" ]]; then
   print_test_result "true" "$0" "6" "Extension setup ran (marker CB_DETECT_EXTENSION_v1)"
 else
@@ -140,7 +140,7 @@ else
   FAILED=$((FAILED + 1))
 fi
 
-S_MARK=$(booth_run "tr -d '\r\n'" cat /tmp/cb-local-setup-marker.txt) || true
+S_MARK=$(MSYS2_ARG_CONV_EXCL='/tmp' booth_run "tr -d '\r\n'" cat /tmp/cb-local-setup-marker.txt) || true
 if [[ "$S_MARK" == "CB_DETECT_SETUP_v1" ]]; then
   print_test_result "true" "$0" "7" "Hand-placed local setup ran (marker CB_DETECT_SETUP_v1)"
 else
