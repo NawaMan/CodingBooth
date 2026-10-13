@@ -4,6 +4,15 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`--help` is easier to scan: profiles and the everyday run flags are on it, and `config`,
+  `example` and `showcase` have their own rows.** The short page now lists `--profile` (see
+  [BOOTH_PROFILES.md](BOOTH_PROFILES.md)), `--keep-alive`, `--persist-home` and `--writable-booth`.
+  The safety overrides and rarely needed flags (`--ok-public`, `--dind-allowed`,
+  `--privileged-allowed`, `--hide-welcome`, `--no-sudo`, `--rootless`) moved off it; they are
+  unchanged and still in `--help --detail`, as is every flag on the short page. Under OTHER
+  COMMANDS, `config`, `example` and `showcase` each get a row with their own doc. Fixed:
+  `--help showcase` said "Unknown command" instead of showing the showcase help.
+
 - **The Booth panel shows how many pages are viewing the booth.** It reads `👁 1 viewer`, or
   `👁 3 viewers · 1 in background`, in yellow once there is more than one, so a second tab or
   someone else on another machine shows up. Every page with the overlay (the Console UI and every

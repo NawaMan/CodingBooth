@@ -19,7 +19,7 @@ fi
 
 # Just check the USAGE section - the full help is ~98 lines
 ACTUAL=$(run_coding_booth help)
-ACTUAL=$(printf '%s\n' "$ACTUAL" | head -45)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -47)
 
 HERE="$PWD"
 VERSION="$(get_booth_version)"
@@ -36,18 +36,17 @@ OPTIONS
   --build-arg <KEY=VAL>   Add a Docker build-arg which customize the booth image.
   --variant <name>        Prebuilt variant: base | notebook | codeserver | xfce | kde | lxqt | wayland
   --port <n|RANDOM|NEXT>  Host port → container 10000 (NEXT/RANDOM accept :base)
+  --profile <a[,b]>       Overlay .booth/<name>--config.toml and .booth/.<name>--env
+                          on the base config (see docs/BOOTH_PROFILES.md)
   --daemon                Run the booth in the background
+  --keep-alive            Do not remove the container when stopped
   --no-browser            Do not open the booth UI in a browser when it comes up
-  --hide-welcome          Do not print the welcome banner in booth shells
+  --persist-home          [Experimental] Persist /home/coder across sessions in a named volume
+  --writable-booth        Allow writing to .booth/ inside the container (read-only by default)
   --dind                  Enable a Docker-in-Docker sidecar (privileged: asks first)
-  --dind-allowed          Start a --dind booth without asking
-  --privileged-allowed    Start a booth with --privileged-like run-args without asking
   --public                Bind to all interfaces with password authentication
-  --ok-public             Required with --public if another port is already published
   --egress                Enable egress defaults (proxy + enforcement)
   --sudo <true|false>     Enable/disable sudo access (default: true)
-  --no-sudo               Shorthand for --sudo false
-  --rootless              Skip the Linux rootless/userns-remap refusal (unsupported)
   --engine <docker|podman|apple>
                           Container engine to use (default: apple, i.e. Apple
                           container, when installed and running; else docker;
@@ -60,15 +59,18 @@ EXAMPLES:
   ${SCRIPT_NAME} -- 'mvn install'           Run 'mvn install' inside the booth.
 
 OTHER COMMANDS:
-  BUILD     | Build and publish booth images   | build                                                                   | docs/BOOTH_BUILD.md
-  LIFECYCLE | Manage kept-alive booths         | list, start, stop, restart, remove, prune, logs                         | docs/BOOTH_LIFECYCLE.md
-  HOME VOL  | Manage persisted home volumes    | home-volume-list, home-volume-export, home-volume-import [Experimental] | docs/BOOTH_HOME.md
-  TOOLS     | Copy files and inspect booths    | cp, inspect, stats, top, diff, wait                                     | docs/BOOTH_TOOLS.md
-  CONNECT   | Connect to a running booth       | shell, exec                                                             | docs/BOOTH_CONNECT.md
-  MESSAGE   | Send messages into a booth       | message                                                                 | docs/BOOTH_MESSAGE.md
-  EXPOSE    | Inspect a booth's ports          | expose list                                                             | docs/BOOTH_EXPOSE.md
-  PROJECT   | Set up and scaffold new projects | example, config, just-init, template, showcase                          | docs/BOOTH_EXAMPLE.md
-  EXPRESS   | Run from arguments, ignoring the project's .booth | express                                                      | docs/BOOTH_RUN.md
+  BUILD     | Build and publish booth images         | build                                                                   | docs/BOOTH_BUILD.md
+  LIFECYCLE | Manage kept-alive booths               | list, start, stop, restart, remove, prune, logs                         | docs/BOOTH_LIFECYCLE.md
+  HOME VOL  | Manage persisted home volumes          | home-volume-list, home-volume-export, home-volume-import [Experimental] | docs/BOOTH_HOME.md
+  TOOLS     | Copy files and inspect booths          | cp, inspect, stats, top, diff, wait                                     | docs/BOOTH_TOOLS.md
+  CONNECT   | Connect to a running booth             | shell, exec                                                             | docs/BOOTH_CONNECT.md
+  MESSAGE   | Send messages into a booth             | message                                                                 | docs/BOOTH_MESSAGE.md
+  EXPOSE    | Inspect a booth's ports                | expose list                                                             | docs/BOOTH_EXPOSE.md
+  CONFIG    | Configure this project's booth         | config                                                                  | docs/BOOTH_CONFIG.md
+  EXAMPLE   | Start from an example workspace        | example                                                                 | docs/BOOTH_EXAMPLE.md
+  SHOWCASE  | Import a CodingBooths.online showcase  | showcase                                                                | docs/BOOTH_SHOWCASE.md
+  PROJECT   | Scaffold project files                 | just-init, template                                                     | docs/BOOTH_EXAMPLE.md
+  EXPRESS   | Run from arguments, ignoring .booth/   | express                                                                 | docs/BOOTH_RUN.md
 
 Run '${SCRIPT_NAME} --help <command>'   for command-specific help."
 
