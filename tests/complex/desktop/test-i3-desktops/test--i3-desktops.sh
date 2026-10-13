@@ -67,7 +67,7 @@ REPORT='
     grep -q i3-config-wizard /etc/i3/config && echo "etc-config=wizard"
     echo "twins=$(grep -c "^bindsym Control+Mod1+" /etc/xdg/i3/config.d/ctrl-alt.conf)"
     echo "mod-bindings=$(grep -c "^bindsym \$mod+" /etc/xdg/i3/config)"
-    grep -qx "gaps inner 8" /etc/xdg/i3/config.d/gaps.conf && echo "gaps=8"
+    grep -qx "gaps inner 4" /etc/xdg/i3/config.d/gaps.conf && echo "gaps=4"
     for c in start-i3 stop-i3 cb-i3-wallpaper cb-i3-dock; do [ -x /usr/local/bin/$c ] && echo "cmd=$c"; done
     [ -f /etc/skel/Desktop/cb-i3-start.desktop ] && echo "desktop-icon=yes"
     [ -f /usr/share/icons/hicolor/scalable/apps/cb-i3.svg ] && echo "icon=yes"
@@ -107,8 +107,8 @@ has "$OUT" "etc-config=includes-ours" && ! has "$OUT" "etc-config=wizard" \
 MODS=$(sed -n 's/^mod-bindings=//p' <<< "$OUT"); TWINS=$(sed -n 's/^twins=//p' <<< "$OUT")
 [[ -n "$MODS" && "$MODS" -gt 40 && "$MODS" == "$TWINS" ]] \
     && check "true" "XFCE: a Ctrl+Alt twin for every mod binding ($TWINS)" || check "false" "XFCE: a Ctrl+Alt twin for every mod binding" "mod=$MODS twins=$TWINS"
-has "$OUT" "gaps=8" && has "$OUT" "bad-gap=rejected" \
-    && check "true" "XFCE: 8px gaps; a non-numeric gap is rejected" || check "false" "XFCE: 8px gaps; a non-numeric gap is rejected" "$OUT"
+has "$OUT" "gaps=4" && has "$OUT" "bad-gap=rejected" \
+    && check "true" "XFCE: 4px gaps; a non-numeric gap is rejected" || check "false" "XFCE: 4px gaps; a non-numeric gap is rejected" "$OUT"
 has "$OUT" "cmd=start-i3" && has "$OUT" "cmd=stop-i3" && has "$OUT" "cmd=cb-i3-wallpaper" && has "$OUT" "cmd=cb-i3-dock" && has "$OUT" "start-i3=xfce" \
     && check "true" "XFCE: start-i3 / stop-i3 and helpers installed for XFCE" || check "false" "XFCE: start-i3 / stop-i3 and helpers installed for XFCE" "$OUT"
 has "$OUT" "desktop-icon=yes" && has "$OUT" "icon=yes" \
