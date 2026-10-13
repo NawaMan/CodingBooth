@@ -346,8 +346,8 @@ helper	booth--shutdown	1.0.0	2b7d830b4da0ac0cd237e304c90454dda06febf68fe86c869ce
 helper	booth--theme	0.1.0	80f52127fb2c5e6dbbfe630e9c648a64632634635e9c378c11ecefb4295761fa	variants/base/setups/booth--theme
 helper	booth-keyboard-capture.js	0.1.0	1b8bdf5a1dd143bb693efb5d01ff2fc1ac227a91fffadf5e25a45fdbecb05b18	variants/base/setups/booth-keyboard-capture.js
 helper	booth-lifecycle-watcher	1.0.0	2542a0cbd246097ec7b16b5c30d14769abf02bcc8190b8755b1bb0db4dad2b7f	variants/base/setups/booth-lifecycle-watcher
-helper	booth-message-api-server	1.1.0	5449e6ea36c948694320667c191503dcf48fec6f9a09e57a19cc176a19b73a85	variants/base/setups/booth-message-api-server
-helper	booth-message-overlay.html	1.0.0	0d12449adf0f8197e389d5cf0c1360149b81dee3d569c2beafd1a83276d743cc	variants/base/setups/booth-message-overlay.html
+helper	booth-message-api-server	1.2.0	b10c4456740f52748060cf219263a027edf8a325945b6243c472c34fd3c43880	variants/base/setups/booth-message-api-server
+helper	booth-message-overlay.html	1.1.0	c4b75914a642a246a35932a467149e1befd0a1a3916f3d6b33b12a1311fde064	variants/base/setups/booth-message-overlay.html
 helper	booth-ready.js	0.1.1	7f34aa1fc35ab3436a405bb4d037746e60fd207aaf857a16838a889378205d0a	variants/base/setups/booth-ready.js
 helper	booth-timer-notifier	1.0.0	989957246822c338cb8d8d99c3be2e9d8fede407bc75b68469e3981635d620c1	variants/base/setups/booth-timer-notifier
 helper	cb-booth-favicon.sh	0.1.0	1a58ecdc1b85acfb1cc1bf8e775dc533308ed7520611c0c8b62e51d22e31690e	variants/base/setups/cb-booth-favicon.sh
