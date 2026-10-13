@@ -80,6 +80,25 @@ function booth() {
         echo "Error: templates directory or codingbooth binary not found under $_repo_root" >&2
         return 1
     fi
+
+    # A mount spec is a docker volume string the test asserts on verbatim, not a
+    # host path for Git Bash to rewrite: `--mount /data:/app/data` otherwise lands
+    # in config.toml as `C:\Program Files\Git\data;C:\Program Files\Git\app\data`
+    # (the colon read as a path-list separator). MSYS2_ARG_CONV_EXCL is a list of
+    # argument prefixes to leave alone, so each mount value names itself. A no-op
+    # off Windows.
+    local conv_excl="${MSYS2_ARG_CONV_EXCL:-}" arg prev=""
+    for arg in "$@"; do
+        case "$prev" in
+            --mount|--add-mount|--remove-mount) conv_excl="${conv_excl:+$conv_excl;}$arg" ;;
+        esac
+        case "$arg" in
+            --mount=*|--add-mount=*|--remove-mount=*) conv_excl="${conv_excl:+$conv_excl;}$arg" ;;
+        esac
+        prev="$arg"
+    done
+
+    MSYS2_ARG_CONV_EXCL="$conv_excl" \
     CB_TEMPLATES_PATH="$_repo_root/templates" \
     "$booth_bin" "$@"
 }
