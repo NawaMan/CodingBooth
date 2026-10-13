@@ -280,6 +280,7 @@ setup	sql-studio	1.0.0	37c2fd6242fcc3e7925b3a037f868e7e6aa2c3620478e360c49a3a058
 setup	sqlite	1.0.0	893824be9b031bffd397f44550a3a9fcf3a5747c69f7bdf4b110a5d285226b72	variants/base/setups/sqlite--setup.sh
 setup	sqluv	1.0.0	2df7cbc86aad89c1a6478dd3e38e24fc7e32cf7dcb8d0bcc4616c7449a87eddd	variants/base/setups/sqluv--setup.sh
 setup	stern	1.0.0	34ea4d09b559d24efa60cde0b1f79536d24bce1a33904c40f08648f1fc095fd7	variants/base/setups/stern--setup.sh
+setup	superfile	0.1.0	dd678bfaf672bc74af3e3aa3a734317aa9a407b2e10b1ad2caef70ad2783f262	variants/base/setups/superfile--setup.sh
 setup	svelte-code-extension	1.0.0	72a89f4990116bf86fe62a09ae0269fbd5f6e1aa73519b10b2d1beb5a47c7999	variants/base/setups/svelte-code-extension--setup.sh
 setup	sway	0.1.1	a84990c34c0f35888fe43de5bd99a5311033b2a39253e27ce8aa1a76f1f81113	variants/base/setups/sway--setup.sh
 setup	sway-ctrl-alt	0.1.0	1b80287d9197d0d069db5d6cde174e867424365c7bd9e2679c45d8c0e31770b5	variants/base/setups/sway-ctrl-alt--setup.sh
@@ -547,6 +548,7 @@ template	sqlite	1.0.0	acb431a561235cd8e3a1aa4440602eae54201f1058767e97e2273c62c5
 template	sqluv	0.1.0	2ca235a1be79ace871a862f26ba71382222a6b7d24a51de0de3909b9c89294be	templates/tools/sqluv/template.toml
 template	ssh	1.0.0	799d6d517963cfca52189f35818190cbbc8ac088ab4068a71f581810ccd845a8	templates/tools/ssh/template.toml
 template	stern	1.0.0	f9651b9141a4d7c4870e46426794ad0f5b6dd5c0c31d0bf82a42a7f99be0eeda	templates/tools/stern/template.toml
+template	superfile	0.1.0	f5bbc7f59c2819ad6c9819d2e91e2a0df109ae506aceaba4aa1da95043b6d9be	templates/tools/superfile/template.toml
 template	svelte	0.1.0	2ef837e43415e3798d32fbe342d88e9073abab5be2ee0261c6e0ce3e4734b862	templates/frameworks/svelte/template.toml
 template	sway	0.1.1	73aede41360cf6557b64d58f994563e678a2a339650bc595a9283b86378f1c75	templates/desktops/sway/template.toml
 template	swift	1.0.0	d0a4704c99d83b46d452be8d2a2ac6d2899f990c3306ab5d36557bc1db66216d	templates/languages/swift/template.toml

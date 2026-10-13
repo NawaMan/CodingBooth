@@ -4,6 +4,15 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **superfile is now in the catalog: `setup superfile` and a `superfile` tool template.** It is
+  the [superfile](https://github.com/yorukot/superfile) terminal file manager, installed from the
+  official release as `spf` (also `superfile`) for amd64 and arm64 and checked against the
+  release's checksums file. `--version X.Y.Z|latest` falls back to 1.6.0; releases before 1.6.0 publish no checksums and are
+  refused. The first start seeds
+  `~/.config/superfile/config.toml` with superfile's own default config, with update checks
+  turned off (`auto_check_update = false`); a config already there is left alone. Select
+  `superfile`, or `superfile:1.6.0` to pin a release.
+
 - **i3, sway and Krohnkite: the window gap is 4px by default, down from 8px.** The `i3+gaps`,
   `sway+gaps` and `krohnkite+gaps` extensions (selected automatically) and their `*-gaps--setup.sh`
   scripts all default to 4 now. An existing booth keeps the value its Boothfile already pins (for

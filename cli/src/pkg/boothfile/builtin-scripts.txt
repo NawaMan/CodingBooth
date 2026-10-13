@@ -281,6 +281,7 @@ setup sql-studio
 setup sqlite
 setup sqluv
 setup stern
+setup superfile
 setup svelte-code-extension
 setup sway
 setup sway-ctrl-alt
