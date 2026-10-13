@@ -10,8 +10,9 @@
 # HOME, and asserts:
 #   - EDITOR defaults to fresh, and the welcome banner names it
 #   - no Fresh config -> one is written with check_for_updates false (no
-#     upgrade checks, no telemetry)
+#     upgrade checks, no telemetry) and theme "terminal"
 #   - a config without the key (e.g. only a theme) gets it added, other keys kept
+#   - a config without a theme gets "terminal", other keys kept
 #   - a user's own "check_for_updates": true is left alone
 #   - a config that is not JSON is left untouched
 # -----------------------------------------------------------------------------
@@ -44,12 +45,19 @@ grep -q '^EDITOR=fresh$'                     <<<"$out" || fail "EDITOR is not fr
 grep -q 'editor  *Text editor (fresh)'       <<<"$out" || fail "welcome does not name fresh: $out"
 grep -q 'tilde'                              <<<"$out" && fail "welcome still mentions tilde: $out"
 [[ "$(jq -r '.check_for_updates' "$CONF")" == "false" ]] || fail "fresh config not seeded: $(cat "$CONF")"
+[[ "$(jq -r '.theme' "$CONF")" == "terminal" ]]           || fail "theme not seeded: $(cat "$CONF")"
 
 # ---- theme-only config: key added, theme kept ----
 printf '{"version":1,"theme":"nord"}\n' > "$CONF"
 run_profile >/dev/null
 [[ "$(jq -r '.check_for_updates' "$CONF")" == "false" ]] || fail "key not added: $(cat "$CONF")"
 [[ "$(jq -r '.theme' "$CONF")" == "nord" ]]               || fail "theme lost: $(cat "$CONF")"
+
+# ---- no theme: terminal added, other keys kept ----
+printf '{"version":1,"check_for_updates":false,"tab_size":2}\n' > "$CONF"
+run_profile >/dev/null
+[[ "$(jq -r '.theme' "$CONF")" == "terminal" ]] || fail "theme not added: $(cat "$CONF")"
+[[ "$(jq -r '.tab_size' "$CONF")" == "2" ]]     || fail "other key lost: $(cat "$CONF")"
 
 # ---- user opted in: left alone ----
 printf '{"version":1,"check_for_updates":true}\n' > "$CONF"
@@ -61,4 +69,4 @@ printf 'not json\n' > "$CONF"
 run_profile >/dev/null
 [[ "$(cat "$CONF")" == "not json" ]] || fail "non-JSON config was changed: $(cat "$CONF")"
 
-echo "✅ profile makes Fresh the default editor with updates/telemetry off"
+echo "✅ profile makes Fresh the default editor on the terminal theme, updates/telemetry off"
