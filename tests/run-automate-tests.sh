@@ -696,7 +696,11 @@ for i in "${!SUITES[@]}"; do
     failed_block=$(echo "$stripped" | last_failed_tests_block)
 
     echo "$failed_block" | grep -E '^\s+(❌|-)' | sed 's/^[[:space:]]*[❌-][[:space:]]*//' | while IFS= read -r tname; do
-        tname=$(echo "$tname" | xargs)  # trim whitespace
+        # Trim whitespace in bash, not xargs: xargs parses quotes, so a name like
+        # "creates the store's parent" died as "unmatched single quote" and was
+        # logged cut off at the apostrophe.
+        tname="${tname#"${tname%%[![:space:]]*}"}"
+        tname="${tname%"${tname##*[![:space:]]}"}"
         [[ -n "$tname" ]] && echo "${s}:${tname}"
     done >> "$FAILED_LOG"
 
