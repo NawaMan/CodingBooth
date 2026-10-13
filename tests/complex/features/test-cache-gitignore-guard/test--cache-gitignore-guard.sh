@@ -42,9 +42,10 @@ FAILED=0
 # The guard has to be exercised from inside a foreign project directory, so the usual
 # run_coding_booth helper does not fit: it locates the binary relative to the caller's
 # cwd, which we change. Resolve it once here instead. (SCRIPT_DIR is tests/complex/<test>.)
-BOOTH_BIN="$(cd "$SCRIPT_DIR/../../../.." && pwd)/codingbooth"
-if [[ ! -x "$BOOTH_BIN" ]]; then
-  echo "ERROR: codingbooth not found at $BOOTH_BIN — build it first" >&2
+# find_local_booth_build knows the platform's binary name: codingbooth.exe on Windows,
+# where the extensionless codingbooth beside it is the Linux cross-build and cannot run.
+if ! BOOTH_BIN="$(find_local_booth_build "$SCRIPT_DIR")"; then
+  echo "ERROR: no local codingbooth build above $SCRIPT_DIR — build it first" >&2
   exit 1
 fi
 

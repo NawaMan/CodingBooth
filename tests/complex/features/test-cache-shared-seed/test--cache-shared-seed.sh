@@ -39,9 +39,10 @@ FAILED=0
 # The booth runs from a project outside the repo, so resolve the binary here, as
 # test-cache-gitignore-guard does. (SCRIPT_DIR is tests/complex/<category>/<test>.)
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
-BOOTH_BIN="$REPO_ROOT/codingbooth"
-if [[ ! -x "$BOOTH_BIN" ]]; then
-  echo "ERROR: codingbooth not found at $BOOTH_BIN — build it first" >&2
+# find_local_booth_build knows the platform's binary name: codingbooth.exe on Windows,
+# where the extensionless codingbooth beside it is the Linux cross-build and cannot run.
+if ! BOOTH_BIN="$(find_local_booth_build "$REPO_ROOT")"; then
+  echo "ERROR: no local codingbooth build in $REPO_ROOT — build it first" >&2
   exit 1
 fi
 # A worktree or --rc version has no released catalog to fetch.
