@@ -18,7 +18,10 @@ run "$BOOTH_BIN" config "$prj" --no-tui --select go --templates-path "$TEMPLATES
 if [[ ! -f "$manifest" ]]; then
     skip "seed step did not produce a .booth/.generated"
 fi
-sed -i 's/=sha256:[0-9a-f]*/=sha256:0000/' "$manifest"
+# sed-inplace, not `sed -i`: BSD sed takes the script as the backup suffix and
+# leaves the file alone, so the stale fingerprint this whole file is about was
+# never written and the TUI had nothing to ask about. See the helper's own note.
+sed-inplace 's/=sha256:[0-9a-f]*/=sha256:0000/' "$manifest"
 cp "$manifest" "$prj/stale-generated"
 
 # ── 0) Opening asks, and warns about nothing hand-written ────────────
