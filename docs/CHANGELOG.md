@@ -4,6 +4,16 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **differ is now in the catalog: `setup differ` and a `differ` AI-tools template.**
+  [differ](https://github.com/JanSmrcka/differ) reviews what a coding agent changed: `differ review`
+  in a git repository, comment on lines, and `S` sends the comments to an agent (claude, codex,
+  aider, ...) in another tmux pane, which the Console UI already uses; it pairs with `herdr` too.
+  Installed from the official release to `/usr/local/bin/differ` for amd64 and arm64, checked
+  against the release's `checksums.txt`; `--version X.Y.Z|latest` falls back to 1.8.1. The `e` key
+  opens `$EDITOR` (Fresh) at the top of the file; set `"editor_line_args": "{file}:{line}"` in
+  `~/.config/differ/config.json` to open Fresh at the line. Select `differ`, or `differ:1.8.1` to
+  pin a release.
+
 - **superfile is now in the catalog: `setup superfile` and a `superfile` tool template.** It is
   the [superfile](https://github.com/yorukot/superfile) terminal file manager, installed from the
   official release as `spf` (also `superfile`) for amd64 and arm64 and checked against the

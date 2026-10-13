@@ -69,6 +69,7 @@ setup	default-terminal	1.0.0	b5ba2b0dcc90ea2355fb529902f0daccd3c53ab8046a832bea2
 setup	deno	1.0.0	b5cb7026bd75202319f66faa56b51cf4bc47c2004050115d750b01d0c1a09197	variants/base/setups/deno--setup.sh
 setup	deno-code-extension	1.0.0	65526a1bc8f4c471226a070ef2b3833331588c22dac536055e9619a96822b93c	variants/base/setups/deno-code-extension--setup.sh
 setup	deno-nb-kernel	1.0.0	6a466544a75e1fa234a194ef3140c686c8e69615f9aaddbdcfdcd5eb553cda25	variants/base/setups/deno-nb-kernel--setup.sh
+setup	differ	0.1.0	01c76ae91b8cde35f94ee19a0691fa8d7817f6fb077730088ef2ec31bc6db4a4	variants/base/setups/differ--setup.sh
 setup	dind	1.0.0	d85ab9cfab4957178be3483ccb5c5eb2bf3308c565096472c2f3340d1d3c9b56	variants/base/setups/dind--setup.sh
 setup	direnv	1.0.0	84be601ab8b9f198683270ccb3b71e291ac65f11056519f3d5fa8db9ca87e384	variants/base/setups/direnv--setup.sh
 setup	dive	1.0.0	1d7f52b7e366674f3af13dc6b3bd72034b438893754aa004efeb209e6b0cc6ea	variants/base/setups/dive--setup.sh
@@ -413,6 +414,7 @@ template	datagrip	1.0.0	41dcf00b2fdb288079ae12d0c7d2b7e9b13413e3f3e5334dec4ed754
 template	dbeaver	1.0.0	9a6b7e2cf1207078797494e6299da6ab3def54ae587c64fc0e32595939ee9bfd	templates/ides/dbeaver/template.toml
 template	dblab	0.1.0	c3579457835a9652de02d55f82ba7f8a480842b33863eab2170cc316522e0982	templates/tools/dblab/template.toml
 template	deno	1.1.0	fb2f939bc2f658ddbc7d1fa9cc63dd94819a9544384902d850d804a8ab31ee72	templates/languages/deno/template.toml
+template	differ	0.1.0	e734c6fbc2695ed64ea7a48029add1a984f8a47bd397e24a5d8bb2e29ffded93	templates/ai-tools/differ/template.toml
 template	dind	1.0.0	161056c65c1dc9aa8061d30bf40302952a00ee6fa029449d5c51ea291454525d	templates/tools/dind/template.toml
 template	direnv	1.0.0	37ee50a7cf5e643d444eb8bf6be17ac10b0c490cd5e85bb396266584a9ec25fe	templates/tools/direnv/template.toml
 template	dive	1.0.0	a1b366ad07d23aaa671bfb1c8d910e92620300202955adbaf20adcb9246968f6	templates/tools/dive/template.toml

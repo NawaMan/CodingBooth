@@ -1,0 +1,25 @@
+cb-version = "0.1.0"
+display-name = "differ"
+primary = true
+display-disc = "Review what your coding agent changed, then send it line comments"
+display-detail = """Installs differ from the official GitHub release to /usr/local/bin/differ, checked against the release's checksums.txt. Run differ review in a git repository: read the changes file by file, comment on lines, and send the comments to an agent (claude, codex, aider, ...) running in another tmux pane, which the Console UI already uses; it pairs with herdr too. Comments are pasted into the agent's prompt, never submitted. The e key opens $EDITOR at the top of the file; to open Fresh at the line, set "editor_line_args": "{file}:{line}" in ~/.config/differ/config.json. Pin a release with differ:1.8.1; the default is latest, falling back to 1.8.1."""
+display-order = 25
+tags = [
+    "ai",
+    "agent",
+    "review",
+    "diff",
+    "git",
+    "tmux",
+    "cli",
+    "tui"
+]
+
+[params.DIFFER_VERSION]
+default = "latest"
+suggests = ["latest", "1.8.1"]
+
+[segments]
+Boothfile = """
+setup differ --version ${DIFFER_VERSION}
+"""
