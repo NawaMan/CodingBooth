@@ -14,6 +14,17 @@ This file contains a list of changes for each released version.
   produce a mapping docker would refuse; a port you pin yourself is checked and refused by name
   instead. See [The offset base](BOOTH_RUN.md#the-offset-base).
 
+- **Fixed: `go` builds in a booth with the Go Download Cache no longer fail with "permission
+  denied" on their own cache.** `install go …@latest` in a Boothfile runs `go install` at image
+  build time, which fills `GOCACHE` at the very path the `mod-cache` extension mounts a volume
+  on. Docker pre-seeds a new volume from the image, uid and all, and `booth-entry`'s home
+  ownership sweep is `-xdev` — so it chowned the mount point and nothing inside it. On any host
+  whose uid is not the image's 1000, `go build` then died on
+  `open /home/coder/.cache/go-build/…: permission denied`. The extension now declares both cache
+  paths in `owner-permission.yaml`, which reaches inside the mounts; it also lets two host users
+  share the volumes. Existing volumes are repaired on the next start. Regenerate an affected
+  project's `.booth/` (`booth config --overwrite`) to pick it up.
+
 - **`setup bash` installs Bash 3.2 prebuilt instead of compiling it.** 3.2.48 to 3.2.57,
   including the default 3.2.57, now come from the static builds published at
   [NawaMan/Bash32Ubuntu](https://github.com/NawaMan/Bash32Ubuntu/releases) for x86_64 and
