@@ -250,6 +250,14 @@ RUN just--setup.sh
 # Git TUI (lazygit) - every booth can manage git from the terminal
 RUN lazygit--setup.sh
 
+# Modern file manager (superfile, spf) - pinned; the superfile template picks
+# another release. $EXPLORER and `explorer` stay Midnight Commander (mc).
+RUN superfile--setup.sh --version 1.6.0
+
+# Agent change review (differ) - pinned; review what an agent changed and send
+# it line comments in its tmux pane. The differ template picks another release.
+RUN differ--setup.sh --version 1.8.1
+
 # Default text editor (Fresh) - pinned; the fresh template picks another release
 RUN fresh--setup.sh --version 0.5.2 \
   && ln -sf /usr/local/bin/fresh /usr/local/bin/editor
