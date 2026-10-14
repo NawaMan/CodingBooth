@@ -63,7 +63,7 @@ setup	crystal-code-extension	1.0.0	14c2ce6f0561eec9ff041e616cd1b93c789c101ab5fdb
 setup	cuda	0.1.0	b84d2b3c36d6292a3fc8b64881396f1e1b791b862aebc1b1db17213189afe8aa	variants/base/setups/cuda--setup.sh
 setup	cursor	1.0.0	b157012b2d424a25501f4088de21e8e4bd4eb32b6082434ca53ace404187543e	variants/base/setups/cursor--setup.sh
 setup	cypress	1.0.0	3758a04ba55ea39dce40d7c535060116bd28f3de2af01b213cb022dce3375917	variants/base/setups/cypress--setup.sh
-setup	dbeaver	1.0.0	85a8e85bd2d2e63e33189545b966333d44ad6c50fbb408eb049b658ce64d4e0c	variants/base/setups/dbeaver--setup.sh
+setup	dbeaver	1.0.1	bc3bf9541f4e5d58eb0fe58e3b8207beff5e7cc54f198c2e9a812623fe33450c	variants/base/setups/dbeaver--setup.sh
 setup	dblab	0.1.0	4c85d42697e81961082bed7d0148da6b739edf97829883ace2534600aaa6ecf3	variants/base/setups/dblab--setup.sh
 setup	default-terminal	1.0.0	b5ba2b0dcc90ea2355fb529902f0daccd3c53ab8046a832bea26dab69640adcd	variants/base/setups/default-terminal--setup.sh
 setup	deno	1.0.0	b5cb7026bd75202319f66faa56b51cf4bc47c2004050115d750b01d0c1a09197	variants/base/setups/deno--setup.sh
@@ -90,7 +90,7 @@ setup	elm-code-extension	1.0.0	6e0caa93413bd80117a033e9a2f94c537a9867e775427f778
 setup	envfolio	2.1.0	259df49877efbb3a99feb142fbd1fbc3b0ac0f7be96de0cbac5816ddba4bd044	variants/base/setups/envfolio--setup.sh
 setup	erlang	1.0.0	24ad8e50ad69aef9725262acd39b14885d8007f85bacd31e360b75a39d6175ab	variants/base/setups/erlang--setup.sh
 setup	erlang-code-extension	1.0.0	6e5b09d75439bec5b67b899d850b0a99cb07c3fe72052e8061458843f60aff70	variants/base/setups/erlang-code-extension--setup.sh
-setup	excalidraw	1.0.1	59cc6f1fc07318765cb3ec8ef771f64c6814ed21b83f7202446a96f1a50f6841	variants/base/setups/excalidraw--setup.sh
+setup	excalidraw	1.1.0	02f04628f0678822959537b54d80a34743aae9c1d30c77b41fb45aaa06f34f87	variants/base/setups/excalidraw--setup.sh
 setup	exercism	1.0.0	036c8ef57fcfabde43a3d47d55affc68a5127451a61586d2bc990bed6155ebc7	variants/base/setups/exercism--setup.sh
 setup	fira-code-nerd-font	0.1.0	376ef1dfb459f4ad16ab0b76812fd6920fe7569371c80e61c2057a2820fd5509	variants/base/setups/fira-code-nerd-font--setup.sh
 setup	firebase	1.0.0	cb173cd4ef650d421702b797c175e1104e2974be965d684f6ecee5fe00af2f26	variants/base/setups/firebase--setup.sh
@@ -133,6 +133,7 @@ setup	harlequin	0.1.0	7d16f4a9d8afdbbf7beba8c5a83a72bdc3c790ce370e81474da53e8f13
 setup	haskell	1.0.0	9b52b1f086c217f186b0ed739a9951c52d6027c4a1236d41936462f78ed6d3bf	variants/base/setups/haskell--setup.sh
 setup	haskell-code-extension	1.0.0	da1b29d952efef7fc21ce36533c0d0689bcb2e8e80965ac45cd1376e86ebd485	variants/base/setups/haskell-code-extension--setup.sh
 setup	haskell-nb-kernel	1.0.0	97ff6f9e8caedf94e93f0f0518b93b40e3a3c7204eb87e9a45f0b456c84a8853	variants/base/setups/haskell-nb-kernel--setup.sh
+setup	haskell-tools	1.0.0	8953f1481b20fde900c2ce26bc45fb743f747151957140b4e95ea727093a47ad	variants/base/setups/haskell-tools--setup.sh
 setup	heidisql	0.1.0	b577d8e7a12a4e3264eaf5b9968f9dde580fce7f2c6874260855ab40d1c3b7db	variants/base/setups/heidisql--setup.sh
 setup	helix	1.0.0	7a017950fe6f47fc4b2498e32e6b8bdacaa61c759a4644893ff3a5bd19b65ee6	variants/base/setups/helix--setup.sh
 setup	helm	1.0.0	7afeaf721ee89c9362432d1691902f3b61dbde5ee9f8a755da0d256a7aa701df	variants/base/setups/helm--setup.sh
@@ -151,7 +152,7 @@ setup	java-jjava-nb-kernel	1.0.0	1b7ea82b4a3013f266411ab503581065d3936b53b99ea56
 setup	java-nb-kernel	1.0.0	df0f3253ca33f610d280bb659ae045f1a24f59d54d8944398530bb05b511c9ca	variants/base/setups/java-nb-kernel--setup.sh
 setup	jdk	1.0.0	ea8788f58b0a44f347a8717f1b1a4a199351d76ce80ccd5a8c374656924b9e53	variants/base/setups/jdk--setup.sh
 setup	jenv	1.0.0	b191d7d6948ccf22c8a25f2ca766b4f5fbd567736399a174ce03255517c689c2	variants/base/setups/jenv--setup.sh
-setup	jetbrains	1.0.0	b6de31572b37dbe3652d13bf0c1c17aed907254c64ffefbb16414f95838217fb	variants/base/setups/jetbrains--setup.sh
+setup	jetbrains	1.0.1	927b691f601bcb3de39398cf11aeb1c8eb81819f19066c70df21a682b02b91f8	variants/base/setups/jetbrains--setup.sh
 setup	jetbrains-first-run	0.1.0	10de26bb2a94e257f55c97087dcbdb549dc59c4d05cf311bc2f440da6c38a4ea	variants/base/setups/jetbrains-first-run--setup.sh
 setup	jetbrains-import-project	0.1.0	9928c407aa4ba054a568a20a1091fdcf833b9ead47157c3a3863e796abfe4dbe	variants/base/setups/jetbrains-import-project--setup.sh
 setup	jetbrains-jdk	0.1.0	21e7e0cd7608d6dfa391e5e4f88f48e48ef2feb63ed162bd0b2761aaef4f18f0	variants/base/setups/jetbrains-jdk--setup.sh
@@ -170,7 +171,7 @@ setup	kde-wallpaper	1.0.0	ec76abf4bf6c84e2897f7eba786daac467ab0ebb285c713350c430
 setup	kind	1.0.0	bbe71aadcd2a12a78bebf990222f3ff71c2640d2d2d3f0e5da37bfa7145dddc9	variants/base/setups/kind--setup.sh
 setup	kitty	1.0.0	fcd7a7bca4648a4fa1491165b2b06b218efe5d668f0aafc980eedadc0bf69df7	variants/base/setups/kitty--setup.sh
 setup	kitty-fancy	1.0.0	fd0a1edfe3769341e38c58062f0c568f199c0fac9443883071916de72f663325	variants/base/setups/kitty-fancy--setup.sh
-setup	kotlin	1.0.0	49142ebc4995d12ee21b1d87e2ec3edd32037f9e76418b4da14cf7b523b61543	variants/base/setups/kotlin--setup.sh
+setup	kotlin	1.0.1	c9cf93d2c19d825934bc0b0123b0c9bf6f3c6288eebb991d88ba5b13ef1da99a	variants/base/setups/kotlin--setup.sh
 setup	kotlin-code-extension	1.0.0	df900e891adbeeddcb789ba8e0025bc0378244e2fa5e0c0005e7f039bfe9de9b	variants/base/setups/kotlin-code-extension--setup.sh
 setup	kotlin-nb-kernel	1.0.0	48f7e51e99e51cf8b2c98ac524265d3e2e76cffe40b7ac06a3b3ca00f1e9e26d	variants/base/setups/kotlin-nb-kernel--setup.sh
 setup	krohnkite	1.0.0	8688e9a05355ac0ffc3c6acaecd108ff65c25bf8945e4bbc6420a15f01e22a32	variants/base/setups/krohnkite--setup.sh
@@ -279,19 +280,19 @@ setup	rescript-code-extension	1.0.0	03df70f3dbc594b9cfae9cba6e889bc20960da7a0b48
 setup	reversal-icons	0.1.0	fd59d92cf3b349e073aa6106910966266702f178f3d17167d76975186b68defa	variants/base/setups/reversal-icons--setup.sh
 setup	roc	1.0.0	638bf050c8ae65baff8bde20695be6e4c9f4d30ea6b804e860894ff99ecf4190	variants/base/setups/roc--setup.sh
 setup	roc-code-extension	1.0.0	7df93e3f6f14ce185099f56aaeaa165deed1c0d6dc6dfb2a4fd88056820ba55a	variants/base/setups/roc-code-extension--setup.sh
-setup	ruby	1.0.0	1fd3945db32c71c9efce7295c9c0f14cb8aae74e580646b7c7c70d186d3d8f4a	variants/base/setups/ruby--setup.sh
+setup	ruby	1.1.0	a1f394f3051db3024c387fde4508decca8f6a845cc6c696dfe89c18cd1e069d7	variants/base/setups/ruby--setup.sh
 setup	ruby-code-extension	1.0.0	780ddb3632d0bd3c4d51480b03f7e9f57a07fe11a6e8e8c70d8ca9d3f638bc67	variants/base/setups/ruby-code-extension--setup.sh
 setup	ruby-nb-kernel	1.0.0	0cd5854ecbe3020b642f4220baa9fc10152a2d9d7f034fcdfe6b559c16bf693c	variants/base/setups/ruby-nb-kernel--setup.sh
 setup	rust	1.1.0	794a3ebc52f438e35b2ba32f7b5dad4dbfdf509535c866ff5f2488fd144ecce1	variants/base/setups/rust--setup.sh
 setup	rust-code-extension	1.0.0	171449f2c52abd5add0a0062e8999a903884946349fae385b1e52dbdb94046bb	variants/base/setups/rust-code-extension--setup.sh
-setup	rust-nb-kernel	1.0.0	68e0ff75f57c016e4f6d1d9f2a61376a5fbd673751ff5a8f46b3ba55414ad277	variants/base/setups/rust-nb-kernel--setup.sh
+setup	rust-nb-kernel	1.1.0	c776a6c9376646512d69ab2a015a1b493cad496cd6691545aa662bb9959b117a	variants/base/setups/rust-nb-kernel--setup.sh
 setup	rust-toolchain-file	0.1.0	d5e594812574e48e45f36ed0c85cf49ceb2158389c5fd8c662fe0f5d1e584881	variants/base/setups/rust-toolchain-file--setup.sh
 setup	sbt	1.0.0	a6361fbb0c96162b8730a1f6351edcaee867ff91a53f03d7d41c0b391653b227	variants/base/setups/sbt--setup.sh
 setup	scala	1.0.0	18b43d545d675e2971aedfb65413cb6ba6c57efd22201e8a84a5fcf789afa172	variants/base/setups/scala--setup.sh
 setup	scala-code-extension	1.0.0	f626327232a0c3dbf7660e08717170d0f545a9453256d26cc111d1e6f04d7ec1	variants/base/setups/scala-code-extension--setup.sh
 setup	scala-nb-kernel	1.0.0	cbccc4bcc4b9128b18f5eefde1fff288c8e4eb0fd43e6f7dd7e7c3d8e6db6b29	variants/base/setups/scala-nb-kernel--setup.sh
 setup	sccache	0.1.0	c3062922a19a3bdb2180f59a2226137a18f0c8e60a132c0d1805478a9f47c400	variants/base/setups/sccache--setup.sh
-setup	scratch	1.0.0	96e25f80c6d0c3a05a58192352d09eec065d62f41e95ff59d2ef58695a973d9d	variants/base/setups/scratch--setup.sh
+setup	scratch	1.1.0	ebd018fca124477838bf615646f3ec204ed008c0e9c3d434d1a7915da095b5b1	variants/base/setups/scratch--setup.sh
 setup	selenium	1.0.0	ad338354b6932063d168eae2085ddd53ecdc1f265933d1baf7ef965cb0ca5cf3	variants/base/setups/selenium--setup.sh
 setup	spring-boot-code-extension	0.1.0	b71ef395a19b1959a071eaae1aacb9587828b2d365f11afbdfea1de4491e0489	variants/base/setups/spring-boot-code-extension--setup.sh
 setup	sql-code-extension	0.1.0	f3a7f8b3338f74d811ef4cc44c0a3ca791e33681961cd489d8ed1aa206fc1087	variants/base/setups/sql-code-extension--setup.sh
@@ -333,7 +334,7 @@ setup	yaml-code-extension	0.1.0	a645a17343854b3f3fc21a01e0fb6346878cc777aacf9935
 setup	zig	1.0.0	b4697e1c090e510c423ef961dd6bfcc06a480adf78bd774e3f5291ac468f459e	variants/base/setups/zig--setup.sh
 setup	zig-code-extension	1.0.0	2b398b4a16070263e1e4929a512e1cbf7c997bb6b7124688aa0d5e30812ecb5c	variants/base/setups/zig-code-extension--setup.sh
 install	apt	1.0.0	c98531784bb25c6699118f1396c54a2c22aed7369196cdab2d4a70a4381e749c	variants/base/setups/apt--install.sh
-install	brew	1.0.0	665f507b1852d0bd88726aa221eed4645865c55b0fe7a853035d70c11c543da5	variants/base/setups/brew--install.sh
+install	brew	1.0.1	15b88e85a19c8afc32b759673f93b8211d310278defbacb26e35648cd5da56cd	variants/base/setups/brew--install.sh
 install	bun	1.0.0	2bd28d270b69000f5346408c3cd308a7e57ec77ee7705e6566ec19da9c9c58ad	variants/base/setups/bun--install.sh
 install	cabal	1.0.0	0960aa673e85c85a5745402a35984fa84a37f5de601ef3b0c98f176b7ce3a960	variants/base/setups/cabal--install.sh
 install	cargo	1.0.0	e1e2f5d9d52be6401b0b20196bb9dbec8165ea4961d52dae1ae828029e8a0429	variants/base/setups/cargo--install.sh
@@ -385,6 +386,7 @@ helper	template-seup.sh	1.0.0	c9c0ad54732fdd56d2bb5ac692ebec0c6bd237af9a92fa7719
 lib	booth-proxy-response.conf	0.1.0	605ebfc3f0a878a1a68212190bf254cdfbb889393a0191d5855d5ad16e235a6b	variants/base/setups/libs/booth-proxy-response.conf
 lib	code-extension-source.sh	1.0.0	2c81911a7aeb0b25195cd4cd67785c9125d186d4eb99e6fe362d1b09bf875d0d	variants/base/setups/libs/code-extension-source.sh
 lib	jetbrains-source.sh	0.1.0	dd1f0922678630909118a128d045d047eb49d0541ff439f72f3a1b5681290e8b	variants/base/setups/libs/jetbrains-source.sh
+lib	prebuilt-source.sh	0.1.0	6bb28eb75317d956e890a9c069e91cf9ce0f855af624b9ad2c59567c121d6b29	variants/base/setups/libs/prebuilt-source.sh
 lib	retry-source.sh	0.1.0	dc80e4474b59095be79b52489947dd6e7edae0bcb7efb5bc687b32e7f932d09e	variants/base/setups/libs/retry-source.sh
 lib	skip-setup.sh	1.0.0	ed256a1d9f447f755a6e7eb20cc5cef612aedf38d085740781eb064079da03ae	variants/base/setups/libs/skip-setup.sh
 assets	booth-web-preview	0.1.0	b7777911fb75cb633a8aeaf373bd3e3ac579736797db2d8dab740ddf1808e518	variants/base/setups/booth-web-preview/.cb-version
@@ -730,6 +732,7 @@ extension	grok+settings-cache	1.0.0	2583191eb2cbe317b1e3c5e96aa5f7aee78ebb0f03c2
 extension	grok+token-credential	0.1.0	d31721bc9bbc0ee48af7533f4b98471b67fb2f7d641247491ce69bc75d31c183	templates/ai-tools/grok/token-credential--extension.toml
 extension	haskell+cabal-pkg	1.0.0	63e52f989b5cfcd43bb0f4ae4f9005a1fe0b7dade3f4cd30242ff72f4b85254f	templates/languages/haskell/cabal-pkg--extension.toml
 extension	haskell+kernel	1.0.0	72931bf5da2785e47664e1e4d4b6a3a13364310f91eba8d1a7dcd0465c365a23	templates/languages/haskell/kernel--extension.toml
+extension	haskell+tools	1.0.0	8a72399d81d0152e1b73f0fdf87a23c460cb536b8053a3f850ffb59eeace09dc	templates/languages/haskell/tools--extension.toml
 extension	haskell+vscode-ext	1.0.0	d2665dcab2cc5f5a8f358d40f4879cb954ff967a8c765acc94fa80fbb0f81aaa	templates/languages/haskell/vscode-ext--extension.toml
 extension	helix+config-shared	1.0.0	9ad544f907b107c753b78473533b226b84719ae43c68ec8166c55b4176d6cf5c	templates/tools/helix/config-shared--extension.toml
 extension	helm+vscode-ext	0.1.0	234b37f513a542241199e495b1bddfa925ef0f79e9234323b065a57330a95fef	templates/tools/helm/vscode-ext--extension.toml
