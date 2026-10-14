@@ -4,6 +4,13 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`setup bash` installs Bash 3.2 prebuilt instead of compiling it.** 3.2.48 to 3.2.57,
+  including the default 3.2.57, now come from the static builds published at
+  [NawaMan/Bash32Ubuntu](https://github.com/NawaMan/Bash32Ubuntu/releases) for x86_64 and
+  arm64, checked against each release's `.sha256`. A mismatch stops the setup. The image no
+  longer needs build-essential, bison or ncurses for it, and the setup takes seconds instead of
+  minutes. Any other release (`bash:5.2.37`, `bash:5.3`) is still built from source as before.
+
 - **`--help` is easier to scan: profiles and the everyday run flags are on it, and `config`,
   `example` and `showcase` have their own rows.** The short page now lists `--profile` (see
   [BOOTH_PROFILES.md](BOOTH_PROFILES.md)), `--keep-alive`, `--persist-home` and `--writable-booth`.
