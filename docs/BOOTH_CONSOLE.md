@@ -169,7 +169,7 @@ The **+** and **−** buttons beside **Reload** open a pane next to the focused 
 
 ## Keyboard Shortcuts (Tiling)
 
-The Console UI tiles its six sessions the way the **i3** window manager tiles windows, with **Ctrl+Alt** as the modifier — the same keys as the i3 template's Ctrl+Alt bindings, so one set of habits works on both. The toolbar [layouts](#layouts) still work as before; the shortcuts reach every other arrangement of up to six panes as well, one pane at a time.
+The Console UI tiles its six sessions the way the **i3** window manager tiles windows, with **Ctrl+Alt** as the modifier — **Control+Option** on a Mac, where Option is the Alt key — the same keys as the i3 template's Ctrl+Alt bindings, so one set of habits works on both. The toolbar [layouts](#layouts) still work as before; the shortcuts reach every other arrangement of up to six panes as well, one pane at a time.
 
 | Keys | Action |
 |---|---|
@@ -184,7 +184,7 @@ The Console UI tiles its six sessions the way the **i3** window manager tiles wi
 | `Ctrl+Alt+Shift+q` (or **−**) | Close the pane — it is only hidden; its session keeps running |
 | `Ctrl+Alt+Shift+x` (or the pane's ⏻) | Reset the session: after asking, end its shell and anything running in it, and start a fresh one |
 
-The focused pane has a highlighted border once there is more than one. The shortcuts work from inside a terminal or a booth web tab (`:3000` and the like). A web tab showing an outside site keeps its keys to itself, so click into a terminal pane first. `Ctrl+Alt+arrows` may be taken by your own desktop; `h`/`j`/`k`/`l` always work.
+The focused pane has a highlighted border once there is more than one. The shortcuts work from inside a terminal or a booth web tab (`:3000` and the like). A web tab showing an outside site keeps its keys to itself, so click into a terminal pane first. `Ctrl+Alt+arrows` may be taken by your own desktop; `h`/`j`/`k`/`l` always work. On a Mac, VoiceOver claims Control+Option as its own modifier and takes these keys first while it is on.
 
 The **Keyboard Shortcut Hint** in the toolbar always shows the main keys, the `Ctrl+Alt` ones and then the `Ctrl+Alt+Shift` ones. While a mode is on it shows what the keys do there instead — a pane filling the console, or where the next pane will open after `Ctrl+Alt+b` / `v` — and a click leaves the mode. To resize a pane, drag a divider. Otherwise a click opens the full table, which is also in the console itself: open the floating **Booth** panel and pick **CodingBooth Help**, which opens on its **Console Shortcuts** tab (the desktop variants' i3 template adds an **i3 Shortcuts** tab to the same dialog).
 

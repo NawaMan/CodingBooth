@@ -4,6 +4,16 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Fixed: the Console UI's `Ctrl+Alt` tiling shortcuts now work on a Mac.** Every one of them
+  did nothing there — focus, move, open, close, equalize — while working on Linux and Windows.
+  macOS calls the combination Control+Option, and Option is that layout's AltGr: the browser
+  reports `AltGraph` for it, which the console read as AltGr typing a character and skipped, the
+  guard that keeps a Windows AltGr out of the shortcuts. (Firefox on macOS goes further and drops
+  `altKey` altogether once Option composes a character, which the gate also required.) Option can
+  never be a real AltGr on a Mac, so that guard is now applied on the other platforms only, and
+  both of macOS's shapes count as the modifier. Windows AltGr is unchanged: it still types.
+  See [Keyboard Shortcuts (Tiling)](BOOTH_CONSOLE.md#keyboard-shortcuts-tiling).
+
 - **The welcome banner no longer lists `lazygit`.** Its "Handy commands" list is shorter;
   `lazygit` is still installed in every booth. Needs a rebuilt base image.
 
