@@ -416,6 +416,7 @@ try {
     const focusedNow = async () => (await evaluate(STATE)).focused;
     const LABELS = `(() => ({
       hint: document.getElementById('shortcut-hint').textContent,
+      title: document.getElementById('shortcut-hint').title,
       help: (document.getElementById('bl-help-panel-console') || {}).textContent || '',
       add: document.getElementById('pane-add').title,
       reset: (document.querySelector('.session-reset[data-session="2"]') || {}).title || '',
@@ -430,10 +431,14 @@ try {
     await frameKey(1, { key: "l", code: "KeyL", ctrlKey: true, altKey: true });
     const winPlain = await focusedNow();
     const winLabels = await evaluate(LABELS);
-    const winSaysCtrlAlt = Object.values(winLabels).every((text) => text.includes("Ctrl+Alt"))
+    // The hint is short forms, the tooltip and everything roomier is words.
+    const winSaysCtrlAlt = winLabels.hint.includes("^⎇") && winLabels.hint.includes("^⎇⇧")
+      && !/Ctrl\+Alt|Control\+Option/.test(winLabels.hint)
+      && winLabels.title.includes("^⎇ is Ctrl+Alt")
+      && [winLabels.help, winLabels.add, winLabels.reset].every((text) => text.includes("Ctrl+Alt"))
       && !Object.values(winLabels).some((text) => text.includes("Control+Option"));
     report(ready && winStart === "1" && winAltGr === "1" && winPlain === "2" && winSaysCtrlAlt,
-      "On Windows, AltGr typing a character is not a shortcut, Ctrl+Alt+l still focuses right, and every label still says Ctrl+Alt",
+      "On Windows, AltGr typing a character is not a shortcut, Ctrl+Alt+l still focuses right, the hint reads ^⎇ and the words stay Ctrl+Alt",
       { ready, winStart, winAltGr, winPlain, winLabels });
 
     // On a Mac the same keys are Control+Option, and Option is that layout's
@@ -452,11 +457,15 @@ try {
     // console names them — the hint, the tooltips in the toolbar and in a
     // pane's header, and the Help tab (built on load, before it is opened).
     const macLabels = await evaluate(LABELS);
-    const macSaysControlOption = Object.values(macLabels).every((text) => text.includes("Control+Option"))
+    const macSaysControlOption = macLabels.hint.includes("⌃⌥") && macLabels.hint.includes("⌃⌥⇧")
+      && !/Ctrl\+Alt|Control\+Option/.test(macLabels.hint)
+      && macLabels.title.includes("⌃⌥ is Control+Option")
+      && [macLabels.help, macLabels.add, macLabels.reset].every((text) => text.includes("Control+Option"))
       && !Object.values(macLabels).some((text) => text.includes("Ctrl+Alt"));
     report(macSaysControlOption && macLabels.help.includes("Control+Option+Shift+x")
-        && macLabels.add.includes("Control+Option+Enter") && macLabels.help.includes("VoiceOver"),
-      "On a Mac every label says Control+Option: the hint, the toolbar and pane tooltips, and CodingBooth Help",
+        && macLabels.add.includes("Control+Option+Enter") && macLabels.help.includes("⌃⌥")
+        && macLabels.help.includes("VoiceOver"),
+      "On a Mac the hint reads ⌃⌥ with the tooltip and Help spelling it out, and the tooltips say Control+Option",
       macLabels);
   }
 } catch (e) {

@@ -626,10 +626,13 @@
       border-color: var(--accent);
     }
 
-    /* A modifier key in the hint, drawn as an inverted key cap. */
+    /* A modifier key in the hint, drawn as an inverted key cap. The Nerd Font
+       the console serves is named first here because the symbols (⌃ ⌥ ⇧ ^ ⎇)
+       come out of it; the rest of the stack is for the moment before it
+       loads. */
     .shortcut-hint kbd {
       display: inline-block;
-      font-family: inherit;
+      font-family: "FiraCode Nerd Font Mono", "JetBrains Mono", "Fira Code", monospace;
       font-size: 12.5px;
       font-weight: 700;
       line-height: 1.2;
@@ -778,6 +781,26 @@
       function modKeys(text) {
         return isMac ? text.replace(/Ctrl\+Alt/g, "Control+Option") : text;
       }
+
+      // The toolbar hint is read at a glance and has one line, so there the
+      // modifiers are symbols: Apple's own on a Mac, and on the other
+      // platforms the caret a terminal already writes Control with (^C) plus
+      // ISO 9995-7's Alt. Every glyph is in the Nerd Font the console serves
+      // (see the @font-face above and .shortcut-hint kbd below), so none of
+      // this depends on what the viewer has installed. Words stay everywhere
+      // with room for them: the tooltips, and CodingBooth Help's table.
+      function hintKeys(html) {
+        const control = isMac ? "⌃" : "^";
+        const alt = isMac ? "⌥" : "⎇";
+        return html
+          .replace(/Ctrl\+Alt\+Shift/g, control + alt + "⇧")
+          .replace(/Ctrl\+Alt/g, control + alt);
+      }
+
+      // What those symbols mean, for the hint's tooltip and for Help.
+      const hintLegend = isMac
+        ? "⌃⌥ is Control+Option, ⌃⌥⇧ adds Shift"
+        : "^⎇ is Ctrl+Alt, ^⎇⇧ adds Shift";
 
       // One pane per session start-ttyd-split runs (/s1/ … /s6/), stamped
       // from #pane-template before anything below looks them up.
@@ -1494,13 +1517,13 @@
         }
         shortcutHint.classList.toggle("mode", !!text);
         // The text is this page's own; only the modifiers become key caps.
-        shortcutHint.innerHTML = modKeys((text ||
+        shortcutHint.innerHTML = hintKeys((text ||
           "Ctrl+Alt+ h j k l focus · Enter open · f full · = equalize | Ctrl+Alt+Shift+ h j k l move · q close · x reset")
           .replace(/(Ctrl\+Alt\+Shift|Ctrl\+Alt)\+ ?/g, '<kbd><span>$1</span></kbd> ')
           .replace(" | ", '<span class="hint-gap"></span>'));
         shortcutHint.title = text
-          ? "Keyboard Shortcut Hint — click to leave"
-          : "Keyboard Shortcut Hint — click for every console shortcut";
+          ? "Keyboard Shortcut Hint — " + hintLegend + " — click to leave"
+          : "Keyboard Shortcut Hint — " + hintLegend + " — click for every console shortcut";
       }
       shortcutHint.addEventListener("click", function() {
         if (resizeMode) setResizeMode(false);
@@ -1797,6 +1820,9 @@
             '<strong>+</strong> / <strong>−</strong> buttons open and close panes; a shortcut ' +
             'can reach any arrangement of up to six. A layout without a button shows as ' +
             '<strong>Other</strong>.</p>' +
+            '<p>The toolbar\'s hint writes the modifiers short — <code>' + hintKeys("Ctrl+Alt") +
+            '</code> for Ctrl+Alt, <code>' + hintKeys("Ctrl+Alt+Shift") + '</code> with Shift, which ' +
+            'hovering it says too. The table spells them out.</p>' +
             '<table style="border-collapse:collapse;font-size:13px">' + rows + '</table>' +
             '<h3>Shortcut did nothing?</h3>' +
             '<p>A web tab showing an outside site keeps its keys to itself: click into a ' +
