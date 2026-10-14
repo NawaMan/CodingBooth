@@ -361,6 +361,12 @@ try {
         && await until(termReady(2));
     };
     const focusedNow = async () => (await evaluate(STATE)).focused;
+    const LABELS = `(() => ({
+      hint: document.getElementById('shortcut-hint').textContent,
+      help: (document.getElementById('bl-help-panel-console') || {}).textContent || '',
+      add: document.getElementById('pane-add').title,
+      reset: (document.querySelector('.session-reset[data-session="2"]') || {}).title || '',
+    }))()`;
 
     // On Windows, AltGr arrives as Ctrl+Alt and is typing a character, not a
     // shortcut; the same keys without it still tile.
@@ -370,9 +376,12 @@ try {
     const winAltGr = await focusedNow();
     await frameKey(1, { key: "l", code: "KeyL", ctrlKey: true, altKey: true });
     const winPlain = await focusedNow();
-    report(ready && winStart === "1" && winAltGr === "1" && winPlain === "2",
-      "On Windows, AltGr typing a character is not a shortcut, while Ctrl+Alt+l still focuses right",
-      { ready, winStart, winAltGr, winPlain });
+    const winLabels = await evaluate(LABELS);
+    const winSaysCtrlAlt = Object.values(winLabels).every((text) => text.includes("Ctrl+Alt"))
+      && !Object.values(winLabels).some((text) => text.includes("Control+Option"));
+    report(ready && winStart === "1" && winAltGr === "1" && winPlain === "2" && winSaysCtrlAlt,
+      "On Windows, AltGr typing a character is not a shortcut, Ctrl+Alt+l still focuses right, and every label still says Ctrl+Alt",
+      { ready, winStart, winAltGr, winPlain, winLabels });
 
     // On a Mac the same keys are Control+Option, and Option is that layout's
     // AltGr: Chrome reports it alongside altKey, Firefox reports it instead.
@@ -385,6 +394,17 @@ try {
     report(ready && altGraphSeen && macStart === "1" && macChrome === "2" && macFirefox === "1",
       "On a Mac, Control+Option focuses the pane — with altKey (Chrome) and with AltGraph alone (Firefox)",
       { ready, altGraphSeen, macStart, macChrome, macFirefox });
+
+    // Same page, still MacIntel: Apple's names for the keys, everywhere the
+    // console names them — the hint, the tooltips in the toolbar and in a
+    // pane's header, and the Help tab (built on load, before it is opened).
+    const macLabels = await evaluate(LABELS);
+    const macSaysControlOption = Object.values(macLabels).every((text) => text.includes("Control+Option"))
+      && !Object.values(macLabels).some((text) => text.includes("Ctrl+Alt"));
+    report(macSaysControlOption && macLabels.help.includes("Control+Option+Shift+x")
+        && macLabels.add.includes("Control+Option+Enter") && macLabels.help.includes("VoiceOver"),
+      "On a Mac every label says Control+Option: the hint, the toolbar and pane tooltips, and CodingBooth Help",
+      macLabels);
   }
 } catch (e) {
   report(false, "The browser run completed", String(e && e.stack || e));
