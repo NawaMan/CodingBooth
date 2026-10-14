@@ -43,7 +43,17 @@ cd tests && ./run-automate-tests.sh --only config-tui
 
 On failure, inspect `log--<testname>.log` (full tape + vhs output + cleaned
 frame) and `prj--<testname>/frame.clean.txt` (exactly what the TUI rendered).
-`./clean-all.sh` removes all `prj--`/`log--`/`run--` artifacts.
+Both live under `$TMPDIR/codingbooth-config-tui-tests/`, not in this directory.
+
+`run-all-tests.sh` retries a failing test once, and a retry re-runs the same
+script — which truncates that log and wipes that prj. So for a test that passed
+only on its second attempt, the two paths above hold the attempt that *passed*;
+the failure is kept beside them as `log--<testname>.attempt1.log` and
+`prj--<testname>--attempt1/frame.clean.txt`, and that is the pair to read. A
+first attempt with `vhs exited with code N` and `no frame.txt captured` failed
+to record at all, which is a different problem from a frame that came out wrong.
+
+`./clean-all.sh` removes all `prj--`/`log--`/`run--` artifacts, in both places.
 
 ## Writing a test
 
