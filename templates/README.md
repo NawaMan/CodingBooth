@@ -361,6 +361,7 @@ fontconfig/GTK libraries Rust GUI crates link to), so it sits with the other sys
 | `ai-tools/aider`           | Aider |
 | `ai-tools/anythingllm`     | AnythingLLM |
 | `ai-tools/claude-code`     | Claude Code |
+| `ai-tools/differ`          | differ (agent diff review) |
 | `ai-tools/gemini-cli`      | Gemini CLI |
 | `ai-tools/gh-copilot`      | GitHub Copilot CLI |
 | `ai-tools/goose`           | Goose |
@@ -450,6 +451,7 @@ fontconfig/GTK libraries Rust GUI crates link to), so it sits with the other sys
 | `tools/lazygit`            | Lazygit |
 | `tools/lazysql`            | lazysql |
 | `tools/make`               | GNU Make |
+| `tools/mc`                 | Midnight Commander (mc) |
 | `tools/mkcert`             | mkcert |
 | `tools/neovim`             | Neovim |
 | `tools/nginx`              | nginx |
@@ -460,6 +462,7 @@ fontconfig/GTK libraries Rust GUI crates link to), so it sits with the other sys
 | `tools/sql-studio`         | sql-studio |
 | `tools/sqluv`              | sqluv |
 | `tools/stern`              | stern |
+| `tools/superfile`          | superfile (spf) |
 | `tools/terraform`          | Terraform |
 | `tools/vhs`                | VHS (terminal/TUI recorder) |
 
