@@ -159,8 +159,11 @@ try {
       intact: (() => { try { JSON.parse(document.getElementById('cb-console-config').textContent); return true; } catch { return false; } })(),
       specRan: window.BOOTH_CONSOLE_SPEC === "shared",
       hint: (document.getElementById('shortcut-hint') || {}).textContent || '',
+      // No platform is emulated here, so the hint follows the host's: ⌃⌥ on a
+      // Mac, ^⎇ elsewhere (the same test the console makes).
+      hintMod: /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || "") ? "⌃⌥" : "^⎇",
     }))()`);
-    report(loaded && f.intact && f.specRan && f.hint.includes("Ctrl+Alt"),
+    report(loaded && f.intact && f.specRan && f.hint.includes(f.hintMod),
       "A console.json with </script> and <!-- inside a tab still loads the whole page and its scripts", f);
     report(f.preset === null && f.other && f.active === "123456",
       "An unknown layout falls back to one that shows every pane given tabs (pane 5: the 3x2 grid, as Other)", f);
@@ -405,11 +408,14 @@ try {
     //
     // Both platforms are emulated rather than taken from the host, so the run
     // means the same thing on either. navigator.platform is read while the
-    // page's script runs, hence the override before each reload.
+    // page's script runs, hence the override before each reload. The query
+    // makes each platform's URL its own: navigating to the URL already shown,
+    // differing at most in its #fragment, only scrolls — the page never
+    // reloads and keeps the platform it loaded with.
     const ua = await evaluate(`navigator.userAgent`);
     const asPlatform = async (platform) => {
       await send("Emulation.setUserAgentOverride", { userAgent: ua, platform });
-      await send("Page.navigate", { url: url + "#mode=hsplit" });
+      await send("Page.navigate", { url: url + "?platform=" + platform + "#mode=hsplit" });
       return await until(`!!window.BoothTiling && document.querySelectorAll('.pane.active').length === 2`)
         && await until(termReady(2));
     };
