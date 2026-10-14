@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.1
+# cb-version: 0.2.0
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -19,7 +19,9 @@ Examples:
   $0 --version 5.3        # installed as bash-5.3
 
 Notes:
-- Builds a GNU release from https://ftp.gnu.org/gnu/bash/ (or a mirror)
+- 3.2.48 to 3.2.57 come prebuilt (static, sha256-checked) from
+  https://github.com/NawaMan/Bash32Ubuntu/releases. Nothing is compiled.
+- Any other release is built from https://ftp.gnu.org/gnu/bash/ (or a mirror)
 - Installs under /opt/bash/bash-<version>
 - Links /usr/local/bin/bash-<major>.<minor> (and bash-<version> when that differs)
 - Leaves /bin/bash, the image login shell, alone
@@ -69,85 +71,139 @@ INSTALL_PARENT=/opt/bash
 TARGET_DIR="${INSTALL_PARENT}/bash-${VERSION}"
 BIN_DIR=/usr/local/bin
 
-export DEBIAN_FRONTEND=noninteractive
-apt-get update
-apt-get install -y --no-install-recommends \
-  build-essential bison libncurses-dev curl ca-certificates autotools-dev
-rm -rf /var/lib/apt/lists/*
-
 mkdir -p /usr/local/src
 TMP="$(mktemp -d /usr/local/src/bash-build.XXXXXX)"
 trap 'rm -rf "$TMP"' EXIT
 
-TARBALL="bash-${VERSION}.tar.gz"
-# Three sources, tried in order. --connect-timeout keeps an unreachable host
-# from costing minutes per retry before the next source gets its turn.
-MIRRORS=(
-  "https://ftp.gnu.org/gnu/bash"
-  "https://ftpmirror.gnu.org/bash"
-  "https://mirrors.kernel.org/gnu/bash"
-)
+# Bash 3.2.48-3.2.57: a static build per patch level from
+# NawaMan/Bash32Ubuntu, so the image needs no compiler. Each tarball has a
+# .sha256 beside it; a mismatch stops the setup rather than installing it.
+# Static, so the Ubuntu release in the asset name does not bind the image.
+PREBUILT_REPO="https://github.com/NawaMan/Bash32Ubuntu/releases/download"
+prebuilt_patch() {
+  [[ "$VERSION" =~ ^3\.2\.([0-9]+)$ ]] || return 1
+  (( 10#${BASH_REMATCH[1]} >= 48 && 10#${BASH_REMATCH[1]} <= 57 ))
+}
 
-echo "⬇️  Downloading GNU Bash ${VERSION} ..."
-got_tarball=0
-for mirror in "${MIRRORS[@]}"; do
-  if curl --connect-timeout 15 --retry 3 --retry-delay 3 --retry-all-errors \
-      -fsSL "${mirror}/${TARBALL}" -o "$TMP/$TARBALL"; then
-    got_tarball=1
-    break
+install_prebuilt() {
+  local arch
+  case "$(uname -m)" in
+    x86_64|amd64)  arch=x86_64 ;;
+    aarch64|arm64) arch=arm64 ;;
+    *) echo "❌ No prebuilt GNU Bash ${VERSION} for $(uname -m)" >&2; exit 1 ;;
+  esac
+  local name="bash-${VERSION}-ubuntu26.04-${arch}-static.tar.gz"
+  local url="${PREBUILT_REPO}/bash-${VERSION}/${name}"
+
+  if ! command -v curl >/dev/null 2>&1; then
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update
+    apt-get install -y --no-install-recommends curl ca-certificates
+    rm -rf /var/lib/apt/lists/*
   fi
-  echo "   ${mirror} failed, trying the next mirror..."
-done
-(( got_tarball )) || { echo "❌ Could not download ${TARBALL} from any mirror" >&2; exit 1; }
 
-echo "📦 Building GNU Bash ${VERSION} ..."
-rm -rf "$TARGET_DIR"
-mkdir -p "$TARGET_DIR"
+  echo "⬇️  Downloading prebuilt GNU Bash ${VERSION} (${arch}) ..."
+  curl --connect-timeout 15 --retry 3 --retry-delay 3 --retry-all-errors \
+    -fsSL "$url" -o "$TMP/$name"
+  curl --connect-timeout 15 --retry 3 --retry-delay 3 --retry-all-errors \
+    -fsSL "${url}.sha256" -o "$TMP/${name}.sha256"
+  local want got_sum
+  want="$(awk '{print $1; exit}' "$TMP/${name}.sha256")"
+  got_sum="$(sha256sum "$TMP/$name" | awk '{print $1}')"
+  if [[ -z "$want" || "$want" != "$got_sum" ]]; then
+    echo "❌ ${name}: sha256 ${got_sum} does not match the release's ${want:-<empty>}" >&2
+    exit 1
+  fi
 
-tar -xzf "$TMP/$TARBALL" -C "$TMP"
-SRC_DIR="$TMP/bash-${VERSION}"
-[[ -d "$SRC_DIR" ]] || { echo "❌ Expected source dir ${SRC_DIR}"; exit 1; }
-cd "$SRC_DIR"
+  rm -rf "$TARGET_DIR"
+  mkdir -p "$TARGET_DIR"
+  tar -xzf "$TMP/$name" -C "$TARGET_DIR" --strip-components=1
+  [[ -x "$TARGET_DIR/bin/bash" ]] || { echo "❌ ${name} has no bin/bash" >&2; exit 1; }
+}
 
-# The 3.2.57 tarball ships a y.tab.c from 2006. parse.y is newer and calls
-# expand_prompt_string with three arguments. bison (installed above) regenerates
-# the parser because parse.y is newer. Do not touch y.tab.c ahead of make.
+build_from_source() {
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    build-essential bison libncurses-dev curl ca-certificates autotools-dev
+  rm -rf /var/lib/apt/lists/*
 
-# A release cannot name a machine newer than itself. 3.2.57 ships
-# support/config.guess from 2002, which has never heard of aarch64, so on an
-# arm64 host — an Apple Silicon Mac, an arm64 runner — it gives up and configure
-# stops at "cannot guess build type" before a line is compiled. autotools-dev
-# (installed above) carries a current pair. Both are needed: config.sub is as old
-# and would reject the triplet config.guess now returns.
-#
-# Asking the shipped script is the whole test: it exits 0 and prints the triplet
-# when it knows the host, 1 and nothing when it does not. So a release new enough
-# to recognise the machine keeps its own, whatever the architecture.
-#
-# Through `sh`, not as a program: 3.2.57 ships config.guess executable and 5.3
-# does not, so running it directly answers 126 for the newer release and would
-# swap the files on every host. configure reaches them through $SHELL too, which
-# is why the missing bit costs 5.3 nothing.
-if ! sh support/config.guess >/dev/null 2>&1; then
-  echo "   support/config.guess ($(uname -m)) is older than this architecture; using autotools-dev's"
-  cp /usr/share/misc/config.guess /usr/share/misc/config.sub support/
-fi
+  TARBALL="bash-${VERSION}.tar.gz"
+  # Three sources, tried in order. --connect-timeout keeps an unreachable host
+  # from costing minutes per retry before the next source gets its turn.
+  MIRRORS=(
+    "https://ftp.gnu.org/gnu/bash"
+    "https://ftpmirror.gnu.org/bash"
+    "https://mirrors.kernel.org/gnu/bash"
+  )
 
-if [[ -n "$CFLAGS_PIN" ]]; then
-  export CFLAGS="$CFLAGS_PIN"
-  export CFLAGS_FOR_BUILD="$CFLAGS_PIN"
-fi
+  echo "⬇️  Downloading GNU Bash ${VERSION} ..."
+  got_tarball=0
+  for mirror in "${MIRRORS[@]}"; do
+    if curl --connect-timeout 15 --retry 3 --retry-delay 3 --retry-all-errors \
+        -fsSL "${mirror}/${TARBALL}" -o "$TMP/$TARBALL"; then
+      got_tarball=1
+      break
+    fi
+    echo "   ${mirror} failed, trying the next mirror..."
+  done
+  (( got_tarball )) || { echo "❌ Could not download ${TARBALL} from any mirror" >&2; exit 1; }
 
-./configure --prefix="$TARGET_DIR" --without-bash-malloc
+  echo "📦 Building GNU Bash ${VERSION} ..."
+  rm -rf "$TARGET_DIR"
+  mkdir -p "$TARGET_DIR"
 
-# Bash 3.2 races under make -j: two jobs write support/newversion.h and one
-# mv fails. Build that line serially. Later releases take the core count.
-if (( MAJOR < 4 )); then
-  make -j1
+  tar -xzf "$TMP/$TARBALL" -C "$TMP"
+  SRC_DIR="$TMP/bash-${VERSION}"
+  [[ -d "$SRC_DIR" ]] || { echo "❌ Expected source dir ${SRC_DIR}"; exit 1; }
+  cd "$SRC_DIR"
+
+  # The 3.2.57 tarball ships a y.tab.c from 2006. parse.y is newer and calls
+  # expand_prompt_string with three arguments. bison (installed above) regenerates
+  # the parser because parse.y is newer. Do not touch y.tab.c ahead of make.
+
+  # A release cannot name a machine newer than itself. 3.2.57 ships
+  # support/config.guess from 2002, which has never heard of aarch64, so on an
+  # arm64 host — an Apple Silicon Mac, an arm64 runner — it gives up and configure
+  # stops at "cannot guess build type" before a line is compiled. autotools-dev
+  # (installed above) carries a current pair. Both are needed: config.sub is as old
+  # and would reject the triplet config.guess now returns.
+  #
+  # Asking the shipped script is the whole test: it exits 0 and prints the triplet
+  # when it knows the host, 1 and nothing when it does not. So a release new enough
+  # to recognise the machine keeps its own, whatever the architecture.
+  #
+  # Through `sh`, not as a program: 3.2.57 ships config.guess executable and 5.3
+  # does not, so running it directly answers 126 for the newer release and would
+  # swap the files on every host. configure reaches them through $SHELL too, which
+  # is why the missing bit costs 5.3 nothing.
+  if ! sh support/config.guess >/dev/null 2>&1; then
+    echo "   support/config.guess ($(uname -m)) is older than this architecture; using autotools-dev's"
+    cp /usr/share/misc/config.guess /usr/share/misc/config.sub support/
+  fi
+
+  if [[ -n "$CFLAGS_PIN" ]]; then
+    export CFLAGS="$CFLAGS_PIN"
+    export CFLAGS_FOR_BUILD="$CFLAGS_PIN"
+  fi
+
+  ./configure --prefix="$TARGET_DIR" --without-bash-malloc
+
+  # Bash 3.2 races under make -j: two jobs write support/newversion.h and one
+  # mv fails. Build that line serially. Later releases take the core count.
+  if (( MAJOR < 4 )); then
+    make -j1
+  else
+    make -j"$(nproc)"
+  fi
+  make install
+}
+
+if prebuilt_patch; then
+  install_prebuilt
 else
-  make -j"$(nproc)"
+  build_from_source
 fi
-make install
 
 ln -sfn "${TARGET_DIR}/bin/bash" "${BIN_DIR}/bash-${MM}"
 if [[ "$VERSION" != "$MM" ]]; then
