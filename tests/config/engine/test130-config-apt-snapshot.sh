@@ -1,15 +1,18 @@
 #!/bin/bash
 # The `env APT_SNAPSHOT=` freeze over a booth's life: the first configure stamps
-# today, a plain reconfigure keeps whatever is there, and --apt-snapshot is the
-# only way to move it — an id, `today`, or `none`. `none` is an empty line, not a
-# missing one, so the reconfigure after it keeps the freeze off instead of
-# stamping today again. The header never records the flag: it is replayed on
+# the release's snapshot (apt-snapshot.txt, which build/cli-build.sh stamps into
+# the binary — the one the images are built at), a plain reconfigure keeps
+# whatever is there, and --apt-snapshot is the only way to move it — an id,
+# `today` (a week back), or `none`. `none` is an empty line, not a missing one,
+# so the reconfigure after it keeps the freeze off instead of stamping again. The header never records the flag: it is replayed on
 # every reconfigure, and a recorded `today` would move the freeze each time.
 source "$(dirname "$0")/../test-helpers--source.sh"
 
 begin
 boothfile="$prj/.booth/Boothfile"
-today="$(date -u +%Y%m%d)T000000Z"
+release="$(tr -d ' \t\r\n' < "$(dirname "$0")/../../../apt-snapshot.txt")"
+# `today` is a week back, so it never names a day the snapshot service has not reached.
+today="$(date -u -d '7 days ago' +%Y%m%d 2>/dev/null || date -u -v-7d +%Y%m%d)T000000Z"
 
 function snapshot-line() { grep '^env APT_SNAPSHOT=' "$boothfile" 2>/dev/null ; }
 function check() {
@@ -36,8 +39,8 @@ function check() {
 unset CB_APT_SNAPSHOT
 
 run booth config $prj --no-tui --select apt-pkg:htop
-[[ "$(snapshot-line)" == "env APT_SNAPSHOT=${today}" ]]
-check $? "the first configure stamps today"
+[[ "$(snapshot-line)" == "env APT_SNAPSHOT=${release}" ]]
+check $? "the first configure stamps the release's snapshot"
 
 run booth config $prj --no-tui --overwrite --apt-snapshot 20250101T000000Z
 [[ "$(snapshot-line)" == "env APT_SNAPSHOT=20250101T000000Z" ]]
@@ -60,7 +63,7 @@ check $? "the reconfigure after none keeps the freeze off"
 
 run booth config $prj --no-tui --overwrite --apt-snapshot today
 [[ "$(snapshot-line)" == "env APT_SNAPSHOT=${today}" ]]
-check $? "--apt-snapshot today moves it to today"
+check $? "--apt-snapshot today moves it to a week back"
 
 cp "$boothfile" "$prj/Boothfile.before"
 run booth config $prj --no-tui --overwrite --apt-snapshot 2026-01-01

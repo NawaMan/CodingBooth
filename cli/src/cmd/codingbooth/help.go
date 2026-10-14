@@ -355,8 +355,9 @@ SPEC (compiled, not forwarded):
   --mount <host:path>    Extra mount. Repeatable.
   --set <key[=value]>    A config.toml key run already reads from a file.
   --templates-path <dir> Local template catalog. Requires --select.
-  --apt-snapshot <id>    id, today, or none. Requires --select.
-                         Omitted with --select freezes apt to today.
+  --apt-snapshot <id>    id, today (a week ago), or none. Requires --select.
+                         Omitted with --select freezes apt to the release's
+                         image snapshot.
 
 IMAGE (first match wins; --select is refused alongside the first three):
   --image <ref>          Use this image. Skip the build.

@@ -12,12 +12,18 @@
 #
 #   1. CB_APT_SNAPSHOT   — an id, or `today`. The release workflow sets it, once
 #                          per release, for every build job (see
-#                          .github/workflows/publish-docker-images.yaml).
-#   2. apt-snapshot.txt  — the id that workflow pinned and committed for the last
-#                          release. A local rebuild of a release commit then gets
-#                          the archive that release was actually built against,
-#                          not "whatever today is".
-#   3. today             — UTC, day granularity; only when there is no pin file.
+#                          .github/workflows/publish-docker-images.yaml), from
+#                          apt-snapshot.txt.
+#   2. apt-snapshot.txt  — the id pinned and committed when the release was cut
+#                          (the release-push skill). A local rebuild of a release
+#                          commit then gets the archive that release was actually
+#                          built against, not "whatever today is". build/cli-build.sh
+#                          stamps the same id into the CLI as a new booth's default.
+#   3. today             — only when there is no pin file.
+#
+# `today` is a week back (UTC, day granularity), as it is for `booth config`: the
+# current day can be one the snapshot service has not published yet, depending
+# on the timezone and the hour.
 #
 # The id format and its checks match `booth config --apt-snapshot`
 # (cli/src/pkg/boothinit/aptsnapshot). An image is always pinned, so unlike there,
@@ -51,12 +57,20 @@ apt_snapshot_check() {
   fi
 }
 
+# apt_snapshot_today: the id `today` means — the UTC day a week ago. GNU date
+# first, then BSD (macOS).
+apt_snapshot_today() {
+  local day
+  day="$(date -u -d '7 days ago' +%Y%m%d 2>/dev/null || date -u -v-7d +%Y%m%d)"
+  echo "${day}T000000Z"
+}
+
 # resolve_apt_snapshot: sets APT_SNAPSHOT (the id) and APT_SNAPSHOT_FROM (where it
 # came from). On a value that cannot be used, prints what is wrong and how to fix
 # it to stderr and returns 1.
 resolve_apt_snapshot() {
   local today fix problem
-  today="$(date -u +%Y%m%d)T000000Z"
+  today="$(apt_snapshot_today)"
 
   if [[ -n "${CB_APT_SNAPSHOT:-}" ]]; then
     APT_SNAPSHOT="$CB_APT_SNAPSHOT"

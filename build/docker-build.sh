@@ -37,7 +37,7 @@ VERSION_FILE="version.txt"
 
 # Reproducibility: every image's own apt-get is pinned to one Ubuntu archive
 # snapshot — CB_APT_SNAPSHOT, else the release's pin in apt-snapshot.txt, else
-# today. The order, and the checks on the value, are in apt-snapshot--source.sh.
+# today (a week back). The order, and the checks on the value, are in apt-snapshot--source.sh.
 # A Boothfile built on these images must not pin an older snapshot than this:
 # apt will not downgrade a package the image already has to satisfy an older
 # -dev package's exact-version dependency (e.g. libc6-dev on libc6).
@@ -673,7 +673,7 @@ Environment:
   COSIGN_KEY        Cosign private key content (PEM) stored directly in env; used if set
   COSIGN_KEY_FILE   Path to cosign private key file (default: ${COSIGN_KEY_FILE_DEFAULT})
   COSIGN_PASSWORD   Password for the private key (if the key is encrypted)
-  CB_APT_SNAPSHOT   Ubuntu archive snapshot for every apt-get: an id (20260601T000000Z) or today
+  CB_APT_SNAPSHOT   Ubuntu archive snapshot for every apt-get: an id (20260601T000000Z) or today (a week back)
                     (default: apt-snapshot.txt, the last release's pin; else today)
 
 Examples:
