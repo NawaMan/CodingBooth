@@ -1,12 +1,16 @@
 cb-version = "0.1.0"
 display-name = "Docker Compose"
-display-disc = "Microsoft's server for compose.yaml (Helix and Neovim)"
-display-order = 21
+display-disc = "Microsoft's compose.yaml server (Helix, Neovim); Docker in VS Code"
+display-order = 25
 auto-select = false
 requires = ["nodejs"]
-tags = ["lsp", "language-server", "docker-compose"]
+tags = ["lsp", "language-server", "docker-compose", "vscode"]
 
 [segments]
 "Boothfile--60" = """
 setup lsp--docker-compose
+"""
+# The VS Code side; skips itself on a variant without VS Code or code-server.
+"Boothfile--65" = """
+setup docker-code-extension
 """

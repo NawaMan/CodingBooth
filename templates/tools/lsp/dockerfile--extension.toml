@@ -1,12 +1,16 @@
 cb-version = "0.1.0"
 display-name = "Dockerfile"
-display-disc = "Completion, hover, and linting for Dockerfiles"
-display-order = 20
+display-disc = "Completion, hover, and linting for Dockerfiles; Docker in VS Code"
+display-order = 24
 auto-select = false
 requires = ["nodejs"]
-tags = ["lsp", "language-server", "dockerfile"]
+tags = ["lsp", "language-server", "dockerfile", "vscode"]
 
 [segments]
 "Boothfile--60" = """
 setup lsp--dockerfile
+"""
+# The VS Code side; skips itself on a variant without VS Code or code-server.
+"Boothfile--65" = """
+setup docker-code-extension
 """

@@ -1,7 +1,7 @@
 cb-version = "0.1.0"
 display-name = "Python (pylsp)"
-display-disc = "python-lsp-server: completion, navigation, and diagnostics for Python"
-display-order = 16
+display-disc = "python-lsp-server for terminal editors (python+vscode-ext covers VS Code)"
+display-order = 18
 auto-select = false
 requires = ["python"]
 tags = ["lsp", "language-server", "python"]
