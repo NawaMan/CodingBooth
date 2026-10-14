@@ -277,22 +277,7 @@ exit(($? & 127) ? 128 + ($? & 127) : $? >> 8);
 # answer should fail its test, not hold up the suite behind it. That case exits
 # 137, as timeout's own -k does, to tell "it died of the signal" (124) from "it
 # had to be killed" (137).
-#
-# CMD never gets the terminal as its stdin. Every branch below runs CMD in a
-# process group of its own, which is not the terminal's foreground group, and
-# the kernel stops a background group the moment one of its processes reads the
-# terminal: SIGTTIN, to the whole group. Run from a terminal, booth sees a tty on
-# stdin and starts `docker run -i`; docker reads it, catches the SIGTTIN to pass
-# on to the container, and exits, while booth and the watchdog take the default
-# action and stop. A stopped watchdog never fires, so the call waits for SIGCONT
-# that nothing sends — complex/test-boothfile-bash sat 2.5h on its first call
-# that way. CI has no terminal, so this only ever bit runs from a shell. A stdin
-# that is not a terminal is left alone: a test that pipes input in means it.
 timeout_run() {
-    if [[ -t 0 ]]; then
-        timeout_run "$@" </dev/null
-        return
-    fi
     local signal=TERM
     if [[ "${1:-}" == "-s" ]]; then
         signal="$2"; shift 2
