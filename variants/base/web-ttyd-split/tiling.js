@@ -147,7 +147,11 @@
 
   // ---- the toolbar presets --------------------------------------------------
   //
-  // Every way to divide a 2x2 grid, plus the 3x2 grid. Columns come first:
+  // Every way to divide a 2x2 grid, plus the 3x2 grid. Four of them have a
+  // toolbar button; the rest are names the console still understands — an old
+  // #mode=left-main, or a .booth/console.json checked in before the buttons
+  // went — and the shortcuts reach their shapes like any other. Columns come
+  // first:
   // the full-height dividers split the area into columns, and each column
   // then has its own top/bottom divider. top-main and bottom-main are the
   // exception by nature, their wide pane spanning every column.
@@ -164,6 +168,11 @@
     ["grid6", "h(v(1,4),v(2,5),v(3,6))"]
   ];
   var PRESET_NAMES = PRESETS.map(function (p) { return p[0]; });
+
+  // The ones with a toolbar button. A tree in any other preset's shape reads as
+  // Other: there is no button of its own left to light, and the console draws
+  // Other in the layout's shape anyway.
+  var TOOLBAR_PRESET_NAMES = ["single", "hsplit", "vsplit", "quad"];
 
   function presetShape(name) {
     for (var i = 0; i < PRESETS.length; i++) {
@@ -189,15 +198,18 @@
     return tree;
   }
 
-  // The preset a tree is, by shape alone — dividers can sit anywhere — or
-  // null. The console shows a matching tree as that preset, so a shortcut
-  // that lands on one lights up its toolbar button and keeps the preset's
-  // name in the URL.
+  // The toolbar preset a tree is, by shape alone — dividers can sit anywhere —
+  // or null. The console shows a matching tree as that preset, so a shortcut
+  // that lands on one lights up its toolbar button and keeps the preset's name
+  // in the URL; anything else, a buttonless preset's shape included, is Other
+  // and carries its tree instead.
   function matchPreset(tree) {
     if (!tree) return null;
     var s = shape(tree);
     for (var i = 0; i < PRESETS.length; i++) {
-      if (PRESETS[i][1] === s) return { name: PRESETS[i][0] };
+      if (PRESETS[i][1] === s && TOOLBAR_PRESET_NAMES.indexOf(PRESETS[i][0]) >= 0) {
+        return { name: PRESETS[i][0] };
+      }
     }
     return null;
   }
@@ -448,6 +460,7 @@
   var api = {
     MAX_PANES: MAX_PANES,
     PRESET_NAMES: PRESET_NAMES,
+    TOOLBAR_PRESET_NAMES: TOOLBAR_PRESET_NAMES,
     parse: parse,
     serialize: serialize,
     shape: shape,
