@@ -784,6 +784,16 @@
       // Every layout, preset or not, is a tree from tiling.js.
       const Tiling = window.BoothTiling;
       const grid = document.getElementById("grid");
+      // macOS spells these keys Control+Option — Option is the Alt key — so
+      // every label the console shows says that there instead. The shortcuts
+      // are the same keys either way; tilingModifiers further down is where
+      // the Mac's own way of reporting them is read.
+      const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || "");
+
+      function modKeys(text) {
+        return isMac ? text.replace(/Ctrl\+Alt/g, "Control+Option") : text;
+      }
+
       // One pane per session start-ttyd-split runs (/s1/ … /s6/), stamped
       // from #pane-template before anything below looks them up.
       const paneTemplate = document.getElementById("pane-template").innerHTML;
@@ -791,6 +801,11 @@
         grid.insertAdjacentHTML("beforeend", paneTemplate.replace(/__N__/g, String(n)));
       }
       const panes = Array.from(grid.querySelectorAll(".pane"));
+      if (isMac) {
+        document.querySelectorAll("[title*='Ctrl+Alt']").forEach(function(element) {
+          element.title = modKeys(element.title);
+        });
+      }
       const dragOverlay = document.getElementById("drag-overlay");
       const layoutButtons = Array.from(document.querySelectorAll("[data-layout]"));
       const reloadButton = document.getElementById("reload");
@@ -1494,10 +1509,10 @@
         }
         shortcutHint.classList.toggle("mode", !!text);
         // The text is this page's own; only the modifiers become key caps.
-        shortcutHint.innerHTML = (text ||
+        shortcutHint.innerHTML = modKeys((text ||
           "Ctrl+Alt+ h j k l focus · Enter open · f full · = equalize | Ctrl+Alt+Shift+ h j k l move · q close · x reset")
           .replace(/(Ctrl\+Alt\+Shift|Ctrl\+Alt)\+ ?/g, '<kbd><span>$1</span></kbd> ')
-          .replace(" | ", '<span class="hint-gap"></span>');
+          .replace(" | ", '<span class="hint-gap"></span>'));
         shortcutHint.title = text
           ? "Keyboard Shortcut Hint — click to leave"
           : "Keyboard Shortcut Hint — click for every console shortcut";
@@ -1644,13 +1659,10 @@
         k: ["v", -0.05], arrowup: ["v", -0.05], j: ["v", 0.05], arrowdown: ["v", 0.05]
       };
 
-      // macOS calls this Control+Option, and Option is that layout's AltGr: the
-      // browser reports AltGraph for it, and Firefox there drops altKey once
-      // Option composes a character. Option can never be a real AltGr on a Mac,
-      // so the AltGr veto below is for the other platforms only.
-      const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || "");
-
-      // Ctrl+Alt held, and not something else that merely looks like it.
+      // Ctrl+Alt held, and not something else that merely looks like it. On a
+      // Mac the browser reports Option as AltGraph (it is that layout's AltGr)
+      // and Firefox there drops altKey once Option composes a character, so
+      // both of those shapes are the modifier and the AltGr veto is off.
       function tilingModifiers(e) {
         if (!e.ctrlKey || e.metaKey) return false;
         const altGraph = typeof e.getModifierState === "function" && e.getModifierState("AltGraph");
@@ -1777,7 +1789,7 @@
             return '<tr><td style="padding:2px 12px 2px 0;white-space:nowrap"><code>' + k[0] +
               '</code></td><td style="padding:2px 0">' + k[1] + '</td></tr>';
           }).join("");
-          window.BoothHelp.addTab("console", "Console Shortcuts",
+          window.BoothHelp.addTab("console", "Console Shortcuts", modKeys(
             '<p class="msg-dialog-lead">The console tiles its six sessions the way the ' +
             '<strong>i3</strong> window manager tiles windows, with <strong>Ctrl+Alt</strong> ' +
             'as the modifier. The toolbar has every 2×2 layout and the 3×2 grid, and its ' +
@@ -1788,7 +1800,10 @@
             '<h3>Shortcut did nothing?</h3>' +
             '<p>A web tab showing an outside site keeps its keys to itself: click into a ' +
             'terminal pane first. Ctrl+Alt+arrows may be taken by your own desktop; ' +
-            'h/j/k/l always work.</p>' +
+            'h/j/k/l always work.' +
+            (isMac ? ' On a Mac, VoiceOver claims Control+Option as its own modifier ' +
+              'and takes these keys first while it is on.' : '') +
+            '</p>' +
             '<h3>Mouse and copy</h3>' +
             '<p>Clicks and drags go to the program in the pane when it uses the mouse ' +
             '(Fresh, vim, htop). At a shell, a drag selects and copies to your clipboard ' +
@@ -1797,7 +1812,7 @@
             'the copy (plain http to a remote host).</p>' +
             '<img src="console-ui-tile-keys.webp" alt="Hold Ctrl+Alt, then press H J K L to focus ' +
             'the pane left, down, up or right" style="display:block;width:100%;max-width:405px;' +
-            'margin:14px auto 0;border-radius:8px" onerror="this.remove()">');
+            'margin:14px auto 0;border-radius:8px" onerror="this.remove()">'));
         });
       }
 

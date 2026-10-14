@@ -11,7 +11,10 @@ This file contains a list of changes for each released version.
   guard that keeps a Windows AltGr out of the shortcuts. (Firefox on macOS goes further and drops
   `altKey` altogether once Option composes a character, which the gate also required.) Option can
   never be a real AltGr on a Mac, so that guard is now applied on the other platforms only, and
-  both of macOS's shapes count as the modifier. Windows AltGr is unchanged: it still types.
+  both of macOS's shapes count as the modifier. Windows AltGr is unchanged: it still types. On a
+  Mac the console also names the keys the way the keyboard does — the Keyboard Shortcut Hint, the
+  toolbar and pane tooltips, and CodingBooth Help all say **Control+Option** there, and Help adds
+  that VoiceOver claims those keys while it is on.
   See [Keyboard Shortcuts (Tiling)](BOOTH_CONSOLE.md#keyboard-shortcuts-tiling).
 
 - **The welcome banner no longer lists `lazygit`.** Its "Handy commands" list is shorter;
