@@ -59,7 +59,10 @@ func TestResolveRelativeMapping_ValidOffset(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, ok := resolveRelativeMapping(tt.mapping, tt.boothPort)
+			got, ok, err := resolveRelativeMapping(tt.mapping, tt.boothPort)
+			if err != nil {
+				t.Fatalf("resolveRelativeMapping(%q, %d) returned %v", tt.mapping, tt.boothPort, err)
+			}
 			if ok != tt.wantOk {
 				t.Errorf("resolveRelativeMapping(%q, %d) ok = %v, want %v", tt.mapping, tt.boothPort, ok, tt.wantOk)
 			}
@@ -85,9 +88,13 @@ func TestResolveRelativeMapping_Invalid(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, ok := resolveRelativeMapping(tt.mapping, 10000)
+			_, ok, err := resolveRelativeMapping(tt.mapping, 10000)
 			if ok {
 				t.Errorf("resolveRelativeMapping(%q, 10000) should return false", tt.mapping)
+			}
+			// Not a relative mapping at all: passed through, not an error.
+			if err != nil {
+				t.Errorf("resolveRelativeMapping(%q, 10000) returned %v, want it left alone", tt.mapping, err)
 			}
 		})
 	}
@@ -237,5 +244,114 @@ func TestResolveRelativePorts_NoChangeReturnsOriginal(t *testing.T) {
 	// When nothing changes, the same context should be returned
 	if newCtx.PortNumber() != ctx.PortNumber() {
 		t.Errorf("Expected same context when no changes made")
+	}
+}
+
+// A mapping that resolves past the ceiling is the failure docker used to report
+// as "invalid hostPort: 73888", with nothing to say where the number came from.
+func TestResolveRelativeMapping_PastCeiling(t *testing.T) {
+	tests := []struct {
+		name      string
+		mapping   string
+		boothPort int
+	}{
+		{name: "the data-example mapping on a high pick", mapping: "+8888:18888", boothPort: 65000},
+		{name: "one over the ceiling", mapping: "+1:8080", boothPort: maxPortNumber},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, ok, err := resolveRelativeMapping(tt.mapping, tt.boothPort)
+			if err == nil {
+				t.Fatalf("resolveRelativeMapping(%q, %d) accepted a host port above %d", tt.mapping, tt.boothPort, maxPortNumber)
+			}
+			if ok {
+				t.Errorf("resolveRelativeMapping(%q, %d) reported success alongside an error", tt.mapping, tt.boothPort)
+			}
+		})
+	}
+}
+
+// The ceiling is the host port's, not the offset's: the same mapping is fine
+// from a base that leaves room for it.
+func TestResolveRelativeMapping_AtCeiling(t *testing.T) {
+	got, ok, err := resolveRelativeMapping("+8888:18888", maxPortNumber-8888)
+	if err != nil || !ok {
+		t.Fatalf("resolveRelativeMapping at the ceiling = (%q, %v, %v), want it accepted", got, ok, err)
+	}
+	if got != "65535:18888" {
+		t.Errorf("resolveRelativeMapping at the ceiling = %q, want \"65535:18888\"", got)
+	}
+}
+
+func TestMaxRelativeOffset(t *testing.T) {
+	tests := []struct {
+		name       string
+		args       []string
+		wantOffset int
+		wantFound  bool
+	}{
+		{
+			name:       "no relative publish",
+			args:       []string{"-e", "FOO=BAR", "-p", "8080:8080"},
+			wantOffset: 0,
+			wantFound:  false,
+		},
+		{
+			name:       "the largest of several, across both spellings",
+			args:       []string{"-p", "+3000:13000", "--publish=+8888:18888", "-p=+90:8090"},
+			wantOffset: 8888,
+			wantFound:  true,
+		},
+		{
+			name:       "a zero offset is still a relative publish",
+			args:       []string{"--publish", "+0:10000"},
+			wantOffset: 0,
+			wantFound:  true,
+		},
+		{
+			name:       "a value that only looks like a mapping is skipped",
+			args:       []string{"-e", "+9999:nope", "-p", "+100:8080"},
+			wantOffset: 100,
+			wantFound:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			offset, found := maxRelativeOffset(buildCtxWithRunArgs(10000, tt.args...))
+			if found != tt.wantFound {
+				t.Errorf("maxRelativeOffset(%v) found = %v, want %v", tt.args, found, tt.wantFound)
+			}
+			if offset != tt.wantOffset {
+				t.Errorf("maxRelativeOffset(%v) = %d, want %d", tt.args, offset, tt.wantOffset)
+			}
+		})
+	}
+}
+
+// NEXT / RANDOM scan within the headroom the offsets need, so the pick itself
+// can never produce a host port docker will refuse.
+func TestFindNextPort_StopsAtCeiling(t *testing.T) {
+	// maxRelativeOffset of a "+8888" publish leaves this ceiling.
+	ceiling := maxPortNumber - 8888
+	port, listener, ok := findNextPort(ceiling-portScanStep+1, ceiling)
+	if !ok {
+		t.Skip("no free port in the one slot this ceiling allows")
+	}
+	defer listener.Close()
+	defer releasePortClaim()
+
+	if port > ceiling {
+		t.Errorf("findNextPort returned %d, above the ceiling %d", port, ceiling)
+	}
+	if port+8888 > maxPortNumber {
+		t.Errorf("findNextPort returned %d, which puts a +8888 publish at %d", port, port+8888)
+	}
+}
+
+func TestFindNextPort_NoSlotUnderCeiling(t *testing.T) {
+	if _, _, ok := findNextPort(60000, 50000); ok {
+		t.Error("findNextPort found a port above its own ceiling")
 	}
 }

@@ -151,7 +151,7 @@ func TestFindNextPort_SkipsOccupied(t *testing.T) {
 		defer lnNext.Close()
 	}
 
-	got, reservation, ok := findNextPort(base)
+	got, reservation, ok := findNextPort(base, maxPortNumber)
 	if !ok {
 		t.Fatal("findNextPort returned no free port")
 	}
@@ -193,7 +193,7 @@ func TestFindRandomPort_AvoidsOccupiedBase(t *testing.T) {
 	// attempt hands back a live reservation; release it right away, or later passes
 	// would be skipping the ports this loop is itself holding.
 	for i := 0; i < 20; i++ {
-		got, reservation, ok := findRandomPort(base)
+		got, reservation, ok := findRandomPort(base, maxPortNumber)
 		if !ok {
 			t.Skip("no free random port found in this environment")
 		}
@@ -223,7 +223,7 @@ func TestFindRandomPort_AvoidsOccupiedBase(t *testing.T) {
 func TestFindNextPort_ConcurrentScansDoNotCollide(t *testing.T) {
 	base := 20000
 
-	firstPort, firstReservation, ok := findNextPort(base)
+	firstPort, firstReservation, ok := findNextPort(base, maxPortNumber)
 	if !ok {
 		t.Skip("no free port at or above the base in this environment")
 	}
@@ -231,7 +231,7 @@ func TestFindNextPort_ConcurrentScansDoNotCollide(t *testing.T) {
 	defer os.Remove(portClaimPath(firstPort))
 
 	// Second booth scanning the same range while the first still holds its port.
-	secondPort, secondReservation, ok := findNextPort(base)
+	secondPort, secondReservation, ok := findNextPort(base, maxPortNumber)
 	if !ok {
 		t.Skip("no second free port at or above the base in this environment")
 	}
@@ -247,7 +247,7 @@ func TestFindNextPort_ConcurrentScansDoNotCollide(t *testing.T) {
 // the held port must become bindable again once released, or docker could never
 // publish the very port that was reserved for it.
 func TestReleasePortReservation_FreesThePort(t *testing.T) {
-	port, reservation, ok := findNextPort(20000)
+	port, reservation, ok := findNextPort(20000, maxPortNumber)
 	if !ok {
 		t.Skip("no free port at or above the base in this environment")
 	}
@@ -276,7 +276,7 @@ func TestReleasePortReservation_FreesThePort(t *testing.T) {
 // measured at 2-3 failures per 8 booths started together. The claim is the only
 // evidence available across processes, so reservePort must honour it.
 func TestReservePort_SkipsPortAnotherBoothIsLaunchingOn(t *testing.T) {
-	port, listener, ok := findNextPort(21000)
+	port, listener, ok := findNextPort(21000, maxPortNumber)
 	if !ok {
 		t.Skip("no free port at or above the base in this environment")
 	}
