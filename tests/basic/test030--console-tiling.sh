@@ -114,7 +114,7 @@ if ! wait_ready; then
 fi
 browser_phase fallback
 
-EXPECTED=22
+EXPECTED=25
 if [[ "$ALL" != true || "$CASES" -lt "$EXPECTED" ]]; then
   if [[ "$CASES" -lt "$EXPECTED" ]]; then
     print_test_result "false" "$0" "$((CASES + 1))" "Only $CASES of $EXPECTED browser cases reported"

@@ -4,6 +4,19 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The Console UI's toolbar keeps four layout buttons, and the keyboard gains the pane's Web
+  view, its Markdown viewer and i3's resize mode.** The toolbar is down to one terminal, two
+  columns, two rows and the 2×2 grid; the five three- and six-pane presets lose their buttons,
+  since `Ctrl+Alt+Enter` and the tiling keys reach any arrangement of up to six panes. Their names
+  still work everywhere a layout name goes — `#mode=left-main`, a `.booth/console.json` checked in
+  before this, a saved spec — and open exactly as before, now shown as **Other** (which is already
+  drawn in the layout's own shape). Three new shortcuts act on the focused pane: `Ctrl+Alt+w` for
+  its Web view, `Ctrl+Alt+m` for its Markdown viewer (starting `viewmd` if needed), and
+  `Ctrl+Alt+r` for resize mode, where `h` `j` `k` `l` or the arrows resize the pane and `Enter`,
+  `Esc` or `Ctrl+Alt+r` leaves — the same keys i3 uses, which the console had the machinery for but
+  never bound. `Ctrl+Alt+b` is unchanged: as in i3, it is where the next pane opens.
+  See [Layouts](BOOTH_CONSOLE.md#layouts) and [Keyboard Shortcuts (Tiling)](BOOTH_CONSOLE.md#keyboard-shortcuts-tiling).
+
 - **Fixed: the Console UI's `Ctrl+Alt` tiling shortcuts now work on a Mac.** Every one of them
   did nothing there — focus, move, open, close, equalize — while working on Linux and Windows.
   macOS calls the combination Control+Option, and Option is that layout's AltGr: the browser

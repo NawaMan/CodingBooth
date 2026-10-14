@@ -707,26 +707,11 @@
         <button data-layout="hsplit" title="Left - Right">
           <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="8" y1="1" x2="8" y2="13" stroke="currentColor" stroke-width="1"/></svg>
         </button>
-        <button data-layout="left-main" title="Left Main">
-          <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="10" y1="1" x2="10" y2="13" stroke="currentColor" stroke-width="1"/><line x1="10" y1="7" x2="15" y2="7" stroke="currentColor" stroke-width="1"/></svg>
-        </button>
-        <button data-layout="right-main" title="Right Main">
-          <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="6" y1="1" x2="6" y2="13" stroke="currentColor" stroke-width="1"/><line x1="1" y1="7" x2="6" y2="7" stroke="currentColor" stroke-width="1"/></svg>
-        </button>
         <button data-layout="vsplit" title="Top - Bottom">
           <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" stroke-width="1"/></svg>
         </button>
-        <button data-layout="top-main" title="Top Main">
-          <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="1" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1"/><line x1="8" y1="8" x2="8" y2="13" stroke="currentColor" stroke-width="1"/></svg>
-        </button>
-        <button data-layout="bottom-main" title="Bottom Main">
-          <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="1" y1="6" x2="15" y2="6" stroke="currentColor" stroke-width="1"/><line x1="8" y1="1" x2="8" y2="6" stroke="currentColor" stroke-width="1"/></svg>
-        </button>
         <button data-layout="quad" title="Quad">
           <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="8" y1="1" x2="8" y2="13" stroke="currentColor" stroke-width="1"/><line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" stroke-width="1"/></svg>
-        </button>
-        <button data-layout="grid6" title="Six (3 columns × 2 rows)">
-          <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="5.5" y1="1" x2="5.5" y2="13" stroke="currentColor" stroke-width="1"/><line x1="10.5" y1="1" x2="10.5" y2="13" stroke="currentColor" stroke-width="1"/><line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" stroke-width="1"/></svg>
         </button>
         <button id="tree-layout" title="Other layout" style="display:none"></button>
         <span id="shortcut-hint" class="shortcut-hint" aria-live="polite"></span>
@@ -1681,6 +1666,15 @@
         return (e.key || "").toLowerCase();
       }
 
+      // A pane header's own button, pressed from the keyboard. Clicking it keeps
+      // the Web view's tab state and the Markdown viewer's start — the viewmd
+      // call, its busy guard, the toggle back to the terminal — in one place
+      // rather than a second copy of each here.
+      function clickPaneHeaderButton(selector) {
+        const button = document.querySelector(".pane-" + focusedPane + " " + selector);
+        if (button) button.click();
+      }
+
       function tilingAction(key, shift) {
         const dir = tilingDirs[key];
         if (dir) return shift ? function() { tilingMove(dir); } : function() { tilingFocus(dir); };
@@ -1694,9 +1688,13 @@
           case "v": return function() { setPendingSplit("v"); };
           case "e": return tilingToggleSplit;
           case "=": return tilingEqualize;
-          // Ctrl+Alt+r (resize mode) is off for now; dragging a divider resizes.
+          // i3's resize mode: h j k l (or arrows) resize, Enter, Esc or
+          // Ctrl+Alt+r again leaves. Dragging a divider still works.
+          case "r": return function() { setResizeMode(true); };
           case "enter": return function() { tilingOpen(null); };
           case "f": return tilingZoom;
+          case "w": return function() { clickPaneHeaderButton(".proxy-toggle"); };
+          case "m": return function() { clickPaneHeaderButton(".md-toggle"); };
           case "1": case "2": case "3": case "4": case "5": case "6":
             return function() { tilingGoTo(Number(key)); };
         }
@@ -1779,8 +1777,11 @@
             ["Ctrl+Alt+b / Ctrl+Alt+v", "Next pane opens beside / below this one"],
             ["Ctrl+Alt+1 … 6", "Go to session 1 … 6, opening it if closed"],
             ["Ctrl+Alt+f", "The pane fills the console / back"],
+            ["Ctrl+Alt+w", "The pane's Web view / back to its terminal"],
+            ["Ctrl+Alt+m", "The pane's Markdown viewer (starts viewmd) / back to its terminal"],
             ["Ctrl+Alt+e", "Turn the pane's split the other way (side by side ↔ stacked)"],
             ["Ctrl+Alt+=", "Equalize: every pane in the layout the same size"],
+            ["Ctrl+Alt+r", "Resize mode: h j k l (or arrows) resize the pane, Enter or Esc leaves"],
             ["Ctrl+Alt+Shift+h / j / k / l", "Move the pane left / down / up / right"],
             ["Ctrl+Alt+Shift+q  or  −", "Close the pane — its session keeps running"],
             ["Ctrl+Alt+Shift+x  or  ⏻", "Reset the session: a fresh shell (asks first; stops what runs in it)"]
