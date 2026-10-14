@@ -8,7 +8,8 @@
 # (tests/setups/test--console-tiling.sh); this is the page side it cannot see —
 # keys pressed inside a ttyd terminal reaching the console, panes moving
 # without their terminals reloading, and the Help dialog's added tab actually
-# showing (an added tab once rendered inside the hidden General panel).
+# showing (an added tab once rendered inside the hidden General panel), and the
+# shortcuts arriving as Windows and macOS deliver them, both emulated.
 #
 # Browser checks are capability-gated like test027: they need Node 22+ and a
 # Chrome/Chromium binary (CB_CHROMIUM_PATH, or google-chrome / chromium on PATH).
@@ -113,7 +114,7 @@ if ! wait_ready; then
 fi
 browser_phase fallback
 
-EXPECTED=19
+EXPECTED=21
 if [[ "$ALL" != true || "$CASES" -lt "$EXPECTED" ]]; then
   if [[ "$CASES" -lt "$EXPECTED" ]]; then
     print_test_result "false" "$0" "$((CASES + 1))" "Only $CASES of $EXPECTED browser cases reported"
