@@ -20,6 +20,12 @@
 #
 # Hermetic: CB_PREBUILT_URL points at a fake release tree served as file://, so
 # nothing reaches GitHub and no image is needed.
+#
+# The lib is written for the image — Ubuntu, GNU userland — and this file runs it
+# on the host, so each host-bound ingredient is probed and the case it belongs to
+# skips where the host has not got it: sha256sum (both the fixture and the lib
+# check assets with it), /etc/os-release (case 1's "native" half only), and a
+# file:// spelling this host's curl can read (every download case).
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -30,6 +36,13 @@ source ../common--source.sh
 
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 LIB="$REPO_ROOT/variants/base/setups/libs/prebuilt-source.sh"
+
+# Nothing here works without sha256sum: the fixture signs its tarballs with it and
+# the lib checks them with it. macOS carries one from 15 on, Git Bash has coreutils'.
+command -v sha256sum >/dev/null 2>&1 || {
+    echo "SKIP: no sha256sum on this host, and both the fixture and prebuilt-source.sh check assets with it"
+    exit 0
+}
 
 ALL_PASSED=true
 TEST_NUM=0
@@ -66,7 +79,21 @@ make_release() {  # make_release <version> <good|bad>
 make_release 1.0 good
 make_release 2.0 bad
 
-export CB_PREBUILT_URL="file://$TMP/release"
+# The fake release is served over file://, spelled the way this host's curl reads a
+# path: POSIX on Linux and macOS, but a drive-letter path under MSYS/Git Bash, whose
+# curl is a native Windows binary that knows nothing of /tmp/... — cygpath turns one
+# into the other, and a drive letter takes the third slash (file:///C:/...).
+local_file_url() {  # local_file_url <dir>
+    local path="$1"
+    if command -v cygpath >/dev/null 2>&1; then
+        path="$(cygpath -m "$path")"
+    fi
+    case "$path" in
+        [A-Za-z]:*) echo "file:///$path" ;;
+        *)          echo "file://$path" ;;
+    esac
+}
+export CB_PREBUILT_URL="$(local_file_url "$TMP/release")"
 # shellcheck source=/dev/null
 source "$LIB"
 
@@ -78,12 +105,35 @@ else
     report false "any-arch asset name is <tool>-<version>" "got: $got"
 fi
 
-distro="$(. /etc/os-release && echo "${ID}${VERSION_ID}")"
-got="$(cb_prebuilt_asset demo 1.0 native)"
-if [[ "$got" =~ ^demo-1\.0-${distro//./\\.}-(x86_64|arm64)$ ]]; then
-    report true "native asset name is <tool>-<version>-<distro>-<arch> ($got)"
+# The native name is built from /etc/os-release's ID and VERSION_ID, which only the
+# Linux the image runs on has: macOS has no such file, and MSYS2's may carry an ID
+# with no VERSION_ID. The lib reads both unguarded, so this case wants both present
+# — and skips rather than dying on a branch that never runs outside the image. (The
+# whole file used to die here: `. /etc/os-release` under set -e took cases 2-5 with
+# it, so a Mac reported one failure where it should have reported four passes.)
+distro=""
+if [ -r /etc/os-release ]; then
+    distro="$( . /etc/os-release 2>/dev/null
+               [ -n "${ID:-}" ] && [ -n "${VERSION_ID:-}" ] && printf '%s%s' "$ID" "$VERSION_ID" )" \
+        || distro=""
+fi
+if [ -n "$distro" ]; then
+    got="$(cb_prebuilt_asset demo 1.0 native)"
+    if [[ "$got" =~ ^demo-1\.0-${distro//./\\.}-(x86_64|arm64)$ ]]; then
+        report true "native asset name is <tool>-<version>-<distro>-<arch> ($got)"
+    else
+        report false "native asset name is <tool>-<version>-<distro>-<arch>" "got: $got"
+    fi
 else
-    report false "native asset name is <tool>-<version>-<distro>-<arch>" "got: $got"
+    echo "SKIP: native asset names come from /etc/os-release (ID and VERSION_ID), which this host has not got ($(uname -s))"
+fi
+
+# Every case below fetches from that URL, so check once that this host's curl can
+# read a local file:// at all. Without the check, a spelling that never reached curl
+# would fail three cases for a reason that has nothing to do with the lib.
+if ! curl -fsS "${CB_PREBUILT_URL}/demo-1.0/demo-1.0.tar.gz.sha256" -o "$TMP/url-probe" 2>/dev/null; then
+    echo "SKIP: this host's curl cannot read ${CB_PREBUILT_URL}, so the download cases cannot run hermetically"
+    [ "$ALL_PASSED" = true ] && exit 0 || exit 1
 fi
 
 # 2. Good asset installs, top folder stripped
