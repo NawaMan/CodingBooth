@@ -247,6 +247,13 @@ workspace mount: code in the booth can change refs and objects, and write `.git/
 writable workspace (§1). Submodules are not mounted this way, so git does not work in a booth
 opened on a submodule.
 
+In a booth on any repository that has worktrees, booth also mounts each worktree's `.git` file —
+read-only, and only that one-line file, not the worktree — at the path git's record of it names.
+Without it every record looks stale in the container, and a `git worktree prune` there would drop
+worktrees that are alive on the host. Booth also writes one file per worktree into the repository's
+own `.git/worktrees/<id>/` (`cb-host-path`, the worktree's host path), from which it undoes a
+`git worktree repair` run in a booth.
+
 Read-only mounts (`:ro`), like the credential seeds templates add, do not ask — they leak what they
 contain (§3) but do not let the booth run anything on the host. A `--device` the host does not have
 does not ask either: booth drops it before the run. Nor do the four devices the table excepts —
