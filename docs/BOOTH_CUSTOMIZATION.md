@@ -538,10 +538,10 @@ under **This project** in the TUI and selectable with `--select`.
 
 ```bash
 #!/bin/bash
-# cb-template: DB seed                          ← required: the marker + display name
+# cb-template: DB seed
 # cb-disc:     Load fixture data into Postgres
 # cb-detail:   Longer text for the TUI detail pane.
-# cb-band:     90                               ← Boothfile order (default 50)
+# cb-band:     90
 # cb-requires: postgresql
 # cb-tags:     db, fixtures
 # cb-param:    SEED_SET default=small suggests=small,full
@@ -549,6 +549,9 @@ set -Eeuo pipefail
 SEED_SET="${1:-small}"
 ...
 ```
+
+`cb-template` is required (the marker, and the display name); `cb-band` is the Boothfile order
+(default 50). A key's value is everything after its colon, so never put a comment on the same line.
 
 ```bash
 booth config --no-tui . --select db-seed:full

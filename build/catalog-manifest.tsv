@@ -338,7 +338,7 @@ install	yarn	1.0.0	c7dae3e93b54c1052224c765e33748106f26da79adc97725b5c12a6134e0e
 helper	booth--envs	1.0.0	12d1b1092b570ba3129adcc326672f5fcfc828d6eefe6c5312f8bd8bce96d41d	variants/base/setups/booth--envs
 helper	booth--expose	1.0.0	c45b4b22252a6e67a72f72a7f235f25a1c9a13a78111c7d0df0a038a1cf36ab7	variants/base/setups/booth--expose
 helper	booth--idle-monitor	1.0.0	bd5c81c416f04c2ac415482a17d3bade424219ada60864305a4e45c8a9e00186	variants/base/setups/booth--idle-monitor
-helper	booth--info	1.0.0	43315066e78965f1c248188cfbc53b707ef3d181a0eb3386bdd4ea1e7d2ff313	variants/base/setups/booth--info
+helper	booth--info	1.0.1	c9b1ec967222372e600a42102b264289904a39aa46e3d4e488716511e6764a38	variants/base/setups/booth--info
 helper	booth--lifecycle-log	0.1.0	97553f9e1374ba00cc29bb6da4436132e5a9c84624b006b5f93009e8f3d58bae	variants/base/setups/booth--lifecycle-log
 helper	booth--msg	1.0.0	d47d05298421df358bf477766632feba3459011db13d41cc652b510fb49ff8c0	variants/base/setups/booth--msg
 helper	booth--restart	1.0.0	ba42f1b4055bd6aa52e398d72c7cc33a5df7747a41d250080b47c51b6c0e6761	variants/base/setups/booth--restart
