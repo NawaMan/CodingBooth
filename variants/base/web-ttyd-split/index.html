@@ -1644,6 +1644,21 @@
         k: ["v", -0.05], arrowup: ["v", -0.05], j: ["v", 0.05], arrowdown: ["v", 0.05]
       };
 
+      // macOS calls this Control+Option, and Option is that layout's AltGr: the
+      // browser reports AltGraph for it, and Firefox there drops altKey once
+      // Option composes a character. Option can never be a real AltGr on a Mac,
+      // so the AltGr veto below is for the other platforms only.
+      const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || "");
+
+      // Ctrl+Alt held, and not something else that merely looks like it.
+      function tilingModifiers(e) {
+        if (!e.ctrlKey || e.metaKey) return false;
+        const altGraph = typeof e.getModifierState === "function" && e.getModifierState("AltGraph");
+        // AltGr arrives as Ctrl+Alt on Windows; it is typing a character.
+        if (altGraph && !isMac) return false;
+        return e.altKey || (isMac && altGraph);
+      }
+
       // By the key's label (i3 binds keysyms), falling back to its position
       // for a layout that gives Ctrl+Alt+<key> no plain character.
       function tilingKeyName(e) {
@@ -1684,7 +1699,7 @@
         if (t && t.ownerDocument === document && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName || "")) return;
         e.preventDefault();
         e.stopImmediatePropagation();
-        if (key === "enter" || key === "escape" || (e.ctrlKey && e.altKey && key === "r")) {
+        if (key === "enter" || key === "escape" || (key === "r" && tilingModifiers(e))) {
           setResizeMode(false);
           return;
         }
@@ -1699,9 +1714,7 @@
           handleResizeKey(e);
           return;
         }
-        if (!e.ctrlKey || !e.altKey || e.metaKey) return;
-        // AltGr arrives as Ctrl+Alt on Windows; it is typing a character.
-        if (typeof e.getModifierState === "function" && e.getModifierState("AltGraph")) return;
+        if (!tilingModifiers(e)) return;
         const action = tilingAction(tilingKeyName(e), e.shiftKey);
         if (!action) return;
         e.preventDefault();

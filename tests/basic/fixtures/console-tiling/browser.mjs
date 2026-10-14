@@ -102,6 +102,22 @@ try {
     await send("Input.dispatchKeyEvent", { type: "keyUp", ...base });
     await sleep(300);
   }
+  // A real macOS keypress is the Option character with AltGraph set — and in
+  // Firefox there, without altKey at all — which Input.dispatchKeyEvent cannot
+  // express (CDP's modifier mask has no AltGraph bit). So the page dispatches
+  // it into the pane frame the keys would have landed in, the same window
+  // hookTilingFrame listens on. Returns what the page saw for AltGraph, so a
+  // browser that ignored modifierAltGraph fails the case instead of passing it.
+  async function frameKey(pane, init) {
+    const seen = await evaluate(`(() => {
+      const w = document.querySelector('.pane-${pane} .term-frame').contentWindow;
+      const ev = new w.KeyboardEvent("keydown", Object.assign({ bubbles: true, cancelable: true }, ${JSON.stringify(init)}));
+      w.dispatchEvent(ev);
+      return ev.getModifierState("AltGraph");
+    })()`);
+    await sleep(300);
+    return seen;
+  }
   async function typeLine(text) {
     for (const ch of text) await send("Input.dispatchKeyEvent", { type: "char", text: ch });
     await send("Input.dispatchKeyEvent", { type: "rawKeyDown", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13 });
@@ -331,6 +347,44 @@ try {
     report(firstId && keptId === firstId && asked.some((m) => /Reset session 2\?/.test(m))
         && dialogs.length >= 2 && newId && newId !== firstId,
       "Reset session asks first: Cancel keeps session 2 running, Ctrl+Alt+Shift+x then OK gives the pane a fresh one", { firstId, keptId, newId, asked });
+
+    // ---- the same shortcuts as Windows and a Mac deliver them ----
+    //
+    // Both platforms are emulated rather than taken from the host, so the run
+    // means the same thing on either. navigator.platform is read while the
+    // page's script runs, hence the override before each reload.
+    const ua = await evaluate(`navigator.userAgent`);
+    const asPlatform = async (platform) => {
+      await send("Emulation.setUserAgentOverride", { userAgent: ua, platform });
+      await send("Page.navigate", { url: url + "#mode=hsplit" });
+      return await until(`!!window.BoothTiling && document.querySelectorAll('.pane.active').length === 2`)
+        && await until(termReady(2));
+    };
+    const focusedNow = async () => (await evaluate(STATE)).focused;
+
+    // On Windows, AltGr arrives as Ctrl+Alt and is typing a character, not a
+    // shortcut; the same keys without it still tile.
+    let ready = await asPlatform("Win32");
+    const winStart = await focusedNow();
+    await frameKey(1, { key: "\u0142", code: "KeyL", ctrlKey: true, altKey: true, modifierAltGraph: true });
+    const winAltGr = await focusedNow();
+    await frameKey(1, { key: "l", code: "KeyL", ctrlKey: true, altKey: true });
+    const winPlain = await focusedNow();
+    report(ready && winStart === "1" && winAltGr === "1" && winPlain === "2",
+      "On Windows, AltGr typing a character is not a shortcut, while Ctrl+Alt+l still focuses right",
+      { ready, winStart, winAltGr, winPlain });
+
+    // On a Mac the same keys are Control+Option, and Option is that layout's
+    // AltGr: Chrome reports it alongside altKey, Firefox reports it instead.
+    ready = await asPlatform("MacIntel");
+    const macStart = await focusedNow();
+    const altGraphSeen = await frameKey(1, { key: "\u00ac", code: "KeyL", ctrlKey: true, altKey: true, modifierAltGraph: true });
+    const macChrome = await focusedNow();
+    await frameKey(2, { key: "\u02d9", code: "KeyH", ctrlKey: true, altKey: false, modifierAltGraph: true });
+    const macFirefox = await focusedNow();
+    report(ready && altGraphSeen && macStart === "1" && macChrome === "2" && macFirefox === "1",
+      "On a Mac, Control+Option focuses the pane — with altKey (Chrome) and with AltGraph alone (Firefox)",
+      { ready, altGraphSeen, macStart, macChrome, macFirefox });
   }
 } catch (e) {
   report(false, "The browser run completed", String(e && e.stack || e));
