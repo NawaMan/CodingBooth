@@ -4,6 +4,9 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The welcome banner no longer lists `lazygit`.** Its "Handy commands" list is shorter;
+  `lazygit` is still installed in every booth. Needs a rebuilt base image.
+
 - **A new booth's apt snapshot is the one its images were built against, and `today` is a
   week back.** `booth config` used to freeze a new booth's `install apt` to the day it was
   configured, so a booth configured before an image rebuild could pin an older snapshot than
@@ -66,8 +69,7 @@ This file contains a list of changes for each released version.
   Font icons (the Console UI and the desktop terminals already have the font; a host terminal
   needs its own), and [differ](https://github.com/JanSmrcka/differ) 1.8.1, so `differ review` works
   in any booth. Midnight Commander stays the default: `$EXPLORER` and `explorer` still open `mc`.
-  The welcome banner lists `spf` and `differ`. Select the `superfile` or `differ` template to pick
-  another release; a new `mc` template installs Midnight Commander from apt on an image built
+  Select the `superfile` or `differ` template to pick another release; a new `mc` template installs Midnight Commander from apt on an image built
   without it. The base image grows by about 36 MB. Needs a rebuilt base image.
 
 - **differ is now in the catalog: `setup differ` and a `differ` AI-tools template.**
