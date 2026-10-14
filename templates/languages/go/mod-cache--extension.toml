@@ -1,11 +1,15 @@
-cb-version = "0.1.0"
+cb-version = "0.2.0"
 display-name = "Go Download Cache"
 display-disc = "Share Go module and build caches across booths"
 display-detail = """Mounts two machine-wide volumes: booth-cache-gomod on the module cache (GOMODCACHE) and \
 booth-cache-gobuild on the build cache (GOCACHE). Every booth on this machine reuses the same downloads. \
 Installed binaries stay in ~/go/bin, which is not mounted. A runtime volume hides modules that go-mod baked \
-into the image at the same path. List the volumes with `docker volume ls --filter label=cb.volume=cache` \
-and reset one with `docker volume rm booth-cache-gomod`."""
+into the image at the same path. Both paths sit in coder's home, where `go install` at image build time \
+leaves a cache owned by the build-time uid — docker seeds a fresh volume from it, uid and all, and on a host \
+whose own uid differs coder then cannot write its own cache. booth-entry reads .booth/owner-permission.yaml \
+and sets coder:coder mode 1777 on every directory under both mounts, which also lets two host users share \
+them. List the volumes with `docker volume ls --filter label=cb.volume=cache` and reset one with \
+`docker volume rm booth-cache-gomod`."""
 display-order = 16
 auto-select = false
 tags = ["go", "cache"]
@@ -16,3 +20,22 @@ run-args = [
     "-v", "booth-cache-gomod:/home/coder/go/pkg/mod",
     "-v", "booth-cache-gobuild:/home/coder/.cache/go-build",
 ]
+
+# An image build fills GOCACHE/GOMODCACHE as the build-time coder (uid 1000):
+# `install go …@latest` in a Boothfile runs `go install`, which writes the build
+# cache at this very path. Docker pre-seeds a new volume from whatever the image
+# has there, so the volume inherits uid 1000 — and booth-entry's home sweep is
+# -xdev, so it chowns the mount point and nothing under it. On a host whose uid
+# is not 1000, `go build` then died on "permission denied" opening its own cache
+# entry. These two entries reach inside the mounts, which the home sweep cannot.
+[[owner-permission]]
+path = "/home/coder/go/pkg/mod"
+user = "coder"
+group = "coder"
+mode = "1777"
+
+[[owner-permission]]
+path = "/home/coder/.cache/go-build"
+user = "coder"
+group = "coder"
+mode = "1777"
