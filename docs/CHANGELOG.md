@@ -4,6 +4,16 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Fixed: an auto-picked booth port no longer pushes a `+OFFSET` published port past 65535.**
+  `--port NEXT` / `--port RANDOM` settle the booth port before the `+OFFSET` mappings in the
+  config are resolved, and every one of them counts off that port — so a high pick overflowed.
+  A booth that drew 65000 with `-p +8888:18888` asked docker for host port 73888 and died on
+  `invalid hostPort: 73888`: a number in no config file, with nothing to say which mapping made
+  it or that the pick was the variable. It hit roughly one run in six of a config like
+  `data-example`'s. The scan now reserves the headroom the largest offset needs, so no pick can
+  produce a mapping docker would refuse; a port you pin yourself is checked and refused by name
+  instead. See [The offset base](BOOTH_RUN.md#the-offset-base).
+
 - **`setup bash` installs Bash 3.2 prebuilt instead of compiling it.** 3.2.48 to 3.2.57,
   including the default 3.2.57, now come from the static builds published at
   [NawaMan/Bash32Ubuntu](https://github.com/NawaMan/Bash32Ubuntu/releases) for x86_64 and
