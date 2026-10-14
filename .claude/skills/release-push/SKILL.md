@@ -13,6 +13,7 @@ commit — they ride the same push.
 0.  git preflight (must be main, clean, --rc)
 0b. catalog version sweep — offer bumps; commit accepted ones (not the version commit)
 0c. catalog item versions — build/check-catalog-versions.sh must pass; bump cb-version where it fails
+0d. apt snapshot — pin apt-snapshot.txt a week back, move the examples to it → commit (not the version commit)
 1.  version.txt/README.md: X.Y.Z--rcN → X.Y.Z    → commit "X.Y.Z"
 2.                                                → git push origin main
 3.  version.txt/README.md: X.Y.Z → X.(Y+1).0--rc1 → commit "X.(Y+1).0--rc1"  → NO push
@@ -140,97 +141,6 @@ One commit for the accepted set (not one per tool unless the user asks). Tree mu
 step 1. Re-list `git log --oneline origin/main..main` so the push preview includes these commits.
 Do not mix catalog files into the version.txt commit.
 
-### Apt snapshot pin — a different staleness than the version sweep above
-
-Not a catalog version pin (the "skip example Boothfiles" line above is about tool versions, not
-this). `build/docker-build.sh` pins every image's own `apt-get` to a snapshot (`APT_SNAPSHOT`
-build-arg; `CB_APT_SNAPSHOT` env, else the last release's `apt-snapshot.txt`, else today — see
-`build/apt-snapshot--source.sh`, and `apt--install.sh` for why: the live archive drifts,
-and an exact-version dependency like `libc6-dev` → `libc6` can break a build months later for no
-code reason at all). `publish-docker-images.yaml` computes the id **once**, in `guard-no-rc`, and
-threads it through both `build-base` and `build-variants` as `CB_APT_SNAPSHOT` — they are separate
-amd64/arm64 matrix jobs that can straddle a UTC day boundary, so a per-job default would risk
-pinning one release's architectures (and base vs. variants) to different snapshots. Nothing to do
-here — just know it is not a per-job `date -u` before "simplifying" it back to one.
-
-A Boothfile's own `env APT_SNAPSHOT=...` (stamped by `booth config` at configuration time) is the
-part that *does* need checking here: it can go stale against the images *this* release is about to
-publish, the same way. Example Boothfiles are the case that actually bites — they get built and
-tested against whatever this release just shipped.
-
-**The rule is: an example's snapshot must be at or after the base image's.** Not "recent" — *not
-older than the base*. The base is built at its own snapshot, so its installed packages are
-whatever that day's archive held. An example pinned earlier asks apt for an older `-dev` package
-whose exact-version dependency the base has already upgraded, and apt will not downgrade an
-installed package to satisfy it. The failure reads like a broken archive, not a stale pin:
-
-```
-libsqlite3-dev : Depends: libsqlite3-0 (= 3.45.1-1ubuntu2.7) but 3.45.1-1ubuntu2.8 is to be installed
-E: Unable to correct problems, you have held broken packages.
-```
-
-(That one is real: `systemlib-example` pinned `20260914`, the base was rebuilt at `20260918`, and
-Ubuntu shipped a sqlite security update in between.)
-
-**Compare against the base's snapshot, not today's date.** The two differ whenever the base is
-built on a later day than this check runs — and a base can be **rebuilt on the same version**,
-which moves its snapshot with no version change to warn anyone. Read it from the published image:
-
-```bash
-docker buildx imagetools inspect nawaman/codingbooth:base-<version> --format '{{json .Image}}' \
-  | grep -o 'APT_SNAPSHOT=[0-9]*T[0-9]*Z' | sort -u
-```
-
-Re-run this whole check after **any** base rebuild, not only at release.
-
-**Which examples it can actually break.** Only `apt--install.sh` reads `APT_SNAPSHOT` — a
-Boothfile's `install apt ...` line, and the setups that install through it (latex, texstudio, i3,
-sway, wayland, xfce, erlang, plank, the theme/icon/cursor setups). A setup's own raw `apt-get`
-does not pass `--snapshot`. When a stale pin does break a build, `apt--install.sh` now says so —
-it compares against the image's `CB_IMAGE_APT_SNAPSHOT` and prints the `booth config
---apt-snapshot` fix — so a failure is no longer a mystery; this sweep just keeps it from
-happening in a release. The `install apt` examples, as of 2026-09-18:
-
-| Example | Pinned | `install apt` packages | Risk |
-| --- | --- | --- | --- |
-| `systemlib-example` | `20260918` | `ca-certificates`, `libcurl4-openssl-dev`, `libsqlite3-dev`, `sqlite3` | **high** — `-dev` packages pin exact library versions; broke at `20260914` on the `20260918` base |
-| `clang-example` | `20260918` | `nlohmann-json3-dev` | medium — header-only, few exact-version deps |
-| `turtle-example` | `20260918` | `tk`, `xvfb` | medium — `xvfb` pulls X libs the base may carry newer |
-| `apt-example` | `20260918` | `jq`, `ripgrep`, `tree` | low — leaf packages (its test004 reads the expected date from the Boothfile, so a bump needs no test edit) |
-
-The table drifts as examples are added. Regenerate it rather than trusting it:
-
-```bash
-grep -l '^install apt' examples/workspaces/*/.booth/Boothfile | while read -r bf; do
-  printf '%s  %s  %s\n' "$(basename "$(dirname "$(dirname "$bf")")")" \
-    "$(grep -o 'APT_SNAPSHOT=[0-9]*T[0-9]*Z' "$bf" | cut -d= -f2)" \
-    "$(grep -m1 '^arg APT_PKGS=' "$bf" | cut -d= -f2)"
-done
-```
-
-Report each one whose date is before the base's, and offer to bump it to the base's snapshot
-(same `booth config` stamp format: `YYYYMMDDT000000Z`) — same shape as the version sweep above:
-report, wait, apply only what's picked. Examples whose setups install through `apt--install.sh`
-(e.g. `latex-example`, `tiling-example`) consume their stamp too, though the grep above does not
-list them; a stamp on an example with neither is unconsumed, and bumping it is churn.
-
-**Bump it through `booth config`, never with `sed`.** Editing the `env APT_SNAPSHOT=` line by hand
-breaks the example's `.booth/.generated` fingerprint, and the example then opens as edited.
-Reconfiguring keeps a booth's existing snapshot, so move it explicitly — from inside the example
-directory, against the repo's own templates:
-
-```bash
-export CB_TEMPLATES_PATH="$PWD/templates"
-(cd examples/workspaces/<example> && \
-    ../../../codingbooth config --no-tui --overwrite --apt-snapshot <base-snapshot>)
-rm -f examples/workspaces/<example>/.booth/*.bak
-```
-
-That regenerates from the example's header, so it also picks up any template changes since the
-example was last configured. Look at the diff before committing (all three files: `Boothfile`,
-`config.toml`, `.booth/.generated`). If `booth config` says it could not read the example's edits
-back, the example holds hand-written content — ask before overwriting it.
-
 ## 0c. Catalog item versions — blocking
 
 Every catalog item carries a hand-written `cb-version` and a generated sha256
@@ -256,6 +166,61 @@ of HEAD means main was never rebased onto that release — stop and find out why
 Commit the bumps plus the regenerated manifest as one commit (`Bump catalog item versions for
 X.Y.Z`), separate from the version commit, then re-run the check until it reports `0 fail`. CI runs
 the same check on release and refuses to publish when it fails.
+
+## 0d. Apt snapshot — pin it, move the examples to it
+
+`apt-snapshot.txt` is the one apt date a release has. Three things read it, and they must agree:
+
+- **The images.** `build/docker-build.sh` pins every image's own `apt-get` to it (see
+  `build/apt-snapshot--source.sh`). In CI, `publish-docker-images.yaml` reads it **once**, in
+  `guard-no-rc`, and threads it through `build-base` and `build-variants` as `CB_APT_SNAPSHOT`, so
+  the amd64/arm64 matrix jobs cannot drift apart. CI only reads it: a missing file stops the
+  release. It no longer picks a date or pushes a commit of its own.
+- **The CLI.** `build/cli-build.sh` stamps it into the binary (`aptsnapshot.Release`); it is the
+  snapshot `booth config` freezes a **new** booth to, so a fresh booth starts at its image's
+  snapshot and never older.
+- **The examples.** Their Boothfiles' `env APT_SNAPSHOT=` must be at or after it.
+
+That is why the date is chosen **here**, in a commit, and not in CI: the release binaries are
+built from the pushed commit, so a date picked after it would ship a CLI and examples one release
+behind the images.
+
+**Why "not older" matters.** The base is built at its snapshot, so its installed packages are that
+day's. An example pinned earlier asks apt for an older `-dev` package whose exact-version dependency
+the base already has newer, and apt will not downgrade. It reads like a broken archive:
+
+```
+libssl-dev : Depends: libssl3t64 (= 3.5.5-1ubuntu3.5) but 3.5.5-1ubuntu3.7 is to be installed
+```
+
+(Real: `elixir-example` pinned `20260916` and `systemlib-example` `20260930` on a `20261004` base.)
+
+**Pin a week back, not today.** A snapshot id names a UTC day, and the day it is here can be one the
+snapshot service has not published yet. Seven days back exists everywhere — the same rule as
+`today` in `booth config` and the build fallback.
+
+```bash
+# GNU date, then BSD (macOS)
+day="$(date -u -d '7 days ago' +%Y%m%d 2>/dev/null || date -u -v-7d +%Y%m%d)"
+echo "${day}T000000Z" > apt-snapshot.txt
+./build/cli-build.sh                       # not required for the bump, but keeps ./codingbooth in step
+examples/sync-apt-snapshot.sh              # moves every example pinned older, via booth config
+examples/ensure-config.sh | tail -1        # must report STALE-APT 0
+```
+
+`sync-apt-snapshot.sh` bumps through `booth config --apt-snapshot`, never `sed`, so each example's
+`.booth/.generated` fingerprint stays valid. Only older pins move; an empty pin (no freeze) is
+kept. Reconfiguring also re-copies template-owned files (`.booth/startups/`, `.booth/setups/`,
+seeds under `.booth/shared/`) — **look at the diff and keep only `Boothfile` and `.generated`**
+unless a refresh of those is wanted; a `.booth/setups/` copy of a built-in shadows it.
+
+Commit `apt-snapshot.txt` and the examples together (`Pin apt snapshot to <id> for X.Y.Z`),
+separate from the version commit. If the pin did not move (re-running a release the same week),
+there is nothing to commit.
+
+**Local images built before this commit are older than the new pin.** That is fine — an example
+newer than its image installs; only older fails. The next `./build/docker-build.sh` reads the new
+pin.
 
 ### Go-ahead to drop the rc
 

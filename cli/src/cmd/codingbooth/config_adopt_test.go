@@ -264,11 +264,16 @@ func TestApplyBoothAptSnapshot_EnvOverrideMovesIt(t *testing.T) {
 	assert.True(t, strings.HasPrefix(out.Boothfile.Content, "env APT_SNAPSHOT=20260201T000000Z\n"))
 }
 
-func TestApplyBoothAptSnapshot_NewBoothGetsToday(t *testing.T) {
+func TestApplyBoothAptSnapshot_NewBoothGetsTheReleaseSnapshot(t *testing.T) {
 	t.Setenv("CB_APT_SNAPSHOT", "")
+	saved := aptsnapshot.Release
+	t.Cleanup(func() { aptsnapshot.Release = saved })
+	aptsnapshot.Release = "20261004T000000Z"
+
 	out := &output.BoothOutput{Boothfile: &output.BoothfileContent{Content: "setup go\n"}}
 	applyBoothAptSnapshot(out, t.TempDir(), initFlags{})
-	assert.True(t, strings.HasPrefix(out.Boothfile.Content, "env APT_SNAPSHOT="+aptSnapshotID()+"\n"))
+	assert.True(t, strings.HasPrefix(out.Boothfile.Content, "env APT_SNAPSHOT=20261004T000000Z\n"),
+		"a new booth is frozen to its images' snapshot, not the configure date: %q", out.Boothfile.Content)
 }
 
 func TestApplyBoothAptSnapshot_EmptyLineMeansNoFreezeAndIsKept(t *testing.T) {

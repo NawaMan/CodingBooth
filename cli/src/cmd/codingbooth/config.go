@@ -93,14 +93,15 @@ func shouldUseWebUI() bool {
 }
 
 // aptSnapshotID returns the Ubuntu archive snapshot id used to freeze `install apt`
-// installs. `booth config` stamps the configuration date (UTC, day granularity) so
-// that apt resolves against a frozen archive on every rebuild. CB_APT_SNAPSHOT
-// overrides the computed value (used by tests and for pinning a specific snapshot).
+// installs. `booth config` stamps the snapshot this release's images were built
+// against (aptsnapshot.Default) so that apt resolves against a frozen archive on
+// every rebuild, and never one older than the image's own packages.
+// CB_APT_SNAPSHOT overrides it (used by tests and for pinning a specific snapshot).
 func aptSnapshotID() string {
 	if id, set := aptSnapshotEnv(); set {
 		return id
 	}
-	return aptsnapshot.Today()
+	return aptsnapshot.Default()
 }
 
 // aptSnapshotHint is how the CLI says what --apt-snapshot does take.
@@ -170,7 +171,8 @@ func applyBoothAptSnapshot(out *output.BoothOutput, targetPath string, flags ini
 //     package to whatever the archive held that day — the opposite of freezing.
 //     An empty line counts: it is how a booth records "no freeze", and treating it
 //     as missing would re-stamp the freeze the user removed.
-//  4. Today — the first configure of a booth that has no line yet.
+//  4. The release's snapshot (aptsnapshot.Default) — the first configure of a
+//     booth that has no line yet.
 //
 // "" means no freeze.
 func resolveBoothAptSnapshot(flags initFlags, targetPath string) string {
@@ -183,7 +185,7 @@ func resolveBoothAptSnapshot(flags initFlags, targetPath string) string {
 	if existing, ok := readExistingAptSnapshot(targetPath); ok {
 		return existing
 	}
-	return aptsnapshot.Today()
+	return aptsnapshot.Default()
 }
 
 // applyAptSnapshotID prepends `env APT_SNAPSHOT=<id>`. An empty id still writes the
@@ -644,7 +646,7 @@ func applyInteractiveResult(version, targetPath string, setup interactiveSetup, 
 	flags.version = result.StringFields["templates-version"]
 
 	// The field was preloaded with the snapshot this booth already freezes apt to
-	// (or today's, on a first configure), so whatever comes back is the user's
+	// (or the release's, on a first configure), so whatever comes back is the user's
 	// answer — including empty, which turns the freeze off.
 	// The TUI refuses to save an invalid value, so this only guards the web UI and
 	// anything else that hands back a ConfigResult.
@@ -1679,9 +1681,11 @@ Flags:
   --templates-path <dir>   Use local templates directory
   --version <ver>          Use templates from a specific release version
   --apt-snapshot <id>      Freeze apt to an Ubuntu archive snapshot. An id
-                           (20260601T000000Z), today (move it to now), or none
+                           (20260601T000000Z), today (move it to a week ago —
+                           a day every timezone has a snapshot for), or none
                            (no freeze). Without it, an existing booth keeps the
-                           snapshot it has and a new booth is frozen to today.
+                           snapshot it has and a new booth is frozen to the one
+                           this release's images were built against.
   --overwrite              Overwrite existing files without prompting, including
                            hand-written ones (--no-tui only)
   --beside                 Keep hand-written files; write the generated content

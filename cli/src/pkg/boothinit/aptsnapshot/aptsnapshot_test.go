@@ -56,3 +56,35 @@ func TestToday_IsUTCMidnight(t *testing.T) {
 	_, err := Parse(Today())
 	assert.NoError(t, err, "today's own id must parse")
 }
+
+// `today` lands a week back, so it never names a day some timezone — or the
+// snapshot service — has not reached yet.
+func TestToday_IsAWeekBack(t *testing.T) {
+	now := time.Now().UTC()
+	// Either side of the call, in case it straddles UTC midnight.
+	want := []string{
+		now.AddDate(0, 0, -7).Format("20060102") + "T000000Z",
+		time.Now().UTC().AddDate(0, 0, -7).Format("20060102") + "T000000Z",
+	}
+	assert.Contains(t, want, Today())
+}
+
+func TestDefault_IsTheReleaseSnapshot(t *testing.T) {
+	saved := Release
+	t.Cleanup(func() { Release = saved })
+
+	Release = "20261004T000000Z"
+	assert.Equal(t, "20261004T000000Z", Default())
+}
+
+// A binary not built by cli-build.sh has no stamp; a stamp that is not a
+// snapshot id is no better. Both fall back to Today rather than write junk.
+func TestDefault_FallsBackToToday(t *testing.T) {
+	saved := Release
+	t.Cleanup(func() { Release = saved })
+
+	for _, release := range []string{"", "none", "today", "2026-10-04", "99991231T000000Z"} {
+		Release = release
+		assert.Equal(t, Today(), Default(), "Release=%q", release)
+	}
+}

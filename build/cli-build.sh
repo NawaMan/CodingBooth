@@ -38,9 +38,22 @@ fi
 # binary (version.txt unchanged) is still distinguishable in the config TUI
 # header from whatever a project's wrapper/cache had already resolved.
 BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-LDFLAGS="-X main.version=${VERSION} -X main.buildDate=${BUILD_DATE}"
 
-echo "🔨 Building ${APP_NAME} v${VERSION}"
+# The apt snapshot this release's images are built against, stamped in as the
+# snapshot a new booth is frozen to — so a fresh booth is never older than its
+# own image. Resolved exactly as docker-build.sh resolves it (CB_APT_SNAPSHOT,
+# else apt-snapshot.txt, else a week back), so the two cannot disagree.
+APT_SNAPSHOT=$(
+    cd "${SCRIPT_DIR}/.." &&
+    source build/apt-snapshot--source.sh &&
+    resolve_apt_snapshot &&
+    echo "$APT_SNAPSHOT"
+) || { echo "❌ Error: could not resolve the apt snapshot to stamp in"; exit 1; }
+
+LDFLAGS="-X main.version=${VERSION} -X main.buildDate=${BUILD_DATE}"
+LDFLAGS+=" -X github.com/nawaman/codingbooth/src/pkg/boothinit/aptsnapshot.Release=${APT_SNAPSHOT}"
+
+echo "🔨 Building ${APP_NAME} v${VERSION} (apt snapshot ${APT_SNAPSHOT})"
 echo "=================================="
 echo ""
 

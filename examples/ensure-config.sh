@@ -21,8 +21,11 @@
 #   CHANGES    regenerates fine, but the output differs (the catalog moved on)
 #   COLLISION  refused: hand-written files would be overwritten
 #   ERROR      booth config failed for another reason
+#   STALE-APT  its apt snapshot is older than the release's (apt-snapshot.txt),
+#              which the images are built at; installs can fail on it.
+#              Fix with examples/sync-apt-snapshot.sh
 #
-# Exits 1 when any example is COLLISION or ERROR.
+# Exits 1 when any example is COLLISION, ERROR or STALE-APT.
 
 set -uo pipefail
 
@@ -39,7 +42,7 @@ EXAMPLES=()
 for arg in "$@"; do
     case "$arg" in
         --diff)    SHOW_DIFF=true ;;
-        -h|--help) sed -n '6,26p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '6,30p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
         -*)        echo "Unknown option: $arg" >&2; exit 2 ;;
         *)         EXAMPLES+=("${arg%/}") ;;
     esac
@@ -56,6 +59,11 @@ if [[ ${#EXAMPLES[@]} -eq 0 ]]; then
         [[ -d "$dir/.booth" ]] && EXAMPLES+=("$(basename "$dir")")
     done
 fi
+
+# The snapshot the images are built at. An example pinned older than it can fail
+# to install apt packages (apt will not downgrade one the image already has).
+RELEASE_APT_SNAPSHOT="$(tr -d ' 	
+' < "$REPO_DIR/apt-snapshot.txt" 2>/dev/null)"
 
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
@@ -78,7 +86,7 @@ split_dryrun() {
     ' "$out"
 }
 
-count_ok=0 count_readback=0 count_changes=0 count_collision=0 count_error=0
+count_ok=0 count_readback=0 count_changes=0 count_collision=0 count_error=0 count_stale=0
 width=0
 for name in "${EXAMPLES[@]}"; do
     (( ${#name} > width )) && width=${#name}
@@ -136,17 +144,27 @@ for name in "${EXAMPLES[@]}"; do
         fi
     fi
 
+    # Regenerates fine, but pinned behind the images: say so, it fails the run.
+    if [[ "$verdict" == OK || "$verdict" == READ-BACK || "$verdict" == CHANGES ]] && [[ -n "$RELEASE_APT_SNAPSHOT" ]]; then
+        pinned="$(grep -m1 -o '^env APT_SNAPSHOT=[0-9TZ]*' "$ws/.booth/Boothfile" 2>/dev/null | cut -d= -f2)"
+        if [[ -n "$pinned" && "$pinned" < "$RELEASE_APT_SNAPSHOT" ]]; then
+            verdict=STALE-APT
+            detail="apt snapshot $pinned is older than the release's $RELEASE_APT_SNAPSHOT -- run examples/sync-apt-snapshot.sh"
+        fi
+    fi
+
     case "$verdict" in
         OK)        count_ok=$((count_ok + 1)) ;;
         READ-BACK) count_readback=$((count_readback + 1)) ;;
         CHANGES)   count_changes=$((count_changes + 1)) ;;
         COLLISION) count_collision=$((count_collision + 1)) ;;
         ERROR)     count_error=$((count_error + 1)) ;;
+        STALE-APT) count_stale=$((count_stale + 1)) ;;
     esac
     printf "%-*s  %-9s  %s\n" "$width" "$name" "$verdict" "$detail"
 done
 
 echo
-echo "Total ${#EXAMPLES[@]}: OK $count_ok, READ-BACK $count_readback, CHANGES $count_changes, COLLISION $count_collision, ERROR $count_error"
+echo "Total ${#EXAMPLES[@]}: OK $count_ok, READ-BACK $count_readback, CHANGES $count_changes, COLLISION $count_collision, ERROR $count_error, STALE-APT $count_stale"
 
-(( count_collision + count_error == 0 ))
+(( count_collision + count_error + count_stale == 0 ))

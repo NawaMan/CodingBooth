@@ -4,6 +4,17 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A new booth's apt snapshot is the one its images were built against, and `today` is a
+  week back.** `booth config` used to freeze a new booth's `install apt` to the day it was
+  configured, so a booth configured before an image rebuild could pin an older snapshot than
+  the image and fail to install `-dev` packages (apt cannot downgrade what the image already
+  has). It now stamps the release's own snapshot (`apt-snapshot.txt`), so images, the CLI and
+  the example workspaces all share one date. `today` — in `--apt-snapshot`, the TUI's `TODAY`,
+  `CB_APT_SNAPSHOT`, and the image build's fallback — now means seven days ago (UTC), a day the
+  snapshot service has published whatever your timezone. Existing booths keep their snapshot.
+  The release pin is now chosen when the release is cut and committed with it, instead of by
+  the image workflow. See [REPRODUCIBILITY.md](REPRODUCIBILITY.md#apt--pin-the-snapshot-not-the-package).
+
 - **Fixed: an auto-picked booth port no longer pushes a `+OFFSET` published port past 65535.**
   `--port NEXT` / `--port RANDOM` settle the booth port before the `+OFFSET` mappings in the
   config are resolved, and every one of them counts off that port — so a high pick overflowed.
