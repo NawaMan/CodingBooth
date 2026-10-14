@@ -52,6 +52,19 @@ state_of() {
   fi
 }
 
+# The code path as booth records it in the cb.code-path label. On Linux/macOS
+# that is the path itself; under Git Bash the shell's "/tmp/tmp.X" reaches the
+# Windows binary as C:/Users/.../Temp/tmp.X and booth stores its absolute
+# Windows form, "C:\Users\...\Temp\tmp.X" — which is what a label filter has to
+# name, and what a comparison has to expect.
+recorded_code_path() {
+  if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+    cygpath -w "$1"
+  else
+    printf '%s\n' "$1"
+  fi
+}
+
 code_path_label() {
   docker inspect -f '{{index .Config.Labels "cb.code-path"}}' "$1" 2>/dev/null || true
 }
@@ -123,17 +136,18 @@ CREATE_OUT="$(run_coding_booth exec --code "$CODE_C" --run --keep-alive -- whoam
 CREATE_EXIT=$?
 set -e
 
-CREATED_NAME_C="$(docker ps -a --filter "label=cb.code-path=$CODE_C" --format '{{.Names}}' | head -1)"
+WANT_LABEL_C="$(recorded_code_path "$CODE_C")"
+CREATED_NAME_C="$(docker ps -a --filter "label=cb.code-path=$WANT_LABEL_C" --format '{{.Names}}' | head -1)"
 CREATED_LABEL="$(code_path_label "${CREATED_NAME_C:-__none__}")"
 
 if [[ $CREATE_EXIT -eq 0 ]] \
   && [[ "$CREATE_OUT" == *"coder"* ]] \
   && [[ -n "$CREATED_NAME_C" ]] \
-  && [[ "$CREATED_LABEL" == "$CODE_C" ]]; then
+  && [[ "$CREATED_LABEL" == "$WANT_LABEL_C" ]]; then
   print_test_result "true" "$0" "4" "--code --run creates a new booth rooted at that code path"
 else
   print_test_result "false" "$0" "4" "--code --run should create a booth labeled with CODE_C"
-  echo "  exit=$CREATE_EXIT name=$CREATED_NAME_C label=$CREATED_LABEL want=$CODE_C"
+  echo "  exit=$CREATE_EXIT name=$CREATED_NAME_C label=$CREATED_LABEL want=$WANT_LABEL_C"
   echo "  output: $CREATE_OUT"
   FAILED=$((FAILED + 1))
 fi
@@ -154,7 +168,9 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 6) --name + --code together, mismatched, is a hard error naming both paths
+# 6) --name + --code together, mismatched, is a hard error naming both paths.
+#    Matched on the mktemp basename (unique per run): the message names the
+#    recorded form, Go-quoted, which on Windows reads "C:\\Users\\...\\tmp.X".
 # ---------------------------------------------------------------------------
 set +e
 MISMATCH_ERR="$(run_coding_booth exec --name "$NAME1" --code "$CODE_B" -- whoami 2>&1)"
@@ -163,8 +179,8 @@ set -e
 
 if [[ $MISMATCH_EXIT -ne 0 ]] \
   && grep -q "was created from code path" <<<"$MISMATCH_ERR" \
-  && grep -qF "$CODE_A" <<<"$MISMATCH_ERR" \
-  && grep -qF "$CODE_B" <<<"$MISMATCH_ERR"; then
+  && grep -qF "$(basename "$CODE_A")" <<<"$MISMATCH_ERR" \
+  && grep -qF "$(basename "$CODE_B")" <<<"$MISMATCH_ERR"; then
   print_test_result "true" "$0" "6" "--name + mismatched --code refuses, naming both paths"
 else
   print_test_result "false" "$0" "6" "--name + mismatched --code should refuse and name both paths"
