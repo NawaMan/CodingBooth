@@ -42,7 +42,7 @@ EXAMPLES=()
 for arg in "$@"; do
     case "$arg" in
         --diff)    SHOW_DIFF=true ;;
-        -h|--help) sed -n '6,30p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '6,28p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
         -*)        echo "Unknown option: $arg" >&2; exit 2 ;;
         *)         EXAMPLES+=("${arg%/}") ;;
     esac
@@ -62,8 +62,7 @@ fi
 
 # The snapshot the images are built at. An example pinned older than it can fail
 # to install apt packages (apt will not downgrade one the image already has).
-RELEASE_APT_SNAPSHOT="$(tr -d ' 	
-' < "$REPO_DIR/apt-snapshot.txt" 2>/dev/null)"
+RELEASE_APT_SNAPSHOT="$(tr -d ' \t\r\n' < "$REPO_DIR/apt-snapshot.txt" 2>/dev/null)"
 
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
