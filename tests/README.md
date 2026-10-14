@@ -217,6 +217,26 @@ with `setsid: command not found` — and the weakest of them *passed* on it, bec
 and no container" is satisfied just as well by a missing binary as by booth refusing. A test that
 asserts a refusal must assert on the refusal's own text, or a broken harness reads as green.
 
+## A deadline never lets the terminal stop its command
+
+`timeout_run` runs its command in a process group of its own — that is what lets it signal the
+whole tree. That group is never the terminal's foreground group, so terminal access from it stops
+the group: SIGTTIN on a read, SIGTTOU on a `tcsetattr`. The watchdog stops with it, the deadline
+never fires, and the call waits forever rather than failing. Run from a shell, booth saw a terminal
+on stdin, started `docker run -i`, docker read the terminal, and `complex/test-boothfile-bash` sat
+for 2.5h on one `bash-3.2 --version`. CI has no terminal, so only a run from a shell ever saw it.
+
+Two things keep that from happening. `timeout_run` ignores SIGTTIN and SIGTTOU in its command, so
+the kernel skips the stop and the read fails with `EIO` instead — the test fails in a second and
+the suite moves on. `SIG_IGN` survives `exec`, so it reaches the command's children, the docker CLI
+included. And the watchdog sends CONT behind its signal, so a command stopped some other way still
+takes the deadline instead of outliving it.
+
+Stdin itself is left alone: a stdin you pipe in still reaches the command, and a test that needs a
+terminal of its own makes one with `pty_run`. What `capture_codingbooth` does is narrower — it
+hands booth `/dev/null`, because booth passes `-i` to `docker run` whenever stdin is open, and a
+container on the suite's own terminal swallows whatever the operator types at the running suite.
+
 ## `set -euo pipefail` will eat your test
 
 Every suite runs under it, and it silently skips cases rather than failing loudly. Both of these

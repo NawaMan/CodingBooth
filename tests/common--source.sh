@@ -285,13 +285,40 @@ timeout_run() {
     signal="${signal#SIG}"   # INT, not SIGINT: a perl %SIG key, and what -s takes
     local seconds="$1" grace=5; shift
 
-    # perl -e '…' SIG CMD… : un-ignore SIG, then *become* CMD, so the pid the
-    # watchdog signals is still CMD's own.
+    # Terminal access must not stop CMD.
+    #
+    # Every branch below runs CMD in a process group of its own, which is never
+    # the terminal's foreground group. A read of the terminal from such a group
+    # raises SIGTTIN, a tcsetattr raises SIGTTOU, and either one stops the whole
+    # group — CMD, its children, and the perl watchdog with them. A stopped
+    # watchdog never fires, so the call does not time out: it waits forever. Run
+    # from a shell, booth saw a terminal on stdin, started `docker run -i`,
+    # docker read the terminal, and complex/test-boothfile-bash sat for 2.5h on
+    # one `bash-3.2 --version`. CI has no terminal, so only a run from a shell
+    # ever sees it.
+    #
+    # Ignoring the two signals is what makes that read fail instead of freeze:
+    # the kernel skips the stop for a process that ignores the signal and the
+    # read returns EIO, so CMD fails its test in a second and the suite moves on.
+    # SIG_IGN survives exec, so it reaches CMD's own children — the docker CLI
+    # included, which is the one that actually touches the terminal. CMD's stdin
+    # is left as it is: a stdin the caller piped in still reaches CMD, and a test
+    # that needs a terminal of its own still gets one from pty_run.
+    #
+    # What the TTOU half gives up: a tcsetattr from the background now succeeds
+    # instead of stopping, so a CMD killed between "set raw" and "restore" leaves
+    # the terminal as it set it (`stty sane` puts it back). That is the trade the
+    # other way round from a suite that sits for hours, which is what it did.
+    #
+    # perl -e '…' SIG CMD… : un-ignore SIG, ignore the two stop signals, then
+    # *become* CMD, so the pid the watchdog signals is still CMD's own.
     local -a unignore=()
     if command -v perl >/dev/null 2>&1; then
         unignore=(perl -e '
 my $signal = shift;
 $SIG{$signal} = "DEFAULT";
+$SIG{TTIN} = "IGNORE";
+$SIG{TTOU} = "IGNORE";
 exec { $ARGV[0] } @ARGV;
 print STDERR "$ARGV[0]: $!\n";
 exit(127);
@@ -328,9 +355,17 @@ my $killed = 0;
 # (setpgid can fail). kill returns how many it signalled, so the fallback needs
 # no getpgid — which perl POSIX does not even define, and asking for it took the
 # watchdog down with "Undefined subroutine" and left CMD running untimed.
+#
+# CONT behind the signal, every time. A stopped process does not act on a
+# catchable signal until it is continued, so a CMD that someone else stopped —
+# or that stopped itself on a terminal the ignores above do not cover — would
+# take the TERM pending and keep sitting there, and the deadline would come and
+# go with nothing to show for it. SIGKILL needs no help; sending CONT with it
+# costs nothing and keeps the two paths the same shape.
 my $signal_tree = sub {
     my $sig = shift;
     kill($sig, -$pid) or kill($sig, $pid);
+    kill("CONT", -$pid) or kill("CONT", $pid);
 };
 $SIG{ALRM} = sub {
     if ($timedout) { $killed = 1; $signal_tree->("KILL"); return; }
@@ -1204,6 +1239,15 @@ get_booth_version() {
 # Each attempt is preceded by a marker line so the two retries stay separable.
 # The caller is responsible for creating the log's parent directory.
 #
+# Booth is given /dev/null on stdin. A capture reads booth's output and never
+# writes to it, and booth passes `-i` to `docker run` whenever stdin is open —
+# so on a terminal the container's stdin is the suite's own terminal. That costs
+# twice over: the container swallows whatever the operator types at the running
+# suite, and if anything has put the call in a background process group, docker's
+# read of the terminal stops it (see timeout_run). test-boothfile-superfile
+# already spelled `</dev/null` into its *container* command to keep a TUI off the
+# terminal; this is the same fix, one level up, for every caller.
+#
 # Usage:
 #   ACTUAL=$(capture_codingbooth "head -1" --silence-build -- gcc --version)
 capture_codingbooth() {
@@ -1226,12 +1270,12 @@ capture_codingbooth() {
   # dependent, so it only fires on a loaded machine — the failure then looks like
   # flakiness and the retry below hides it instead of fixing it.
   _capture_attempt 1 "$@"
-  out=$(run_coding_booth "$@" 2>>"$errdest") || out=""
+  out=$(run_coding_booth "$@" 2>>"$errdest" </dev/null) || out=""
   out=$(printf '%s\n' "$out" | eval "$pipeline")
   if [[ -z "$out" ]]; then
     sleep 2
     _capture_attempt 2 "$@"
-    out=$(run_coding_booth "$@" 2>>"$errdest") || out=""
+    out=$(run_coding_booth "$@" 2>>"$errdest" </dev/null) || out=""
     out=$(printf '%s\n' "$out" | eval "$pipeline")
   fi
   printf '%s\n' "$out"
