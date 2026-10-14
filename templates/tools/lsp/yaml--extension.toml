@@ -1,0 +1,12 @@
+cb-version = "0.1.0"
+display-name = "YAML (yaml-language-server)"
+display-disc = "Red Hat's YAML server, with schema validation from SchemaStore"
+display-order = 12
+auto-select = false
+requires = ["nodejs"]
+tags = ["lsp", "language-server", "yaml"]
+
+[segments]
+"Boothfile--60" = """
+setup lsp--yaml
+"""

@@ -189,6 +189,18 @@ setup	libreoffice	1.0.0	c20c5ac0724088909c1e0bfa1b844c4aaad47d8f25285ce54b9dfab4
 setup	logo	0.1.0	508b45f46b768c84eca8adb35753e16e51e29bd72eebb4733620d0ae6df52875	variants/base/setups/logo--setup.sh
 setup	lombok-eclipse	1.0.0	4a8e7542bba4ffcdb70b0e17867c16f5646f394bc1c9d15ce7f2dc2146a7c6c8	variants/base/setups/lombok-eclipse--setup.sh
 setup	lombok-idea	0.1.0	32ea8debd47df5ecd96f954a1bcc4721e53cfbd292528de1dc7ba5a2922757b1	variants/base/setups/lombok-idea--setup.sh
+setup	lsp--bash	0.1.0	44b26f03208ba978052443ba0e06fc5156a98f7888a60ece80b3930c5d1f5dc3	variants/base/setups/lsp--bash--setup.sh
+setup	lsp--docker-compose	0.1.0	47ed95f628254ba6a362df96893244cfa3a7294ba7fc33399df10c3f63e14c4a	variants/base/setups/lsp--docker-compose--setup.sh
+setup	lsp--dockerfile	0.1.0	0eccd24649203a3d96e282fe2828bdb4ef2d4539951449306e85009f960bdd92	variants/base/setups/lsp--dockerfile--setup.sh
+setup	lsp--marksman	0.1.0	573cc8533de8c6861e49d390841df6354b718708a604d317c8052ef9daedd7b7	variants/base/setups/lsp--marksman--setup.sh
+setup	lsp--pylsp	0.1.0	ec6a850f7e1291a20548ddae53c95318868596dda57ac8d25e2d77ae518ac446	variants/base/setups/lsp--pylsp--setup.sh
+setup	lsp--sqls	0.1.0	9faa23f34e2dc7e56425489fe21e26cc90e96b0257ec56b237cb8d411ea6a305	variants/base/setups/lsp--sqls--setup.sh
+setup	lsp--tailwindcss	0.1.0	8be46bd06cf1214516c9acfeb7d36491109522eddfe03eba7211e6842056f268	variants/base/setups/lsp--tailwindcss--setup.sh
+setup	lsp--taplo	0.1.0	0f4406cfb49ffbeaf2f324b17bb34f12468f923b1914388030fb9372827a7b65	variants/base/setups/lsp--taplo--setup.sh
+setup	lsp--terraform-ls	0.1.0	1ad897a3956898cba2add4419ba077f47e87f4c1131e8d267f98632d155069d1	variants/base/setups/lsp--terraform-ls--setup.sh
+setup	lsp--typescript	0.1.0	ab056ebfb1c12d69564333df84a238c87b39aeefb784c56a3c6d575b4505de37	variants/base/setups/lsp--typescript--setup.sh
+setup	lsp--vscode-langservers	0.1.0	2f7aa3d3e7612b7b62629748c06d827946aed5c4cb439f99557a5873c59fa936	variants/base/setups/lsp--vscode-langservers--setup.sh
+setup	lsp--yaml	0.1.0	cf362c8928d7acf2ee65ede18ad526de39dc14daca2524062b7d153626121bb9	variants/base/setups/lsp--yaml--setup.sh
 setup	lua	1.0.0	4d56b33de1f7e499b032ce34b3d65cb58cbfe3f04df322505aacab8f314771e9	variants/base/setups/lua--setup.sh
 setup	lua-code-extension	1.0.0	c9947d26ad809b5a768ffa27604ed277460d2e0ba548c9452cadb79e08be3337	variants/base/setups/lua-code-extension--setup.sh
 setup	lua-nb-kernel	1.0.0	001fd2f052a142a81f9fe60c5b88c71f53e73c3b2ed90b543458f685a5c95da3	variants/base/setups/lua-nb-kernel--setup.sh
@@ -210,6 +222,7 @@ setup	mysql	1.0.0	60e0564af91ddf71101cf8022bb22c1c7979d1bf9dc60078aeaccd697ae04b
 setup	n8n	0.2.0	caaa53698aff9f66ba324bf33a8a00b3c1369ed92d30769871b279cdee68bb7e	variants/base/setups/n8n--setup.sh
 setup	nbgrader	1.0.0	07ab891bc09aae91e162808951150e06564731497b8f8affc3c018f1581ad218	variants/base/setups/nbgrader--setup.sh
 setup	neovim	1.0.0	bf81805049e5766eff3c6e6a2f2dde4658fa127d2257d1d0d383892fe74cc1b9	variants/base/setups/neovim--setup.sh
+setup	neovim-lsp	0.1.0	97e9018ffdee6cff75827272a9cb6c67741dbe3abec523c4c4349e8359091c49	variants/base/setups/neovim-lsp--setup.sh
 setup	network-whitelist	1.0.0	3d02b83cba6adfce82951ef427f109d42eed6c3979f577c210f7c02ae32a1742	variants/base/setups/network-whitelist--setup.sh
 setup	nginx	1.0.0	dbc90a29a20ddbd8ceea620903e7d8edeadc59bb114c9417c7cdc61dd956ea84	variants/base/setups/nginx--setup.sh
 setup	nim	1.0.0	be41e2610510734bc9f8f41f747112b51bb15024aa6dd4f43bb207cf052ffc6c	variants/base/setups/nim--setup.sh
@@ -327,6 +340,7 @@ install	gem	1.0.0	30283143a735660a27f127ddcbbe98347cc053fc0a3cb686f3aee9ff4a99c6
 install	go	1.0.0	ed62acb57ffe3face3251e179fe55647e466b4ec8d10e4ce09b3e74351de7930	variants/base/setups/go--install.sh
 install	hex	1.0.0	5a5be06dabc640025bc5462f5c635c7f3a6c9db38eb06d4094791d2c24db088f	variants/base/setups/hex--install.sh
 install	jetbrains-plugin	0.1.0	f3a0db39c95e8e5da538e772999657b98246abf6e30582825335433d1c90e3fb	variants/base/setups/jetbrains-plugin--install.sh
+install	lsp	0.1.0	0b521ace6520c50e9594aba45868a7a707b0c1024d8599128d327117cac21c1b	variants/base/setups/lsp--install.sh
 install	luarocks	1.0.0	038f6604928bdd69f3b8b919a0cd7c8afa780b3485c7e9ddbc315ae5cb4949ab	variants/base/setups/luarocks--install.sh
 install	npm	1.0.0	60dd3186f1fa122ab66f0ae61ffa07b6e272a2d05100b08ba4e5b051ca8dcdc0	variants/base/setups/npm--install.sh
 install	pecl	1.0.0	10f8728a1a8c4fd3eda484340ec53e938de18659504d14de5230037194ca3d69	variants/base/setups/pecl--install.sh
@@ -367,6 +381,7 @@ lib	jetbrains-source.sh	0.1.0	dd1f0922678630909118a128d045d047eb49d0541ff439f72f
 lib	retry-source.sh	0.1.0	dc80e4474b59095be79b52489947dd6e7edae0bcb7efb5bc687b32e7f932d09e	variants/base/setups/libs/retry-source.sh
 lib	skip-setup.sh	1.0.0	ed256a1d9f447f755a6e7eb20cc5cef612aedf38d085740781eb064079da03ae	variants/base/setups/libs/skip-setup.sh
 assets	booth-web-preview	0.1.0	b7777911fb75cb633a8aeaf373bd3e3ac579736797db2d8dab740ddf1808e518	variants/base/setups/booth-web-preview/.cb-version
+assets	fresh-plugins	0.1.0	ed3a16c1ba1a58f58b6f5fbf491f519ad4ad4eaa37b4302bc47cf363c22d2fa7	variants/base/setups/fresh-plugins/.cb-version
 assets	logo-files	0.1.0	72cdb4272e6be5df2ad0e959508803ba6ef927b6e040e4affa3dca1293409d4e	variants/base/setups/logo-files/.cb-version
 template	act	1.0.0	33cac4f54cb7ceebada109f40c0f846caf3615f230ac76e7724e6be1fadfd916	templates/tools/act/template.toml
 template	affine-desktop	0.1.0	6b4070ca55a0c5ccd37b2a7c95c9e3f5409423489d671f64e30f66b4a165b330	templates/tools/affine-desktop/template.toml
@@ -491,6 +506,7 @@ template	lazygit	1.0.0	beadc27bf3b3d5a49806bf1b77f5a468f420a1042688e9b15007511e7
 template	lazysql	0.1.0	aa06755a09ac23b4bb4c2fd7c0632bdfc355a175c429b5d0a75beaeffe64ff2f	templates/tools/lazysql/template.toml
 template	libreoffice	1.0.0	8b693055cc5e8dcd6c5f53d302ac127c8ad55a21eb3fa050420fa7d593208df3	templates/desktops/libreoffice/template.toml
 template	logo	0.1.0	04549157796baba24738e89cec29ab7fbf9131dbe17f12dcee9eb7670500abe0	templates/education/logo/template.toml
+template	lsp	0.1.0	ad8960985f4a91b6782218cd220f184a3fd31bdd90cd0b0b5eaeca29fdf93556	templates/tools/lsp/template.toml
 template	lua	1.0.0	280f87fd4a9f035ceb5a1c0590f601c9f2532088d3ef8d4a45a2afa039b883d9	templates/languages/lua/template.toml
 template	lxqt	1.0.0	963f393fa998d49aa47f27a28f0b6fe4f1143f63a18e2adc592ee7db70cd9765	templates/desktops/lxqt/template.toml
 template	make	1.1.0	e14353ff4845d12fd1d4ee812f474c0347134a7ab1886c4a01672428a169a209	templates/tools/make/template.toml
@@ -748,6 +764,18 @@ extension	latex+texstudio	0.1.0	b250edd359daa8f2cfbb8e66b024d4a2a201402fce28e86e
 extension	latex+vscode-ext	0.1.0	f70711697eab14c7fcb68378155697ee04f038471610b8ad8a6634a2bcb3c6fa	templates/tools/latex/vscode-ext--extension.toml
 extension	logo+autostart	0.1.0	290bfb03d1021250d843a6776607eae4c85d2f353c4e8705c9a4ab7c6a71af56	templates/education/logo/autostart--extension.toml
 extension	logo+expose	1.0.0	1dd58d0cb8a6262950c2193c3a5c7d8562ea2573b007729462c2937c9d047639	templates/education/logo/expose--extension.toml
+extension	lsp+bash	0.1.0	800e8d44e28b44ce278f24767f53d135bd268fc63febb26cc231c42a3d046b0f	templates/tools/lsp/bash--extension.toml
+extension	lsp+docker-compose	0.1.0	5f4993926b50255b55e985525c4c01a1445b12cb8511063c179619f9134ca98c	templates/tools/lsp/docker-compose--extension.toml
+extension	lsp+dockerfile	0.1.0	3eec8c5f3569b2cf68814986d1577face7fa4a141e195d4a88a28176d3fbc6c8	templates/tools/lsp/dockerfile--extension.toml
+extension	lsp+json	0.1.0	ab8da95b7145f7a05852c508ad241b53e7d2b29543e8f4b732ba499ebb242583	templates/tools/lsp/json--extension.toml
+extension	lsp+markdown	0.1.0	0bd873589a6c1d0578c327d151cb691633a720f5dfa4579d14644990c6c6f257	templates/tools/lsp/markdown--extension.toml
+extension	lsp+python	0.1.0	4bdcb2bfdd0b5dcef9ab21b05609f1c8caaaaafba52faf872ebcbb5bfcc155d5	templates/tools/lsp/python--extension.toml
+extension	lsp+sql	0.1.0	dead34a7ba74942550ca03b9ed202ea8cb3ccdf69f50bfc2dc4312ee967101d5	templates/tools/lsp/sql--extension.toml
+extension	lsp+tailwind	0.1.0	00cd18f973a54a81282ce9dbfa98269754e0ec048fa4d2c99141e6f9c16fccb3	templates/tools/lsp/tailwind--extension.toml
+extension	lsp+terraform	0.1.0	b3515fee5d923bf526abd702a85e69b2c8f9599f8e7afb731f67e251a33551a7	templates/tools/lsp/terraform--extension.toml
+extension	lsp+toml	0.1.0	a098a89d71d52a9b26331c49cde10900f87fc499683aa9d70f61783d48937805	templates/tools/lsp/toml--extension.toml
+extension	lsp+typescript	0.1.0	42082be39f25cab7217edf7dbafb752a7c2ebcf796a7e6e0ebe4170a2083cabc	templates/tools/lsp/typescript--extension.toml
+extension	lsp+yaml	0.1.0	5889b729cd37daee167d64a69cf2c294d84381efc38209a15634b2e62f091eb1	templates/tools/lsp/yaml--extension.toml
 extension	lua+kernel	0.1.0	c3921b8258cfe24c83d94db89ee1f58b0db4e6a8ebec2e7e863d04998e4788d2	templates/languages/lua/kernel--extension.toml
 extension	lua+luarocks-pkg	1.0.0	c7ff429d95f030c4141e712207d359717271c4ed5294e85055cc52b1b5c942b8	templates/languages/lua/luarocks-pkg--extension.toml
 extension	lua+vscode-ext	1.0.0	7c1abebefd16981a1bb67279252d9e22183cf55cfe227755a64e90b0617ec48d	templates/languages/lua/vscode-ext--extension.toml
@@ -772,6 +800,7 @@ extension	n8n+search	0.2.0	5c770448e45de19bd4b0aed762bfb057d7c4d4d2a21d11ad90922
 extension	neovim+config	1.0.0	f34c817467bd276eb278b70d918f7be95fc309ca7c71d1f7a1d84237ecf69435	templates/tools/neovim/config--extension.toml
 extension	neovim+config-shared	1.0.0	d8091cefafd4ad7014c260c7adb69c378375592b5392d568a03534f6b6350ad9	templates/tools/neovim/config-shared--extension.toml
 extension	neovim+data-cache	1.0.0	d7dda185adfab3b1bcce23edfce01ea1b76633630b5c5fa6cd0ce318e685fb55	templates/tools/neovim/data-cache--extension.toml
+extension	neovim+lsp	0.1.0	1a5e5b4b9530e929fb01164748a266354d0f9bbcfe89096adacca0d4158f6d80	templates/tools/neovim/lsp--extension.toml
 extension	nginx+expose	1.0.0	b252b85f50d4d1a1cf5624e94883d1e97fa7229358f6d01eedffd785fc5774ea	templates/tools/nginx/expose--extension.toml
 extension	nginx+php-fpm	0.1.0	1e045eb9ebaecba69f237deab990543111b3a9344be06611799ba84d4b9b8879	templates/tools/nginx/php-fpm--extension.toml
 extension	nim+vscode-ext	1.0.0	eb2effd82a887dde6ef64c419d29f2dab4d2f47d4208c591cff79d1325d0f0b1	templates/languages/nim/vscode-ext--extension.toml

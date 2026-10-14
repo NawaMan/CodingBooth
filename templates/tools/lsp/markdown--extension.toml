@@ -1,0 +1,11 @@
+cb-version = "0.1.0"
+display-name = "Markdown (marksman)"
+display-disc = "marksman: wiki-links, heading navigation, and link checks for Markdown"
+display-order = 10
+auto-select = false
+tags = ["lsp", "language-server", "markdown"]
+
+[segments]
+"Boothfile--60" = """
+setup lsp--marksman
+"""

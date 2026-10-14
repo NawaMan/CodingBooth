@@ -1,0 +1,23 @@
+cb-version = "0.1.0"
+display-name = "Language Servers"
+primary = true
+display-disc = "Language servers for terminal editors (Fresh, Helix, Neovim)"
+display-detail = """Installs language servers that any LSP editor can use. Fresh and Helix start them \
+on their own; Neovim needs neovim+lsp. Pick a language below (lsp+markdown, lsp+yaml, ...), or type \
+server names into this template's list: lsp:marksman,taplo,yaml. A name is a server or the \
+language it serves, with an optional @version (taplo@0.10.0). Servers: marksman, taplo, \
+terraform-ls, sqls, yaml, bash, vscode-langservers (JSON, HTML, CSS), typescript, tailwindcss, \
+dockerfile, docker-compose, pylsp. The Node-based ones need the nodejs template and pylsp needs \
+python. Inside the booth, Fresh's LSP popup also offers "Install <server>" for a missing one; that \
+install lasts until the booth is rebuilt, so select it here to keep it."""
+display-order = 24
+tags = ["lsp", "language-server", "editor", "fresh", "helix", "neovim", "packages"]
+
+[params.LSP_SERVERS]
+default = ""
+variadic = true
+
+[segments]
+"Boothfile--60" = """
+install lsp ${LSP_SERVERS}
+"""
