@@ -153,6 +153,7 @@ try {
       web5: document.querySelector('.pane-5').classList.contains('mode-web'),
       tabs5: [...document.querySelectorAll('.pane-5 .web-tab-frame')].map(f => f.getAttribute('src')),
       web2: document.querySelector('.pane-2').classList.contains('mode-web'),
+      other: document.getElementById('tree-layout').classList.contains('active'),
       // An unescaped </script> ends the JSON early; an unescaped <!--<script>
       // swallows the script after it, the one that sets BOOTH_CONSOLE_SPEC.
       intact: (() => { try { JSON.parse(document.getElementById('cb-console-config').textContent); return true; } catch { return false; } })(),
@@ -161,8 +162,8 @@ try {
     }))()`);
     report(loaded && f.intact && f.specRan && f.hint.includes("Ctrl+Alt"),
       "A console.json with </script> and <!-- inside a tab still loads the whole page and its scripts", f);
-    report(f.preset === "grid6" && f.active === "123456",
-      "An unknown layout falls back to one that shows every pane given tabs (pane 5: grid6)", f);
+    report(f.preset === null && f.other && f.active === "123456",
+      "An unknown layout falls back to one that shows every pane given tabs (pane 5: the 3x2 grid, as Other)", f);
     report(f.web5 && f.tabs5.length === 2 && !f.tabs5.some((src) => /google|object/i.test(src || "")) && !f.web2,
       "Pane 5 keeps its two real tabs; a non-address tab and a non-object pane are skipped, not opened", f);
     const mine = warnings.filter((w) => w.startsWith(".booth/console.json"));
@@ -249,8 +250,8 @@ try {
     const origin = (n) => `document.querySelector('.pane-${n} .term-frame').contentWindow.performance.timeOrigin`;
 
     let l = await evaluate(LAYOUT);
-    report(l.buttons === "single,hsplit,left-main,right-main,vsplit,top-main,bottom-main,quad,grid6",
-      "The toolbar has a button for every 2x2 layout and the 3x2 grid", l.buttons);
+    report(l.buttons === "single,hsplit,vsplit,quad",
+      "The toolbar has the four layout buttons; every other arrangement is reached with the keys", l.buttons);
 
     // A browser that has never opened this console starts from .booth/console.json.
     await evaluate(`localStorage.clear()`);
@@ -258,9 +259,10 @@ try {
     const fresh = await until(`document.readyState === 'complete' && !!document.querySelector('.pane-6')`) && await until(termReady(6));
     await until(`document.querySelectorAll('.pane-5 .web-tab-frame').length > 0`, 10000);
     l = await evaluate(LAYOUT);
-    report(fresh && l.preset === "grid6" && l.active === "123456" && l.web5 && l.tab5.some(src => src.includes("127.0.0.1:" + boothPort))
-        && !l.other && l.addOff && !l.removeOff && l.handles === "xxyyy",
-      "console.json's grid6 opens six live sessions in three columns, pane 5 in Web view, + greyed at six", l);
+    report(fresh && l.preset === null && l.other && l.otherLit && l.active === "123456"
+        && l.web5 && l.tab5.some(src => src.includes("127.0.0.1:" + boothPort))
+        && l.addOff && !l.removeOff && l.handles === "xxyyy",
+      "console.json's grid6 still opens six live sessions in three columns — as Other, now the toolbar has no grid6 button — pane 5 in Web view, + greyed at six", l);
 
     // Pane 5 shows an outside (cross-origin) site; pane 6, after it, a terminal.
     const before = await evaluate(origin(6));
@@ -347,6 +349,57 @@ try {
     report(firstId && keptId === firstId && asked.some((m) => /Reset session 2\?/.test(m))
         && dialogs.length >= 2 && newId && newId !== firstId,
       "Reset session asks first: Cancel keeps session 2 running, Ctrl+Alt+Shift+x then OK gives the pane a fresh one", { firstId, keptId, newId, asked });
+
+    // ---- the pane header's own buttons, from the keyboard ----
+    //
+    // Ctrl+Alt+w and Ctrl+Alt+m press the focused pane's Web view and Markdown
+    // buttons, so the viewmd start and the tab state have one implementation.
+    // Focus is in pane 2, from the reset above.
+    const PANE2 = `(() => { const pane = document.querySelector('.pane-2');
+      const tab = pane.querySelector('.web-tab-frame');
+      return { web: pane.classList.contains('mode-web'), src: tab ? tab.getAttribute('src') : null,
+        mdTitle: pane.querySelector('.md-toggle').title }; })()`;
+    await until(termReady(2));
+    await key("ca", "w", "KeyW", 87);
+    const webOn = await evaluate(PANE2);
+    await key("ca", "w", "KeyW", 87);
+    const webOff = await evaluate(PANE2);
+    report(webOn.web && !webOff.web && (await evaluate(termReady(2))),
+      "Ctrl+Alt+w turns the focused pane into a Web view and back to its terminal", { webOn, webOff });
+
+    await key("ca", "m", "KeyM", 77);
+    const started = await until(`(document.querySelector('.pane-2 .web-tab-frame') || {getAttribute: () => ''})
+      .getAttribute('src').indexOf('proxy/8765/') === 0`, 20000);
+    const mdOn = await evaluate(PANE2);
+    await key("ca", "m", "KeyM", 77);
+    await sleep(500);
+    const mdOff = await evaluate(PANE2);
+    report(started && mdOn.web && !mdOff.web && !/failed/i.test(mdOn.mdTitle),
+      "Ctrl+Alt+m starts viewmd and opens it in the focused pane, and again returns the terminal",
+      { started, mdOn, mdOff });
+
+    // ---- resize mode: Ctrl+Alt+r, then the keys the mode owns ----
+    await evaluate(`document.querySelector('[data-layout="quad"]').click()`);
+    await sleep(400);
+    const HINT = `(() => { const hint = document.getElementById('shortcut-hint');
+      return { text: hint.textContent, lit: hint.classList.contains('mode') }; })()`;
+    const widths = `[1, 2].map(n => Math.round(document.querySelector('.pane-' + n).getBoundingClientRect().width))`;
+    const beforeResize = await evaluate(widths);
+    await key("ca", "r", "KeyR", 82);
+    const inResize = await evaluate(HINT);
+    // No modifier: in resize mode the keys are the mode's own, as in i3.
+    await key("", "l", "KeyL", 76);
+    await key("", "ArrowRight", "ArrowRight", 39);
+    const afterResize = await evaluate(widths);
+    await key("", "Escape", "Escape", 27);
+    const leftResize = await evaluate(HINT);
+    const resizedLayout = await evaluate(LAYOUT);
+    report(inResize.lit && /Resize/.test(inResize.text) && !/Resize/.test(leftResize.text)
+        && Math.abs(afterResize[0] - beforeResize[0]) > 20
+        && afterResize[0] + afterResize[1] === beforeResize[0] + beforeResize[1]
+        && resizedLayout.preset === "quad",
+      "Ctrl+Alt+r enters resize mode: h j k l resize the focused pane, Esc leaves, the layout is still quad",
+      { inResize, beforeResize, afterResize, leftResize, preset: resizedLayout.preset });
 
     // ---- the same shortcuts as Windows and a Mac deliver them ----
     //
