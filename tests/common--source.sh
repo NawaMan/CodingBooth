@@ -304,23 +304,38 @@ exit(127);
     elif command -v gtimeout >/dev/null 2>&1; then
         gtimeout -s "$signal" -k "$grace" "$seconds" "$@"
     elif command -v perl >/dev/null 2>&1; then
-        # The signal goes to the child itself, which is what `timeout` does
-        # without --foreground: a test that interrupts `booth logs -f` wants the
-        # CLI to see the SIGINT, not the process group the harness sits in.
-        SIG="$signal" SECS="$seconds" GRACE="$grace" perl -e '
+        # CMD gets a process group of its own and the watchdog signals the
+        # *group*, which is what `timeout` does without --foreground. Signalling
+        # the one process is not enough: `bash -c "exec 3<>…; cat <&3"` leaves
+        # `cat` blocked on the read when its bash is killed, orphaned onto init
+        # and still holding the write end of the capture pipe — so `$(...)` waits
+        # for output from a process nobody is going to kill. That is how
+        # complex/test--tunnel-public-bind sat for 21 minutes on one 2-second
+        # read. The group goes to the harness's own if setpgid fails, so fall
+        # back to the single pid rather than signalling that.
+        SIG="$signal" SECS="$seconds" GRACE="$grace" perl -MPOSIX -e '
 my $pid = fork();
 defined $pid or die "fork: $!\n";
 if ($pid == 0) {
+    POSIX::setpgid(0, 0);
     exec { $ARGV[0] } @ARGV;
     print STDERR "$ARGV[0]: $!\n";
-    exit(127);
+    POSIX::_exit(127);
 }
 my $timedout = 0;
 my $killed = 0;
+# The group first, the bare process only if there is no group of its own
+# (setpgid can fail). kill returns how many it signalled, so the fallback needs
+# no getpgid — which perl POSIX does not even define, and asking for it took the
+# watchdog down with "Undefined subroutine" and left CMD running untimed.
+my $signal_tree = sub {
+    my $sig = shift;
+    kill($sig, -$pid) or kill($sig, $pid);
+};
 $SIG{ALRM} = sub {
-    if ($timedout) { $killed = 1; kill "KILL", $pid; return; }
+    if ($timedout) { $killed = 1; $signal_tree->("KILL"); return; }
     $timedout = 1;
-    kill $ENV{SIG}, $pid;
+    $signal_tree->($ENV{SIG});
     alarm $ENV{GRACE};
 };
 alarm $ENV{SECS};
