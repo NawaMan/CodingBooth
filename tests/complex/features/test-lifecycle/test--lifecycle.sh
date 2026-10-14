@@ -34,8 +34,18 @@ container_state() {
   docker inspect -f '{{.State.Status}}' "$1" 2>/dev/null || true
 }
 
+# The booth's command is re-run by every `docker start`/`restart`, so a plain
+# 'sleep 1' exits again a second after step 3 resumes it, and steps 4-5 then
+# race it: they pass only if booth's own container lookups are faster than that
+# second (Linux), and fail with "is not running" where each docker call costs
+# ~1s (Docker Desktop on Windows). So: the first run exits quickly (step 1 needs
+# an exited booth), and every later start stays up. The marker lives in the
+# container (under ~ so Git Bash has no /path to rewrite), named per booth so a
+# home volume shared with an earlier run cannot carry it over.
+BOOTH_CMD="if [ -e ~/.cb-lifecycle-$NAME ]; then exec sleep 300; fi; touch ~/.cb-lifecycle-$NAME; sleep 1"
+
 # 1) Create a keep-alive booth from a short command.
-if run_coding_booth --variant base --name "$NAME" --keep-alive -- 'sleep 1' >/dev/null 2>&1; then
+if run_coding_booth --variant base --name "$NAME" --keep-alive -- "$BOOTH_CMD" >/dev/null 2>&1; then
   if [[ "$(container_state "$NAME")" == "exited" ]]; then
     print_test_result "true" "$0" "1" "run --keep-alive created a stopped resumable booth"
   else
