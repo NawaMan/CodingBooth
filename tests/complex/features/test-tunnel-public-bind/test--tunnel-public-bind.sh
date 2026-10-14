@@ -97,9 +97,11 @@ tcp_read() {
   # 3 — which wants an empty answer — passed for the same reason, so it would
   # have stayed green with the tunnel wide open.
   #
-  # Test 6 is not this: it still fails on macOS with the read working, and with
-  # retries, so a --public booth's tunnel really is unreachable off loopback
-  # here while Test 5 reaches the same listener on loopback. Still open.
+  # Test 6 looked like a bind-address bug on macOS and was neither: this helper
+  # used to leave `cat` blocked and orphaned on every read (it signalled the
+  # process, not the group — see timeout_run), which stretched the run past the
+  # booth's own `sleep 300` so the listener was gone and loopback refused just
+  # as flatly. With the group kill the whole file runs in ~16s.
   timeout_run 2 bash -c "exec 3<>/dev/tcp/$host/$port 2>/dev/null; cat <&3" 2>/dev/null || true
 }
 
@@ -267,13 +269,27 @@ else
   fi
 
   if [ -n "$HOST_IP" ]; then
-    RESP="$(tcp_read "$HOST_IP" "$EXPOSE_PORT_PUB")"
-    if echo "$RESP" | grep -qF 'tunnel-pub-ok'; then
-      print_test_result "true" "$0" "6" "--public booth's tunnel is reachable off loopback ($HOST_IP)"
-    else
-      print_test_result "false" "$0" "6" "--public booth's tunnel should be reachable off loopback ($HOST_IP)"
-      echo "  Response: $RESP"
+    # Say which failure this is. A booth that has exited takes its tunnel
+    # listener with it, and then *every* address refuses — indistinguishable
+    # from "bound to loopback only", which is what this case is here to catch.
+    # That cost three wrong answers once: the booth's own `sleep` ran out two
+    # seconds before this read, so the diagnosis looked like a bind-address bug
+    # on macOS when the booth was simply gone. The run takes ~16s now, well
+    # inside that, but a host slow enough to outlast it should say so plainly.
+    if ! docker exec "$NAME_PUBLIC" bash -lc true >/dev/null 2>&1; then
+      print_test_result "false" "$0" "6" "--public booth should still be running for the off-loopback check"
+      echo "  The booth exited before this case ran; its tunnel went with it." \
+           "Nothing is proven about where the tunnel was bound."
       FAILED=$((FAILED + 1))
+    else
+      RESP="$(tcp_read "$HOST_IP" "$EXPOSE_PORT_PUB")"
+      if echo "$RESP" | grep -qF 'tunnel-pub-ok'; then
+        print_test_result "true" "$0" "6" "--public booth's tunnel is reachable off loopback ($HOST_IP)"
+      else
+        print_test_result "false" "$0" "6" "--public booth's tunnel should be reachable off loopback ($HOST_IP)"
+        echo "  Response: $RESP"
+        FAILED=$((FAILED + 1))
+      fi
     fi
   else
     echo "SKIP: test 6 (no non-loopback address available)" >&2
