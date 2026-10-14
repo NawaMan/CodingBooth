@@ -22,7 +22,8 @@ func SerializeOwnerPermission(entries []OwnerPerm, command, adjustCommand string
 	var b strings.Builder
 	b.WriteString(formatGeneratedHeader("#", command, adjustCommand))
 	b.WriteString("# booth-entry applies each entry to that mount point on startup.\n")
-	b.WriteString("# A directory entry covers that directory and every directory under it.\n")
+	b.WriteString("# A directory entry sets the mode on that directory and every directory under\n")
+	b.WriteString("# it, and the owner on everything in the tree, files included.\n")
 	for _, e := range entries {
 		fmt.Fprintf(&b, "- path: %s\n", strconv.Quote(e.Path))
 		if e.User != "" {

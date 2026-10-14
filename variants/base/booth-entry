@@ -65,9 +65,9 @@ section() {
 #     group: "coder"
 #     mode: "1777"
 #
-# A directory entry sets the owner and mode on that directory and every
-# directory under it, without crossing onto another filesystem. Files inside
-# the tree keep the mode they already have.
+# A directory entry sets the mode on that directory and every directory under
+# it, and the owner on every entry in the tree, files included, without
+# crossing onto another filesystem. Files keep the mode they already have.
 apply_owner_permissions() {
   local file="${CODE_DIR}/.booth/owner-permission.yaml"
   [ -f "$file" ] || return 0
@@ -102,7 +102,7 @@ apply_owner_permissions() {
 }
 
 apply_one_owner_permission() {
-  local path="$1" user="$2" group="$3" mode="$4" own=""
+  local path="$1" user="$2" group="$3" mode="$4" own="" uid="" gid=""
   [ -n "$path" ] || return 0
   case "$path" in
     /*) ;;
@@ -127,11 +127,42 @@ apply_one_owner_permission() {
     own=":$group"
   fi
   if [ -d "$path" ]; then
+    # The mode is for directories only, on purpose: Go makes the files in a
+    # module cache read-only (0444) so a build cannot quietly mutate a
+    # dependency it has already verified, and 1777 on them would undo that.
     if [ -n "$mode" ]; then
       find "$path" -xdev -type d -exec chmod "$mode" {} + || true
     fi
-    if [ -n "$own" ]; then
-      find "$path" -xdev -type d -exec chown "$own" {} + || true
+    # Ownership, in contrast, has to reach the files. Docker seeds a fresh
+    # volume from whatever the image holds at that path, so a cache written by
+    # a build-time `go install` arrives owned by the build-time uid (1000) —
+    # and on a host whose uid is not 1000 coder cannot write those files even
+    # though step 4 aligned it to HOST_UID. A 1777 directory does not save it:
+    # `go` opens $GOCACHE/trim.txt for writing on every build, an open on the
+    # existing file, which failed with "permission denied" on every Mac (uid
+    # 501) and on any Linux account off 1000.
+    #
+    # Filtered on the current owner, like the home sweep in step 5, so a
+    # 26k-entry module cache costs one traversal — not 26k chowns — per start.
+    # -h and find's own no-follow default keep a symlink in the tree from
+    # redirecting the chown at something outside it.
+    if [ -n "$user" ]; then
+      uid="$user"
+      case "$user" in *[!0-9]*) uid="$(id -u "$user" 2>/dev/null || true)" ;; esac
+      if [ -n "$uid" ]; then
+        find "$path" -xdev ! -user "$uid" -exec chown -h "$uid" {} + 2>/dev/null || true
+      else
+        find "$path" -xdev -exec chown -h "$user" {} + 2>/dev/null || true
+      fi
+    fi
+    if [ -n "$group" ]; then
+      gid="$group"
+      case "$group" in *[!0-9]*) gid="$(getent group "$group" 2>/dev/null | cut -d: -f3)" ;; esac
+      if [ -n "$gid" ]; then
+        find "$path" -xdev ! -group "$gid" -exec chgrp -h "$gid" {} + 2>/dev/null || true
+      else
+        find "$path" -xdev -exec chgrp -h "$group" {} + 2>/dev/null || true
+      fi
     fi
     info "owner-permission: $path user=${user:-} group=${group:-} mode=${mode:-}"
   elif [ -e "$path" ]; then
