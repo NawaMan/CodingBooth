@@ -243,12 +243,21 @@ This file contains a list of changes for each released version.
   it: the same absolute path, or where a relative gitdir (`git worktree add --relative-paths`)
   resolves from `/home/coder/code`. It is the repository the booth already writes to, so it does
   not ask for consent; see
-  [BOOTH_SECURITY.md](BOOTH_SECURITY.md#what-else-booth-asks-about). The booth also pins
-  `gc.worktreePruneExpire=never` (through `GIT_CONFIG_COUNT`), because the records of your other
-  worktrees hold host paths that do not exist in the container. Without it, the `git gc --auto`
-  a commit can trigger would delete the ones older than three months. A `git worktree prune` you
-  run in the booth still prunes them. If the main clone cannot be mounted, booth prints a warning
-  and starts as before. Submodules are not covered yet.
+  [BOOTH_SECURITY.md](BOOTH_SECURITY.md#what-else-booth-asks-about). If the main clone cannot be
+  mounted, booth prints a warning and starts as before. Submodules are not covered yet.
+  - **A booth no longer endangers your other worktrees.** git's records in `.git/worktrees/` hold
+    host paths, which do not exist in the container, so in any booth on the repository — the
+    main clone too — every worktree looked deleted (`prunable`), and a `git worktree prune` there
+    would have dropped them all. booth now also mounts each worktree's `.git` file, read-only and
+    just that one-line file, at the path its record names, so the records resolve. It still pins
+    `gc.worktreePruneExpire=never` (through `GIT_CONFIG_COUNT`), now in main-clone booths as well,
+    for any worktree it could not mirror.
+  - **booth undoes an in-booth `git worktree repair`.** From `/home/coder/code`, repair rewrites
+    the worktree's record to `/home/coder/code/.git`, after which the host treats it as deleted.
+    A booth on a worktree leaves its host path beside the record (`.git/worktrees/<id>/cb-host-path`,
+    which git deletes with the record), and every booth start on the repository writes that path
+    back — only when it still leads to the same worktree. Until then, a `git worktree prune` *on
+    the host* would still drop it, so run worktree commands on the host.
 
 - **Fix: git works in a booth's code folder on a VM-based engine.** On an engine that shares the
   host folder through a VM — Docker Desktop (macOS, Windows, and on Linux), Podman machine,
