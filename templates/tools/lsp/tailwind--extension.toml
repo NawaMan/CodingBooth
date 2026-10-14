@@ -1,0 +1,16 @@
+cb-version = "0.1.0"
+display-name = "Tailwind CSS"
+display-disc = "Class completion and hover previews, in terminal editors and VS Code"
+display-order = 22
+auto-select = false
+requires = ["nodejs"]
+tags = ["lsp", "language-server", "tailwind", "vscode"]
+
+[segments]
+"Boothfile--60" = """
+setup lsp--tailwindcss
+"""
+# The VS Code side; skips itself on a variant without VS Code or code-server.
+"Boothfile--65" = """
+setup tailwind-code-extension
+"""

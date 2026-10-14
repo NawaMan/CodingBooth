@@ -1,0 +1,15 @@
+cb-version = "0.1.0"
+display-name = "Markdown (marksman)"
+display-disc = "marksman for terminal editors; markdownlint in VS Code"
+display-order = 10
+auto-select = false
+tags = ["lsp", "language-server", "markdown", "vscode"]
+
+[segments]
+"Boothfile--60" = """
+setup lsp--marksman
+"""
+# The VS Code side; skips itself on a variant without VS Code or code-server.
+"Boothfile--65" = """
+setup markdown-code-extension
+"""
