@@ -1,7 +1,7 @@
 # syntax=codingbooth/boothfile:1
 # Configured by: booth config --no-tui --overwrite --select rust+vscode-ext+kernel+cargo-pkg:ripgrep,fd-find,bat/python/notebook/xfce/claude-code
 
-env APT_SNAPSHOT=20260906T000000Z
+env APT_SNAPSHOT=20261004T000000Z
 
 arg CARGO_PKGS=bat,fd-find,ripgrep
 arg CLAUDE_CODE_VERSION=latest
