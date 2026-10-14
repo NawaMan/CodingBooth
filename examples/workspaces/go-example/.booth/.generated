@@ -4,3 +4,4 @@
 # as hand-written (booth config will then refuse to clobber them).
 Boothfile=sha256:7f3992a61d740e5fe62d7741e8044245ff637f79048788bfe175ef6599d51a4f
 config.toml=sha256:5fc6d549f45bd349cb0a96bd092d6fa14d4420d52dc099ec083bf9c5eb0c70e6
+owner-permission.yaml=sha256:af5a5e59ebcd545570bbb02ac553b821e29189ce10a2782ed0dd71f5a4abbf39
