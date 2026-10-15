@@ -189,7 +189,7 @@ setup	libreoffice	1.0.0	c20c5ac0724088909c1e0bfa1b844c4aaad47d8f25285ce54b9dfab4
 setup	logo	0.1.0	508b45f46b768c84eca8adb35753e16e51e29bd72eebb4733620d0ae6df52875	variants/base/setups/logo--setup.sh
 setup	lombok-eclipse	1.0.0	4a8e7542bba4ffcdb70b0e17867c16f5646f394bc1c9d15ce7f2dc2146a7c6c8	variants/base/setups/lombok-eclipse--setup.sh
 setup	lombok-idea	0.1.0	32ea8debd47df5ecd96f954a1bcc4721e53cfbd292528de1dc7ba5a2922757b1	variants/base/setups/lombok-idea--setup.sh
-setup	lsp--bash	0.1.0	44b26f03208ba978052443ba0e06fc5156a98f7888a60ece80b3930c5d1f5dc3	variants/base/setups/lsp--bash--setup.sh
+setup	lsp--bash	0.1.0	2f31b813fb9f79ddfe35646ca7efbc0eb38706b2fd84ff9fc108836d11eaeffb	variants/base/setups/lsp--bash--setup.sh
 setup	lsp--clangd	0.1.0	fe947ad8950f987b2c6410600c4a06155f4b85635c507316465a7d29e4b9c12a	variants/base/setups/lsp--clangd--setup.sh
 setup	lsp--docker-compose	0.1.0	47ed95f628254ba6a362df96893244cfa3a7294ba7fc33399df10c3f63e14c4a	variants/base/setups/lsp--docker-compose--setup.sh
 setup	lsp--dockerfile	0.1.0	0eccd24649203a3d96e282fe2828bdb4ef2d4539951449306e85009f960bdd92	variants/base/setups/lsp--dockerfile--setup.sh
