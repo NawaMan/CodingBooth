@@ -1,0 +1,16 @@
+cb-version = "0.1.0"
+display-name = "YAML (yaml-language-server)"
+display-disc = "Red Hat's YAML server, with SchemaStore schemas; Red Hat YAML in VS Code"
+display-order = 12
+auto-select = false
+requires = ["nodejs"]
+tags = ["lsp", "language-server", "yaml", "vscode"]
+
+[segments]
+"Boothfile--60" = """
+setup lsp--yaml
+"""
+# The VS Code side; skips itself on a variant without VS Code or code-server.
+"Boothfile--65" = """
+setup yaml-code-extension
+"""
