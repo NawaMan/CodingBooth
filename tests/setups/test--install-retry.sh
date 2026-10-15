@@ -224,7 +224,7 @@ N=$(grep -c "^npm install -g nosuchpkg" "$MARKER" || true)
     || pass_fail false "npm--install.sh should fail immediately on a rejected package" "rc=$RC calls=$N" "$OUT"
 
 # ---- 15. Every install script routes through cb_retry ----------------------
-# Two scripts legitimately do not source the lib directly, and say why here rather
+# Some scripts legitimately do not source the lib directly, and say why here rather
 # than being quietly missed:
 #   code-extension  gets cb_retry through libs/code-extension-source.sh, which it
 #                   already sources for the shared extension-dir resolution.
@@ -233,7 +233,9 @@ N=$(grep -c "^npm install -g nosuchpkg" "$MARKER" || true)
 #   jetbrains-plugin  downloads the plugin zip with curl, whose own `--retry 3
 #                     --retry-delay 3 --retry-all-errors` is the right tool and is
 #                     what every other download-based setup in the catalog uses.
-EXEMPT=("code-extension" "go" "jetbrains-plugin")
+#   lsp             reaches no registry itself: it resolves names and runs each
+#                   lsp--<name>--setup.sh, which does its own downloading.
+EXEMPT=("code-extension" "go" "jetbrains-plugin" "lsp")
 MISSING=()
 COVERED=0
 for script in "$SETUPS_DIR"/*--install.sh; do
