@@ -1,641 +1,312 @@
-# CodingBooth Agent Instructions
+# CodingBooth — Instructions for an AI Agent Inside a Booth
 
-**Purpose:** Operational guidance for AI agents to configure and manage CodingBooth development environments.
+You are running inside a **booth**: a Docker container built for this project. The project folder
+on the host is mounted at `/home/coder/code`, and you are the `coder` user. This page covers the jobs
+you will be asked to do in here, in order: orient, run, install, configure, expose, set env vars,
+write local templates. Each section ends with the local doc that goes deeper.
 
----
+**Not in a booth?** (no `/opt/codingbooth/`, no `$BOOTH_CONTAINER_NAME`) Then this is the wrong guide —
+read [AGENT_SETUP.md](https://github.com/NawaMan/CodingBooth/blob/main/docs/AGENT_SETUP.md), which
+helps a user set a booth up from the host.
 
-## Am I in a CodingBooth?
-
-**Check if you're inside a CodingBooth container:**
-
-```bash
-# Any of these indicate you're in a booth:
-[[ -d /opt/codingbooth ]]               # CodingBooth directory exists
-command -v booth--info &>/dev/null # CodingBooth info command available
-[[ -f /opt/codingbooth/version.txt ]]   # Version file exists
-```
-
-**If YES (inside a booth):** Continue reading this document.
-
-**If NO (not in a booth):** Wrong guide! Read the setup guide instead:
-- https://github.com/NawaMan/CodingBooth/blob/main/docs/AGENT_SETUP.md
-
-That guide helps you assist users in setting up CodingBooth from scratch. Once the booth is running, come back here.
+**Docs in here.** Every CodingBooth doc ships in `/opt/codingbooth/docs/` — `cat` it. For the user,
+`viewmd /opt/codingbooth/docs &` serves them rendered on port 8765, opened like any server (§2). Online, the same files for this exact version are at
+`https://github.com/NawaMan/CodingBooth/tree/$BOOTH_VERSION/docs` (an `--rc` or other pre-release
+version has no tag; use `main`). The paths below are all local.
 
 ---
 
-## First Things First
+## 1. Orient yourself
 
 ```bash
-booth--info                              # What environment am I in?
-ls /opt/codingbooth/setups/              # What tools can I easily add?
-cat /home/coder/code/.booth/Boothfile    # What's already configured, and by which command
-cat /home/coder/code/.booth/config.toml  # Variant, ports, mounts
-just --list                              # Project recipes, if a Justfile is present
+booth--info                            # version, variant, booth name, how to reach the host
+booth--envs                            # every BOOTH_* variable: port, variant, dind, egress, sudo, ...
+head -2 ~/code/.booth/Boothfile        # "# Configured by: booth config ..." — what this booth was built from
+[ -w ~/code/.booth ] && echo writable || echo read-only     # can you change the config yourself?
+just --list                            # the project's own recipes, if it has a Justfile
 ```
 
-Every booth ships `just`. If the workspace has a `Justfile` (shipped examples with build/run/test
-do), **`just --list`** then `just run` / `just test` / `just start` is how you exercise the sample.
-Do not invent a parallel command; wrap or call the existing recipes.
+What to expect, and what not to:
 
-(An older booth may have a `.booth/Dockerfile` instead of a Boothfile — see
-[Change the Environment](#action-change-the-environment-boothfile--configtoml).)
+| | |
+|---|---|
+| **Persistent** | `/home/coder/code` (the host folder). Plus whatever `.booth/cache/` and `.booth/shared/` mount into `~`, and `--persist-home` if used. |
+| **Gone when the container goes** | Everything else: `~` outside `code/`, `/usr`, `/etc`, `/opt`. A normal booth is removed on exit; a `--keep-alive` one survives until `./booth remove`. |
+| **`.booth/`** | Read-only unless the booth was started with `--writable-booth`. `.booth/.tmp/` is always writable but is wiped on each start. |
+| **sudo** | Passwordless — unless `BOOTH_SUDO=false` (`--no-sudo`). |
+| **Languages** | Only what the Boothfile selected. The base image has no Python, no Node. |
+| **docker** | Only when `BOOTH_DIND=true`. There is no docker otherwise, and no access to the host's. |
+| **Network** | Open, unless `BOOTH_EGRESS=true` — then only allowlisted HTTP(S) domains (`.booth/egress/allowlist.txt`); ssh and raw TCP are blocked. |
+| **git** | Installed. `~/.gitconfig` is usually empty: check `git config user.email` before committing, and ask rather than invent an identity. No ssh-agent is forwarded. |
 
-**You are running as the `coder` user** (not root). You have passwordless `sudo` available when needed for system operations. Setup scripts run as root during image build.
+Deeper: `/opt/codingbooth/docs/USER_GUIDE.md` (a working day in a booth), `IN-OUT.md` (every way
+in and out), `BOOTH_SECURITY.md` (what the isolation does and does not do).
 
 ---
 
-## Critical Mental Model
+## 2. Run things
 
-**You are INSIDE the container.** This changes everything:
+**Use the project's recipes.** If there is a `Justfile`, `just run` / `just test` / `just build`
+is how this project is exercised — call those rather than inventing a parallel command.
 
-| Location                         | Persistence                  | What to do                      |
-|----------------------------------|------------------------------|---------------------------------|
-| `/home/coder/code/`              | Persists (mounted from host) | Project files                   |
-| `/home/coder/code/.booth/`       | Persists but **read-only**   | Config — edit from host side    |
-| `/home/coder/` (outside `code/`) | Ephemeral                    | Lost on restart                 |
-| `/opt/`, `/usr/`, `/etc/`        | Ephemeral                    | Lost on restart                 |
+**Showing the user a server you started** — say a dev server on port 5173:
 
-**Key insight:** The `.booth/` directory is the source of truth that rebuilds the container, but it is **read-only inside the container** by default. To modify `.booth/` files, the user must edit them on the host (outside the container), or restart with `--writable-booth` to allow edits from inside.
+| Variant (`$BOOTH_VARIANT_TAG`) | The user opens |
+|---|---|
+| `base` (Console UI), `codeserver`, `notebook` | `http://localhost:$BOOTH_HOST_PORT/proxy/5173/` — same login as the booth itself |
+| `desktop-*` | `http://localhost:5173` in the browser on the booth's desktop |
+| any, as a real host port | run `booth--expose 5173` (§5), then `http://localhost:5173` on the host |
 
----
+`/proxy/` rewrites URLs on a best-effort basis; an app with hard-coded absolute asset paths may need
+its base path set to `/proxy/5173/`. Binding to `127.0.0.1` is enough for the proxy and for
+`booth--expose`.
 
-## Quick Reference: Where Things Are
+**Reaching the host** — a database or API running outside the booth — is
+`host.docker.internal:<port>` (also `$BOOTH_HOST_NAME`). The host service must listen on
+`0.0.0.0`; one bound to `127.0.0.1` is unreachable from any container.
 
-```
-/home/coder/code/              # Project root (PERSISTENT - mounted from host)
-├── .booth/                    # READ-ONLY by default (use --writable-booth to allow edits)
-│   ├── Boothfile              # What goes INTO the image — generated by `booth config`
-│   ├── config.toml            # Runtime config (variant, ports, run-args, etc.) — same
-│   ├── .generated             # Fingerprint of those two; proves they are unedited
-│   ├── Dockerfile             # Raw-Docker alternative; used only when there is no Boothfile
-│   ├── setups/                # Custom setup scripts (you create these)
-│   ├── home/                  # Files copied to ~ (override mode)
-│   ├── home-seed/             # Files copied to ~ (no-clobber mode)
-│   ├── cache/                 # Local-only bind mounts (gitignored)
-│   ├── shared/                # Team/git bind mounts (commit these)
-│   └── startup.sh             # Custom startup hook (runs as user)
+**Long-running work.** If `BOOTH_IDLE_TIME` is set (non-zero seconds), the booth shuts itself down
+after that long without *user* input — your own activity does not count. On `base` it shuts down
+with no warning. Before a long unattended task, check it and tell the user; on a web variant they
+can pause the watchdog from the Booth panel. (`/opt/codingbooth/docs/BOOTH_IDLE.md`)
 
-/opt/codingbooth/              # CodingBooth resources
-├── README.md                  # Main documentation
-├── version.txt                # Current version
-├── AGENT.md                   # This file!
-├── variants/                  # Dockerfiles for all variants (for reference)
-└── setups/                    # Built-in setup scripts (READ THESE FIRST)
-    ├── python--setup.sh
-    ├── nodejs--setup.sh
-    ├── java--setup.sh
-    ├── go--setup.sh
-    ├── booth--info       # Quick info about current environment
-    └── ...                    # Many more — list with: ls /opt/codingbooth/setups/
-
-/etc/profile.d/                # Shell profile scripts (sourced on login)
-/usr/share/startup.d/          # Startup scripts (run once per container boot)
-/usr/local/bin/                # Executable wrappers
-```
+**Never run `booth--restart` or `booth--shutdown` on your own.** Both kill every process in the
+booth, you included. See §4 for when a restart is needed and how to ask for one.
 
 ---
 
-## Decision Tree: Adding Dependencies
+## 3. Install more things
 
-```
-User needs a tool/dependency
-           │
-           ▼
-┌──────────────────────────────────────┐
-│ Check /opt/codingbooth/setups/ first │
-│ ls /opt/codingbooth/setups/          │
-└──────────────────────────────────────┘
-           │
-           ▼
-    Built-in exists?
-      /          \
-    YES           NO
-     │             │
-     ▼             ▼
-  Add its      Just an apt package?
-  name to        /          \
-  --select     YES           NO
-     │           │            │
-     │           ▼            ▼
-     │      Add          Write .booth/setups/<tool>--setup.sh
-     │      apt-pkg:<pkg>  with a `# cb-template:` header,
-     │      to --select    so --select can name it
-     │           │            │
-     └─────┬─────┴────────────┘
-           ▼
-  Give the user ONE booth config
-  command: --add-select <template>
-  (keeps the rest of the selection)
-           │
-           ▼
-   Restart the booth
-   (user runs: ./booth)
+**Right now, for this session** — you have sudo, and every installer the booth uses at build time is
+on your `PATH`:
+
+```bash
+sudo apt--install.sh htop jq            # apt, pinned to the image's snapshot
+sudo nodejs--setup.sh                   # a whole language/tool setup — ls /opt/codingbooth/setups/
+sudo npm--install.sh cowsay             # also pip--, uv--, cargo--, go--, gem--install.sh, ...
+                                        # (each needs its language set up first)
 ```
 
-Everything in that diagram happens on the host — see
-[Change the Environment](#action-change-the-environment-boothfile--configtoml) first, since it is
-the same command every time and the shape of it is what the actions below fill in.
+Start a new login shell (`bash -l`) after a setup so its `/etc/profile.d/` script is loaded. All of
+this is lost when the container goes (§1), so it is for **trying** things.
+
+**For good** — once it works, make it part of the Boothfile through `booth config` (§4):
+
+| What you installed | What to select |
+|---|---|
+| a tool that has a setup in `/opt/codingbooth/setups/` | its template: `--add-select nodejs` (find the exact name with `./booth template search`) |
+| apt packages | `--add-select 'apt-pkg:htop,jq'` |
+| packages from another manager | its `*-pkg` extension, e.g. `--add-select 'python+pip-pkg:httpx'` — `./booth template show <lang>` lists them |
+| anything else | a local setup (§7) |
+
+**Read the setup before you use it.** `/opt/codingbooth/setups/<name>--setup.sh` is the source of
+truth for where a tool lands, which env vars it sets, and which flags (versions) it takes — a
+setup's flags are normally the template's params (`python--setup.sh 3.13.12` ⇢ `python:3.13.12`).
+
+Deeper: `/opt/codingbooth/docs/BOOTH_CUSTOMIZATION.md`, `REPRODUCIBILITY.md` (pinning).
 
 ---
 
-## Action: Change the Environment (Boothfile / config.toml)
+## 4. Change the booth's configuration
 
-**This is the normal way to add a tool, a port, or a mount. Read it before any of the actions
-below.**
+`.booth/Boothfile` (what goes into the image) and `.booth/config.toml` (how the container runs) are
+**generated by `booth config`. Do not edit them by hand.** `.booth/.generated` holds their
+fingerprint; a hand edit `booth config` cannot read back marks the files hand-written, after which
+`booth config` refuses to run without `--overwrite` and the config TUI hides behind a warning. Every
+change has a flag — use it. (Exception: a booth with no `.generated` and no `# Configured by:` line
+was hand-written from the start; there, editing by hand is how it is maintained.)
 
-`.booth/Boothfile` and `.booth/config.toml` are **generated by `booth config`, not written by
-hand** — and `booth config` knows the difference. It stores a SHA-256 of each file it writes in
-`.booth/.generated`; on the next run it re-hashes what is on disk. Edit either file directly and
-the hashes stop matching. An edit `booth config` could have written itself (a changed `port`, an
-extra `--env`, a bumped `arg` pin) is read back and kept. Anything else — a `setup` or `run` line,
-an unknown key — makes the file hand-written, permanently changing how the tool behaves for the
-user:
+**`booth config` works from in here.** The project's `./booth` wrapper is mounted at
+`~/code/booth`; it downloads the CLI pinned in `.booth/tools/codingbooth.lock` on first use. Only
+*starting* a booth is blocked inside a booth.
 
-- `booth config --no-tui` refuses to run at all without `--overwrite` or `--beside`
-- the config TUI opens behind a blocking warning dialog and will not save until the user types
-  "overwrite" in full
-
-So **don't hand-edit these two files**, even for edits that would be read back. Every change has a
-`booth config` flag; use it instead.
-
-The one booth where that does not apply is one whose files were hand-written from the start: no
-`.generated`, no `# Configured by:` header, so there is no provenance to lose and hand-editing is
-already how it is maintained. Check before you decide:
+**Pass only the change.** A run starts from the command in the Boothfile's `# Configured by:` line,
+and any setting you leave out keeps its recorded value:
 
 ```bash
-ls -a /home/coder/code/.booth/ | grep -x .generated   # present → generated; regenerate, don't edit
-head -2 /home/coder/code/.booth/Boothfile             # "# Configured by:" → same answer
+cd ~/code
+./booth config --no-tui --dryrun --add-select python     # print what would be written; touches nothing
+./booth config --no-tui --overwrite --add-select python  # write it — needs a writable .booth/
 ```
 
-### How to regenerate
+| Change | Flag |
+|---|---|
+| add / drop a template or extension | `--add-select python`, `--add-select go+linter`, `--remove-select python` |
+| an env var | `--add-env TZ=UTC`, `--remove-env TZ` |
+| a published port | `--add-expose 8080`, `--add-expose +3000:5000` |
+| a mount | `--add-mount ~/data:/home/coder/data` |
+| variant | `--variant codeserver` (`base`, `notebook`, `codeserver`, `desktop-xfce`/`-kde`/`-lxqt`/`-wayland`) |
+| booth port | `--port 10000` / `NEXT` / `RANDOM` |
+| command | `--cmd npm --cmd start` (one word per flag; no `bash -lc` — booth wraps it already) |
+| any other `config.toml` key | `--set <key>=<value>`, `--unset <key>` |
 
-Line 2 of the Boothfile records the exact command that produced it:
+**A plain list flag replaces the whole list.** `--select python` alone drops every other template;
+`--env`, `--expose` and `--mount` work the same way. Use the `--add-*` / `--remove-*` forms.
 
-```bash
-head -2 /home/coder/code/.booth/Boothfile
-# syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --expose +-1910:8090 --select go+vscode-ext
-```
+**If `.booth/` is read-only:** run the `--dryrun` to prove the command, then hand the user the
+`--overwrite` form to run on the host. Or ask them to start the booth with `--writable-booth`.
 
-That command is the **baseline**: a new `booth config` run starts from it, and a setting you leave
-out keeps its recorded value. So pass only the change:
+**The change takes effect when the booth starts fresh.** Tell the user, and let them choose:
 
-```bash
-# Adding the Python toolchain to the example above — go+vscode-ext and the expose stay:
-booth config --no-tui --overwrite --add-select python
+- a foreground booth: `booth--restart --yes` from in here (it ends your session too), or quit and
+  run `./booth` on the host;
+- `BOOTH_DAEMON=true`: `booth--restart` cannot bring it back — the user runs `./booth stop` then
+  `./booth` on the host;
+- `BOOTH_KEEP_ALIVE=true`: `./booth start` resumes the *old* image — the user needs `./booth remove`
+  then `./booth`.
 
-# Adding an extension to a template that is already selected:
-booth config --no-tui --overwrite --add-select go+linter
+An older booth may have a `.booth/Dockerfile` instead of a Boothfile. If both exist, the Boothfile
+wins and the Dockerfile is ignored. A Dockerfile-only booth has no `booth config` provenance, so it
+is edited by hand.
 
-# Dropping one:
-booth config --no-tui --overwrite --remove-select python
-```
+Deeper: `/opt/codingbooth/docs/BOOTH_CONFIG.md` (every flag, the generated files),
+`BOOTH_RUN.md` (every `config.toml` key), `BOOTH_LIFECYCLE.md` (start, stop, keep-alive),
+`BOOTH_PROFILES.md` (`--profile` overlays).
 
-`--add-env`, `--add-expose`, `--add-mount` and their `--remove-*` forms work the same way.
+---
 
-**Restating a list flag replaces the whole list.** `--select python` on its own would leave only
-Python, and the Go toolchain would silently disappear from the next build. Prefer the `--add-*` /
-`--remove-*` forms; if you do restate `--select`, carry the whole list.
+## 5. Expose a port
 
-### You cannot run any of this from in here
+| For | Do |
+|---|---|
+| now, until the booth stops | `booth--expose 5173` (host `localhost:5173`), `booth--expose 5173 15173`, `booth--expose 5173 +5173` (offset from the booth port) |
+| see what is published and what is listening | `booth--expose list` |
+| close it | `booth--expose close 5173` |
+| every time the booth starts | `./booth config --no-tui --overwrite --add-expose 5173` (§4) |
 
-**There is no `booth` CLI inside the container** — only the `booth--*` helpers (`booth--info`,
-`booth--expose`, …) in `/opt/codingbooth/setups/`. `booth config` and `booth template` are host-side
-commands, and `.booth/` is read-only from in here unless the booth was started with
-`--writable-booth`. So your job is to work out the right command and **hand it to the user in full**,
-not to run it.
+`booth--expose` is TCP only and needs the host's `booth` process in the foreground (not a
+`--daemon` booth). On a `--public` booth (`BOOTH_PUBLIC=true`) it is refused unless you pass
+`--ok-public`, because the tunnel has none of the booth port's password or TLS — ask the user first.
+Often you need no port at all: `/proxy/<port>/` (§2) already reaches the app.
 
-What you *can* do in here is figure out what to ask for. `/opt/codingbooth/setups/` is the catalog as
-this image sees it:
+Deeper: `/opt/codingbooth/docs/BOOTH_EXPOSE.md`.
 
-```bash
-ls /opt/codingbooth/setups/ | grep -i <keyword>     # is there a built-in for this?
-cat /opt/codingbooth/setups/<name>--setup.sh        # what it installs, and its flags
-```
+---
 
-A setup script's name is normally the template name to put in `--select`, but not always — the
-authoritative list is host-side, so offer the user these to check before committing to a command:
+## 6. Environment variables
 
-```bash
-booth template list                 # everything selectable
-booth template search <keyword>     # narrower
-booth template show <name>          # its params, extensions, and what it requires
-booth config --no-tui --dryrun --select '<the full list>'    # print the result, write nothing
-```
+| For | Do |
+|---|---|
+| what the booth tells you | `booth--envs` — `BOOTH_HOST_PORT`, `BOOTH_VARIANT_TAG`, `BOOTH_DIND`, `BOOTH_EGRESS`, ... (read-only facts) |
+| this shell only | `export KEY=value` |
+| every start, not secret | `./booth config --no-tui --overwrite --add-env KEY=value` → `config.toml` |
+| every start, secret | a `KEY=value` line in `.booth/.env` |
+| one profile only | `.booth/.<profile>--env` (used with `--profile <profile>`) |
 
-`--dryrun` is the cheap way to be sure: it prints the Boothfile it *would* write and touches nothing.
+`.booth/.env` is **not** generated, so editing it is fine (it lives in `.booth/`, so it needs
+`--writable-booth` or the host). It must be gitignored — booth refuses to start if it is not, and
+the generated `.booth/.gitignore` already covers it. Values are expanded on the **host** when the
+booth starts: `TOKEN=$TOKEN` passes the host's variable through; `$VAR` and `~` work as in bash.
+One `KEY=VALUE` per line, no spaces around `=`, no multi-line values.
 
-### Also tell the user this
+All of these apply from the next start. If the user keeps secrets in `folio` (in every booth), use
+them for one command without writing them anywhere: `folio exec --secrets <name> -- <cmd>`.
 
-**The change applies the next time the booth starts fresh.** A fresh `./booth` always rebuilds the
-image from the Boothfile (Docker's layer cache keeps it quick). From inside, `booth--restart` exits
-and comes back rebuilt. The exception is a **kept-alive** booth resumed with `./booth start`: it
-keeps its old image and settings. The user must `./booth remove` it and run `./booth` again.
+Deeper: `/opt/codingbooth/docs/BOOTH_VARS.md` (`.env` syntax and expansion), `BOOTH_PROFILES.md`.
 
-### If the booth has a `.booth/Dockerfile` instead
+---
 
-Older booths — and anyone who wants raw Docker — use `.booth/Dockerfile`. It still works: booth
-looks for `Boothfile` first and falls back to `Dockerfile`. If **both** exist the Boothfile wins and
-booth prints `Warning: Both Boothfile and Dockerfile exist. Using Boothfile.`, which means edits to
-that Dockerfile do nothing. Check which one you actually have before touching either:
+## 7. Local templates, setups, and other files you may write
 
-```bash
-ls /home/coder/code/.booth/{Boothfile,Dockerfile} 2>/dev/null
-```
-
-A Dockerfile-only booth has no `booth config` provenance to protect, so editing it by hand is the
-normal way to change it — the rest of this section does not apply. Anything a Dockerfile can do a
-Boothfile can too (`run`, `copy`, `env`, `workdir`, `expose`, `label`, `arg`, plus `setup` and
-`install`), so suggest converting only if the user asks.
-
-### What you *can* write by hand
-
-Everything else under `.booth/` is copied rather than regenerated, and survives a reconfigure
-untouched — this is where your own work belongs:
+Everything under `.booth/` except `Boothfile`, `config.toml` and `.generated` is yours to write by
+hand (writable `.booth/`, or on the host):
 
 | Path | What it is |
 |---|---|
-| `.booth/setups/` | your own `<name>--setup.sh` scripts (they shadow the built-ins) |
-| `.booth/startups/` | per-boot hooks |
-| `.booth/home/`, `.booth/home-seed/` | dotfiles copied into `~` |
-| `.booth/shared/`, `.booth/cache/` | bind-mounted directories |
+| `.booth/setups/<name>--setup.sh` | a build-time install script; runs as root while the image builds |
+| `.booth/templates/<name>.toml` | a project-local template, when a script alone is not enough |
+| `.booth/startups/<name>--startup.sh` | runs as `coder` on every container start |
+| `.booth/home/`, `.booth/home-seed/` | files copied into `~` on start — `home/` overwrites, `home-seed/` only fills in missing files |
+| `.booth/cache/`, `.booth/shared/` | host folders bind-mounted at the matching path in the booth; `cache/` is gitignored, `shared/` is meant to be committed |
 
-A custom setup script in `.booth/setups/` still needs a `setup <name>` line in the Boothfile to
-run. That line is added by selecting it, as above; see
-[Create a Custom Setup Script](#action-create-a-custom-setup-script).
-
----
-
-## Action: Add a Built-in Tool
-
-**Example:** User asks for Python environment.
-
-1. **Check if a setup exists:**
-   ```bash
-   ls /opt/codingbooth/setups/ | grep python
-   ```
-
-2. **Read the setup script** to understand what it does — its flags are usually the template's
-   params (`python--setup.sh 3.13.12` ⇢ `--select python:3.13.12`):
-   ```bash
-   cat /opt/codingbooth/setups/python--setup.sh
-   ```
-
-3. **Check the current selection** off the top of the Boothfile, so you don't add what is there:
-   ```bash
-   head -2 /home/coder/code/.booth/Boothfile
-   # Configured by: booth config --no-tui --overwrite --select go+vscode-ext
-   ```
-
-4. **Hand the user the command that adds it:**
-   ```bash
-   booth config --no-tui --overwrite --add-select python
-   ```
-
-   > "Python isn't in this booth yet. Run this on the host to add it, then restart the booth
-   > (`./booth`). Your existing `go+vscode-ext` selection stays."
-
-**Do not** add `RUN python--setup.sh` to the Boothfile by hand. It would work once and cost the user
-the config TUI from then on.
-
----
-
-## Action: Add a Simple apt Package
-
-**Example:** User needs `htop`.
-
-There is a template for exactly this — `apt-pkg` takes a comma-separated list and compiles to
-`arg APT_PKGS=…` + `install apt ${APT_PKGS}`:
+**A setup that is its own template.** Put a `# cb-template:` line in the script's leading comment
+block and it becomes a template named after the file, selectable like any stock one — so the
+`setup` line in the Boothfile is *generated*, not typed in:
 
 ```bash
-booth config --no-tui --overwrite --add-select 'apt-pkg:htop,jq'
-```
-
-Let the user run it on the host. Version-pin
-in the manager's own syntax when it matters — `apt-pkg:htop=3.3.0-1`.
-
----
-
-## Action: Create a Custom Setup Script
-
-**When:** Tool requires environment variables, profile scripts, user-specific config, or complex installation.
-
-1. **Create the setup script** at `.booth/setups/<tool>--setup.sh`, with a `# cb-template:` header
-   in its leading comment block. The header makes the script a template named `<tool>`, so
-   `--select` can name it and the `setup <tool>` line is *generated* rather than typed into the
-   Boothfile:
-   ```bash
-   #!/usr/bin/env bash
-   # cb-template: <Tool>                          ← required: the marker + display name
-   # cb-disc:     What it installs, in one line
-   # cb-band:     90                              ← Boothfile order: 90 runs after language setups
-   # cb-param:    TOOL_VERSION default=1.2.3      ← optional; reaches the script as $1
-   set -euo pipefail
-   TOOL_VERSION="${1:-1.2.3}"
-
-   # Install the tool (runs as root during build)
-   curl -fsSL "https://example.com/install.sh" | bash -s -- "$TOOL_VERSION"
-
-   # Create profile script (for PATH, env vars)
-   cat > /etc/profile.d/65-cb-<tool>--profile.sh << 'EOF'
-   export TOOL_HOME="/opt/tool"
-   export PATH="$TOOL_HOME/bin:$PATH"
-   EOF
-   chmod 644 /etc/profile.d/65-cb-<tool>--profile.sh
-
-   # Create startup script (one-time init per boot, runs as user)
-   cat > /usr/share/startup.d/65-cb-<tool>--startup.sh << 'EOF'
-   #!/usr/bin/env bash
-   # Create user config if missing
-   [[ -f ~/.tool-config ]] || echo "default config" > ~/.tool-config
-   EOF
-   chmod 755 /usr/share/startup.d/65-cb-<tool>--startup.sh
-   ```
-
-   Only the leading comment block is read, and once `cb-template` is present an unknown `cb-` key
-   is an error. The other keys (`cb-detail`, `cb-requires`, `cb-tags`) are in
-   [Customization → A setup that is its own template](BOOTH_CUSTOMIZATION.md#a-setup-that-is-its-own-template).
-
-   `.booth/setups/` is prepended to the build's `PATH`, ahead of `/opt/codingbooth/setups/`. So a
-   `setup <tool>` line finds your script — and a script named after a built-in **shadows** it, which
-   is the supported way to patch one locally (and an easy way to break one by accident: name it
-   something new unless shadowing is the point).
-
-   `.booth/` is read-only in here, so either the user creates this file on the host, or the booth
-   was started with `--writable-booth`.
-
-2. **Select it**, and tell the user to restart the booth:
-
-   ```bash
-   booth config --no-tui --overwrite --add-select <tool>          # or <tool>:<version>
-   ```
-
-   The result is an ordinary generated Boothfile carrying `setup <tool>`, so the booth stays
-   TUI-editable and your tool shows up under **This project** like any other template.
-
-   > **When a script header is not enough** — the tool needs extensions, files or run-args of its
-   > own — write a project-local template instead: one file,
-   > `.booth/templates/<name>.toml`, with the setup script inline under
-   > `[files.setups]`. It needs no directory, no `meta.toml` and no display keys, and lists under **This project**
-   > (see [AGENT_TEMPLATE.md](AGENT_TEMPLATE.md)). A project-local template of the same name as a
-   > stock one overrides it, with a warning.
-
-   > **Shortcut, with a cost:** you *can* skip the header and add `setup <tool>` to the Boothfile
-   > by hand. It builds — and it converts the booth to hand-written, so the user's next
-   > `booth config` refuses to run without `--overwrite`. Only do it if the user says they don't use
-   > the TUI.
-
-**Picking a `<LEVEL>`:** profiles and startup scripts run in filename order, lower first. Pick a
-level above every built-in your script relies on — `ls /etc/profile.d/ /usr/share/startup.d/` shows
-what is in this booth and at which number. Common ones: Python 53, Go 57, the JDK 60, jenv 65,
-IDEs and the notebook 70. Nothing validates the number; sorting after what you need is the rule.
-
----
-
-## Action: Add User-Level Config/Dotfiles
-
-**Team-shared (override):** `.booth/home/`
-- Files copied to `/home/coder/` at startup
-- **Overwrites** existing files
-- Use for: enforced team configs
-
-**Team-shared (seed):** `.booth/home-seed/`
-- Files copied to `/home/coder/` at startup
-- **Does NOT overwrite** existing files
-- Use for: default templates users can customize
-
-**Example:** Add team `.gitconfig`
-```
-.booth/home/.gitconfig    # Enforced for everyone
-```
-
----
-
-## Action: Add Custom Startup Logic
-
-**For simple project-specific startup:** Add a script to `.booth/startups/`
-- Create a file matching `*--startup.sh` (e.g., `my-service--startup.sh`)
-- Files without a `NN-` prefix default to order 50
-- Runs once at container start, as the `coder` user
-- Survives `booth config --no-tui --overwrite`, as long as it carries **no** `# Configured by:` /
-  `# Generated by:` header. That header is how a reconfigure spots the startup scripts *it* wrote in
-  order to clean them up; yours has no header, so it is left alone. Don't paste one in.
-
-```bash
-# .booth/startups/dev-server--startup.sh
 #!/usr/bin/env bash
-# Start a background service for this project
-npm run dev:server &
+# cb-template: My Tool
+# cb-disc:     Installs mytool, the project's release helper
+# cb-band:     90
+# cb-param:    TOOL_VERSION default=1.2.3
+set -euo pipefail
+TOOL_VERSION="${1:-1.2.3}"
+
+curl -fsSL "https://example.com/mytool-${TOOL_VERSION}.tar.gz" | tar -xz -C /usr/local/bin mytool
+
+# PATH or env for every shell: a profile script, named <LEVEL>-cb-<name>--profile.sh
+cat > /etc/profile.d/65-cb-mytool--profile.sh <<'EOF'
+export MYTOOL_HOME=/usr/local/share/mytool
+EOF
 ```
 
-**For tool installation with startup needs:** Create a setup script in `.booth/setups/`
-- Setup scripts run as root during image build
-- They can create proper startup scripts in `/usr/share/startup.d/`
-- Better for: reusable tools, system-level configuration
+```bash
+./booth config --no-tui --overwrite --add-select mytool:1.3.0
+# Boothfile:  arg TOOL_VERSION=1.3.0
+#             setup mytool ${TOOL_VERSION}
+```
 
-**When to use which:**
-| Need                               | Use                                                  |
-|-------------------------------------|------------------------------------------------------|
-| Project-specific startup commands   | `.booth/startups/name--startup.sh`                   |
-| Tool that needs PATH/env vars       | Setup script with profile in `/etc/profile.d/`       |
-| Tool with user-level init           | Setup script with startup in `/usr/share/startup.d/` |
+- The value of each `cb-` key is **everything after the colon** — never put a comment on the same
+  line. An unknown `cb-` key is an error. Other keys: `cb-detail`, `cb-requires`, `cb-tags`.
+- `cb-band` orders it in the Boothfile (default 50; 90 runs after the language setups).
+  `cb-param` values reach the script as `$1`, `$2`, ... in declaration order.
+- `.booth/setups/` comes first on the build's `PATH`, so a script named after a built-in
+  **replaces** it. Pick a new name unless replacing is the point.
+- Profile/startup script `<LEVEL>` numbers run in order: pick one above what you depend on —
+  `ls /etc/profile.d/ /usr/share/startup.d/` shows the ones in this booth (Python 53, Go 57, the
+  JDK 60).
+
+**`.booth/startups/` scripts** are `source`d one after another in one shell with `set -e`, in name
+order (no `NN-` prefix counts as 50). An `exit` or a failing command stops the rest — keep them
+short and put long-running servers in the background (`npm run dev &`).
+
+Deeper: `/opt/codingbooth/docs/BOOTH_CUSTOMIZATION.md` (setup headers, local templates,
+recipes), `AGENT_TEMPLATE.md` (every `template.toml` key), `BOOTH_SETUP.md` (setup-script
+conventions and helpers), `BOOTH_HOME.md`, `BOOTH_LOCALCACHE.md`, `BOOTH_SHARED.md`.
 
 ---
 
-## Action: Experiment Before Committing
+## 8. Which templates exist for this version
 
-**Pattern:** Try ephemeral changes first, persist only if they work.
+The catalog is versioned with the CLI. `./booth template` downloads the templates for the version
+pinned in `.booth/tools/codingbooth.lock` (from that GitHub release) and lists them, together with
+this project's local ones:
 
-```
-Agent: "Let me try installing this package to see if it works..."
-
-# Ephemeral test (will be lost on restart)
-pip install some-package --break-system-packages
-# or
-npm install -g some-tool
-
-Agent: "That worked! Here's the booth config command to make it permanent..."
-
-# Then hand over the regenerate command — see "Change the Environment"
-booth config --no-tui --overwrite --add-select '<the new template>'
+```bash
+cd ~/code
+./booth template list                  # everything selectable, by category (--full adds secondary ones)
+./booth template search postgres
+./booth template show python           # params, extensions (+uv, +pip-pkg, ...), what it requires
+./booth template cat python            # its full source
 ```
 
-**This is valuable because:**
-- Fast feedback loop
-- No rebuild needed for testing
-- Only commit working solutions to config
+The source tree for a release is also browsable at
+`https://github.com/NawaMan/CodingBooth/tree/<version>/templates`. The setup scripts the
+templates call are already in this image, in `/opt/codingbooth/setups/`.
 
 ---
 
-## Action: Modify Runtime Config
+## Quick reference
 
-**File:** `.booth/config.toml` — but if it is generated (the usual case), reach it through
-`booth config` flags rather than by editing it. Each setting below has one:
-
-| Setting | Flag |
+| Don't | Do |
 |---|---|
-| `variant` | `--variant codeserver` |
-| `port` | `--port 10000` / `NEXT` / `RANDOM` |
-| a published port | `--expose 8080`, `--expose +3000:5000` |
-| an env var | `--env TZ=UTC` |
-| a mount | `--mount /host/path:/container/path` |
-| `cmds` | `--cmd bash --cmd -lc --cmd 'npm start'` |
-| anything else | `--set <key>=<value>` |
+| hand-edit `.booth/Boothfile` or `config.toml` | `./booth config --no-tui --overwrite --add-…` (§4) |
+| restate `--select` / `--env` / `--expose` with part of the list | `--add-*` / `--remove-*` |
+| treat an ephemeral install as done | persist it through `booth config` (§3) |
+| run `booth--restart` / `booth--shutdown` unasked | tell the user a restart is needed (§4) |
+| put a secret in `config.toml` | `.booth/.env` (§6) |
+| assume where a tool lives | read `/opt/codingbooth/setups/<name>--setup.sh` |
+| commit as an invented identity | check `git config user.email`; ask |
 
-```bash
-booth config --no-tui --overwrite --add-env TZ=UTC --add-expose 8080
-```
+| Symptom | Cause |
+|---|---|
+| `Read-only file system` under `.booth/` | started without `--writable-booth` (§4) |
+| tool missing after a restart | it was installed ephemerally, or a restated `--select` dropped it, or a kept-alive booth was resumed on its old image |
+| config change has no effect | the booth was not started fresh (§4) |
+| `Running booth inside a booth container` | you tried to *start* a booth; `./booth config` and `./booth template` are fine |
+| booth vanished during a long task | idle shutdown (§2) |
+| `docker: command not found` | the booth has no DinD; `--add-select dind`, after asking — it gives the booth host-root-equivalent power |
 
-A setting you leave out keeps its recorded value. `--add-*` / `--remove-*` change one entry;
-restating the plain flag (`--env`, `--expose`, `--mount`) **replaces** that whole list. Same rule
-as `--select`.
-
-**What the keys look like in the file:**
-```toml
-# Select variant
-variant = "codeserver"    # base, notebook, codeserver, desktop-xfce, desktop-kde (aliases: default, console, terminal, xfce, kde)
-
-# Port mapping
-port = 10000              # or "NEXT" or "RANDOM"
-
-# Environment variables for container
-run-args = ["-e", "TZ=UTC", "-e", "MY_VAR=value"]
-
-# Extra volumes
-run-args = ["-v", "/host/path:/container/path"]
-
-# Bind mounts (-v / --volume) whose host path does not exist are skipped at runtime.
-# Named Docker volumes (bare names like "myvol:/data") are never skipped.
-# Missing host paths are logged to stderr so multi-OS credential paths are safe:
-# list Linux, macOS, and Windows locations; only existing ones are mounted.
-# Add the booth-only option `create` to make a missing host folder instead of skipping:
-#   "-v", "~/.cache/sccache:/home/coder/.cache/sccache:create"
-
-# Devices
-run-args = ["--device", "/dev/kvm"]
-
-# --device follows the same rule: a device node that is not present on the host is
-# dropped with a warning rather than failing `docker run`, so asking for hardware a
-# machine may not have can never stop the booth from starting.
-
-# Default command
-cmds = ["bash", "-lc", "npm start"]
-
-# Build arguments
-build-args = ["--build-arg", "NODE_VERSION=20"]
-```
-
-**Changes take effect on next `./booth` run.**
-
----
-
-## Action: Change the Desktop Look
-
-On a desktop booth (XFCE for now), `booth--theme` switches the look from any shell — no GUI, no
-`.booth/` change, applies live:
-
-```bash
-booth--theme                          # current gtk, wm, icons, cursor, cursor-size, dock, dock-hide
-booth--theme list icons               # what is installed (* marks the current one)
-booth--theme set  icons Adwaita       # switch; refuses a name that is not installed
-booth--theme set  dock-hide intelligent
-booth--theme reset icons              # back to the image default
-```
-
-It writes exactly what the desktop's own Settings would, per user under `~/.config` — so it
-survives a booth restart but not a recreated container. To change the **image default** for
-everyone instead, that is a setup change (`xfce-theme--setup.sh` picks the XFCE defaults) — hand
-it to the user like any other environment change.
-
----
-
-## Action: Find Information About the Environment
-
-**Quick overview:** Run `booth--info` to see version, variant, key paths, and how to reach the host:
-```bash
-booth--info
-```
-
-**Talking to a service on the host** — a database, an API, a language server running outside the
-booth — needs no tunnel: the host is always reachable at `host.docker.internal`
-(also in `$BOOTH_HOST_NAME`; the host's own network address is in `$BOOTH_HOST_IP`).
-
-```bash
-curl http://host.docker.internal:3000/          # a host service on port 3000
-```
-
-The service must listen on `0.0.0.0`, not only on `127.0.0.1` — a host-local bind is unreachable
-from inside any container. See [BOOTH_EXPOSE.md](BOOTH_EXPOSE.md) for both directions.
-
-**Read setup scripts** to understand paths, env vars, and configuration:
-```bash
-cat /opt/codingbooth/setups/python--setup.sh
-cat /opt/codingbooth/setups/node--setup.sh
-```
-
-Setup scripts are the **source of truth** for:
-- Where tools are installed
-- What environment variables are set
-- What profile/startup scripts are created
-- What wrapper commands exist
-
----
-
-## What NOT to Do
-
-| Don't                                                    | Do Instead                                    |
-|----------------------------------------------------------|-----------------------------------------------|
-| Edit `.booth/` files from inside the container           | Edit on the host, or use `--writable-booth`   |
-| Hand-edit `.booth/Boothfile` or `config.toml`            | Re-run `booth config` with `--add-select` (see [Change the Environment](#action-change-the-environment-boothfile--configtoml)) |
-| Restate `--select` with only part of the list            | `--add-select` / `--remove-select` — a restated list replaces the old one |
-| Install tools directly in running container (ephemeral)  | Add the template to the Boothfile via `booth config` |
-| Edit files in `/etc/`, `/opt/`, `/usr/` directly         | Create setup scripts in `.booth/setups/`      |
-| Tell user to "just run `curl \| bash`"                   | Add a proper setup — built-in template, or `.booth/setups/` |
-| Hardcode paths without checking setup scripts            | Read `/opt/codingbooth/setups/*.sh` first     |
-| Assume tool locations                                    | Check setup scripts for actual paths/env vars |
-
-**Exception:** Ephemeral installs are OK for **experimentation** before committing to config.
-
----
-
-## Troubleshooting
-
-**"Tool not found after restart"**
-- Is it in the Boothfile? Ephemeral installs don't persist — `grep <tool> .booth/Boothfile`.
-- It is in the Boothfile but still missing: the booth was probably resumed, not started fresh. A
-  kept-alive booth resumed with `./booth start` keeps its old image. Have the user `./booth remove`
-  it and run `./booth`.
-- Did a reconfigure drop it? A restated `--select` replaces the selection, so a template left out
-  of it is gone. The Boothfile's `# Configured by:` line shows what was actually asked for.
-
-**"Read-only file system" when editing `.booth/` files**
-- `.booth/` is mounted read-only by default. Edit files on the host side, or ask the user to restart with `--writable-booth`.
-
-**"Permission denied"**
-- Setup scripts run as root during build. User-level changes go in startup scripts or `.booth/home/`.
-
-**"Changes not taking effect"**
-- The booth must start fresh: `./booth` on the host, or `booth--restart` from inside. A resumed
-  keep-alive booth keeps its old image — `./booth remove` it first.
-
-**"Which setup script should I use?"**
-- List available: `ls /opt/codingbooth/setups/`
-- Read it: `cat /opt/codingbooth/setups/<name>--setup.sh`
-
----
-
-## Summary Checklist
-
-When user asks to set up a tool/environment:
-
-- [ ] Check `booth template list` / `/opt/codingbooth/setups/` for a built-in setup
-- [ ] Read the setup script to understand what it does
-- [ ] If no built-in: decide between apt-get or a custom setup script in `.booth/setups/`
-- [ ] Read the Boothfile's `# Configured by:` line, then use `--add-select` — never hand-edit the
-      Boothfile or `config.toml`, and never restate part of the existing selection
-- [ ] Hand the user the full `booth config` command (it is host-side; there is no CLI in here)
-- [ ] If user config needed: add to `.booth/home/` or `.booth/home-seed/`
-- [ ] If runtime config needed: pass `--add-expose` / `--add-env` / `--set` to the same command
-- [ ] Tell user to restart booth to apply changes
-- [ ] For quick tests: OK to install ephemerally first, then persist
+Other docs in `/opt/codingbooth/`: `README.md` (product overview), `GUIDE.md` (the human's
+in-booth guide: Booth panel, tiling, clipboard), `docs/` (everything), `variants/` (each image's
+Dockerfile), `setups/` (every built-in setup and `booth--*` helper).
