@@ -33,6 +33,28 @@ This file contains a list of changes for each released version.
   Hovering the hint spells them out and Help lists both forms.
   See [Keyboard Shortcuts (Tiling)](BOOTH_CONSOLE.md#keyboard-shortcuts-tiling).
 
+- **`AGENT.md` — the guide baked into every booth for an AI agent — is rewritten around what an
+  agent does in there.** Orient, run, install, change the config, expose a port, set env vars,
+  write local templates and setups, find the templates for this version — each section points at
+  the local `/opt/codingbooth/docs/` file that goes deeper. It now says that `./booth config` and
+  `./booth template` work from inside a booth (only *starting* one is blocked), so with
+  `--writable-booth` an agent applies a change itself and otherwise proves it with `--dryrun`
+  first. It also covers idle shutdown during a long task, why `booth--restart` ends the agent's own
+  session, `/proxy/<port>/` for showing the user a server, and what a booth may lack (docker, open
+  network, a git identity). Corrected along the way: the persistence table, optional sudo, the
+  variant list, setup names, and links that did not resolve inside the image. See
+  [AGENT.md](AGENT.md).
+
+- **Fixed: two copy-paste examples that did not work.** The setup-header example in
+  [BOOTH_CUSTOMIZATION.md](BOOTH_CUSTOMIZATION.md#a-setup-that-is-its-own-template) had `← notes`
+  on its `cb-` lines, which are read as part of the value — copied as-is, `cb-band` failed with
+  `must be a non-negative number`. The `cmds` example in [BOOTH_RUN.md](BOOTH_RUN.md) used
+  `["bash", "-lc", "make test"]`, but booth already wraps the command in `bash -lc`, so it ran
+  `make` with no target; it is now `["make", "test"]`.
+
+- **`booth--info` no longer says `AGENT.md` is also at `~/AGENT.md`** — no such copy exists.
+  Needs a rebuilt base image.
+
 - **The welcome banner no longer lists `lazygit`.** Its "Handy commands" list is shorter;
   `lazygit` is still installed in every booth. Needs a rebuilt base image.
 

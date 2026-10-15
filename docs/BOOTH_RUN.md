@@ -229,8 +229,10 @@ You can define special arrays in `.booth/config.toml` to customize Docker intera
 
 - **`cmds`** — Default command to run inside the container. CLI `-- <cmd>` overrides this (does not append).
   ```toml
-  cmds = ["bash", "-lc", "make test"]
+  cmds = ["make", "test"]
   ```
+  Booth already runs the command through `bash -lc`, so don't add one yourself:
+  `["bash", "-lc", "make test"]` becomes `bash -lc 'bash -lc make test'`, which runs `make` alone.
 
 > These arrays allow you to version-control runtime and build options without hardcoding them into your CLI workflow.
 
