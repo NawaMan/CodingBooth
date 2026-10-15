@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 # This script installs Debian/Ubuntu system packages via apt.
 # Usage: apt--install.sh <package>[=<version>] [package...]
@@ -105,6 +105,39 @@ if [ -n "$PINNED" ] && [ -n "${CB_IMAGE_APT_SNAPSHOT:-}" ] \
     echo "    will not install."
 fi
 
+# apt has no overall time limit: its per-connection timeouts only cover an active
+# transfer. A desktop-kde build once sat in apt-get update for over three hours,
+# every connection CLOSE-WAIT and apt idle, so cb_retry never got an exit to
+# retry. Each apt-get below runs under `timeout` instead; a run that hits it is
+# reported as "timed out", which cb_retry counts as transient. The limits are
+# generous on purpose — a slow but healthy snapshot.ubuntu.com once took 15
+# minutes for a 30MB install. Hosts without `timeout` (macOS runs the setups
+# tests) run apt-get unlimited, as before.
+CB_APT_UPDATE_TIMEOUT="${CB_APT_UPDATE_TIMEOUT:-600}"
+CB_APT_INSTALL_TIMEOUT="${CB_APT_INSTALL_TIMEOUT:-1800}"
+
+# apt_get_timed <seconds> <apt-get args...>
+apt_get_timed() {
+    local limit="$1" rc=0
+    shift
+    if ! command -v timeout >/dev/null 2>&1; then
+        apt-get "$@" || rc=$?
+        return "$rc"
+    fi
+    # timeout signals apt's whole process group, so its download methods and any
+    # dpkg it started go too; --kill-after covers one that ignores SIGTERM.
+    timeout --kill-after=30 "$limit" apt-get "$@" || rc=$?
+    if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
+        echo "⚠️  apt-get $1 timed out after ${limit}s"
+        # A kill mid-dpkg leaves packages half-configured, and the next install
+        # refuses to run until they are finished.
+        if [ "$1" = install ]; then
+            dpkg --configure -a || true
+        fi
+    fi
+    return "$rc"
+}
+
 # apt-get update exits 0 even when snapshot.ubuntu.com 502/503s
 # ("W: Failed to fetch … ignored"). cb_retry then sees success and does not
 # retry; the following install dies with "Unable to locate package", which is
@@ -114,7 +147,7 @@ apt_get_update() {
     local log rc
     log="$(mktemp)"
     rc=0
-    apt-get update "$@" >"$log" 2>&1 || rc=$?
+    apt_get_timed "$CB_APT_UPDATE_TIMEOUT" update "$@" >"$log" 2>&1 || rc=$?
     cat "$log"
     if [ "$rc" -eq 0 ] && grep -qiE 'Failed to fetch|[45][0-9]{2}[[:space:]]+(Bad Gateway|Service Unavailable|Too Many Requests)' "$log"; then
         rm -f "$log"
@@ -128,7 +161,7 @@ apt_get_update() {
 # macOS ships, and what the host-side tests run this with — calls an empty
 # "${arr[@]}" unbound under `set -u`; this form expands to nothing instead.
 cb_retry apt_get_update ${SNAPSHOT_ARGS[@]+"${SNAPSHOT_ARGS[@]}"}
-if ! cb_retry apt-get install -y --no-install-recommends ${SNAPSHOT_ARGS[@]+"${SNAPSHOT_ARGS[@]}"} "$@"; then
+if ! cb_retry apt_get_timed "$CB_APT_INSTALL_TIMEOUT" install -y --no-install-recommends ${SNAPSHOT_ARGS[@]+"${SNAPSHOT_ARGS[@]}"} "$@"; then
     if [ -n "$OLDER_THAN_IMAGE" ]; then
         echo "" >&2
         echo "❌ apt could not install from snapshot ${APT_SNAPSHOT}: it is older than this" >&2
