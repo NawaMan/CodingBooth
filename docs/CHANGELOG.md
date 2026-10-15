@@ -62,11 +62,15 @@ This file contains a list of changes for each released version.
   popup.** A new `lsp` template installs the common servers, one `lsp--<server>--setup.sh` each:
   `lsp+markdown` (marksman), `+toml` (taplo), `+yaml`, `+json` (JSON, HTML, CSS), `+bash`,
   `+typescript`, `+python` (pylsp), `+sql` (sqls, amd64 only), `+tailwind`, `+terraform`,
-  `+dockerfile`, and `+docker-compose`. Or type the names yourself: `lsp:marksman,taplo@0.10.0,yaml`
-  takes any server or language name. The Node-based ones pull in `nodejs`, and pylsp pulls in
-  `python`. Fresh and Helix start them without any config. For Neovim, the new `neovim+lsp` adds a
-  system-wide `booth-lsp.lua` that enables every installed server, gopls, rust-analyzer and clangd
-  included. It loads after your own `init.lua`, and `vim.g.booth_lsp = false` turns it off. In
+  `+dockerfile`, `+docker-compose`, `+c` (clangd, for gcc booths too), `+java` (jdtls), `+react`, and
+  `+svelte`. Each one also adds the matching VS Code extension (Even Better TOML, Red Hat YAML,
+  clangd, Svelte for VS Code, ...), which skips itself on a variant without VS Code or code-server.
+  Or type the names yourself: `lsp:marksman,taplo@0.10.0,yaml` takes any server or language name.
+  The Node-based ones pull in `nodejs`, pylsp pulls in `python`, and jdtls pulls in `java`. Any
+  other VS Code extension is still `code-ext-pkg:<id>,...`. Fresh and Helix start the servers
+  without any config. For Neovim, the new `neovim+lsp` adds a
+  system-wide `booth-lsp.lua` that enables every installed server, gopls, rust-analyzer, clangd and
+  jdtls included. It loads after your own `init.lua`, and `vim.g.booth_lsp = false` turns it off. In
   Fresh, a missing server now gets an **Install <server> (booth)** row in the status-bar LSP popup.
   The palette command **Booth: Install Language Server** lists them all. Either one runs the setup
   with `sudo` and starts the server. An installed server auto-starts unless your `config.json`

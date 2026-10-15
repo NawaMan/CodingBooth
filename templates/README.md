@@ -597,18 +597,22 @@ never the whole context, so editing source does not invalidate its layer.
 
 | Extension                          | Display Name |
 |------------------------------------|--------------|
-| `lsp/markdown--extension`          | Markdown (marksman) |
-| `lsp/toml--extension`              | TOML (taplo) |
-| `lsp/yaml--extension`              | YAML (yaml-language-server) *(requires nodejs)* |
+| `lsp/markdown--extension`          | Markdown (marksman; markdownlint in VS Code) |
+| `lsp/toml--extension`              | TOML (taplo; Even Better TOML in VS Code) |
+| `lsp/yaml--extension`              | YAML (yaml-language-server; Red Hat YAML in VS Code) *(requires nodejs)* |
 | `lsp/json--extension`              | JSON, HTML, CSS (vscode-langservers) *(requires nodejs)* |
-| `lsp/bash--extension`              | Bash (bash-language-server) *(requires nodejs)* |
+| `lsp/bash--extension`              | Bash (bash-language-server; Bash IDE in VS Code) *(requires nodejs)* |
 | `lsp/typescript--extension`        | TypeScript / JavaScript (typescript-language-server) *(requires nodejs)* |
+| `lsp/react--extension`             | React (typescript-language-server; React snippets in VS Code) *(requires nodejs)* |
+| `lsp/svelte--extension`            | Svelte (svelte-language-server; Svelte for VS Code) *(requires nodejs)* |
 | `lsp/python--extension`            | Python (pylsp) *(requires python)* |
-| `lsp/sql--extension`               | SQL (sqls) *(amd64 only)* |
+| `lsp/c--extension`                 | C / C++ (clangd; clangd in VS Code) |
+| `lsp/java--extension`              | Java (jdtls) *(requires java)* |
+| `lsp/sql--extension`               | SQL (sqls, amd64 only; SQLTools in VS Code) |
 | `lsp/tailwind--extension`          | Tailwind CSS *(requires nodejs)* |
-| `lsp/terraform--extension`         | Terraform (terraform-ls) |
-| `lsp/dockerfile--extension`        | Dockerfile *(requires nodejs)* |
-| `lsp/docker-compose--extension`    | Docker Compose *(requires nodejs)* |
+| `lsp/terraform--extension`         | Terraform (terraform-ls; HashiCorp Terraform in VS Code) |
+| `lsp/dockerfile--extension`        | Dockerfile (Docker in VS Code) *(requires nodejs)* |
+| `lsp/docker-compose--extension`    | Docker Compose (Docker in VS Code) *(requires nodejs)* |
 | `neovim/lsp--extension`            | Neovim LSP (enables the installed servers) |
 
 Each server is its own `lsp--<server>--setup.sh`, so the same binary serves every
@@ -620,7 +624,11 @@ and `lsp+toml+yaml` install the same thing. Inside a booth, Fresh's LSP popup al
 "Install <server>" for a missing one (the base image's `fresh-plugins/booth-lsp.ts`), which
 runs the same setup script. These sit at order 60 because the Node- and Python-based
 servers install with the runtime that order 50 put in place; servers that come with a
-language (gopls, rust-analyzer, clangd) stay in that language's template.
+language (gopls, rust-analyzer) stay in that language's template; clangd has `lsp+c` too,
+for a `gcc` booth. Each extension also emits its VS Code extension at order 65 (a guarded
+`*-code-extension` setup that skips without an editor), so one pick covers terminal editors
+and VS Code; where VS Code has the language built in (JSON, TypeScript) or the language
+template already auto-selects one (python, java), it adds none.
 
 ### Order 62 — Android emulator (needs the Android SDK from order 60)
 

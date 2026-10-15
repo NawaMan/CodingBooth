@@ -62,7 +62,10 @@ local servers = {
   docker_compose_language_service = {
                    cmd = { 'docker-compose-langserver', '--stdio' }, filetypes = { 'yaml.docker-compose' },
                    root_markers = { 'compose.yaml', 'compose.yml', 'docker-compose.yaml', 'docker-compose.yml' } },
-  -- From the language templates rather than the lsp template.
+  jdtls        = { cmd = { 'jdtls' },                               filetypes = { 'java' },
+                   root_markers = { 'pom.xml', 'build.gradle', 'build.gradle.kts', 'settings.gradle', '.git' } },
+  svelte       = { cmd = { 'svelteserver', '--stdio' },             filetypes = { 'svelte' },            root_markers = { 'package.json', '.git' } },
+  -- From the language templates (or lsp+c for clangd) rather than the lsp template.
   gopls        = { cmd = { 'gopls' },                               filetypes = { 'go', 'gomod', 'gowork', 'gotmpl' },
                    root_markers = { 'go.work', 'go.mod', '.git' } },
   rust_analyzer = { cmd = { 'rust-analyzer' },                      filetypes = { 'rust' },              root_markers = { 'Cargo.toml', '.git' } },

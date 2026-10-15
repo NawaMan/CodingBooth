@@ -191,11 +191,14 @@ setup logo
 setup lombok-eclipse
 setup lombok-idea
 setup lsp--bash
+setup lsp--clangd
 setup lsp--docker-compose
 setup lsp--dockerfile
+setup lsp--jdtls
 setup lsp--marksman
 setup lsp--pylsp
 setup lsp--sqls
+setup lsp--svelte
 setup lsp--tailwindcss
 setup lsp--taplo
 setup lsp--terraform-ls
@@ -208,6 +211,7 @@ setup lua-nb-kernel
 setup lxqt
 setup lxqt-wallpaper
 setup make
+setup markdown-code-extension
 setup material-cursors
 setup mermaid
 setup mermaid-code-extension
@@ -291,6 +295,7 @@ setup sccache
 setup scratch
 setup selenium
 setup spring-boot-code-extension
+setup sql-code-extension
 setup sql-studio
 setup sqlite
 setup sqluv
@@ -309,6 +314,7 @@ setup terraform-code-extension
 setup texstudio
 setup thonny
 setup tls
+setup toml-code-extension
 setup ttyd-nerd-font-index
 setup vhs
 setup viewmd
@@ -324,6 +330,7 @@ setup xfce
 setup xfce-theme
 setup xfce-wallpaper
 setup xonsh
+setup yaml-code-extension
 setup zig
 setup zig-code-extension
 install apt
