@@ -1,0 +1,8 @@
+# taplo checks this file: try `taplo check settings.toml`, or break a value below.
+[app]
+name = "lsp-example"
+greeting = "Hello"
+retries = 3
+
+[app.limits]
+max_names = 10

@@ -108,6 +108,10 @@ The advantages, in CodingBooth's own vocabulary:
   and KVM on xfce; `just build` emits an APK and `just run` launches it on an
   AVD. The SDK + NDK stay out of the desktop example on purpose.
 
+- **lsp-example** — five language servers (marksman, taplo, yaml, bash, TypeScript) installed
+  once and used by three terminal editors at the same time: Fresh, Helix, and Neovim, with no editor
+  config. A server that is missing installs from Fresh's own LSP popup.
+
 ## 🧹 Host stays clean — no global/system-wide installs
 
 - **pip-example**, **npm-example**, **bun-example** — global CLIs and lint/test toolchains live in
@@ -285,6 +289,7 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 | lamp-example | Multiple things bundled |
 | latex-example | Host stays clean / batteries-included |
 | lemp-example | Multiple things bundled |
+| lsp-example | Batteries-included (language servers for three editors) |
 | mean-example | Multiple things bundled |
 | mern-example | Multiple things bundled |
 | mvn-deps-example | Pre-baked deps |
