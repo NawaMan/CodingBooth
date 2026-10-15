@@ -1,0 +1,12 @@
+cb-version = "0.1.0"
+display-name = "Docker Compose"
+display-disc = "Microsoft's server for compose.yaml (Helix and Neovim)"
+display-order = 21
+auto-select = false
+requires = ["nodejs"]
+tags = ["lsp", "language-server", "docker-compose"]
+
+[segments]
+"Boothfile--60" = """
+setup lsp--docker-compose
+"""

@@ -58,6 +58,21 @@ This file contains a list of changes for each released version.
 - **The welcome banner no longer lists `lazygit`.** Its "Handy commands" list is shorter;
   `lazygit` is still installed in every booth. Needs a rebuilt base image.
 
+- **Language servers for terminal editors, and Fresh installs a missing one from its own LSP
+  popup.** A new `lsp` template installs the common servers, one `lsp--<server>--setup.sh` each:
+  `lsp+markdown` (marksman), `+toml` (taplo), `+yaml`, `+json` (JSON, HTML, CSS), `+bash`,
+  `+typescript`, `+python` (pylsp), `+sql` (sqls, amd64 only), `+tailwind`, `+terraform`,
+  `+dockerfile`, and `+docker-compose`. Or type the names yourself: `lsp:marksman,taplo@0.10.0,yaml`
+  takes any server or language name. The Node-based ones pull in `nodejs`, and pylsp pulls in
+  `python`. Fresh and Helix start them without any config. For Neovim, the new `neovim+lsp` adds a
+  system-wide `booth-lsp.lua` that enables every installed server, gopls, rust-analyzer and clangd
+  included. It loads after your own `init.lua`, and `vim.g.booth_lsp = false` turns it off. In
+  Fresh, a missing server now gets an **Install <server> (booth)** row in the status-bar LSP popup.
+  The palette command **Booth: Install Language Server** lists them all. Either one runs the setup
+  with `sudo` and starts the server. An installed server auto-starts unless your `config.json`
+  says otherwise. A server installed this way lasts until the booth is rebuilt, so the message
+  names the `lsp+…` selection that keeps it.
+
 - **A new booth's apt snapshot is the one its images were built against, and `today` is a
   week back.** `booth config` used to freeze a new booth's `install apt` to the day it was
   configured, so a booth configured before an image rebuild could pin an older snapshot than
