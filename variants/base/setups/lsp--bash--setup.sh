@@ -19,6 +19,7 @@ Examples:
 
 Notes:
 - Installs bash-language-server globally with npm, so bash-language-server lands in /usr/local/bin
+- Also installs shellcheck (apt), which the server runs for its diagnostics
 - Needs Node.js: select the nodejs template (or run nodejs--setup.sh first)
 USAGE
 }
@@ -43,6 +44,12 @@ fi
 
 echo "⬇️  Installing bash-language-server@${REQ_VER} ..."
 npm--install.sh "bash-language-server@${REQ_VER}"
+
+# bash-language-server's diagnostics come from shellcheck; without it the server
+# still completes and hovers, but never flags anything.
+if ! command -v shellcheck >/dev/null 2>&1; then
+  apt--install.sh shellcheck
+fi
 
 echo "✅ Bash language server installed."
 echo -n "   bash-language-server → "; command -v bash-language-server || true
