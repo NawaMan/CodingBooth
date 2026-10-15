@@ -33,6 +33,39 @@ This file contains a list of changes for each released version.
   Hovering the hint spells them out and Help lists both forms.
   See [Keyboard Shortcuts (Tiling)](BOOTH_CONSOLE.md#keyboard-shortcuts-tiling).
 
+- **Setups that compiled from source now install prebuilt, sha256-checked builds.** They come
+  from [CodingBoothPrebuilt](https://github.com/NawaMan/CodingBoothPrebuilt) (built on x86_64 and
+  arm64), and a version with no prebuilt build still compiles as before:
+  - `rust-nb-kernel`: evcxr_jupyter 0.22.0 installs in about 2s instead of a multi-minute
+    `cargo install`. Pin it with `EVCXR_VERSION`. It now lives in `/opt/evcxr`, readable by the
+    booth user, instead of root's cargo home.
+  - `scratch`: the Scratch 3 editor (scratch-gui 5.3.0, upstream's final release) installs in
+    about 9s instead of an npm/webpack build. Pin it with `SCRATCH_VERSION`; a source build now
+    uses that tag instead of upstream's latest commit. The license note now says AGPL-3.0.
+  - `excalidraw`: 0.18.1 installs in about 5s instead of a yarn build. yarn is installed only
+    when it has to build another `EXCALIDRAW_VERSION`.
+
+- **`setup ruby` installs a prebuilt Ruby from [ruby-builder](https://github.com/ruby/ruby-builder)**
+  when one exists for the version, Ubuntu release and CPU. It's checked against the release's
+  sha256 digest, extracted to `/opt/hostedtoolcache/Ruby` (the path its binaries expect) and
+  linked into rbenv. The default 3.4 installs in about 17s instead of a 3-4 minute compile; other
+  versions still build with `rbenv install`.
+
+- **New Haskell extension: Haskell Tools** (`haskell+tools`) installs `hlint`, `ormolu`,
+  `fourmolu` or `pandoc` as ready-made binaries, in seconds instead of 5-15 minutes of cabal
+  each. The default is `fourmolu,hlint`; pin with `@`, as in `hlint@3.10`. On arm64, where
+  upstream ships no hlint or ormolu, they come from CodingBoothPrebuilt.
+
+- **Fixed: arm64 and download breakages found in a platform audit.**
+  - `dbeaver` installs on arm64 (the aarch64 .deb), and pinned versions download again: they now
+    come from the GitHub release, since the dbeaver.io path 404s.
+  - JetBrains IDEs download again: every IDE now uses download.jetbrains.com, because the CDN host
+    404s every tarball. Rider and DataGrip also get their aarch64 builds on arm64.
+  - `kotlin --with-native` works again for Kotlin 2.x (the tarball was renamed). On arm64 it now
+    fails with a clear message, since JetBrains ships no Linux arm64 Kotlin/Native.
+  - `install brew` on an image without Homebrew installs Homebrew first, instead of failing
+    because `brew` is missing.
+
 - **`AGENT.md` — the guide baked into every booth for an AI agent — is rewritten around what an
   agent does in there.** Orient, run, install, change the config, expose a port, set env vars,
   write local templates and setups, find the templates for this version — each section points at

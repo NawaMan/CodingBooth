@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -21,7 +21,8 @@ Examples:
 
 Notes:
 - Requires a desktop variant (desktop-xfce, desktop-kde)
-- Installs DBeaver Community Edition via .deb package
+- Installs DBeaver Community Edition via .deb package (amd64 or arm64)
+- arm64 needs latest or 25.3.1+; older releases ship no arm64 .deb
 - Creates a desktop shortcut
 USAGE
 }
@@ -50,15 +51,38 @@ fi
 # ---- install ----
 export DEBIAN_FRONTEND=noninteractive
 
+case "$(dpkg --print-architecture)" in
+  amd64) DEB_ARCH=amd64; GH_ARCH=x86_64  ;;
+  arm64) DEB_ARCH=arm64; GH_ARCH=aarch64 ;;
+  *) echo "❌ Unsupported architecture: $(dpkg --print-architecture) (DBeaver ships amd64 and arm64)" >&2; exit 1 ;;
+esac
+
+# "latest" comes from dbeaver.io, which redirects to the newest release per architecture.
+# A pinned version comes from its GitHub release, whose .deb names changed at 25.3.5:
+# dbeaver-ce-<ver>-linux-<x86_64|aarch64>.deb from then on, dbeaver-ce_<ver>_<amd64|arm64>.deb
+# before. arm64 .debs start at 25.3.1.
+GH_BASE="https://github.com/dbeaver/dbeaver/releases/download/${DBEAVER_VERSION}"
 if [[ "$DBEAVER_VERSION" == "latest" ]]; then
-  DEB_URL="https://dbeaver.io/files/dbeaver-ce_latest_amd64.deb"
+  DEB_URLS=("https://dbeaver.io/files/dbeaver-ce_latest_${DEB_ARCH}.deb")
 else
-  DEB_URL="https://dbeaver.io/files/${DBEAVER_VERSION}/dbeaver-ce_${DBEAVER_VERSION}_amd64.deb"
+  DEB_URLS=("${GH_BASE}/dbeaver-ce-${DBEAVER_VERSION}-linux-${GH_ARCH}.deb"
+            "${GH_BASE}/dbeaver-ce_${DBEAVER_VERSION}_${DEB_ARCH}.deb")
 fi
 
-echo "• Downloading DBeaver CE (${DBEAVER_VERSION}) ..."
+echo "• Downloading DBeaver CE (${DBEAVER_VERSION}, ${DEB_ARCH}) ..."
 DEB_FILE="/tmp/dbeaver-ce.deb"
-curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL -o "$DEB_FILE" "$DEB_URL"
+downloaded=false
+for url in "${DEB_URLS[@]}"; do
+  if curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL -o "$DEB_FILE" "$url"; then
+    downloaded=true
+    break
+  fi
+done
+if [[ "$downloaded" != true ]]; then
+  echo "❌ No DBeaver CE ${DBEAVER_VERSION} .deb for ${DEB_ARCH}." >&2
+  [[ "$DEB_ARCH" == arm64 ]] && echo "   arm64 .debs exist from 25.3.1 on." >&2
+  exit 1
+fi
 
 echo "• Installing DBeaver CE ..."
 apt-get update

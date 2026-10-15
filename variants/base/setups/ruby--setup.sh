@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -22,21 +22,6 @@ LEVEL=59                          # See README.md - Profile Ordering
 
 STARTUP_FILE="/usr/share/startup.d/${LEVEL}-cb-ruby--startup.sh"
 PROFILE_FILE="/etc/profile.d/${LEVEL}-cb-ruby--profile.sh"
-
-# Install build dependencies
-apt-get update
-apt-get install -y --no-install-recommends \
-    autoconf \
-    bison \
-    build-essential \
-    libssl-dev \
-    libyaml-dev \
-    libreadline-dev \
-    zlib1g-dev \
-    libncurses-dev \
-    libffi-dev \
-    libgdbm-dev
-rm -rf /var/lib/apt/lists/*
 
 # Install rbenv and ruby-build
 echo "📦 Installing rbenv..."
@@ -78,8 +63,91 @@ if [ -z "$FULL_VERSION" ]; then
     exit 1
 fi
 
+# Prebuilt: ruby/ruby-builder publishes a tarball per version, Ubuntu release
+# and arch (the ones GitHub's setup-ruby uses), so nothing is compiled. They are
+# not relocatable -- RUNPATH and shebangs point at
+# /opt/hostedtoolcache/Ruby/<version>/<x64|arm64> -- so they are extracted there
+# and linked into rbenv's versions dir. The sha256 comes from the release's
+# asset digest; a mismatch stops the setup. No asset for this version, Ubuntu
+# or arch (or no digest to check it against) falls back to a source build.
+PREBUILT_REPO="ruby/ruby-builder"
+TOOLCACHE_DIR="/opt/hostedtoolcache/Ruby"
+
+install_prebuilt() {
+  local arch ubuntu name tag api digest want got_sum tmp
+  case "$(uname -m)" in
+    x86_64|amd64)  arch=x64   ;;
+    aarch64|arm64) arch=arm64 ;;
+    *) return 1 ;;
+  esac
+  ubuntu="$(. /etc/os-release && [ "$ID" = ubuntu ] && echo "$VERSION_ID")" || return 1
+  [ -n "$ubuntu" ] || return 1
+  tag="ruby-${FULL_VERSION}"
+  name="${tag}-ubuntu-${ubuntu}-${arch}.tar.gz"
+  api="https://api.github.com/repos/${PREBUILT_REPO}/releases/tags/${tag}"
+
+  digest="$(curl --connect-timeout 15 --retry 3 --retry-delay 3 -fsSL "$api" 2>/dev/null \
+            | jq -r --arg n "$name" '.assets[] | select(.name == $n) | .digest // empty' 2>/dev/null)" || digest=""
+  if [[ "$digest" != sha256:* ]]; then
+    echo "ℹ️  No prebuilt Ruby ${FULL_VERSION} for Ubuntu ${ubuntu} ${arch} (${name}); building from source."
+    return 1
+  fi
+  want="${digest#sha256:}"
+
+  tmp="$(mktemp -d)"
+  echo "⬇️  Downloading prebuilt Ruby ${FULL_VERSION} (Ubuntu ${ubuntu}, ${arch}) ..."
+  curl --connect-timeout 15 --retry 3 --retry-delay 3 --retry-all-errors \
+    -fsSL "https://github.com/${PREBUILT_REPO}/releases/download/${tag}/${name}" -o "$tmp/$name"
+  got_sum="$(sha256sum "$tmp/$name" | awk '{print $1}')"
+  if [ "$want" != "$got_sum" ]; then
+    echo "❌ ${name}: sha256 ${got_sum} does not match the release's ${want}" >&2
+    rm -rf "$tmp"
+    exit 1
+  fi
+
+  install_gem_build_deps
+
+  rm -rf "${TOOLCACHE_DIR:?}/${FULL_VERSION}"
+  mkdir -p "${TOOLCACHE_DIR}/${FULL_VERSION}"
+  tar -xzf "$tmp/$name" -C "${TOOLCACHE_DIR}/${FULL_VERSION}"
+  rm -rf "$tmp"
+  [ -x "${TOOLCACHE_DIR}/${FULL_VERSION}/${arch}/bin/ruby" ] \
+    || { echo "❌ ${name} has no ${arch}/bin/ruby" >&2; exit 1; }
+  chmod -R a+rX /opt/hostedtoolcache
+
+  mkdir -p "${RBENV_ROOT}/versions"
+  ln -sfn "${TOOLCACHE_DIR}/${FULL_VERSION}/${arch}" "${RBENV_ROOT}/versions/${FULL_VERSION}"
+  "${RBENV_ROOT}/versions/${FULL_VERSION}/bin/ruby" -e 'require "openssl"; require "psych"; require "fiddle"' \
+    || { echo "❌ prebuilt Ruby ${FULL_VERSION} cannot load openssl/psych/fiddle" >&2; exit 1; }
+  rbenv rehash
+}
+
+# A compiler and headers for gems with native extensions (pg, ffi, nokogiri from
+# source, ...). The prebuilt Ruby itself only needs libffi8 and libyaml-0-2, which
+# these pull in; the base image has no compiler of its own.
+install_gem_build_deps() {
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update
+  apt-get install -y --no-install-recommends "$@" \
+      build-essential \
+      libssl-dev \
+      libyaml-dev \
+      libreadline-dev \
+      zlib1g-dev \
+      libncurses-dev \
+      libffi-dev \
+      libgdbm-dev
+  rm -rf /var/lib/apt/lists/*
+}
+
+build_from_source() {
+  install_gem_build_deps autoconf bison
+  echo "📦 Building Ruby ${FULL_VERSION} from source..."
+  RUBY_CONFIGURE_OPTS="--disable-install-doc" rbenv install "$FULL_VERSION"
+}
+
 echo "📦 Installing Ruby ${FULL_VERSION}..."
-RUBY_CONFIGURE_OPTS="--disable-install-doc" rbenv install "$FULL_VERSION"
+install_prebuilt || build_from_source
 rbenv global "$FULL_VERSION"
 
 # Make rbenv accessible
