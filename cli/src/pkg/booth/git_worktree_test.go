@@ -203,3 +203,189 @@ func TestUnusableGitMountTarget(t *testing.T) {
 		}
 	}
 }
+
+// mainWithWorktrees makes a main clone with worktrees a and b beside it, all at absolute paths.
+func mainWithWorktrees(t *testing.T) (root, main string) {
+	t.Helper()
+	root, _ = filepath.EvalSymlinks(t.TempDir())
+	main = filepath.Join(root, "main")
+	gitRepo(t, main)
+	runGit(t, main, "worktree", "add", "-q", filepath.Join(root, "a"), "-b", "a")
+	runGit(t, main, "worktree", "add", "-q", filepath.Join(root, "b"), "-b", "b")
+	return root, main
+}
+
+func mirrorTargets(mirrors []gitWorktreeMount) map[string]string {
+	targets := map[string]string{}
+	for _, m := range mirrors {
+		targets[m.hostPath] = m.containerPath
+	}
+	return targets
+}
+
+// Every record's .git file is mirrored at the path the record names, so none looks stale in the
+// booth -- from the main clone (its .git inside the workspace) or from a worktree.
+func TestWorktreeMirrors_EveryWorktree(t *testing.T) {
+	if !hostskip.UnixPaths() {
+		t.Skip("records hold Windows paths, which a container cannot hold")
+	}
+	root, main := mainWithWorktrees(t)
+	common := filepath.Join(main, ".git")
+
+	for name, containerCommon := range map[string]string{
+		"from the main clone": containerCodePath + "/.git",
+		"from a worktree":     common,
+	} {
+		t.Run(name, func(t *testing.T) {
+			mirrors, has := resolveWorktreeMirrors(common, containerCommon)
+			if !has {
+				t.Fatal("hasWorktrees = false, want true")
+			}
+			targets := mirrorTargets(mirrors)
+			for _, wt := range []string{"a", "b"} {
+				file := filepath.Join(root, wt, ".git")
+				if targets[file] != file {
+					t.Errorf("%s: mirrored at %q, want the same path; all: %v", wt, targets[file], targets)
+				}
+			}
+			if len(mirrors) != 2 {
+				t.Errorf("got %d mirrors, want 2: %v", len(mirrors), targets)
+			}
+		})
+	}
+}
+
+// A worktree deleted on the host without `git worktree remove` really is stale: not mirrored, so
+// prune can still drop it. A repository with no worktrees needs nothing at all.
+func TestWorktreeMirrors_StaleAndNone(t *testing.T) {
+	if !hostskip.UnixPaths() {
+		t.Skip("records hold Windows paths, which a container cannot hold")
+	}
+	root, main := mainWithWorktrees(t)
+	if err := os.RemoveAll(filepath.Join(root, "b")); err != nil {
+		t.Fatal(err)
+	}
+	mirrors, has := resolveWorktreeMirrors(filepath.Join(main, ".git"), containerCodePath+"/.git")
+	if !has || len(mirrors) != 1 || mirrors[0].hostPath != filepath.Join(root, "a", ".git") {
+		t.Errorf("has=%v mirrors=%v, want only a", has, mirrorTargets(mirrors))
+	}
+
+	plain := filepath.Join(root, "plain")
+	gitRepo(t, plain)
+	if mirrors, has := resolveWorktreeMirrors(filepath.Join(plain, ".git"), containerCodePath+"/.git"); has || len(mirrors) != 0 {
+		t.Errorf("no worktrees: has=%v mirrors=%v, want nothing", has, mirrors)
+	}
+}
+
+// With --relative-paths a record resolves from the git folder's place in the booth. From the main
+// clone that lands in the workspace mount, which already holds the file.
+func TestWorktreeMirrors_RelativeInsideWorkspace(t *testing.T) {
+	root, _ := filepath.EvalSymlinks(t.TempDir())
+	main := filepath.Join(root, "main")
+	gitRepo(t, main)
+	cmd := exec.Command("git", "worktree", "add", "-q", "--relative-paths", filepath.Join(main, "worktree", "f"), "-b", "f")
+	cmd.Dir = main
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Skipf("git without --relative-paths: %s", out)
+	}
+	mirrors, has := resolveWorktreeMirrors(filepath.Join(main, ".git"), containerCodePath+"/.git")
+	if !has || len(mirrors) != 0 {
+		t.Errorf("has=%v mirrors=%v, want the record counted and nothing mounted", has, mirrorTargets(mirrors))
+	}
+}
+
+// `git worktree repair` in a booth points the record at /home/coder/code/.git; the next booth
+// writes the host path back. A healthy record, a plain repo, and no repo are left alone.
+func TestHealWorktreeBackLink(t *testing.T) {
+	if !hostskip.UnixPaths() {
+		t.Skip("the broken record is a Unix path")
+	}
+	root, main := mainWithWorktrees(t)
+	wt := filepath.Join(root, "a")
+	record := filepath.Join(main, ".git", "worktrees", "a", "gitdir")
+
+	if got, err := healWorktreeBackLink(wt); got != "" || err != nil {
+		t.Fatalf("healthy: got %q, %v; want nothing", got, err)
+	}
+	saved, _ := os.ReadFile(filepath.Join(main, ".git", "worktrees", "a", worktreeHostPathFile))
+	if want := filepath.Join(wt, ".git") + "\n"; string(saved) != want {
+		t.Errorf("%s = %q, want %q", worktreeHostPathFile, saved, want)
+	}
+
+	writeFile(t, record, containerCodePath+"/.git\n")
+	got, err := healWorktreeBackLink(wt)
+	if err != nil || got != record {
+		t.Fatalf("broken: got %q, %v; want %s", got, err, record)
+	}
+	data, _ := os.ReadFile(record)
+	if want := filepath.Join(wt, ".git") + "\n"; string(data) != want {
+		t.Errorf("record = %q, want %q", data, want)
+	}
+	runGit(t, main, "worktree", "prune")
+	if _, err := os.Stat(record); err != nil {
+		t.Errorf("after the heal, prune still dropped the record: %v", err)
+	}
+
+	if got, _ := healWorktreeBackLink(main); got != "" {
+		t.Errorf("main clone: got %q, want nothing", got)
+	}
+	if got, _ := healWorktreeBackLink(filepath.Join(root, "nowhere")); got != "" {
+		t.Errorf("no repo: got %q, want nothing", got)
+	}
+}
+
+// A booth on the main clone heals a record that a booth on the worktree broke, from the path that
+// booth left beside it -- before, the main clone's booth saw a "duplicate entry" and pruned it.
+func TestHealWorktreeRecords(t *testing.T) {
+	if !hostskip.UnixPaths() {
+		t.Skip("the broken record is a Unix path")
+	}
+	root, main := mainWithWorktrees(t)
+	common := filepath.Join(main, ".git")
+	recordA := filepath.Join(common, "worktrees", "a", "gitdir")
+	recordB := filepath.Join(common, "worktrees", "b", "gitdir")
+	for _, wt := range []string{"a", "b"} {
+		if _, err := healWorktreeBackLink(filepath.Join(root, wt)); err != nil { // a booth on each
+			t.Fatal(err)
+		}
+	}
+
+	// b's saved path leads to a's .git, as if b were moved and a took its place: not trusted.
+	writeFile(t, filepath.Join(common, "worktrees", "b", worktreeHostPathFile), filepath.Join(root, "a", ".git")+"\n")
+	writeFile(t, recordA, boothRecordPath+"\n")
+	writeFile(t, recordB, boothRecordPath+"\n")
+
+	healed, err := healWorktreeRecords(common, boothRecordPath)
+	if err != nil || len(healed) != 1 || healed[0] != recordA {
+		t.Fatalf("healed %v, %v; want only %s", healed, err, recordA)
+	}
+	if data, _ := os.ReadFile(recordA); string(data) != filepath.Join(root, "a", ".git")+"\n" {
+		t.Errorf("record a = %q", data)
+	}
+	if data, _ := os.ReadFile(recordB); string(data) != boothRecordPath+"\n" {
+		t.Errorf("record b = %q, want it left alone", data)
+	}
+
+	// Without a saved path there is nothing to heal from.
+	if err := os.Remove(filepath.Join(common, "worktrees", "b", worktreeHostPathFile)); err != nil {
+		t.Fatal(err)
+	}
+	if healed, _ := healWorktreeRecords(common, boothRecordPath); len(healed) != 0 {
+		t.Errorf("healed %v with no saved path, want nothing", healed)
+	}
+
+	// Healthy records are not touched, and the saved path survives git's own commands.
+	writeFile(t, recordB, filepath.Join(root, "b", ".git")+"\n")
+	if healed, _ := healWorktreeRecords(common, boothRecordPath); len(healed) != 0 {
+		t.Errorf("healed %v from healthy records, want nothing", healed)
+	}
+	runGit(t, main, "worktree", "prune")
+	runGit(t, main, "worktree", "list")
+	if _, err := os.Stat(filepath.Join(common, "worktrees", "a", worktreeHostPathFile)); err != nil {
+		t.Errorf("saved path gone after prune/list: %v", err)
+	}
+	runGit(t, main, "worktree", "remove", filepath.Join(root, "a"))
+	if _, err := os.Stat(filepath.Join(common, "worktrees", "a")); !os.IsNotExist(err) {
+		t.Errorf("record folder of a removed worktree still there (err=%v)", err)
+	}
+}
