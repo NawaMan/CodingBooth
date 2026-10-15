@@ -1,13 +1,17 @@
 cb-version = "0.1.0"
 display-name = "SQL (sqls)"
-display-disc = "sqls: completion against a configured database; amd64 only"
-display-order = 17
+display-disc = "sqls for terminal editors (amd64 only); SQLTools in VS Code"
+display-order = 21
 auto-select = false
 unsupported-arch = ["arm64"]
 unsupported-arch-note = "sqls publishes a linux build for amd64 only. On arm64 the setup explains and skips; with the go template, install go github.com/sqls-server/sqls@latest builds it."
-tags = ["lsp", "language-server", "sql"]
+tags = ["lsp", "language-server", "sql", "vscode"]
 
 [segments]
 "Boothfile--60" = """
 setup lsp--sqls
+"""
+# The VS Code side; skips itself on a variant without VS Code or code-server.
+"Boothfile--65" = """
+setup sql-code-extension
 """

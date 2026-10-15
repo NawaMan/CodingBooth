@@ -1,11 +1,15 @@
 cb-version = "0.1.0"
 display-name = "TOML (taplo)"
-display-disc = "taplo: completion, validation, and formatting for TOML"
+display-disc = "taplo for terminal editors; Even Better TOML in VS Code"
 display-order = 11
 auto-select = false
-tags = ["lsp", "language-server", "toml"]
+tags = ["lsp", "language-server", "toml", "vscode"]
 
 [segments]
 "Boothfile--60" = """
 setup lsp--taplo
+"""
+# The VS Code side; skips itself on a variant without VS Code or code-server.
+"Boothfile--65" = """
+setup toml-code-extension
 """

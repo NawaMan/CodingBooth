@@ -35,7 +35,7 @@ case "${1:-}" in
         echo "Installs language servers. No names is a no-op."
         echo
         echo "Servers:   $(available | tr '\n' ' ')"
-        echo "Languages: markdown toml terraform sql json html css javascript tailwind python"
+        echo "Languages: markdown toml terraform sql json html css javascript react tailwind python c cpp java"
         exit 0
         ;;
 esac
@@ -67,6 +67,9 @@ for spec in "$@"; do
         python|py)              name="pylsp" ;;
         compose)                name="docker-compose" ;;
         shell|sh)               name="bash" ;;
+        c|cpp|c++|cxx)          name="clangd" ;;
+        java)                   name="jdtls" ;;
+        react|jsx|tsx)          name="typescript" ;;
     esac
 
     script="lsp--${name}--setup.sh"

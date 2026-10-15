@@ -1,6 +1,6 @@
 cb-version = "0.1.0"
 display-name = "TypeScript / JavaScript (typescript-language-server)"
-display-disc = "typescript-language-server, with the TypeScript compiler it drives"
+display-disc = "typescript-language-server for terminal editors (built into VS Code)"
 display-order = 15
 auto-select = false
 requires = ["nodejs"]

@@ -1,0 +1,16 @@
+cb-version = "0.1.0"
+display-name = "React (JSX / TSX)"
+display-disc = "typescript-language-server for .jsx/.tsx; React snippets in VS Code"
+display-order = 16
+auto-select = false
+requires = ["nodejs"]
+tags = ["lsp", "language-server", "react", "vscode"]
+
+[segments]
+"Boothfile--60" = """
+setup lsp--typescript
+"""
+# The VS Code side; skips itself on a variant without VS Code or code-server.
+"Boothfile--65" = """
+setup react-code-extension
+"""

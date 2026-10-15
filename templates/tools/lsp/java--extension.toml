@@ -1,0 +1,12 @@
+cb-version = "0.1.0"
+display-name = "Java (jdtls)"
+display-disc = "Eclipse JDT language server for terminal editors (java+vscode-ext covers VS Code)"
+display-order = 20
+auto-select = false
+requires = ["java"]
+tags = ["lsp", "language-server", "java"]
+
+[segments]
+"Boothfile--60" = """
+setup lsp--jdtls
+"""

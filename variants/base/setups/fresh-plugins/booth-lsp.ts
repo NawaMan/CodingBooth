@@ -38,7 +38,7 @@ interface Server {
   command: string;
   args: string[];
   /** A runtime the setup needs that the base image does not have. */
-  needs?: "node" | "python";
+  needs?: "node" | "python" | "java";
 }
 
 const SERVERS: Server[] = [
@@ -59,6 +59,9 @@ const SERVERS: Server[] = [
   { setup: "tailwindcss", extension: "tailwind", languages: ["tailwindcss"], command: "tailwindcss-language-server", args: ["--stdio"], needs: "node" },
   { setup: "dockerfile", extension: "dockerfile", languages: ["dockerfile"], command: "docker-langserver", args: ["--stdio"], needs: "node" },
   { setup: "pylsp", extension: "python", languages: ["python"], command: "pylsp", args: [], needs: "python" },
+  { setup: "clangd", extension: "c", languages: ["c", "cpp"], command: "clangd", args: [] },
+  { setup: "jdtls", extension: "java", languages: ["java"], command: "jdtls", args: [], needs: "java" },
+  { setup: "svelte", extension: "svelte", languages: ["svelte"], command: "svelteserver", args: ["--stdio"], needs: "node" },
 ];
 
 /** File names of open buffers that belong to a language, so an install can start its server. */
@@ -77,6 +80,10 @@ const LANGUAGE_FILES: Record<string, RegExp> = {
   javascript: /\.(js|jsx|mjs|cjs)$/i,
   dockerfile: /(^|\/)(Dockerfile|Containerfile)[^/]*$|\.dockerfile$/i,
   python: /\.pyi?$/i,
+  c: /\.[ch]$/i,
+  cpp: /\.(cc|cpp|cxx|c\+\+|hh|hpp|hxx)$/i,
+  java: /\.java$/i,
+  svelte: /\.svelte$/i,
 };
 
 let installing: string | null = null;
@@ -102,6 +109,7 @@ function installed(server: Server): boolean {
 function runtimeMissing(server: Server): string | null {
   if (server.needs === "node" && !onPath("npm")) return "Node.js (select the nodejs template)";
   if (server.needs === "python" && !editor.fileExists("/opt/python/bin/pip")) return "Python (select the python template)";
+  if (server.needs === "java" && !onPath("java")) return "Java 21+ (select the java template)";
   return null;
 }
 

@@ -1,6 +1,6 @@
 cb-version = "0.1.0"
 display-name = "JSON, HTML, CSS (vscode-langservers)"
-display-disc = "The JSON, HTML, and CSS servers from VS Code"
+display-disc = "The JSON, HTML, and CSS servers from VS Code (built into VS Code itself)"
 display-order = 13
 auto-select = false
 requires = ["nodejs"]
