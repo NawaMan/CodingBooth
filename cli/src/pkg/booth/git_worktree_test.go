@@ -307,6 +307,10 @@ func TestHealWorktreeBackLink(t *testing.T) {
 	if got, err := healWorktreeBackLink(wt); got != "" || err != nil {
 		t.Fatalf("healthy: got %q, %v; want nothing", got, err)
 	}
+	saved, _ := os.ReadFile(filepath.Join(main, ".git", "worktrees", "a", worktreeHostPathFile))
+	if want := filepath.Join(wt, ".git") + "\n"; string(saved) != want {
+		t.Errorf("%s = %q, want %q", worktreeHostPathFile, saved, want)
+	}
 
 	writeFile(t, record, containerCodePath+"/.git\n")
 	got, err := healWorktreeBackLink(wt)
@@ -327,5 +331,61 @@ func TestHealWorktreeBackLink(t *testing.T) {
 	}
 	if got, _ := healWorktreeBackLink(filepath.Join(root, "nowhere")); got != "" {
 		t.Errorf("no repo: got %q, want nothing", got)
+	}
+}
+
+// A booth on the main clone heals a record that a booth on the worktree broke, from the path that
+// booth left beside it -- before, the main clone's booth saw a "duplicate entry" and pruned it.
+func TestHealWorktreeRecords(t *testing.T) {
+	if !hostskip.UnixPaths() {
+		t.Skip("the broken record is a Unix path")
+	}
+	root, main := mainWithWorktrees(t)
+	common := filepath.Join(main, ".git")
+	recordA := filepath.Join(common, "worktrees", "a", "gitdir")
+	recordB := filepath.Join(common, "worktrees", "b", "gitdir")
+	for _, wt := range []string{"a", "b"} {
+		if _, err := healWorktreeBackLink(filepath.Join(root, wt)); err != nil { // a booth on each
+			t.Fatal(err)
+		}
+	}
+
+	// b's saved path leads to a's .git, as if b were moved and a took its place: not trusted.
+	writeFile(t, filepath.Join(common, "worktrees", "b", worktreeHostPathFile), filepath.Join(root, "a", ".git")+"\n")
+	writeFile(t, recordA, boothRecordPath+"\n")
+	writeFile(t, recordB, boothRecordPath+"\n")
+
+	healed, err := healWorktreeRecords(common, boothRecordPath)
+	if err != nil || len(healed) != 1 || healed[0] != recordA {
+		t.Fatalf("healed %v, %v; want only %s", healed, err, recordA)
+	}
+	if data, _ := os.ReadFile(recordA); string(data) != filepath.Join(root, "a", ".git")+"\n" {
+		t.Errorf("record a = %q", data)
+	}
+	if data, _ := os.ReadFile(recordB); string(data) != boothRecordPath+"\n" {
+		t.Errorf("record b = %q, want it left alone", data)
+	}
+
+	// Without a saved path there is nothing to heal from.
+	if err := os.Remove(filepath.Join(common, "worktrees", "b", worktreeHostPathFile)); err != nil {
+		t.Fatal(err)
+	}
+	if healed, _ := healWorktreeRecords(common, boothRecordPath); len(healed) != 0 {
+		t.Errorf("healed %v with no saved path, want nothing", healed)
+	}
+
+	// Healthy records are not touched, and the saved path survives git's own commands.
+	writeFile(t, recordB, filepath.Join(root, "b", ".git")+"\n")
+	if healed, _ := healWorktreeRecords(common, boothRecordPath); len(healed) != 0 {
+		t.Errorf("healed %v from healthy records, want nothing", healed)
+	}
+	runGit(t, main, "worktree", "prune")
+	runGit(t, main, "worktree", "list")
+	if _, err := os.Stat(filepath.Join(common, "worktrees", "a", worktreeHostPathFile)); err != nil {
+		t.Errorf("saved path gone after prune/list: %v", err)
+	}
+	runGit(t, main, "worktree", "remove", filepath.Join(root, "a"))
+	if _, err := os.Stat(filepath.Join(common, "worktrees", "a")); !os.IsNotExist(err) {
+		t.Errorf("record folder of a removed worktree still there (err=%v)", err)
 	}
 }
