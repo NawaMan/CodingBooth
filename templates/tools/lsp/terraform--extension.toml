@@ -1,0 +1,11 @@
+cb-version = "0.1.0"
+display-name = "Terraform (terraform-ls)"
+display-disc = "HashiCorp's server for .tf and .tfvars files"
+display-order = 19
+auto-select = false
+tags = ["lsp", "language-server", "terraform"]
+
+[segments]
+"Boothfile--60" = """
+setup lsp--terraform-ls
+"""

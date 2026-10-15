@@ -190,6 +190,18 @@ setup libreoffice
 setup logo
 setup lombok-eclipse
 setup lombok-idea
+setup lsp--bash
+setup lsp--docker-compose
+setup lsp--dockerfile
+setup lsp--marksman
+setup lsp--pylsp
+setup lsp--sqls
+setup lsp--tailwindcss
+setup lsp--taplo
+setup lsp--terraform-ls
+setup lsp--typescript
+setup lsp--vscode-langservers
+setup lsp--yaml
 setup lua
 setup lua-code-extension
 setup lua-nb-kernel
@@ -211,6 +223,7 @@ setup mysql
 setup n8n
 setup nbgrader
 setup neovim
+setup neovim-lsp
 setup network-whitelist
 setup nginx
 setup nim
@@ -328,6 +341,7 @@ install gem
 install go
 install hex
 install jetbrains-plugin
+install lsp
 install luarocks
 install npm
 install pecl

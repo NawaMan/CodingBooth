@@ -559,6 +559,7 @@ never the whole context, so editing source does not invalidate its layer.
 | `tools/cypress`            | Cypress |
 | `tools/excalidraw`         | Excalidraw |
 | `tools/freeplane`          | Freeplane |
+| `tools/lsp`                | Language Servers *(any server by name — `lsp:marksman,taplo`)* |
 | `tools/mermaid`            | Mermaid |
 | `tools/n8n`                | n8n |
 | `tools/notebook`           | Jupyter Notebook |
@@ -591,6 +592,35 @@ never the whole context, so editing source does not invalidate its layer.
 | `ruby/gem-pkg--extension`       | Gem Packages     |
 | `rust/cargo-pkg--extension`     | Cargo Packages   |
 | `tools/brew-pkg`                | brew Packages    |
+
+### Order 60 — Language servers (after the runtimes they run on)
+
+| Extension                          | Display Name |
+|------------------------------------|--------------|
+| `lsp/markdown--extension`          | Markdown (marksman) |
+| `lsp/toml--extension`              | TOML (taplo) |
+| `lsp/yaml--extension`              | YAML (yaml-language-server) *(requires nodejs)* |
+| `lsp/json--extension`              | JSON, HTML, CSS (vscode-langservers) *(requires nodejs)* |
+| `lsp/bash--extension`              | Bash (bash-language-server) *(requires nodejs)* |
+| `lsp/typescript--extension`        | TypeScript / JavaScript (typescript-language-server) *(requires nodejs)* |
+| `lsp/python--extension`            | Python (pylsp) *(requires python)* |
+| `lsp/sql--extension`               | SQL (sqls) *(amd64 only)* |
+| `lsp/tailwind--extension`          | Tailwind CSS *(requires nodejs)* |
+| `lsp/terraform--extension`         | Terraform (terraform-ls) |
+| `lsp/dockerfile--extension`        | Dockerfile *(requires nodejs)* |
+| `lsp/docker-compose--extension`    | Docker Compose *(requires nodejs)* |
+| `neovim/lsp--extension`            | Neovim LSP (enables the installed servers) |
+
+Each server is its own `lsp--<server>--setup.sh`, so the same binary serves every
+terminal editor: Fresh and Helix start it by its default name, and `neovim+lsp` seeds a
+system-wide `booth-lsp.lua` that enables the installed ones. `tools/lsp` follows the
+`code-ext-pkg` shape — curated extensions for the common languages, plus a variadic list
+(`install lsp ${LSP_SERVERS}`) that takes any server or language name, so `lsp:toml,yaml`
+and `lsp+toml+yaml` install the same thing. Inside a booth, Fresh's LSP popup also offers
+"Install <server>" for a missing one (the base image's `fresh-plugins/booth-lsp.ts`), which
+runs the same setup script. These sit at order 60 because the Node- and Python-based
+servers install with the runtime that order 50 put in place; servers that come with a
+language (gopls, rust-analyzer, clangd) stay in that language's template.
 
 ### Order 62 — Android emulator (needs the Android SDK from order 60)
 

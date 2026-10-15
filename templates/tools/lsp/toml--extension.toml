@@ -1,0 +1,11 @@
+cb-version = "0.1.0"
+display-name = "TOML (taplo)"
+display-disc = "taplo: completion, validation, and formatting for TOML"
+display-order = 11
+auto-select = false
+tags = ["lsp", "language-server", "toml"]
+
+[segments]
+"Boothfile--60" = """
+setup lsp--taplo
+"""

@@ -1,0 +1,12 @@
+cb-version = "0.1.0"
+display-name = "Tailwind CSS"
+display-disc = "Class completion and hover previews for Tailwind CSS"
+display-order = 18
+auto-select = false
+requires = ["nodejs"]
+tags = ["lsp", "language-server", "tailwind"]
+
+[segments]
+"Boothfile--60" = """
+setup lsp--tailwindcss
+"""

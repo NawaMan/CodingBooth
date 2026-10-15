@@ -1,0 +1,12 @@
+cb-version = "0.1.0"
+display-name = "Dockerfile"
+display-disc = "Completion, hover, and linting for Dockerfiles"
+display-order = 20
+auto-select = false
+requires = ["nodejs"]
+tags = ["lsp", "language-server", "dockerfile"]
+
+[segments]
+"Boothfile--60" = """
+setup lsp--dockerfile
+"""
