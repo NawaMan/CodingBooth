@@ -581,6 +581,7 @@ never the whole context, so editing source does not invalidate its layer.
 | `elixir/hex-pkg--extension`     | Hex Packages     |
 | `go/go-pkg--extension`          | Go Packages      |
 | `haskell/cabal-pkg--extension`  | Cabal Packages   |
+| `haskell/tools--extension`      | Haskell Tools    |
 | `lua/luarocks-pkg--extension`   | LuaRocks Packages|
 | `nodejs/npm-pkg--extension`     | npm Packages     |
 | `nodejs/yarn-pkg--extension`    | Yarn Packages    |
