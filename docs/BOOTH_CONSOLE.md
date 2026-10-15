@@ -59,7 +59,7 @@ The file is:
 }
 ```
 
-- **`layout`** — one of the nine [layout names](#layouts) the toolbar buttons themselves produce: `single`, `hsplit`, `left-main`, `right-main`, `vsplit`, `top-main`, `bottom-main`, `quad`, `grid6` — or a [tiling layout](#tiling-layouts) such as `h(1,v(2,3))`. Anything else is ignored.
+- **`layout`** — one of the nine [layout names](#layouts), four of which have a toolbar button: `single`, `hsplit`, `left-main`, `right-main`, `vsplit`, `top-main`, `bottom-main`, `quad`, `grid6` — or a [tiling layout](#tiling-layouts) such as `h(1,v(2,3))`. Anything else is ignored.
 - **`panes`** — an object keyed by pane number as a string (`"1"` through `"6"`). A pane not listed here stays a terminal.
   - **`web`** — must be `true` for the pane to open in Web view at all. A pane listed with `"web": false` (or without `"tabs"`) is left as a terminal, same as not listing it.
   - **`tabs`** — an array of addresses, one per tab to open in that pane, in order. The last one ends up active. An empty or missing list leaves the pane as a terminal even with `"web": true`.
@@ -130,7 +130,7 @@ The console always loads, whatever `console.json` holds. Each thing it cannot us
 |---|---|
 | Not valid JSON, or not an object | Ignored; the console starts as if there were no file |
 | `"layout"` with stray spaces or capitals (`" Quad "`) | Read as `quad` |
-| `"layout"` that is not a layout (a typo, a pane above 6) | The smallest toolbar layout that shows every pane given tabs — pane 5 has tabs, so `grid6` — or `single` |
+| `"layout"` that is not a layout (a typo, a pane above 6) | The smallest layout that shows every pane given tabs — pane 5 has tabs, so `grid6`, shown as **Other** — or `single` |
 | No `"layout"`, but tabs in pane 2 or above | The same: those panes are shown, not left hidden |
 | A pane key that is not `"1"` … `"6"`, or a pane that is not an object | That pane is ignored |
 | `"web"` that is not `true` / `false` | The pane stays a terminal |
@@ -143,25 +143,25 @@ A file with any of these problems is **never saved over**, even with [`console-s
 
 ## Layouts
 
-The toolbar has a button for every way to divide the console into a 2×2 grid, and for a 3×2 grid of six:
+The toolbar has four buttons: one terminal, two columns, two rows, and the 2×2 grid. Every other arrangement is a keystroke away — see the [shortcuts](#keyboard-shortcuts-tiling) — and the five names without a button still work anywhere a layout name goes (`#mode=`, `console.json`, a saved spec): they open exactly as they always did, and show as **Other**.
 
-| Name | Panes | Looks like |
-|---|---|---|
-| `single` | 1 | One terminal |
-| `hsplit` | 2 | Two columns |
-| `left-main` | 3 | Session 1 on the left, 2 and 3 stacked on the right |
-| `right-main` | 3 | Session 1 on the right, 2 and 3 stacked on the left |
-| `vsplit` | 2 | Two rows |
-| `top-main` | 3 | Session 1 along the top, 2 and 3 side by side below |
-| `bottom-main` | 3 | Session 1 along the bottom, 2 and 3 side by side above |
-| `quad` | 4 | Two columns of two: 1 and 2 on top, 3 and 4 below |
-| `grid6` | 6 | Three columns of two: 1, 2, 3 on top, 4, 5, 6 below |
+| Name | Button | Panes | Looks like |
+|---|---|---|---|
+| `single` | ✓ | 1 | One terminal |
+| `hsplit` | ✓ | 2 | Two columns |
+| `vsplit` | ✓ | 2 | Two rows |
+| `quad` | ✓ | 4 | Two columns of two: 1 and 2 on top, 3 and 4 below |
+| `left-main` | | 3 | Session 1 on the left, 2 and 3 stacked on the right |
+| `right-main` | | 3 | Session 1 on the right, 2 and 3 stacked on the left |
+| `top-main` | | 3 | Session 1 along the top, 2 and 3 side by side below |
+| `bottom-main` | | 3 | Session 1 along the bottom, 2 and 3 side by side above |
+| `grid6` | | 6 | Three columns of two: 1, 2, 3 on top, 4, 5, 6 below |
 
 Columns come first: the dividers running the full height split the console into columns, and each column has its own top/bottom divider, so in `quad` or `grid6` dragging one column's divider leaves the others where they are. (`top-main` and `bottom-main` are the exception by nature: their wide pane spans every column.) Each preset remembers its divider positions in the browser, so going back to it shows it the way you left it.
 
-Any other arrangement — five panes, three columns, a [tiling layout](#tiling-layouts) built with the shortcuts — shows an **Other** button, lit and drawn in the layout's shape, for as long as it shows. The layout itself is remembered like any other, in the URL, the browser and [`console.json`](#saving-layout-changes-back).
+Any arrangement without a button of its own — the five names above, five panes, three columns, a [tiling layout](#tiling-layouts) built with the shortcuts — shows an **Other** button, lit and drawn in the layout's shape, for as long as it shows. The layout itself is remembered like any other, in the URL, the browser and [`console.json`](#saving-layout-changes-back).
 
-The **+** and **−** buttons beside **Reload** open a pane next to the focused one and close the focused one, the same as `Ctrl+Alt+Enter` and `Ctrl+Alt+Shift+q`; they turn grey at six panes and at one. Going from `quad` to `grid6` one pane at a time passes through five, which shows as Other — or click `grid6` to get there in one step. Closing a pane only hides it: its session keeps running, and opening it again shows it as it was. To really end one, **reset** it — the ⏻ in a terminal pane's header, or `Ctrl+Alt+Shift+x` on the focused pane. It asks first, then ends that pane's tmux session (`s1` … `s6`), stopping whatever runs there, and the pane reconnects to a fresh shell.
+The **+** and **−** buttons beside **Reload** open a pane next to the focused one and close the focused one, the same as `Ctrl+Alt+Enter` and `Ctrl+Alt+Shift+q`; they turn grey at six panes and at one. Going from `quad` to six panes one at a time passes through five; both show as Other. Closing a pane only hides it: its session keeps running, and opening it again shows it as it was. To really end one, **reset** it — the ⏻ in a terminal pane's header, or `Ctrl+Alt+Shift+x` on the focused pane. It asks first, then ends that pane's tmux session (`s1` … `s6`), stopping whatever runs there, and the pane reconnects to a fresh shell.
 
 **Reload** reloads what every visible pane shows. A terminal reattaches to its tmux session, so the shell and anything running in it carry on; a web tab reloads its page — for an outside site, the page the tab opened on, since where it has navigated since cannot be read.
 
@@ -169,7 +169,7 @@ The **+** and **−** buttons beside **Reload** open a pane next to the focused 
 
 ## Keyboard Shortcuts (Tiling)
 
-The Console UI tiles its six sessions the way the **i3** window manager tiles windows, with **Ctrl+Alt** as the modifier — the same keys as the i3 template's Ctrl+Alt bindings, so one set of habits works on both. The toolbar [layouts](#layouts) still work as before; the shortcuts reach every other arrangement of up to six panes as well, one pane at a time.
+The Console UI tiles its six sessions the way the **i3** window manager tiles windows, with **Ctrl+Alt** as the modifier — **Control+Option** on a Mac, where Option is the Alt key — the same keys as the i3 template's Ctrl+Alt bindings, so one set of habits works on both. The toolbar [layouts](#layouts) still work as before; the shortcuts reach every other arrangement of up to six panes as well, one pane at a time.
 
 | Keys | Action |
 |---|---|
@@ -178,15 +178,18 @@ The Console UI tiles its six sessions the way the **i3** window manager tiles wi
 | `Ctrl+Alt+b` / `Ctrl+Alt+v` | The next pane opens beside / below this one |
 | `Ctrl+Alt+1` … `6` | Go to session 1 … 6, opening it again if it was closed |
 | `Ctrl+Alt+f` | The pane fills the console; again to restore |
+| `Ctrl+Alt+w` | The pane's Web view; again for its terminal |
+| `Ctrl+Alt+m` | The pane's Markdown viewer — starts `viewmd` if needed; again for its terminal |
 | `Ctrl+Alt+e` | Turn the pane's split the other way (side by side ↔ stacked) |
 | `Ctrl+Alt+=` | Equalize: every pane in the layout the same size, same layout |
+| `Ctrl+Alt+r` | Resize mode: `h` `j` `k` `l` or arrows resize the focused pane, `Enter`, `Esc` or `Ctrl+Alt+r` leaves |
 | `Ctrl+Alt+Shift+h` / `j` / `k` / `l` (or arrows) | Move the pane left / down / up / right |
 | `Ctrl+Alt+Shift+q` (or **−**) | Close the pane — it is only hidden; its session keeps running |
 | `Ctrl+Alt+Shift+x` (or the pane's ⏻) | Reset the session: after asking, end its shell and anything running in it, and start a fresh one |
 
-The focused pane has a highlighted border once there is more than one. The shortcuts work from inside a terminal or a booth web tab (`:3000` and the like). A web tab showing an outside site keeps its keys to itself, so click into a terminal pane first. `Ctrl+Alt+arrows` may be taken by your own desktop; `h`/`j`/`k`/`l` always work.
+The focused pane has a highlighted border once there is more than one. The shortcuts work from inside a terminal or a booth web tab (`:3000` and the like). A web tab showing an outside site keeps its keys to itself, so click into a terminal pane first. `Ctrl+Alt+arrows` may be taken by your own desktop; `h`/`j`/`k`/`l` always work. On a Mac, VoiceOver claims Control+Option as its own modifier and takes these keys first while it is on.
 
-The **Keyboard Shortcut Hint** in the toolbar always shows the main keys, the `Ctrl+Alt` ones and then the `Ctrl+Alt+Shift` ones. While a mode is on it shows what the keys do there instead — a pane filling the console, or where the next pane will open after `Ctrl+Alt+b` / `v` — and a click leaves the mode. To resize a pane, drag a divider. Otherwise a click opens the full table, which is also in the console itself: open the floating **Booth** panel and pick **CodingBooth Help**, which opens on its **Console Shortcuts** tab (the desktop variants' i3 template adds an **i3 Shortcuts** tab to the same dialog).
+The **Keyboard Shortcut Hint** in the toolbar always shows the main keys, the `Ctrl+Alt` ones and then the `Ctrl+Alt+Shift` ones, writing the modifiers short — `^⎇` and `^⎇⇧`, or `⌃⌥` and `⌃⌥⇧` on a Mac — in the font the console serves, so the glyphs do not depend on what you have installed. Hovering it spells them out, and CodingBooth Help gives both forms. While a mode is on it shows what the keys do there instead — a pane filling the console, or where the next pane will open after `Ctrl+Alt+b` / `v` — and a click leaves the mode. To resize a pane, drag a divider or use `Ctrl+Alt+r`. Otherwise a click opens the full table, which is also in the console itself: open the floating **Booth** panel and pick **CodingBooth Help**, which opens on its **Console Shortcuts** tab (the desktop variants' i3 template adds an **i3 Shortcuts** tab to the same dialog).
 
 ### Tiling Layouts
 
@@ -199,7 +202,7 @@ A layout the toolbar has no button for is written as a tree: `h(…)` puts its p
 | `v(h(2,3),1)` | Session 1 along the bottom, 2 and 3 above it |
 | `h(1@60,v(2,3,4)@40)` | Session 1 on 60% of the width, three stacked on the right |
 
-It appears in the URL (`#mode=h(1,2,3)`), is remembered in the browser like any layout, and works as `"layout"` in `console.json` — [console-spec](#saving-layout-changes-back) saves it there the same way it saves a preset name, sizes included (`"layout": "h(2@55,1@45)"`). Filling the console with `Ctrl+Alt+f` is temporary and never saved. When a shortcut produces the shape of one of the toolbar [layouts](#layouts), wherever its dividers sit, the console shows it as that layout and lights its button; any other layout shows the **Other** button. `quad` is columns first, `h(v(1,3),v(2,4))`, so the rows-first `v(h(1,2),h(3,4))` is Other.
+It appears in the URL (`#mode=h(1,2,3)`), is remembered in the browser like any layout, and works as `"layout"` in `console.json` — [console-spec](#saving-layout-changes-back) saves it there the same way it saves a preset name, sizes included (`"layout": "h(2@55,1@45)"`). Filling the console with `Ctrl+Alt+f` is temporary and never saved. When a shortcut produces the shape of one of the four [layouts](#layouts) with a button, wherever its dividers sit, the console shows it as that layout and lights its button; every other layout — a buttonless preset's shape included — shows the **Other** button. `quad` is columns first, `h(v(1,3),v(2,4))`, so the rows-first `v(h(1,2),h(3,4))` is Other.
 
 A booth image older than this feature does not know tree layouts: it ignores one in `console.json` and starts with a single pane, as it would for any unknown name. The same goes for `right-main`, `bottom-main` and `grid6`, and for panes `5` and `6`, on an image from before six panes.
 

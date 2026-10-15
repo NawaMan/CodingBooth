@@ -36,16 +36,25 @@ for (const bad of ['', 'single', '7', '0', 'h(1)', 'h(1,1)', 'h(1,2', 'x(1,2)', 
 }
 
 // ---- presets ----
-// Every way to divide a 2x2 grid, then the 3x2 grid; columns first.
+// Every way to divide a 2x2 grid, then the 3x2 grid; columns first. Four have a
+// toolbar button; the rest stay resolvable by name (an old #mode=, a checked-in
+// console.json) but read back as Other.
 const presetShapes = {
   'single': '1', 'hsplit': 'h(1,2)', 'left-main': 'h(1,v(2,3))', 'right-main': 'h(v(2,3),1)',
   'vsplit': 'v(1,2)', 'top-main': 'v(1,h(2,3))', 'bottom-main': 'v(h(2,3),1)',
   'quad': 'h(v(1,3),v(2,4))', 'grid6': 'h(v(1,4),v(2,5),v(3,6))',
 };
-assert.deepEqual(T.PRESET_NAMES, Object.keys(presetShapes), 'the toolbar presets, in toolbar order');
+assert.deepEqual(T.PRESET_NAMES, Object.keys(presetShapes), 'every preset name that resolves');
+assert.deepEqual(T.TOOLBAR_PRESET_NAMES, ['single', 'hsplit', 'vsplit', 'quad'],
+  'the toolbar buttons, in toolbar order');
 for (const [name, shape] of Object.entries(presetShapes)) {
   assert.equal(T.shape(T.presetTree(name)), shape, 'preset shape: ' + name);
-  assert.equal(T.matchPreset(T.presetTree(name, 0.3, 0.7)).name, name, 'preset round trip: ' + name);
+  const match = T.matchPreset(T.presetTree(name, 0.3, 0.7));
+  if (T.TOOLBAR_PRESET_NAMES.includes(name)) {
+    assert.equal(match.name, name, 'preset round trip: ' + name);
+  } else {
+    assert.equal(match, null, 'a preset without a button is Other: ' + name);
+  }
 }
 assert.equal(S(T.presetTree('quad', 0.3, 0.7)), 'h(v(1@70,3@30)@30,v(2@70,4@30)@70)', 'old divider positions carry over');
 assert.equal(S(T.presetTree('grid6', 0.3, 0.7)), 'h(v(1@70,4@30),v(2@70,5@30),v(3@70,6@30))', 'a three-way split keeps equal columns');
@@ -168,4 +177,4 @@ assert.equal(S(T.dragDivider(P('h(1,2)'), [], 1, 0.3)), 'h(1,2)', 'no such divid
 
 console.log('PASS: text form, presets, 31 reachable shapes, six panes, focus, move, insert, remove, toggle, resize, drag');
 JS
-print_test_result true "$0" 1 "Console tiling tree: nine presets, all 31 layouts of up to 4 panes, six panes, driven the way i3 drives them, equalize"
+print_test_result true "$0" 1 "Console tiling tree: nine preset names behind four toolbar buttons, all 31 layouts of up to 4 panes, six panes, driven the way i3 drives them, equalize"
