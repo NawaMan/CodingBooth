@@ -1,0 +1,12 @@
+cb-version = "0.1.0"
+display-name = "TypeScript / JavaScript (typescript-language-server)"
+display-disc = "typescript-language-server for terminal editors (built into VS Code)"
+display-order = 15
+auto-select = false
+requires = ["nodejs"]
+tags = ["lsp", "language-server", "typescript"]
+
+[segments]
+"Boothfile--60" = """
+setup lsp--typescript
+"""

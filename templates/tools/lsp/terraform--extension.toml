@@ -1,0 +1,15 @@
+cb-version = "0.1.0"
+display-name = "Terraform (terraform-ls)"
+display-disc = "HashiCorp's server for .tf files; HashiCorp Terraform in VS Code"
+display-order = 23
+auto-select = false
+tags = ["lsp", "language-server", "terraform", "vscode"]
+
+[segments]
+"Boothfile--60" = """
+setup lsp--terraform-ls
+"""
+# The VS Code side; skips itself on a variant without VS Code or code-server.
+"Boothfile--65" = """
+setup terraform-code-extension
+"""
