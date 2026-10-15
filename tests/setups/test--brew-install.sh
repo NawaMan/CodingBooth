@@ -65,7 +65,7 @@ chmod +x "$STUB/bin/sudo" "$STUB/bin/chown" "$STUB/bin/chmod" "$STUB/linuxbrew/b
 run_brew_install() {
     PATH="$STUB/bin:$PATH" \
     STUB_LOG="$MARKER" \
-    LINUXBREW_PREFIX="$STUB/linuxbrew" \
+    LINUXBREW_PREFIX="${TEST_BREW_PREFIX:-$STUB/linuxbrew}" \
     SETUP_LIBS_DIR="$REPO_ROOT/variants/base/setups/libs" \
     CB_RETRY_ATTEMPTS=1 \
         ${ROOT_RUN[@]+"${ROOT_RUN[@]}"} bash "$BREW_SCRIPT" "$@" 2>&1
@@ -113,6 +113,24 @@ if [ "$RC" -ne 0 ] && grep -q "these packages are missing: nginx" <<< "$OUT"; th
     pass_fail true "a missing formula still fails the install"
 else
     pass_fail false "a missing formula still fails the install" "rc=$RC out=$OUT"
+fi
+
+# 4. brew not installed yet → homebrew--setup.sh (found on PATH) installs it first, then
+#    the packages install. It used to re-run brew--install.sh itself with no packages,
+#    which is a no-op, so the install that followed hit a brew that did not exist.
+: > "$MARKER"
+RC=0
+cat > "$STUB/bin/homebrew--setup.sh" << EOF
+#!/bin/bash
+echo "homebrew--setup.sh" >> "\${STUB_LOG:?}"
+mkdir -p "$STUB/fresh/bin" && cp "$STUB/linuxbrew/bin/brew" "$STUB/fresh/bin/brew"
+EOF
+chmod +x "$STUB/bin/homebrew--setup.sh"
+OUT=$(TEST_BREW_PREFIX="$STUB/fresh" BREW_INSTALL_RC=0 run_brew_install nginx) || RC=$?
+if [ "$RC" -eq 0 ] && [ "$(head -1 "$MARKER")" = "homebrew--setup.sh" ] && grep -q "brew install nginx" "$MARKER"; then
+    pass_fail true "a missing brew is installed by homebrew--setup.sh first"
+else
+    pass_fail false "a missing brew is installed by homebrew--setup.sh first" "rc=$RC out=$OUT log=$(cat "$MARKER")"
 fi
 
 if [[ "$ALL_PASSED" != "true" ]]; then

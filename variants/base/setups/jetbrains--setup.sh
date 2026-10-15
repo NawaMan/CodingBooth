@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO: $BASH_COMMAND" >&2' ERR
@@ -104,62 +104,62 @@ case "$ARCH_RAW" in
 esac
 
 # --- Map IDE to base URL, tarball pattern, product code ---
+# Every BASE is the front door, download.jetbrains.com, which 302-redirects to a signed
+# CDN URL. The CDN host itself (download-cdn.jetbrains.com) serves only the .sha256
+# files and 404s every tarball, on x86_64 and aarch64 alike.
 case "$IDE" in
   pycharm)
     PRODUCT="PyCharm Community"
-    BASE="https://download-cdn.jetbrains.com/python"
+    BASE="https://download.jetbrains.com/python"
     TARBALL="pycharm-community-${VER}${ARCH_SUFFIX}.tar.gz"
     INSTALL_DIR="/opt/pycharm-PC-${VER}"
     ;;
   idea)
     PRODUCT="IntelliJ IDEA Community"
-    BASE="https://download-cdn.jetbrains.com/idea"
+    BASE="https://download.jetbrains.com/idea"
     TARBALL="ideaIC-${VER}${ARCH_SUFFIX}.tar.gz"
     INSTALL_DIR="/opt/idea-IC-${VER}"
     ;;
   goland)
     PRODUCT="GoLand"
-    BASE="https://download-cdn.jetbrains.com/go"
+    BASE="https://download.jetbrains.com/go"
     TARBALL="goland-${VER}${ARCH_SUFFIX}.tar.gz"
     INSTALL_DIR="/opt/goland-${VER}"
     ;;
   webstorm)
     PRODUCT="WebStorm"
-    BASE="https://download-cdn.jetbrains.com/webstorm"
+    BASE="https://download.jetbrains.com/webstorm"
     TARBALL="WebStorm-${VER}${ARCH_SUFFIX}.tar.gz"
     INSTALL_DIR="/opt/webstorm-${VER}"
     ;;
   phpstorm)
     PRODUCT="PhpStorm"
-    BASE="https://download-cdn.jetbrains.com/webide"
+    BASE="https://download.jetbrains.com/webide"
     TARBALL="PhpStorm-${VER}${ARCH_SUFFIX}.tar.gz"
     INSTALL_DIR="/opt/phpstorm-${VER}"
     ;;
   clion)
     PRODUCT="CLion"
-    BASE="https://download-cdn.jetbrains.com/cpp"
+    BASE="https://download.jetbrains.com/cpp"
     TARBALL="CLion-${VER}${ARCH_SUFFIX}.tar.gz"
     INSTALL_DIR="/opt/clion-${VER}"
     ;;
   rider)
     PRODUCT="Rider"
-    BASE="https://download-cdn.jetbrains.com/rider"
-    TARBALL="JetBrains.Rider-${VER}.tar.gz"
+    BASE="https://download.jetbrains.com/rider"
+    TARBALL="JetBrains.Rider-${VER}${ARCH_SUFFIX}.tar.gz"
     INSTALL_DIR="/opt/rider-${VER}"
     ;;
   rubymine)
     PRODUCT="RubyMine"
-    # Unlike the other IDEs here, the RubyMine tarball itself 404s on the CDN host
-    # (download-cdn.jetbrains.com) even though its .sha256 is present there; the
-    # front door (download.jetbrains.com) 302-redirects to a working signed CDN URL.
     BASE="https://download.jetbrains.com/ruby"
     TARBALL="RubyMine-${VER}${ARCH_SUFFIX}.tar.gz"
     INSTALL_DIR="/opt/rubymine-${VER}"
     ;;
   datagrip)
     PRODUCT="DataGrip"
-    BASE="https://download-cdn.jetbrains.com/datagrip"
-    TARBALL="datagrip-${VER}.tar.gz"
+    BASE="https://download.jetbrains.com/datagrip"
+    TARBALL="datagrip-${VER}${ARCH_SUFFIX}.tar.gz"
     INSTALL_DIR="/opt/datagrip-${VER}"
     ;;
   *)

@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 
 set -Eeuo pipefail
 trap 'echo "Error on line $LINENO"; exit 1' ERR
@@ -20,6 +20,7 @@ Examples:
 Notes:
 - JVM/JS compiler extracted to /opt/kotlin/kotlin-<ver> -> /opt/kotlin-stable
 - (Optional) Kotlin/Native to /opt/kotlin-native/kotlin-native-<ver> -> /opt/kotlin-native-stable
+  (x86_64 only: JetBrains ships no Linux arm64 Kotlin/Native compiler)
 - /usr/local/bin symlinks ensure tools work in non-login shells
 - Requires Java (JAVA_HOME) for JVM/JS compiler
 USAGE
@@ -62,10 +63,15 @@ fi
 
 # ---- arch detection for Kotlin/Native ----
 dpkgArch="$(dpkg --print-architecture)"
+# JetBrains publishes Kotlin/Native for Linux hosts on x86_64 only; there is no
+# linux-aarch64 compiler distribution in any release. Fail before installing anything.
 case "$dpkgArch" in
   amd64)  KN_ARCH="x86_64";;
-  arm64)  KN_ARCH="aarch64";;
-  *) if [[ $WITH_NATIVE -eq 1 ]]; then echo "Kotlin/Native unsupported arch: $dpkgArch"; exit 1; fi ;;
+  *) if [[ $WITH_NATIVE -eq 1 ]]; then
+       echo "❌ Kotlin/Native has no Linux ${dpkgArch} compiler distribution (JetBrains ships linux-x86_64 only)." >&2
+       echo "   Drop --with-native on this architecture; the JVM compiler still installs." >&2
+       exit 1
+     fi ;;
 esac
 
 # ---- base deps ----
@@ -108,9 +114,19 @@ ln -sfn "$KOTLIN_DIR" "$KOTLIN_LINK"
 
 # ---- Kotlin/Native (optional) ----
 if [[ $WITH_NATIVE -eq 1 ]]; then
-  KN_TGZ_URL="https://github.com/JetBrains/kotlin/releases/download/v${KVER}/kotlin-native-linux-${KN_ARCH}-${KVER}.tar.gz"
+  # 2.x names the tarball kotlin-native-prebuilt-linux-<arch>-<ver>.tar.gz; 1.9.x and
+  # earlier used kotlin-native-linux-<arch>-<ver>.tar.gz.
+  KN_RELEASE="https://github.com/JetBrains/kotlin/releases/download/v${KVER}"
   echo "Downloading Kotlin/Native ${KVER} (${KN_ARCH}) ..."
-  curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$KN_TGZ_URL" -o "$TMP/konan.tgz"
+  kn_ok=0
+  for KN_TGZ_URL in "${KN_RELEASE}/kotlin-native-prebuilt-linux-${KN_ARCH}-${KVER}.tar.gz" \
+                    "${KN_RELEASE}/kotlin-native-linux-${KN_ARCH}-${KVER}.tar.gz"; do
+    if curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$KN_TGZ_URL" -o "$TMP/konan.tgz"; then
+      kn_ok=1
+      break
+    fi
+  done
+  [[ $kn_ok -eq 1 ]] || { echo "❌ No Kotlin/Native ${KVER} tarball for linux-${KN_ARCH}" >&2; exit 1; }
 
   echo "Installing Kotlin/Native ${KVER} ..."
   rm -rf "$KN_DIR"
