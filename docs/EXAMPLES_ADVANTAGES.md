@@ -83,7 +83,8 @@ The advantages, in CodingBooth's own vocabulary:
 - **appwrite-example** — Appwrite CLI + a self-hosted Appwrite console on `:8080` in
   one selector (`appwrite-server+autostart+expose`). The server is the official
   Compose stack inside DinD — there is no native install. `just run` waits for
-  `/v1/health/version` and points the CLI at localhost. *(Secondary: nested
+  `/v1/health/version` and points the CLI at localhost; `just web` runs Appwrite's Svelte
+  starter against that server, project and `.env` created for you. *(Secondary: nested
   containers and port exposure; first boot wants ~4GB RAM.)*
 - **postgrest-example** — PostgreSQL + pgvector/pg_trgm + a REST API in one selector
   (`postgresql+pg-ext-pkg:pgvector,pg_trgm/postgrest+autostart+expose`), no server code written.
