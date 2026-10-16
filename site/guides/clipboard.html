@@ -390,6 +390,27 @@
             color: #000d33;
         }
 
+        .demo-ctrl.demo-cc {
+            width: auto;
+            border-radius: 14px;
+            padding: 0 8px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            opacity: 0.55;
+        }
+
+        .demo-ctrl.demo-cc.is-on {
+            opacity: 1;
+        }
+
+        .demo-player video::cue {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+            font-size: 1.15em;
+            color: #fff;
+            background: rgba(0, 13, 51, 0.85);
+        }
+
         .demo-ctrl svg {
             width: 12px;
             height: 12px;
@@ -692,7 +713,10 @@
                 <video src="../media/guides/clipboard-into-booth.mp4" autoplay loop muted playsinline
                     preload="auto" width="1914" height="958"
                     poster="../images/guides/clipboard-into-booth-poster.jpg"
-                    aria-label="Video: copying text from a host editor into VS Code inside a desktop booth through the noVNC Clipboard panel."></video>
+                    aria-label="Video: copying text from a host editor into VS Code inside a desktop booth through the noVNC Clipboard panel.">
+                    <track kind="subtitles" src="../media/guides/clipboard-into-booth.vtt" srclang="en" label="English"
+                        default>
+                </video>
             </div>
             <div class="demo-bar-row">
                 <button class="demo-ctrl demo-pause" type="button" aria-label="Pause video" title="Pause">
@@ -709,6 +733,8 @@
                         <polyline points="3 4 3 9 8 9" />
                     </svg>
                 </button>
+                <button class="demo-ctrl demo-cc is-on" type="button" aria-label="Hide subtitles"
+                    aria-pressed="true" title="Subtitles">CC</button>
                 <div class="demo-progress" aria-hidden="true">
                     <div class="demo-progress-bar"></div>
                 </div>
@@ -742,7 +768,10 @@
                 <video src="../media/guides/clipboard-out-of-booth.mp4" autoplay loop muted playsinline
                     preload="metadata" width="1914" height="958"
                     poster="../images/guides/clipboard-out-of-booth-poster.jpg"
-                    aria-label="Video: copying text from a README inside a desktop booth out to a host editor through the noVNC Clipboard panel."></video>
+                    aria-label="Video: copying text from a README inside a desktop booth out to a host editor through the noVNC Clipboard panel.">
+                    <track kind="subtitles" src="../media/guides/clipboard-out-of-booth.vtt" srclang="en" label="English"
+                        default>
+                </video>
             </div>
             <div class="demo-bar-row">
                 <button class="demo-ctrl demo-pause" type="button" aria-label="Pause video" title="Pause">
@@ -759,6 +788,8 @@
                         <polyline points="3 4 3 9 8 9" />
                     </svg>
                 </button>
+                <button class="demo-ctrl demo-cc is-on" type="button" aria-label="Hide subtitles"
+                    aria-pressed="true" title="Subtitles">CC</button>
                 <div class="demo-progress" aria-hidden="true">
                     <div class="demo-progress-bar"></div>
                 </div>
@@ -825,7 +856,7 @@
     </footer>
 
     <script>
-        // The home page's video player: pause/restart, a clickable progress bar, and a list of
+        // The home page's video player: pause/restart, a subtitles toggle, a clickable progress bar, and a list of
         // bookmarks that jump the video and highlight the current step. Each <section> holds one
         // player and its bookmarks.
         (function () {
@@ -886,6 +917,21 @@
                     if (!video.duration) return;
                     bar.style.width = (video.currentTime / video.duration * 100) + '%';
                 });
+
+                const ccBtn = row.querySelector('.demo-cc');
+                const subs = video.textTracks && video.textTracks[0];
+                if (ccBtn && subs) {
+                    subs.mode = 'showing';
+                    ccBtn.addEventListener('click', () => {
+                        const on = subs.mode !== 'showing';
+                        subs.mode = on ? 'showing' : 'hidden';
+                        ccBtn.classList.toggle('is-on', on);
+                        ccBtn.setAttribute('aria-pressed', String(on));
+                        ccBtn.setAttribute('aria-label', on ? 'Hide subtitles' : 'Show subtitles');
+                    });
+                } else if (ccBtn) {
+                    ccBtn.hidden = true;
+                }
 
                 const track = bar.parentElement;
                 track.addEventListener('click', (e) => {
