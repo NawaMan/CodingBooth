@@ -2400,7 +2400,31 @@
       // a lifecycle-panel plugin (booth-message-wrapper--setup.sh's plugins/
       // drop-in) — e.g. i3--setup.sh adds its key bindings. Additive only:
       // the built-in tabs and the default (Clipboard) are unchanged.
+      // What a key is called for whoever is watching. noVNC rewrites the
+      // modifiers of a Mac keyboard before they reach X (its
+      // core/input/keyboard.js: "Alt behaves more like AltGraph on macOS"):
+      // left Command arrives as Alt_L, right Command as Super_L, and Option
+      // as Mode_switch (AltGr). So a tab listing Mod1 shortcuts has to print
+      // Command on a Mac, and Option never works for them. Keyed on the
+      // browser, exactly as noVNC keys its own remap: the keyboard is
+      // wherever the booth is being watched from, which need not be the host.
+      var macViewer = /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || "");
+      var MAC_MODS = {
+        "Ctrl+Alt": "Control+Command",
+        "Alt": "Command",
+        "Super": "right Command"
+      };
+
       window.BoothHelp = {
+        macViewer: macViewer,
+        // Modifier in, modifier the viewer can actually press out. Unknown
+        // labels come back untouched, so a new tab cannot be broken by it.
+        // mac overrides the detection, which is how the test asserts both
+        // answers from one browser.
+        modLabel: function (mod, mac) {
+          var isMac = (mac === undefined) ? macViewer : mac;
+          return (isMac && MAC_MODS[mod]) || mod;
+        },
         addTab: function (name, label, html) {
           var tabBar = overlay.querySelector(".msg-tabs");
           // The dialog's own "Got it" row, not the first .msg-actions in it —
