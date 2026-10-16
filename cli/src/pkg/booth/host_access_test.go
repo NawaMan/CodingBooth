@@ -6,6 +6,7 @@ package booth
 
 import (
 	"net"
+	"runtime"
 	"testing"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
@@ -111,5 +112,43 @@ func TestIsUsableHostIP_RejectsWhatCannotNameTheHost(t *testing.T) {
 
 	if isUsableHostIP(nil) {
 		t.Fatal("isUsableHostIP(nil) must be false")
+	}
+}
+
+// BOOTH_HOST_OS is the prefixed twin of the bare HOST_OS: same value, both
+// emitted. The prefix is what booth--envs greps for, so a booth could not see
+// its host's OS without it; the bare one stays because booth-entry and
+// booth--file-sync read it. Asserting the pair, rather than a literal, keeps
+// the test honest on every host the suite runs on.
+func TestPrepareCommonArgs_HostOSGoesInPrefixedAndBare(t *testing.T) {
+	ctx := PrepareCommonArgs(hostAccessBuilder().Build())
+
+	hostOS := getHostOS()
+	assertContainsArgPair(t, ctx.CommonArgs(), "-e", "HOST_OS="+hostOS)
+	assertContainsArgPair(t, ctx.CommonArgs(), "-e", "BOOTH_HOST_OS="+hostOS)
+}
+
+func TestGetHostOS_IsATagForThisHost(t *testing.T) {
+	// The value tracks the machine the test runs on, so assert the contract:
+	// one of the three tags booth-entry branches on, or GOOS verbatim when the
+	// host is none of them.
+	got := getHostOS()
+	switch runtime.GOOS {
+	case "darwin":
+		if got != "MAC" {
+			t.Fatalf("getHostOS() = %q on darwin, want MAC", got)
+		}
+	case "linux":
+		if got != "LIN" {
+			t.Fatalf("getHostOS() = %q on linux, want LIN", got)
+		}
+	case "windows":
+		if got != "WIN" {
+			t.Fatalf("getHostOS() = %q on windows, want WIN", got)
+		}
+	default:
+		if got != runtime.GOOS {
+			t.Fatalf("getHostOS() = %q on %s, want the GOOS verbatim", got, runtime.GOOS)
+		}
 	}
 }
