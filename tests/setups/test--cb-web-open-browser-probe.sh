@@ -119,8 +119,8 @@ make_working_browser firefox
 run_web_open
 assert_contains "a google-chrome that cannot run is skipped for Firefox" \
     "$RUN_OUT" "CHOSE=firefox"
-assert_contains "Firefox is opened in its own window on the service's URL" \
-    "$RUN_OUT" "ARGS=--new-window ${URL}"
+assert_contains "Firefox is handed the URL as a tab, not a window" \
+    "$RUN_OUT" "ARGS=--new-tab ${URL}"
 
 # ---- amd64: a working Chrome is still preferred, in app mode ----------------
 rm -f "$BIN"/*

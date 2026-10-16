@@ -282,8 +282,9 @@ first browser that **actually runs** — Chrome, Chromium or Firefox, each probe
 rather than merely looked up on `PATH`, falling back to `xdg-open`. The probe is not pedantry: on
 arm64 there is no Chrome to install, so `google-chrome--setup.sh` leaves a placeholder at
 `/usr/local/bin/google-chrome` that exits 127, and a presence-only test picked it and `exec`ed
-away every click. Chrome and Chromium get a chromeless `--app` window; Firefox gets
-`--new-window`. A launcher is `Terminal=false`, so nothing a browser prints is ever seen — anything
+away every click. Chrome and Chromium get a chromeless `--app` window; Firefox gets `--new-tab`, so
+a desktop's several web-service icons share one window instead of opening one window each. A
+launcher is `Terminal=false`, so nothing a browser prints is ever seen — anything
 that must be visible belongs in the service's own log, not on the launcher's stderr.
 
 ---

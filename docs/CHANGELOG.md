@@ -13,10 +13,14 @@ This file contains a list of changes for each released version.
   working Firefox two branches down was never reached, and since a `.desktop` launcher is
   `Terminal=false` the stub's explanation went nowhere: on every arm64 desktop booth — the default
   on Apple Silicon — all three icons were silently dead. Each candidate is now required to *run*
-  (`--version` succeeds), not merely exist, so a stub is skipped and Firefox gets the window;
+  (`--version` succeeds), not merely exist, so a stub is skipped and Firefox gets the click;
   amd64, where Chrome is real, is unchanged and still gets a chromeless `--app` window. The
   placeholder itself is unchanged — it is still what you want when you type `google-chrome`
   yourself. Adding the `chromium` template remains the way to get an app-mode window on arm64.
+  Firefox is also handed `--new-tab` rather than `--new-window`: with Chrome gone, every icon on
+  the desktop lands on the Firefox branch, and a window apiece meant JupyterLab, the markdown
+  viewer and a project's own dashboard each claimed one. They now share a window as tabs, with the
+  clicked one active.
   See [Desktop icons](BOOTH_SETUP.md#desktop-icons--cb-desktop-iconsh-and-cb-web-iconsh).
 
 - **The Jupyter Notebook desktop icon now opens on the project, not the Desktop.** On a desktop

@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.1.0
+# cb-version: 1.1.1
 #
 # cb-web-open — open a booth web service (an HTTP server on an internal port) in
 # a browser window. Invoked at click time by the desktop launcher that
@@ -73,11 +73,20 @@ browser_ok() {
   command -v "$1" >/dev/null 2>&1 && "$1" --version >/dev/null 2>&1
 }
 
-# Open in a dedicated app-mode window when possible (chromeless), else a normal
-# browser window, else whatever xdg-open resolves.
+# Open in a dedicated app-mode window when possible (chromeless), else a tab in
+# whatever browser window is already open, else whatever xdg-open resolves.
+#
+# Firefox gets --new-tab, not --new-window: a desktop has one icon per web
+# service, and on arm64 — where Chrome does not exist and every icon lands on
+# this branch — --new-window meant JupyterLab, the markdown viewer and a
+# project's own dashboard each took over a separate window. --new-tab hands the
+# URL to the running instance, which opens it as the active tab; with no
+# instance yet Firefox still opens its first window, as it must. Chrome and
+# Chromium keep --app because a chromeless app window is the better shape where
+# it is available, and "a tab" is not a thing an app-mode window has.
 if   browser_ok google-chrome   ; then exec google-chrome    --app="$URL"
 elif browser_ok chromium        ; then exec chromium         --app="$URL"
 elif browser_ok chromium-browser; then exec chromium-browser --app="$URL"
-elif browser_ok firefox         ; then exec firefox --new-window "$URL"
+elif browser_ok firefox         ; then exec firefox --new-tab "$URL"
 else                                   exec xdg-open "$URL"
 fi
