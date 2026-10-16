@@ -12,6 +12,10 @@
 
 RewriteEngine On
 
+# The desktop clipboard guide moved from Markdown to HTML. Booth images built before
+# the move still link to the .md address from their Help dialog, so send it on.
+RewriteRule ^guides/clipboard\.md$ /guides/clipboard.html [R=301,L]
+
 # Versioned form: /examples/<version>/<name>.zip  (more specific — must come first)
 RewriteRule ^examples/([0-9][^/]*)/(.+\.zip)$ https://github.com/NawaMan/CodingBooth/releases/download/$1/$2 [R=302,L]
 
