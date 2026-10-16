@@ -65,6 +65,11 @@ its base path set to `/proxy/5173/`. Binding to `127.0.0.1` is enough for the pr
 `host.docker.internal:<port>` (also `$BOOTH_HOST_NAME`). The host service must listen on
 `0.0.0.0`; one bound to `127.0.0.1` is unreachable from any container.
 
+**Which OS the host runs** is `$BOOTH_HOST_OS` — `MAC`, `LIN` or `WIN` (rarely, Go's own name for
+something else). Worth reading before you hand the user a command to run on their *own* machine, or
+guess at a path convention; everything inside the booth is Linux regardless. (The unprefixed
+`HOST_OS` is the same value, kept for scripts that already read it.)
+
 **Long-running work.** If `BOOTH_IDLE_TIME` is set (non-zero seconds), the booth shuts itself down
 after that long without *user* input — your own activity does not count. On `base` it shuts down
 with no warning. Before a long unattended task, check it and tell the user; on a web variant they
@@ -187,7 +192,7 @@ Deeper: `/opt/codingbooth/docs/BOOTH_EXPOSE.md`.
 
 | For | Do |
 |---|---|
-| what the booth tells you | `booth--envs` — `BOOTH_HOST_PORT`, `BOOTH_VARIANT_TAG`, `BOOTH_DIND`, `BOOTH_EGRESS`, ... (read-only facts) |
+| what the booth tells you | `booth--envs` — `BOOTH_HOST_PORT`, `BOOTH_VARIANT_TAG`, `BOOTH_HOST_OS`, `BOOTH_DIND`, `BOOTH_EGRESS`, ... (read-only facts) |
 | this shell only | `export KEY=value` |
 | every start, not secret | `./booth config --no-tui --overwrite --add-env KEY=value` → `config.toml` |
 | every start, secret | a `KEY=value` line in `.booth/.env` |
