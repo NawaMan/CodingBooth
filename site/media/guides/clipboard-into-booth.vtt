@@ -1,22 +1,22 @@
 WEBVTT
 
-00:00.000 --> 00:05.500
+00:00.000 --> 00:05.500 line:-3
 Left: the booth's desktop. Right: an editor on your computer.
 
-00:06.000 --> 00:09.000
+00:06.000 --> 00:09.000 line:-3
 Open the tab on the left edge, then click the Clipboard button.
 
-00:09.000 --> 00:12.800
+00:09.000 --> 00:12.800 line:-3
 The Clipboard panel opens with an empty text box.
 
-00:13.000 --> 00:16.000
+00:13.000 --> 00:16.000 line:-3
 On your computer: select some text and copy it.
 
-00:16.000 --> 00:19.500
+00:16.000 --> 00:19.500 line:-3
 Paste it into the panel's text box. The booth now has it.
 
-00:19.500 --> 00:22.000
+00:19.500 --> 00:22.000 line:-3
 Inside the booth: paste into VS Code.
 
-00:22.000 --> 00:27.000
+00:22.000 --> 00:27.000 line:-3
 The text is in the booth app.
