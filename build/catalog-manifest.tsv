@@ -712,7 +712,7 @@ extension	go+go-mod	1.0.0	d0ce534aaa86760a1384b2241206a294bec0fe086d52eadafd8390
 extension	go+go-pkg	1.0.0	9b7c75ede3885e70b0f33727564ff950e586a76adf8094fbc9c0c9a95da80053	templates/languages/go/go-pkg--extension.toml
 extension	go+kernel	1.0.0	d0578c4528c27c25379f3cc1e3dfc0c36affbea736633be93ddaefb1226513f2	templates/languages/go/kernel--extension.toml
 extension	go+linter	1.0.0	7c64fa4a74e3fa9d723f909f97c67aec172fd518e4742e8148d4f5cf642d284e	templates/languages/go/linter--extension.toml
-extension	go+mod-cache	0.2.0	697c334f0d9a43948bf8468d22e79efe9617fe86709f9b678945f79aaf1770ae	templates/languages/go/mod-cache--extension.toml
+extension	go+mod-cache	0.2.0	17439e016b3514927a23702608e06c5822f3c988fe366fbfd5573c25f7fed9e3	templates/languages/go/mod-cache--extension.toml
 extension	go+vscode-ext	1.0.0	19f0f4aebb35aa43293d3f6dacc9e1bd50471df2dba7f1ab0cb366792657543a	templates/languages/go/vscode-ext--extension.toml
 extension	goland+import-project	0.1.0	044f2d86d524a2f7897307480eebfb3d105a32228f9b1e1e14ee73d811291d19	templates/ides/goland/import-project--extension.toml
 extension	goland+skip-first-run	0.1.0	c33be5a3321462f3aa0e2b25efa26dc8a18cadc47c7a077706a5e3211ef1c374	templates/ides/goland/skip-first-run--extension.toml
@@ -883,7 +883,7 @@ extension	python+conda	1.1.0	b02e8ed5ba71591690a850894c37237beedc2194242bba8b341
 extension	python+conda-pkg	1.0.0	3679659cf8f791e57774063f19239ca58bc52b9a39e6c8ed4ab2150f9e011929	templates/languages/python/conda-pkg--extension.toml
 extension	python+kernel	1.0.0	5e62a9054833c44cff823c07606fe468fca75fda95e3353c0eee143a69af9378	templates/languages/python/kernel--extension.toml
 extension	python+pip	1.0.0	a8d46c35f928d4c111f82a690ff819a0e8f9b4d1ba345808c7d63382d597ca1c	templates/languages/python/pip--extension.toml
-extension	python+pip-cache	0.2.0	ae8de34c6d874605618530169744679ef1e15ae690387dccc8349141dc14eb7b	templates/languages/python/pip-cache--extension.toml
+extension	python+pip-cache	0.2.0	10c873ca4f253d75b3cb2ea50d6b68c34dc127fbf210f597d488da7a87b2a5e2	templates/languages/python/pip-cache--extension.toml
 extension	python+pip-config	1.0.0	6bfb04c926b312da711e64da1247d523c01bce2516af549cb01cceae3720320a	templates/languages/python/pip-config--extension.toml
 extension	python+pip-pkg	1.0.0	cfaa9a63a630c72ea68b9018090032a4c6690d1f2e498f83ff592cea3ebbe15f	templates/languages/python/pip-pkg--extension.toml
 extension	python+repl-history	1.0.0	48e77b409f95e49f2f08c525dc76c21c41614327fd5c991277f81b4534c1cf06	templates/languages/python/repl-history--extension.toml
