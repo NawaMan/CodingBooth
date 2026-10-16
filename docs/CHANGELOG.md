@@ -4,6 +4,16 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Removed: AFFiNE, AnythingLLM and Penpot.** The `affine-server`, `affine-desktop`,
+  `anythingllm` and `penpot` templates (with their extensions), their setups (`penpot-exporter`
+  too), and `affine-example` / `anythingllm-example` are gone. Each is a finished product used on
+  its own rather than a service a project builds on, and each keeps its content in its own
+  database, where it cannot be committed with the project. A booth whose `# Configured by:` header
+  still selects one fails to reconfigure until that selector is dropped. For diagrams that live in
+  git, use `excalidraw` or `mermaid`. For a local LLM, use `ollama` directly. The generic pieces
+  that first served AnythingLLM stay: the `@code` run-args mount source and the console proxy's
+  fallbacks for globe-pane apps.
+
 - **The XFCE dock is smaller.** Plank now defaults to 36px icons instead of its stock 48px, so the
   strip it keeps free at the bottom of the screen — which maximized windows stop above — is
   shorter. A size picked in Plank's Preferences still wins. Takes effect once the base image is

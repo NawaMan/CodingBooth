@@ -1594,9 +1594,9 @@ func formatPortMapping(public bool, hostPort, containerPort int) string {
 }
 
 // atCodeVolumeSource in a run-args -v spec means "the host project directory"
-// (the same path already mounted at /home/coder/code). AnythingLLM's
-// file-system agent realpath()s and rejects a symlink that points outside its
-// jail, so +project-fs bind-mounts the project a second time into that jail.
+// (the same path already mounted at /home/coder/code). A tool that realpath()s
+// and rejects a symlink pointing outside its own folder needs the project
+// bind-mounted a second time inside that folder.
 const atCodeVolumeSource = "@code"
 
 func rewriteAtCodeVolumeGroups(args *ilist.AppendableList[ilist.List[string]], codePath string) *ilist.AppendableList[ilist.List[string]] {
