@@ -6,6 +6,13 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "redirects": [
+      {
+        "source": "/guides/clipboard.md",
+        "destination": "/guides/clipboard.html",
+        "type": 301
+      }
     ]
   },
   "firestore": {
