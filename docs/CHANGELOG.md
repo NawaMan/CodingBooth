@@ -4,6 +4,21 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Fixed: on arm64, clicking a web-service desktop icon did nothing at all.** JupyterLab,
+  viewmd and a project's own icon (data-example's "Sales Explorer") all run `cb-web-open`, which
+  `exec`s the first browser it finds. Google publishes no Linux build of Chrome for arm64, so
+  `google-chrome--setup.sh` installs a placeholder at `/usr/local/bin/google-chrome` that explains
+  itself and exits 127 — and a placeholder is a real, executable file, so the `command -v
+  google-chrome` test that chose the browser said yes and the `exec` handed the click to it. The
+  working Firefox two branches down was never reached, and since a `.desktop` launcher is
+  `Terminal=false` the stub's explanation went nowhere: on every arm64 desktop booth — the default
+  on Apple Silicon — all three icons were silently dead. Each candidate is now required to *run*
+  (`--version` succeeds), not merely exist, so a stub is skipped and Firefox gets the window;
+  amd64, where Chrome is real, is unchanged and still gets a chromeless `--app` window. The
+  placeholder itself is unchanged — it is still what you want when you type `google-chrome`
+  yourself. Adding the `chromium` template remains the way to get an app-mode window on arm64.
+  See [Desktop icons](BOOTH_SETUP.md#desktop-icons--cb-desktop-iconsh-and-cb-web-iconsh).
+
 - **The Jupyter Notebook desktop icon now opens on the project, not the Desktop.** On a desktop
   variant, clicking the icon when JupyterLab was not yet running started it from `~/Desktop` —
   XFCE runs a launcher in the folder its `.desktop` file lives in — so the file browser showed the
