@@ -852,6 +852,7 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_ENV_FILE="+ctx.EnvFile()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_HOST_UID="+ctx.HostUID()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_HOST_GID="+ctx.HostGID()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_HOST_OS="+getHostOS()))
 
 	// How to reach the host from inside. The name always works (see --add-host
 	// above); the address is the host's own LAN IP, which is what a service

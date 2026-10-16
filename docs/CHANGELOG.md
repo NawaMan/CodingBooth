@@ -4,6 +4,17 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The host's OS now reaches the booth under a name you can find: `BOOTH_HOST_OS`.** The value
+  was already passed, as the unprefixed `HOST_OS` (`MAC` / `LIN` / `WIN`), but every other fact the
+  launcher hands in is `BOOTH_`-prefixed, and `booth--envs` lists exactly what that prefix matches —
+  so a booth's own user or agent had no documented way to learn which OS was on the other side of
+  the mount. It is now also passed as `BOOTH_HOST_OS`, next to `BOOTH_HOST_UID`, `BOOTH_HOST_GID`
+  and `BOOTH_HOST_IP`. Same three tags, same source; useful mainly before handing someone a command
+  to run on their own machine, since the booth itself is Linux either way. `HOST_OS` keeps being
+  passed unchanged — `booth-entry` and `booth--file-sync` read it, and so may a startup script of
+  your own.
+  See [Environment variables](AGENT.md#6-environment-variables).
+
 - **Fixed: a shared package cache is writable again on a host whose uid is not 1000.**
   `go+mod-cache` and `python+pip-cache` mount machine-wide volumes, and docker seeds a fresh volume
   from the image — so a cache an image build left behind arrives owned by the build-time uid, 1000.

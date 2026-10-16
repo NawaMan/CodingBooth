@@ -98,6 +98,7 @@ docker \\
     -e 'BOOTH_ENV_FILE=' \\
     -e 'BOOTH_HOST_UID=${HOST_UID}' \\
     -e 'BOOTH_HOST_GID=${HOST_GID}' \\
+    -e 'BOOTH_HOST_OS=${HOST_OS}' \\
     -e 'BOOTH_HOST_NAME=host.docker.internal' \\
     -e 'BOOTH_HOST_IP=XXXXX' \\
     '--pull=never' \\
