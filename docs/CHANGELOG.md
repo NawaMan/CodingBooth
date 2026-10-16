@@ -4,6 +4,13 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The desktop clipboard guide is now a real page, with videos.** The Help dialog's "Read this on
+  codingbooth.io" link (Clipboard tab) used to open `guides/clipboard.md` as raw text, with garbled
+  dashes and arrows. It now opens `guides/clipboard.html`: why the panel exists, where to click, and
+  a short video for each direction (into the booth, out of the booth), each with jump-to bookmarks
+  like the home-page demo. The old `.md` address redirects to the new page, so booths built before
+  this change still land on it.
+
 - **The i3 Help tab now names the keys a Mac can actually press.** It listed `Ctrl+Alt+…`
   everywhere, which is right for the desktop but not for the keyboard in front of a Mac: the booth
   is reached through noVNC, which rewrites a Mac's modifiers before the desktop sees them — left ⌘
