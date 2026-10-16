@@ -1,6 +1,6 @@
 # CodingBooth
 
-**Current Version:** v0.80.0--clipboard-guide — [View Changelog](docs/CHANGELOG.md)
+**Current Version:** v0.80.0--apt-snapshot-sync — [View Changelog](docs/CHANGELOG.md)
 
 ![Works On My Machine](docs/Works-On-My-Machine-small.png)
 
