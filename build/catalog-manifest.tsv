@@ -381,7 +381,7 @@ helper	cb-has-vscode.sh	1.0.0	80c7d5894f3ec35a908491fa127627d6ba567d92616c7b0d0d
 helper	cb-install-chromium.sh	0.1.0	f0b72ae88c8928df048f8595bc9e8007aa67d766cd16d5288f304d57ff77f646	variants/base/setups/cb-install-chromium.sh
 helper	cb-plank-start	0.1.0	6fb36bb1627ef3670771ec483b6db5c60ff9141f31f4c21a717b4bd587bf9d12	variants/base/setups/cb-plank-start
 helper	cb-web-icon.sh	1.0.0	8f46a7da4ac9280faeb077c495dd92c7dedc9cc020382507bc8dac80fbbc1adb	variants/base/setups/cb-web-icon.sh
-helper	cb-web-open	1.0.0	329cc1aefad5d86c2515a5b543599a5b956ea9e7719ea554ecad6438b4781111	variants/base/setups/cb-web-open
+helper	cb-web-open	1.0.1	ea22ae3a301fd56a82f42bf2b818b495fefb4d30d7c6e8fd12ffece41c49f8eb	variants/base/setups/cb-web-open
 helper	template-seup.sh	1.0.0	c9c0ad54732fdd56d2bb5ac692ebec0c6bd237af9a92fa7719922d4d7941d2f4	variants/base/setups/template-seup.sh
 lib	booth-proxy-response.conf	0.1.0	605ebfc3f0a878a1a68212190bf254cdfbb889393a0191d5855d5ad16e235a6b	variants/base/setups/libs/booth-proxy-response.conf
 lib	code-extension-source.sh	1.0.0	2c81911a7aeb0b25195cd4cd67785c9125d186d4eb99e6fe362d1b09bf875d0d	variants/base/setups/libs/code-extension-source.sh

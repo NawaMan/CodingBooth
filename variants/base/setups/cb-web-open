@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 #
 # cb-web-open — open a booth web service (an HTTP server on an internal port) in
 # a browser window. Invoked at click time by the desktop launcher that
@@ -16,6 +16,11 @@
 #   URL_PATH      path to open (e.g. /lab)
 #   TOKEN_ENV     env var holding an access token to append as ?token= (optional)
 #   START_CMD     command that starts the service if it is not already listening
+#
+# START_CMD runs from the project folder (CB_WEB_START_DIR, default
+# /home/coder/code), not from wherever the launcher happened to run: XFCE starts
+# a desktop icon in ~/Desktop, and a service that serves its working directory
+# (JupyterLab) would otherwise open on the Desktop instead of the project.
 
 set -u
 
@@ -47,6 +52,7 @@ is_up() { (exec 3<>"/dev/tcp/127.0.0.1/${PORT}") 2>/dev/null; }
 
 if ! is_up && [ -n "$START_CMD" ]; then
   echo "cb-web-open: ${ID} not running — starting via '${START_CMD}'…" >&2
+  cd "${CB_WEB_START_DIR:-/home/coder/code}" 2>/dev/null || cd "$HOME" 2>/dev/null || true
   nohup $START_CMD >"/tmp/cb-web-${ID}.log" 2>&1 &
   for _ in $(seq 1 30); do is_up && break; sleep 1; done
 fi

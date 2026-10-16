@@ -4,6 +4,14 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The Jupyter Notebook desktop icon now opens on the project, not the Desktop.** On a desktop
+  variant, clicking the icon when JupyterLab was not yet running started it from `~/Desktop` —
+  XFCE runs a launcher in the folder its `.desktop` file lives in — so the file browser showed the
+  desktop shortcuts instead of `/home/coder/code`. `cb-web-open` now starts every not-yet-running
+  web service from the project folder (falling back to `$HOME`), which covers the other desktop
+  web-app icons too. A booth whose notebook is already running keeps its old folder until that
+  server is restarted.
+
 - **The desktop clipboard guide is now a real page, with videos.** The Help dialog's "Read this on
   codingbooth.io" link (Clipboard tab) used to open `guides/clipboard.md` as raw text, with garbled
   dashes and arrows. It now opens `guides/clipboard.html`: why the panel exists, where to click, and
