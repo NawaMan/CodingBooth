@@ -277,6 +277,15 @@ cb-web-icon.sh --id excalidraw --name "Excalidraw" --icon "$ICON" \
 `tests/config/catalog/test90-web-servers-have-desktop-icon.sh` guards that every template starting a web
 server registers an icon this way.
 
+At click time `cb-web-open` starts the service if nothing is listening yet, then opens it in the
+first browser that **actually runs** — Chrome, Chromium or Firefox, each probed with `--version`
+rather than merely looked up on `PATH`, falling back to `xdg-open`. The probe is not pedantry: on
+arm64 there is no Chrome to install, so `google-chrome--setup.sh` leaves a placeholder at
+`/usr/local/bin/google-chrome` that exits 127, and a presence-only test picked it and `exec`ed
+away every click. Chrome and Chromium get a chromeless `--app` window; Firefox gets
+`--new-window`. A launcher is `Terminal=false`, so nothing a browser prints is ever seen — anything
+that must be visible belongs in the service's own log, not on the launcher's stderr.
+
 ---
 
 ## Custom Setups
