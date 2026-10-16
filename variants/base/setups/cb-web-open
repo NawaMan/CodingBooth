@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.1
+# cb-version: 1.1.0
 #
 # cb-web-open — open a booth web service (an HTTP server on an internal port) in
 # a browser window. Invoked at click time by the desktop launcher that
@@ -57,11 +57,27 @@ if ! is_up && [ -n "$START_CMD" ]; then
   for _ in $(seq 1 30); do is_up && break; sleep 1; done
 fi
 
+# Does this name resolve to a browser that actually runs?
+#
+# Presence on PATH is not enough. On arm64, where Google publishes no Linux
+# build of Chrome, google-chrome--setup.sh installs a placeholder at
+# /usr/local/bin/google-chrome that prints an explanation and exits 127. It is
+# a real executable, so it satisfied the `command -v` test this chain used to
+# make, and `exec` then replaced this process with it — the working Firefox
+# further down was never reached. Every web-service icon on an arm64 desktop
+# (JupyterLab, viewmd, a project's own) silently did nothing when clicked,
+# because a .desktop launcher is Terminal=false and the stub's stderr goes
+# nowhere. Requiring --version to succeed separates a browser that runs from
+# one that merely exists; every real browser here answers it, the stub cannot.
+browser_ok() {
+  command -v "$1" >/dev/null 2>&1 && "$1" --version >/dev/null 2>&1
+}
+
 # Open in a dedicated app-mode window when possible (chromeless), else a normal
 # browser window, else whatever xdg-open resolves.
-if   command -v google-chrome     >/dev/null 2>&1; then exec google-chrome     --app="$URL"
-elif command -v chromium          >/dev/null 2>&1; then exec chromium          --app="$URL"
-elif command -v chromium-browser  >/dev/null 2>&1; then exec chromium-browser  --app="$URL"
-elif command -v firefox           >/dev/null 2>&1; then exec firefox --new-window "$URL"
-else                                                    exec xdg-open "$URL"
+if   browser_ok google-chrome   ; then exec google-chrome    --app="$URL"
+elif browser_ok chromium        ; then exec chromium         --app="$URL"
+elif browser_ok chromium-browser; then exec chromium-browser --app="$URL"
+elif browser_ok firefox         ; then exec firefox --new-window "$URL"
+else                                   exec xdg-open "$URL"
 fi
