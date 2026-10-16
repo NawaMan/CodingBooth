@@ -3,9 +3,9 @@ display-name = "pip Cache"
 display-disc = "Share the pip download cache across booths"
 display-detail = """Mounts the machine-wide volume booth-cache-pip on /opt/pip-cache. That is where the Python \
 setup points PIP_CACHE_DIR, including from its login profile, so the volume is the cache pip already uses. \
-An image build can leave a root-owned directory inside that volume. booth-entry reads \
-.booth/owner-permission.yaml and sets coder:coder mode 1777 on every directory under the mount, so coder \
-can store new downloads. This is the download cache, not a virtualenv. The pip requirements extension still \
+An image build can leave a root-owned directory, or files owned by the build-time uid, inside that \
+volume. booth-entry reads .booth/owner-permission.yaml and takes coder:coder over everything under the \
+mount, files included, setting mode 1777 on the directories, so coder can store new downloads. This is the download cache, not a virtualenv. The pip requirements extension still \
 installs into the image at build time; this volume does not feed that build. Reset the cache with \
 `docker volume rm booth-cache-pip`."""
 display-order = 13

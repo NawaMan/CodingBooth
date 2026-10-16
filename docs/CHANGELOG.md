@@ -4,6 +4,20 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Fixed: a shared package cache is writable again on a host whose uid is not 1000.**
+  `go+mod-cache` and `python+pip-cache` mount machine-wide volumes, and docker seeds a fresh volume
+  from the image — so a cache an image build left behind arrives owned by the build-time uid, 1000.
+  The `[[owner-permission]]` entries `booth-entry` applies on startup chowned such a mount's
+  directories and nothing else, so on every Mac (uid 501), and on any Linux account off 1000, the
+  files inside kept a uid coder does not have: `go build` died on `failed to trim cache: open
+  /home/coder/.cache/go-build/trim.txt: permission denied`, since a 1777 directory does not help an
+  open on a file that already exists. Ownership now covers everything in the tree, files included,
+  while the mode stays directory-only — Go makes the files in a module cache read-only so a build
+  cannot quietly mutate a verified dependency, and 1777 on them would undo that. Entries that already have the right owner are skipped, so a 26k-entry cache costs one
+  traversal per start, and the next start repairs a volume that is already in the broken state:
+  no need to drop the cache.
+  See [Owner and mode of a mount](IN-OUT.md#owner-and-mode-of-a-mount).
+
 - **The Console UI's toolbar keeps four layout buttons, and the keyboard gains the pane's Web
   view, its Markdown viewer and i3's resize mode.** The toolbar is down to one terminal, two
   columns, two rows and the 2×2 grid; the five three- and six-pane presets lose their buttons,

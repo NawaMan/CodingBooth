@@ -258,9 +258,9 @@ To reset a booth's data, remove its volume while no booth uses it:
 ### Owner and mode of a mount
 
 A volume that Docker creates, or one that an image build wrote into, can hold directories owned by
-root, which coder cannot write. A template lists `[[owner-permission]]` entries: `path` (absolute),
-and the optional `user`, `group` and `mode` (an octal string such as `"1777"`). `booth config`
-merges them into `.booth/owner-permission.yaml`. It is a generated file, fingerprinted in
+root, and files owned by the build-time uid, neither of which coder can write. A template lists
+`[[owner-permission]]` entries: `path` (absolute), and the optional `user`, `group` and `mode` (an
+octal string such as `"1777"`). `booth config` merges them into `.booth/owner-permission.yaml`. It is a generated file, fingerprinted in
 `.booth/.generated` like the Boothfile, so do not edit it by hand.
 
 ```yaml
@@ -270,13 +270,17 @@ merges them into `.booth/owner-permission.yaml`. It is a generated file, fingerp
   mode: "1777"
 ```
 
-On every start, `booth-entry` applies each entry as root. A directory entry sets the owner and mode
-on that directory and every directory under it, and does not cross onto another filesystem. Files
-keep the mode they have. A path that is not a mount point, or does not exist, is skipped with a
-notice.
+On every start, `booth-entry` applies each entry as root, without crossing onto another filesystem.
+A directory entry sets the **mode** on that directory and every directory under it, and the
+**owner** on everything in the tree, files included — a fresh volume is seeded from the image, so
+the files in it arrive owned by the build-time uid, and a 1777 directory does not let coder write a
+file it does not own. Files keep the mode they have, which a Go module cache relies on: Go makes
+them read-only so a build cannot quietly mutate a verified dependency. A path that is not a mount point, or does not exist, is skipped
+with a notice.
 
-Its one user is `python+pip-cache`: `/opt/pip-cache` becomes `coder:coder`, mode `1777`. See the
-`owner-permission` key in [Template schema](AGENT_TEMPLATE.md).
+Its users are the package-cache extensions: `python+pip-cache` (`/opt/pip-cache`) and
+`go+mod-cache` (the module and build caches in coder's home), each becoming `coder:coder`, mode
+`1777`. See the `owner-permission` key in [Template schema](AGENT_TEMPLATE.md).
 
 ### Who uses `--persist-home`
 
