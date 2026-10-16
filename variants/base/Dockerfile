@@ -13,6 +13,19 @@ ARG LOCALE=en_US.UTF-8
 # is copied in, so the snapshot pin is inlined for these two base install steps.
 ARG APT_SNAPSHOT=
 
+# Every apt-get update and apt-get install below runs inside a retry loop. Plain
+# `apt-get update` treats an index it could not fetch as a warning and exits 0, so
+# a snapshot.ubuntu.com 503 surfaced one command later as "Unable to locate
+# package curl", with nothing left to retry — hence APT::Update::Error-Mode=any.
+# Installs get Acquire::Retries=5 (apt's per-file retry, default 3, with backoff)
+# and the same loop: a .deb that keeps 503ing fails the install, and the next
+# attempt fetches only what is still missing, since the downloaded archives stay
+# in /var/cache/apt/archives until the step cleans up. The loop is for outages
+# that outlast apt's own retries — a few minutes of 502/503 from the snapshot
+# service — waiting 15s, 30s, 45s, 60s between attempts. These options are
+# passed per command, not set in apt.conf.d, so the setups and booths built on
+# this image keep apt's usual behaviour.
+
 # The snapshot this image's packages come from, kept for apt--install.sh: a
 # Boothfile pinning an older one cannot always install on top of these packages,
 # and the script says so, with the fix. A different name from APT_SNAPSHOT on
@@ -49,8 +62,18 @@ RUN touch /tmp/startups.log \
 # purpose even once that's possible: a snapshotted root CA bundle is a stale
 # root CA bundle, and freshness is the point of this particular package.
 RUN set -euo pipefail \
-  ; apt-get update \
-  ; apt-get install -y --no-install-recommends ca-certificates \
+  ; for attempt in 1 2 3 4 5; do \
+      apt-get update -o APT::Update::Error-Mode=any && break \
+    ; [ "$attempt" -lt 5 ] || exit 1 \
+    ; echo "⚠️  apt-get update failed (attempt $attempt of 5); retrying in $((attempt * 15))s" \
+    ; sleep $((attempt * 15)) \
+    ; done \
+  ; for attempt in 1 2 3 4 5; do \
+      apt-get install -y --no-install-recommends -o Acquire::Retries=5 ca-certificates && break \
+    ; [ "$attempt" -lt 5 ] || exit 1 \
+    ; echo "⚠️  apt-get install failed (attempt $attempt of 5); retrying in $((attempt * 15))s" \
+    ; sleep $((attempt * 15)) \
+    ; done \
   ; rm -rf /var/lib/apt/lists/*
 
 # Essential system setup
@@ -62,26 +85,38 @@ RUN set -euo pipefail \
         *) echo "⚠️  APT_SNAPSHOT=${APT_SNAPSHOT} ignored on $(dpkg --print-architecture): no ports.ubuntu.com snapshots" ;; \
       esac \
     fi \
-  ; apt-get update "${SNAPSHOT_ARGS[@]}" \
-  ; apt-get install -y --no-install-recommends "${SNAPSHOT_ARGS[@]}" \
-  bash                   \
-  curl                   \
-  debian-archive-keyring \
-  file                   \
-  gettext-base           \
-  git                    \
-  gnupg                  \
-  less                   \
-  locales                \
-  sudo                   \
-  tar                    \
-  tini                   \
-  tzdata                 \
-  ttyd                   \
-  unzip                  \
-  wget                   \
-  xz-utils               \
-  zip                    \
+  ; for attempt in 1 2 3 4 5; do \
+      apt-get update -o APT::Update::Error-Mode=any "${SNAPSHOT_ARGS[@]}" && break \
+    ; [ "$attempt" -lt 5 ] || exit 1 \
+    ; echo "⚠️  apt-get update failed (attempt $attempt of 5); retrying in $((attempt * 15))s" \
+    ; sleep $((attempt * 15)) \
+    ; done \
+  ; PACKAGES=( \
+      bash                   \
+      curl                   \
+      debian-archive-keyring \
+      file                   \
+      gettext-base           \
+      git                    \
+      gnupg                  \
+      less                   \
+      locales                \
+      sudo                   \
+      tar                    \
+      tini                   \
+      tzdata                 \
+      ttyd                   \
+      unzip                  \
+      wget                   \
+      xz-utils               \
+      zip                    \
+    ) \
+  ; for attempt in 1 2 3 4 5; do \
+      apt-get install -y --no-install-recommends -o Acquire::Retries=5 "${SNAPSHOT_ARGS[@]}" "${PACKAGES[@]}" && break \
+    ; [ "$attempt" -lt 5 ] || exit 1 \
+    ; echo "⚠️  apt-get install failed (attempt $attempt of 5); retrying in $((attempt * 15))s" \
+    ; sleep $((attempt * 15)) \
+    ; done \
   ; rm -rf /var/lib/apt/lists/*      \
   ; rm -rf /var/cache/apt/archives/* \
   ; rm -rf /var/cache/apt/archives/partial/*
@@ -96,19 +131,31 @@ RUN set -euo pipefail \
         *) echo "⚠️  APT_SNAPSHOT=${APT_SNAPSHOT} ignored on $(dpkg --print-architecture): no ports.ubuntu.com snapshots" ;; \
       esac \
     fi \
-  ; apt-get update "${SNAPSHOT_ARGS[@]}" \
-  ; apt-get install -y --no-install-recommends "${SNAPSHOT_ARGS[@]}" \
-  direnv \
-  jq     \
-  mc     \
-  nano   \
-  nginx  \
-  socat  \
-  tig      \
-  tmux     \
-  tree     \
-  whiptail \
-  zsh      \
+  ; for attempt in 1 2 3 4 5; do \
+      apt-get update -o APT::Update::Error-Mode=any "${SNAPSHOT_ARGS[@]}" && break \
+    ; [ "$attempt" -lt 5 ] || exit 1 \
+    ; echo "⚠️  apt-get update failed (attempt $attempt of 5); retrying in $((attempt * 15))s" \
+    ; sleep $((attempt * 15)) \
+    ; done \
+  ; PACKAGES=( \
+      direnv   \
+      jq       \
+      mc       \
+      nano     \
+      nginx    \
+      socat    \
+      tig      \
+      tmux     \
+      tree     \
+      whiptail \
+      zsh      \
+    ) \
+  ; for attempt in 1 2 3 4 5; do \
+      apt-get install -y --no-install-recommends -o Acquire::Retries=5 "${SNAPSHOT_ARGS[@]}" "${PACKAGES[@]}" && break \
+    ; [ "$attempt" -lt 5 ] || exit 1 \
+    ; echo "⚠️  apt-get install failed (attempt $attempt of 5); retrying in $((attempt * 15))s" \
+    ; sleep $((attempt * 15)) \
+    ; done \
   ; rm -rf /var/lib/apt/lists/*      \
   ; rm -rf /var/cache/apt/archives/* \
   ; rm -rf /var/cache/apt/archives/partial/*
