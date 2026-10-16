@@ -134,6 +134,7 @@ setup harlequin
 setup haskell
 setup haskell-code-extension
 setup haskell-nb-kernel
+setup haskell-tools
 setup heidisql
 setup helix
 setup helm
