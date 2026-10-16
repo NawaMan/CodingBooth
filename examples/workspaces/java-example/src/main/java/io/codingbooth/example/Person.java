@@ -1,4 +1,4 @@
-package com.example;
+package io.codingbooth.example;
 
 import lombok.Value;
 
