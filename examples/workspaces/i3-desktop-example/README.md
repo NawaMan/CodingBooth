@@ -30,6 +30,10 @@ Every shortcut also works with plain **Alt** when the browser lets go of it — 
 panel's **Full screen** button, which captures the whole keyboard. Firefox keeps Alt for itself, so
 use Ctrl+Alt there.
 
+**On a Mac, read Ctrl+Alt as Control+Command and Alt as Command.** The desktop is reached through
+noVNC, which sends ⌘ to it as Alt and ⌥ as AltGr — so Option never triggers these, whatever the key
+says. The Help tab works this out from the browser and prints the keys you can actually press.
+
 ## Switching back and forth
 
 Tiling is a window-manager switch inside the same desktop session, not a different desktop:

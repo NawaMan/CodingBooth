@@ -4,6 +4,17 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The i3 Help tab now names the keys a Mac can actually press.** It listed `Ctrl+Alt+…`
+  everywhere, which is right for the desktop but not for the keyboard in front of a Mac: the booth
+  is reached through noVNC, which rewrites a Mac's modifiers before the desktop sees them — left ⌘
+  arrives as Alt, right ⌘ as Super, and ⌥ as AltGr. So Control+Command is what triggers i3's
+  `Control+Mod1+…` bindings, and Option can never trigger anything. On a Mac the tab now prints
+  **Control+Command** (and **Command** for the bare mod), and adds a short note that Option will not
+  work however the key is labelled; every other viewer sees exactly what it saw before. The choice
+  follows the *browser*, like noVNC's own remap does, so opening a Linux host's booth from a Mac
+  laptop gets the Mac keys and the other way round. sway and Krohnkite still print their old labels.
+  See [Desktop tiling](GUIDE.md).
+
 - **The host's OS now reaches the booth under a name you can find: `BOOTH_HOST_OS`.** The value
   was already passed, as the unprefixed `HOST_OS` (`MAC` / `LIN` / `WIN`), but every other fact the
   launcher hands in is `BOOTH_`-prefixed, and `booth--envs` lists exactly what that prefix matches —

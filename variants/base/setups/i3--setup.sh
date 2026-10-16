@@ -416,7 +416,9 @@ done
 # inlines every plugins/*.js into the page, so the tab exists exactly when this
 # setup ran. The keys are listed with window.CB_I3_KEYS as the modifier when an
 # earlier plugin sets it (i3-ctrl-alt--setup.sh's i3-00-ctrl-alt.js), else the
-# mod key. Skipped quietly on an image without the wrapper.
+# mod key — each run through BoothHelp.modLabel, which names it for whoever is
+# watching (a Mac presses Command for what X calls Alt). Skipped quietly on an
+# image without the wrapper.
 PLUGIN_DIR=/usr/local/share/booth-message-wrapper/plugins
 if [[ -d "$PLUGIN_DIR" ]]; then
   sed "s/@MOD@/${MOD_LABEL}/g" > "$PLUGIN_DIR/i3-help.js" <<'EOF'
@@ -425,7 +427,14 @@ if [[ -d "$PLUGIN_DIR" ]]; then
   if (!window.BoothHelp) {
     return;
   }
-  var K = window.CB_I3_KEYS || "@MOD@";
+  // What this viewer actually presses: on a Mac the desktop is reached
+  // through noVNC, which hands X an Alt when Command is pressed. BoothHelp
+  // knows the mapping; an older overlay without it leaves the labels alone.
+  var label = window.BoothHelp.modLabel || function (mod) { return mod; };
+  var RAW = window.CB_I3_KEYS || "@MOD@";
+  var hasTwin = RAW !== "@MOD@";
+  var K = label(RAW);
+  var M = label("@MOD@");
   var keys = [
     [K + "+Enter",                  "Open a terminal"],
     [K + "+d",                      "Run a command (dmenu)"],
@@ -437,7 +446,7 @@ if [[ -d "$PLUGIN_DIR" ]]; then
     [K + "+w / s / e",              "Tabbed / stacked / split layout"],
     [K + "+f",                      "Full screen toggle"],
     [K + "+Shift+Space",            "Float / tile the window"],
-    ["@MOD@+drag",                  "Move a floating window (or drag its title bar)"],
+    [M + "+drag",                   "Move a floating window (or drag its title bar)"],
     [K + "+r",                      "Resize mode (h/j/k/l or arrows, Enter to leave)"],
     [K + "+1 … 0",                  "Go to workspace 1 … 10"],
     [K + "+Shift+1 … 0",            "Send the window to workspace 1 … 10"],
@@ -448,14 +457,24 @@ if [[ -d "$PLUGIN_DIR" ]]; then
     return '<tr><td style="padding:2px 12px 2px 0;white-space:nowrap"><code>' + k[0] +
       '</code></td><td style="padding:2px 0">' + k[1] + '</td></tr>';
   }).join("");
-  var keyNote = K === "@MOD@"
+  // Why the keys are not the ones printed on a Mac keyboard. Without this,
+  // Option is the first thing anyone tries, and it cannot work: noVNC sends
+  // it as AltGr.
+  var macNote = window.BoothHelp.macViewer
+    ? '<h3>On a Mac: Command, not Option</h3>' +
+      '<p>The desktop is reached through noVNC, which hands it <strong>Command</strong> ' +
+      'when you press \u2318 and <em>AltGr</em> when you press \u2325. So these shortcuts want ' +
+      'the left <strong>\u2318</strong>, and <strong>Option never works</strong> for them, however ' +
+      'the keys are labelled.</p>'
+    : '';
+  var keyNote = !hasTwin
     ? '<h3>Browser took the key?</h3>' +
       '<p>In Chrome, turn on the panel\'s <strong>Full screen</strong> button, which captures ' +
-      'the whole keyboard so @MOD@ shortcuts reach the booth.</p>'
-    : '<h3>Shorter: @MOD@ instead of ' + K + '</h3>' +
-      '<p>Every shortcut also works with just <strong>@MOD@</strong> (e.g. <code>@MOD@+h</code>) ' +
+      'the whole keyboard so ' + M + ' shortcuts reach the booth.</p>'
+    : '<h3>Shorter: ' + M + ' instead of ' + K + '</h3>' +
+      '<p>Every shortcut also works with just <strong>' + M + '</strong> (e.g. <code>' + M + '+h</code>) ' +
       'when the browser passes it on: in Chrome, turn on the panel\'s <strong>Full screen</strong> ' +
-      'button, which captures the whole keyboard. Firefox keeps @MOD@ shortcuts for itself, so ' +
+      'button, which captures the whole keyboard. Firefox keeps ' + M + ' shortcuts for itself, so ' +
       'use ' + K + ' there. ' + K + '+arrows may be taken by your own desktop; h/j/k/l always work.</p>';
   window.BoothHelp.addTab("i3", "i3 Shortcuts (Tiling)",
     '<p class="msg-dialog-lead">This desktop can use the <strong>i3</strong> tiling window ' +
@@ -463,6 +482,7 @@ if [[ -d "$PLUGIN_DIR" ]]; then
     'driven from the keyboard with <strong>' + K + '</strong> as the modifier. The panel ' +
     'and menu work as usual.</p>' +
     '<table style="border-collapse:collapse;font-size:13px">' + rows + '</table>' +
+    macNote +
     keyNote +
     '<h3>Switching</h3>' +
     '<p>Run <code>start-i3</code> (or the <strong>Tiling Window Manager (i3)</strong> icon) to ' +

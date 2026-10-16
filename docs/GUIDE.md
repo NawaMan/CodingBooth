@@ -34,7 +34,9 @@ Booths with the `i3` template on XFCE or LXQt can tile windows instead of overla
 `start-i3` (or the **Tiling Window Manager (i3)** desktop icon) to switch to i3, and `stop-i3` (or
 **Leave Tiling (i3)** in the menu) to switch back — desktop icons are hidden while i3 runs. The
 shortcuts are in Help → **i3 Shortcuts (Tiling)**; every one works with **Ctrl+Alt** in any browser, and
-with plain Alt in Chrome while **Full screen** is on.
+with plain Alt in Chrome while **Full screen** is on. On a Mac press **Control+Command** (and plain
+**Command**) instead: noVNC hands the desktop an Alt when you press ⌘, and AltGr when you press ⌥, so
+Option cannot work. The Help tab prints whichever of the two you are actually on.
 
 ---
 
