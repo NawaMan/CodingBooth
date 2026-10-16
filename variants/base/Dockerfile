@@ -22,9 +22,14 @@ ARG APT_SNAPSHOT=
 # attempt fetches only what is still missing, since the downloaded archives stay
 # in /var/cache/apt/archives until the step cleans up. The loop is for outages
 # that outlast apt's own retries — a few minutes of 502/503 from the snapshot
-# service — waiting 15s, 30s, 45s, 60s between attempts. These options are
-# passed per command, not set in apt.conf.d, so the setups and booths built on
-# this image keep apt's usual behaviour.
+# service — waiting 15s, 30s, 45s, 60s between attempts. apt has no overall
+# time limit, and a desktop-kde build once hung in apt-get update for hours with
+# every connection closed, so each attempt also runs under `timeout`: 10 minutes
+# for update, 30 for install (a slow but healthy snapshot service took 15 for
+# this image's essentials). A killed install can leave packages half-configured,
+# so a failed attempt runs `dpkg --configure -a` before the next one. These
+# options are passed per command, not set in apt.conf.d, so the setups and
+# booths built on this image keep apt's usual behaviour.
 
 # The snapshot this image's packages come from, kept for apt--install.sh: a
 # Boothfile pinning an older one cannot always install on top of these packages,
@@ -63,13 +68,14 @@ RUN touch /tmp/startups.log \
 # root CA bundle, and freshness is the point of this particular package.
 RUN set -euo pipefail \
   ; for attempt in 1 2 3 4 5; do \
-      apt-get update -o APT::Update::Error-Mode=any && break \
+      timeout --kill-after=30 600 apt-get update -o APT::Update::Error-Mode=any && break \
     ; [ "$attempt" -lt 5 ] || exit 1 \
     ; echo "⚠️  apt-get update failed (attempt $attempt of 5); retrying in $((attempt * 15))s" \
     ; sleep $((attempt * 15)) \
     ; done \
   ; for attempt in 1 2 3 4 5; do \
-      apt-get install -y --no-install-recommends -o Acquire::Retries=5 ca-certificates && break \
+      timeout --kill-after=30 1800 apt-get install -y --no-install-recommends -o Acquire::Retries=5 ca-certificates && break \
+    ; dpkg --configure -a || true \
     ; [ "$attempt" -lt 5 ] || exit 1 \
     ; echo "⚠️  apt-get install failed (attempt $attempt of 5); retrying in $((attempt * 15))s" \
     ; sleep $((attempt * 15)) \
@@ -86,7 +92,7 @@ RUN set -euo pipefail \
       esac \
     fi \
   ; for attempt in 1 2 3 4 5; do \
-      apt-get update -o APT::Update::Error-Mode=any "${SNAPSHOT_ARGS[@]}" && break \
+      timeout --kill-after=30 600 apt-get update -o APT::Update::Error-Mode=any "${SNAPSHOT_ARGS[@]}" && break \
     ; [ "$attempt" -lt 5 ] || exit 1 \
     ; echo "⚠️  apt-get update failed (attempt $attempt of 5); retrying in $((attempt * 15))s" \
     ; sleep $((attempt * 15)) \
@@ -112,7 +118,8 @@ RUN set -euo pipefail \
       zip                    \
     ) \
   ; for attempt in 1 2 3 4 5; do \
-      apt-get install -y --no-install-recommends -o Acquire::Retries=5 "${SNAPSHOT_ARGS[@]}" "${PACKAGES[@]}" && break \
+      timeout --kill-after=30 1800 apt-get install -y --no-install-recommends -o Acquire::Retries=5 "${SNAPSHOT_ARGS[@]}" "${PACKAGES[@]}" && break \
+    ; dpkg --configure -a || true \
     ; [ "$attempt" -lt 5 ] || exit 1 \
     ; echo "⚠️  apt-get install failed (attempt $attempt of 5); retrying in $((attempt * 15))s" \
     ; sleep $((attempt * 15)) \
@@ -132,7 +139,7 @@ RUN set -euo pipefail \
       esac \
     fi \
   ; for attempt in 1 2 3 4 5; do \
-      apt-get update -o APT::Update::Error-Mode=any "${SNAPSHOT_ARGS[@]}" && break \
+      timeout --kill-after=30 600 apt-get update -o APT::Update::Error-Mode=any "${SNAPSHOT_ARGS[@]}" && break \
     ; [ "$attempt" -lt 5 ] || exit 1 \
     ; echo "⚠️  apt-get update failed (attempt $attempt of 5); retrying in $((attempt * 15))s" \
     ; sleep $((attempt * 15)) \
@@ -151,7 +158,8 @@ RUN set -euo pipefail \
       zsh      \
     ) \
   ; for attempt in 1 2 3 4 5; do \
-      apt-get install -y --no-install-recommends -o Acquire::Retries=5 "${SNAPSHOT_ARGS[@]}" "${PACKAGES[@]}" && break \
+      timeout --kill-after=30 1800 apt-get install -y --no-install-recommends -o Acquire::Retries=5 "${SNAPSHOT_ARGS[@]}" "${PACKAGES[@]}" && break \
+    ; dpkg --configure -a || true \
     ; [ "$attempt" -lt 5 ] || exit 1 \
     ; echo "⚠️  apt-get install failed (attempt $attempt of 5); retrying in $((attempt * 15))s" \
     ; sleep $((attempt * 15)) \
