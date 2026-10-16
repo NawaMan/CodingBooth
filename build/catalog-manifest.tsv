@@ -250,7 +250,7 @@ setup	penpot	0.1.1	0ba8bca6a4b92800850822516405fa28b07e2e7213a6edd6c21522ad62258
 setup	penpot-exporter	0.1.0	966f1f4b8e5c4ef54b8cf0783df10e138367ebc89427cf46d604900ce980cacf	variants/base/setups/penpot-exporter--setup.sh
 setup	php	1.0.0	397c63cb432fd45e81a827200be0a0bde3f1ac4bc6da62595944a4e51a3b0a93	variants/base/setups/php--setup.sh
 setup	php-code-extension	1.0.0	938a5949e6a3723c576a0b6f7c4bf04f346db5fb165b976774730f8974d74dbf	variants/base/setups/php-code-extension--setup.sh
-setup	plank	0.2.0	84f64081452e95aca08eb0d4a76e2172713dd3e3ce548b8c57cd1d110df7af20	variants/base/setups/plank--setup.sh
+setup	plank	0.3.0	3dfa45f945005656f46c6c42db17474d3ba080870fa1bb96d4654a0a4e18c551	variants/base/setups/plank--setup.sh
 setup	plantuml	1.0.0	d929a039b50ee7b0087b7fca824005a28e8fb8429e104a04b3357cab9bc9fcbe	variants/base/setups/plantuml--setup.sh
 setup	plantuml-code-extension	0.1.0	cbc444d18c725e8c48e6e0beb9a1a71c2b71a80bc72cc4a62ee1f0ab32ee1cd3	variants/base/setups/plantuml-code-extension--setup.sh
 setup	playwright	1.0.0	b1c66d74796b338a6bf5cfdab1ef6638b54b40b3ee81e0e025185030ef5c7892	variants/base/setups/playwright--setup.sh
