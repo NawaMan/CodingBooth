@@ -101,6 +101,33 @@ FAIL_TESTS=()
 RETRIED_LIST="$(mktemp)"
 trap 'rm -f "$RETRIED_LIST"' EXIT
 
+# Where a test keeps its own detailed log and its captured frames — the same path
+# tui-helpers--source.sh computes, which owns it (and clean-all.sh sweeps). Needed
+# here because a retry overwrites both, and the first attempt's copy is the only
+# record of what actually went wrong.
+_scratch_base="${TMPDIR:-/tmp}/codingbooth-config-tui-tests"
+
+# keep_first_attempt <name> — set the failed attempt aside before the retry wipes it.
+#
+# A retried test re-runs the same script, and `begin` opens its log with `tee`
+# (truncating) and does `rm -Rf "$prj"`. So a flake that passes the second time
+# leaves nothing behind but the one-line verdict: the vhs exit code, the keystroke
+# tape and the captured frame that the assertion actually read are all gone, which
+# is exactly what is needed to tell "the frame was late" from "no frame at all".
+# Saved as <name>.attempt1.log, the same convention run-automate-tests.sh uses for
+# a whole suite's first attempt.
+keep_first_attempt() {
+    local name="$1"
+    local log="${_scratch_base}/log--${name}.log"
+    local prj="${_scratch_base}/prj--${name}"
+    [[ -f "$log" ]] && cp -f "$log" "${_scratch_base}/log--${name}.attempt1.log" 2>/dev/null
+    if [[ -d "$prj" ]]; then
+        rm -rf "${prj}--attempt1" 2>/dev/null
+        cp -R "$prj" "${prj}--attempt1" 2>/dev/null
+    fi
+    return 0
+}
+
 run_one() {
     local test_file="$1"
     local name
@@ -120,8 +147,11 @@ run_one() {
     #
     # This runs in a background subshell, so the retry is recorded in a file; an
     # array assignment here would not survive back to the parent.
+    keep_first_attempt "$name"
     echo "" >> "$out"
     echo "⚠️  First attempt failed — retrying once." >> "$out"
+    echo "   First attempt kept as: ${_scratch_base}/log--${name}.attempt1.log" >> "$out"
+    echo "   Its captured frame:    ${_scratch_base}/prj--${name}--attempt1/frame.clean.txt" >> "$out"
     printf '%s\n' "$name" >> "$RETRIED_LIST"
 
     if (cd "$SCRIPT_DIR" && CB_NO_BUILD_PROGRESS=1 bash "$test_file" $VERBOSE) >> "$out" 2>&1; then
@@ -254,6 +284,7 @@ echo "  Total: ${TEST_COUNT}   Passed: ${PASS_COUNT}   Failed: ${FAIL_COUNT}"
 if [[ -s "$RETRIED_LIST" ]]; then
     echo "  ⚠️  Retried after a first-attempt failure: $(wc -l < "$RETRIED_LIST" | tr -d ' ')"
     sed 's/^/    - /' "$RETRIED_LIST"
+    echo "    Each first attempt kept as ${_scratch_base}/log--<test>.attempt1.log"
 fi
 echo "  Duration: $((OVERALL_END - OVERALL_START))s"
 echo "========================================"

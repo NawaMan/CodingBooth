@@ -349,6 +349,12 @@ The first attempt is kept, not overwritten: `tests/logs/<suite>.attempt1.log`, p
 `complex-booth-calls.attempt1.log` for its trace. The final summary lists every test that passed
 only after a retry and names the log holding its failure. Read that log before calling it a flake.
 
+`config-tui/` keeps the same thing one level down, because a retry there re-runs the test script,
+whose `begin` truncates its log and wipes its prj directory: the first attempt's detailed log and
+captured frames are set aside as `log--<test>.attempt1.log` and `prj--<test>--attempt1/` under
+`$TMPDIR/codingbooth-config-tui-tests/`. Without them a VHS flake erases its own evidence, and
+"the frame came out wrong" is indistinguishable from "vhs never recorded".
+
 At the end of a run on Docker, `run-automate-tests.sh` prunes dangling images labelled
 `cb.managed=true`. These are copies that a test rebuild or variant refresh replaced. Left alone
 they fill the disk, and BuildKit's GC then evicts build cache, so the next run rebuilds every
