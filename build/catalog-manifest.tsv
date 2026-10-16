@@ -92,7 +92,7 @@ setup	erlang	1.0.0	24ad8e50ad69aef9725262acd39b14885d8007f85bacd31e360b75a39d617
 setup	erlang-code-extension	1.0.0	6e5b09d75439bec5b67b899d850b0a99cb07c3fe72052e8061458843f60aff70	variants/base/setups/erlang-code-extension--setup.sh
 setup	excalidraw	1.1.0	02f04628f0678822959537b54d80a34743aae9c1d30c77b41fb45aaa06f34f87	variants/base/setups/excalidraw--setup.sh
 setup	exercism	1.0.0	036c8ef57fcfabde43a3d47d55affc68a5127451a61586d2bc990bed6155ebc7	variants/base/setups/exercism--setup.sh
-setup	fira-code-nerd-font	0.1.0	376ef1dfb459f4ad16ab0b76812fd6920fe7569371c80e61c2057a2820fd5509	variants/base/setups/fira-code-nerd-font--setup.sh
+setup	fira-code-nerd-font	0.1.1	3b77e6657d8c862d874f46a15a4eaade9f978ab824aff503780ffe9e2ad7b246	variants/base/setups/fira-code-nerd-font--setup.sh
 setup	firebase	1.0.0	cb173cd4ef650d421702b797c175e1104e2974be965d684f6ecee5fe00af2f26	variants/base/setups/firebase--setup.sh
 setup	firefox	1.0.0	e5ddd08461944d477d87ca40779b2d1bb632a0b77fedc15b0122bb83f2ba76e6	variants/base/setups/firefox--setup.sh
 setup	firefox-managed-policies	1.0.0	56725f8b7e2225e097ca92cd31a387847995e8a37b1b01654ec022780c30f37d	variants/base/setups/firefox-managed-policies--setup.sh
