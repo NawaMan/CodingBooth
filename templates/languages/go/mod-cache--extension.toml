@@ -7,8 +7,8 @@ Installed binaries stay in ~/go/bin, which is not mounted. A runtime volume hide
 into the image at the same path. Both paths sit in coder's home, where `go install` at image build time \
 leaves a cache owned by the build-time uid — docker seeds a fresh volume from it, uid and all, and on a host \
 whose own uid differs coder then cannot write its own cache. booth-entry reads .booth/owner-permission.yaml \
-and sets coder:coder mode 1777 on every directory under both mounts, which also lets two host users share \
-them. List the volumes with `docker volume ls --filter label=cb.volume=cache` and reset one with \
+and takes coder:coder over everything under both mounts, files included, setting mode 1777 on the \
+directories, which also lets two host users share them. List the volumes with `docker volume ls --filter label=cb.volume=cache` and reset one with \
 `docker volume rm booth-cache-gomod`."""
 display-order = 16
 auto-select = false
