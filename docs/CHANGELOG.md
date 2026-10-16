@@ -4,6 +4,18 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The XFCE dock is smaller.** Plank now defaults to 36px icons instead of its stock 48px, so the
+  strip it keeps free at the bottom of the screen — which maximized windows stop above — is
+  shorter. A size picked in Plank's Preferences still wins. Takes effect once the base image is
+  rebuilt.
+
+- **java-example: no more stray Lombok warning, and a real package name.** `just run` printed a
+  lone `WARNING: Please consider reporting this to the maintainers of class lombok.permit.Permit`:
+  JDK 25 warns when Lombok calls `sun.misc.Unsafe` during compilation, and the script's filter
+  removed the other three lines of that warning but not this one. `.mvn/jvm.config` now allows that
+  access in Maven's JVM, so nothing is printed — for `just build` too, which had no filter. The
+  example's code also moved from `com.example` to `io.codingbooth.example`.
+
 - **Fixed: on arm64, clicking a web-service desktop icon did nothing at all.** JupyterLab,
   viewmd and a project's own icon (data-example's "Sales Explorer") all run `cb-web-open`, which
   `exec`s the first browser it finds. Google publishes no Linux build of Chrome for arm64, so

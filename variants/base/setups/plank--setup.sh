@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.2.0
+# cb-version: 0.3.0
 
 # plank--setup.sh — Plank Reloaded dock for the XFCE desktop, Matte theme.
 #
@@ -19,6 +19,8 @@
 #     with a desktop icon is also put on the dock once — including apps a later
 #     image rebuild adds. Later changes made from Plank's Preferences are kept.
 #   - hide-mode 'none' as the default (always visible, reserves its space).
+#   - icon-size 36 as the default (stock is 48), so the strip it reserves is
+#     smaller.
 #   - XFCE's stock bottom panel (panel-2, a launcher bar) is dropped from the
 #     panel's system default, since the dock sits in the same place. The top
 #     panel is untouched. Homes that already have a panel config keep theirs.
@@ -73,15 +75,17 @@ if [[ ! -d "/usr/share/plank/themes/${PLANK_THEME}" ]]; then
   exit 2
 fi
 
-# ---- always visible (default hide mode) ----
+# ---- always visible (default hide mode), smaller icons ----
 # Stock Plank autohides ("intelligent"). With hide-mode "none" the dock stays up
 # and reserves its strip of the screen, so maximized windows stop above it instead of covering it. A schema override only changes the
 # default: a hide mode picked in Plank's Preferences, or with
-# `booth--theme set dock-hide`, still wins.
+# `booth--theme set dock-hide`, still wins. The same goes for icon-size: stock
+# 48px icons make the reserved strip 70px tall; 36px shrinks it.
 SCHEMA_DIR=/usr/share/glib-2.0/schemas
 cat > "$SCHEMA_DIR/90-cb-plank.gschema.override" <<'OVERRIDE'
 [net.launchpad.plank.dock.settings]
 hide-mode='none'
+icon-size=36
 OVERRIDE
 chmod 0644 "$SCHEMA_DIR/90-cb-plank.gschema.override"
 glib-compile-schemas "$SCHEMA_DIR"
