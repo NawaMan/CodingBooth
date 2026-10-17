@@ -4,6 +4,13 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Starting a DinD or egress booth no longer removes another booth's sidecar.** On start, a booth
+  clears sidecars and networks left over from its own earlier runs. It matched them by project
+  name, so a second booth from a folder with the same name — a worktree copy of an example, or any
+  run with `--name` — removed the running booth's sidecar, cutting that booth off its network and
+  ports. It now matches only its own final container name, and only networks named exactly
+  `<name>-<port>-net` or `<name>-<port>-egress-net`.
+
 - **`expose list` works for DinD and egress booths.** In a booth with a DinD or egress sidecar,
   `.booth/.tmp/ports.json` said `"published": null`, so `booth--expose list` inside showed no host
   ports and `booth expose list` on the host said the booth publishes nothing. The manifest was
