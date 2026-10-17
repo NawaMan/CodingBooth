@@ -4,6 +4,14 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **appwrite-example runs Appwrite's Svelte starter against its own server.** The
+  `starter-for-svelte/` copy was never wired up: the booth had no Node.js and its `.env` pointed at
+  Appwrite Cloud. The example now selects `nodejs` and exposes Vite on `+-4827:5173`. `just app`
+  signs in as the console admin, creates a `starter` project with a `localhost` web platform
+  (skipping whatever already exists), and writes `.env` with the host-side endpoint. `just web`
+  then serves the starter, so **Send a ping** answers from the booth's Appwrite. `just run` also
+  prints the console login now. Test: the example's `test001` runs `just app` and checks the ping.
+
 - **Removed: AFFiNE, AnythingLLM and Penpot.** The `affine-server`, `affine-desktop`,
   `anythingllm` and `penpot` templates (with their extensions), their setups (`penpot-exporter`
   too), and `affine-example` / `anythingllm-example` are gone. Each is a finished product used on
