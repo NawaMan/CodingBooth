@@ -11,3 +11,11 @@ default:
 # Wait for the local Appwrite, print CLI version and API health
 run:
     {{run-in-booth}} ./demo.sh
+
+# Create the starter project in the local Appwrite and write starter-for-svelte/.env
+app:
+    {{run-in-booth}} ./appwrite-app.sh
+
+# Run starter-for-svelte against the local Appwrite (Vite on :5173)
+web:
+    {{run-in-booth}} ./web.sh
