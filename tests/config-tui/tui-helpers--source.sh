@@ -108,14 +108,34 @@ function sed-inplace() {
 # in the background, and a backgrounded vhs cannot reach ttyd
 # ("net::ERR_CONNECTION_REFUSED") — the guard broke the thing it guarded.
 #
-# perl's alarm+exec has neither problem. `exec` *replaces* the perl process with
-# the command, so vhs keeps the foreground terminal it needs, while the alarm
-# timer — a process property that survives exec — delivers SIGALRM at the
-# deadline and kills it. macOS ships /usr/bin/perl, so this needs no install.
-# Running unguarded was the previous fallback and it does not fail safe: one
-# wedged vhs hangs the whole suite forever and leaks its ttyd, which is how a
-# backlog of 779 stray ttyd processes accumulated and started wedging runs that
-# would otherwise have passed.
+# perl's alarm+exec fixed the foreground problem and introduced a quieter one.
+# `exec` *replaces* the perl process with the command, so vhs keeps the
+# foreground terminal it needs, and the alarm timer survives exec — but the
+# signal it raises is SIGALRM, and **Go ignores SIGALRM**. In Go's sigtable
+# SIGALRM is _SigNotify with neither _SigKill nor _SigThrow, so when nothing has
+# called signal.Notify for it the runtime handler simply returns. vhs is a Go
+# binary. The deadline fired on time and vhs shrugged it off, which made the
+# guard a no-op against the one program it exists to guard: a wedged vhs ran for
+# 56 minutes under a 120-second limit, and because it never returned it never
+# reached its reap-by-difference cleanup either, leaking its ttyd every time.
+# That is how a backlog of stray ttyd accumulates — 115 of them, the oldest 16
+# days, were found on one machine — and the backlog is itself what tips later
+# runs into wedging, so the two failures feed each other.
+#
+# So the timer has to live outside the signalled process: perl's alarm can only
+# ever raise SIGALRM. Fork a watchdog first, then exec. vhs still gets the
+# foreground terminal (the exec'd process is the original one the shell started,
+# so the backgrounded-vhs/ttyd "ERR_CONNECTION_REFUSED" problem does not come
+# back), while the child holds the clock.
+#
+# The watchdog escalates, because TERM is not enough either: a wedged vhs
+# ignored SIGTERM in testing and only died on SIGKILL. It also checks the parent
+# is still alive before signalling, so a command that finishes early is never
+# hit by a stale timer, and the pid it would signal cannot have been recycled
+# into someone else's process in the meantime.
+#
+# Running unguarded is the last fallback and it does not fail safe: one wedged
+# vhs hangs the whole suite forever.
 function run-with-timeout() {
     local secs="$1"; shift
     if command -v timeout >/dev/null 2>&1; then
@@ -123,7 +143,33 @@ function run-with-timeout() {
     elif command -v gtimeout >/dev/null 2>&1; then
         gtimeout "$secs" "$@"
     elif command -v perl >/dev/null 2>&1; then
-        perl -e 'alarm shift @ARGV; exec @ARGV or exit 127' "$secs" "$@"
+        perl -e '
+            my $secs = shift @ARGV;
+            my $target = $$;
+            my $pid = fork();
+            die "fork failed: $!" unless defined $pid;
+            if ($pid == 0) {
+                # Watchdog. It must not hold the caller any longer than the
+                # command does: it inherits stdin/stdout/stderr, and a $(...)
+                # capture or a pipe does not finish until every writer closes,
+                # so a watchdog still sleeping on its deadline would stall a
+                # command that already exited. Drop the inherited handles, then
+                # poll instead of sleeping the whole span so it also goes away
+                # promptly on the happy path.
+                open(STDIN,  "<",  "/dev/null");
+                open(STDOUT, ">",  "/dev/null");
+                open(STDERR, ">",  "/dev/null");
+                for (1 .. $secs) {
+                    sleep 1;
+                    exit 0 unless kill(0, $target);
+                }
+                kill("TERM", $target);
+                for (1 .. 5) { sleep 1; exit 0 unless kill(0, $target); }
+                kill("KILL", $target);
+                exit 0;
+            }
+            exec @ARGV or exit 127;
+        ' "$secs" "$@"
     else
         "$@"
     fi
