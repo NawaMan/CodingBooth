@@ -3,8 +3,6 @@
 # compiler to validate `setup <tool>` and `install <manager>` names.
 # Format: "setup <name>" or "install <name>", one per line.
 setup act
-setup affine-desktop
-setup affine-server
 setup aider
 setup alacritty
 setup alacritty-fancy
@@ -15,7 +13,6 @@ setup ansible
 setup ansible-code-extension
 setup ant
 setup antigravity
-setup anythingllm
 setup apache
 setup appwrite-cli
 setup appwrite-server
@@ -247,8 +244,6 @@ setup opencode
 setup openssh
 setup opensshd
 setup orchis-gtk
-setup penpot
-setup penpot-exporter
 setup php
 setup php-code-extension
 setup plank

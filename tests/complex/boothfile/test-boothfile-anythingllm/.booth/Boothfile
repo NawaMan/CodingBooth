@@ -1,8 +1,0 @@
-# syntax=codingbooth/boothfile:1
-
-# The fixture is a tiny Node server that answers /api/ping the same way the
-# real AnythingLLM health check does. Pulling mintplexlabs/anythingllm here
-# would add several GB to a unit-of-wiring test.
-
-copy ./fixtures/anythingllm /opt/anythingllm
-setup anythingllm --port 3001

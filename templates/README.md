@@ -144,7 +144,6 @@ share — never for a server's data folder.
 | kafka      | `booth-kafkadata-{name}`          | `/opt/kafkadata`       |
 | rabbitmq   | `booth-rabbitmqdata-{name}`       | `/opt/rabbitmq`        |
 | floci      | `booth-flocidata-{name}`          | `/home/coder/.floci`   |
-| penpot     | `booth-penpot-assets-{name}`      | `/opt/data/assets`     |
 
 These are **named Docker volumes** (not bind mounts), so Docker manages the storage. Booth creates
 one the first time it is needed, labelled `cb.project=<project>`, `cb.booth=<name>` and
@@ -359,7 +358,6 @@ fontconfig/GTK libraries Rust GUI crates link to), so it sits with the other sys
 | Template               | Display Name     |
 |------------------------|------------------|
 | `ai-tools/aider`           | Aider |
-| `ai-tools/anythingllm`     | AnythingLLM |
 | `ai-tools/claude-code`     | Claude Code |
 | `ai-tools/differ`          | differ (agent diff review) |
 | `ai-tools/gemini-cli`      | Gemini CLI |
@@ -552,8 +550,6 @@ never the whole context, so editing source does not invalidate its layer.
 | `languages/scala`          | Scala |
 | `languages/wails`          | Wails v3 (experimental) |
 | `middlewares/postgrest`    | PostgREST |
-| `tools/affine-desktop`     | AFFiNE Desktop |
-| `tools/affine-server`      | AFFiNE Server |
 | `tools/android-sdk`        | Android SDK |
 | `tools/buf`                | Buf |
 | `tools/cypress`            | Cypress |
@@ -564,7 +560,6 @@ never the whole context, so editing source does not invalidate its layer.
 | `tools/n8n`                | n8n |
 | `tools/notebook`           | Jupyter Notebook |
 | `tools/obsidian`           | Obsidian |
-| `tools/penpot`             | Penpot (experimental) |
 | `tools/plantuml`           | PlantUML |
 | `tools/playwright`         | Playwright |
 | `tools/puppeteer`          | Puppeteer |

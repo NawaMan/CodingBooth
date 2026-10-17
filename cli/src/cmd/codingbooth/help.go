@@ -829,7 +829,7 @@ EXAMPLES:
   %s logs --startup
   %s logs --list
   %s logs excalidraw -f
-  %s logs penpot
+  %s logs n8n
   %s logs lifecycle -n 20
 `, s, s, s, s, s, s, s, s, s, s, s, s, s)
 }

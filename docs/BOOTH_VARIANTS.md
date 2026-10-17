@@ -79,9 +79,8 @@ the seventh (`11112`–`11117`, `11118` by default), as the one on the booth por
 `10001`–`10006` and `10007`.
 
 Web apps from the catalog that serve their own UI default to the `2xxxx` range, one
-hundred apart: AFFiNE `20100`, AnythingLLM `20200`, CloudBeaver `20300`, Excalidraw `20400`,
-Hoppscotch `20500`, Logo `20600`, Mermaid `20700`, Penpot `20800`, PlantUML `20900`,
-Scratch `21000`, SQL Studio `21100`. Servers whose clients expect a standard port keep it
+hundred apart: CloudBeaver `20300`, Excalidraw `20400`, Hoppscotch `20500`, Logo `20600`,
+Mermaid `20700`, PlantUML `20900`, Scratch `21000`, SQL Studio `21100`, n8n `21200`. Servers whose clients expect a standard port keep it
 (Ollama `11434`, RabbitMQ `15672`, Appwrite `8080`), as does `viewmd` (`8765`).
 
 ## Desktop Configuration

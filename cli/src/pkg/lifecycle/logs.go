@@ -300,8 +300,8 @@ func followInBooth(engine string, execArgs []ilist.List[string], stdout, stderr 
 }
 
 // selectLogFiles maps service names to log files: <name>.log when it exists,
-// otherwise every <name>-*.log (penpot → penpot-backend.log, penpot-exporter.log,
-// …). Order follows the names; duplicates are dropped. Pure for unit tests.
+// otherwise every <name>-*.log (app → app-backend.log, app-worker.log, …).
+// Order follows the names; duplicates are dropped. Pure for unit tests.
 func selectLogFiles(services []string, files []logFile) ([]logFile, error) {
 	byService := map[string]logFile{}
 	for _, file := range files {

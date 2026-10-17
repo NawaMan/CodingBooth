@@ -92,8 +92,8 @@ See [Build](BOOTH_BUILD.md), [Customization](BOOTH_CUSTOMIZATION.md) and
 | **Cache** | `cache-files` / `cache-dirs` in a template or `config.toml`; or files placed in `.booth/cache/` by hand | `.booth/cache/<path>` → `/<path>`. Read-write. **Must not be in git** — the booth refuses to start otherwise |
 | **Shared** | `shared-files` / `shared-dirs`; or files placed in `.booth/shared/` by hand | `.booth/shared/<path>` → `/<path>`. Read-write. **Meant for git** |
 | **Bind mount** | `booth config --mount` / `--add-mount` (each adds a `-v`); `run-args = ["-v", …]` in `config.toml` or a template | Any host path → any container path, read-write or `:ro`. An entry whose host path does not exist is dropped with a notice, unless it ends in `:create`, which creates the host folder |
-| `@code` source | run-args `-v @code:<path>` (`anythingllm+project-fs`) | The project folder, mounted a second time at another path |
-| **Named volume** | run-args `-v <name>:<path>` (`postgresql`, `mysql`, `redis`, `mongodb`, `penpot`, …) | Docker storage → path. `{name}` in the name makes it one volume per booth, `{project}` one per project |
+| `@code` source | run-args `-v @code:<path>` in a template or `config.toml` | The project folder, mounted a second time at another path |
+| **Named volume** | run-args `-v <name>:<path>` (`postgresql`, `mysql`, `redis`, `mongodb`, `floci`, …) | Docker storage → path. `{name}` in the name makes it one volume per booth, `{project}` one per project |
 | `--persist-home` | CLI / `config.toml` | Volume `cb-home-<name>` → the whole of `/home/coder`. Seeding stops after the first run |
 | `--tls-cert`, `--tls-key` | CLI | Host files → `/tmp/booth-tls-*.pem`, read-only |
 | Devices and GPUs | run-args `--device /dev/kvm`, `--gpus all` | Host hardware → the booth |
@@ -159,15 +159,13 @@ It exists because a template cannot know where the project lives on the host: `$
 not mean "the project", so without `@code` a template had no way to say "mount the project here
 too".
 
-Its one user is `ai-tools/anythingllm+project-fs`:
+No catalog template uses it at the moment. It is for a tool that only works on files inside its
+own folder and resolves symlinks to check — a symlink to `~/code` is rejected, while a second bind
+mount makes the project really be inside that folder:
 
 ```toml
-run-args = ["-v", "@code:/home/coder/.anythingllm/anythingllm-fs/code"]
+run-args = ["-v", "@code:/home/coder/.some-tool/workspace/code"]
 ```
-
-AnythingLLM's file-system agent only touches files inside its own folder, and resolves symlinks
-to check — so a symlink to `~/code` is rejected. A second bind mount makes the project really be
-inside that folder.
 
 ### Named volumes in use
 
@@ -178,14 +176,13 @@ same folder has its own too.
 
 | Volume | Template | Examples using it |
 |---|---|---|
-| `booth-pgdata-{name}` | `middlewares/postgresql` | affine, rails, data, pern, postgrest, `examples/demo` |
+| `booth-pgdata-{name}` | `middlewares/postgresql` | rails, data, pern, postgrest, `examples/demo` |
 | `booth-mysqldata-{name}` | `middlewares/mysql` | lamp, lemp, wordpress |
 | `booth-mongodata-{name}` | `middlewares/mongodb` | mean, mern |
-| `booth-redisdata-{name}` | `middlewares/redis` | affine |
+| `booth-redisdata-{name}` | `middlewares/redis` | — |
 | `booth-kafkadata-{name}` | `middlewares/kafka` | — |
 | `booth-rabbitmqdata-{name}` | `middlewares/rabbitmq` | — |
 | `booth-flocidata-{name}` | `tools/floci` | floci |
-| `booth-penpot-assets-{name}` | `tools/penpot` | — |
 | `cb-home-<booth name>` | the CLI, for `--persist-home` | — (one per booth) |
 | `booth-cache-gomod`, `booth-cache-gobuild` | `go+mod-cache` | go-example |
 | `booth-cache-npm` | `nodejs+npm-cache` | npm-example |
