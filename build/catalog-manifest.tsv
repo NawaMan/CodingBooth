@@ -2,8 +2,6 @@
 # See docs/CATALOG_VERSIONING.md.
 kind	name	cb-version	sha256	path
 setup	act	1.0.0	0ca87cdaf56fc34fd27e488e1cd156cdfa69957437772dac5bfdcd2b731be21a	variants/base/setups/act--setup.sh
-setup	affine-desktop	0.1.0	67f1ca9e205678f323bb705997b39571f17929e761acaf062d31a3f95fae9c26	variants/base/setups/affine-desktop--setup.sh
-setup	affine-server	0.1.0	e33e2f76136f9db28ac14de4d2160d536f2c4bf197b221e436c37f59206caf2e	variants/base/setups/affine-server--setup.sh
 setup	aider	1.0.0	17f16bc650d114d025d9fcdc6e7e2cade9047ed11a8e5846ed96b95dbd65d989	variants/base/setups/aider--setup.sh
 setup	alacritty	1.0.0	e5c1c229d33b23cf8911742113e818417c479d81ba98c5d8c0b0950a5bbe819b	variants/base/setups/alacritty--setup.sh
 setup	alacritty-fancy	1.0.0	e9be30b45648220767104d66c0198f3cf87351b38432535f71e26992c5e22679	variants/base/setups/alacritty-fancy--setup.sh
@@ -14,7 +12,6 @@ setup	ansible	1.0.0	4392e8f53e79968d8d81057803213691979ee181a02ba175316af9fdb826
 setup	ansible-code-extension	0.1.0	c5aadbacbe21ea42f0c3965c1e7a1bd54de4925a472757a800f98c461d5f7470	variants/base/setups/ansible-code-extension--setup.sh
 setup	ant	0.1.0	898ab4155e66d5fc0b788c20e52e525384ff0eddfe5f1ff1c482117dd4a6195d	variants/base/setups/ant--setup.sh
 setup	antigravity	1.0.0	4f2f3247caa24356b52052dcf53ad93587d45cdd8f4724012f338ff4c5a373f0	variants/base/setups/antigravity--setup.sh
-setup	anythingllm	0.1.0	af41e4c5feeab4eb21c699fde6f1cc4b78b362ad39f0233813dcd05d07d90f97	variants/base/setups/anythingllm--setup.sh
 setup	apache	1.0.0	617e95ed26efe524963c5cf9a195cbf7a7131a6e70f446045a828e01d42fe72d	variants/base/setups/apache--setup.sh
 setup	appwrite-cli	0.1.0	bce1a8d838f509fc02cde39583d4fae8b55b51ceded7ed6dff86a0a04fea2d25	variants/base/setups/appwrite-cli--setup.sh
 setup	appwrite-server	0.2.0	052841a1b44cfb2bc22cecb4effe37264fed5b9ec3b51f0faaee0bd44903d439	variants/base/setups/appwrite-server--setup.sh
@@ -140,7 +137,7 @@ setup	helm	1.0.0	7afeaf721ee89c9362432d1691902f3b61dbde5ee9f8a755da0d256a7aa701d
 setup	herdr	1.0.0	f84266e5badb254f8faaf6e5c4ee1d09123d0ac9fe2902bc6b5c236f43e80f31	variants/base/setups/herdr--setup.sh
 setup	homebrew	1.0.0	db8d46c975532cce8ad13cdc31e4b76770621a8ae6e590c9c0d27ee21cebae84	variants/base/setups/homebrew--setup.sh
 setup	hoppscotch	0.1.0	08109dde5ef1e4c1043ce0376217c0b71a3461a7f9b71a25b7f34764ce1685e7	variants/base/setups/hoppscotch--setup.sh
-setup	i3	1.0.1	bcca0cdb191c67604054bce6d9382da0f91b6626450d7009a7849fb7d0ce4d55	variants/base/setups/i3--setup.sh
+setup	i3	1.0.1	868dcaa511c035c720530a9fb8e445e8458c01ae14c870a9b71cf129bdc1e854	variants/base/setups/i3--setup.sh
 setup	i3-ctrl-alt	1.0.0	2b1946eff53514fefe4d0943cffbf80f988833350a36f0b537dc9473a5ae48e4	variants/base/setups/i3-ctrl-alt--setup.sh
 setup	i3-default	1.0.0	9d1e51d1d23899ee8753b204850a4a4cb45c5637b44e2ad3c6c2c735071811a1	variants/base/setups/i3-default--setup.sh
 setup	i3-gaps	2.0.0	623e93ad9de6253390070a56c18f19a95a290b1014d81bce1863cbc150113c47	variants/base/setups/i3-gaps--setup.sh
@@ -246,8 +243,6 @@ setup	opencode	1.0.0	ca71227c4bd11873653df20062ec2dfe0603ba0c1bc18e6d30405532fd0
 setup	openssh	1.0.0	6a93cef06723e5533a896967d599f9699809d12de641ad055aa5f7354568d0ee	variants/base/setups/openssh--setup.sh
 setup	opensshd	1.0.0	5c7dbf41db974b86119595853d8ec2f167dd6f0bd6f98e101f8faeb53aed5ce6	variants/base/setups/opensshd--setup.sh
 setup	orchis-gtk	0.1.0	03bb0f3bb90620590a2cd7ab9682d99544ae0ec3bef77be80a7e83b78b3e4df2	variants/base/setups/orchis-gtk--setup.sh
-setup	penpot	0.1.1	0ba8bca6a4b92800850822516405fa28b07e2e7213a6edd6c21522ad62258b38	variants/base/setups/penpot--setup.sh
-setup	penpot-exporter	0.1.0	966f1f4b8e5c4ef54b8cf0783df10e138367ebc89427cf46d604900ce980cacf	variants/base/setups/penpot-exporter--setup.sh
 setup	php	1.0.0	397c63cb432fd45e81a827200be0a0bde3f1ac4bc6da62595944a4e51a3b0a93	variants/base/setups/php--setup.sh
 setup	php-code-extension	1.0.0	938a5949e6a3723c576a0b6f7c4bf04f346db5fb165b976774730f8974d74dbf	variants/base/setups/php-code-extension--setup.sh
 setup	plank	0.3.0	3dfa45f945005656f46c6c42db17474d3ba080870fa1bb96d4654a0a4e18c551	variants/base/setups/plank--setup.sh
@@ -381,7 +376,7 @@ helper	cb-has-vscode.sh	1.0.0	80c7d5894f3ec35a908491fa127627d6ba567d92616c7b0d0d
 helper	cb-install-chromium.sh	0.1.0	f0b72ae88c8928df048f8595bc9e8007aa67d766cd16d5288f304d57ff77f646	variants/base/setups/cb-install-chromium.sh
 helper	cb-plank-start	0.1.0	6fb36bb1627ef3670771ec483b6db5c60ff9141f31f4c21a717b4bd587bf9d12	variants/base/setups/cb-plank-start
 helper	cb-web-icon.sh	1.0.0	8f46a7da4ac9280faeb077c495dd92c7dedc9cc020382507bc8dac80fbbc1adb	variants/base/setups/cb-web-icon.sh
-helper	cb-web-open	1.0.1	ea22ae3a301fd56a82f42bf2b818b495fefb4d30d7c6e8fd12ffece41c49f8eb	variants/base/setups/cb-web-open
+helper	cb-web-open	1.1.1	564918a6c1c51a4c1a0f8aaae4a63b71c6aaa1d3b3e2bf5f033b8be7c77fee67	variants/base/setups/cb-web-open
 helper	template-seup.sh	1.0.0	c9c0ad54732fdd56d2bb5ac692ebec0c6bd237af9a92fa7719922d4d7941d2f4	variants/base/setups/template-seup.sh
 lib	booth-proxy-response.conf	0.1.0	605ebfc3f0a878a1a68212190bf254cdfbb889393a0191d5855d5ad16e235a6b	variants/base/setups/libs/booth-proxy-response.conf
 lib	code-extension-source.sh	1.0.0	2c81911a7aeb0b25195cd4cd67785c9125d186d4eb99e6fe362d1b09bf875d0d	variants/base/setups/libs/code-extension-source.sh
@@ -393,15 +388,12 @@ assets	booth-web-preview	0.1.0	b7777911fb75cb633a8aeaf373bd3e3ac579736797db2d8da
 assets	fresh-plugins	0.1.0	219facc384a8bb2ec6f7eab953048ea717bfb9bc1ffe2b618bafddd472801099	variants/base/setups/fresh-plugins/.cb-version
 assets	logo-files	0.1.0	72cdb4272e6be5df2ad0e959508803ba6ef927b6e040e4affa3dca1293409d4e	variants/base/setups/logo-files/.cb-version
 template	act	1.0.0	33cac4f54cb7ceebada109f40c0f846caf3615f230ac76e7724e6be1fadfd916	templates/tools/act/template.toml
-template	affine-desktop	0.1.0	6b4070ca55a0c5ccd37b2a7c95c9e3f5409423489d671f64e30f66b4a165b330	templates/tools/affine-desktop/template.toml
-template	affine-server	0.1.1	ecd4322046f76dcae6772d88c53068c948907e5583cfad54fe7387cdde5236b5	templates/tools/affine-server/template.toml
 template	aider	1.0.0	07ec35d83e2435528f7a84617d28dafebf3d12e3e202d30620c33e788db15c39	templates/ai-tools/aider/template.toml
 template	alacritty	1.0.0	dd6d86e867b51a6dfe0fb79c8190880c5e0030d01b4c03d343dec25d3aa0adaa	templates/desktops/alacritty/template.toml
 template	android-sdk	0.1.0	f194b7dcd13e80241455c5cebeaad4ad8009e9df9eec778cdbcb84be97a2a532	templates/tools/android-sdk/template.toml
 template	angular	0.1.0	f6a0762d4aa4d9e570d5356758e401436176c76d342ac5b0afb4e65d7adcbc98	templates/frameworks/angular/template.toml
 template	ansible	1.0.0	94215bf0dc214351b6474bd893406eabd2356adb7d9b310a9c9b2b54613de695	templates/tools/ansible/template.toml
 template	antigravity	1.0.0	28f8aaa3db7f6b2233e1b0104209a97ac32e8cf5a73761ae79c265cd9eea278f	templates/ai-tools/antigravity/template.toml
-template	anythingllm	0.1.0	bd0f0672370811a9450657271dfab4dcab21fcbd6e3fb5dedd8f41749c2ff8fd	templates/ai-tools/anythingllm/template.toml
 template	apache	1.0.0	b9f0d00ad3ff5f770177661cf4a2022603f410f88e0704da261bac53d40f87dc	templates/tools/apache/template.toml
 template	appwrite-cli	0.1.0	c5140173243894739da14761d775155d04f152ae08ddd2fdb673e1e81bc5ebd6	templates/tools/appwrite-cli/template.toml
 template	appwrite-server	0.2.0	a1c88a4cadf6429c4f24df2ad4ec2f72a3e456d06ca7acb7232eb10c2c61e71e	templates/tools/appwrite-server/template.toml
@@ -541,7 +533,6 @@ template	ollama	1.0.0	5fdb875baa6eaf50f9441fd727fc92d3b2638de822e280b13d16b0e604
 template	opencode	1.0.0	2871adf254f8f249db6118eb8c330dd3321501b66f2769ee69b2c61b3b9bf470	templates/ai-tools/opencode/template.toml
 template	openssh	1.0.0	3f9a44c7fea93ca4024e7939267d8e200a8419bfda285dbc2e9a5f4e0db8ccd3	templates/tools/openssh/template.toml
 template	orchis-gtk	0.1.0	90d120c836c889c8ee0f98ab8f29f20dd873e3ee952951daa39d475082bc0116	templates/desktops/orchis-gtk/template.toml
-template	penpot	0.3.0	d1ec68889245673eb0b0612d8e1644e65e407a05d56e6d23ccfaf59bcaaa405e	templates/tools/penpot/template.toml
 template	php	1.0.0	1c7bf5b149e8922242abac9d78935da6c45881f91a58268e3fdada08e5cbaa63	templates/languages/php/template.toml
 template	phpstorm	1.0.0	e3f9978b35ff7170c9e2bf825a5a5c09c1b42ca9e50e84b6861d102ca31cef18	templates/ides/phpstorm/template.toml
 template	plantuml	1.0.0	2ea1d2e1c098fadcbff7add437e7658f691d89a092f7b60a4cfd31a70e645b39	templates/tools/plantuml/template.toml
@@ -598,10 +589,6 @@ template	xfce	1.0.0	e8a1f042cf6d70bf19f5ac6222e65ac9e0d2c97666f0deed4356316c0976
 template	xonsh	0.1.0	5b81d563e92fdeed53e97c84f2884ac0464fd977c57877b68bde851690ab1237	templates/tools/xonsh/template.toml
 template	zig	1.0.0	71543afb9d1ddc460b14e73a70e2d9526a5999f4a58ddd4b75d05c99a0ba34b6	templates/languages/zig/template.toml
 template	zsh	1.0.0	3bff077c10dfc8f349493225885ee048681221ffeddec5c489afd5afd1a4ac41	templates/tools/zsh/template.toml
-extension	affine-server+autostart	0.1.0	cb1e8b1b4e005cbdbab8607a9c3822041bfd5e4d6cf2d43d9d77aaa8ac6d79a7	templates/tools/affine-server/autostart--extension.toml
-extension	affine-server+expose	0.1.0	fa792c85fa7ab8160cab7f95182869607e2f91717835ce0b20f06063ab73cd9b	templates/tools/affine-server/expose--extension.toml
-extension	affine-server+persist	0.1.0	5c0feba136d41d48e538d2674ace815e77c2532fa36f7c837cead3716ab617dc	templates/tools/affine-server/persist--extension.toml
-extension	affine-server+seed	0.1.0	1a77b8cc0b19dabf4630ec968c4231896b36d702a8b4976a914f989a46eef928	templates/tools/affine-server/seed--extension.toml
 extension	alacritty+default	1.0.0	fb58c274fc0f0b31accbf87ed1730789566c268b79d941808784ebc33438bd17	templates/desktops/alacritty/default--extension.toml
 extension	alacritty+fancy	1.0.0	d37ce88d3e5f831f3a3830258b0fa7930bf9498beb4d6f5c80600b5475c6c568	templates/desktops/alacritty/fancy--extension.toml
 extension	android-sdk+avd-cache	0.1.0	091ec3514ea17e35a134af5359eec90682a6ce16289ef66417c065af45267c07	templates/tools/android-sdk/avd-cache--extension.toml
@@ -609,11 +596,6 @@ extension	android-sdk+emulator	0.1.1	57d72ea45c1781986e47bba8689287d8e6719f0fcd6
 extension	android-sdk+kvm	0.2.0	5a292bee50f92ea8d1d090d2050c2a232f3f3bfc8a8bad066792106995ec8c3a	templates/tools/android-sdk/kvm--extension.toml
 extension	ansible+vscode-ext	0.1.0	c447f128b6a692ffed8abfdb1192dcbe2f4dd1301fc5bebfb9520d07064a87c6	templates/tools/ansible/vscode-ext--extension.toml
 extension	antigravity+credential	1.0.0	21339d2f9fa86934ca4763c6850551187a0de5ee58e7fdd5393f277725f589c0	templates/ai-tools/antigravity/credential--extension.toml
-extension	anythingllm+autostart	0.1.0	5eda4b35906a0ec3cfd85a975c57494fbdb3d15d6a92152ad1f090618737c247	templates/ai-tools/anythingllm/autostart--extension.toml
-extension	anythingllm+expose	1.0.0	1910f2daa84ade32c01cd33eea15aea7829a106fe889b9f09822dd124d0c7a39	templates/ai-tools/anythingllm/expose--extension.toml
-extension	anythingllm+passwordless	0.1.0	5106d6ac58ce1347dc21bb5f109af9eed6d77ed4b3bbe9accd7a44e67e15e98f	templates/ai-tools/anythingllm/passwordless--extension.toml
-extension	anythingllm+persist	0.1.0	87927a9cab7476fc2eaa4e94064496ee1b4a89c8e7728c1ab870cc286fbb719e	templates/ai-tools/anythingllm/persist--extension.toml
-extension	anythingllm+project-fs	0.1.0	8785964424a2498316d62cfa2d743b6c3cb875989375d7fff7261f6c0cc8dd3d	templates/ai-tools/anythingllm/project-fs--extension.toml
 extension	apache+expose	1.0.0	9494f9668668513cbebc69e92c52991cd9a30a869e5986cee086e8d93c8ff58d	templates/tools/apache/expose--extension.toml
 extension	apache+php	0.1.0	f47c27931d955312dadf14a78ab6e1d78c61c330d351102f5945364cdeb60c2a	templates/tools/apache/php--extension.toml
 extension	appwrite-cli+credential	0.1.0	c2ffb18ff2c3abb56268676b1d677d2e3974a82ce730886ecaa8da9ec06605a4	templates/tools/appwrite-cli/credential--extension.toml
@@ -846,9 +828,6 @@ extension	opencode+settings-cache	1.0.0	730145895c15155043c10f19475682577b8b9a9a
 extension	openssh+credential	1.0.0	605b1875399044c02b199736d5ede36bf78ed1493da9ca748ac6205047b727fe	templates/tools/openssh/credential--extension.toml
 extension	openssh+expose	1.0.0	f88138a819c24a8c4a74ccfa14df73a3bac03e82e2713d3f899c30fcd7aa948b	templates/tools/openssh/expose--extension.toml
 extension	openssh+server	1.0.0	46290b15c093ae48ff741a1196268ea5e3edb3c1d2485055258aad2776c984a4	templates/tools/openssh/server--extension.toml
-extension	penpot+autostart	0.1.0	4eaa39a49a716a2688b0d4de411ddf161beb73423fed74b4bf861c77bbc50f67	templates/tools/penpot/autostart--extension.toml
-extension	penpot+exporter	0.1.0	e17a3d330902614f2205d422a04483bb04a9c9ec754dbcd5d2d5f052c3366935	templates/tools/penpot/exporter--extension.toml
-extension	penpot+expose	0.1.0	f78b83a64729b5373789a3dc587ad97d503bddcdd4e072050dbc6db1b9aebe18	templates/tools/penpot/expose--extension.toml
 extension	php+composer	0.1.0	f09b39d4b52798b2723f098179bfd1a72e4261b0cf0ac8137f769c6542c43af9	templates/languages/php/composer--extension.toml
 extension	php+composer-install	1.0.0	168df8033d46ba56955b2c8da1a48719b74b2a5bb8a847850ec5b82566f28136	templates/languages/php/composer-install--extension.toml
 extension	php+pecl-pkg	1.0.0	2aca90dbc112c9807d61bf93939644cae94b8f7b9eb7b4ee2519b4552ee32b1f	templates/languages/php/pecl-pkg--extension.toml

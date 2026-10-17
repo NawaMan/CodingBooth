@@ -334,8 +334,7 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
         offered). Revisit each at the next sweep; none of the newer majors has been tried in a booth.
       - **Bumped but not yet built:** python 3.14.8 (default jumps a minor: 3.13 → 3.14 — watch
         packages without 3.14 wheels), zig 0.16.0 (0.15 → 0.16 breaks std APIs; zig-example code may
-        need updating), julia 1.13.1, anythingllm 1.17.0, appwrite-cli 28.1.0, hoppscotch 2026.9.0,
-        penpot 2.18.1, wails v3.0.0-beta.27, mermaid 11.17.2.
+        need updating), julia 1.13.1, appwrite-cli 28.1.0, hoppscotch 2026.9.0, wails v3.0.0-beta.27, mermaid 11.17.2.
       - **Not checked by the sweep:** greenfoot (no parseable latest), haskell's `recommended`
         (ghcup decides), older entries deep in the go/rust/python/scala/kotlin suggests lists.
 - [ ] **Desktop variants' clipboard still needs noVNC's manual side panel.** Investigated

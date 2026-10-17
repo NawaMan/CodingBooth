@@ -7,15 +7,11 @@
 # `booth exec` runs with no shell and never reads /etc/profile.d.
 
 # --- Services: the start-<name> script sets the env it needs ----------------
-affine-server   *   # start-affine-server sets its own env; the exports only describe the service to a shell
-anythingllm     *   # start-anythingllm sets its own env; the exports only describe the service to a shell
 appwrite-server *   # APPWRITE_ENDPOINT is computed per shell from the port; the service does not read it
 cloudbeaver     *   # start-cloudbeaver puts its bundled JRE on PATH itself
 hoppscotch      *   # start-hoppscotch sets its own env; the exports only describe the service to a shell
 n8n             *   # start-n8n sets N8N_PORT and the user folder itself
 opensshd        *   # CB_SSH_PORT only describes the service to a shell
-penpot          *   # start-penpot sets JAVA_HOME, PATH and LD_LIBRARY_PATH for its own JRE and ImageMagick
-penpot-exporter *   # started by penpot, which sets the exporter's Node and browser paths
 sql-studio      *   # SQLSTUDIO_PORT only describes the service to a shell
 
 # --- Desktops: the display belongs to the desktop session (exec: see P5) ----
