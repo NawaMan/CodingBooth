@@ -90,3 +90,24 @@ calling `run-tui` (e.g. `LAUNCH_ARGS=(--select go)`).
   Keep generous `Sleep`s and verify each tape against the live TUI — the `.txt`
   frame dump (no alternate screen) stacks every render, so `assert-frame` uses
   substring matches.
+
+### When a run wedges, and the ttyd backlog
+
+A tape that does not land where it expects can leave `vhs` wedged. `run-tui`
+caps it with `run-with-timeout 120`, and that cap has to be able to kill a **Go**
+process: an earlier version used `perl -e 'alarm …; exec …'`, and Go ignores
+SIGALRM, so a wedged vhs ran for 56 minutes under a 120-second limit. A wedged
+vhs also ignores SIGTERM — only SIGKILL ends it — so the guard forks a watchdog
+that escalates. `tests/setups/test--tui-run-with-timeout.sh` locks both in.
+
+The reason this matters beyond one slow run: vhs starts its own `ttyd` and only
+reaps it on the way out, so a vhs that never returns leaks one. The leak then
+*causes* the next wedge — a machine was found with 115 stray `ttyd`, the oldest
+16 days, and clearing them made the wedging test pass on the retry. If the suite
+hangs on a TUI test, check for the backlog before suspecting the test:
+
+```bash
+pgrep -f 'ttyd --port=' | wc -l     # should be 0 between runs
+pkill -f 'ttyd --port='             # safe: booth containers' ttyd are not these
+./tests/config-tui/clean-all.sh     # scratch dirs (files only, no processes)
+```
