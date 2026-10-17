@@ -1,1 +1,1 @@
-0.80.0--appwrite-svelte
+0.80.0--rc1
