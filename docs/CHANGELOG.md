@@ -4,6 +4,16 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`/proxy/<port>/` works for Vite apps in a plain tab, and next to other proxied apps.** An
+  app's root-absolute requests (`/v1/…`, `/@vite/client`, …) reach the booth root, which sends
+  them to an app port. It used to try the globe pane's `cb_proxy_port` cookie before the request's
+  Referer, so with a pane open on one app another app's tab sent its API calls to the wrong port
+  (the Appwrite console could not sign in while a Vite pane was open). The Referer now wins. And a
+  `/proxy/<port>/` page opened in a plain tab now sets that cookie too, as the globe pane does, so
+  a Vite dev server opened directly no longer fails on its second-level module imports. Takes
+  effect once the base image is rebuilt. appwrite-example's `just run` and `just web` print the
+  host and `/proxy/` URLs for the booth's actual port. Test: `setups/test--console-proxy-routing.sh`.
+
 - **Starting a DinD or egress booth no longer removes another booth's sidecar.** On start, a booth
   clears sidecars and networks left over from its own earlier runs. It matched them by project
   name, so a second booth from a folder with the same name — a worktree copy of an example, or any

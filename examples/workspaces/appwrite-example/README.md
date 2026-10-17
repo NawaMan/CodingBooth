@@ -27,7 +27,10 @@ just web                 # ./web.sh — the Svelte starter on :5173
 ```
 
 From the host, the console is published on port 8080 (`+expose`):
-[http://localhost:8080](http://localhost:8080). First start creates
+[http://localhost:8080](http://localhost:8080), or through the booth's own port at
+[http://localhost:10000/proxy/8080/console/](http://localhost:10000/proxy/8080/console/) (a
+plain tab, or the globe pane in the Console UI). `just run` prints both for the booth's actual
+port. First start creates
 `admin@example.com` / `password123`. This example is **clean** data — every
 `booth` is a new Appwrite. `+seed` starts from a home-seed snapshot (writes
 do not stick); `+persist` keeps data in `.booth/cache` on this machine.
@@ -68,7 +71,8 @@ creates a team, a `starter` project and a `localhost` web platform — each skip
 already there — and writes `starter-for-svelte/.env` (gitignored) with the host-side endpoint.
 Then it installs the starter's packages and serves it with Vite. Open
 [http://localhost:5173](http://localhost:5173) and press **Send a ping**: the log row shows
-`200 /v1/ping {"message":"Pong!"}` from your own Appwrite.
+`200 /v1/ping {"message":"Pong!"}` from your own Appwrite. It also works through the booth
+port at [http://localhost:10000/proxy/5173/](http://localhost:10000/proxy/5173/).
 
 The browser runs on the host, so `.env` names the *host* ports: the booth port minus the
 offsets in `.booth/config.toml` (`+-1920` → 8080 for Appwrite, `+-4827` → 5173 for Vite, with

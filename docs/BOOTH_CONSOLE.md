@@ -85,6 +85,15 @@ A bare domain with no scheme (`example.com`) is assumed to be `https`; anything 
 
 A malformed individual address (an unsupported scheme, a reserved port) is skipped, with a warning in the browser console, rather than blocking the rest of the file's tabs from opening. A bare number in `tabs` is taken as a port (`3000` is `:3000`).
 
+### Apps that use root-absolute URLs
+
+`/proxy/<port>/` rewrites the obvious absolute links in what it serves (`href="/…"`, `src="/…"`, `fetch("/…")`), but an app's JavaScript can still ask for `/v1/…` or `/@vite/client` on the booth's own root. The booth sends such a request to an app port when it can tell which one:
+
+1. **The Referer** — a request made by a `/proxy/<port>/` page goes to `<port>`.
+2. **The `cb_proxy_port` cookie** — otherwise, the port of the last `/proxy/<port>/` page opened in this browser, in a plain tab or a globe pane. This covers a module imported by another module that was itself served from the root (Vite's dev server), whose Referer no longer carries the prefix.
+
+So a Vite dev server or the Appwrite console works at `/proxy/<port>/` in either place. Two such apps open at once in the same browser can still collide on step 2: the one opened last wins, and reloading the other makes it win again.
+
 ---
 
 ## Precedence
