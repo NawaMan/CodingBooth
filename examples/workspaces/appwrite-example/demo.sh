@@ -56,4 +56,7 @@ appwrite client --debug || true
 
 echo
 echo "Console: http://localhost:${ready_port}"
+# Same variables and defaults start-appwrite uses to create the admin on first start.
+# With +persist/+seed an older database may hold a different admin.
+echo "Login:   ${APPWRITE_ADMIN_EMAIL:-admin@example.com} / ${APPWRITE_ADMIN_PASSWORD:-password123}"
 echo "✅ Appwrite CLI and server are both working."
