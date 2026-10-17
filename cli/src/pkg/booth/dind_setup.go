@@ -18,8 +18,14 @@ import (
 
 // cleanupPreviousBoothInstances cleans up any leftover containers and networks from previous booth runs.
 // This helps prevent port conflicts when restarting the booth.
-// It uses label-based queries to precisely identify sidecars belonging to this project.
-func cleanupPreviousBoothInstances(ctx appctx.AppContext, projectName string) {
+//
+// It matches on the booth's own final container name (ctx.Name(), settled by
+// EnsureContainerName), never the project name: two booths can share a project
+// name — a second run from the same folder, a worktree checkout of the same
+// example, or an explicit --name — and a project-name match removed the running
+// booth's sidecar from under it. EnsureContainerName guarantees no container
+// holds this name right now, so a sidecar labelled cb.parent=<name> is orphaned.
+func cleanupPreviousBoothInstances(ctx appctx.AppContext) {
 	// Apple container booths never have sidecars: --dind and --egress are
 	// refused on that engine (resolveEngineConfig).
 	if ctx.Dryrun() || ctx.Engine() == docker.EngineApple {
@@ -27,11 +33,15 @@ func cleanupPreviousBoothInstances(ctx appctx.AppContext, projectName string) {
 	}
 
 	engine := docker.EngineBinary(ctx.Engine())
+	boothName := ctx.Name()
+	if boothName == "" {
+		return
+	}
 
-	// Find and stop/remove sidecars labeled with cb.parent matching the project name
+	// Find and stop/remove sidecars labeled with cb.parent matching this booth's name
 	output, err := exec.Command(engine, "ps", "-aq",
 		"--filter", "label=cb.role=sidecar",
-		"--filter", "label=cb.parent="+projectName,
+		"--filter", "label=cb.parent="+boothName,
 	).Output()
 	if err == nil && len(strings.TrimSpace(string(output))) > 0 {
 		containerIDs := strings.Fields(string(output))
@@ -52,13 +62,13 @@ func cleanupPreviousBoothInstances(ctx appctx.AppContext, projectName string) {
 		}
 	}
 
-	// Find and remove any networks matching the project name pattern
-	output, err = exec.Command(engine, "network", "ls", "--filter", "name="+projectName, "--format", "{{.Name}}").Output()
+	// Find and remove this booth's leftover networks (<name>-<port>-net and
+	// <name>-<port>-egress-net, from any earlier port).
+	output, err = exec.Command(engine, "network", "ls", "--filter", "name="+boothName, "--format", "{{.Name}}").Output()
 	if err == nil && len(strings.TrimSpace(string(output))) > 0 {
 		networks := strings.Fields(string(output))
 		for _, network := range networks {
-			// Only remove networks that look like booth networks (contain -net suffix)
-			if strings.HasSuffix(network, "-net") && strings.HasPrefix(network, projectName) {
+			if isBoothNetwork(network, boothName) {
 				if ctx.Verbose() {
 					fmt.Printf("Removing leftover network: %s\n", network)
 				}
@@ -66,6 +76,32 @@ func cleanupPreviousBoothInstances(ctx appctx.AppContext, projectName string) {
 			}
 		}
 	}
+}
+
+// isBoothNetwork reports whether network is one the named booth creates:
+// "<name>-<port>-net" (DinD) or "<name>-<port>-egress-net" (egress). Requiring
+// the numeric port keeps "<name>-<other>-<port>-net", another booth's network,
+// out of the match — `network ls --filter name=` is a substring filter.
+func isBoothNetwork(network, boothName string) bool {
+	rest, ok := strings.CutPrefix(network, boothName+"-")
+	if !ok {
+		return false
+	}
+	port, ok := strings.CutSuffix(rest, "-egress-net")
+	if !ok {
+		if port, ok = strings.CutSuffix(rest, "-net"); !ok {
+			return false
+		}
+	}
+	if port == "" {
+		return false
+	}
+	for _, r := range port {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 // podmanDindSidecarImage is the nested-Podman sidecar image used in place of
