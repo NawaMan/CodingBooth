@@ -27,7 +27,9 @@ echo ""
 # First boot pulls the Appwrite Compose stack inside DinD — several minutes.
 # --dind-allowed: this example's dind = true would otherwise stop for a [y/N]
 # consent prompt on /dev/tty (see docs/BOOTH_SECURITY.md) — silent in a script.
-output=$("$BOOTH" --dind-allowed --variant base --port "${CB_PORT:-50280}" -- 'just run && just app' 2>&1) || true
+# NEXT, not a number: then BOOTH_PORT holds "NEXT:50280" rather than a port, and
+# just app must take its host ports from BOOTH_HOST_PORT.
+output=$("$BOOTH" --dind-allowed --variant base --port "${CB_PORT:-NEXT:50280}" -- 'just run && just app' 2>&1) || true
 
 echo "$output"
 echo ""
