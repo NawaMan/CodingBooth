@@ -8,7 +8,7 @@ Docker-in-Docker (`appwrite-server+autostart`, which pulls in `dind` and
 `docker-compose`). `just run` waits for `/v1/health/version` and shows the CLI talking
 to that local endpoint.
 
-**Stack:** Appwrite CLI + Appwrite Server + Docker-in-Docker, port 8080
+**Stack:** Appwrite CLI + Appwrite Server + Docker-in-Docker + Node.js 24, ports 8080 (console/API) and 5173 (Svelte starter)
 
 Appwrite wants about **4GB RAM** and the first boot downloads many images — later
 starts reuse them.
@@ -23,6 +23,7 @@ booth
 # 2. Inside the booth — wait for health and point the CLI at localhost
 just --list
 just run                 # ./demo.sh
+just web                 # ./web.sh — the Svelte starter on :5173
 ```
 
 From the host, the console is published on port 8080 (`+expose`):
@@ -51,6 +52,32 @@ appwrite init project
 `just run` is the scripted form of the health check (`./demo.sh`). Either path is
 fine; the typed commands are how you would actually use Appwrite in a project.
 
+## The Svelte starter
+
+`starter-for-svelte/` is Appwrite's own
+[Svelte starter](https://github.com/appwrite/starter-for-svelte), copied in unchanged. It is a
+one-page SvelteKit app with a **Send a ping** button that calls `client.ping()`. Out of the box
+it points at Appwrite Cloud. Here it points at this booth's server:
+
+```bash
+just web                 # inside the booth (or from the host — it starts one)
+```
+
+`just web` runs `just app` first (`./appwrite-app.sh`), which signs in as the console admin,
+creates a team, a `starter` project and a `localhost` web platform — each skipped when it is
+already there — and writes `starter-for-svelte/.env` (gitignored) with the host-side endpoint.
+Then it installs the starter's packages and serves it with Vite. Open
+[http://localhost:5173](http://localhost:5173) and press **Send a ping**: the log row shows
+`200 /v1/ping {"message":"Pong!"}` from your own Appwrite.
+
+The browser runs on the host, so `.env` names the *host* ports: the booth port minus the
+offsets in `.booth/config.toml` (`+-1920` → 8080 for Appwrite, `+-4827` → 5173 for Vite, with
+the default booth port 10000). On another booth port they move together; `APPWRITE_HOST_PORT`
+and `WEB_HOST_PORT` override them.
+
+Data is `clean`, so a new booth has no `starter` project — `just app` (and `just web`) create
+it again.
+
 ## What's included
 
 | Component     | Details                                              |
@@ -59,14 +86,12 @@ fine; the typed commands are how you would actually use Appwrite in a project.
 | CLI           | `appwrite` (required by the server template)         |
 | Docker        | DinD sidecar + Compose, required by `start-appwrite` |
 | Persistence   | `APPWRITE_DATA=clean` (default). `+seed` / `+persist`    |
+| Runtime       | Node.js 24, for the Svelte starter                   |
 | Sample        | `demo.sh` — CLI version + API health round-trip      |
+| App           | `starter-for-svelte/` — `just web`, wired by `appwrite-app.sh` |
 
 Select a different server version with `APPWRITE_VERSION`, or a different listen
 port with `APPWRITE_PORT`, via `booth config`. The CLI version is `APPWRITE_CLI_VERSION`.
 Data policy is `APPWRITE_DATA` (`clean` / `seed` / `persist`); `+seed` and
 `+persist` install the CodingBooth home-seed / cache backing. For persist, run
 `stop-appwrite` (or shut the booth down) so volumes dump into `~/.appwrite-server`.
-
-`.booth/setups/` copies `appwrite-cli--setup.sh` and `appwrite-server--setup.sh` so
-this example builds against a released base image that does not yet ship them.
-Keep those copies byte-identical with `variants/base/setups/`.

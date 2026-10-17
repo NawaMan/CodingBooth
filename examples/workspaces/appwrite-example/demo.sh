@@ -60,3 +60,5 @@ echo "Console: http://localhost:${ready_port}"
 # With +persist/+seed an older database may hold a different admin.
 echo "Login:   ${APPWRITE_ADMIN_EMAIL:-admin@example.com} / ${APPWRITE_ADMIN_PASSWORD:-password123}"
 echo "✅ Appwrite CLI and server are both working."
+echo
+echo "Next: just web — Appwrite's Svelte starter, wired to this server."

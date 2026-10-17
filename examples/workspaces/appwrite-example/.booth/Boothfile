@@ -1,5 +1,5 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --select appwrite-server+autostart+expose:+-1920
+# Configured by: booth config --no-tui --overwrite --expose +-4827:5173 --select nodejs/appwrite-server+autostart+expose:+-1920
 
 env APT_SNAPSHOT=20261004T000000Z
 
@@ -9,9 +9,12 @@ arg APPWRITE_HOST_PORT=+-1920
 arg APPWRITE_HTTPS_PORT=8443
 arg APPWRITE_PORT=8080
 arg APPWRITE_VERSION=1.9.6
+arg NODE_VERSION=24
 
 setup appwrite-cli --version ${APPWRITE_CLI_VERSION}
 setup appwrite-server --version ${APPWRITE_VERSION} --http-port ${APPWRITE_PORT} --https-port ${APPWRITE_HTTPS_PORT} --data ${APPWRITE_DATA}
 setup dind
 setup docker-code-extension
 setup docker-compose
+setup nodejs ${NODE_VERSION}
+setup nodejs-code-extension

@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-# Configured by: booth config --no-tui --overwrite --select appwrite-server+autostart+expose:+-1920
+# Configured by: booth config --no-tui --overwrite --expose +-4827:5173 --select nodejs/appwrite-server+autostart+expose:+-1920
 
 # Auto-start self-hosted Appwrite (needs Docker / dind).
 PORT=${APPWRITE_PORT:-8080}
