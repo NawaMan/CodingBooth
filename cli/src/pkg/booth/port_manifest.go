@@ -41,27 +41,29 @@ type PublishedPort struct {
 
 // buildPortManifest assembles the manifest from an AppContext whose ports have
 // already been resolved (i.e. after ResolveRelativePorts / NormalizePortMappings,
-// so every -p host side is an absolute port). It mirrors the mapping collection
-// in NormalizePortMappings: the run-args publishes plus the booth's own front
-// door (unless a dind/egress sidecar owns the published port instead).
+// so every -p host side is an absolute port) and before SetupDind/SetupEgress
+// strip the -p flags from RunArgs. It lists the run-args publishes plus the
+// booth's own front door. With a dind/egress sidecar the sidecar publishes those
+// same mappings for the booth, which shares its network, so they are listed all
+// the same; the sidecar maps the front door to container port 10000 even when
+// public (startDindSidecar / startEgressNetnsOwner).
 func buildPortManifest(ctx appctx.AppContext) PortManifest {
 	manifest := PortManifest{
-		Booth:   boothDisplayName(ctx),
-		Variant: ctx.Variant(),
+		Booth:     boothDisplayName(ctx),
+		Variant:   ctx.Variant(),
+		Published: []PublishedPort{}, // "published": [] rather than null when there are none
 	}
 
 	// Front door first, so the list reads top-down from the booth's own URL.
-	if !ctx.Dind() && !ctx.Egress() {
-		containerPort := 10000
-		if ctx.Public() {
-			containerPort = 10443
-		}
-		raw := formatPortMapping(ctx.Public(), ctx.PortNumber(), containerPort)
-		if m, ok := ParsePortMapping(raw); ok {
-			m.Source = "booth front door"
-			if p, ok := toPublishedPort(m); ok {
-				manifest.Published = append(manifest.Published, p)
-			}
+	containerPort := 10000
+	if ctx.Public() && !ctx.Dind() && !ctx.Egress() {
+		containerPort = 10443
+	}
+	raw := formatPortMapping(ctx.Public(), ctx.PortNumber(), containerPort)
+	if m, ok := ParsePortMapping(raw); ok {
+		m.Source = "booth front door"
+		if p, ok := toPublishedPort(m); ok {
+			manifest.Published = append(manifest.Published, p)
 		}
 	}
 
@@ -110,7 +112,8 @@ func boothDisplayName(ctx appctx.AppContext) string {
 
 // WritePortManifest writes .booth/.tmp/ports.json for the run. It must run after
 // PrepareBoothTmp (which creates and clears .tmp/) so the manifest is not wiped,
-// and after the port-resolution steps so the mappings it records are concrete.
+// after the port-resolution steps so the mappings it records are concrete, and
+// before SetupDind/SetupEgress, which move the -p flags onto the sidecar.
 // Failures are non-fatal: the manifest is a convenience for the expose-list
 // readers, which fall back to `docker inspect` when it is absent.
 func WritePortManifest(ctx appctx.AppContext) appctx.AppContext {

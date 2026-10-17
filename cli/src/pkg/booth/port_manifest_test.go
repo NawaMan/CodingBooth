@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
@@ -94,13 +95,38 @@ func TestBuildPortManifest_PublicFrontDoorIs10443(t *testing.T) {
 	}
 }
 
-func TestBuildPortManifest_DindOwnsPortNoFrontDoor(t *testing.T) {
-	b := manifestBuilder()
-	b.Config.Dind = true
-	m := buildPortManifest(b.Build())
+func TestBuildPortManifest_SidecarBoothListsItsPorts(t *testing.T) {
+	// A dind/egress sidecar publishes the booth's ports (the booth shares its
+	// network), so the manifest lists them all the same — including the front
+	// door, which the sidecar maps to container 10000 even when public.
+	for _, mode := range []string{"dind", "egress"} {
+		for _, public := range []bool{false, true} {
+			b := manifestBuilder("8080:8080")
+			b.Config.Dind = mode == "dind"
+			b.Config.Egress = mode == "egress"
+			b.Config.Public = public
+			m := buildPortManifest(b.Build())
 
-	if _, ok := findPublished(m, 10000); ok {
-		t.Errorf("dind booth should not list a front door: %+v", m.Published)
+			front, ok := findPublished(m, 10000)
+			if !ok || front.HostPort != 11000 || front.Source != "booth front door" {
+				t.Errorf("%s public=%v: front door wrong: %+v", mode, public, m.Published)
+			}
+			if _, ok := findPublished(m, 10443); ok {
+				t.Errorf("%s public=%v: sidecar maps the front door to 10000, not 10443", mode, public)
+			}
+			if _, ok := findPublished(m, 8080); !ok {
+				t.Errorf("%s public=%v: published -p missing: %+v", mode, public, m.Published)
+			}
+		}
+	}
+}
+
+func TestPortManifest_EmptyPublishedIsListNotNull(t *testing.T) {
+	// booth--expose reads it with `jq '.published[]'`, which errors on null.
+	m := PortManifest{Booth: "demo", Published: []PublishedPort{}}
+	data, _ := json.Marshal(m)
+	if want := `"published":[]`; !strings.Contains(string(data), want) {
+		t.Errorf("want %s in %s", want, data)
 	}
 }
 
