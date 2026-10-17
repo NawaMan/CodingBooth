@@ -21,9 +21,11 @@ PROJECT_NAME="Svelte starter"
 
 # The browser runs on the host, so .env needs host-side ports. They are the
 # booth port minus the offsets in .booth/config.toml (+-1920:8080, +-4827:5173).
-BOOTH_PORT="${BOOTH_PORT:-10000}"
-APPWRITE_HOST_PORT="${APPWRITE_HOST_PORT:-$((BOOTH_PORT - 1920))}"
-WEB_HOST_PORT="${WEB_HOST_PORT:-$((BOOTH_PORT - 4827))}"
+# BOOTH_HOST_PORT is the resolved number; BOOTH_PORT is the port as requested,
+# which can be NEXT or RANDOM.
+HOST_PORT="${BOOTH_HOST_PORT:-10000}"
+APPWRITE_HOST_PORT="${APPWRITE_HOST_PORT:-$((HOST_PORT - 1920))}"
+WEB_HOST_PORT="${WEB_HOST_PORT:-$((HOST_PORT - 4827))}"
 
 COOKIES="$(mktemp)"
 BODY="$(mktemp)"

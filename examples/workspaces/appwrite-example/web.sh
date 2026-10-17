@@ -13,7 +13,7 @@ cd "$(dirname "$0")"
 cd starter-for-svelte
 [[ -d node_modules ]] || npm ci
 
-BOOTH_PORT="${BOOTH_PORT:-10000}"
+HOST_PORT="${BOOTH_HOST_PORT:-10000}"   # resolved; BOOTH_PORT may be NEXT or RANDOM
 echo
-echo "Open http://localhost:${WEB_HOST_PORT:-$((BOOTH_PORT - 4827))} and press \"Send a ping\". Ctrl+C stops it."
+echo "Open http://localhost:${WEB_HOST_PORT:-$((HOST_PORT - 4827))} and press \"Send a ping\". Ctrl+C stops it."
 exec npx vite dev --host 0.0.0.0 --port 5173 --strictPort
