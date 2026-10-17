@@ -60,15 +60,16 @@ func (runner *BoothRunner) Run() error {
 	ctx = NormalizePortMappings(ctx)
 	ctx = CheckPublicPortsExposed(ctx)
 	ctx = ShowDebugBanner(ctx)
-	ctx = SetupDind(ctx)
-	ctx = SetupEgress(ctx)
-	ctx = PrepareRunMode(ctx)
 	ctx = PrepareBoothTmp(ctx)
 	// WritePortManifest and ApplyEnvFile both run after PrepareBoothTmp so the
 	// files they write into .booth/.tmp/ are not wiped by the start-of-run
 	// cleanup. WritePortManifest also relies on the port steps above having
-	// resolved every mapping to a concrete host port.
+	// resolved every mapping to a concrete host port, and must run before
+	// SetupDind/SetupEgress strip the -p flags it records.
 	ctx = WritePortManifest(ctx)
+	ctx = SetupDind(ctx)
+	ctx = SetupEgress(ctx)
+	ctx = PrepareRunMode(ctx)
 	ctx = ApplyEnvFile(ctx)
 	ctx = PrepareCommonArgs(ctx)
 	// After PrepareCommonArgs so TLS/common mounts are also filtered.

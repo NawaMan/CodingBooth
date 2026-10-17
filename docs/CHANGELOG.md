@@ -4,6 +4,13 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`expose list` works for DinD and egress booths.** In a booth with a DinD or egress sidecar,
+  `.booth/.tmp/ports.json` said `"published": null`, so `booth--expose list` inside showed no host
+  ports and `booth expose list` on the host said the booth publishes nothing. The manifest was
+  written after the `-p` flags had moved onto the sidecar, and it left out the front door on
+  purpose. It is now written first and lists the front door and every `-p` as the sidecar publishes
+  them. The host command reads the live bindings from the sidecar, since the booth itself has none.
+
 - **appwrite-example runs Appwrite's Svelte starter against its own server.** The
   `starter-for-svelte/` copy was never wired up: the booth had no Node.js and its `.env` pointed at
   Appwrite Cloud. The example now selects `nodejs` and exposes Vite on `+-4827:5173`. `just app`
