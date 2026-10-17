@@ -197,9 +197,9 @@ func SetupDind(ctx appctx.AppContext) appctx.AppContext {
 
 	builder := ctx.ToBuilder()
 
-	// Clean up any leftover containers/networks from previous booth runs
+	// Clean up any leftover containers/networks from previous runs of this booth
 	// This prevents port conflicts when restarting the booth
-	cleanupPreviousBoothInstances(ctx, ctx.ProjectName())
+	cleanupPreviousBoothInstances(ctx)
 
 	// Set up unique network and sidecar names
 	dindNet := getDindNet(ctx)
