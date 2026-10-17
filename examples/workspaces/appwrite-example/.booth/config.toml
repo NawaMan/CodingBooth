@@ -1,13 +1,15 @@
-# Configured by: booth config --no-tui --overwrite --select appwrite-server+autostart+expose:+-1920
+# Configured by: booth config --no-tui --overwrite --expose +-4827:5173 --select nodejs/appwrite-server+autostart+expose:+-1920
 
 dind = true
 
 run-args = [
+    "-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro",
     "-e", "APPWRITE_PORT=8080",
     "-e", "APPWRITE_HTTPS_PORT=8443",
     "-e", "APPWRITE_DATA=clean",
     "-p", "+-1920:8080",
     "-v", "~/.appwrite:/etc/cb-home-seed/.appwrite:ro",
     "-v", "~/AppData/Roaming/appwrite:/etc/cb-home-seed/.appwrite:ro",
-    "-v", "~/.docker/config.json:/etc/cb-home-seed/.docker/config.json:ro"
+    "-v", "~/.docker/config.json:/etc/cb-home-seed/.docker/config.json:ro",
+    "--publish", "+-4827:5173"
 ]
