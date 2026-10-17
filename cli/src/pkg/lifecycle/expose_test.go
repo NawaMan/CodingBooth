@@ -185,3 +185,22 @@ func TestReadLivePortsUsesChosenEngine(t *testing.T) {
 		})
 	}
 }
+
+func TestNetworkModeOwner(t *testing.T) {
+	cases := []struct {
+		mode  string
+		owner string
+		ok    bool
+	}{
+		{"container:7b2348b04a30\n", "7b2348b04a30", true}, // dind/egress booth: the sidecar holds the ports
+		{"bridge", "", false},
+		{"default", "", false},
+		{"container:", "", false},
+	}
+	for _, c := range cases {
+		owner, ok := networkModeOwner(c.mode)
+		if owner != c.owner || ok != c.ok {
+			t.Errorf("networkModeOwner(%q) = %q, %v; want %q, %v", c.mode, owner, ok, c.owner, c.ok)
+		}
+	}
+}
