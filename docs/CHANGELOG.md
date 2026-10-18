@@ -4,6 +4,13 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A booth container started with no command opens coder's login shell again.** booth-entry
+  falls back to a login shell when it is given no command, through `runuser -u coder --login`.
+  util-linux 2.41 in the Ubuntu 26.04 base refuses `--login` with `--user` ("mutually
+  exclusive"), so that container printed the error and exited. It now runs `runuser -l coder`.
+  The CLI always passes a command, so `booth` itself was not affected; a plain `docker run` of the
+  image with the entrypoint and nothing after it was.
+
 - **`use-bash 3.2 <cmd>` runs a command with Bash 3.2 as every bash it starts, `#!/bin/bash`
   scripts included.** Before, `bash-3.2 ./script.sh` ran only that script on 3.2: a child it
   started with `#!/bin/bash`, `#!/usr/bin/env bash` or `bash -c` was back on the distro bash, and
