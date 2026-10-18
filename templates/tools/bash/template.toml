@@ -1,7 +1,7 @@
-cb-version = "0.2.0"
+cb-version = "0.3.0"
 display-name = "Bash"
 display-disc = "GNU Bash beside the system shell; 3.2 comes prebuilt"
-display-detail = """Installs a GNU Bash release beside the system shell. 3.2.48 to 3.2.57 come as prebuilt static binaries from NawaMan/Bash32Ubuntu, checked against their sha256, so nothing is compiled; any other release is built from source. It is installed as bash-<major>.<minor> (the default 3.2.57 is the command bash-3.2). The booth login shell stays /bin/bash unless you also select bash+default, which logs the coder user into that build. This can be useful for testing scripts against the Bash 3.2 that macOS ships as /bin/bash: that shell treats an empty array expansion as an error when set -u is on. Pin another release with bash:5.2.37 or bash:5.3."""
+display-detail = """Installs a GNU Bash release beside the system shell. 3.2.48 to 3.2.57 come as prebuilt static binaries from NawaMan/Bash32Ubuntu, checked against their sha256, so nothing is compiled; any other release is built from source. It is installed as bash-<major>.<minor> (the default 3.2.57 is the command bash-3.2). use-bash runs a command with that build as every bash it starts: use-bash 3.2 ./script.sh makes #!/bin/bash, #!/usr/bin/env bash and bash -c all 3.2, at any depth, and use-bash 3.2 alone opens such a shell. Outside use-bash every bash is the distro one, booth's own scripts included. The booth login shell stays /bin/bash unless you also select bash+default, which logs the coder user into that build and makes it every bash of the session. This can be useful for testing scripts against the Bash 3.2 that macOS ships as /bin/bash: that shell treats an empty array expansion as an error when set -u is on. Pin another release with bash:5.2.37 or bash:5.3."""
 display-order = 31
 tags = [
     "bash",

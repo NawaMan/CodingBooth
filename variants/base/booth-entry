@@ -209,6 +209,12 @@ HOME_DIR="/home/${USER_NAME}"
 CODE_NAME="${CODE_NAME:-code}"
 CODE_DIR="/home/${USER_NAME}/${CODE_NAME}"
 USER_SHELL="${USER_SHELL:-/bin/bash}"
+# setup bash replaces /usr/bin/bash with a script that dispatches on CB_BASH
+# (see use-bash). A login shell is told by argv[0] "-bash", which a script
+# loses, so log in with the real binary it dispatches to.
+if [[ "$USER_SHELL" == /bin/bash || "$USER_SHELL" == /usr/bin/bash ]] && [[ -x /usr/bin/bash.distro ]]; then
+  USER_SHELL=/usr/bin/bash.distro
+fi
 HOST_UID="${HOST_UID:-1000}"
 HOST_GID="${HOST_GID:-1000}"
 

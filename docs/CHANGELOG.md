@@ -4,6 +4,20 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`use-bash 3.2 <cmd>` runs a command with Bash 3.2 as every bash it starts, `#!/bin/bash`
+  scripts included.** Before, `bash-3.2 ./script.sh` ran only that script on 3.2: a child it
+  started with `#!/bin/bash`, `#!/usr/bin/env bash` or `bash -c` was back on the distro bash, and
+  the only way around that was editing the shebang. Now `setup bash` diverts the distro bash to
+  `/usr/bin/bash.distro` and puts a dispatcher at `/usr/bin/bash` that runs `$CB_BASH` when set.
+  `use-bash` sets it, so the whole tree under the command follows, at any depth. With no command
+  it opens a 3.2 shell; `use-bash --list` shows the installed releases, and `use-bash distro
+  <cmd>` (or its version, as in `use-bash 5.3`) gets the image's bash back. Outside `use-bash` nothing changes, booth's own scripts
+  included. `bash+default` now does the same for the whole session: the release it logs in with
+  sets `CB_BASH`, so `#!/bin/bash` scripts and booth helpers run from that session are 3.2 too.
+  Coder now logs in with `/usr/bin/bash.distro` in any booth with `setup bash`, because a login
+  shell needs `argv[0]` `-bash` and a script dispatcher loses it. Try
+  `examples/workspaces/bash-example` (`just count`).
+
 - **`BOOTH=<command> just <recipe>` runs a starter Justfile's recipes through another booth
   command than `./booth`.** The starter (`booth just-init`) and every example Justfile hard-coded
   `./booth` in `{{run-in-booth}}`, its `--keep-alive` form and the `shell` recipe. A CodingBooth

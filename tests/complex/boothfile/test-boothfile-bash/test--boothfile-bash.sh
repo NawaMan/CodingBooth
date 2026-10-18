@@ -9,7 +9,8 @@
 # bash-3.2 --version proves the binary. Only major.minor is asserted, so a
 # bump of the default patch release does not break the test. The safe probe
 # is what a script must do to run under the bash 3.2 that macOS ships. The
-# unsafe probe is the expansion that shell rejects.
+# unsafe probe is the expansion that shell rejects. probe-nested.sh is a
+# tree of #!/bin/bash and #!/usr/bin/env bash scripts for use-bash.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -58,6 +59,38 @@ if echo "$ACTUAL" | grep -q "unbound variable" && ! echo "$ACTUAL" | grep -q "su
     print_test_result "true" "$0" "4" "bash-3.2 rejects an empty array under set -u"
 else
     print_test_result "false" "$0" "4" "bash-3.2 should reject an empty array under set -u"
+    echo "  Actual output: $ACTUAL"
+    FAILED=$((FAILED + 1))
+fi
+
+# use-bash: every bash under the command is the release, #!/bin/bash
+# children and grandchildren included. Five lines, all 3.2.
+ACTUAL=$(capture_codingbooth "cat" --silence-build -- 'use-bash 3.2 ./probe-nested.sh')
+if [[ "$(echo "$ACTUAL" | grep -c ':3\.2\.')" == 5 ]]; then
+    print_test_result "true" "$0" "5" "use-bash 3.2 runs #!/bin/bash, env bash and bash -c at every depth on 3.2"
+else
+    print_test_result "false" "$0" "5" "use-bash 3.2 should run every nested bash on 3.2"
+    echo "  Actual output: $ACTUAL"
+    FAILED=$((FAILED + 1))
+fi
+
+# Without use-bash the same tree stays on the distro bash.
+ACTUAL=$(capture_codingbooth "cat" --silence-build -- './probe-nested.sh')
+if [[ "$(echo "$ACTUAL" | grep -c ':[0-9]')" == 5 ]] && ! echo "$ACTUAL" | grep -q ':3\.2\.'; then
+    print_test_result "true" "$0" "6" "without use-bash every nested bash is the distro one"
+else
+    print_test_result "false" "$0" "6" "without use-bash no nested bash should be 3.2"
+    echo "  Actual output: $ACTUAL"
+    FAILED=$((FAILED + 1))
+fi
+
+# /usr/bin/bash is now a dispatcher script. A login needs argv[0] "-bash",
+# which a script loses, so coder logs in with the binary behind it.
+ACTUAL=$(capture_codingbooth "cat" --silence-build -- 'getent passwd coder | cut -d: -f7; head -1 /usr/bin/bash')
+if echo "$ACTUAL" | grep -qx '/usr/bin/bash.distro' && echo "$ACTUAL" | grep -qx '#!/usr/bin/dash'; then
+    print_test_result "true" "$0" "7" "coder logs in with /usr/bin/bash.distro behind the dispatcher"
+else
+    print_test_result "false" "$0" "7" "coder's login shell should be /usr/bin/bash.distro"
     echo "  Actual output: $ACTUAL"
     FAILED=$((FAILED + 1))
 fi
