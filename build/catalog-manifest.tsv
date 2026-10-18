@@ -54,7 +54,7 @@ setup	codex	1.0.0	a0f76155dd0b93e901a5b994393d68d545214b3b568d1de237febc9a36d096
 setup	codex-code-extension	1.0.0	076be4c351d968b8775495057013581f1190d7f0f3557742beec8e8324a04ea1	variants/base/setups/codex-code-extension--setup.sh
 setup	conan	1.0.0	d33c16ec6dc96f8aca41e01f0ca4f5386b4fa0b78d9f80e0c95622aa6131a211	variants/base/setups/conan--setup.sh
 setup	conda	1.0.0	48963ccf24d11779847d6a76989b99e33edf1bcf113824249c22233a0773bb86	variants/base/setups/conda--setup.sh
-setup	conda-nb-kernel	0.1.0	a8bc4ef1f3ec81e0b565e93e01505a62c9b2bf00feb4c42e3b43dfe3852ee71d	variants/base/setups/conda-nb-kernel--setup.sh
+setup	conda-nb-kernel	0.1.0	5cc6fe1a343bcf1cf30ffdf92f2eb6133b898c5a3952f9ced5f95874117cec21	variants/base/setups/conda-nb-kernel--setup.sh
 setup	cpp-nb-kernel	0.1.0	ca55497f946f98c9c381a35d26928eda13adc0febd1228f469a021659beea38e	variants/base/setups/cpp-nb-kernel--setup.sh
 setup	crystal	1.0.0	61384d7bce11d836a007a7815f4cf24888e028dc442db554b382562a8d48a84f	variants/base/setups/crystal--setup.sh
 setup	crystal-code-extension	1.0.0	14c2ce6f0561eec9ff041e616cd1b93c789c101ab5fdb2ba3a03b3255b82e03f	variants/base/setups/crystal-code-extension--setup.sh
