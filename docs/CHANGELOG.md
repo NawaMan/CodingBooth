@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The base image ships `tilde`, a menu-driven terminal editor with Windows-style keys.**
+  Ctrl+S saves, Ctrl+Q quits, Ctrl+C/X/V copy, cut and paste, and the menu bar (F10 or a click)
+  lists the rest, so someone who has never used a terminal editor can edit a file without a key
+  chart. It is Ubuntu's own package; `$EDITOR` stays `fresh`. About 6 MB. Needs a rebuilt base
+  image.
+
 - **A booth container started with no command opens coder's login shell again.** booth-entry
   falls back to a login shell when it is given no command, through `runuser -u coder --login`.
   util-linux 2.41 in the Ubuntu 26.04 base refuses `--login` with `--user` ("mutually

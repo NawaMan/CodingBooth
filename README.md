@@ -1,6 +1,6 @@
 # CodingBooth
 
-**Current Version:** v0.80.0--rc1 — [View Changelog](docs/CHANGELOG.md)
+**Current Version:** v0.80.0--tilde-editor — [View Changelog](docs/CHANGELOG.md)
 
 ![Works On My Machine](docs/Works-On-My-Machine-small.png)
 
@@ -327,7 +327,7 @@ These essentials are preinstalled so you can start working immediately — no ex
   `git`, `gh` (GitHub CLI), `tig`, `lazygit` (terminal UI for git), `differ` (review what an agent changed)
 
 - **Editors & File Browsers**
-  `fresh`, `nano`, `mc` (Midnight Commander), `spf` (superfile, file manager), `less`, `viewmd` (Markdown viewer in a browser)
+  `fresh`, `nano`, `tilde` (menu-driven, Windows-style keys), `mc` (Midnight Commander), `spf` (superfile, file manager), `less`, `viewmd` (Markdown viewer in a browser)
 
 - **Secrets & Environment**
   `folio` (EnvFolio: texts and secrets as environment variables, on `pass`)
