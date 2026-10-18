@@ -19,3 +19,11 @@ app:
 # Run starter-for-svelte against the local Appwrite (Vite on :5173)
 web:
     {{run-in-booth}} ./web.sh
+
+# Follow Appwrite's request log: one line per /v1/ping as it arrives (Ctrl+C stops)
+watch:
+    {{run-in-booth}} ./watch-pings.sh
+
+# Print how many pings the starter project has received (pingCount, pingedAt)
+pings:
+    {{run-in-booth}} ./pings.sh
