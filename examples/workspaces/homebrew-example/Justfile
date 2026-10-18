@@ -1,0 +1,47 @@
+# This project's commands - run `just` to list them.  https://just.systems
+#
+# Every recipe works the same from the host and from inside the booth. Start a
+# recipe line with where it must run:
+#
+#   {{run-in-booth}}  On the host: `./booth exec --run --`, which runs the line in
+#                     this project's booth, starting one first if none is running
+#                     (and stopping it again after). Inside the booth: as is.
+#   {{run-on-host}}   On the host: as is. Inside the booth: refused, for lines that
+#                     drive the booth from outside (./booth ...).
+#
+# The host shell reads a {{run-in-booth}} line first: wrap $VAR, $(...), | and &&
+# in bash -c '...' to have the booth expand them instead. Each such line is its
+# own `booth exec`, so a multi-line job is quicker as one script.
+#
+# No `just` on the host? `./booth exec --run -- just <recipe>` does the same.
+#
+# Created by `booth just-init`, from
+# https://github.com/NawaMan/CodingBooth/blob/main/docs/just/Justfile
+
+booth        := env("BOOTH", "./booth")
+run-in-booth := if env("BOOTH_CONTAINER_NAME", "") == "" { booth + " exec --run --" } else { "" }
+run-on-host  := if env("BOOTH_CONTAINER_NAME", "") == "" { "" } else { "echo 'just: this recipe runs on the host - exit the booth and run it there.' >&2; exit 2;" }
+
+[private]
+default:
+    @just --list
+
+# Check every brew tool works: bat, nvim, node, ffmpeg, imagemagick, gcc, postgresql, redis, nginx
+test:
+    {{run-in-booth}} ./.cb-tests/inBooth--run-all-tests.sh
+
+# The formulae brew installed on request, with their versions
+packages:
+    {{run-in-booth}} bash -c 'brew list --versions $(brew leaves)'
+
+# Start a throwaway PostgreSQL, Redis and nginx in turn, talk to each, stop it
+services:
+    {{run-in-booth}} bash -c 'set -e; for t in 007-postgresql 008-redis 009-nginx; do ./.cb-tests/inBooth-test$t--in-booth.sh; done'
+
+# Print this README through bat, with line numbers
+bat:
+    {{run-in-booth}} bat --paging=never --style=numbers,grid README.md
+
+# Open a shell in this project's booth, starting it if needed.
+shell:
+    {{run-on-host}} {{booth}} shell --run

@@ -34,6 +34,19 @@ use Ctrl+Alt there.
 noVNC, which sends ⌘ to it as Alt and ⌥ as AltGr — so Option never triggers these, whatever the key
 says. The Help tab works this out from the browser and prints the keys you can actually press.
 
+### Run it
+
+```bash
+just --list
+just desktop             # ./booth — the desktop in your browser, tiling
+just version             # i3 --version
+just status              # i3-msg -t get_version — the running i3 and the config it loaded
+```
+
+`just status` asks the i3 running in the booth's desktop session, so it waits (up to 60 seconds) for
+the session to come up; its `included_config_file_names` shows the `ctrl-alt` and `gaps` extensions
+in effect.
+
 ## Switching back and forth
 
 Tiling is a window-manager switch inside the same desktop session, not a different desktop:

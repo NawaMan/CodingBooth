@@ -11,8 +11,17 @@ This example pre-installs npm dependencies at booth-build time so the first run 
 cd examples/workspaces/npm-deps-example
 booth
 
-# 2. Inside the booth — node_modules already exists; just run
-npm test
+# 2. Inside the booth — node_modules already exists; just use it
+node -e 'require("chalk"); console.log("chalk is ready")'
+```
+
+### Run it
+
+```bash
+just --list
+just check               # require chalk from the pre-baked node_modules, print its version
+just run                 # a chalk-coloured hello — no npm install first
+just deps                # npm ls --depth=0
 ```
 
 ## What's included

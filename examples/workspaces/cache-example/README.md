@@ -16,7 +16,7 @@ booth config . --no-tui --select shell-history \
 
 ```bash
 # Start the booth
-../../booth
+./booth
 
 # Inside the container — write some data:
 echo "hello from session 1" >> ~/.my_app_history
@@ -25,13 +25,26 @@ history  # shell history is also being saved
 
 # Exit and restart:
 exit
-../../booth
+./booth
 
 # Your data is still here:
 cat ~/.my_app_history           # → "hello from session 1"
 cat ~/.my_app_data/notes.txt    # → "important notes"
 history                         # → previous commands still there
 ```
+
+### Run it
+
+```bash
+just --list
+just write               # append to ~/.my_app_history, rewrite ~/.my_app_data/notes.txt
+just read                # print both
+just demo                # write, then read — each in its own booth
+just reset               # rm -rf .booth/cache (shell history too)
+```
+
+With no booth running, every recipe starts one and stops it after, so `just demo`'s read happens
+in a new container: what it prints came through `.booth/cache/`.
 
 ## What's Persisted
 
