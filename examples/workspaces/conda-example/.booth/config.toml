@@ -1,5 +1,6 @@
-# Configured by: booth config --no-tui --overwrite --select python:3.12+conda+conda-pkg:numpy
+# Configured by: booth config --no-tui --overwrite --variant notebook --select python:3.12+conda+conda-pkg:rdkit,pandas,matplotlib+conda-kernel/notebook
 
+variant = "notebook"
 
 run-args = [
     "-e", "PYTHONDONTWRITEBYTECODE=1",

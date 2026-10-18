@@ -1,3 +1,4 @@
 python
 package-manager
 conda
+notebook

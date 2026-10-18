@@ -4,6 +4,22 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Conda environments can run Jupyter notebooks: the new `python+conda-kernel` extension.**
+  JupyterLab and its stock *Python (venv)* kernel live in the notebook's own venv, so a package
+  installed with conda (`conda-pkg:rdkit`, or `conda install` in a terminal) imported fine from
+  the terminal and failed with `ModuleNotFoundError` in a notebook. The extension installs
+  `ipykernel` into the conda env and registers it as a second kernel, **Python X.Y (conda)**,
+  pointing at the env's real path under `/opt/conda-envs/`. Select it with
+  `python+conda+conda-kernel/notebook`; it needs the notebook template, like `python+kernel`.
+  New setup `conda-nb-kernel`, so it needs a rebuilt base image.
+
+- **The conda example is now a Molecule Lab on the notebook variant.** It installs RDKit, pandas
+  and matplotlib from conda-forge, and its `Molecules.ipynb` runs on the conda kernel: it draws a
+  dozen well-known drugs from their SMILES, tabulates their descriptors, checks Lipinski's rule of
+  five, charts weight against logP, and highlights a substructure search. `just run caffeine`
+  gives the same descriptors on the command line. It replaces the NumPy statistics script. Its
+  tests check the kernel registration and run every cell of the notebook headlessly.
+
 - **The base image ships `tilde` again, beside Fresh: a menu-driven terminal editor with
   Windows-style keys.** Ctrl+S saves, Ctrl+Q quits, Ctrl+C/X/V copy, cut and paste, and the menu
   bar (F10 or a click) lists the rest, so someone who has never used a terminal editor can edit a
