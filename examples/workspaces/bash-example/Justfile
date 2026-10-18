@@ -24,3 +24,11 @@ count-two:
 # The same script on the image's own bash
 count-distro:
     {{run-in-booth}} ./scripts/count-args.sh
+
+# Each level of a #!/bin/bash script tree, on the image's bash
+which-bash:
+    {{run-in-booth}} ./scripts/which-bash.sh
+
+# The same tree under use-bash 3.2: every level is 3.2, declare -A fails
+which-bash-32:
+    {{run-in-booth}} use-bash 3.2 ./scripts/which-bash.sh

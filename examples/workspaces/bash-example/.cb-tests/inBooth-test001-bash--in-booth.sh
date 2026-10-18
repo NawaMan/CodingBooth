@@ -38,6 +38,20 @@ echo "nested child: $nested"
 plain="$(/tmp/bash-parent.sh)"
 [[ "$plain" != 3.2.* ]] || { echo "without use-bash the child should be the distro bash"; exit 1; }
 
+# scripts/which-bash.sh: a tree of #!/bin/bash and env-bash scripts, plus
+# bash -c. Each line reports its bash and whether declare -A works.
+tree="$(./scripts/which-bash.sh)"
+echo "$tree"
+bash_lines="$(echo "$tree" | grep -c 'declare -A:')"
+[[ "$bash_lines" == 7 ]] || { echo "expected 7 bash levels, got $bash_lines"; exit 1; }
+echo "$tree" | grep -q '3\.2\.' && { echo "no level should be 3.2 without use-bash"; exit 1; }
+[[ "$(echo "$tree" | grep -c 'declare -A: yes')" == 7 ]] || { echo "every level should have declare -A on the distro bash"; exit 1; }
+
+tree="$(use-bash 3.2 ./scripts/which-bash.sh)"
+echo "$tree"
+[[ "$(echo "$tree" | grep -c ' 3\.2\.57.*declare -A: no')" == 7 ]] || { echo "every level should be 3.2 without declare -A under use-bash"; exit 1; }
+echo "$tree" | grep -q 'sh -c.*dash' || { echo "sh -c should stay on dash"; exit 1; }
+
 cat > /tmp/bash-unsafe.sh <<'EOF'
 #!/bin/bash
 set -u
