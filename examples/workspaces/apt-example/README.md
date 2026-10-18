@@ -30,7 +30,7 @@ just versions            # ./versions.sh — exact versions, and whether the fre
 Apple Silicon Mac the booth is arm64, and Ubuntu publishes no arm64 snapshots: `install apt` warns,
 ignores `APT_SNAPSHOT`, and installs from the live archive, so those versions are current, not
 frozen. Build with `--platform linux/amd64` when the freeze has to hold. See
-[REPRODUCIBILITY.md](../../../docs/REPRODUCIBILITY.md#apt--pin-the-snapshot-not-the-package).
+[REPRODUCIBILITY.md](https://github.com/NawaMan/CodingBooth/blob/main/docs/REPRODUCIBILITY.md#apt--pin-the-snapshot-not-the-package).
 
 ## What's included
 
@@ -68,7 +68,7 @@ install apt ${APT_PKGS}
 Why pin the snapshot rather than just the package version? The live apt archive keeps
 only the *current* version of most packages, so a bare `jq=1.7.1-3build1` pin stops
 resolving once a newer build lands. Freezing the snapshot keeps the whole resolution
-installable. See [REPRODUCIBILITY.md](../../../docs/REPRODUCIBILITY.md#apt--pin-the-snapshot-not-the-package).
+installable. See [REPRODUCIBILITY.md](https://github.com/NawaMan/CodingBooth/blob/main/docs/REPRODUCIBILITY.md#apt--pin-the-snapshot-not-the-package).
 
 To change the package set, regenerate rather than edit the Boothfile by hand (a hand edit makes
 `booth config` treat the file as hand-written), e.g.

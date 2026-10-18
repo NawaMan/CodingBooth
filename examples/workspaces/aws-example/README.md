@@ -79,7 +79,7 @@ role_arn = arn:aws:iam::123456789:role/ProjectRole
 source_profile = default
 ```
 
-It **replaces** your host `~/.aws/config` in the booth rather than merging with it: files in `.booth/home/` are copied in first, and the host seed never overwrites a file that is already there. Any host profile the project file does not define — SSO profiles included — is not available in the booth. The credentials file is unaffected, so each team member needs host credentials under the profile names the project config refers to (`default` in the example above). See [docs/BOOTH_HOME.md](../../../docs/BOOTH_HOME.md#precedence-order) for the precedence order.
+It **replaces** your host `~/.aws/config` in the booth rather than merging with it: files in `.booth/home/` are copied in first, and the host seed never overwrites a file that is already there. Any host profile the project file does not define — SSO profiles included — is not available in the booth. The credentials file is unaffected, so each team member needs host credentials under the profile names the project config refers to (`default` in the example above). See [docs/BOOTH_HOME.md](https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_HOME.md#precedence-order) for the precedence order.
 
 ## Interactive Runnable Documentation
 

@@ -24,7 +24,7 @@ Running Docker inside CodingBooth keeps your container workloads **apart from yo
 | **Clean Teardown**       | When you're done, everything disappears. No orphaned containers, dangling images, or zombie networks on your host.      |
 | **CI/CD Ready**          | The same containerized environment runs locally and in CI pipelines, eliminating environment drift.                     |
 
-This is the foundation for running Kubernetes (KIND), building multi-container apps, or any Docker-based workflow without touching your host's Docker. It is not a security boundary: the sidecar is privileged, so run only code you trust (see [Security](../../../docs/BOOTH_SECURITY.md)).
+This is the foundation for running Kubernetes (KIND), building multi-container apps, or any Docker-based workflow without touching your host's Docker. It is not a security boundary: the sidecar is privileged, so run only code you trust (see [Security](https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_SECURITY.md)).
 
 ## Quick Start
 
@@ -46,7 +46,7 @@ just stop            # ./stop-server.sh
 
 Booth asks `Start this booth? [y/N]` before it starts: the DinD sidecar is privileged, so code
 in the booth can use it to reach your host as root. Answer `y` for code you trust. From a script or CI
-with no terminal, add `--dind-allowed` instead. See [Security](../../../docs/BOOTH_SECURITY.md).
+with no terminal, add `--dind-allowed` instead. See [Security](https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_SECURITY.md).
 
 ## Architecture
 
