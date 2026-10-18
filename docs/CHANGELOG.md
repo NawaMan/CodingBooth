@@ -4,6 +4,11 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **appwrite-example shows each ping arriving at Appwrite.** The starter's **Logs** list is only
+  the browser's side, and the console's Requests chart is a delayed usage statistic (it showed 2
+  for 4 pings). `just watch` follows Appwrite's request log and prints one line per `/v1/ping`,
+  and `just pings` prints the project's `pingCount` and `pingedAt`.
+
 - **android-example pins `engine = "docker"`.** On a Mac with Apple container running, a plain
   `booth` picked Apple container, which refuses the example's `--device /dev/kvm`. The pin outranks
   `CB_ENGINE`; `--engine <name>` still overrides it.

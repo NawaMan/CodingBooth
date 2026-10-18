@@ -74,6 +74,27 @@ Then it installs the starter's packages and serves it with Vite. Open
 `200 /v1/ping {"message":"Pong!"}` from your own Appwrite. It also works through the booth
 port at [http://localhost:10000/proxy/5173/](http://localhost:10000/proxy/5173/).
 
+### Seeing both ends
+
+The page's **Logs** list is the browser's side: it lives in the page and resets on reload. To
+watch the same pings land on the server, open a second terminal pane beside the starter:
+
+```bash
+just watch               # one line per /v1/ping as Appwrite receives it (Ctrl+C stops)
+just pings               # the project's own counter: pingCount and pingedAt
+```
+
+```
+#1   02:09:03  GET /v1/ping → 200      ← the check at the end of just app
+#2   02:09:34  GET /v1/ping → 200      ← Send a ping
+```
+
+`just pings` counts one more than the page shows, because `just app` sends its own ping to
+check the setup. `just watch` reads the API container's log, so it lists pings since that
+container started; `pingCount` is kept with the project. Don't use the console's **Requests**
+chart to count pings: it is a usage statistic that a background worker adds up later. On
+Appwrite 1.9.6 it showed 2 for 4 pings.
+
 The browser runs on the host, so `.env` names the *host* ports: the booth port minus the
 offsets in `.booth/config.toml` (`+-1920` → 8080 for Appwrite, `+-4827` → 5173 for Vite, with
 the default booth port 10000). On another booth port they move together; `APPWRITE_HOST_PORT`
