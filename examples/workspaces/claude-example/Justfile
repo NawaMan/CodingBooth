@@ -37,3 +37,7 @@ claude:
 # Open a shell in this project's booth, starting it if needed.
 shell:
     {{run-on-host}} {{booth}} shell --run
+
+# Run one Claude Code task non-interactively: just ask  or  just ask "your prompt"
+ask *prompt:
+    {{run-in-booth}} scripts/ask-claude.sh {{quote(prompt)}}
