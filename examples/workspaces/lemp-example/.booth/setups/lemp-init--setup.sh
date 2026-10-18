@@ -22,8 +22,10 @@ rm -f /var/www/html/index.nginx-debian.html /var/www/html/index.html
 
 cat >/var/www/html/index.php <<'PHP'
 <?php
-$user = getenv('USER') ?: 'coder';
-$mysqli = new mysqli('localhost', $user, '', 'lemp_demo');
+// The web server runs as www-data (USER may even say root), so the page signs in
+// as its own read-only MySQL user, created by the startup hook below.
+mysqli_report(MYSQLI_REPORT_OFF);
+$mysqli = new mysqli('localhost', 'lemp_web', '', 'lemp_demo');
 if ($mysqli->connect_errno) {
     http_response_code(500);
     echo "<h1>LEMP example — DB not ready yet</h1>";
@@ -48,12 +50,14 @@ cat >"$STARTUP_FILE" <<'STARTUP'
 #!/usr/bin/env bash
 set -euo pipefail
 for i in $(seq 1 30); do
-  mysqladmin ping --silent 2>/dev/null && break
+  sudo mysqladmin ping --silent 2>/dev/null && break
   sleep 1
 done
 
-mysql -u root <<SQL 2>/dev/null || true
+sudo mysql -u root <<SQL 2>/dev/null || true
 CREATE DATABASE IF NOT EXISTS lemp_demo;
+CREATE USER IF NOT EXISTS 'lemp_web'@'localhost';
+GRANT SELECT ON lemp_demo.* TO 'lemp_web'@'localhost';
 USE lemp_demo;
 CREATE TABLE IF NOT EXISTS hello (id INT AUTO_INCREMENT PRIMARY KEY, message VARCHAR(255));
 INSERT INTO hello (message) SELECT 'Hi from MySQL via PHP-FPM!' WHERE NOT EXISTS (SELECT 1 FROM hello);

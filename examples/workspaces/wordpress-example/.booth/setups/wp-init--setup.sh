@@ -35,11 +35,11 @@ set -euo pipefail
 
 # Wait briefly for mysqld (started by 50-cb-mysql--startup.sh).
 for i in $(seq 1 30); do
-  mysqladmin ping --silent 2>/dev/null && break
+  sudo mysqladmin ping --silent 2>/dev/null && break
   sleep 1
 done
 
-mysql -u root -e "CREATE DATABASE IF NOT EXISTS wordpress CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || true
+sudo mysql -u root -e "CREATE DATABASE IF NOT EXISTS wordpress CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || true
 STARTUP
 chmod 755 "$STARTUP_FILE"
 

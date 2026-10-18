@@ -19,6 +19,17 @@ This file contains a list of changes for each released version.
   Boothfile already says `arg FRESH_THEME=terminal` stays on it; `fresh+theme:terminal` gets the
   terminal's own colors back. Needs a rebuilt base image.
 
+- **MySQL starts on boot again (`setup mysql`).** Startup hooks run as the container user, and the
+  MySQL hook called `mysqld_safe --user=mysql` without `sudo`, so the server exited the moment it
+  started and the lamp, lemp and wordpress examples showed a page with no database behind it. The
+  hook also spent 30 seconds waiting for that server, holding up every hook after it (Apache
+  among them). It now starts the server, and creates the MySQL user for the container user, through
+  `sudo`, as the PostgreSQL hook does. The examples' own seed hooks had the same bug
+  (`mysql -u root` without `sudo`, so `lamp_demo`, `lemp_demo` and `wordpress` were never
+  created), and the lamp and lemp pages signed in to MySQL as `$USER` — `root` under Apache. The
+  pages now sign in as a read-only user the seed hook creates (`lamp_web`, `lemp_web`). The three
+  examples gained a test that boots the booth and checks the page or database answers.
+
 - **A booth container started with no command opens coder's login shell again.** booth-entry
   falls back to a login shell when it is given no command, through `runuser -u coder --login`.
   util-linux 2.41 in the Ubuntu 26.04 base refuses `--login` with `--user` ("mutually

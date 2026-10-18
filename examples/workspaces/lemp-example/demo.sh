@@ -47,7 +47,10 @@ case "${1:-page}" in
     mysql -t -e 'SELECT * FROM hello' "$DB"
     ;;
   status)
+    # The boot hooks run one after another: mysqld first, then nginx and php-fpm.
     wait_for "mysqld to answer" mysqladmin ping --silent
+    wait_for "nginx to start" pgrep -f 'nginx: master'
+    wait_for "php-fpm to start" pgrep -f 'php-fpm: master'
     running nginx   'nginx: master'
     running php-fpm 'php-fpm: master'
     running mysqld  'mysqld'
