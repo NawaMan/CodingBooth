@@ -31,7 +31,7 @@ sh -c                    dash (not bash)
 
 Run it without `use-bash` (`just which-bash`) and every line is the distro bash with `declare -A: yes`.
 
-Outside `use-bash`, every one of those is the distro bash, booth's own scripts included. `bash-3.2 ./script.sh` runs only that script on 3.2; its children follow their shebang. `use-bash 3.2` with no command opens a shell where every bash is 3.2; `exit` leaves it. `use-bash --list` shows what is installed, and `use-bash distro <cmd>` gets the image's bash back inside such a shell.
+Outside `use-bash`, every one of those is the distro bash, booth's own scripts included. `bash-3.2 ./script.sh` runs only that script on 3.2; its children follow their shebang. `use-bash 3.2` with no command opens a shell where every bash is 3.2; `exit` leaves it. `use-bash --list` shows what is installed, and `use-bash distro <cmd>` (or its version, `use-bash 5.3 <cmd>`) gets the image's bash back inside such a shell. A version matches a `setup bash` release first, then the image's bash, by whole components: `5.3` matches 5.3.9, `5.3.1` does not.
 
 How: `setup bash` moves the distro bash to `/usr/bin/bash.distro` (a `dpkg-divert`, so apt upgrades still land) and puts a small dispatcher at `/usr/bin/bash`. The dispatcher runs `$CB_BASH` when it is set and the distro bash otherwise. `use-bash` sets `CB_BASH`, and every child inherits it. Seen from inside: `ps` and `$BASH` show `/usr/bin/bash.distro`, and coder logs in with that binary.
 

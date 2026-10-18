@@ -273,8 +273,9 @@ Usage:
   use-bash <bash> [command [args...]]
   use-bash --list
 
-<bash> is a release installed by `setup bash` (3.2, 3.2.57, 5.3), a path to
-a bash binary, or "distro" for the image's own bash.
+<bash> is a version (3.2, 3.2.57, 5.3), a path to a bash binary, or
+"distro" for the image's own bash. A version matches a release installed by
+`setup bash` first, then the image's own bash (5.3 is the distro 5.3.9).
 
 Every bash started under <command> is <bash>: #!/bin/bash, #!/usr/bin/env
 bash and bash -c, at any depth. #!/bin/sh scripts stay on dash. With no
@@ -289,14 +290,32 @@ USAGE
 }
 
 version_of() { "$1" -c 'printf %s "$BASH_VERSION"' 2>/dev/null || true; }
+# 3.2.57(1)-release -> 3.2.57
+number_of() { v="$(version_of "$1")"; printf %s "${v%%[!0-9.]*}"; }
 
 list() {
-  printf '%-8s %-20s %s\n' distro "$(version_of /usr/bin/bash.distro)" /usr/bin/bash.distro
+  printf '%-16s %-20s %s\n' "$(number_of /usr/bin/bash.distro) (distro)" \
+    "$(version_of /usr/bin/bash.distro)" /usr/bin/bash.distro
   for b in /opt/bash/bash-*/bin/bash; do
     [ -x "$b" ] || continue
-    v="$(version_of "$b")"
-    printf '%-8s %-20s %s\n' "${v%%[!0-9.]*}" "$v" "$b"
+    printf '%-16s %-20s %s\n' "$(number_of "$b")" "$(version_of "$b")" "$b"
   done
+}
+
+# A version with no bash-<version> link: match it by whole components against
+# the releases under /opt/bash, then the distro bash. 5.3 and 5.3.9 match
+# 5.3.9; 5.3.1 and 5.31 do not. Installed releases come first, so after
+# setup bash --version 5.3 the build wins over the distro.
+by_version() {
+  case "$1" in ""|.*|*.|*[!0-9.]*) return 1 ;; esac
+  for b in /opt/bash/bash-*/bin/bash /usr/bin/bash.distro; do
+    [ -x "$b" ] || continue
+    n="$(number_of "$b")"
+    case "$n" in
+      "$1"|"$1".*) printf %s "$b"; return 0 ;;
+    esac
+  done
+  return 1
 }
 
 [ $# -gt 0 ] || { usage >&2; exit 2; }
@@ -305,9 +324,10 @@ case "$1" in
   --list)    list;  exit 0 ;;
   distro)    target=/usr/bin/bash.distro ;;
   */*)       target="$1" ;;
-  *)         target="/usr/local/bin/bash-$1" ;;
+  *)         target="/usr/local/bin/bash-$1"
+             [ -x "$target" ] || target="$(by_version "$1" || true)" ;;
 esac
-if [ ! -x "$target" ]; then
+if [ -z "$target" ] || [ ! -x "$target" ]; then
   echo "use-bash: no bash '$1'. Installed:" >&2
   list >&2
   exit 2

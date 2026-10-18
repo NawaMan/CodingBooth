@@ -52,6 +52,15 @@ echo "$tree"
 [[ "$(echo "$tree" | grep -c ' 3\.2\.57.*declare -A: no')" == 7 ]] || { echo "every level should be 3.2 without declare -A under use-bash"; exit 1; }
 echo "$tree" | grep -q 'sh -c.*dash' || { echo "sh -c should stay on dash"; exit 1; }
 
+# A version with no setup-bash release falls back to the image's own bash
+# when its version matches by whole components; one that matches nothing fails.
+distro_ver="$(/usr/bin/bash.distro -c 'printf %s "${BASH_VERSINFO[0]}.${BASH_VERSINFO[1]}"')"
+got="$(use-bash "$distro_ver" bash -c 'printf %s "$BASH_VERSION"')"
+echo "use-bash $distro_ver: $got"
+[[ "$got" == "$distro_ver".* ]] || { echo "use-bash $distro_ver should reach the distro bash, got: $got"; exit 1; }
+if use-bash 9.9 true 2>/dev/null; then echo "use-bash 9.9 should fail"; exit 1; fi
+if use-bash 3.2.5 true 2>/dev/null; then echo "use-bash 3.2.5 should not match 3.2.57"; exit 1; fi
+
 cat > /tmp/bash-unsafe.sh <<'EOF'
 #!/bin/bash
 set -u
