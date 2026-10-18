@@ -224,6 +224,18 @@ the build continues, or **42** interactively to signal "not applicable" to the c
 
 Use `cb-has-desktop.sh` at build time and `cb-has-desktop-running.sh` from startup scripts.
 
+### Before extracting a tarball — `cb-check-tar-extract.sh`
+
+```bash
+"$SCRIPT_DIR/cb-check-tar-extract.sh" || exit 1
+tar -xzf "$TARBALL" -C "$DEST"
+```
+
+Returns 0, silently, when a test extraction works. Otherwise it prints one explanation and returns
+1 — naming Docker Desktop's Rosetta emulation when `openat2` is missing, the known cause (Ubuntu's
+tar needs it; Rosetta does not implement it). `jdk--setup.sh` and `libs/prebuilt-source.sh` call
+it; a setup whose tarball step is likely to run in an amd64 booth on a Mac should too.
+
 ### VS Code extensions — `libs/code-extension-source.sh`
 
 ```bash

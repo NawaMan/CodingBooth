@@ -147,7 +147,7 @@ setup	inkscape	1.0.0	fa8885b0c921ffbc224a4577265504628ff7d8ba81dea6012895037b1be
 setup	java-code-extension	1.0.0	0f3666aca2b43b5fe2ea5a21b2d4d0d558fe876dfc455b79f39520b9a003b6f0	variants/base/setups/java-code-extension--setup.sh
 setup	java-jjava-nb-kernel	1.0.0	1b7ea82b4a3013f266411ab503581065d3936b53b99ea56011aff01275763d5c	variants/base/setups/java-jjava-nb-kernel--setup.sh
 setup	java-nb-kernel	1.0.0	df0f3253ca33f610d280bb659ae045f1a24f59d54d8944398530bb05b511c9ca	variants/base/setups/java-nb-kernel--setup.sh
-setup	jdk	1.0.0	ea8788f58b0a44f347a8717f1b1a4a199351d76ce80ccd5a8c374656924b9e53	variants/base/setups/jdk--setup.sh
+setup	jdk	1.0.1	9434c9452373e2346722b2dac4cd9eb602e75014ef48952d90e9c86c08cc1089	variants/base/setups/jdk--setup.sh
 setup	jenv	1.0.0	b191d7d6948ccf22c8a25f2ca766b4f5fbd567736399a174ce03255517c689c2	variants/base/setups/jenv--setup.sh
 setup	jetbrains	1.0.1	927b691f601bcb3de39398cf11aeb1c8eb81819f19066c70df21a682b02b91f8	variants/base/setups/jetbrains--setup.sh
 setup	jetbrains-first-run	0.1.0	10de26bb2a94e257f55c97087dcbdb549dc59c4d05cf311bc2f440da6c38a4ea	variants/base/setups/jetbrains-first-run--setup.sh
@@ -368,6 +368,7 @@ helper	booth-message-overlay.html	1.1.1	e594288906dc3cf8a0ad6997a1f2f3ef74c0ccee
 helper	booth-ready.js	0.1.1	7f34aa1fc35ab3436a405bb4d037746e60fd207aaf857a16838a889378205d0a	variants/base/setups/booth-ready.js
 helper	booth-timer-notifier	1.0.0	989957246822c338cb8d8d99c3be2e9d8fede407bc75b68469e3981635d620c1	variants/base/setups/booth-timer-notifier
 helper	cb-booth-favicon.sh	0.1.0	1a58ecdc1b85acfb1cc1bf8e775dc533308ed7520611c0c8b62e51d22e31690e	variants/base/setups/cb-booth-favicon.sh
+helper	cb-check-tar-extract.sh	0.1.0	9602b36d599ec0d1ec3c20815734afa1677901068e394f64d709b197bfa6a402	variants/base/setups/cb-check-tar-extract.sh
 helper	cb-desktop-icon.sh	1.0.0	de75acb980c5690bdb777a63656ea771e5fda50345c5f7aaa45e5b3a34cc18a7	variants/base/setups/cb-desktop-icon.sh
 helper	cb-has-desktop-running.sh	1.0.0	b9433a500b5fe60bd9416e678bbe97584f4e0494f78cf548b2004d6a03e853d7	variants/base/setups/cb-has-desktop-running.sh
 helper	cb-has-desktop.sh	1.0.0	d3b87fb9197b251a344a13d70d8dd92cff5c23754ba766effa0416e5b012fe4c	variants/base/setups/cb-has-desktop.sh
@@ -381,7 +382,7 @@ helper	template-seup.sh	1.0.0	c9c0ad54732fdd56d2bb5ac692ebec0c6bd237af9a92fa7719
 lib	booth-proxy-response.conf	0.1.0	605ebfc3f0a878a1a68212190bf254cdfbb889393a0191d5855d5ad16e235a6b	variants/base/setups/libs/booth-proxy-response.conf
 lib	code-extension-source.sh	1.0.0	2c81911a7aeb0b25195cd4cd67785c9125d186d4eb99e6fe362d1b09bf875d0d	variants/base/setups/libs/code-extension-source.sh
 lib	jetbrains-source.sh	0.1.0	dd1f0922678630909118a128d045d047eb49d0541ff439f72f3a1b5681290e8b	variants/base/setups/libs/jetbrains-source.sh
-lib	prebuilt-source.sh	0.1.0	6bb28eb75317d956e890a9c069e91cf9ce0f855af624b9ad2c59567c121d6b29	variants/base/setups/libs/prebuilt-source.sh
+lib	prebuilt-source.sh	0.1.1	014b77e8a84b3d36872954ce4690b1a6bd06cd5a63ad9bc91c9e999790901ac3	variants/base/setups/libs/prebuilt-source.sh
 lib	retry-source.sh	0.1.0	dc80e4474b59095be79b52489947dd6e7edae0bcb7efb5bc687b32e7f932d09e	variants/base/setups/libs/retry-source.sh
 lib	skip-setup.sh	1.0.0	ed256a1d9f447f755a6e7eb20cc5cef612aedf38d085740781eb064079da03ae	variants/base/setups/libs/skip-setup.sh
 assets	booth-web-preview	0.1.0	b7777911fb75cb633a8aeaf373bd3e3ac579736797db2d8dab740ddf1808e518	variants/base/setups/booth-web-preview/.cb-version

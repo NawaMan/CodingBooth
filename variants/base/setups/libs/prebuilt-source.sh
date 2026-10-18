@@ -1,7 +1,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.1.1
 
 # ---- Prebuilt assets from NawaMan/CodingBoothPrebuilt ----
 #
@@ -72,6 +72,7 @@ cb_prebuilt_install() {
     exit 1
   fi
 
+  "$(dirname "${BASH_SOURCE[0]}")/../cb-check-tar-extract.sh" || exit 1
   mkdir -p "$dest"
   tar -xzf "$tmp/asset.tar.gz" -C "$dest" --strip-components=1 --no-same-owner
   rm -rf "$tmp"
