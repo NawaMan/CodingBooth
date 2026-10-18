@@ -97,8 +97,10 @@ A tape that does not land where it expects can leave `vhs` wedged. `run-tui`
 caps it with `run-with-timeout 120`, and that cap has to be able to kill a **Go**
 process: an earlier version used `perl -e 'alarm …; exec …'`, and Go ignores
 SIGALRM, so a wedged vhs ran for 56 minutes under a 120-second limit. A wedged
-vhs also ignores SIGTERM — only SIGKILL ends it — so the guard forks a watchdog
-that escalates. `tests/setups/test--tui-run-with-timeout.sh` locks both in.
+vhs also ignores SIGTERM — only SIGKILL ends it — so every branch of the guard
+escalates: `timeout -k 5` (or `gtimeout -k 5`) where coreutils is installed, a
+forked perl watchdog where it is not. A bare `timeout` sends SIGTERM and nothing
+after it. `tests/setups/test--tui-run-with-timeout.sh` locks both in.
 
 The reason this matters beyond one slow run: vhs starts its own `ttyd` and only
 reaps it on the way out, so a vhs that never returns leaks one. The leak then
