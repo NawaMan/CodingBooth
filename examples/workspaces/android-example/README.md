@@ -127,7 +127,7 @@ Two things to know before enabling it:
 - **Stop with `cb-android-emulator-stop`.** The emulator does not reliably save a Quick Boot snapshot on its own way out, so `adb emu kill` — or just closing the booth — restores the previously saved state and silently discards the session. The stop command saves first.
 - **It is about 2.8 GB** in `.booth/cache/`, mostly the RAM snapshot that makes the fast restore possible. That is local and gitignored, never committed; `rm -rf .booth/cache/home/coder/.android` reclaims it and gives you a clean device next start.
 
-It is off by default for that size, which is why this example does not ship with it. See [Local Cache](../../../docs/BOOTH_LOCALCACHE.md).
+It is off by default for that size, which is why this example does not ship with it. See [Local Cache](https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_LOCALCACHE.md).
 
 The window can take a minute to appear — longer without KVM. Once it is up:
 

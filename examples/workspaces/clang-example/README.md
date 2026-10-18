@@ -44,4 +44,4 @@ a JSON array via the library.
 Pin a version with apt's native syntax (`install apt nlohmann-json3-dev=3.11.3-1`), and
 freeze the whole archive reproducibly by adding an `env APT_SNAPSHOT=<id>` line above the
 `install` — see the [apt-example](../apt-example/) workspace and
-[REPRODUCIBILITY.md](../../../docs/REPRODUCIBILITY.md#apt--pin-the-snapshot-not-the-package).
+[REPRODUCIBILITY.md](https://github.com/NawaMan/CodingBooth/blob/main/docs/REPRODUCIBILITY.md#apt--pin-the-snapshot-not-the-package).

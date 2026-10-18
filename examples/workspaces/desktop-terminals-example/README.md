@@ -46,5 +46,5 @@ check what can be checked without it.
 | Alt terminal | Kitty — GPU-accelerated, C/Python |
 | Font | FiraCode Nerd Font Mono, 11pt (seeded once, per terminal) |
 
-See [`docs/MODERN_UX.md`](../../../docs/MODERN_UX.md) for the background — this was suggestion #1
+See [`docs/MODERN_UX.md`](https://github.com/NawaMan/CodingBooth/blob/main/docs/MODERN_UX.md) for the background — this was suggestion #1
 from a review of Omarchy-inspired desktop UX ideas, tried as a standalone experiment.

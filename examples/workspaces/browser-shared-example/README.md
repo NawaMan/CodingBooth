@@ -74,4 +74,4 @@ booth config --no-tui . --variant xfce \
 Checks that shared dirs exist, config declares `shared-dirs` (not cache for browsers),
 the bookmark seeds are in place, and sample gitignores are present. Does **not** require a full desktop browser session.
 
-Full guide: [BOOTH_SHARED.md](../../../docs/BOOTH_SHARED.md).
+Full guide: [BOOTH_SHARED.md](https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_SHARED.md).

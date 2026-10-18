@@ -33,6 +33,11 @@ cat ~/.my_app_data/notes.txt    # → "important notes"
 history                         # → previous commands still there
 ```
 
+> **Note:** check shell history from an interactive booth, not with `booth -- history`. A one-off
+> command runs as `bash -lc …`, and bash turns history off in non-interactive shells, so it prints
+> nothing even though `~/.bash_history` is saved. Use `booth -- cat ~/.bash_history`, or
+> `booth -- 'history -r; history'`.
+
 ### Run it
 
 ```bash
@@ -63,4 +68,4 @@ in a new container: what it prints came through `.booth/cache/`.
 - Cache files are created automatically at booth startup from `config.toml`
 - Deleting `.booth/cache/` is safe — it will be recreated on next start
 
-See [BOOTH_LOCALCACHE.md](../../../docs/BOOTH_LOCALCACHE.md) for the full guide.
+See [BOOTH_LOCALCACHE.md](https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_LOCALCACHE.md) for the full guide.
