@@ -11,9 +11,9 @@
 #   - EDITOR defaults to fresh, and the welcome banner names it
 #   - the banner keeps mc as explorer and lists spf and differ
 #   - no Fresh config -> one is written with check_for_updates false (no
-#     upgrade checks, no telemetry) and theme "terminal"
+#     upgrade checks, no telemetry) and theme "dark"
 #   - a config without the key (e.g. only a theme) gets it added, other keys kept
-#   - a config without a theme gets "terminal", other keys kept
+#   - a config without a theme gets "dark", other keys kept
 #   - a user's own "check_for_updates": true is left alone
 #   - a config that is not JSON is left untouched
 # -----------------------------------------------------------------------------
@@ -50,7 +50,7 @@ grep -qE '^  spf ' <<<"$out"                && fail "welcome still lists spf: $o
 grep -qE '^  lazygit ' <<<"$out"            && fail "welcome still lists lazygit: $out"
 grep -qE '^  differ ' <<<"$out"             && fail "welcome still lists differ: $out"
 [[ "$(jq -r '.check_for_updates' "$CONF")" == "false" ]] || fail "fresh config not seeded: $(cat "$CONF")"
-[[ "$(jq -r '.theme' "$CONF")" == "terminal" ]]           || fail "theme not seeded: $(cat "$CONF")"
+[[ "$(jq -r '.theme' "$CONF")" == "dark" ]]           || fail "theme not seeded: $(cat "$CONF")"
 
 # ---- theme-only config: key added, theme kept ----
 printf '{"version":1,"theme":"nord"}\n' > "$CONF"
@@ -58,10 +58,10 @@ run_profile >/dev/null
 [[ "$(jq -r '.check_for_updates' "$CONF")" == "false" ]] || fail "key not added: $(cat "$CONF")"
 [[ "$(jq -r '.theme' "$CONF")" == "nord" ]]               || fail "theme lost: $(cat "$CONF")"
 
-# ---- no theme: terminal added, other keys kept ----
+# ---- no theme: dark added, other keys kept ----
 printf '{"version":1,"check_for_updates":false,"tab_size":2}\n' > "$CONF"
 run_profile >/dev/null
-[[ "$(jq -r '.theme' "$CONF")" == "terminal" ]] || fail "theme not added: $(cat "$CONF")"
+[[ "$(jq -r '.theme' "$CONF")" == "dark" ]] || fail "theme not added: $(cat "$CONF")"
 [[ "$(jq -r '.tab_size' "$CONF")" == "2" ]]     || fail "other key lost: $(cat "$CONF")"
 
 # ---- user opted in: left alone ----
@@ -74,4 +74,4 @@ printf 'not json\n' > "$CONF"
 run_profile >/dev/null
 [[ "$(cat "$CONF")" == "not json" ]] || fail "non-JSON config was changed: $(cat "$CONF")"
 
-echo "✅ profile makes Fresh the default editor on the terminal theme, updates/telemetry off"
+echo "✅ profile makes Fresh the default editor on the dark theme, updates/telemetry off"

@@ -29,16 +29,16 @@ export TERM=${TERM:-xterm-256color}
 # Fresh (the default editor) checks for upgrades and sends anonymous telemetry
 # unless told not to. Turn both off when the config does not decide; a user who
 # wants them sets "check_for_updates": true, which is left alone.
-# The theme defaults to "terminal" (the terminal's own colors) the same way: a
+# The theme defaults to "dark" the same way: a
 # theme already in the file, from fresh+theme or the user, is left alone.
 _cb_fresh_conf="$HOME/.config/fresh/config.json"
 if [[ ! -s "$_cb_fresh_conf" ]]; then
   mkdir -p "${_cb_fresh_conf%/*}" 2>/dev/null \
-    && printf '{"version":1,"check_for_updates":false,"theme":"terminal"}\n' > "$_cb_fresh_conf" 2>/dev/null
+    && printf '{"version":1,"check_for_updates":false,"theme":"dark"}\n' > "$_cb_fresh_conf" 2>/dev/null
 elif ! jq -e 'has("check_for_updates") and has("theme")' "$_cb_fresh_conf" >/dev/null 2>&1; then
   _cb_fresh_tmp="$(mktemp)"
   if jq 'if has("check_for_updates") then . else .check_for_updates = false end
-         | if has("theme") then . else .theme = "terminal" end' \
+         | if has("theme") then . else .theme = "dark" end' \
         "$_cb_fresh_conf" > "$_cb_fresh_tmp" 2>/dev/null; then
     mv "$_cb_fresh_tmp" "$_cb_fresh_conf"
   else

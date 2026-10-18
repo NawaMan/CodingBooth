@@ -9,7 +9,7 @@
 # fresh --version only proves a binary landed on PATH. grammar list reads the
 # grammars compiled into that binary. config show reads ~/.config/fresh and
 # must return the tab size just written there. The auto-selected theme startup
-# writes terminal (the default theme) into that file before the editor runs.
+# writes dark (the default theme) into that file before the editor runs.
 #
 # fresh--setup.sh is not on the Docker Hub base image yet. The build uses a
 # locally rebuilt base, which is where that script lives.
@@ -63,10 +63,10 @@ fi
 # The startup sets theme on each start. A fresh home has no config.json, so
 # this is the value a bare `fresh` selection actually opens with.
 ACTUAL=$(capture_codingbooth "cat" --silence-build -- 'fresh --no-upgrade-check --cmd config show')
-if [[ "$ACTUAL" == *'"theme": "terminal"'* ]]; then
-    print_test_result "true" "$0" "4" "fresh starts on the terminal theme"
+if [[ "$ACTUAL" == *'"theme": "dark"'* ]]; then
+    print_test_result "true" "$0" "4" "fresh starts on the dark theme"
 else
-    print_test_result "false" "$0" "4" "fresh should start on the terminal theme"
+    print_test_result "false" "$0" "4" "fresh should start on the dark theme"
     echo "  Actual output: $ACTUAL"
     FAILED=$((FAILED + 1))
 fi

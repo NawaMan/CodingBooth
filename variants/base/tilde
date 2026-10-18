@@ -1,0 +1,33 @@
+#!/bin/sh
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
+# -----------------------------------------------------------------------------
+# tilde (wrapper for /usr/bin/tilde)
+#
+# Gives tilde the mouse inside tmux, so in every Console UI pane.
+#
+# tilde draws through libt3window, which turns on mouse reporting only for a
+# terminal it knows as xterm. A tmux pane says TERM=tmux-256color (or screen*),
+# so tilde never asks for the mouse and tmux keeps every click. tmux reads the
+# xterm mouse protocol fine, so tilde's own -T option names the terminal as
+# xterm-256color for tilde alone; what tilde starts still sees the real TERM.
+#
+# Left alone: any TERM that is not tmux/screen, and a -T/--terminal the caller
+# passed. On PATH ahead of /usr/bin, so `tilde` and $EDITOR=tilde both get it.
+# -----------------------------------------------------------------------------
+
+case "${TERM:-}" in
+  tmux*|screen*) ;;
+  *) exec /usr/bin/tilde "$@" ;;
+esac
+
+for arg in "$@"; do
+  case "$arg" in
+    --)                   break ;;
+    -T*|--terminal|--terminal=*) exec /usr/bin/tilde "$@" ;;
+  esac
+done
+
+exec /usr/bin/tilde -T xterm-256color "$@"
