@@ -4,6 +4,10 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **android-example pins `engine = "docker"`.** On a Mac with Apple container running, a plain
+  `booth` picked Apple container, which refuses the example's `--device /dev/kvm`. The pin outranks
+  `CB_ENGINE`; `--engine <name>` still overrides it.
+
 - **An amd64 booth built under Rosetta on Apple Silicon now says why tarball installs fail.**
   Ubuntu's security-patched tar extracts through `openat2`, which Docker Desktop's Rosetta amd64
   emulation does not implement, so every `tar -x` failed with a "Function not implemented" line
