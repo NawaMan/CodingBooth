@@ -20,7 +20,7 @@ setup	aws-cli	1.0.0	86f33b090048a34908a279d640b232f8f3b4d70d17347fbf7116a24181f2
 setup	aws-sam-cli	1.0.0	f9ea029f35792cdc088f459e6192efb3e140ae9c72e2b5ecf659b4f0e6d73c2a	variants/base/setups/aws-sam-cli--setup.sh
 setup	azure-cli	1.0.0	98a239af8dceb156d984e50bca3cebcbddf28f78611837c695a77dc0e50a5b20	variants/base/setups/azure-cli--setup.sh
 setup	base-code-extension	1.0.0	8442e7a6aa51c3423207d8172d170208a5696abad356505cd95bb49983393db3	variants/base/setups/base-code-extension--setup.sh
-setup	bash	0.3.0	7e4f9935dc0ef3583b4fc037a7ed172d681a0ecb10f36a0e0c317285d0019c73	variants/base/setups/bash--setup.sh
+setup	bash	0.3.0	3f76c8ae3d334c61cc557b2f3ad423bbb9543f815da2a042054c4926e3473535	variants/base/setups/bash--setup.sh
 setup	bash-code-extension	1.0.0	739b732e27d197027422df407be931c49db8b64c2ba1cbb5b33378ba0fda4635	variants/base/setups/bash-code-extension--setup.sh
 setup	bash-nb-kernel	1.0.0	7b99d4bb4f5c20b73ade9ec071e6b7051c7372bbc23f7f8d80ecf4aab51b70cb	variants/base/setups/bash-nb-kernel--setup.sh
 setup	bluej	1.1.0	a36c1160117ebbd75b018a2ae5b219fd18a817330c914ef0af9b68e323128a21	variants/base/setups/bluej--setup.sh

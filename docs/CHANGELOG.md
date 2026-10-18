@@ -11,7 +11,7 @@ This file contains a list of changes for each released version.
   `/usr/bin/bash.distro` and puts a dispatcher at `/usr/bin/bash` that runs `$CB_BASH` when set.
   `use-bash` sets it, so the whole tree under the command follows, at any depth. With no command
   it opens a 3.2 shell; `use-bash --list` shows the installed releases, and `use-bash distro
-  <cmd>` gets the image's bash back. Outside `use-bash` nothing changes, booth's own scripts
+  <cmd>` (or its version, as in `use-bash 5.3`) gets the image's bash back. Outside `use-bash` nothing changes, booth's own scripts
   included. `bash+default` now does the same for the whole session: the release it logs in with
   sets `CB_BASH`, so `#!/bin/bash` scripts and booth helpers run from that session are 3.2 too.
   Coder now logs in with `/usr/bin/bash.distro` in any booth with `setup bash`, because a login
