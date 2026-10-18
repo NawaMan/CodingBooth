@@ -36,6 +36,11 @@ just run                 # ./demo.sh
 just web                 # ./web.sh — the Svelte starter on :5173
 ```
 
+Appwrite runs on Docker-in-Docker, a privileged sidecar, so `booth` warns and asks
+`Start this booth? [y/N]` before it starts. Type `y` and press Enter for code you trust; anything
+else, a bare Enter included, aborts. `booth --dind-allowed` skips the question (the warning still
+prints) — the only way to run it from a script. See [Security](../../../docs/BOOTH_SECURITY.md#dind).
+
 From the host, the console is published on port 8080 (`+expose`):
 [http://localhost:8080](http://localhost:8080), or through the booth's own port at
 [http://localhost:10000/proxy/8080/console/](http://localhost:10000/proxy/8080/console/) (a
