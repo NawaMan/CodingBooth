@@ -4,6 +4,13 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The `Start this booth? [y/N]` prompt no longer answers itself.** It could return at once and
+  abort as if you had said no — when keys typed earlier (a stray Enter) were still waiting on the
+  terminal, or when a previous program left the terminal in a mode where reads do not wait. Booth
+  now throws away input typed before the question (macOS, Linux, BSD), and when the terminal
+  returns no answer at all it refuses with `no answer could be read from the terminal` and points
+  at `stty sane` or `--dind-allowed` / `--privileged-allowed`, instead of the plain `aborted`.
+
 - **appwrite-example shows each ping arriving at Appwrite.** The starter's **Logs** list is only
   the browser's side, and the console's Requests chart is a delayed usage statistic (it showed 2
   for 4 pings). `just watch` follows Appwrite's request log and prints one line per `/v1/ping`,
