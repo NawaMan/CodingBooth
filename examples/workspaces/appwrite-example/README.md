@@ -13,6 +13,16 @@ to that local endpoint.
 Appwrite wants about **4GB RAM** and the first boot downloads many images — later
 starts reuse them.
 
+## Appwrite and Firebase
+
+If you know Firebase, Appwrite fills the same role: auth, a document database, file storage,
+functions, realtime and a web console, used from a client SDK rather than a backend you write.
+The difference is who runs it. Firebase lives only in Google's cloud. Appwrite is open source and
+can run anywhere Docker does — here, entirely inside the booth (offline once its images are pulled),
+with fresh data on every start. Compare [`firebase-example`](../firebase-example/), where only the CLI is in the booth and
+the backend stays in the cloud, and [`pocketbase-example`](../pocketbase-example/), a backend
+built into a single Go binary.
+
 ## Quick start
 
 ```bash
