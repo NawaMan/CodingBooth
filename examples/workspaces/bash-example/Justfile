@@ -13,10 +13,14 @@ default:
 version:
     {{run-in-booth}} bash-3.2 --version
 
-# Count zero arguments. The empty array must not abort under set -u.
+# Count zero arguments under bash 3.2. The empty array must not abort under set -u.
 count:
-    {{run-in-booth}} ./scripts/count-args.sh
+    {{run-in-booth}} use-bash 3.2 ./scripts/count-args.sh
 
-# Count two arguments
+# Count two arguments under bash 3.2
 count-two:
-    {{run-in-booth}} ./scripts/count-args.sh one two
+    {{run-in-booth}} use-bash 3.2 ./scripts/count-args.sh one two
+
+# The same script on the image's own bash
+count-distro:
+    {{run-in-booth}} ./scripts/count-args.sh

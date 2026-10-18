@@ -1,7 +1,7 @@
-cb-version = "0.1.0"
+cb-version = "0.2.0"
 display-name = "Bash Default"
 display-disc = "Set the built Bash as the default login shell"
-display-detail = "Sets USER_SHELL to /opt/bash/bash-<version>/bin/bash, using the release selected on the bash template. On container start, booth-entry uses that path as the coder user's login shell, so the console and a bare booth session start that build. booth -- <cmd> still runs under /bin/bash. Without this extension the login shell stays /bin/bash."
+display-detail = "Sets USER_SHELL to /opt/bash/bash-<version>/bin/bash, using the release selected on the bash template. On container start, booth-entry uses that path as the coder user's login shell, so the console and a bare booth session start that build. That login shell also sets CB_BASH, as use-bash does, so every bash started from the session is the same build, #!/bin/bash scripts and booth helpers included. booth -- <cmd> still runs under the distro bash; booth -- use-bash 3.2 <cmd> runs it under 3.2. Without this extension the login shell stays /bin/bash."
 display-order = 2
 auto-select = false
 tags = [
