@@ -12,9 +12,23 @@ cd examples/workspaces/pip-example
 booth
 
 # 2. Inside the booth — try the preinstalled tools
-cowsay "hello from pip-example"
+cowsay -t "hello from pip-example"   # cowsay 6 takes the text with -t
 pyfiglet codingbooth
 pytest --version
+```
+
+### Run it
+
+`hello.py` is a small `click` command that prints a `pyfiglet` banner and a `rich` table of the
+installed packages; `test_hello.py` tests it. The recipes put the rest of the tools to work on them:
+
+```bash
+just --list
+just run                 # python hello.py --name booth, then cowsay
+just test                # pytest on test_hello.py
+just lint                # ruff check + black --check
+just cache               # ./cache.sh — the shared download cache below, in one go
+just packages            # installed versions of the Boothfile's pip packages
 ```
 
 ## Shared download cache
@@ -42,4 +56,6 @@ The second pip install prints `Using cached`. The uv install finishes from `boot
 | Runtime   | Python (default)                                                       |
 | Packages  | `httpx`, `rich`, `click`, `pytest`, `black`, `ruff`, `cowsay`, `pyfiglet` |
 
-Edit the `install pip ...` line in `.booth/Boothfile` to customise the package set.
+To change the package set, regenerate rather than edit the Boothfile by hand (a hand edit makes
+`booth config` treat the file as hand-written): re-run the `booth config` line from the
+Boothfile's `# Configured by:` header with a different `pip-pkg:` list.
