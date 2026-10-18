@@ -25,6 +25,18 @@ Both start with `FiraCode Nerd Font Mono` at 11pt, seeded once on first containe
 `~/.config/alacritty/alacritty.toml` / `~/.config/kitty/kitty.conf` — edit those files directly
 afterwards; the seed never overwrites an existing one.
 
+### Run it
+
+```bash
+just --list
+just desktop             # ./booth — the XFCE desktop in your browser
+just versions            # alacritty --version, kitty --version
+just fonts               # the font lines seeded into each terminal's config
+```
+
+The terminals themselves need the desktop's display, so open them from the desktop; the recipes
+check what can be checked without it.
+
 ## What's included
 
 | Component | Details |

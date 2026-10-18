@@ -43,6 +43,20 @@ If you use AWS SSO and your session has expired, run `aws sso login` inside the 
 **Interactive Guide (Jupyter Notebook):**
 - [`AWS-NoteBook.ipynb`](AWS-NoteBook.ipynb) - Step-by-step AWS operations with runnable cells
 
+### Run it
+
+```bash
+just --list
+just check               # ./check-connection.sh — OK when the booth can reach AWS
+just whoami              # aws sts get-caller-identity
+just config              # aws configure list — where profile, region and keys come from
+just buckets             # aws s3 ls
+just version             # aws --version — the only recipe that needs no credentials
+```
+
+Every recipe but `version` needs your host logged in to AWS first: they run against the credentials
+seeded from your host `~/.aws`, and without them `just check` reports `FAILED`.
+
 ## Credentials Separation Pattern
 
 CodingBooth can keep **secrets** (on your host) apart from **configuration** (committed with the project). This example ships only the first half; the second is a pattern you can add:

@@ -33,17 +33,31 @@ This means:
 ### From Host
 
 ```bash
-../../../booth -- ./test-connection.sh
+./booth -- ./check-connection.sh
 ```
 
 ### From Container
 
 ```bash
-../../codingbooth
+./booth
 # Then in the container:
 firebase login:list
 firebase projects:list
 ```
+
+### Run it
+
+```bash
+just --list
+just check               # ./check-connection.sh — OK when the Firebase CLI is logged in
+just whoami              # firebase login:list
+just projects            # firebase projects:list
+just version             # firebase --version — the only recipe that needs no credentials
+```
+
+Every recipe but `version` needs your host logged in to Firebase first (`firebase login`, see
+[Prerequisites](#prerequisites)): they run against the credentials seeded from your host, and
+without them `just check` reports `FAILED`.
 
 ## What's Mounted
 

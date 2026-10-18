@@ -15,6 +15,17 @@ booth
 claude
 ```
 
+### Run it
+
+```bash
+just --list
+just version             # claude --version
+just claude              # an interactive Claude Code session in the booth
+```
+
+`just claude` needs a login: the booth reads your host's `~/.claude.json` and
+`~/.claude/.credentials.json`, or you log in inside it, and that login is kept in `.booth/cache/`.
+
 ## What's included
 
 | Component | Details                                              |
