@@ -9,7 +9,9 @@ This file contains a list of changes for each released version.
   installed with conda (`conda-pkg:rdkit`, or `conda install` in a terminal) imported fine from
   the terminal and failed with `ModuleNotFoundError` in a notebook. The extension installs
   `ipykernel` into the conda env and registers it as a second kernel, **Python X.Y (conda)**,
-  pointing at the env's real path under `/opt/conda-envs/`. Select it with
+  pointing at the env's real path under `/opt/conda-envs/`. `jupyter` in a terminal stays the
+  notebook's own (ipykernel's bare `jupyter` stub in the conda env would otherwise shadow it, and
+  `jupyter nbconvert` / `jupyter lab` would be "not found"). Select it with
   `python+conda+conda-kernel/notebook`; it needs the notebook template, like `python+kernel`.
   New setup `conda-nb-kernel`, so it needs a rebuilt base image.
 
