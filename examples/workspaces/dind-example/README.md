@@ -44,7 +44,7 @@ curl localhost:8080
 just stop            # ./stop-server.sh
 ```
 
-Booth asks `Start this booth anyway? [y/N]` before it starts: the DinD sidecar is privileged, so code
+Booth asks `Start this booth? [y/N]` before it starts: the DinD sidecar is privileged, so code
 in the booth can use it to reach your host as root. Answer `y` for code you trust. From a script or CI
 with no terminal, add `--dind-allowed` instead. See [Security](../../../docs/BOOTH_SECURITY.md).
 
