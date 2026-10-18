@@ -115,8 +115,11 @@ with where it runs:
 test:
     {{run-in-booth}} go test ./...       # host: ./booth exec --run -- …   booth: as is
 shell:
-    {{run-on-host}} ./booth shell --run  # refused inside the booth
+    {{run-on-host}} {{booth}} shell --run  # refused inside the booth
 ```
+
+`{{booth}}` is `./booth` unless `BOOTH` says otherwise: `BOOTH=../codingbooth just test` drives
+the booth with that command instead, such as a CodingBooth checkout's own build.
 
 A new project gets this file without asking: `booth create` and a project's first `booth config`
 both add it, unless the project already has a Justfile. On a project that already has one,
