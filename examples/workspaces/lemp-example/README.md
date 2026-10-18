@@ -10,6 +10,20 @@ This example is a canonical LEMP stack — Linux, nginx, MySQL, and PHP-FPM — 
 
 Then open http://localhost:8080/ on the host. You should see a PHP-FPM-rendered page with a row pulled from MySQL.
 
+### Run it
+
+```bash
+just --list
+just page                # ./demo.sh page — the page nginx + PHP-FPM render, with the row from MySQL
+just db                  # ./demo.sh db — the lemp_demo.hello table itself
+just status              # ./demo.sh status — nginx, php-fpm and mysqld running
+just versions            # PHP, MySQL and nginx versions
+```
+
+With no booth running, each recipe starts one and stops it again afterwards, so it waits
+for the services the booth starts (up to 60s) before it checks anything. To browse the page,
+keep a booth up with `./booth run` or `just shell`.
+
 ## What's inside
 
 - `.booth/Boothfile` — PHP, MySQL, nginx+php-fpm, and the project-local `lemp-init` demo.
