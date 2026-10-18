@@ -104,6 +104,7 @@ Node/pnpm — here the product *is* the booth tooling.
 | Why did a booth call return nothing? | `tests/logs/complex-booth-calls.log` — the complex suite traces every booth call's command, exit code, and stderr (tests themselves discard stderr). Set `CB_DIAG_LOG=<path>` to trace any suite; `CB_DIAG_LOG=/dev/null` to opt out. |
 | Rebuild base/variant images | `./build/docker-build.sh base` (or listed variants) — only when the change needs a new image |
 | Wrapper smoke tests | scripts under `tests/wrapper/` |
+| An example's `just` recipe, from a worktree | `BOOTH=../../../codingbooth just <recipe>` — the example's `./booth` is gitignored, and would run a release, not this build |
 | Blog (`blog/` is GeekPresent) | follow `blog/AGENTS.md` if present; otherwise treat as a nested site |
 
 **Prefer the smallest verification that matches the change.** A pure Go fix should not rebuild

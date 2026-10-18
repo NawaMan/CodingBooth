@@ -158,21 +158,24 @@ func TestStarterRuns(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	run := func(inBooth bool, args ...string) (string, error) {
+	runWith := func(extra []string, inBooth bool, args ...string) (string, error) {
 		cmd := exec.Command(justBin, args...)
 		cmd.Dir = dir
 		var env []string
 		for _, kv := range os.Environ() {
-			if !strings.HasPrefix(kv, "BOOTH_CONTAINER_NAME=") {
+			if !strings.HasPrefix(kv, "BOOTH_CONTAINER_NAME=") && !strings.HasPrefix(kv, "BOOTH=") {
 				env = append(env, kv)
 			}
 		}
 		if inBooth {
 			env = append(env, "BOOTH_CONTAINER_NAME=test-booth")
 		}
-		cmd.Env = env
+		cmd.Env = append(env, extra...)
 		out, err := cmd.CombinedOutput()
 		return string(out), err
+	}
+	run := func(inBooth bool, args ...string) (string, error) {
+		return runWith(nil, inBooth, args...)
 	}
 
 	if out, err := run(false, "--list"); err != nil || !strings.Contains(out, "info") || !strings.Contains(out, "shell") {
@@ -189,6 +192,18 @@ func TestStarterRuns(t *testing.T) {
 	}
 	if out, err := run(true, "shell"); err == nil || !strings.Contains(out, "runs on the host") {
 		t.Errorf("in-booth shell: err=%v out=%q, want a host-only refusal", err, out)
+	}
+
+	// BOOTH swaps ./booth for another command, such as a checkout's own build.
+	local := []string{"BOOTH=../codingbooth"}
+	if out, err := runWith(local, false, "--dry-run", "info"); err != nil || !strings.Contains(out, "../codingbooth exec --run -- booth--info") {
+		t.Errorf("host info with BOOTH: err=%v out=%q, want it handed to ../codingbooth exec --run", err, out)
+	}
+	if out, err := runWith(local, false, "--dry-run", "shell"); err != nil || !strings.Contains(out, "../codingbooth shell --run") {
+		t.Errorf("host shell with BOOTH: err=%v out=%q, want ../codingbooth shell --run", err, out)
+	}
+	if out, err := runWith(local, true, "--dry-run", "info"); err != nil || strings.Contains(out, "codingbooth") || !strings.Contains(out, "booth--info") {
+		t.Errorf("in-booth info with BOOTH: err=%v out=%q, want a bare booth--info", err, out)
 	}
 }
 
