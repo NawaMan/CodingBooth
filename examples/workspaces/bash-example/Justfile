@@ -13,10 +13,22 @@ default:
 version:
     {{run-in-booth}} bash-3.2 --version
 
-# Count zero arguments. The empty array must not abort under set -u.
+# Count zero arguments under bash 3.2. The empty array must not abort under set -u.
 count:
+    {{run-in-booth}} use-bash 3.2 ./scripts/count-args.sh
+
+# Count two arguments under bash 3.2
+count-two:
+    {{run-in-booth}} use-bash 3.2 ./scripts/count-args.sh one two
+
+# The same script on the image's own bash
+count-distro:
     {{run-in-booth}} ./scripts/count-args.sh
 
-# Count two arguments
-count-two:
-    {{run-in-booth}} ./scripts/count-args.sh one two
+# Each level of a #!/bin/bash script tree, on the image's bash
+which-bash:
+    {{run-in-booth}} ./scripts/which-bash.sh
+
+# The same tree under use-bash 3.2: every level is 3.2, declare -A fails
+which-bash-32:
+    {{run-in-booth}} use-bash 3.2 ./scripts/which-bash.sh
