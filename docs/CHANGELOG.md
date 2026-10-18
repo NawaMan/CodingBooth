@@ -4,6 +4,15 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`BOOTH=<command> just <recipe>` runs a starter Justfile's recipes through another booth
+  command than `./booth`.** The starter (`booth just-init`) and every example Justfile hard-coded
+  `./booth` in `{{run-in-booth}}`, its `--keep-alive` form and the `shell` recipe. A CodingBooth
+  checkout has no `./booth` in its examples (it is gitignored), and the one `update-booth.sh` writes
+  runs a downloaded release, so a worktree could not run an example's recipes against its own build.
+  Now they read `booth := env("BOOTH", "./booth")`: `BOOTH=../../../codingbooth just test` uses the
+  local build, and with `BOOTH` unset nothing changes. Existing project Justfiles keep working as
+  they are; copy the `booth :=` line from `docs/just/Justfile` to get the override.
+
 - **The `Start this booth? [y/N]` prompt no longer answers itself.** It could return at once and
   abort as if you had said no — when keys typed earlier (a stray Enter) were still waiting on the
   terminal, or when a previous program left the terminal in a mode where reads do not wait. Booth
