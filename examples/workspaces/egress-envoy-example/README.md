@@ -35,6 +35,19 @@ curl -I -x http://127.0.0.1:15001 https://example.com
 HTTPS_PROXY= HTTP_PROXY= curl -I --max-time 8 https://google.com
 ```
 
+### Run it
+
+```bash
+just --list
+just verify              # .cb-tests/test-on-container.sh — every check below at once
+just allowed             # pypi.org, which envoy.yaml allows, through the proxy
+just blocked             # example.com — refused by the proxy
+just bypass              # a direct connection, skipping the proxy — refused by the firewall
+just policy              # the RBAC rules in .booth/egress/envoy.yaml
+```
+
+`blocked` and `bypass` succeed when the connection fails, and fail if it gets through.
+
 ## Run tests
 
 ```bash

@@ -38,6 +38,20 @@ curl -I -x http://127.0.0.1:15001 https://reddit.com
 HTTPS_PROXY= HTTP_PROXY= curl -I --max-time 8 https://google.com
 ```
 
+### Run it
+
+```bash
+just --list
+just verify              # .cb-tests/test-on-container.sh — every check below at once
+just allowed             # pypi.org (file) and example.com (config), through the proxy
+just blocked             # reddit.com — refused by the proxy
+just bypass              # a direct connection, skipping the proxy — refused by the firewall
+```
+
+`allowed` checks the proxy's answer, not the site's: only a 403 means blocked, and a 503 means the
+proxy let it through but the site itself did not answer. `blocked` and `bypass` succeed when the
+connection fails, and fail if it gets through.
+
 ## Run tests
 
 ```bash
