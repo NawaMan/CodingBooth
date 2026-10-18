@@ -4,6 +4,16 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **An amd64 booth built under Rosetta on Apple Silicon now says why tarball installs fail.**
+  Ubuntu's security-patched tar extracts through `openat2`, which Docker Desktop's Rosetta amd64
+  emulation does not implement, so every `tar -x` failed with a "Function not implemented" line
+  per file — `jdk`, for one, so android-example could not build its booth. The new
+  `cb-check-tar-extract.sh` helper test-extracts first, and `jdk--setup.sh` and the prebuilt-asset
+  installer (`libs/prebuilt-source.sh`) now stop with one message naming the Docker Desktop setting
+  to turn off ("Use Rosetta for x86_64/amd64 emulation"). It does not make Rosetta work; QEMU
+  emulation, native builds and CI are unaffected. Takes effect once the base image is rebuilt.
+  Test: `setups/test--cb-check-tar-extract.sh`.
+
 - **`/proxy/<port>/` works for Vite apps in a plain tab, and next to other proxied apps.** An
   app's root-absolute requests (`/v1/…`, `/@vite/client`, …) reach the booth root, which sends
   them to an app port. It used to try the globe pane's `cb_proxy_port` cookie before the request's
