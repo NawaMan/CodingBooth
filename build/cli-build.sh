@@ -156,3 +156,10 @@ ls -lh "$OUTPUT_DIR"
 
 echo ""
 echo "🎉 Build complete!"
+
+# An unreleased version (x.y.z--rc1, x.y.z--<worktree>) has nothing to download,
+# so the examples' ./booth runs this build from the shared cache instead.
+if [[ $FAILED_COUNT -eq 0 && "$VERSION" == *--* ]]; then
+    echo ""
+    "${SCRIPT_DIR}/../examples/update-booth.sh" --seed-only
+fi
