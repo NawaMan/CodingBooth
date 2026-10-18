@@ -256,14 +256,18 @@ Example: `0.77.0--rc2` → `0.77.0--anythingllm`. The pre-commit hook requires t
 match, so edit both. Do **not** use `build/set-version.sh` for this — it only accepts `--rc#`.
 
 That label is how the CLI and Docker image tags (`nawaman/codingbooth:base-0.77.0--anythingllm`)
-tell this session apart from main's `--rc` tag. After stamping, retag a local base rather than
+tell this session apart from main's `--rc` tag. After stamping, retag the local images rather than
 rebuilding Ubuntu:
 
 ```bash
 # from worktree/<name>/
 old=$(tr -d ' \t\n\r' < ../../version.txt)   # main clone, e.g. 0.77.0--rc2
 new=$(tr -d ' \t\n\r' < version.txt)         # this worktree, e.g. 0.77.0--anythingllm
-docker tag "nawaman/codingbooth:base-${old}" "nawaman/codingbooth:base-${new}"
+# Every variant built locally, not only base: a desktop or notebook example
+# would otherwise look for <variant>-${new} on Docker Hub, where it never exists.
+for img in $(docker images --format '{{.Repository}}:{{.Tag}}' nawaman/codingbooth | grep -- "-${old}\$"); do
+  docker tag "$img" "${img%-${old}}-${new}"
+done
 ./build/cli-build.sh
 ```
 
