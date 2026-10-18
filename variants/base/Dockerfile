@@ -342,6 +342,8 @@ COPY --chmod=0755 booth--as-coder /usr/local/bin/booth--as-coder
 # CLI to stage such files for it (an image without it gets them mounted directly).
 COPY --chmod=0755 booth--file-sync /usr/local/bin/booth--file-sync
 LABEL com.codingbooth.file-sync="1"
+# Gives tilde the mouse inside tmux (Console UI panes); see the script.
+COPY --chmod=0755 tilde /usr/local/bin/tilde
 # Main CodingBooth profile script with helper functions
 COPY --chmod=0644 99z-cb--profile.sh /etc/profile.d/99z-cb--profile.sh
 # Startup file: to be executed at first container start

@@ -4,11 +4,20 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
-- **The base image ships `tilde`, a menu-driven terminal editor with Windows-style keys.**
-  Ctrl+S saves, Ctrl+Q quits, Ctrl+C/X/V copy, cut and paste, and the menu bar (F10 or a click)
-  lists the rest, so someone who has never used a terminal editor can edit a file without a key
-  chart. It is Ubuntu's own package; `$EDITOR` stays `fresh`. About 6 MB. Needs a rebuilt base
+- **The base image ships `tilde` again, beside Fresh: a menu-driven terminal editor with
+  Windows-style keys.** Ctrl+S saves, Ctrl+Q quits, Ctrl+C/X/V copy, cut and paste, and the menu
+  bar (F10 or a click) lists the rest, so someone who has never used a terminal editor can edit a
+  file without a key chart. It is Ubuntu's own package; `$EDITOR` stays `fresh`. About 6 MB. The
+  mouse works in Console UI panes: tilde turns mouse reporting on only for a terminal it knows as
+  xterm, and a tmux pane says `TERM=tmux-256color`, so a `tilde` wrapper in `/usr/local/bin` passes
+  `-T xterm-256color` under tmux or screen. A `-T` you pass yourself wins. Needs a rebuilt base
   image.
+
+- **Fresh starts on the `dark` theme instead of `terminal`.** The base profile writes
+  `"theme": "dark"` into `~/.config/fresh/config.json` when that file has no theme, and
+  `fresh+theme` defaults to `dark`. A theme already in that file is kept, and a project whose
+  Boothfile already says `arg FRESH_THEME=terminal` stays on it; `fresh+theme:terminal` gets the
+  terminal's own colors back. Needs a rebuilt base image.
 
 - **A booth container started with no command opens coder's login shell again.** booth-entry
   falls back to a login shell when it is given no command, through `runuser -u coder --login`.
