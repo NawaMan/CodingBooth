@@ -152,6 +152,7 @@ RUN set -euo pipefail \
       nginx    \
       socat    \
       tig      \
+      tilde    \
       tmux     \
       tree     \
       whiptail \
