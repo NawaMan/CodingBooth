@@ -29,8 +29,10 @@
             "Bash(git restore .)",
             "Bash(git restore -- .)",
             "Bash(git restore --staged *)",
+            "Bash(git push --delete*)",
             "Bash(git push * --delete*)",
-            "Bash(git push * :*)",
+            "Bash(git push -d*)",
+            "Bash(git push * -d*)",
             "Bash(git stash clear)",
             "Bash(rm -rf /*)",
             "Bash(rm -rf /)"
