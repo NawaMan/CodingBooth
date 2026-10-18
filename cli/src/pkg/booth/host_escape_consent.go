@@ -58,9 +58,14 @@ func defaultConsentEnv() consentEnv {
 		},
 		// The prompt goes to the controlling terminal, not stdin/stdout, so it still works when
 		// booth is started by `booth shell --run` (whose stdout is redirected) and cannot be
-		// answered by whatever is piped into stdin.
+		// answered by whatever is piped into stdin. Keys typed before the question was asked are
+		// thrown away, so a stray Enter cannot answer it.
 		openTTY: func() (io.ReadWriteCloser, error) {
-			return os.OpenFile("/dev/tty", os.O_RDWR, 0)
+			tty, err := os.OpenFile("/dev/tty", os.O_RDWR, 0)
+			if err == nil {
+				discardPendingInput(tty)
+			}
+			return tty, err
 		},
 		warnings: os.Stderr,
 	}
@@ -118,7 +123,15 @@ func ensureHostEscapeConsent(ctx appctx.AppContext, env consentEnv) error {
 	defer tty.Close()
 
 	fmt.Fprint(tty, "\nStart this booth? [y/N]: ")
-	line, _ := bufio.NewReader(tty).ReadString('\n')
+	line, err := bufio.NewReader(tty).ReadString('\n')
+	// No line at all is not a "no": the terminal gave nothing back, typically because the program
+	// before booth left it in a mode where reads do not wait. Refuse, but say so.
+	if err != nil && strings.TrimSpace(line) == "" {
+		fmt.Fprintln(tty)
+		return fmt.Errorf("refusing to start: no answer could be read from the terminal (%v).\n"+
+			"If it did not wait for you, reset it with `stty sane` and re-run, or re-run with %s.",
+			err, overrideFlags(pending))
+	}
 	switch strings.ToLower(strings.TrimSpace(line)) {
 	case "y", "yes":
 		for _, reason := range pending {

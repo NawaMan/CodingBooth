@@ -179,6 +179,10 @@ code you trust the answer is simply yes. Not every kind leads to root: a writabl
 `--network=host` is reported for what it is (see the table below), not as host root.
 
 - **The default is no.** Anything but `y` / `yes` aborts, and nothing has been started.
+- **Only what you type after the question counts.** Keys pressed before it — a stray Enter while
+  the previous command was finishing — are thrown away. If the terminal returns no answer at all
+  (a program before booth left it in a mode where reads do not wait), booth still refuses, but says
+  so: `no answer could be read from the terminal`. Run `stty sane` (or open a new tab) and re-run.
 - **It asks on the terminal itself** (`/dev/tty`), not on stdin, so a `booth shell --run` still
   prompts, and nothing piped into booth can answer for you.
 - **No terminal** (CI, scripts, agents): booth **refuses and exits non-zero** unless the command line
