@@ -134,14 +134,19 @@ function sed-inplace() {
 # hit by a stale timer, and the pid it would signal cannot have been recycled
 # into someone else's process in the meantime.
 #
+# timeout/gtimeout get the same escalation through -k: on its own `timeout`
+# sends SIGTERM and nothing after it, so the wedged vhs that shrugs off TERM
+# would outlive the deadline there too — on Linux, where GNU timeout is always
+# present and the perl branch below never runs.
+#
 # Running unguarded is the last fallback and it does not fail safe: one wedged
 # vhs hangs the whole suite forever.
 function run-with-timeout() {
     local secs="$1"; shift
     if command -v timeout >/dev/null 2>&1; then
-        timeout "$secs" "$@"
+        timeout -k 5 "$secs" "$@"
     elif command -v gtimeout >/dev/null 2>&1; then
-        gtimeout "$secs" "$@"
+        gtimeout -k 5 "$secs" "$@"
     elif command -v perl >/dev/null 2>&1; then
         perl -e '
             my $secs = shift @ARGV;
