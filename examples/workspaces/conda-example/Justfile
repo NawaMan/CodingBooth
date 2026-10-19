@@ -7,16 +7,24 @@ run-on-host  := if env("BOOTH_CONTAINER_NAME", "") == "" { "" } else { "echo 'ju
 
 [private]
 default:
-    @just --list
+    @just --list --unsorted
 
-# Drug-likeness of a molecule, by name or SMILES (`just run caffeine`)
+# 1. API latency report from data/requests.csv (`just run /api/search` for one endpoint)
 run *args:
+    {{run-in-booth}} ./run-latency.sh {{ args }}
+
+# 2. Run Latency.ipynb headlessly on the conda kernel, outputs into Latency.out.ipynb
+latency-notebook:
+    {{run-in-booth}} jupyter nbconvert --to notebook --execute Latency.ipynb --output Latency.out.ipynb
+
+# 3. Drug-likeness of a molecule, by name or SMILES (`just molecule caffeine`)
+molecule *args:
     {{run-in-booth}} ./run-molecule.sh {{ args }}
 
-# List the molecules the lab knows by name
-list:
+# 3. List the molecules the lab knows by name
+molecules:
     {{run-in-booth}} ./run-molecule.sh --list
 
-# Run Molecules.ipynb headlessly on the conda kernel, outputs into Molecules.out.ipynb
-notebook:
+# 3. Run Molecules.ipynb headlessly on the conda kernel, outputs into Molecules.out.ipynb
+molecule-notebook:
     {{run-in-booth}} jupyter nbconvert --to notebook --execute Molecules.ipynb --output Molecules.out.ipynb
