@@ -9,6 +9,14 @@ run-on-host  := if env("BOOTH_CONTAINER_NAME", "") == "" { "" } else { "echo 'ju
 default:
     @just --list
 
-# Print stats for a list of numbers (`just run 1 2 3 4 5`)
+# Drug-likeness of a molecule, by name or SMILES (`just run caffeine`)
 run *args:
-    {{run-in-booth}} ./run-stats.sh {{ args }}
+    {{run-in-booth}} ./run-molecule.sh {{ args }}
+
+# List the molecules the lab knows by name
+list:
+    {{run-in-booth}} ./run-molecule.sh --list
+
+# Run Molecules.ipynb headlessly on the conda kernel, outputs into Molecules.out.ipynb
+notebook:
+    {{run-in-booth}} jupyter nbconvert --to notebook --execute Molecules.ipynb --output Molecules.out.ipynb
