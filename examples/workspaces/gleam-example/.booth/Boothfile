@@ -9,6 +9,6 @@ arg OTP_VERSION=28
 
 setup erlang --otp-version ${OTP_VERSION}
 setup codeserver ${CODESERVER_PORT}
-setup erlang-code-extension
 setup gleam --version ${GLEAM_VERSION}
+setup erlang-code-extension
 setup gleam-code-extension

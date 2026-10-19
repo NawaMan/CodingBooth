@@ -15,5 +15,5 @@ env PYTHONUNBUFFERED=1
 env VIRTUAL_ENV=/opt/python
 env PATH=/usr/local/uv/bin:/usr/local/uv:/opt/pyenv/bin:/opt/python/bin:$PATH
 setup python ${PYTHON_VERSION}
-setup python-code-extension
 setup xonsh --version ${XONSH_VERSION}
+setup python-code-extension

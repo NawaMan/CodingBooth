@@ -15,7 +15,6 @@ env VISUAL=nvim
 setup neovim ${NEOVIM_VERSION}
 setup nodejs ${NODE_VERSION}
 install lsp ${LSP_SERVERS}
-setup nodejs-code-extension
 setup lsp--bash
 setup lsp--marksman
 setup lsp--taplo
@@ -26,3 +25,4 @@ setup bash-code-extension
 setup markdown-code-extension
 setup toml-code-extension
 setup yaml-code-extension
+setup nodejs-code-extension

@@ -281,6 +281,112 @@ func TestCompile_RequiresCycleDoesNotPanic(t *testing.T) {
 	assert.Contains(t, out.Boothfile.Content, "setup b\n")
 }
 
+func TestCompile_KernelExtensionOfRequiredTemplateFollowsNotebook(t *testing.T) {
+	// The real python/notebook shape: notebook requires python, and python's own
+	// kernel extension requires notebook. Requiring "python" used to pull every
+	// python-owned segment ahead of notebook -- the kernel included -- and the
+	// cycle guard then dropped the kernel's own edge, so `setup python-nb-kernel`
+	// landed before the `setup notebook` it needs.
+	resolved := &selection.ResolvedSelection{
+		Templates: []selection.SelectedTemplate{
+			{
+				Template: &tmpl.Template{
+					Name:     "notebook",
+					Requires: []string{"python"},
+					BoothfileSegments: []tmpl.Segment{
+						{Order: 60, Content: "setup notebook\n"},
+					},
+				},
+				ParamValues: map[string]string{},
+			},
+			{
+				Template: &tmpl.Template{
+					Name: "python",
+					BoothfileSegments: []tmpl.Segment{
+						{Order: 50, Content: "setup python\n"},
+					},
+				},
+				Extensions: []selection.SelectedExtension{
+					{
+						Extension: &tmpl.Template{
+							Name:     "kernel",
+							Requires: []string{"notebook"},
+							BoothfileSegments: []tmpl.Segment{
+								{Order: 70, Content: "setup python-nb-kernel\n"},
+							},
+						},
+						ParamValues: map[string]string{},
+					},
+				},
+				ParamValues: map[string]string{},
+			},
+		},
+	}
+
+	out, err := Compile(resolved)
+	require.NoError(t, err)
+	require.NotNil(t, out.Boothfile)
+	assert.Equal(t, "setup python\nsetup notebook\nsetup python-nb-kernel\n", out.Boothfile.Content)
+}
+
+func TestCompile_RequiringTemplateDoesNotPullItsExtensionsOutOfBand(t *testing.T) {
+	// Requiring a template waits for the template itself, not for every add-on
+	// selected on it: python's VS Code extension (--65) and its pip extension's
+	// post-setup step (--90) keep their bands relative to notebook (--60), which
+	// only needs `setup python`. (Every catalog template has a single Boothfile
+	// segment of its own; anything banded later comes from an extension.)
+	resolved := &selection.ResolvedSelection{
+		Templates: []selection.SelectedTemplate{
+			{
+				Template: &tmpl.Template{
+					Name:     "notebook",
+					Requires: []string{"python"},
+					BoothfileSegments: []tmpl.Segment{
+						{Order: 60, Content: "setup notebook\n"},
+					},
+				},
+				ParamValues: map[string]string{},
+			},
+			{
+				Template: &tmpl.Template{
+					Name: "python",
+					BoothfileSegments: []tmpl.Segment{
+						{Order: 50, Content: "setup python\n"},
+					},
+				},
+				Extensions: []selection.SelectedExtension{
+					{
+						Extension: &tmpl.Template{
+							Name: "vscode-ext",
+							BoothfileSegments: []tmpl.Segment{
+								{Order: 65, Content: "setup python-code-extension\n"},
+							},
+						},
+						ParamValues: map[string]string{},
+					},
+					{
+						Extension: &tmpl.Template{
+							Name: "pip",
+							BoothfileSegments: []tmpl.Segment{
+								{Order: 90, Content: "run pip install -r requirements.txt\n"},
+							},
+						},
+						ParamValues: map[string]string{},
+					},
+				},
+				ParamValues: map[string]string{},
+			},
+		},
+	}
+
+	out, err := Compile(resolved)
+	require.NoError(t, err)
+	require.NotNil(t, out.Boothfile)
+	assert.Equal(t,
+		"setup python\nsetup notebook\nsetup python-code-extension\nrun pip install -r requirements.txt\n",
+		out.Boothfile.Content)
+}
+
 func TestCompile_MultiTemplateSegmentsMerged(t *testing.T) {
 	resolved := &selection.ResolvedSelection{
 		Templates: []selection.SelectedTemplate{

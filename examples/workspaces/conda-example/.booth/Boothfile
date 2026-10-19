@@ -26,9 +26,9 @@ env PIP_DISABLE_PIP_VERSION_CHECK=1
 env PYTHONUNBUFFERED=1
 env PATH=/opt/python/bin:/opt/conda/bin:$PATH
 setup conda
+setup notebook ${NOTEBOOK_PORT}
 install conda ${CONDA_PKGS}
 setup python-code-extension
 setup conda-nb-kernel
  
 run --mount=type=bind,target=/tmp/ctx                                               if [ -f /tmp/ctx/.booth/requirements.txt ]; then                                pip install -r /tmp/ctx/.booth/requirements.txt;                           else echo "Warning: .booth/requirements.txt not found -- skipping pip install"; fi
-setup notebook ${NOTEBOOK_PORT}

@@ -464,12 +464,20 @@ When multiple templates are selected, their outputs merge:
 
 | Type                   | Strategy         | Example                        |
 |------------------------|------------------|--------------------------------|
-| Boothfile segments     | Concatenate      | Sorted by order, tiebreak name |
+| Boothfile segments     | Concatenate      | Sorted by order, tiebreak name; `requires` wins (below) |
 | Startup segments       | Concatenate      | Sorted by order, tiebreak name |
 | Scalars (variant, etc) | Match-or-error   | Conflict = error               |
 | Arrays (run-args, etc) | Combine & dedup  | Flag-value pairs preserved     |
 | Files                  | Collect all      | From templates + extensions    |
 | Params                 | Error on conflict| Same key, different value      |
+
+**`requires` and Boothfile order.** A segment never lands ahead of a template it `requires`,
+even when its order (or name) would sort it first: `aws-cdk` requires `nodejs`, so
+`setup nodejs` comes first although both sit in band 50. The requirement is met by the required
+template's **own** segment, not by its extensions': notebook requires python, so it waits for
+`setup python` only, and python's `+vscode-ext` (65), `+kernel` (70) and post-setup (90)
+segments stay in their bands. An extension's own `requires` applies to its segments, as a
+kernel's `requires = ["notebook"]` keeps it after `setup notebook`.
 
 ---
 

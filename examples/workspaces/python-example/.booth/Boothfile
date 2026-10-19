@@ -23,7 +23,7 @@ env PYTHONUNBUFFERED=1
 env VIRTUAL_ENV=/opt/python
 env PATH=/usr/local/uv/bin:/usr/local/uv:/opt/pyenv/bin:/opt/python/bin:$PATH
 setup python ${PYTHON_VERSION}
+setup notebook ${NOTEBOOK_PORT}
 setup python-code-extension
 setup python-nb-kernel
 run --mount=type=bind,target=/tmp/ctx if [ -f /tmp/ctx/.booth/requirements.txt ]; then pip install -r /tmp/ctx/.booth/requirements.txt; else echo "Warning: .booth/requirements.txt not found -- skipping pip install"; fi
-setup notebook ${NOTEBOOK_PORT}

@@ -27,8 +27,12 @@ type sourcedSegment struct {
 	// Order/SourceName sort. Owner is the top-level template name a Requires
 	// value from another segment would reference; Requires lists the top-level
 	// template names this segment's content depends on being installed first.
-	Owner    string
-	Requires []string
+	// FromExtension marks a segment contributed by one of Owner's extensions
+	// rather than by the template itself; such a segment carries its own
+	// Requires but never satisfies another segment's (see topoSortSegments).
+	Owner         string
+	Requires      []string
+	FromExtension bool
 }
 
 // Compile converts a ResolvedSelection into a BoothOutput.
@@ -108,7 +112,9 @@ func (c *collector) collectTemplate(st selection.SelectedTemplate) error {
 	// Requires values always name a top-level template (selection.Resolve looks
 	// them up in registry.ByName), so that's the identity other segments' Requires
 	// need to match against — an extension's segments are owned by their parent,
-	// not by the extension's own composite source name.
+	// not by the extension's own composite source name. They are flagged
+	// FromExtension so that requiring the parent waits for the parent itself,
+	// not for every add-on selected on it.
 	owner := t.Name
 
 	// Params
@@ -117,7 +123,7 @@ func (c *collector) collectTemplate(st selection.SelectedTemplate) error {
 	}
 
 	// Segments
-	c.collectSegments(t, source, owner, t.Requires)
+	c.collectSegments(t, source, owner, t.Requires, false)
 
 	// Config
 	if err := c.collectConfig(t, source); err != nil {
@@ -138,7 +144,7 @@ func (c *collector) collectTemplate(st selection.SelectedTemplate) error {
 			return err
 		}
 
-		c.collectSegments(ext.Extension, extSource, owner, ext.Extension.Requires)
+		c.collectSegments(ext.Extension, extSource, owner, ext.Extension.Requires, true)
 
 		if err := c.collectConfig(ext.Extension, extSource); err != nil {
 			return err
@@ -189,11 +195,11 @@ func (c *collector) collectParams(values map[string]string, source string) error
 	return nil
 }
 
-func (c *collector) collectSegments(t *tmpl.Template, source, owner string, requires []string) {
+func (c *collector) collectSegments(t *tmpl.Template, source, owner string, requires []string, fromExtension bool) {
 	for _, seg := range t.BoothfileSegments {
 		c.boothfileSegs = append(c.boothfileSegs, sourcedSegment{
 			Order: seg.Order, Content: seg.Content, SourceName: source,
-			Owner: owner, Requires: requires,
+			Owner: owner, Requires: requires, FromExtension: fromExtension,
 		})
 	}
 	for _, seg := range t.StartupSegments {
@@ -483,11 +489,20 @@ func mergeSegments(segs []sourcedSegment) string {
 // that both leave Boothfile at the default order band still install in
 // dependency order, not alphabetically by template name.
 //
+// A Requires name is satisfied by that template's own segments only, never by
+// its extensions' (FromExtension). Requiring "python" means `setup python` must
+// come first, not python's VS Code, kernel or post-setup extensions: pulling
+// those ahead too dragged them out of their order bands (a --90 step ahead of
+// notebook's --60), and since a kernel extension itself requires notebook while
+// notebook requires python, it formed a cycle that put the kernel ahead of the
+// notebook it needs.
+//
 // Requires is resolved only against selected templates: selection.Resolve
 // already fails the whole selection if a Requires name isn't in the catalog,
 // and auto-selects it when it's valid but not explicitly chosen, so by the
-// time segments reach here every Requires name is guaranteed to have a
-// matching Owner among segs. A Requires cycle (which nothing upstream
+// time segments reach here every Requires name is a selected template (one
+// with no Boothfile segment of its own simply has nothing to order against).
+// A Requires cycle (which nothing upstream
 // currently rejects) is not treated as an error here either — visiting simply
 // does not re-enter a segment already being visited, so a cyclic pair falls
 // back to baseline order for that pair instead of infinite-looping.
@@ -497,6 +512,9 @@ func topoSortSegments(segs []sourcedSegment) []sourcedSegment {
 
 	byOwner := make(map[string][]int, len(ordered))
 	for i, seg := range ordered {
+		if seg.FromExtension {
+			continue
+		}
 		byOwner[seg.Owner] = append(byOwner[seg.Owner], i)
 	}
 

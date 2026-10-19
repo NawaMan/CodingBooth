@@ -4,6 +4,22 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth config` keeps Boothfile lines in their order bands again when one template requires
+  another.** Since requires-ordering arrived (the aws-cdk/nodejs fix), requiring a template
+  pulled every line of *its extensions* ahead too, whatever their band: notebook requires python,
+  so python's VS Code extension (65), notebook kernel (70) and requirements install (90) all
+  landed before `setup notebook` (60). For a kernel it was worse: the kernel requires notebook,
+  and the resulting cycle put `setup python-nb-kernel` before the notebook it needs. A requires
+  is now satisfied by the required template's own lines only, so `setup notebook` follows
+  `setup python` and the extensions stay in their bands. It only changes newly generated
+  Boothfiles; one you already have keeps its order until you re-run `booth config`, which then
+  reorders it (and rebuilds the image once). 27 example Boothfiles were regenerated; every change
+  is a reordering of the same lines.
+
+- **`nodejs+npm-upgrade` runs before the tools that install with npm (band 65 → 55).** It ran
+  after them, so `npm-pkg` packages and setups such as Playwright were installed with Node.js's
+  bundled npm, not the pinned `NPM_VERSION`. It now runs right after `setup nodejs`.
+
 - **Conda environments can run Jupyter notebooks: the new `python+conda-kernel` extension.**
   JupyterLab and its stock *Python (venv)* kernel live in the notebook's own venv, so a package
   installed with conda (`conda-pkg:rdkit`, or `conda install` in a terminal) imported fine from

@@ -26,12 +26,12 @@ env CB_JDK_VERSION=${JDK_VERSION}
 env PATH=$PATH:/opt/jdk${JDK_VERSION}/bin
 setup jdk ${JDK_VERSION} ${JDK_VENDOR}
 setup nodejs ${NODE_VERSION}
-setup java-code-extension
 setup android-sdk --cmdline-tools ${ANDROID_CMDLINE_TOOLS} --api ${ANDROID_API} --build-tools ${ANDROID_BUILD_TOOLS}
-setup go-code-extension
-setup nodejs-code-extension
 env WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1
 env WEBKIT_DISABLE_DMABUF_RENDERER=1
 setup wails --version ${WAILS_VERSION}
 setup android-emulator --api ${ANDROID_API} --tag ${ANDROID_IMAGE_TAG} --abi ${ANDROID_IMAGE_ABI}
+setup go-code-extension
+setup java-code-extension
+setup nodejs-code-extension
 setup wails-android

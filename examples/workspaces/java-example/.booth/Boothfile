@@ -29,15 +29,15 @@ env PYTHONUNBUFFERED=1
 env VIRTUAL_ENV=/opt/python
 env PATH=/usr/local/uv/bin:/usr/local/uv:/opt/pyenv/bin:/opt/python/bin:$PATH
 setup python ${PYTHON_VERSION}
-setup java-code-extension
-setup python-code-extension
-setup notebook ${NOTEBOOK_PORT}
-setup java-nb-kernel
 setup eclipse
 setup idea
+setup notebook ${NOTEBOOK_PORT}
 setup eclipse-import-project ${ECLIPSE_PROJECT_KIND}
 setup idea-import-project ${IDEA_PROJECT_KIND}
+setup java-code-extension
+setup python-code-extension
 setup jetbrains-jdk
 setup lombok-idea
 setup jetbrains-first-run
+setup java-nb-kernel
 install jetbrains-plugin ${JETBRAINS_PLUGIN_PKGS}
