@@ -9,9 +9,6 @@
 # ttt --version only proves a binary landed on PATH. --exec types into a file,
 # saves it, and quits: that is the edit a user does in the first minute.
 # rg --version proves workspace search has its dependency.
-#
-# ttt--setup.sh is copied under .booth/setups/ until the base image ships it.
-# Delete that copy before landing, then rebuild base and re-run this test.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
