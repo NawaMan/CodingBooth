@@ -1,8 +1,9 @@
-cb-version = "0.1.0"
+cb-version = "0.1.1"
 display-name   = "Modern Theme"
 display-disc   = "Greybird-dark apps and windows, Reversal-dark icons, Gruppled cursor"
 display-detail = """\
-Makes a modern dark look the default: Greybird-dark for apps and window borders, \
+Makes a modern dark look the default: Greybird-dark for apps, its accessibility \
+variant for window borders (3 px edges, easy to grab for a resize), \
 Reversal-dark icons and the Gruppled White cursor (size 40). Only what that look \
 needs is installed; more themes are opt-in templates (tela-icons, orchis-gtk, \
 material-cursors). Only the system defaults change, so \

@@ -2,12 +2,12 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 # xfce-theme--setup.sh — the default look of the XFCE booth, in one place:
 #
 #   app style (GTK)      Greybird-dark     greybird-gtk-theme (apt)
-#   window borders       Greybird-dark     greybird-gtk-theme (apt)
+#   window borders       Greybird-dark-accessibility (3 px edges, easy to grab)
 #   icons                Reversal-dark     reversal-icons--setup.sh
 #   cursor               gruppled_white    gruppled-cursors--setup.sh
 #   cursor size          40                (the only size Gruppled ships)
@@ -40,7 +40,10 @@ if ! command -v xfce4-session &>/dev/null; then
 fi
 
 GTK_THEME="Greybird-dark"
-WM_THEME="Greybird-dark"
+# Same look as Greybird-dark, but its window edges are 3 px instead of 1 px.
+# xfwm4 only resizes from the border the theme draws, so 1 px is near-impossible
+# to grab with the mouse. Ships in the same greybird-gtk-theme package.
+WM_THEME="Greybird-dark-accessibility"
 ICON_THEME="Reversal-dark"
 CURSOR_THEME="gruppled_white"
 CURSOR_SIZE=40
