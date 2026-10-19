@@ -183,6 +183,7 @@ setup kubernetes-code-extension
 setup kustomize
 setup latex
 setup latex-code-extension
+setup lazarus
 setup lazydocker
 setup lazygit
 setup lazysql
