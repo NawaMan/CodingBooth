@@ -1,0 +1,5 @@
+# Settings overlay for scripts/vet-repo.sh (omp --config).
+# A repository can declare MCP servers (.mcp.json, .codex/config.toml, ...),
+# and omp starts them as programs. Never for a repository being vetted.
+mcp:
+  enableProjectConfig: false

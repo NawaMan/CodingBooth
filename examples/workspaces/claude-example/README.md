@@ -112,9 +112,16 @@ just vet https://github.com/owner/repo v2.1.0     # a branch or tag
 1. Clones the repo (`--depth 1`) into a temporary folder in the booth's `/tmp`. The clone is
    never written to the project folder or the host, and it is deleted when the script ends.
 2. Runs `claude -p` in the clone with `--tools "Read,Glob,Grep"`. In that session Claude has no
-   Bash, no Edit and no web access, so nothing from the repository can execute, even though this
-   booth's `auto-accept` settings allow more. A system-prompt line tells Claude the files are
-   untrusted data, so instructions planted in them become a red flag instead of a command.
+   Bash, no Edit and no web access, even though this booth's `auto-accept` settings allow more.
+   A system-prompt line tells Claude the files are untrusted data, so instructions planted in
+   them become a red flag instead of a command.
+
+   Restricting the tools is not enough on its own. A repository can carry its own
+   `.claude/settings.json`, whose hooks are shell commands Claude Code runs when a session starts,
+   and a `.mcp.json`, whose MCP servers are programs it starts. Either would run the repository's
+   code before Claude reads a single file. `--setting-sources user` skips the repository's
+   settings, and `--strict-mcp-config` skips its MCP servers, so nothing from the repository
+   executes.
 3. Prints the report and saves it to `reports/<owner>-<repo>.md`, with the URL and commit it
    vetted.
 
