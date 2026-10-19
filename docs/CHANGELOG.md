@@ -14,6 +14,25 @@ This file contains a list of changes for each released version.
   (Prime Finder) in an XFCE booth, with `just check`, `just run` and `just ide`. Needs a rebuilt
   base image.
 
+- **Grok, Codex and Oh My Pi examples, next to the Claude ones.** `grok-example`, `codex-example`
+  and `omp-example` reuse the host's own login (`grok login`, `codex login`, omp's `/login`), and
+  `codex-token-example` and `omp-token-example` log in from an environment variable instead. Each
+  has `just ask`; Grok and omp also have `just vet`, which clones a repository into the booth and
+  has the agent review it with only read tools. Two new extensions make the token examples
+  possible: `codex+token-credential` forwards `CODEX_ACCESS_TOKEN` (ChatGPT Business/Enterprise)
+  and `CODEX_API_KEY`, and `oh-my-pi+token-credential` forwards a `claude setup-token` token as
+  `ANTHROPIC_OAUTH_TOKEN`, so omp runs Anthropic models on a Claude subscription. Codex also gets
+  `codex+settings-cache` (auto-selected), so its login and sessions survive a booth restart. Codex
+  gets no `just vet`: its sandbox needs Linux namespaces, which a booth container does not have,
+  and it reads files only through its shell.
+
+- **`claude-example`'s `just vet` no longer runs code from the repository it vets.** Restricting
+  Claude to `Read`, `Glob` and `Grep` left two ways in: the clone's `.claude/settings.json` hooks,
+  which Claude Code runs as shell commands when the session starts, and its `.mcp.json` servers,
+  which it starts as programs. A test repository carrying both showed they ran inside the booth,
+  where the Claude login is, before Claude read a file. `scripts/vet-repo.sh` now adds
+  `--setting-sources user` and `--strict-mcp-config`, and the same test repository runs nothing.
+
 - **TTT and Croft are catalog terminal editors.** `setup ttt` installs the TTT
   Editor release binary for amd64 and arm64, and installs `ripgrep` when `rg` is
   missing so workspace search works. `setup croft` installs the static musl
