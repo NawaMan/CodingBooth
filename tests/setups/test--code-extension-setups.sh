@@ -70,8 +70,10 @@ cp "$STUB/bin/code-server" "$STUB/bin/code"
 # runs and reaches an install call with a real id, not what is inside the
 # archive, so a stub that just creates the file it was asked for is enough — in
 # the same spirit as the editor CLIs above. Used only when the host has no zip,
-# so a host that does keeps exercising the real thing.
-if ! command -v zip >/dev/null 2>&1; then
+# so a host that does keeps exercising the real thing. Asked on the PATH the
+# scripts run with below: a zip elsewhere on the caller's PATH (GnuWin32 on
+# Windows) is one they never see.
+if ! PATH="/usr/bin:/bin" command -v zip >/dev/null 2>&1; then
     cat > "$STUB/bin/zip" << 'EOF'
 #!/bin/bash
 # zip [-qr] <archive> <paths…> — the archive is all this has to produce.
