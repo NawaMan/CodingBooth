@@ -15,12 +15,15 @@ This file contains a list of changes for each released version.
   `python+conda+conda-kernel/notebook`; it needs the notebook template, like `python+kernel`.
   New setup `conda-nb-kernel`, so it needs a rebuilt base image.
 
-- **The conda example is now a Molecule Lab on the notebook variant.** It installs RDKit, pandas
-  and matplotlib from conda-forge, and its `Molecules.ipynb` runs on the conda kernel: it draws a
-  dozen well-known drugs from their SMILES, tabulates their descriptors, checks Lipinski's rule of
-  five, charts weight against logP, and highlights a substructure search. `just run caffeine`
-  gives the same descriptors on the command line. It replaces the NumPy statistics script. Its
-  tests check the kernel registration and run every cell of the notebook headlessly.
+- **The conda example is now three examples on the notebook variant, simple to complex.** It
+  installs pandas, matplotlib and RDKit from conda-forge, and its notebooks run on the conda
+  kernel. (1) `just run` reads a web API's request log (`data/requests.csv`) and reports p50 / p95
+  / p99 latency and error rate per endpoint. (2) `Latency.ipynb` charts the same log and finds the
+  slow endpoint and a four-minute incident. (3) `Molecules.ipynb`, the Molecule Lab, draws a
+  dozen well-known drugs from their SMILES, checks Lipinski's rule of five, and highlights a
+  substructure search; `just molecule caffeine` gives the same descriptors on the command line.
+  It replaces the NumPy statistics script. Its tests check the kernel registration and run every
+  cell of both notebooks headlessly.
 
 - **The base image ships `tilde` again, beside Fresh: a menu-driven terminal editor with
   Windows-style keys.** Ctrl+S saves, Ctrl+Q quits, Ctrl+C/X/V copy, cut and paste, and the menu
