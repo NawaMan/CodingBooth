@@ -1,0 +1,11 @@
+# Configured by: booth config --no-tui --overwrite --cmd bash --select grok+settings-cache
+
+
+cmds = ["bash"]
+
+run-args = [
+    "-v", "~/.grok/auth.json:/etc/cb-home-seed/.grok/auth.json:ro",
+    "-v", "~/.grok/config.toml:/etc/cb-home-seed/.grok/config.toml:ro"
+]
+
+cache-dirs = ["home/coder/.grok"]

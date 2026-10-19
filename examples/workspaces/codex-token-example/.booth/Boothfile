@@ -1,0 +1,10 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --cmd bash --select codex+settings-cache+token-credential~credential~vscode-ext/nodejs~npmrc~vscode-ext
+
+env APT_SNAPSHOT=20261004T000000Z
+
+arg CODEX_VERSION=latest
+arg NODE_VERSION=24
+
+setup nodejs ${NODE_VERSION}
+setup codex ${CODEX_VERSION}

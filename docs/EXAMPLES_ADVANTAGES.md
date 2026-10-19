@@ -79,6 +79,12 @@ The advantages, in CodingBooth's own vocabulary:
   host's own `claude` login (mounted read-only).
 - **claude-token-example** — the same booth, logged in with a `claude setup-token` token passed
   in as `CLAUDE_CODE_OAUTH_TOKEN`, for hosts with no `claude` login to share.
+- **grok-example**, **codex-example**, **omp-example** — the same booth for Grok Build, OpenAI
+  Codex and Oh My Pi, each logged in with the host's own login and with `just ask`. Grok and omp
+  also have `just vet`; Codex has none, because its sandbox cannot start in a container.
+- **codex-token-example**, **omp-token-example** — logged in from an environment variable instead:
+  `CODEX_ACCESS_TOKEN` (ChatGPT Business/Enterprise) or `CODEX_API_KEY` for Codex, and a
+  `claude setup-token` token as `ANTHROPIC_OAUTH_TOKEN` for omp.
 - **herdr-example** — a niche `herdr` tool plus a pinned clang/LLVM 18 toolchain in one selector.
 - **floci-example** — Floci (local AWS emulator) + AWS CLI + DinD in one selector, so
   `just run` creates an S3 bucket on `:4566` with no cloud account. *(Secondary: nested
@@ -252,6 +258,8 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 | clang-example | Reproducibility |
 | claude-example | Batteries-included |
 | claude-token-example | Batteries-included |
+| codex-example | Batteries-included |
+| codex-token-example | Batteries-included |
 | conda-example | Batteries-included (data-science stack) |
 | csharp-example | Reproducibility (pinned SDK) |
 | data-example | Multiple things bundled |
@@ -269,6 +277,7 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 | fsharp-example | Host stays clean |
 | gcloud-example | Credential seeding |
 | go-example | Batteries-included / Standardize-to-Linux |
+| grok-example | Batteries-included |
 | haskell-example | Batteries-included (with baked-in repair) |
 | herdr-example | Batteries-included |
 | homebrew-example | Host stays clean |
@@ -292,6 +301,8 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 | npm-example | Host stays clean |
 | npm-deps-example | Pre-baked deps |
 | octave-example | Batteries-included / notebook |
+| omp-example | Batteries-included |
+| omp-token-example | Batteries-included |
 | pern-example | Multiple things bundled |
 | php-example | Host stays clean |
 | pip-example | Host stays clean |
