@@ -1,0 +1,8 @@
+# Configured by: booth config --no-tui --overwrite --cmd bash --select claude-code+auto-accept+settings-cache+token-credential~credential
+
+
+cmds = ["bash"]
+
+run-args = ["-e", "CLAUDE_CODE_OAUTH_TOKEN=${CLAUDE_CODE_OAUTH_TOKEN}"]
+
+cache-dirs = ["home/coder/.claude"]

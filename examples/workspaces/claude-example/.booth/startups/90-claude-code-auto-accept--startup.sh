@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-# Configured by: booth config --no-tui --overwrite --cmd bash --select claude-code+auto-accept+settings-cache+token-credential~credential
+# Configured by: booth config --no-tui --overwrite --cmd bash --select claude-code+auto-accept+settings-cache
 
 # Detect user-bound volumes and protect them from accidental rm -rf
 # by patching Claude Code's deny rules with jq.
