@@ -643,6 +643,8 @@ extension	codeserver+settings-cache	1.0.0	824e83e951ce7e908ba08e3a7e5978e6743454
 extension	codeserver+settings-shared	1.0.0	bc51dcc6b960d5027d5c554ad98c0590fa878bf8ee5667ccdeee3aaf59df9b74	templates/ides/codeserver/settings-shared--extension.toml
 extension	codeserver+snippets-shared	1.0.0	961fd8e86b77376b71e68c69aa893209dc7cea8db2e375469145243c97c218bf	templates/ides/codeserver/snippets-shared--extension.toml
 extension	codex+credential	1.0.0	b3e624050f846270226545bfcc00769c0cbd7ef7ae3cddca2947aad2f485cc78	templates/ai-tools/codex/credential--extension.toml
+extension	codex+settings-cache	0.1.0	61c8aa8bf8b423d7dc4dcbd0653818f44c57b7b97daf274a5d5fe1f8149075e1	templates/ai-tools/codex/settings-cache--extension.toml
+extension	codex+token-credential	0.1.0	fd95f97c6f9299845d1b73ed6b463be11203de3dfe78418a3e62213bbf08ba73	templates/ai-tools/codex/token-credential--extension.toml
 extension	codex+vscode-ext	0.1.0	356c24d5b0a26535ab02aa704fc7cd25d5b2658817ce81c72ab33fa20c1def32	templates/ai-tools/codex/vscode-ext--extension.toml
 extension	conan+conan-pkg	1.0.0	7b64f5600b6cf909139ff201695cec7dbb1f68badfc40b8afc3014b80f7dea35	templates/tools/conan/conan-pkg--extension.toml
 extension	croft+config-shared	0.1.0	ddc7b8b9a4253c7b5574200b17a4f97c0968f89edd6475fb23dd954f60a1be5c	templates/tools/croft/config-shared--extension.toml
@@ -829,6 +831,7 @@ extension	octave+vscode-ext	1.0.0	b33b87a91b7978584ebef4c36c2d8077e6c529d4b03564
 extension	oh-my-pi+credential	1.0.0	65128194229cb2449f7620fa0b55dccc5aa328a678e8fe320f3e38ad4c7bdfff	templates/ai-tools/oh-my-pi/credential--extension.toml
 extension	oh-my-pi+plugins	1.0.0	4331334c59566ee53eeda1b54bb74645780720f9a02bd7830426ee5c2619fc25	templates/ai-tools/oh-my-pi/plugins--extension.toml
 extension	oh-my-pi+settings-cache	1.0.0	c95529bfb94afe3624f075d36776b0d3cce8ffbf9c61249d6eb1322a55349364	templates/ai-tools/oh-my-pi/settings-cache--extension.toml
+extension	oh-my-pi+token-credential	0.1.0	ccb7ee48da6b732236cb278d1c57966d3023cf733c8b3e01a7f7aa10a10c8ad5	templates/ai-tools/oh-my-pi/token-credential--extension.toml
 extension	ollama+autostart	1.0.0	51e1e55f158942467c188bb909a7aafe4d5ae966cfb735c86f0d318f8d9bb480	templates/ai-tools/ollama/autostart--extension.toml
 extension	ollama+expose	1.0.0	7ccc39d0fbb2f8d2c3e742ccf635d105a144f3bd94fc7fddaef797903c4e7914	templates/ai-tools/ollama/expose--extension.toml
 extension	opencode+credential	1.0.0	bcdabc07a81f1a199c6c898f66828c44c430b45d66ee939170b83702a17c18a4	templates/ai-tools/opencode/credential--extension.toml

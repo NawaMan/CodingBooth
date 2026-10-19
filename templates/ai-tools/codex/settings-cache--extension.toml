@@ -1,0 +1,10 @@
+cb-version = "0.1.0"
+display-name = "Settings Cache"
+display-disc = "Persist Codex settings and sessions across booth restarts"
+display-order = 91
+auto-select = true
+tags = ["openai", "persistence", "cache"]
+
+cache-dirs = [
+    "home/coder/.codex",
+]
