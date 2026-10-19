@@ -14,7 +14,7 @@ REPO_ROOT="$SCRIPT_DIR/../../../.."
 source "$REPO_ROOT/tests/booth-bin--source.sh"
 BOOTH="$(resolve_booth_bin)"
 
-"$BOOTH" --variant base --port "${CB_PORT:-50041}" -- "./.cb-tests/inBooth--run-all-tests.sh" 2>&1 | tee "$0.out"
+"$BOOTH" --variant notebook --port "${CB_PORT:-50041}" -- "./.cb-tests/inBooth--run-all-tests.sh" 2>&1 | tee "$0.out"
 
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}All tests passed!${NC}"
