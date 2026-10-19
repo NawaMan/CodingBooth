@@ -1,0 +1,8 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --variant base --select croft
+
+env APT_SNAPSHOT=20261004T000000Z
+
+arg CROFT_VERSION=latest
+
+setup croft --version ${CROFT_VERSION}

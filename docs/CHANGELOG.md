@@ -4,6 +4,14 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **TTT and Croft are catalog terminal editors.** `setup ttt` installs the TTT
+  Editor release binary for amd64 and arm64, and installs `ripgrep` when `rg` is
+  missing so workspace search works. `setup croft` installs the static musl
+  Croft build and checks it against the release `SHA256SUMS`. Select `ttt` or
+  `ttt:1.8.0`, and `croft` or `croft:0.2.32`. `ttt+config-shared` and
+  `croft+config-shared` bind-mount `~/.config/ttt/` and `~/.config/croft/`.
+  `$EDITOR` stays `fresh`. Needs a rebuilt base image.
+
 - **Two Claude Code examples, one per way of logging in.** `claude-example` reuses the host's
   `claude` login again: the default `credential` extension mounts `~/.claude.json` and
   `~/.claude/.credentials.json` read-only, so logging in once on the host is enough. The token

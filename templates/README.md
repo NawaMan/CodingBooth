@@ -416,6 +416,7 @@ fontconfig/GTK libraries Rust GUI crates link to), so it sits with the other sys
 | `tools/cmake`              | CMake |
 | `tools/conan`              | Conan |
 | `tools/conda`              | Conda (Miniforge) |
+| `tools/croft`              | Croft |
 | `tools/dblab`              | dblab |
 | `tools/dind`               | Docker-in-Docker |
 | `tools/direnv`             | direnv |
@@ -462,6 +463,7 @@ fontconfig/GTK libraries Rust GUI crates link to), so it sits with the other sys
 | `tools/stern`              | stern |
 | `tools/superfile`          | superfile (spf) |
 | `tools/terraform`          | Terraform |
+| `tools/ttt`                | TTT |
 | `tools/vhs`                | VHS (terminal/TUI recorder) |
 
 ### Order 50 — Extensions (run alongside parent)

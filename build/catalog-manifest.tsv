@@ -56,6 +56,7 @@ setup	conan	1.0.0	d33c16ec6dc96f8aca41e01f0ca4f5386b4fa0b78d9f80e0c95622aa6131a2
 setup	conda	1.0.0	48963ccf24d11779847d6a76989b99e33edf1bcf113824249c22233a0773bb86	variants/base/setups/conda--setup.sh
 setup	conda-nb-kernel	0.1.0	5cc6fe1a343bcf1cf30ffdf92f2eb6133b898c5a3952f9ced5f95874117cec21	variants/base/setups/conda-nb-kernel--setup.sh
 setup	cpp-nb-kernel	0.1.0	ca55497f946f98c9c381a35d26928eda13adc0febd1228f469a021659beea38e	variants/base/setups/cpp-nb-kernel--setup.sh
+setup	croft	0.1.0	f2a78e126762315887878a962dd9330566e61ca9d6295ab03cd04dee8eaa0491	variants/base/setups/croft--setup.sh
 setup	crystal	1.0.0	61384d7bce11d836a007a7815f4cf24888e028dc442db554b382562a8d48a84f	variants/base/setups/crystal--setup.sh
 setup	crystal-code-extension	1.0.0	14c2ce6f0561eec9ff041e616cd1b93c789c101ab5fdb2ba3a03b3255b82e03f	variants/base/setups/crystal-code-extension--setup.sh
 setup	cuda	0.1.0	b84d2b3c36d6292a3fc8b64881396f1e1b791b862aebc1b1db17213189afe8aa	variants/base/setups/cuda--setup.sh
@@ -311,6 +312,7 @@ setup	texstudio	0.1.0	470bc74505458309fe2cce3d15c2022606cc460c0136f293a1fadf7a6a
 setup	thonny	1.0.0	a14c0b5793457d929adfcb899ee169b3dd57ea2efa6eb3a6a400ff7a9f7168d7	variants/base/setups/thonny--setup.sh
 setup	tls	1.0.0	719a92dd7d6975d798ad20ebd76a45d0e35af17ee6a440ce44cc437e3aa48b94	variants/base/setups/tls--setup.sh
 setup	toml-code-extension	0.1.0	b32c730a20ee3d570253cfffa23d2b9eeeee4ce8c3993b4c66aa4acf10b1f3ed	variants/base/setups/toml-code-extension--setup.sh
+setup	ttt	0.1.0	c34b255977add620696f2114b610d3506c4be22d5d2c0745db53204d642651fa	variants/base/setups/ttt--setup.sh
 setup	ttyd-nerd-font-index	0.2.0	7695b34cf707159cbeb1f5e6f3ebaf836b0f808efe824bcdbeb565f6ca6ec6e9	variants/base/setups/ttyd-nerd-font-index--setup.sh
 setup	vhs	1.0.0	a5ed3a8d5ae5e152d8907f9f6bb2c398e40d52c3e2b3b4eda5a8b9429416b9dd	variants/base/setups/vhs--setup.sh
 setup	viewmd	1.0.0	d86fb47a1ec9db20bf39a717ee94ea9e03c4418894db2da8fcd7abfd77cb5dfd	variants/base/setups/viewmd--setup.sh
@@ -423,6 +425,7 @@ template	codeserver	1.0.0	1489535058148132e2ccf07c265d8a7d29f78941be45c48dc506b0
 template	codex	1.0.0	e1f6b45932e1d0f92118d912a227f704406b094e779e1977c1ca5c639d263adf	templates/ai-tools/codex/template.toml
 template	conan	1.0.0	a1ba767acfc167a67d1d65ea91fe348836bbe2f69276790f55c5b2741ff8be95	templates/tools/conan/template.toml
 template	conda	1.1.0	2d4488f43dfbde1d94972aafb0f6f4300b1f94335d59699bde4a58ad3181dfd7	templates/tools/conda/template.toml
+template	croft	0.1.0	8b08151c62d06051ae6d7e3387dc13f53c68cf3e5b01c258ced443178138786e	templates/tools/croft/template.toml
 template	crystal	1.0.0	a39b3b18bfeb2e280bab82c8fe68d8dc8736e1ff0dae91f676598ef6e6a46fe5	templates/languages/crystal/template.toml
 template	csharp	1.1.0	b6e52c52efd79c2c3bd7136cfb10cd01a81c0b1cb03b7d6177edeff4d4e313ec	templates/languages/csharp/template.toml
 template	cuda	0.1.0	c1011dad037d2baf270b52e572e8c314392ed87a1c10a8e886b2cbb79ebe5b8b	templates/tools/cuda/template.toml
@@ -577,6 +580,7 @@ template	tailwind	0.1.0	bb0ef9fede7cf622fa9e8f2980823836ce159361d22a3d4a634e5c8c
 template	tela-icons	0.1.0	bc9fb120c9a2a35da5e4078832bc039a940fdefacc925f99eb66e6c3d55450f7	templates/desktops/tela-icons/template.toml
 template	terraform	1.0.0	151cdf8d4ddba87cd10e5b51a11c17d61e35a29be195131aec1ff425781da76c	templates/tools/terraform/template.toml
 template	thonny	1.0.0	64571e52b43139716e35c9bd72304a5642bd69c155b599bfdeba438e67388d0e	templates/education/thonny/template.toml
+template	ttt	0.1.0	adfb438fe97793ab15238e6dac6519fb2c3df1cf03229eff08210b5ac0a175ca	templates/tools/ttt/template.toml
 template	vhs	1.0.0	f2f8d6aca4c461eea09eb9922032616049a00be4f6994ab510538cda9cf29a07	templates/tools/vhs/template.toml
 template	vm-cpus	1.0.0	c843ec808161827deac4fc590e588a5e89bf63e0b6c3c70daf7519b14c990412	templates/booth-vm/vm-cpus/template.toml
 template	vm-memory	1.0.0	adc63eaf0d364e048e73443de713f63bc0f60d6d1cce6118aa8952081c5f97ee	templates/booth-vm/vm-memory/template.toml
@@ -640,6 +644,7 @@ extension	codeserver+snippets-shared	1.0.0	961fd8e86b77376b71e68c69aa893209dc7ce
 extension	codex+credential	1.0.0	b3e624050f846270226545bfcc00769c0cbd7ef7ae3cddca2947aad2f485cc78	templates/ai-tools/codex/credential--extension.toml
 extension	codex+vscode-ext	0.1.0	356c24d5b0a26535ab02aa704fc7cd25d5b2658817ce81c72ab33fa20c1def32	templates/ai-tools/codex/vscode-ext--extension.toml
 extension	conan+conan-pkg	1.0.0	7b64f5600b6cf909139ff201695cec7dbb1f68badfc40b8afc3014b80f7dea35	templates/tools/conan/conan-pkg--extension.toml
+extension	croft+config-shared	0.1.0	ddc7b8b9a4253c7b5574200b17a4f97c0968f89edd6475fb23dd954f60a1be5c	templates/tools/croft/config-shared--extension.toml
 extension	crystal+vscode-ext	1.0.0	9d1ca111ccfcfdc1a73f2a7c620e1ebb1ec71ae7a776f9307364ed18380f60fd	templates/languages/crystal/vscode-ext--extension.toml
 extension	csharp+dotnet-pkg	1.0.0	ab1d4a997224368660f89a26f0b28293dd1517572d44798fa97e5135a06aa699	templates/languages/csharp/dotnet-pkg--extension.toml
 extension	csharp+vscode-ext	1.0.0	af746def2fce51274f345a46c69bce3cce1789584cb68d0659f3a7afe332b81e	templates/languages/csharp/vscode-ext--extension.toml
@@ -912,6 +917,7 @@ extension	sway+ctrl-alt	0.1.0	cc789939fc6e24738068644041470b81a7d065364da363a09b
 extension	sway+gaps	0.2.0	7262c863d0cebb6e392bb0ce8e982c3e426976b80f8692b6d8c65354eead9dd0	templates/desktops/sway/gaps--extension.toml
 extension	swift+vscode-ext	1.0.0	6cc024ba78d2963fe83b4e3d1c7171daa911be52ecd01d47b09baed3df3fd119	templates/languages/swift/vscode-ext--extension.toml
 extension	terraform+vscode-ext	0.1.0	8694236fe71c28f470b9de9c0d1004a5de0e6484f9d820f3b934523c3673bd8c	templates/tools/terraform/vscode-ext--extension.toml
+extension	ttt+config-shared	0.1.0	680b160a87365913a6bac4f1a50942431acca19e393fb673674869a5fb463488	templates/tools/ttt/config-shared--extension.toml
 extension	wails+android	0.1.0	9969ceb831f5dc53121d16794e2c3811fb630db50e2654ff1f3dec9a389bffcc	templates/languages/wails/android--extension.toml
 extension	wails+cross	0.1.0	25aa26c799d144a1ceadba10207544d514f145ec49f853e4b25d6c1893c0dbc4	templates/languages/wails/cross--extension.toml
 extension	warp+credential	1.0.0	dc35501a634880687f8a723760af347f22a6b9ba5e8855ae377774ff6302bed5	templates/ai-tools/warp/credential--extension.toml
