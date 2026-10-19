@@ -10,7 +10,9 @@ This file contains a list of changes for each released version.
   Croft build and checks it against the release `SHA256SUMS`. Select `ttt` or
   `ttt:1.8.0`, and `croft` or `croft:0.2.32`. `ttt+config-shared` and
   `croft+config-shared` bind-mount `~/.config/ttt/` and `~/.config/croft/`.
-  `$EDITOR` stays `fresh`. Needs a rebuilt base image.
+  `$EDITOR` stays `fresh`. The Croft template warns that the base Console has
+  no way to quit Croft: the browser takes Ctrl+Q and closes the tab. Needs a
+  rebuilt base image.
 
 - **Two Claude Code examples, one per way of logging in.** `claude-example` reuses the host's
   `claude` login again: the default `credential` extension mounts `~/.claude.json` and

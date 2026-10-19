@@ -56,7 +56,7 @@ setup	conan	1.0.0	d33c16ec6dc96f8aca41e01f0ca4f5386b4fa0b78d9f80e0c95622aa6131a2
 setup	conda	1.0.0	48963ccf24d11779847d6a76989b99e33edf1bcf113824249c22233a0773bb86	variants/base/setups/conda--setup.sh
 setup	conda-nb-kernel	0.1.0	5cc6fe1a343bcf1cf30ffdf92f2eb6133b898c5a3952f9ced5f95874117cec21	variants/base/setups/conda-nb-kernel--setup.sh
 setup	cpp-nb-kernel	0.1.0	ca55497f946f98c9c381a35d26928eda13adc0febd1228f469a021659beea38e	variants/base/setups/cpp-nb-kernel--setup.sh
-setup	croft	0.1.0	f2a78e126762315887878a962dd9330566e61ca9d6295ab03cd04dee8eaa0491	variants/base/setups/croft--setup.sh
+setup	croft	0.1.1	a9b590b7440dbf57e43b89712dcb12e894a37ed256a016a355958e3fc01d66f2	variants/base/setups/croft--setup.sh
 setup	crystal	1.0.0	61384d7bce11d836a007a7815f4cf24888e028dc442db554b382562a8d48a84f	variants/base/setups/crystal--setup.sh
 setup	crystal-code-extension	1.0.0	14c2ce6f0561eec9ff041e616cd1b93c789c101ab5fdb2ba3a03b3255b82e03f	variants/base/setups/crystal-code-extension--setup.sh
 setup	cuda	0.1.0	b84d2b3c36d6292a3fc8b64881396f1e1b791b862aebc1b1db17213189afe8aa	variants/base/setups/cuda--setup.sh
@@ -425,7 +425,7 @@ template	codeserver	1.0.0	1489535058148132e2ccf07c265d8a7d29f78941be45c48dc506b0
 template	codex	1.0.0	e1f6b45932e1d0f92118d912a227f704406b094e779e1977c1ca5c639d263adf	templates/ai-tools/codex/template.toml
 template	conan	1.0.0	a1ba767acfc167a67d1d65ea91fe348836bbe2f69276790f55c5b2741ff8be95	templates/tools/conan/template.toml
 template	conda	1.1.0	2d4488f43dfbde1d94972aafb0f6f4300b1f94335d59699bde4a58ad3181dfd7	templates/tools/conda/template.toml
-template	croft	0.1.0	8b08151c62d06051ae6d7e3387dc13f53c68cf3e5b01c258ced443178138786e	templates/tools/croft/template.toml
+template	croft	0.1.1	583f5c4bcf8af0db7fda4e6b94b8db381bdaa20d7a0b703056491c3cd8e02108	templates/tools/croft/template.toml
 template	crystal	1.0.0	a39b3b18bfeb2e280bab82c8fe68d8dc8736e1ff0dae91f676598ef6e6a46fe5	templates/languages/crystal/template.toml
 template	csharp	1.1.0	b6e52c52efd79c2c3bd7136cfb10cd01a81c0b1cb03b7d6177edeff4d4e313ec	templates/languages/csharp/template.toml
 template	cuda	0.1.0	c1011dad037d2baf270b52e572e8c314392ed87a1c10a8e886b2cbb79ebe5b8b	templates/tools/cuda/template.toml

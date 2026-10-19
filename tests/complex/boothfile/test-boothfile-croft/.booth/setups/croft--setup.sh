@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.1.1
 
 # croft--setup.sh — Install the Croft terminal editor from GitHub releases.
 set -Eeuo pipefail
@@ -119,6 +119,11 @@ echo "✅ Croft installed."
 echo -n "   croft → "; croft --version 2>/dev/null || true
 
 cat <<'EON'
+⚠️ WARNING: On the base variant (Console UI) there is no way to quit Croft.
+   The browser takes Ctrl+Q and closes the tab, and Croft has no other quit
+   command, so you can get stuck in it. Prefer a desktop variant, or run
+   croft from a host terminal such as Ghostty, kitty, or WezTerm.
+
 ℹ️ Ready to use:
 - Open this folder: croft
 - Open a file:      croft . --open-file README.md
