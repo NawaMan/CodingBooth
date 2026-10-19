@@ -182,6 +182,7 @@ setup	kubernetes-code-extension	0.1.0	3439d0cfd28cbd1d4d4a37e1714725a83103a0719a
 setup	kustomize	1.0.0	27b4b3f3833eaf9fc1f80266202550c80b3246c8ae3e8327999e75c220923a20	variants/base/setups/kustomize--setup.sh
 setup	latex	0.1.0	004b7d6dadbc9e8c3b424b90b3affa45e56aeeca192be313e6a9a1e07dbd1a2e	variants/base/setups/latex--setup.sh
 setup	latex-code-extension	1.0.0	49fc431ec3a4d5e6a7136a9eb2660d2bab37046524f370b4539ca1ef57d71d73	variants/base/setups/latex-code-extension--setup.sh
+setup	lazarus	0.1.0	93e4f081c88b1605db5b4b85a379cf1ed4c69f0e7fdc6cb61e0b413d28c0f1e0	variants/base/setups/lazarus--setup.sh
 setup	lazydocker	1.0.0	d9578b308e4d6d396fc098f3072e0459ee0c4d8aed4ca9767a80fb5dd58ac1cc	variants/base/setups/lazydocker--setup.sh
 setup	lazygit	1.0.0	c4adfd559e2de777fecb0a7e83098499f06cc579d4c39424f07c3cb1d60d58b0	variants/base/setups/lazygit--setup.sh
 setup	lazysql	0.1.0	a4935fd619a7800684ed1257ec2559a115e89026b6b331146ade9698de023316	variants/base/setups/lazysql--setup.sh
@@ -684,6 +685,7 @@ extension	floci+expose	0.1.0	cde99db7aeb6fc0e1eff3ab9dd655b7b3cddeffd724d2d2bac6
 extension	flutter+android	0.1.0	0ad91891122e331d9dcad56bfab13da7976adb53e3dec36ea3540bd34ed5e686	templates/languages/flutter/android--extension.toml
 extension	flutter+linux-desktop	0.1.0	a0d21868c9153250264974efe24bd185cc68eb0b5135888caed3ab8933989162	templates/languages/flutter/linux-desktop--extension.toml
 extension	flutter+vscode-ext	0.1.0	960dbb4948451317c93bf4702e9d4a6b9f75d693923e9b82f01a42779b159b06	templates/languages/flutter/vscode-ext--extension.toml
+extension	fpc+lazarus	0.1.0	f0d4166798a779dcb7d0cba4773a0f4e5ded3050fc3391045488e9d62cbc3cce	templates/languages/fpc/lazarus--extension.toml
 extension	fpc+vscode-ext	1.0.0	3eff946a4e4eaa30869f8ae31814cb5a78541a0d46cbd1adb416761174244ae1	templates/languages/fpc/vscode-ext--extension.toml
 extension	fresh+config-shared	0.1.0	8c97c5790a3f6cdec5e371a3d8be33f62a2f680a39a8946f884f889a36cf3228	templates/tools/fresh/config-shared--extension.toml
 extension	fresh+theme	0.3.0	cf0adbb46d159af58a87c9288f34ba1f65abab9b55a02dd0686d5a488c4b660f	templates/tools/fresh/theme--extension.toml
