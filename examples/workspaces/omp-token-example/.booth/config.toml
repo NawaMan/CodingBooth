@@ -1,0 +1,8 @@
+# Configured by: booth config --no-tui --overwrite --cmd bash --select oh-my-pi+settings-cache+token-credential~credential
+
+
+cmds = ["bash"]
+
+run-args = ["-e", "ANTHROPIC_OAUTH_TOKEN=${ANTHROPIC_OAUTH_TOKEN}"]
+
+cache-dirs = ["home/coder/.omp"]
