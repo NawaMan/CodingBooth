@@ -8,9 +8,6 @@
 #
 # croft --version only proves a binary landed on PATH. `croft plot` charts
 # numbers from stdin, which is a command a user runs without opening the TUI.
-#
-# croft--setup.sh is copied under .booth/setups/ until the base image ships it.
-# Delete that copy before landing, then rebuild base and re-run this test.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
