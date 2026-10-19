@@ -41,3 +41,7 @@ shell:
 # Run one Claude Code task non-interactively: just ask  or  just ask "your prompt"
 ask *prompt:
     {{run-in-booth}} scripts/ask-claude.sh {{quote(prompt)}}
+
+# Vet a git repo before you run it: just vet <git-url> [branch-or-tag]  -> reports/<owner>-<repo>.md
+vet url *ref:
+    {{run-in-booth}} scripts/vet-repo.sh {{quote(url)}} {{ref}}
