@@ -5,3 +5,8 @@ run-args = [
     "-e", "CARGO_NET_GIT_FETCH_WITH_CLI=true",
     "-v", "~/.cargo/credentials.toml:/etc/cb-home-seed/.cargo/credentials.toml:ro"
 ]
+
+cache-dirs = [
+    "home/coder/.cargo/registry",
+    "home/coder/.cargo/git"
+]
