@@ -29,6 +29,23 @@ assert_has "go+mod-cache mounts the module cache" "booth-cache-gomod:/home/coder
 assert_has "go+mod-cache mounts the build cache" "booth-cache-gobuild:/home/coder/.cache/go-build"
 assert_has "go+mod-cache pins GOMODCACHE" "GOMODCACHE=/home/coder/go/pkg/mod"
 assert_has "go+mod-cache pins GOCACHE" "GOCACHE=/home/coder/.cache/go-build"
+# Both go caches sit in coder's home, where an image build leaves them owned by
+# the build-time uid; docker seeds a fresh volume from that, and booth-entry's
+# home sweep is -xdev so it cannot reach inside the mount. Without these entries
+# `go build` died on "permission denied" on its own cache on any host whose uid
+# is not 1000.
+TEST_COUNT=$((TEST_COUNT + 1))
+echo -n "Test ${TEST_COUNT}: go+mod-cache writes owner-permission.yaml for both caches ..."
+if grep -qF 'path: "/home/coder/go/pkg/mod"'      "$prj/.booth/owner-permission.yaml" \
+   && grep -qF 'path: "/home/coder/.cache/go-build"' "$prj/.booth/owner-permission.yaml" \
+   && grep -qF 'mode: "1777"'                        "$prj/.booth/owner-permission.yaml"; then
+    PASS_COUNT=$((PASS_COUNT + 1))
+    echo -e "\033[32mPASSED\033[0m"
+else
+    FAIL_COUNT=$((FAIL_COUNT + 1))
+    FAIL_TESTS+=("${test_label}: Test ${TEST_COUNT}: go owner-permission.yaml")
+    echo -e "\033[31mFAILED\033[0m"
+fi
 
 run rm -Rf $prj ; mkdir -p $prj
 run booth config $prj --no-tui --select 'nodejs+npm-cache+pnpm-cache'

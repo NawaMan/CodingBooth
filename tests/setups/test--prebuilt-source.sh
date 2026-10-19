@@ -1,0 +1,170 @@
+#!/bin/bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
+# -----------------------------------------------------------------------------
+# Unit test: libs/prebuilt-source.sh — the CodingBoothPrebuilt download helper
+#
+# rust-nb-kernel, scratch and excalidraw install a prebuilt release asset and only
+# compile when there is none. The helper decides which of the two happens, so the
+# cases that matter are:
+#
+#   1. Asset names: "any" is <tool>-<version>; "native" adds <distro>-<arch> from
+#      /etc/os-release and uname, matching what CodingBoothPrebuilt publishes.
+#   2. A published asset that matches its .sha256 unpacks into the destination,
+#      without the tarball's top folder.
+#   3. No asset (a version that was never prebuilt) returns 1 and leaves the
+#      destination alone — the caller builds from source.
+#   4. A checksum mismatch is NOT a fallback: the setup exits, installing nothing.
+#
+# Hermetic: CB_PREBUILT_URL points at a fake release tree served as file://, so
+# nothing reaches GitHub and no image is needed.
+#
+# The lib is written for the image — Ubuntu, GNU userland — and this file runs it
+# on the host, so each host-bound ingredient is probed and the case it belongs to
+# skips where the host has not got it: sha256sum (both the fixture and the lib
+# check assets with it), /etc/os-release (case 1's "native" half only), and a
+# file:// spelling this host's curl can read (every download case).
+# -----------------------------------------------------------------------------
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR"
+source ../common--source.sh
+
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+LIB="$REPO_ROOT/variants/base/setups/libs/prebuilt-source.sh"
+
+# Nothing here works without sha256sum: the fixture signs its tarballs with it and
+# the lib checks them with it. macOS carries one from 15 on, Git Bash has coreutils'.
+command -v sha256sum >/dev/null 2>&1 || {
+    echo "SKIP: no sha256sum on this host, and both the fixture and prebuilt-source.sh check assets with it"
+    exit 0
+}
+
+ALL_PASSED=true
+TEST_NUM=0
+
+report() {  # report <ok> <desc> [detail-lines...]
+    local ok="$1" desc="$2"; shift 2
+    TEST_NUM=$((TEST_NUM + 1))
+    if [ "$ok" = true ]; then
+        print_test_result "true" "$0" "$TEST_NUM" "$desc"
+    else
+        print_test_result "false" "$0" "$TEST_NUM" "$desc"
+        for line in "$@"; do echo "      $line"; done
+        ALL_PASSED=false
+    fi
+}
+
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+
+# A fake release: tool "demo" version 1.0, arch-independent, with a good checksum,
+# and version 2.0 whose .sha256 is wrong.
+make_release() {  # make_release <version> <good|bad>
+    local version="$1" sum="$2" name="demo-$1"
+    mkdir -p "$TMP/stage/$name/sub" "$TMP/release/$name"
+    echo "hello $version" > "$TMP/stage/$name/sub/file.txt"
+    tar -czf "$TMP/release/$name/$name.tar.gz" -C "$TMP/stage" "$name"
+    if [ "$sum" = good ]; then
+        (cd "$TMP/release/$name" && sha256sum "$name.tar.gz" > "$name.tar.gz.sha256")
+    else
+        echo "0000000000000000000000000000000000000000000000000000000000000000  $name.tar.gz" \
+            > "$TMP/release/$name/$name.tar.gz.sha256"
+    fi
+}
+make_release 1.0 good
+make_release 2.0 bad
+
+# The fake release is served over file://, spelled the way this host's curl reads a
+# path: POSIX on Linux and macOS, but a drive-letter path under MSYS/Git Bash, whose
+# curl is a native Windows binary that knows nothing of /tmp/... — cygpath turns one
+# into the other, and a drive letter takes the third slash (file:///C:/...).
+local_file_url() {  # local_file_url <dir>
+    local path="$1"
+    if command -v cygpath >/dev/null 2>&1; then
+        path="$(cygpath -m "$path")"
+    fi
+    case "$path" in
+        [A-Za-z]:*) echo "file:///$path" ;;
+        *)          echo "file://$path" ;;
+    esac
+}
+export CB_PREBUILT_URL="$(local_file_url "$TMP/release")"
+# shellcheck source=/dev/null
+source "$LIB"
+
+# 1. Asset names
+got="$(cb_prebuilt_asset demo 1.0 any)"
+if [ "$got" = "demo-1.0" ]; then
+    report true "any-arch asset name is <tool>-<version>"
+else
+    report false "any-arch asset name is <tool>-<version>" "got: $got"
+fi
+
+# The native name is built from /etc/os-release's ID and VERSION_ID, which only the
+# Linux the image runs on has: macOS has no such file, and MSYS2's may carry an ID
+# with no VERSION_ID. The lib reads both unguarded, so this case wants both present
+# — and skips rather than dying on a branch that never runs outside the image. (The
+# whole file used to die here: `. /etc/os-release` under set -e took cases 2-5 with
+# it, so a Mac reported one failure where it should have reported four passes.)
+distro=""
+if [ -r /etc/os-release ]; then
+    distro="$( . /etc/os-release 2>/dev/null
+               [ -n "${ID:-}" ] && [ -n "${VERSION_ID:-}" ] && printf '%s%s' "$ID" "$VERSION_ID" )" \
+        || distro=""
+fi
+if [ -n "$distro" ]; then
+    got="$(cb_prebuilt_asset demo 1.0 native)"
+    if [[ "$got" =~ ^demo-1\.0-${distro//./\\.}-(x86_64|arm64)$ ]]; then
+        report true "native asset name is <tool>-<version>-<distro>-<arch> ($got)"
+    else
+        report false "native asset name is <tool>-<version>-<distro>-<arch>" "got: $got"
+    fi
+else
+    echo "SKIP: native asset names come from /etc/os-release (ID and VERSION_ID), which this host has not got ($(uname -s))"
+fi
+
+# Every case below fetches from that URL, so check once that this host's curl can
+# read a local file:// at all. Without the check, a spelling that never reached curl
+# would fail three cases for a reason that has nothing to do with the lib.
+if ! curl -fsS "${CB_PREBUILT_URL}/demo-1.0/demo-1.0.tar.gz.sha256" -o "$TMP/url-probe" 2>/dev/null; then
+    echo "SKIP: this host's curl cannot read ${CB_PREBUILT_URL}, so the download cases cannot run hermetically"
+    [ "$ALL_PASSED" = true ] && exit 0 || exit 1
+fi
+
+# 2. Good asset installs, top folder stripped
+if out="$(cb_prebuilt_install demo 1.0 any "$TMP/dest-ok" 2>&1)" \
+   && [ "$(cat "$TMP/dest-ok/sub/file.txt" 2>/dev/null)" = "hello 1.0" ]; then
+    report true "a published asset unpacks into the destination without its top folder"
+else
+    report false "a published asset unpacks into the destination without its top folder" "$out"
+fi
+
+# 3. Missing asset → status 1, destination untouched
+status=0
+out="$(cb_prebuilt_install demo 9.9 any "$TMP/dest-missing" 2>&1)" || status=$?
+if [ "$status" = 1 ] && [ ! -e "$TMP/dest-missing" ]; then
+    report true "no asset returns 1 and leaves the destination alone (caller builds from source)"
+else
+    report false "no asset returns 1 and leaves the destination alone" "status: $status" "$out"
+fi
+
+# 4. Checksum mismatch → the setup exits; run in a subshell since it calls exit
+status=0
+out="$( (cb_prebuilt_install demo 2.0 any "$TMP/dest-bad"; echo "CONTINUED") 2>&1)" || status=$?
+if [ "$status" != 0 ] && [[ "$out" != *CONTINUED* ]] && [[ "$out" == *"does not match"* ]] \
+   && [ ! -e "$TMP/dest-bad" ]; then
+    report true "a checksum mismatch exits the setup and installs nothing"
+else
+    report false "a checksum mismatch exits the setup and installs nothing" "status: $status" "$out"
+fi
+
+if [ "$ALL_PASSED" = true ]; then
+    exit 0
+else
+    exit 1
+fi

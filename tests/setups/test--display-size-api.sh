@@ -26,6 +26,8 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 API="$REPO_ROOT/variants/base/setups/booth-message-api-server"
 BASH_BIN="$(command -v bash)"
 
+require_host_tools "booth-message-api-server matches its request headers with \${line,,}" bash4
+
 STUB=$(mktemp -d)
 trap 'rm -rf "$STUB"' EXIT
 mkdir -p "$STUB/bin" "$STUB/hook" "$STUB/failing"
@@ -56,7 +58,7 @@ post() {
     local path="$1" body="$2"
     OUT=$(printf 'POST /booth-messages/api/display-size HTTP/1.1\r\nContent-Type: application/json\r\nContent-Length: %s\r\n\r\n%s' \
             "${#body}" "$body" \
-          | env -i HOME="$STUB" PATH="$path" "$BASH_BIN" "$API" --handle 2>&1 | tr -d '\r')
+          | env -i HOME="$STUB" PATH="$(stub_path "$path")" "$BASH_BIN" "$API" --handle 2>&1 | tr -d '\r')
 }
 
 # ---- no hook: supported:false, nothing run ----

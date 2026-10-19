@@ -22,6 +22,9 @@ const defaultPortBase = 10000
 // portScanStep is the spacing between candidate ports scanned by NEXT / RANDOM.
 const portScanStep = 1000
 
+// maxPortNumber is the highest port a host can publish on.
+const maxPortNumber = 65535
+
 // PortDetermination determines the host port and returns updated AppContext.
 func PortDetermination(ctx appctx.AppContext) appctx.AppContext {
 	builder := ctx.ToBuilder()
@@ -35,6 +38,26 @@ func PortDetermination(ctx appctx.AppContext) appctx.AppContext {
 	portGenerated := false
 	var portNumber int
 
+	// NEXT / RANDOM must leave room for the "+OFFSET" published ports resolved
+	// later in the run (see ResolveRelativePorts): while the offset base follows
+	// the booth port, every one of them moves with the pick, and a high pick puts
+	// them past the ceiling. An explicit --offset-base takes them off the booth
+	// port entirely, and then no pick can affect them.
+	ceiling := maxPortNumber
+	headroom := 0
+	if strings.TrimSpace(ctx.OffsetBase()) == "" {
+		if offset, ok := maxRelativeOffset(ctx); ok && offset > 0 {
+			headroom = offset
+			ceiling = maxPortNumber - offset
+		}
+	}
+	if keyword != "" && base > ceiling {
+		fmt.Fprintf(os.Stderr,
+			"Error: no booth port at or above %d leaves room for a +%d published port — the host port would be above %d. Lower the --port %s base, or set --offset-base.\n",
+			base, headroom, maxPortNumber, keyword)
+		os.Exit(1)
+	}
+
 	switch keyword {
 	case "RANDOM":
 		// In dryrun mode, avoid binding sockets so tests remain deterministic in restricted environments.
@@ -44,7 +67,7 @@ func PortDetermination(ctx appctx.AppContext) appctx.AppContext {
 		}
 		// Generate random ports in increments of portScanStep from base (e.g. 10000, 11000, 12000, ...).
 		var listener net.Listener
-		portNumber, listener, portGenerated = findRandomPort(base)
+		portNumber, listener, portGenerated = findRandomPort(base, ceiling)
 		if !portGenerated {
 			fmt.Fprintf(os.Stderr, "Error: unable to find a free RANDOM port at or above %d.\n", base)
 			os.Exit(1)
@@ -59,7 +82,7 @@ func PortDetermination(ctx appctx.AppContext) appctx.AppContext {
 		}
 		// Find next available port starting from base in increments of portScanStep.
 		var listener net.Listener
-		portNumber, listener, portGenerated = findNextPort(base)
+		portNumber, listener, portGenerated = findNextPort(base, ceiling)
 		if !portGenerated {
 			fmt.Fprintf(os.Stderr, "Error: unable to find the NEXT free port at or above %d.\n", base)
 			os.Exit(1)
@@ -211,17 +234,22 @@ var (
 	portReservation      net.Listener
 )
 
-// findRandomPort finds a random free port at or above base in increments of portScanStep.
-// The returned listener is a live reservation on that port; the caller owns it.
-func findRandomPort(base int) (int, net.Listener, bool) {
-	numSlots := (65000-base)/portScanStep + 1
+// findRandomPort finds a random free port in [base, ceiling] in increments of
+// portScanStep. The returned listener is a live reservation on that port; the
+// caller owns it.
+func findRandomPort(base, ceiling int) (int, net.Listener, bool) {
+	top := ceiling
+	if top > 65000 {
+		top = 65000
+	}
+	numSlots := (top-base)/portScanStep + 1
 	if numSlots < 1 {
 		numSlots = 1
 	}
 
 	for i := 0; i < 200; i++ {
 		port := base + (rand.Intn(numSlots) * portScanStep)
-		if port > 65535 {
+		if port > ceiling {
 			continue
 		}
 		if listener, ok := reservePort(port); ok {
@@ -232,10 +260,11 @@ func findRandomPort(base int) (int, net.Listener, bool) {
 	return 0, nil, false
 }
 
-// findNextPort finds the next free port at or above base in increments of portScanStep.
-// The returned listener is a live reservation on that port; the caller owns it.
-func findNextPort(base int) (int, net.Listener, bool) {
-	for port := base; port <= 65535; port += portScanStep {
+// findNextPort finds the next free port in [base, ceiling] in increments of
+// portScanStep. The returned listener is a live reservation on that port; the
+// caller owns it.
+func findNextPort(base, ceiling int) (int, net.Listener, bool) {
+	for port := base; port <= ceiling; port += portScanStep {
 		if listener, ok := reservePort(port); ok {
 			return port, listener, true
 		}

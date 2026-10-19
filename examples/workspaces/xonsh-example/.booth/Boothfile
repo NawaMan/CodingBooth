@@ -1,7 +1,7 @@
 # syntax=codingbooth/boothfile:1
 # Configured by: booth config --no-tui --overwrite --select xonsh:0.24.2+default
 
-env APT_SNAPSHOT=20261002T000000Z
+env APT_SNAPSHOT=20261004T000000Z
 
 arg PYTHON_VERSION=3.13.15
 arg XONSH_VERSION=0.24.2
@@ -15,5 +15,5 @@ env PYTHONUNBUFFERED=1
 env VIRTUAL_ENV=/opt/python
 env PATH=/usr/local/uv/bin:/usr/local/uv:/opt/pyenv/bin:/opt/python/bin:$PATH
 setup python ${PYTHON_VERSION}
-setup python-code-extension
 setup xonsh --version ${XONSH_VERSION}
+setup python-code-extension

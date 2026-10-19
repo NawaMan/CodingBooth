@@ -1,9 +1,10 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --select python:3.12+conda+conda-pkg:numpy
+# Configured by: booth config --no-tui --overwrite --variant notebook --select python:3.12+conda+conda-pkg:rdkit,pandas,matplotlib+conda-kernel/notebook
 
-env APT_SNAPSHOT=20260906T000000Z
+env APT_SNAPSHOT=20261004T000000Z
 
-arg CONDA_PKGS=numpy
+arg CONDA_PKGS=matplotlib,pandas,rdkit
+arg NOTEBOOK_PORT=12222
 arg PYTHON_VERSION=3.12
 
 env CB_PYENV_ROOT=/opt/pyenv
@@ -25,7 +26,9 @@ env PIP_DISABLE_PIP_VERSION_CHECK=1
 env PYTHONUNBUFFERED=1
 env PATH=/opt/python/bin:/opt/conda/bin:$PATH
 setup conda
+setup notebook ${NOTEBOOK_PORT}
 install conda ${CONDA_PKGS}
 setup python-code-extension
+setup conda-nb-kernel
  
 run --mount=type=bind,target=/tmp/ctx                                               if [ -f /tmp/ctx/.booth/requirements.txt ]; then                                pip install -r /tmp/ctx/.booth/requirements.txt;                           else echo "Warning: .booth/requirements.txt not found -- skipping pip install"; fi

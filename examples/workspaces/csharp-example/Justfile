@@ -1,7 +1,8 @@
 # {{run-in-booth}} runs a line in this project's booth (starting one if needed),
 # {{run-on-host}} keeps a line on the host. From `booth just-init`:
 # https://github.com/NawaMan/CodingBooth/blob/main/docs/just/Justfile
-run-in-booth := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+booth        := env("BOOTH", "./booth")
+run-in-booth := if env("BOOTH_CONTAINER_NAME", "") == "" { booth + " exec --run --" } else { "" }
 run-on-host  := if env("BOOTH_CONTAINER_NAME", "") == "" { "" } else { "echo 'just: this recipe runs on the host - exit the booth and run it there.' >&2; exit 2;" }
 
 [private]
@@ -12,6 +13,6 @@ default:
 build:
     {{run-in-booth}} dotnet build --project .
 
-# Build and run
-run:
-    {{run-in-booth}} ./run-csharp.sh
+# Build and run; sums 1..N (default 10)
+run *args:
+    {{run-in-booth}} ./run-csharp.sh {{args}}

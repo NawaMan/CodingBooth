@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -20,10 +20,13 @@ Examples:
   $0 18700      # use port 18700
 
 Notes:
-- Installs Node.js (if not present) and builds the open-source Scratch 3 GUI from source
+- Installs Node.js (if not present) to serve the open-source Scratch 3 GUI
+- scratch-gui ${SCRATCH_VERSION} comes prebuilt (sha256-checked) from
+  https://github.com/NawaMan/CodingBoothPrebuilt/releases; when that is
+  unreachable it is built from the same upstream tag instead
 - Serves the static build with 'serve' on the configured port
 - Access: http://localhost:<PORT>
-- Scratch is released by MIT under the 3-Clause BSD license
+- scratch-gui is released under the AGPL-3.0
   (https://github.com/scratchfoundation/scratch-gui)
 USAGE
 }
@@ -37,6 +40,8 @@ HOME=/root
 # ---- defaults / args ----
 SCRATCH_PORT="${1:-21000}"
 SCRATCH_DIR="/opt/scratch"
+# Upstream archived scratch-gui at 5.3.0, so this is also its last release.
+SCRATCH_VERSION="${SCRATCH_VERSION:-5.3.0}"
 
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
   usage
@@ -69,38 +74,51 @@ fi
 echo "• Installing 'serve' ..."
 npm install -g serve
 
-# ---- clone and build scratch-gui ----
-BUILD_DIR="/tmp/scratch-build"
-rm -rf "$BUILD_DIR"
+# ---- install the built editor ----
+SETUP_LIBS_DIR="${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}"
+if [ ! -r "${SETUP_LIBS_DIR}/prebuilt-source.sh" ]; then
+  SETUP_LIBS_DIR="$(dirname "$0")/libs"
+fi
+source "${SETUP_LIBS_DIR}/prebuilt-source.sh"
 
-echo "• Cloning scratch-gui ..."
-# github.com intermittently answers 429/503 during a full build sweep and git has
-# no --retry of its own. Clear the partial clone before retrying — git refuses to
-# clone into a non-empty directory.
-for attempt in 1 2 3; do
-  if git clone --depth 1 https://github.com/scratchfoundation/scratch-gui.git "$BUILD_DIR"; then break; fi
-  if [ "$attempt" = 3 ]; then echo "❌ scratch-gui clone failed after 3 attempts"; exit 1; fi
-  echo "  ⚠️  clone failed — retrying in $((attempt * 5))s ..."
-  rm -rf "$BUILD_DIR"
-  sleep $((attempt * 5))
-done
+build_from_source() {
+  local build_dir="/tmp/scratch-build" attempt
+  rm -rf "$build_dir"
 
-cd "$BUILD_DIR"
+  echo "• Cloning scratch-gui v${SCRATCH_VERSION} ..."
+  # github.com intermittently answers 429/503 during a full build sweep and git has
+  # no --retry of its own. Clear the partial clone before retrying — git refuses to
+  # clone into a non-empty directory.
+  for attempt in 1 2 3; do
+    if git clone --depth 1 --branch "v${SCRATCH_VERSION}" \
+         https://github.com/scratchfoundation/scratch-gui.git "$build_dir"; then break; fi
+    if [ "$attempt" = 3 ]; then echo "❌ scratch-gui clone failed after 3 attempts"; exit 1; fi
+    echo "  ⚠️  clone failed — retrying in $((attempt * 5))s ..."
+    rm -rf "$build_dir"
+    sleep $((attempt * 5))
+  done
 
-echo "• Installing dependencies (this may take several minutes) ..."
-npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+  cd "$build_dir"
 
-echo "• Building Scratch editor ..."
-NODE_ENV=production NODE_OPTIONS=--openssl-legacy-provider npm run build
+  echo "• Installing dependencies (this may take several minutes) ..."
+  npm ci --no-audit --no-fund || npm install --no-audit --no-fund
 
-# ---- install built files ----
-echo "• Installing to ${SCRATCH_DIR} ..."
-mkdir -p "$SCRATCH_DIR"
-cp -r build/* "$SCRATCH_DIR"/
+  echo "• Building Scratch editor ..."
+  NODE_ENV=production NODE_OPTIONS=--openssl-legacy-provider npm run build
 
-# ---- clean up build artifacts ----
-cd /
-rm -rf "$BUILD_DIR"
+  echo "• Installing to ${SCRATCH_DIR} ..."
+  mkdir -p "$SCRATCH_DIR"
+  cp -r build/* "$SCRATCH_DIR"/
+
+  cd /
+  rm -rf "$build_dir"
+}
+
+rm -rf "$SCRATCH_DIR"
+if ! cb_prebuilt_install scratch-gui "$SCRATCH_VERSION" any "$SCRATCH_DIR"; then
+  build_from_source
+fi
+chmod -R a+rX "$SCRATCH_DIR"
 
 # ---- create starter script (manual foreground launch) ----
 cat > "${STARTER_FILE}" <<'STARTER'
@@ -129,6 +147,7 @@ cb-web-icon.sh --id scratch --name "Scratch" --icon "$ICON" \
   --port "${SCRATCH_PORT}" --path / --start start-scratch
 
 echo "✅ Scratch installed."
+echo "   Version:  ${SCRATCH_VERSION}"
 echo "   Location: ${SCRATCH_DIR}"
 echo "   Port:     ${SCRATCH_PORT}"
 echo "   Starter:  ${STARTER_FILE}"

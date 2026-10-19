@@ -1,0 +1,16 @@
+cb-version = "0.1.0"
+display-name = "Bash (bash-language-server)"
+display-disc = "Completion, hover docs, and shellcheck diagnostics; Bash IDE in VS Code"
+display-order = 14
+auto-select = false
+requires = ["nodejs"]
+tags = ["lsp", "language-server", "bash", "vscode"]
+
+[segments]
+"Boothfile--60" = """
+setup lsp--bash
+"""
+# The VS Code side; skips itself on a variant without VS Code or code-server.
+"Boothfile--65" = """
+setup bash-code-extension
+"""

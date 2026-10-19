@@ -39,6 +39,18 @@ an **XFCE desktop in your browser** on the booth's port. From there:
 From a shell inside the booth, `start-sales-explorer` does the same build-and-start
 (logs in `~/.sales-explorer.log`, PID in `~/.sales-explorer.pid`).
 
+### Run it
+
+```bash
+just --list
+just sql                 # ./demo.sh sql — revenue by category, straight from PostgreSQL
+just api                 # ./demo.sh api — start Sales Explorer, ask /api/sales/summary
+just desktop             # ./booth — the XFCE desktop in your browser
+```
+
+`sql` and `api` need no desktop. With no booth running, each starts one and stops it again
+afterwards, waiting (up to 60s) for the seeded `sales` rows first.
+
 ## How it works
 
 - `.booth/Boothfile` — installs Python (+ pip packages), Node.js, PostgreSQL, DBeaver and

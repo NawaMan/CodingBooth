@@ -1,0 +1,12 @@
+# Configured by: booth config --no-tui --overwrite --variant xfce --select go:1.25.7+vscode-ext+kernel+mod-cache/python:3.13.12/notebook:18888/codeserver:19999
+# booth-entry applies each entry to that mount point on startup.
+# A directory entry sets the mode on that directory and every directory under
+# it, and the owner on everything in the tree, files included.
+- path: "/home/coder/.cache/go-build"
+  user: "coder"
+  group: "coder"
+  mode: "1777"
+- path: "/home/coder/go/pkg/mod"
+  user: "coder"
+  group: "coder"
+  mode: "1777"

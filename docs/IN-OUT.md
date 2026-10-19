@@ -92,8 +92,8 @@ See [Build](BOOTH_BUILD.md), [Customization](BOOTH_CUSTOMIZATION.md) and
 | **Cache** | `cache-files` / `cache-dirs` in a template or `config.toml`; or files placed in `.booth/cache/` by hand | `.booth/cache/<path>` → `/<path>`. Read-write. **Must not be in git** — the booth refuses to start otherwise |
 | **Shared** | `shared-files` / `shared-dirs`; or files placed in `.booth/shared/` by hand | `.booth/shared/<path>` → `/<path>`. Read-write. **Meant for git** |
 | **Bind mount** | `booth config --mount` / `--add-mount` (each adds a `-v`); `run-args = ["-v", …]` in `config.toml` or a template | Any host path → any container path, read-write or `:ro`. An entry whose host path does not exist is dropped with a notice, unless it ends in `:create`, which creates the host folder |
-| `@code` source | run-args `-v @code:<path>` (`anythingllm+project-fs`) | The project folder, mounted a second time at another path |
-| **Named volume** | run-args `-v <name>:<path>` (`postgresql`, `mysql`, `redis`, `mongodb`, `penpot`, …) | Docker storage → path. `{name}` in the name makes it one volume per booth, `{project}` one per project |
+| `@code` source | run-args `-v @code:<path>` in a template or `config.toml` | The project folder, mounted a second time at another path |
+| **Named volume** | run-args `-v <name>:<path>` (`postgresql`, `mysql`, `redis`, `mongodb`, `floci`, …) | Docker storage → path. `{name}` in the name makes it one volume per booth, `{project}` one per project |
 | `--persist-home` | CLI / `config.toml` | Volume `cb-home-<name>` → the whole of `/home/coder`. Seeding stops after the first run |
 | `--tls-cert`, `--tls-key` | CLI | Host files → `/tmp/booth-tls-*.pem`, read-only |
 | Devices and GPUs | run-args `--device /dev/kvm`, `--gpus all` | Host hardware → the booth |
@@ -159,15 +159,13 @@ It exists because a template cannot know where the project lives on the host: `$
 not mean "the project", so without `@code` a template had no way to say "mount the project here
 too".
 
-Its one user is `ai-tools/anythingllm+project-fs`:
+No catalog template uses it at the moment. It is for a tool that only works on files inside its
+own folder and resolves symlinks to check — a symlink to `~/code` is rejected, while a second bind
+mount makes the project really be inside that folder:
 
 ```toml
-run-args = ["-v", "@code:/home/coder/.anythingllm/anythingllm-fs/code"]
+run-args = ["-v", "@code:/home/coder/.some-tool/workspace/code"]
 ```
-
-AnythingLLM's file-system agent only touches files inside its own folder, and resolves symlinks
-to check — so a symlink to `~/code` is rejected. A second bind mount makes the project really be
-inside that folder.
 
 ### Named volumes in use
 
@@ -178,14 +176,13 @@ same folder has its own too.
 
 | Volume | Template | Examples using it |
 |---|---|---|
-| `booth-pgdata-{name}` | `middlewares/postgresql` | affine, rails, data, pern, postgrest, `examples/demo` |
+| `booth-pgdata-{name}` | `middlewares/postgresql` | rails, data, pern, postgrest, `examples/demo` |
 | `booth-mysqldata-{name}` | `middlewares/mysql` | lamp, lemp, wordpress |
 | `booth-mongodata-{name}` | `middlewares/mongodb` | mean, mern |
-| `booth-redisdata-{name}` | `middlewares/redis` | affine |
+| `booth-redisdata-{name}` | `middlewares/redis` | — |
 | `booth-kafkadata-{name}` | `middlewares/kafka` | — |
 | `booth-rabbitmqdata-{name}` | `middlewares/rabbitmq` | — |
 | `booth-flocidata-{name}` | `tools/floci` | floci |
-| `booth-penpot-assets-{name}` | `tools/penpot` | — |
 | `cb-home-<booth name>` | the CLI, for `--persist-home` | — (one per booth) |
 | `booth-cache-gomod`, `booth-cache-gobuild` | `go+mod-cache` | go-example |
 | `booth-cache-npm` | `nodejs+npm-cache` | npm-example |
@@ -258,9 +255,9 @@ To reset a booth's data, remove its volume while no booth uses it:
 ### Owner and mode of a mount
 
 A volume that Docker creates, or one that an image build wrote into, can hold directories owned by
-root, which coder cannot write. A template lists `[[owner-permission]]` entries: `path` (absolute),
-and the optional `user`, `group` and `mode` (an octal string such as `"1777"`). `booth config`
-merges them into `.booth/owner-permission.yaml`. It is a generated file, fingerprinted in
+root, and files owned by the build-time uid, neither of which coder can write. A template lists
+`[[owner-permission]]` entries: `path` (absolute), and the optional `user`, `group` and `mode` (an
+octal string such as `"1777"`). `booth config` merges them into `.booth/owner-permission.yaml`. It is a generated file, fingerprinted in
 `.booth/.generated` like the Boothfile, so do not edit it by hand.
 
 ```yaml
@@ -270,13 +267,17 @@ merges them into `.booth/owner-permission.yaml`. It is a generated file, fingerp
   mode: "1777"
 ```
 
-On every start, `booth-entry` applies each entry as root. A directory entry sets the owner and mode
-on that directory and every directory under it, and does not cross onto another filesystem. Files
-keep the mode they have. A path that is not a mount point, or does not exist, is skipped with a
-notice.
+On every start, `booth-entry` applies each entry as root, without crossing onto another filesystem.
+A directory entry sets the **mode** on that directory and every directory under it, and the
+**owner** on everything in the tree, files included — a fresh volume is seeded from the image, so
+the files in it arrive owned by the build-time uid, and a 1777 directory does not let coder write a
+file it does not own. Files keep the mode they have, which a Go module cache relies on: Go makes
+them read-only so a build cannot quietly mutate a verified dependency. A path that is not a mount point, or does not exist, is skipped
+with a notice.
 
-Its one user is `python+pip-cache`: `/opt/pip-cache` becomes `coder:coder`, mode `1777`. See the
-`owner-permission` key in [Template schema](AGENT_TEMPLATE.md).
+Its users are the package-cache extensions: `python+pip-cache` (`/opt/pip-cache`) and
+`go+mod-cache` (the module and build caches in coder's home), each becoming `coder:coder`, mode
+`1777`. See the `owner-permission` key in [Template schema](AGENT_TEMPLATE.md).
 
 ### Who uses `--persist-home`
 

@@ -30,11 +30,24 @@ func TestFindJustfile(t *testing.T) {
 	if got := FindJustfile(dir); got != "" {
 		t.Errorf("empty folder: got %q", got)
 	}
+	// By file identity, not by spelling. FindJustfile probes the names in
+	// order, so on a case-insensitive filesystem (macOS, Windows) the probe
+	// for "Justfile" already finds a file written as "justfile", and the path
+	// it hands back carries the probe's spelling rather than the one on disk.
+	// That path opens the file callers want, which is what the function is
+	// for; os.SameFile says so on every platform, and still fails if some
+	// other file comes back.
 	for _, name := range justfileNames {
 		d := t.TempDir()
-		mustWrite(t, filepath.Join(d, name), "x")
-		if got := FindJustfile(d); got != filepath.Join(d, name) {
-			t.Errorf("with %s: got %q", name, got)
+		want := filepath.Join(d, name)
+		mustWrite(t, want, "x")
+		got := FindJustfile(d)
+		if got == "" {
+			t.Errorf("with %s: found nothing", name)
+			continue
+		}
+		if !sameFile(t, got, want) {
+			t.Errorf("with %s: got %q, which is a different file", name, got)
 		}
 	}
 	// A folder named Justfile is not one.
@@ -145,21 +158,24 @@ func TestStarterRuns(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	run := func(inBooth bool, args ...string) (string, error) {
+	runWith := func(extra []string, inBooth bool, args ...string) (string, error) {
 		cmd := exec.Command(justBin, args...)
 		cmd.Dir = dir
 		var env []string
 		for _, kv := range os.Environ() {
-			if !strings.HasPrefix(kv, "BOOTH_CONTAINER_NAME=") {
+			if !strings.HasPrefix(kv, "BOOTH_CONTAINER_NAME=") && !strings.HasPrefix(kv, "BOOTH=") {
 				env = append(env, kv)
 			}
 		}
 		if inBooth {
 			env = append(env, "BOOTH_CONTAINER_NAME=test-booth")
 		}
-		cmd.Env = env
+		cmd.Env = append(env, extra...)
 		out, err := cmd.CombinedOutput()
 		return string(out), err
+	}
+	run := func(inBooth bool, args ...string) (string, error) {
+		return runWith(nil, inBooth, args...)
 	}
 
 	if out, err := run(false, "--list"); err != nil || !strings.Contains(out, "info") || !strings.Contains(out, "shell") {
@@ -177,6 +193,36 @@ func TestStarterRuns(t *testing.T) {
 	if out, err := run(true, "shell"); err == nil || !strings.Contains(out, "runs on the host") {
 		t.Errorf("in-booth shell: err=%v out=%q, want a host-only refusal", err, out)
 	}
+
+	// BOOTH swaps ./booth for another command, such as a checkout's own build.
+	local := []string{"BOOTH=../codingbooth"}
+	if out, err := runWith(local, false, "--dry-run", "info"); err != nil || !strings.Contains(out, "../codingbooth exec --run -- booth--info") {
+		t.Errorf("host info with BOOTH: err=%v out=%q, want it handed to ../codingbooth exec --run", err, out)
+	}
+	if out, err := runWith(local, false, "--dry-run", "shell"); err != nil || !strings.Contains(out, "../codingbooth shell --run") {
+		t.Errorf("host shell with BOOTH: err=%v out=%q, want ../codingbooth shell --run", err, out)
+	}
+	if out, err := runWith(local, true, "--dry-run", "info"); err != nil || strings.Contains(out, "codingbooth") || !strings.Contains(out, "booth--info") {
+		t.Errorf("in-booth info with BOOTH: err=%v out=%q, want a bare booth--info", err, out)
+	}
+}
+
+// sameFile reports whether two paths lead to the same file on disk, so a test
+// can compare what a lookup found against what it wrote without depending on
+// the filesystem's case sensitivity.
+func sameFile(t *testing.T, left, right string) bool {
+	t.Helper()
+	leftInfo, err := os.Stat(left)
+	if err != nil {
+		t.Errorf("stat %s: %v", left, err)
+		return false
+	}
+	rightInfo, err := os.Stat(right)
+	if err != nil {
+		t.Errorf("stat %s: %v", right, err)
+		return false
+	}
+	return os.SameFile(leftInfo, rightInfo)
 }
 
 func mustWrite(t *testing.T, path, content string) {

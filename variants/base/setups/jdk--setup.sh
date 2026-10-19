@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -198,6 +198,7 @@ if [[ "$DOWNLOAD_URL" != "jbang" ]]; then
   [[ -s "$TMP_TARBALL" ]] || die "Downloaded file is empty"
 
   log "Extracting JDK..."
+  "$(dirname "$0")/cb-check-tar-extract.sh" || exit 1
   mkdir -p "$JDK_INSTALL_DIR"
   tar -xzf "$TMP_TARBALL" -C "$JDK_INSTALL_DIR" --strip-components=1
   rm -f "$TMP_TARBALL"

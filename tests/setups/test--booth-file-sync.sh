@@ -23,6 +23,9 @@ source ../common--source.sh
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 SYNC_SRC="$REPO_ROOT/variants/base/booth--file-sync"
 
+require_host_tools "booth--file-sync finds its staged files with find -printf and carries modes over with stat -c" \
+                   gnu-find gnu-stat
+
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 
@@ -67,9 +70,17 @@ ln -s "$WORK/elsewhere" "$TARGET/$H/.zsh_history"
 
 check 1 "init: copies a staged file to its path" "HOST_HISTORY" "$(cat "$TARGET/$H/.zsh_history")"
 check 2 "init: creates missing parent folders" "HOST_SHORTCUTS" "$(cat "$TARGET/$H/.config/shortcuts.xml")"
-check 3 "init: replaces a symlink instead of writing through it" "DO_NOT_TOUCH|regular" \
-    "$(cat "$WORK/elsewhere")|$([ -L "$TARGET/$H/.zsh_history" ] && echo link || echo regular)"
-check 4 "init: keeps the staged file's mode" "600" "$(stat -c '%a' "$TARGET/$H/.zsh_history")"
+# Only where the fixture above really is a symlink: `ln -s` copies on a host
+# without them (see have_symlinks), and then this case would pass without ever
+# putting a link in the way.
+if have_symlinks; then
+    check 3 "init: replaces a symlink instead of writing through it" "DO_NOT_TOUCH|regular" \
+        "$(cat "$WORK/elsewhere")|$([ -L "$TARGET/$H/.zsh_history" ] && echo link || echo regular)"
+fi
+# Only where a mode is a mode (see unix_modes in common--source.sh).
+if unix_modes; then
+    check 4 "init: keeps the staged file's mode" "600" "$(stat -c '%a' "$TARGET/$H/.zsh_history")"
+fi
 
 # The case this exists for: a tool saves by writing a new file and renaming it.
 echo "SAVED_BY_RENAME" > "$TARGET/$H/.zsh_history.new"

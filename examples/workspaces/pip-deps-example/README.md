@@ -15,6 +15,14 @@ booth
 python -c "import requests; print(requests.__version__)"
 ```
 
+### Run it
+
+```bash
+just --list
+just check               # import requests and flask, print their versions
+just packages            # pip list, filtered to the packages in .booth/requirements.txt
+```
+
 ## What's included
 
 | Component | Details                                                            |

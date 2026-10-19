@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 
 set -Eeuo pipefail
 
@@ -48,28 +48,32 @@ cat >"$STARTUP_FILE" <<'STARTUP'
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Startup hooks run as the container user, not root. mysqld_safe must start as
+# root to drop to --user=mysql, and root signs in to MySQL by OS user (socket
+# auth), so the server commands go through sudo - as postgresql's hook does.
+
 MYSQL_DATA="/var/lib/mysql"
 
 # Ensure directories exist with correct permissions
 sudo install -d -o mysql -g mysql -m 0755 /var/log/mysql
 sudo install -d -o mysql -g mysql -m 0755 /var/run/mysqld
 
-# Initialize if needed
-if [ ! -d "$MYSQL_DATA/mysql" ]; then
-  mysqld --initialize-insecure --user=mysql 2>/dev/null || true
+# Initialize if needed (the data dir is mysql's and unreadable to the user)
+if ! sudo test -d "$MYSQL_DATA/mysql"; then
+  sudo mysqld --initialize-insecure --user=mysql 2>/dev/null || true
 fi
 
 # Start server
-mysqld_safe --user=mysql &
+sudo mysqld_safe --user=mysql &
 # Wait for it to be ready
 for i in $(seq 1 30); do
-  mysqladmin ping --silent 2>/dev/null && break
+  sudo mysqladmin ping --silent 2>/dev/null && break
   sleep 1
 done
 
 # Create a user matching the container user (if not exists)
 CUSER="${USER:-coder}"
-mysql -u root -e "CREATE USER IF NOT EXISTS '${CUSER}'@'localhost'; GRANT ALL PRIVILEGES ON *.* TO '${CUSER}'@'localhost' WITH GRANT OPTION; FLUSH PRIVILEGES;" 2>/dev/null || true
+sudo mysql -u root -e "CREATE USER IF NOT EXISTS '${CUSER}'@'localhost'; GRANT ALL PRIVILEGES ON *.* TO '${CUSER}'@'localhost' WITH GRANT OPTION; FLUSH PRIVILEGES;" 2>/dev/null || true
 STARTUP
 chmod 755 "$STARTUP_FILE"
 

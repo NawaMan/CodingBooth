@@ -57,7 +57,7 @@ check() {
 # run <path> <script> [args…] — sets OUT and RC; no TTY, as in a Docker build.
 run() {
     local path="$1"; shift
-    OUT=$(env -i EUID=0 HOME="$STUB" PATH="$path" "$BASH_BIN" "$SETUPS/$1" "${@:2}" 2>&1 < /dev/null) && RC=0 || RC=$?
+    OUT=$(env -i EUID=0 HOME="$STUB" PATH="$(stub_path "$path")" "$BASH_BIN" "$SETUPS/$1" "${@:2}" 2>&1 < /dev/null) && RC=0 || RC=$?
 }
 
 # ---- no desktop: every i3 setup skips, exit 0, nothing installed ----
@@ -69,7 +69,7 @@ for s in i3--setup.sh i3-default--setup.sh i3-ctrl-alt--setup.sh i3-gaps--setup.
         check "false" "$s skips (exit 0) without XFCE/LXQt/i3" "rc=$RC out=$OUT"
     fi
 done
-if grep -q 'neither XFCE nor LXQt' <<< "$(env -i EUID=0 PATH="$STUB/bin" "$BASH_BIN" "$SETUPS/i3--setup.sh" 2>&1 < /dev/null || true)"; then
+if grep -q 'neither XFCE nor LXQt' <<< "$(env -i EUID=0 PATH="$(stub_path "$STUB/bin")" "$BASH_BIN" "$SETUPS/i3--setup.sh" 2>&1 < /dev/null || true)"; then
     check "true"  "i3--setup.sh says why it skipped"
 else
     check "false" "i3--setup.sh says why it skipped"

@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"os"
 	"strings"
 	"testing"
 
@@ -116,6 +117,47 @@ func TestConsent_Dind_Answers(t *testing.T) {
 			t.Errorf("answer %q: err=%v, want ok=%v", answer, err, wantOK)
 		}
 	}
+}
+
+// A terminal that returns at once with nothing (EOF) did not answer "no" — the refusal says so,
+// and names the flag. A bare Enter is still an ordinary "no".
+func TestConsent_Dind_NoAnswerRead_RefusesAndSaysWhy(t *testing.T) {
+	resetApprovals(t)
+	env, _, _ := testConsentEnv("", false)
+	err := ensureHostEscapeConsent(newConsentCtx(consentCase{dind: true}), env)
+	if err == nil {
+		t.Fatal("an empty read must not start the booth")
+	}
+	for _, want := range []string{"no answer could be read from the terminal", "stty sane", "--dind-allowed"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error should mention %q, got %q", want, err)
+		}
+	}
+
+	env, _, _ = testConsentEnv("\n", false)
+	err = ensureHostEscapeConsent(newConsentCtx(consentCase{dind: true}), env)
+	if err == nil || strings.Contains(err.Error(), "no answer") {
+		t.Errorf("a bare Enter is a plain no, got %v", err)
+	}
+}
+
+// An answer that arrives without a newline before EOF still counts.
+func TestConsent_Dind_AnswerWithoutNewline(t *testing.T) {
+	resetApprovals(t)
+	env, _, _ := testConsentEnv("y", false)
+	if err := ensureHostEscapeConsent(newConsentCtx(consentCase{dind: true}), env); err != nil {
+		t.Fatalf("\"y\" then EOF should start, got %v", err)
+	}
+}
+
+// discardPendingInput is best effort and must not fail on something that is not a terminal.
+func TestDiscardPendingInput_NotATerminal(t *testing.T) {
+	file, err := os.CreateTemp(t.TempDir(), "not-a-tty")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	discardPendingInput(file)
 }
 
 func TestConsent_Dind_FlagSkipsPromptButStillWarns(t *testing.T) {

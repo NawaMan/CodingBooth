@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 
 # This script installs Homebrew packages for the 'coder' user.
 # It will install Homebrew if it is not already installed (276MB).
@@ -48,9 +48,12 @@ fi
 BREW_PREFIX="${LINUXBREW_PREFIX:-/home/linuxbrew/.linuxbrew}"
 BREW_BIN="${BREW_PREFIX}/bin/brew"
 
+# Install Homebrew itself first when it is missing. Resolved through PATH like every
+# setup (so a project's .booth/setups/ copy wins), else the copy beside this script.
 if [ ! -x "$BREW_BIN" ]; then
-    echo "brew is not installed."
-    /opt/codingbooth/setups/brew--install.sh
+    echo "brew is not installed; installing Homebrew first."
+    HOMEBREW_SETUP="$(command -v homebrew--setup.sh || echo "$(dirname "$0")/homebrew--setup.sh")"
+    "$HOMEBREW_SETUP"
 fi
 
 # Linuxbrew often exits 1 after a successful install because a formula

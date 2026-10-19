@@ -54,6 +54,17 @@ echo "=== Point the CLI at the local server ==="
 appwrite client --endpoint "$ENDPOINT" --self-signed true
 appwrite client --debug || true
 
+# Host-side URLs. ready_port is Appwrite's port inside the booth; the host
+# reaches it on the booth port minus 1920 (+-1920:8080 in .booth/config.toml),
+# or through the booth's own port at /proxy/<port>/. BOOTH_HOST_PORT is the
+# resolved booth port (BOOTH_PORT may be NEXT or RANDOM).
+HOST_PORT="${BOOTH_HOST_PORT:-10000}"
 echo
-echo "Console: http://localhost:${ready_port}"
+echo "Console: http://localhost:${APPWRITE_HOST_PORT:-$((HOST_PORT - 1920))}/console"
+echo "         http://localhost:${HOST_PORT}/proxy/${ready_port}/console/  (through the booth port)"
+# Same variables and defaults start-appwrite uses to create the admin on first start.
+# With +persist/+seed an older database may hold a different admin.
+echo "Login:   ${APPWRITE_ADMIN_EMAIL:-admin@example.com} / ${APPWRITE_ADMIN_PASSWORD:-password123}"
 echo "✅ Appwrite CLI and server are both working."
+echo
+echo "Next: just web — Appwrite's Svelte starter, wired to this server."

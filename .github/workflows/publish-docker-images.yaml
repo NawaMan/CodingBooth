@@ -36,11 +36,6 @@ jobs:
   # ---------------------------------------------------------
   guard-no-rc:
     runs-on: ubuntu-24.04
-    # Only this job writes to the repo (the apt-snapshot.txt pin below); every
-    # other job in this workflow only needs to read, so only this one is
-    # widened from the repo's default read-only GITHUB_TOKEN.
-    permissions:
-      contents: write
     outputs:
       apt_snapshot: ${{ steps.snapshot.outputs.apt_snapshot }}
     steps:
@@ -57,38 +52,33 @@ jobs:
           fi
           echo "Stable version — proceeding."
 
-      # Computed once here, not left to each build job's own docker-build.sh
+      # Read once here, not left to each build job's own docker-build.sh
       # default: build-base and build-variants are separate amd64/arm64 matrix
-      # jobs that can run minutes apart, and each would otherwise pick its own
-      # `date -u` at invocation time. One release straddling UTC midnight would
-      # then pin different architectures — and base vs. the variants built on
-      # top of it — to different apt snapshots.
+      # jobs, and one value threaded through all of them as CB_APT_SNAPSHOT
+      # cannot drift between architectures, or between base and the variants
+      # built on top of it.
       #
-      # Pinned into apt-snapshot.txt and committed, not just kept in this job's
-      # output: a value that only ever lived in-memory for one CI run could not
-      # be reproduced later. This way, checking out `main` at or after this
-      # commit and rebuilding locally (no CB_APT_SNAPSHOT override needed:
-      # docker-build.sh reads this file as its default) gets the exact archive
-      # this release was actually built against, not "whatever today is."
-      # Every release moves this pin exactly once; nothing else writes to it,
-      # so a run that finds nothing to commit (re-running the same day, or the
-      # pin already matches) is silent rather than an empty no-op commit.
-      - name: Pin this release's apt snapshot
+      # The id is apt-snapshot.txt as committed when the release was cut (the
+      # release-push skill writes it — a week back, a day the snapshot service
+      # has certainly published). It is not computed here: the release binaries
+      # are built from that same commit by build/cli-build.sh, which stamps the
+      # file's id in as a new booth's default snapshot, and the example
+      # workspaces are pinned to it. One committed date keeps the images, the
+      # CLI and the examples in step; a date picked here, after the commit,
+      # would leave the binary and the examples one release behind the images.
+      - name: Read this release's apt snapshot
         id: snapshot
         run: |
           set -euo pipefail
-          NEW="$(date -u +%Y%m%d)T000000Z"
-          echo "$NEW" > apt-snapshot.txt
-          if git diff --quiet -- apt-snapshot.txt; then
-            echo "apt-snapshot.txt already pinned to $NEW — nothing to commit."
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add apt-snapshot.txt
-            git commit -m "Pin apt snapshot to $NEW for this release"
-            git push origin HEAD:main
+          unset CB_APT_SNAPSHOT
+          source build/apt-snapshot--source.sh
+          resolve_apt_snapshot
+          if [[ "$APT_SNAPSHOT_FROM" != "$APT_SNAPSHOT_FILE" ]]; then
+            echo "::error::$APT_SNAPSHOT_FILE is missing or empty. Cut the release with the release-push skill, which pins it."
+            exit 1
           fi
-          echo "apt_snapshot=$NEW" >> "$GITHUB_OUTPUT"
+          echo "apt snapshot: $APT_SNAPSHOT (from $APT_SNAPSHOT_FILE)"
+          echo "apt_snapshot=$APT_SNAPSHOT" >> "$GITHUB_OUTPUT"
 
   # ---------------------------------------------------------
   # 1. Build the base container natively, one arch per runner

@@ -5,8 +5,9 @@
 
 # -----------------------------------------------------------------------------
 # build/apt-snapshot--source.sh picks the snapshot docker-build.sh builds images
-# against — CB_APT_SNAPSHOT, then apt-snapshot.txt, then today — and refuses a
-# value apt cannot use, saying what is wrong and how to fix it. No image built.
+# against — CB_APT_SNAPSHOT, then apt-snapshot.txt, then today (a week back) —
+# and refuses a value apt cannot use, saying what is wrong and how to fix it.
+# No image built.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -51,13 +52,14 @@ resolve() {
     )
 }
 
-today="$(date -u +%Y%m%d)T000000Z"
+# `today` is a week back, so it never names a day the snapshot service has not reached.
+today="$(date -u -d '7 days ago' +%Y%m%d 2>/dev/null || date -u -v-7d +%Y%m%d)T000000Z"
 future="$(date -u -d '+2 days' +%Y%m%d 2>/dev/null || date -u -v+2d +%Y%m%d)T000000Z"
 
 unset CB_APT_SNAPSHOT
 
 out="$(resolve)"
-check "no CB_APT_SNAPSHOT and no pin file: today" \
+check "no CB_APT_SNAPSHOT and no pin file: today (a week back)" \
     "$([[ "$out" == "0|${today}|today" ]] && echo true || echo false)" "$out"
 
 out="$(resolve 20250901T000000Z)"
@@ -69,7 +71,7 @@ check "CB_APT_SNAPSHOT wins over the pin file" \
     "$([[ "$out" == "0|20250101T000000Z|CB_APT_SNAPSHOT" ]] && echo true || echo false)" "$out"
 
 out="$(CB_APT_SNAPSHOT=today resolve 20250901T000000Z)"
-check "CB_APT_SNAPSHOT=today is today's id" \
+check "CB_APT_SNAPSHOT=today is a week back" \
     "$([[ "$out" == "0|${today}|CB_APT_SNAPSHOT" ]] && echo true || echo false)" "$out"
 
 # expect_refused <desc> <reason> <fix> — the last resolve failed, naming both.

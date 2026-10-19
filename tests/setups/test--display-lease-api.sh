@@ -28,6 +28,8 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 API="$REPO_ROOT/variants/base/setups/booth-message-api-server"
 BASH_BIN="$(command -v bash)"
 
+require_host_tools "booth-message-api-server matches its request headers with \${line,,}" bash4
+
 STUB=$(mktemp -d)
 trap 'rm -rf "$STUB"' EXIT
 mkdir -p "$STUB/bin"
@@ -54,7 +56,7 @@ lease() {
     local body="$1"
     OUT=$(printf 'POST /booth-messages/api/display-lease HTTP/1.1\r\nContent-Type: application/json\r\nContent-Length: %s\r\n\r\n%s' \
             "${#body}" "$body" \
-          | env -i HOME="$STUB" PATH="$STUB/bin" BOOTH_DISPLAY_LEASE_FILE="$LEASE" "$BASH_BIN" "$API" --handle 2>&1 | tr -d '\r')
+          | env -i HOME="$STUB" PATH="$(stub_path "$STUB/bin")" BOOTH_DISPLAY_LEASE_FILE="$LEASE" "$BASH_BIN" "$API" --handle 2>&1 | tr -d '\r')
 }
 is_leader()   { grep -q '^HTTP/1.0 200' <<< "$OUT" && grep -q '"leader":true'  <<< "$OUT"; }
 is_follower() { grep -q '^HTTP/1.0 200' <<< "$OUT" && grep -q '"leader":false' <<< "$OUT"; }

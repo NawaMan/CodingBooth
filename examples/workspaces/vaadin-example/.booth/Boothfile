@@ -1,7 +1,7 @@
 # syntax=codingbooth/boothfile:1
 # Configured by: booth config --no-tui --overwrite --expose +-1920:8080 --select java:21+maven:3.9.11+vscode-ext/nodejs
 
-env APT_SNAPSHOT=20260906T000000Z
+env APT_SNAPSHOT=20261004T000000Z
 
 arg JDK_VENDOR=temurin
 arg JDK_VERSION=21

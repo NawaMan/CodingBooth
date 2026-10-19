@@ -14,10 +14,23 @@ setup reversal-icons
 setup gruppled-cursors
 setup xfce-theme
 setup plank ${PLANK_VERSION}
+env GOPATH=/home/coder/go
+env GOBIN=/home/coder/go/bin
+env PATH=/home/coder/go/bin:/usr/local/go-current/bin:$PATH
 setup go ${GO_VERSION}                                # GO tool chain
 install go golang.org/x/tools/gopls@latest            # GO language server
 install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
+env EDITOR=nvim
+env VISUAL=nvim
 setup neovim ${NEOVIM_VERSION}
+env CB_PYENV_ROOT=/opt/pyenv
+env CB_PY_STABLE=/opt/python
+env CB_VENV_ROOT=/opt/venvs
+env PIP_CACHE_DIR=/opt/pip-cache
+env PIP_DISABLE_PIP_VERSION_CHECK=1
+env PYTHONUNBUFFERED=1
+env VIRTUAL_ENV=/opt/python
+env PATH=/usr/local/uv/bin:/usr/local/uv:/opt/pyenv/bin:/opt/python/bin:$PATH
 setup python ${PYTHON_VERSION}
 setup chromium-browser
 setup go-code-extension

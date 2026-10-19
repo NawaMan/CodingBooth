@@ -44,6 +44,20 @@ Sample `.gitignore` files under `.booth/shared/…` limit what you should commit
 On the host, paths under `.booth/shared/home/coder/` should update. Restart the
 booth; state should still be there.
 
+### Run it
+
+```bash
+just --list
+just desktop             # ./booth — the XFCE desktop in your browser
+just layout              # the shared-dir layout, seeds and gitignores, checked on the host
+just shared              # the Chrome and Firefox profile folders, as the booth sees them
+just versions            # google-chrome --version, firefox --version
+```
+
+`just layout` runs `.cb-tests/test001-shared-layout.sh` on the host and starts no booth. `just shared`
+lists the same folders from inside the booth — they are bind mounts of `.booth/shared/`, so what it
+shows is what is in your project tree.
+
 ## Templates (equivalent)
 
 ```bash
@@ -60,4 +74,4 @@ booth config --no-tui . --variant xfce \
 Checks that shared dirs exist, config declares `shared-dirs` (not cache for browsers),
 the bookmark seeds are in place, and sample gitignores are present. Does **not** require a full desktop browser session.
 
-Full guide: [BOOTH_SHARED.md](../../../docs/BOOTH_SHARED.md).
+Full guide: [BOOTH_SHARED.md](https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_SHARED.md).

@@ -95,18 +95,29 @@ fi
 
 echo
 echo "Checking seeded font configs..."
+# The font to expect is the one the LAST setup to write /opt/codingbooth/<term>/
+# chose, because that is what the plain setup's startup seeds the home config
+# from. This booth selects alacritty-fancy and kitty-fancy on top of the plain
+# setups, and both of those write JetBrainsMono — not the FiraCode the plain
+# setups default to. Keep this in step with .booth/Boothfile: `booth config`
+# auto-selects the -fancy extensions, so a regeneration can change which font
+# wins here without touching this file.
+SEEDED_FONT="JetBrainsMono Nerd Font"
+
 ALA_CONF=$(docker exec -u coder "$CONTAINER_NAME" bash -lc 'cat "$HOME/.config/alacritty/alacritty.toml" 2>/dev/null' || true)
-if grep -q "FiraCode Nerd Font Mono" <<< "$ALA_CONF"; then
-    pass "Alacritty config seeded with FiraCode Nerd Font Mono"
+if grep -q "$SEEDED_FONT" <<< "$ALA_CONF"; then
+    pass "Alacritty config seeded with $SEEDED_FONT"
 else
-    fail "Alacritty config was not seeded"
+    echo "  alacritty.toml: ${ALA_CONF:-<empty>}"
+    fail "Alacritty config was not seeded with $SEEDED_FONT"
 fi
 
 KITTY_CONF=$(docker exec -u coder "$CONTAINER_NAME" bash -lc 'cat "$HOME/.config/kitty/kitty.conf" 2>/dev/null' || true)
-if grep -q "FiraCode Nerd Font Mono" <<< "$KITTY_CONF"; then
-    pass "Kitty config seeded with FiraCode Nerd Font Mono"
+if grep -q "$SEEDED_FONT" <<< "$KITTY_CONF"; then
+    pass "Kitty config seeded with $SEEDED_FONT"
 else
-    fail "Kitty config was not seeded"
+    echo "  kitty.conf: ${KITTY_CONF:-<empty>}"
+    fail "Kitty config was not seeded with $SEEDED_FONT"
 fi
 
 echo

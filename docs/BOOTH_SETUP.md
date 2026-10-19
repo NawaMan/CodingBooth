@@ -224,6 +224,18 @@ the build continues, or **42** interactively to signal "not applicable" to the c
 
 Use `cb-has-desktop.sh` at build time and `cb-has-desktop-running.sh` from startup scripts.
 
+### Before extracting a tarball — `cb-check-tar-extract.sh`
+
+```bash
+"$SCRIPT_DIR/cb-check-tar-extract.sh" || exit 1
+tar -xzf "$TARBALL" -C "$DEST"
+```
+
+Returns 0, silently, when a test extraction works. Otherwise it prints one explanation and returns
+1 — naming Docker Desktop's Rosetta emulation when `openat2` is missing, the known cause (Ubuntu's
+tar needs it; Rosetta does not implement it). `jdk--setup.sh` and `libs/prebuilt-source.sh` call
+it; a setup whose tarball step is likely to run in an amd64 booth on a Mac should too.
+
 ### VS Code extensions — `libs/code-extension-source.sh`
 
 ```bash
@@ -276,6 +288,16 @@ cb-web-icon.sh --id excalidraw --name "Excalidraw" --icon "$ICON" \
 
 `tests/config/catalog/test90-web-servers-have-desktop-icon.sh` guards that every template starting a web
 server registers an icon this way.
+
+At click time `cb-web-open` starts the service if nothing is listening yet, then opens it in the
+first browser that **actually runs** — Chrome, Chromium or Firefox, each probed with `--version`
+rather than merely looked up on `PATH`, falling back to `xdg-open`. The probe is not pedantry: on
+arm64 there is no Chrome to install, so `google-chrome--setup.sh` leaves a placeholder at
+`/usr/local/bin/google-chrome` that exits 127, and a presence-only test picked it and `exec`ed
+away every click. Chrome and Chromium get a chromeless `--app` window; Firefox gets `--new-tab`, so
+a desktop's several web-service icons share one window instead of opening one window each. A
+launcher is `Terminal=false`, so nothing a browser prints is ever seen — anything
+that must be visible belongs in the service's own log, not on the launcher's stderr.
 
 ---
 

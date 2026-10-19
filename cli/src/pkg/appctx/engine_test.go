@@ -5,10 +5,13 @@
 package appctx
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/nawaman/codingbooth/src/internal/fakebin"
 )
 
 func TestResolveEngineValue_Explicit(t *testing.T) {
@@ -60,23 +63,46 @@ func TestResolveEngineValue_EmptyNeverErrors(t *testing.T) {
 	}
 }
 
-// pathWith puts empty executables with the given names alone on PATH. The
-// name "container+running" installs a `container` whose `system status` reports
-// its service running; a plain "container" reports nothing, like a stopped one.
-func pathWith(t *testing.T, binaries ...string) {
-	t.Helper()
-	dir := t.TempDir()
-	for _, name := range binaries {
-		script := "#!/bin/sh\n"
-		if name == "container+running" {
-			name = "container"
-			script += `[ "$1 $2" = "system status" ] && echo '{"status":"running"}'` + "\nexit 0\n"
-		}
-		if err := os.WriteFile(filepath.Join(dir, name), []byte(script), 0o755); err != nil {
-			t.Fatal(err)
+// TestMain lets a stub installed by pathWith answer as the engine binary it was
+// installed as, instead of running this package's tests again; see the fakebin
+// package for why a stub is a copy of the test binary and not a shell script.
+func TestMain(m *testing.M) {
+	fakebin.Serve(fakeEngineMain)
+	os.Exit(m.Run())
+}
+
+// envAppleRunning is how pathWith tells the stubs which answer to give: "yes"
+// when the installed `container` should report a running service.
+const envAppleRunning = "CB_TEST_APPLE_RUNNING"
+
+// fakeEngineMain is every stub this package installs. Engine detection only
+// asks whether the binary is on PATH, so docker and podman have nothing to
+// answer; `container` is asked one question — whether its service is up.
+func fakeEngineMain(name string, args []string) int {
+	if name == "container" && len(args) >= 2 && args[0] == "system" && args[1] == "status" {
+		if os.Getenv(envAppleRunning) == "yes" {
+			fmt.Println(`{"status":"running"}`)
 		}
 	}
-	t.Setenv("PATH", dir)
+	return 0
+}
+
+// pathWith puts executables with the given names alone on PATH. The name
+// "container+running" installs a `container` whose `system status` reports its
+// service running; a plain "container" reports nothing, like a stopped one.
+func pathWith(t *testing.T, binaries ...string) {
+	t.Helper()
+	names := make([]string, 0, len(binaries))
+	running := "no"
+	for _, name := range binaries {
+		if name == "container+running" {
+			name = "container"
+			running = "yes"
+		}
+		names = append(names, name)
+	}
+	t.Setenv(envAppleRunning, running)
+	fakebin.OnPath(t, names...)
 }
 
 func TestResolveEngineValue_DefaultOrder(t *testing.T) {

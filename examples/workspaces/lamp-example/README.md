@@ -10,6 +10,19 @@ This example is a canonical LAMP stack — Linux, Apache, MySQL, and PHP — run
 
 Then open http://localhost:8080/ on the host. You should see a PHP-rendered page with a row pulled from MySQL.
 
+### Run it
+
+```bash
+just --list
+just page                # ./demo.sh page — the page Apache + PHP render, with the row from MySQL
+just db                  # ./demo.sh db — the lamp_demo.hello table itself
+just versions            # PHP, MySQL and Apache versions
+```
+
+With no booth running, each recipe starts one and stops it again afterwards, so it waits
+for the services the booth starts (up to 60s) before it checks anything. To browse the page,
+keep a booth up with `./booth run` or `just shell`.
+
 ## What's inside
 
 - `.booth/Boothfile` — PHP, MySQL, Apache+mod_php (`apache+php`), and the project-local `lamp-init` demo.

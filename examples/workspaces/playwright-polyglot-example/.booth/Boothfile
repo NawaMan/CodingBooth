@@ -1,7 +1,7 @@
 # syntax=codingbooth/boothfile:1
 # Configured by: booth config --no-tui --overwrite --select nodejs/python/java+maven/dotnet/go/playwright:chromium,1.58.0+python+java+dotnet
 
-env APT_SNAPSHOT=20260916T000000Z
+env APT_SNAPSHOT=20261004T000000Z
 
 arg DOTNET_CHANNEL=9.0
 arg GO_VERSION=1.25.7
@@ -49,7 +49,6 @@ env PYTHONUNBUFFERED=1
 env VIRTUAL_ENV=/opt/python
 env PATH=/usr/local/uv/bin:/usr/local/uv:/opt/pyenv/bin:/opt/python/bin:$PATH
 setup python ${PYTHON_VERSION}
-setup nodejs-code-extension
 env PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
 env PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 setup playwright ${PLAYWRIGHT_BROWSERS} --version ${PLAYWRIGHT_VERSION}
@@ -57,6 +56,7 @@ setup dotnet-code-extension
 setup dotnet-code-extension
 setup go-code-extension
 setup java-code-extension
+setup nodejs-code-extension
 setup playwright-code-extension
 setup python-code-extension
 run dotnet tool install --global Microsoft.Playwright.CLI || true

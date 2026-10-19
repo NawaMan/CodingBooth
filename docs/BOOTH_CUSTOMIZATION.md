@@ -348,10 +348,11 @@ still fails on the first call rather than after the full backoff.
 
 `install apt` installs system packages and accepts apt's native `pkg=version` pin
 (`install apt jq htop=3.0.5-7`). For reproducibility it honors an `APT_SNAPSHOT`
-environment variable: `booth config` stamps the configuration date into the generated
-Boothfile (`env APT_SNAPSHOT=<date>`) so every apt resolution — including transitive
-dependencies — is frozen to that day's archive. Later runs keep that date; change it
-with `booth config --apt-snapshot <id|today|none>` or the TUI's Apt Snapshot field.
+environment variable: `booth config` stamps a snapshot into the generated Boothfile
+(`env APT_SNAPSHOT=<id>`) — for a new booth, the one this release's images were built
+against — so every apt resolution, including transitive dependencies, is frozen to that
+day's archive. Later runs keep it; change it with `booth config --apt-snapshot
+<id|today|none>` (`today` is a week back) or the TUI's Apt Snapshot field.
 A hand-written Boothfile with no `APT_SNAPSHOT`, or an empty one (`none`), resolves
 against the live archive. See
 [REPRODUCIBILITY.md](REPRODUCIBILITY.md#apt--pin-the-snapshot-not-the-package).
@@ -537,10 +538,10 @@ under **This project** in the TUI and selectable with `--select`.
 
 ```bash
 #!/bin/bash
-# cb-template: DB seed                          ← required: the marker + display name
+# cb-template: DB seed
 # cb-disc:     Load fixture data into Postgres
 # cb-detail:   Longer text for the TUI detail pane.
-# cb-band:     90                               ← Boothfile order (default 50)
+# cb-band:     90
 # cb-requires: postgresql
 # cb-tags:     db, fixtures
 # cb-param:    SEED_SET default=small suggests=small,full
@@ -548,6 +549,9 @@ set -Eeuo pipefail
 SEED_SET="${1:-small}"
 ...
 ```
+
+`cb-template` is required (the marker, and the display name); `cb-band` is the Boothfile order
+(default 50). A key's value is everything after its colon, so never put a comment on the same line.
 
 ```bash
 booth config --no-tui . --select db-seed:full

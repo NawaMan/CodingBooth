@@ -129,13 +129,16 @@ cd worktree/<name>
 Stamp the session version so images and the binary do not collide with main's `--rc` tag. Keep the
 numeric triple; replace any `--…` suffix with `--<name>` (`0.77.0--rc2` → `0.77.0--anythingllm`).
 Write **both** `version.txt` and the README `**Current Version:**` line (the pre-commit hook
-requires they match). Do not use `build/set-version.sh` — it only accepts `--rc#`. Then retag a
-local base and rebuild the CLI:
+requires they match). Do not use `build/set-version.sh` — it only accepts `--rc#`. Then retag the
+local images and rebuild the CLI:
 
 ```bash
 old=$(tr -d ' \t\n\r' < ../../version.txt)
 new=$(tr -d ' \t\n\r' < version.txt)
-docker tag "nawaman/codingbooth:base-${old}" "nawaman/codingbooth:base-${new}" 2>/dev/null || true
+# Every variant built locally, not only base (a desktop example needs its own).
+for img in $(docker images --format '{{.Repository}}:{{.Tag}}' nawaman/codingbooth | grep -- "-${old}\$"); do
+  docker tag "$img" "${img%-${old}}-${new}"
+done
 ./build/cli-build.sh
 ```
 

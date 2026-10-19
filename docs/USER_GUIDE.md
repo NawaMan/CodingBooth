@@ -115,8 +115,11 @@ with where it runs:
 test:
     {{run-in-booth}} go test ./...       # host: ./booth exec --run -- …   booth: as is
 shell:
-    {{run-on-host}} ./booth shell --run  # refused inside the booth
+    {{run-on-host}} {{booth}} shell --run  # refused inside the booth
 ```
+
+`{{booth}}` is `./booth` unless `BOOTH` says otherwise: `BOOTH=../codingbooth just test` drives
+the booth with that command instead, such as a CodingBooth checkout's own build.
 
 A new project gets this file without asking: `booth create` and a project's first `booth config`
 both add it, unless the project already has a Justfile. On a project that already has one,
@@ -321,8 +324,10 @@ More: [booth profiles](https://github.com/NawaMan/CodingBooth/blob/main/docs/BOO
 
 Starting a second booth from the same folder just works: it gets the next free port and the name
 `<project>-<port>`. Each git worktree is its own folder, so each gets its own booth, and git works
-in it: booth also mounts the main clone's `.git/`. Plain lifecycle commands act on the first
-booth. Name the second one to target it:
+in it: booth also mounts the main clone's `.git/`. Run `git worktree add`, `prune` and `repair` on
+the host, though: in a booth they see container paths. (Booth keeps the in-booth ones from losing
+your worktrees, but a worktree added in a booth is recorded under `/home/coder/code`.) Plain
+lifecycle commands act on the first booth. Name the second one to target it:
 
 ```bash
 ./booth                               # second booth → e.g. myproj-12000

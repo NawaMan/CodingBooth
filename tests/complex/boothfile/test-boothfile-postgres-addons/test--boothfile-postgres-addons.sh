@@ -94,11 +94,19 @@ fi
 # does not match its CREATE EXTENSION name (control file is vector.control),
 # so this is the check that would have caught pg-ext--install.sh silently
 # recording the wrong identifier in the manifest.
+# Wait for the extensions themselves, not merely for the server to answer:
+# plpgsql is in every database from initdb, so a non-empty reply says nothing
+# about whether the startup hook's CREATE EXTENSION has run yet — and postgis
+# takes seconds of that hook on its own. Breaking on the first non-empty answer
+# read the list mid-way through the hook and blamed the extensions for being
+# absent; on a slower host it lost that race nearly every time.
 EXTENSIONS=""
-for _ in $(seq 1 30); do
+for _ in $(seq 1 60); do
   EXTENSIONS=$(docker exec -u coder "$NAME" bash -lc \
     'psql -d postgres -tAc "SELECT extname FROM pg_extension ORDER BY extname"' 2>/dev/null || true)
-  if [[ -n "$EXTENSIONS" ]]; then
+  if echo "$EXTENSIONS" | grep -qx pg_trgm \
+     && echo "$EXTENSIONS" | grep -qx postgis \
+     && echo "$EXTENSIONS" | grep -qx vector; then
     break
   fi
   sleep 1

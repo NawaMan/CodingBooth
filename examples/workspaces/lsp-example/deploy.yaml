@@ -1,0 +1,9 @@
+# yaml-language-server validates against a schema when one is named, like this:
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: greet
+on: [push]
+jobs:
+  greet:
+    runs-on: ubuntu-latest
+    steps:
+      - run: ./scripts/greet.sh World

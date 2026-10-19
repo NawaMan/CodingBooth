@@ -1,0 +1,24 @@
+cb-version = "0.1.0"
+display-name = "Lazarus"
+display-disc = "Lazarus IDE + lazbuild for Free Pascal (IDE needs a desktop variant)"
+display-detail = """Installs Lazarus, the Free Pascal RAD IDE, with the LCL (GTK2 widgetset). \
+lazbuild and the LCL are always installed, so Lazarus projects build headless too, e.g. in CI. \
+The Lazarus IDE and its desktop icon are added only on a desktop variant."""
+display-order = 2
+tags = [
+    "fpc",
+    "pascal",
+    "lazarus",
+    "ide",
+    "gui",
+    "desktop",
+]
+
+[params.LAZARUS_VERSION]
+default = "latest"
+suggests = ["latest", "4.4"]
+
+[segments]
+"Boothfile--60" = """
+setup lazarus --version ${LAZARUS_VERSION}
+"""

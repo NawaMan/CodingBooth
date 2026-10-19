@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.1.1
 
 # fira-code-nerd-font--setup.sh — installs the Nerd Fonts-patched Fira Code
 # family system-wide. Patched with icon/powerline glyphs, so shell prompts
@@ -63,11 +63,12 @@ fi
 # only pay for apt when this script is run somewhere leaner (e.g. codeserver,
 # which installs no desktop toolkit at all). woff2_compress is never already
 # present — it's only needed here, for the web-terminal .woff2 siblings below.
+# Through apt--install.sh so it honours APT_SNAPSHOT: a plain apt-get here took
+# curl (named explicitly) from the live archive, past the image's own snapshot,
+# and a Boothfile on that snapshot then could not install libcurl4-openssl-dev,
+# which needs the exact libcurl4t64 of its own snapshot (systemlib-example).
 if ! command -v curl >/dev/null 2>&1 || ! command -v unzip >/dev/null 2>&1 || ! command -v fc-cache >/dev/null 2>&1 || ! command -v woff2_compress >/dev/null 2>&1; then
-  export DEBIAN_FRONTEND=noninteractive
-  apt-get update
-  apt-get install -y --no-install-recommends curl ca-certificates unzip fontconfig woff2
-  rm -rf /var/lib/apt/lists/*
+  apt--install.sh curl ca-certificates unzip fontconfig woff2
 fi
 
 # ---- resolve version ----

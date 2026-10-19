@@ -47,6 +47,19 @@ fd 100
 
 If the server is already up, `start-logo` prints the URL and exits 0 instead of failing with "Address already in use".
 
+### Run it
+
+```bash
+just --list
+just draw                # square, star and tree drawn headless (Xvfb) to /tmp/*.ps
+just logo                # check the Logo editor answers on :18610
+just test                # the in-booth checks: tkinter, a turtle drawing, the Logo server
+just desktop             # start the XFCE desktop booth, to draw in windows and Thonny
+```
+
+`draw`, `logo` and `test` start a booth when none is running and stop it after, so the PostScript
+files are gone with it; run them inside `just desktop`'s booth (or `just shell`) to keep them.
+
 ## The same three drawings
 
 | Drawing | Logo | Python |

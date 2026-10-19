@@ -132,7 +132,7 @@ for readability — `booth example list` itself prints a flat alphabetical list.
 
 ### Cloud & services
 
-`affine` · `appwrite` · `aws` · `firebase` · `floci` · `gcloud` · `server`
+`appwrite` · `aws` · `firebase` · `floci` · `gcloud` · `server`
 
 ### Dependencies, caching & system packages
 
@@ -152,7 +152,7 @@ for readability — `booth example list` itself prints a flat alphabetical list.
 
 ### Editors & AI tooling
 
-`anythingllm` · `claude` · `herdr` · `neovim`
+`claude` · `herdr` · `neovim`
 
 ### Security & network isolation
 

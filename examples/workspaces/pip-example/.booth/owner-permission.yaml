@@ -1,6 +1,7 @@
 # Configured by: booth config --no-tui --overwrite --select python:3.13.12+pip-pkg:httpx,rich,click,pytest,black,ruff,cowsay,pyfiglet+pip-cache+uv-cache
 # booth-entry applies each entry to that mount point on startup.
-# A directory entry covers that directory and every directory under it.
+# A directory entry sets the mode on that directory and every directory under
+# it, and the owner on everything in the tree, files included.
 - path: "/opt/pip-cache"
   user: "coder"
   group: "coder"

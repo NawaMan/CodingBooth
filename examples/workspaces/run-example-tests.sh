@@ -87,13 +87,11 @@ declare -a FILTER_EXAMPLES=()
 
 # Skipped from a full run (no --example/--tag filter) by default: not broken,
 # just too slow to fit EXAMPLE_TIMEOUT once the rest of the suite has already
-# loaded the machine. anythingllm-example passes standalone in ~6-7 minutes but
-# hits the 15-minute timeout under a full run's cumulative CPU/disk/memory
-# pressure. n8n-example installs the npm package during the image build, which
-# is the same kind of stall under a full run. `--example anythingllm` and
-# `--example n8n` still run them explicitly -- this list is only consulted
-# when no example/tag filter narrowed the run.
-declare -a DEFAULT_SKIP_EXAMPLES=(anythingllm-example n8n-example)
+# loaded the machine. n8n-example installs the npm package during the image
+# build, which stalls past EXAMPLE_TIMEOUT under a full run's cumulative
+# CPU/disk/memory pressure. `--example n8n` still runs it explicitly -- this
+# list is only consulted when no example/tag filter narrowed the run.
+declare -a DEFAULT_SKIP_EXAMPLES=(n8n-example)
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -373,7 +371,7 @@ if [ "$CONFIG_CHECK" = true ] && [ -x "$ENSURE_CONFIG" ]; then
         CONFIG_CHECK_RESULT=FAILED
         while read -r name; do
             config_check_failed+=("$name")
-        done < <(awk '$2 == "COLLISION" || $2 == "ERROR" { print $1 }' "$CONFIG_CHECK_LOG")
+        done < <(awk '$2 == "COLLISION" || $2 == "ERROR" || $2 == "STALE-APT" { print $1 }' "$CONFIG_CHECK_LOG")
     fi
     CONFIG_CHECK_DURATION=$(( $(date +%s) - CONFIG_CHECK_START ))
     CONFIG_CHECK_SUMMARY=$(grep '^Total ' "$CONFIG_CHECK_LOG" | tail -1)

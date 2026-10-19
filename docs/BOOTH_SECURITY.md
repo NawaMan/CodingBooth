@@ -179,6 +179,10 @@ code you trust the answer is simply yes. Not every kind leads to root: a writabl
 `--network=host` is reported for what it is (see the table below), not as host root.
 
 - **The default is no.** Anything but `y` / `yes` aborts, and nothing has been started.
+- **Only what you type after the question counts.** Keys pressed before it — a stray Enter while
+  the previous command was finishing — are thrown away. If the terminal returns no answer at all
+  (a program before booth left it in a mode where reads do not wait), booth still refuses, but says
+  so: `no answer could be read from the terminal`. Run `stty sane` (or open a new tab) and re-run.
 - **It asks on the terminal itself** (`/dev/tty`), not on stdin, so a `booth shell --run` still
   prompts, and nothing piped into booth can answer for you.
 - **No terminal** (CI, scripts, agents): booth **refuses and exits non-zero** unless the command line
@@ -246,6 +250,13 @@ workspace mount: code in the booth can change refs and objects, and write `.git/
 `.git/config`, which run as you the next time you use git on the host. Treat it like any other
 writable workspace (§1). Submodules are not mounted this way, so git does not work in a booth
 opened on a submodule.
+
+In a booth on any repository that has worktrees, booth also mounts each worktree's `.git` file —
+read-only, and only that one-line file, not the worktree — at the path git's record of it names.
+Without it every record looks stale in the container, and a `git worktree prune` there would drop
+worktrees that are alive on the host. Booth also writes one file per worktree into the repository's
+own `.git/worktrees/<id>/` (`cb-host-path`, the worktree's host path), from which it undoes a
+`git worktree repair` run in a booth.
 
 Read-only mounts (`:ro`), like the credential seeds templates add, do not ask — they leak what they
 contain (§3) but do not let the booth run anything on the host. A `--device` the host does not have

@@ -53,7 +53,17 @@ if [[ "${1:-}" == "--inner" ]]; then
   exit $?
 fi
 
-SHELL=/bin/bash timeout 300 script -qec "bash $(printf '%q' "$0") --inner $(printf '%q' "$WORK") $NAME $PORT" /dev/null \
+# Tests 1-3 need the foreground booth to find a real terminal, which is what
+# pty_run's `script` provides — and `script` is util-linux, which Git Bash does
+# not ship. Where it is missing they are skipped and Test 4, the no-terminal
+# case, still runs; a "pty owned by ''" failure says nothing about booth.
+HAVE_PTY_RUNNER=true
+command -v script >/dev/null 2>&1 || HAVE_PTY_RUNNER=false
+
+if [[ "$HAVE_PTY_RUNNER" == true ]]; then
+
+SHELL=/bin/bash pty_run -t 300 /dev/null \
+  bash "$0" --inner "$WORK" "$NAME" "$PORT" \
   > "$LOG" 2>&1 < /dev/null
 
 OUT="$(tr -d '\r' < "$LOG")"
@@ -90,6 +100,10 @@ if [[ "$READ" == "yes" ]]; then
 else
   print_test_result "false" "$0" "3" "coder should be able to read its foreground pty, got '$READ'"
   FAILED=$((FAILED + 1))
+fi
+
+else
+  echo "SKIP: no 'script' on this host to give the foreground booth a terminal; pty ownership, mode and readability not checked"
 fi
 
 # -------------------------------------------------------

@@ -18,25 +18,44 @@ arg PIP_PKGS=matplotlib,psycopg2-binary
 arg PYTHON_VERSION=3.12
 
 setup claude-code ${CLAUDE_CODE_VERSION}
+env GOPATH=/home/coder/go
+env GOBIN=/home/coder/go/bin
+env PATH=/home/coder/go/bin:/usr/local/go-current/bin:$PATH
 setup go ${GO_VERSION}                                # GO tool chain
 install go golang.org/x/tools/gopls@latest            # GO language server
 install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
+env JAVA_HOME=/opt/jdk${JDK_VERSION}
+env CB_JAVA_HOME=/opt/jdk${JDK_VERSION}
+env CB_JDK_VERSION=${JDK_VERSION}
+env PATH=$PATH:/opt/jdk${JDK_VERSION}/bin
 setup jdk ${JDK_VERSION} ${JDK_VENDOR}
+env GRADLE_HOME=/opt/gradle-stable
+env PATH=/opt/gradle-stable/bin:$PATH
 setup gradle "${GRADLE_VERSION}"
 run echo 'class Hi { public static void main(String[] args) { System.out.println("Hi"); }}' | jbang -
+env MAVEN_HOME=/opt/maven-stable
+env PATH=/opt/maven-stable/bin:$PATH
 setup mvn ${MAVEN_VERSION}
 setup nodejs ${NODE_VERSION}
 setup postgresql --version ${PG_VERSION}
+env CB_PYENV_ROOT=/opt/pyenv
+env CB_PY_STABLE=/opt/python
+env CB_VENV_ROOT=/opt/venvs
+env PIP_CACHE_DIR=/opt/pip-cache
+env PIP_DISABLE_PIP_VERSION_CHECK=1
+env PYTHONUNBUFFERED=1
+env VIRTUAL_ENV=/opt/python
+env PATH=/usr/local/uv/bin:/usr/local/uv:/opt/pyenv/bin:/opt/python/bin:$PATH
 setup python ${PYTHON_VERSION}
 setup dbeaver ${DBEAVER_VERSION}
-install pip ${PIP_PKGS}
-setup python-code-extension
 setup notebook ${NOTEBOOK_PORT}
 setup pycharm
+install pip ${PIP_PKGS}
 setup go-code-extension
 setup java-code-extension
 setup nodejs-code-extension
 setup jetbrains-import-project pycharm
+setup python-code-extension
 setup bash-nb-kernel
 setup java-jjava-nb-kernel
 setup jetbrains-first-run

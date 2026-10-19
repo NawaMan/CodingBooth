@@ -1,7 +1,7 @@
 # syntax=codingbooth/boothfile:1
 # Configured by: booth config --no-tui --overwrite --select java/kotlin+vscode-ext+kernel/python/notebook/xfce/claude-code
 
-env APT_SNAPSHOT=20260906T000000Z
+env APT_SNAPSHOT=20261004T000000Z
 
 arg CLAUDE_CODE_VERSION=latest
 arg JDK_VENDOR=temurin
@@ -31,9 +31,9 @@ env PYTHONUNBUFFERED=1
 env VIRTUAL_ENV=/opt/python
 env PATH=/usr/local/uv/bin:/usr/local/uv:/opt/pyenv/bin:/opt/python/bin:$PATH
 setup python ${PYTHON_VERSION}
-setup java-code-extension
 setup kotlin --version ${KOTLIN_VERSION}
-setup python-code-extension
 setup notebook ${NOTEBOOK_PORT}
+setup java-code-extension
 setup kotlin-code-extension
+setup python-code-extension
 setup kotlin-nb-kernel

@@ -26,14 +26,38 @@ var idShape = regexp.MustCompile(`^[0-9]{8}T[0-9]{6}Z$`)
 // earliest is the first snapshot Ubuntu's snapshot service has.
 var earliest = time.Date(2023, 3, 1, 0, 0, 0, 0, time.UTC)
 
-// Today is today's snapshot id: UTC, day granularity.
+// Lag is how far behind the current day `today` lands. A snapshot id names a
+// UTC day, and the day a user calls "today" can be one Ubuntu has not published
+// yet — late in the evening west of UTC, or before that day's snapshot is cut.
+// A week back is a day that exists everywhere, with room to spare.
+const Lag = 7 * 24 * time.Hour
+
+// Release is the snapshot the images of this binary's release were built
+// against: the repo's apt-snapshot.txt, stamped in by build/cli-build.sh via
+// -ldflags "-X …/aptsnapshot.Release=<id>". Empty in a binary built any other
+// way (go test, go run, a bare go build).
+var Release = ""
+
+// Today is the snapshot id the `today` keyword means: the UTC day Lag ago, at
+// day granularity.
 func Today() string {
-	return time.Now().UTC().Format("20060102") + "T000000Z"
+	return time.Now().UTC().Add(-Lag).Format("20060102") + "T000000Z"
+}
+
+// Default is the snapshot a new booth is frozen to: Release, the one its images
+// were built against, so a booth never starts out older than its own image —
+// apt cannot downgrade a package the image already has newer. Today when the
+// binary carries no usable Release.
+func Default() string {
+	if id, err := Parse(Release); err == nil && id != "" && id == Release {
+		return id
+	}
+	return Today()
 }
 
 // Parse turns a user's value into the id to record:
 //
-//	today        Today()
+//	today        Today() — a week back, not the current day
 //	none, ""     "" — no freeze
 //	<id>         that id, checked to be a real date the snapshot service has
 //

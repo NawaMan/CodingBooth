@@ -67,11 +67,39 @@ REPORT='
     grep -q i3-config-wizard /etc/i3/config && echo "etc-config=wizard"
     echo "twins=$(grep -c "^bindsym Control+Mod1+" /etc/xdg/i3/config.d/ctrl-alt.conf)"
     echo "mod-bindings=$(grep -c "^bindsym \$mod+" /etc/xdg/i3/config)"
-    grep -qx "gaps inner 8" /etc/xdg/i3/config.d/gaps.conf && echo "gaps=8"
+    grep -qx "gaps inner 4" /etc/xdg/i3/config.d/gaps.conf && echo "gaps=4"
     for c in start-i3 stop-i3 cb-i3-wallpaper cb-i3-dock; do [ -x /usr/local/bin/$c ] && echo "cmd=$c"; done
     [ -f /etc/skel/Desktop/cb-i3-start.desktop ] && echo "desktop-icon=yes"
     [ -f /usr/share/icons/hicolor/scalable/apps/cb-i3.svg ] && echo "icon=yes"
     ls /usr/local/share/booth-message-wrapper/plugins/ 2>/dev/null | sed "s/^/plugin=/"
+    # Every modifier the Help tab prints must come from BoothHelp.modLabel,
+    # or a Mac viewer is told to press keys that noVNC never delivers. Render
+    # the installed plugin with a label function that tags what it is given:
+    # an untagged "Ctrl+Alt+Enter" in the output means a hardcoded label.
+    cat > /tmp/cb-labels.js <<"JS"
+    var src = require("fs").readFileSync("/usr/local/share/booth-message-wrapper/plugins/i3-help.js", "utf8");
+    function render(mac) {
+      var out = "";
+      var window = {
+        CB_I3_KEYS: "Ctrl+Alt",
+        BoothHelp: {
+          macViewer: mac,
+          modLabel: function (mod) { return "<" + mod + ">"; },
+          addTab: function (name, label, html) { out = html; }
+        }
+      };
+      (new Function("window", src))(window);
+      return out;
+    }
+    var plain = render(false), mac = render(true);
+    var routed = plain.indexOf("<Ctrl+Alt>+Enter") >= 0 &&
+                 plain.indexOf("<Alt>+drag") >= 0 &&
+                 plain.indexOf("Ctrl+Alt+Enter") < 0;
+    console.log("help-labels=" + (routed ? "routed" : "hardcoded"));
+    console.log("help-mac-note=" + (mac.indexOf("On a Mac") >= 0 && plain.indexOf("On a Mac") < 0
+                                    ? "mac-only" : "wrong"));
+JS
+    node /tmp/cb-labels.js 2>/dev/null || echo "help-labels=did-not-run"
     i3-gaps--setup.sh wide >/dev/null 2>&1 || echo "bad-gap=rejected"
     # cb-web-open app windows tile: the rule that un-floats them must come after
     # the pop-up rule that floats them, since the later for_window wins.
@@ -107,14 +135,18 @@ has "$OUT" "etc-config=includes-ours" && ! has "$OUT" "etc-config=wizard" \
 MODS=$(sed -n 's/^mod-bindings=//p' <<< "$OUT"); TWINS=$(sed -n 's/^twins=//p' <<< "$OUT")
 [[ -n "$MODS" && "$MODS" -gt 40 && "$MODS" == "$TWINS" ]] \
     && check "true" "XFCE: a Ctrl+Alt twin for every mod binding ($TWINS)" || check "false" "XFCE: a Ctrl+Alt twin for every mod binding" "mod=$MODS twins=$TWINS"
-has "$OUT" "gaps=8" && has "$OUT" "bad-gap=rejected" \
-    && check "true" "XFCE: 8px gaps; a non-numeric gap is rejected" || check "false" "XFCE: 8px gaps; a non-numeric gap is rejected" "$OUT"
+has "$OUT" "gaps=4" && has "$OUT" "bad-gap=rejected" \
+    && check "true" "XFCE: 4px gaps; a non-numeric gap is rejected" || check "false" "XFCE: 4px gaps; a non-numeric gap is rejected" "$OUT"
 has "$OUT" "cmd=start-i3" && has "$OUT" "cmd=stop-i3" && has "$OUT" "cmd=cb-i3-wallpaper" && has "$OUT" "cmd=cb-i3-dock" && has "$OUT" "start-i3=xfce" \
     && check "true" "XFCE: start-i3 / stop-i3 and helpers installed for XFCE" || check "false" "XFCE: start-i3 / stop-i3 and helpers installed for XFCE" "$OUT"
 has "$OUT" "desktop-icon=yes" && has "$OUT" "icon=yes" \
     && check "true" "XFCE: desktop icon with its own icon" || check "false" "XFCE: desktop icon with its own icon" "$OUT"
 has "$OUT" "plugin=i3-00-ctrl-alt.js" && has "$OUT" "plugin=i3-help.js" \
     && check "true" "XFCE: Help plugins, Ctrl+Alt flag first" || check "false" "XFCE: Help plugins, Ctrl+Alt flag first" "$OUT"
+has "$OUT" "help-labels=routed" \
+    && check "true" "XFCE: the Help tab takes every modifier from BoothHelp.modLabel" || check "false" "XFCE: the Help tab takes every modifier from BoothHelp.modLabel" "$OUT"
+has "$OUT" "help-mac-note=mac-only" \
+    && check "true" "XFCE: the Command-not-Option note shows for a Mac viewer only" || check "false" "XFCE: the Command-not-Option note shows for a Mac viewer only" "$OUT"
 has "$OUT" "session=i3" && has "$OUT" "session-count=4" && ! has "$OUT" "session=still-xfwm4-or-xfdesktop" \
     && check "true" "XFCE: session logs in on i3, without xfwm4 or xfdesktop" || check "false" "XFCE: session logs in on i3, without xfwm4 or xfdesktop" "$OUT"
 has "$OUT" "xfdesktop-total=1" \

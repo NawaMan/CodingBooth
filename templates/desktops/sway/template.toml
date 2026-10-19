@@ -1,4 +1,4 @@
-cb-version = "0.1.0"
+cb-version = "0.1.1"
 display-name = "Tiling for Wayland (sway)"
 display-label = "sway (Tiling)"
 display-disc = "sway tiling compositor for the Wayland desktop, in place of labwc"
@@ -13,7 +13,7 @@ dialog gets a "sway Shortcuts (Tiling)" tab. Alt is the mod key by default \
 (sway:super for Super). Does nothing unless the Wayland desktop is installed — \
 by the desktop-wayland variant or the wayland template — so it is safe to select \
 on any booth. Its extensions (both on by default): +ctrl-alt adds a Ctrl+Alt \
-twin of every shortcut (for Firefox, which keeps Alt), +gaps puts an 8px gap \
+twin of every shortcut (for Firefox, which keeps Alt), +gaps puts a 4px gap \
 between windows. Customize by copying /etc/sway/config to ~/.config/sway/config."""
 display-order = 18
 tags = [

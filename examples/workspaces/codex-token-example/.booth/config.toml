@@ -1,0 +1,11 @@
+# Configured by: booth config --no-tui --overwrite --cmd bash --select codex+settings-cache+token-credential~credential~vscode-ext/nodejs~npmrc~vscode-ext
+
+
+cmds = ["bash"]
+
+run-args = [
+    "-e", "CODEX_ACCESS_TOKEN=${CODEX_ACCESS_TOKEN}",
+    "-e", "CODEX_API_KEY=${CODEX_API_KEY}"
+]
+
+cache-dirs = ["home/coder/.codex"]

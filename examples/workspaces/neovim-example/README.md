@@ -15,9 +15,18 @@ This means everyone on the team gets the same neovim setup automatically.
 ## Try It
 
 ```bash
-../../codingbooth
+./booth
 # Then in the container:
 nvim
+```
+
+### Run it
+
+```bash
+just --list
+just version             # nvim --version, first line
+just config              # load the team config headless, print what it set
+just edit                # nvim with the team config (:q quits)
 ```
 
 ## Customizing

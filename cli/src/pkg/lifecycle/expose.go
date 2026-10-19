@@ -114,7 +114,7 @@ func exposeList(args []string, stdout io.Writer, stderr io.Writer) error {
 
 	manifest := readPortManifest(target.hostBoothDir())
 	tunnels := readTunnels(target.hostBoothDir())
-	live := readLivePorts(target.Engine, target.Name)
+	live := readLivePorts(target.Engine, portOwner(target.Engine, target.Name))
 
 	rows := buildExposeRows(manifest, tunnels, live)
 	if *jsonOutput {
@@ -182,6 +182,31 @@ func readTunnels(boothDir string) map[int]int {
 		tunnels[containerPort] = externalPort
 	}
 	return tunnels
+}
+
+// portOwner returns the container that holds the booth's host port bindings. A
+// booth with a dind/egress sidecar runs with --network container:<sidecar>, so
+// its own `docker port` is empty and the sidecar publishes its ports instead.
+func portOwner(engine, containerName string) string {
+	out, err := docker.DockerOutput(docker.DockerFlags{Silent: true, Engine: engine}, "inspect", ilist.NewList(
+		ilist.NewList("--format", "{{.HostConfig.NetworkMode}}", containerName),
+	))
+	if err != nil {
+		return containerName
+	}
+	if owner, ok := networkModeOwner(out); ok {
+		return owner
+	}
+	return containerName
+}
+
+// networkModeOwner extracts <id> from a "container:<id>" network mode.
+func networkModeOwner(networkMode string) (string, bool) {
+	owner, ok := strings.CutPrefix(strings.TrimSpace(networkMode), "container:")
+	if !ok || owner == "" {
+		return "", false
+	}
+	return owner, true
 }
 
 // readLivePorts parses `<engine> port <name>`, whose lines look like

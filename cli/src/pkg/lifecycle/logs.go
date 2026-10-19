@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -42,8 +43,14 @@ type logFile struct {
 }
 
 // Service is the name `booth logs <name>` takes for this file.
+//
+// ToSlash before Base: most of these paths are the booth's own ("/tmp/x.log"),
+// but the lifecycle log is read from the host (see logs_lifecycle.go) and on
+// Windows that path is "C:\…\.booth\.tmp\lifecycle.log", which path.Base
+// returns whole — the SERVICE column then printed the entire path instead of
+// "lifecycle".
 func (f logFile) Service() string {
-	return strings.TrimSuffix(path.Base(f.Path), ".log")
+	return strings.TrimSuffix(path.Base(filepath.ToSlash(f.Path)), ".log")
 }
 
 // serviceNamePattern keeps a service name a plain file-name stem: no path
@@ -293,8 +300,8 @@ func followInBooth(engine string, execArgs []ilist.List[string], stdout, stderr 
 }
 
 // selectLogFiles maps service names to log files: <name>.log when it exists,
-// otherwise every <name>-*.log (penpot → penpot-backend.log, penpot-exporter.log,
-// …). Order follows the names; duplicates are dropped. Pure for unit tests.
+// otherwise every <name>-*.log (app → app-backend.log, app-worker.log, …).
+// Order follows the names; duplicates are dropped. Pure for unit tests.
 func selectLogFiles(services []string, files []logFile) ([]logFile, error) {
 	byService := map[string]logFile{}
 	for _, file := range files {

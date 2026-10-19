@@ -101,6 +101,14 @@ ParseArgs() {
             if [[ "$v" == "base" ]]; then
                 continue  # base is always built first
             fi
+            # Checked here, before anything is pruned or built: docker-build.sh
+            # would reject the name too, but only after base, and the poll loop
+            # would then wait forever on a variant it has no status for.
+            if [[ " ${ALL_DEPENDENT_VARIANTS[*]} " != *" $v "* ]]; then
+                echo "Error: unknown variant '$v'." >&2
+                echo "       Valid: base ${ALL_DEPENDENT_VARIANTS[*]}" >&2
+                exit 2
+            fi
             VARIANTS_TO_BUILD+=("$v")
         done
         # If user only said "base", nothing else to build
@@ -224,13 +232,7 @@ get_status_var() {
     case "$step" in
         cli)     echo "$CLI_STATUS" ;;
         base)    echo "$BASE_STATUS" ;;
-        notebook)     cat "${LOG_DIR}/notebook.status" 2>/dev/null || echo "pending" ;;
-        codeserver)   cat "${LOG_DIR}/codeserver.status" 2>/dev/null || echo "pending" ;;
-        desktop-xfce) cat "${LOG_DIR}/desktop-xfce.status" 2>/dev/null || echo "pending" ;;
-        desktop-kde)  cat "${LOG_DIR}/desktop-kde.status" 2>/dev/null || echo "pending" ;;
-        desktop-lxqt) cat "${LOG_DIR}/desktop-lxqt.status" 2>/dev/null || echo "pending" ;;
-        desktop-wayland) cat "${LOG_DIR}/desktop-wayland.status" 2>/dev/null || echo "pending" ;;
-        *)       echo "pending" ;;
+        *)       cat "${LOG_DIR}/${step}.status" 2>/dev/null || echo "pending" ;;
     esac
 }
 

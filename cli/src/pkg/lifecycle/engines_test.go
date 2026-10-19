@@ -6,68 +6,131 @@ package lifecycle
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/nawaman/codingbooth/src/internal/fakebin"
 )
 
 // fakeEngine is a stand-in "docker", "podman" or "container" (Apple container)
-// binary. booths are the names its `ps` (or, for container, `ls`) reports, each
-// shown as running; fail makes every call exit 1, like an engine whose daemon
-// is down.
+// binary. Booths are the names its `ps` (or, for container, `ls`) reports, each
+// shown as running; Fail makes every call exit 1, like an engine whose daemon
+// is down. The fields are exported because the spec travels to the stub
+// process as JSON.
 type fakeEngine struct {
-	booths []string
-	fail   bool
-	// lowPorts (container only): every booth carries cb.apple-low-ports=true.
-	lowPorts bool
+	Booths []string
+	Fail   bool
+	// LowPorts (container only): every booth carries cb.apple-low-ports=true.
+	LowPorts bool
+	// Vanished (docker/podman only): booths the listing `ps` still reports but
+	// that are gone by the time they are inspected — inspect exits 1 and a
+	// name-filtered `ps` no longer finds them.
+	Vanished []string
 }
 
-// installFakeEngines puts a script per engine on an otherwise empty PATH and
+// envFakeEngines carries the engines map to the stubs, which look up the name
+// they were invoked under; envEnginesLog is the file they log their calls to.
+const (
+	envFakeEngines = "CB_TEST_ENGINES"
+	envEnginesLog  = "CB_TEST_ENGINES_LOG"
+)
+
+// installFakeEngines puts a stub per engine on an otherwise empty PATH and
 // returns the file every call is logged to as "<engine> <args>".
 func installFakeEngines(t *testing.T, engines map[string]fakeEngine) string {
 	t.Helper()
-	dir := t.TempDir()
-	log := filepath.Join(dir, "calls.log")
-	for name, engine := range engines {
-		var script string
-		if engine.fail {
-			script = "#!/bin/sh\necho \"" + name + " $*\" >> '" + log + "'\nexit 1\n"
-		} else if name == "container" {
-			// Apple container answers in JSON; the adapter filters and reshapes it.
-			labels := `"cb.managed":"true","cb.variant":"base"`
-			if engine.lowPorts {
-				labels += `,"cb.apple-low-ports":"true"`
-			}
-			var docs []string
-			for _, booth := range engine.booths {
-				docs = append(docs, `{"id":"`+booth+`","configuration":{"labels":{`+labels+`}},"status":{"state":"running"}}`)
-			}
-			script = "#!/bin/sh\n" +
-				"echo \"" + name + " $*\" >> '" + log + "'\n" +
-				"case \"$1\" in\n" +
-				"ls) echo '[" + strings.Join(docs, ",") + "]' ;;\n" +
-				"inspect) for last; do :; done\n" +
-				// Plain quotes: inside printf's single-quoted format they are literal, and
-				// a `\"` escape is left as-is by dash (Linux's /bin/sh), unlike bash.
-				"  printf '[{\"id\":\"%s\",\"configuration\":{\"labels\":{" + labels + "}},\"status\":{\"state\":\"running\"}}]\\n' \"$last\" ;;\n" +
-				"esac\n"
-		} else {
-			script = "#!/bin/sh\n" +
-				"echo \"" + name + " $*\" >> '" + log + "'\n" +
-				"case \"$1\" in\n" +
-				"ps) printf '%s\\n' " + strings.Join(engine.booths, " ") + " ;;\n" +
-				"inspect) for last; do :; done\n" +
-				"  printf '{\"Name\":\"/%s\",\"State\":{\"Status\":\"running\"},\"Config\":{\"Labels\":{\"cb.managed\":\"true\",\"cb.variant\":\"base\"}}}\\n' \"$last\" ;;\n" +
-				"esac\n"
-		}
-		if err := os.WriteFile(filepath.Join(dir, name), []byte(script), 0o755); err != nil {
-			t.Fatal(err)
-		}
+	names := make([]string, 0, len(engines))
+	for name := range engines {
+		names = append(names, name)
 	}
-	t.Setenv("PATH", dir)
+	dir := fakebin.OnPath(t, names...)
+	log := filepath.Join(dir, "calls.log")
+
+	spec, err := json.Marshal(engines)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv(envFakeMode, fakeModeEngines)
+	t.Setenv(envFakeEngines, string(spec))
+	t.Setenv(envEnginesLog, log)
 	t.Setenv("CB_ENGINE", "")
 	return log
+}
+
+// fakeEnginesMain is what a stub installed by installFakeEngines does: log the
+// call, then answer the one query its engine is asked.
+func fakeEnginesMain(name string, args []string) int {
+	appendCall(envEnginesLog, joinCall(name, args))
+
+	var engines map[string]fakeEngine
+	if err := json.Unmarshal([]byte(os.Getenv(envFakeEngines)), &engines); err != nil {
+		return 127
+	}
+	engine := engines[name]
+	if engine.Fail {
+		return 1 // an engine whose daemon is down
+	}
+
+	subcommand := ""
+	if len(args) > 0 {
+		subcommand = args[0]
+	}
+	if name == "container" {
+		// Apple container answers in JSON; the adapter filters and reshapes it.
+		labels := `"cb.managed":"true","cb.variant":"base"`
+		if engine.LowPorts {
+			labels += `,"cb.apple-low-ports":"true"`
+		}
+		document := func(booth string) string {
+			return `{"id":"` + booth + `","configuration":{"labels":{` + labels + `}},"status":{"state":"running"}}`
+		}
+		switch subcommand {
+		case "ls":
+			docs := make([]string, 0, len(engine.Booths))
+			for _, booth := range engine.Booths {
+				docs = append(docs, document(booth))
+			}
+			fmt.Println("[" + strings.Join(docs, ",") + "]")
+		case "inspect":
+			fmt.Println("[" + document(lastArg(args)) + "]")
+		}
+		return 0
+	}
+
+	vanished := func(booth string) bool {
+		for _, gone := range engine.Vanished {
+			if gone == booth {
+				return true
+			}
+		}
+		return false
+	}
+	switch subcommand {
+	case "ps":
+		for i, arg := range args {
+			if arg == "--filter" && i+1 < len(args) && strings.HasPrefix(args[i+1], "name=^") {
+				booth := strings.TrimSuffix(strings.TrimPrefix(args[i+1], "name=^"), "$")
+				if !vanished(booth) {
+					fmt.Println(booth)
+				}
+				return 0
+			}
+		}
+		// One name per line, and a bare newline when there are none — what
+		// `printf '%s\n'` with no arguments printed.
+		fmt.Println(strings.Join(append(append([]string{}, engine.Booths...), engine.Vanished...), "\n"))
+	case "inspect":
+		if vanished(lastArg(args)) {
+			fmt.Fprintf(os.Stderr, "Error: No such object: %s\n", lastArg(args))
+			return 1
+		}
+		fmt.Printf(`{"Name":"/%s","State":{"Status":"running"},"Config":{"Labels":{"cb.managed":"true","cb.variant":"base"}}}`+"\n", lastArg(args))
+	}
+	return 0
 }
 
 func readLog(t *testing.T, log string) string {
@@ -81,8 +144,8 @@ func readLog(t *testing.T, log string) string {
 
 func TestManagedContainersAcrossMergesAndTagsEngine(t *testing.T) {
 	installFakeEngines(t, map[string]fakeEngine{
-		"docker": {booths: []string{"web", "api"}},
-		"podman": {booths: []string{"lab"}},
+		"docker": {Booths: []string{"web", "api"}},
+		"podman": {Booths: []string{"lab"}},
 	})
 
 	var stderr bytes.Buffer
@@ -104,10 +167,27 @@ func TestManagedContainersAcrossMergesAndTagsEngine(t *testing.T) {
 	}
 }
 
+// A booth removed between the listing and its inspect (another suite's --rm
+// booth exiting) used to fail the whole lookup, so `booth logs --name x` broke
+// on a booth that had nothing to do with x.
+func TestManagedContainersSkipsBoothRemovedDuringListing(t *testing.T) {
+	installFakeEngines(t, map[string]fakeEngine{
+		"docker": {Booths: []string{"web"}, Vanished: []string{"tmp-gone"}},
+	})
+
+	got, err := managedContainers("docker", false)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(got) != 1 || got[0].Name != "web" {
+		t.Errorf("containers = %+v, want only web", got)
+	}
+}
+
 func TestManagedContainersAcrossSkipsFailingEngineWithWarning(t *testing.T) {
 	installFakeEngines(t, map[string]fakeEngine{
-		"docker": {fail: true},
-		"podman": {booths: []string{"lab"}},
+		"docker": {Fail: true},
+		"podman": {Booths: []string{"lab"}},
 	})
 
 	var stderr bytes.Buffer
@@ -133,8 +213,8 @@ func stubAppleService(t *testing.T, running bool) {
 
 func TestManagedContainersAcrossIncludesApple(t *testing.T) {
 	installFakeEngines(t, map[string]fakeEngine{
-		"docker":    {booths: []string{"web"}},
-		"container": {booths: []string{"mac"}},
+		"docker":    {Booths: []string{"web"}},
+		"container": {Booths: []string{"mac"}},
 	})
 
 	var stderr bytes.Buffer
@@ -153,8 +233,8 @@ func TestManagedContainersAcrossIncludesApple(t *testing.T) {
 
 func TestManagedContainersAcrossSkipsStoppedAppleQuietly(t *testing.T) {
 	installFakeEngines(t, map[string]fakeEngine{
-		"docker":    {booths: []string{"web"}},
-		"container": {fail: true},
+		"docker":    {Booths: []string{"web"}},
+		"container": {Fail: true},
 	})
 	stubAppleService(t, false)
 
@@ -173,8 +253,8 @@ func TestManagedContainersAcrossSkipsStoppedAppleQuietly(t *testing.T) {
 
 func TestManagedContainersAcrossWarnsWhenRunningAppleFails(t *testing.T) {
 	installFakeEngines(t, map[string]fakeEngine{
-		"docker":    {booths: []string{"web"}},
-		"container": {fail: true},
+		"docker":    {Booths: []string{"web"}},
+		"container": {Fail: true},
 	})
 	stubAppleService(t, true)
 
@@ -189,8 +269,8 @@ func TestManagedContainersAcrossWarnsWhenRunningAppleFails(t *testing.T) {
 
 func TestManagedContainersAcrossStoppedAppleAndFailingDockerIsDockersError(t *testing.T) {
 	installFakeEngines(t, map[string]fakeEngine{
-		"docker":    {fail: true},
-		"container": {fail: true},
+		"docker":    {Fail: true},
+		"container": {Fail: true},
 	})
 	stubAppleService(t, false)
 
@@ -202,7 +282,7 @@ func TestManagedContainersAcrossStoppedAppleAndFailingDockerIsDockersError(t *te
 }
 
 func TestManagedContainersAcrossAppleAloneReportsItsError(t *testing.T) {
-	installFakeEngines(t, map[string]fakeEngine{"container": {fail: true}})
+	installFakeEngines(t, map[string]fakeEngine{"container": {Fail: true}})
 	stubAppleService(t, false)
 
 	var stderr bytes.Buffer
@@ -213,8 +293,8 @@ func TestManagedContainersAcrossAppleAloneReportsItsError(t *testing.T) {
 
 func TestManagedContainersAcrossAllFailingIsAnError(t *testing.T) {
 	installFakeEngines(t, map[string]fakeEngine{
-		"docker": {fail: true},
-		"podman": {fail: true},
+		"docker": {Fail: true},
+		"podman": {Fail: true},
 	})
 
 	var stderr bytes.Buffer
@@ -227,7 +307,7 @@ func TestManagedContainersAcrossAllFailingIsAnError(t *testing.T) {
 }
 
 func TestManagedContainersAcrossSingleEngineReturnsItsError(t *testing.T) {
-	installFakeEngines(t, map[string]fakeEngine{"docker": {fail: true}})
+	installFakeEngines(t, map[string]fakeEngine{"docker": {Fail: true}})
 
 	var stderr bytes.Buffer
 	if _, err := managedContainersAcross([]string{"docker"}, false, &stderr); err == nil {
@@ -271,8 +351,8 @@ func TestAmbiguousEngineErrorNamesAllThreeEngines(t *testing.T) {
 
 func TestListShowsAppleBoothsWhenNoneChosen(t *testing.T) {
 	installFakeEngines(t, map[string]fakeEngine{
-		"docker":    {booths: []string{"web"}},
-		"container": {booths: []string{"mac"}},
+		"docker":    {Booths: []string{"web"}},
+		"container": {Booths: []string{"mac"}},
 	})
 
 	var stdout, stderr bytes.Buffer
@@ -291,7 +371,7 @@ func TestListShowsAppleBoothsWhenNoneChosen(t *testing.T) {
 func TestStopActsOnAppleWhenAppleOwnsTheBooth(t *testing.T) {
 	log := installFakeEngines(t, map[string]fakeEngine{
 		"docker":    {},
-		"container": {booths: []string{"mac"}},
+		"container": {Booths: []string{"mac"}},
 	})
 
 	var stderr bytes.Buffer
@@ -309,8 +389,8 @@ func TestStopActsOnAppleWhenAppleOwnsTheBooth(t *testing.T) {
 
 func TestListShowsBothEnginesWhenNoneChosen(t *testing.T) {
 	installFakeEngines(t, map[string]fakeEngine{
-		"docker": {booths: []string{"web"}},
-		"podman": {booths: []string{"lab"}},
+		"docker": {Booths: []string{"web"}},
+		"podman": {Booths: []string{"lab"}},
 	})
 
 	var stdout, stderr bytes.Buffer
@@ -335,8 +415,8 @@ func TestListShowsBothEnginesWhenNoneChosen(t *testing.T) {
 
 func TestListOfOneChosenEngineKeepsTheOldLayout(t *testing.T) {
 	installFakeEngines(t, map[string]fakeEngine{
-		"docker": {booths: []string{"web"}},
-		"podman": {booths: []string{"lab"}},
+		"docker": {Booths: []string{"web"}},
+		"podman": {Booths: []string{"lab"}},
 	})
 	t.Setenv("CB_ENGINE", "docker")
 
@@ -348,14 +428,14 @@ func TestListOfOneChosenEngineKeepsTheOldLayout(t *testing.T) {
 		t.Errorf("a chosen engine must not add a column:\n%s", stdout.String())
 	}
 	if strings.Contains(stdout.String(), "lab") {
-		t.Errorf("CB_ENGINE=docker must not list podman booths:\n%s", stdout.String())
+		t.Errorf("CB_ENGINE=docker must not list podman Booths:\n%s", stdout.String())
 	}
 }
 
 func TestStopActsOnTheEngineThatOwnsTheBooth(t *testing.T) {
 	log := installFakeEngines(t, map[string]fakeEngine{
 		"docker": {},
-		"podman": {booths: []string{"lab"}},
+		"podman": {Booths: []string{"lab"}},
 	})
 
 	var stderr bytes.Buffer
@@ -373,8 +453,8 @@ func TestStopActsOnTheEngineThatOwnsTheBooth(t *testing.T) {
 
 func TestRemoveRefusesANameOnBothEngines(t *testing.T) {
 	log := installFakeEngines(t, map[string]fakeEngine{
-		"docker": {booths: []string{"web"}},
-		"podman": {booths: []string{"web"}},
+		"docker": {Booths: []string{"web"}},
+		"podman": {Booths: []string{"web"}},
 	})
 
 	var stderr bytes.Buffer
@@ -405,8 +485,8 @@ func TestPruneLabelsTheEngineWhenSeveralAreQueried(t *testing.T) {
 
 func TestExecActsOnAppleWhenAppleOwnsTheBooth(t *testing.T) {
 	log := installFakeEngines(t, map[string]fakeEngine{
-		"docker":    {booths: []string{"web"}},
-		"container": {booths: []string{"mac"}},
+		"docker":    {Booths: []string{"web"}},
+		"container": {Booths: []string{"mac"}},
 	})
 
 	var stderr bytes.Buffer
@@ -424,8 +504,8 @@ func TestExecActsOnAppleWhenAppleOwnsTheBooth(t *testing.T) {
 
 func TestExecActsOnDockerWhenDockerOwnsTheBooth(t *testing.T) {
 	log := installFakeEngines(t, map[string]fakeEngine{
-		"docker":    {booths: []string{"web"}},
-		"container": {booths: []string{"mac"}},
+		"docker":    {Booths: []string{"web"}},
+		"container": {Booths: []string{"mac"}},
 	})
 
 	var stderr bytes.Buffer
@@ -443,8 +523,8 @@ func TestExecActsOnDockerWhenDockerOwnsTheBooth(t *testing.T) {
 
 func TestShellActsOnTheEngineThatOwnsTheBooth(t *testing.T) {
 	log := installFakeEngines(t, map[string]fakeEngine{
-		"docker":    {booths: []string{"web"}},
-		"container": {booths: []string{"mac"}},
+		"docker":    {Booths: []string{"web"}},
+		"container": {Booths: []string{"mac"}},
 	})
 
 	var stderr bytes.Buffer
@@ -458,8 +538,8 @@ func TestShellActsOnTheEngineThatOwnsTheBooth(t *testing.T) {
 
 func TestExecRefusesANameOnSeveralEngines(t *testing.T) {
 	log := installFakeEngines(t, map[string]fakeEngine{
-		"docker":    {booths: []string{"web"}},
-		"container": {booths: []string{"web"}},
+		"docker":    {Booths: []string{"web"}},
+		"container": {Booths: []string{"web"}},
 	})
 
 	var stderr bytes.Buffer
@@ -474,7 +554,7 @@ func TestExecRefusesANameOnSeveralEngines(t *testing.T) {
 
 func TestExecInALowPortsBoothStartsThroughTheHelper(t *testing.T) {
 	log := installFakeEngines(t, map[string]fakeEngine{
-		"container": {booths: []string{"mac"}, lowPorts: true},
+		"container": {Booths: []string{"mac"}, LowPorts: true},
 	})
 	t.Setenv("CB_ENGINE", "apple")
 
@@ -493,7 +573,7 @@ func TestExecInALowPortsBoothStartsThroughTheHelper(t *testing.T) {
 
 func TestExecInAPlainBoothStaysCoder(t *testing.T) {
 	log := installFakeEngines(t, map[string]fakeEngine{
-		"container": {booths: []string{"mac"}},
+		"container": {Booths: []string{"mac"}},
 	})
 	t.Setenv("CB_ENGINE", "apple")
 

@@ -65,9 +65,9 @@ section() {
 #     group: "coder"
 #     mode: "1777"
 #
-# A directory entry sets the owner and mode on that directory and every
-# directory under it, without crossing onto another filesystem. Files inside
-# the tree keep the mode they already have.
+# A directory entry sets the mode on that directory and every directory under
+# it, and the owner on every entry in the tree, files included, without
+# crossing onto another filesystem. Files keep the mode they already have.
 apply_owner_permissions() {
   local file="${CODE_DIR}/.booth/owner-permission.yaml"
   [ -f "$file" ] || return 0
@@ -102,7 +102,7 @@ apply_owner_permissions() {
 }
 
 apply_one_owner_permission() {
-  local path="$1" user="$2" group="$3" mode="$4" own=""
+  local path="$1" user="$2" group="$3" mode="$4" own="" uid="" gid=""
   [ -n "$path" ] || return 0
   case "$path" in
     /*) ;;
@@ -127,11 +127,42 @@ apply_one_owner_permission() {
     own=":$group"
   fi
   if [ -d "$path" ]; then
+    # The mode is for directories only, on purpose: Go makes the files in a
+    # module cache read-only (0444) so a build cannot quietly mutate a
+    # dependency it has already verified, and 1777 on them would undo that.
     if [ -n "$mode" ]; then
       find "$path" -xdev -type d -exec chmod "$mode" {} + || true
     fi
-    if [ -n "$own" ]; then
-      find "$path" -xdev -type d -exec chown "$own" {} + || true
+    # Ownership, in contrast, has to reach the files. Docker seeds a fresh
+    # volume from whatever the image holds at that path, so a cache written by
+    # a build-time `go install` arrives owned by the build-time uid (1000) —
+    # and on a host whose uid is not 1000 coder cannot write those files even
+    # though step 4 aligned it to HOST_UID. A 1777 directory does not save it:
+    # `go` opens $GOCACHE/trim.txt for writing on every build, an open on the
+    # existing file, which failed with "permission denied" on every Mac (uid
+    # 501) and on any Linux account off 1000.
+    #
+    # Filtered on the current owner, like the home sweep in step 5, so a
+    # 26k-entry module cache costs one traversal — not 26k chowns — per start.
+    # -h and find's own no-follow default keep a symlink in the tree from
+    # redirecting the chown at something outside it.
+    if [ -n "$user" ]; then
+      uid="$user"
+      case "$user" in *[!0-9]*) uid="$(id -u "$user" 2>/dev/null || true)" ;; esac
+      if [ -n "$uid" ]; then
+        find "$path" -xdev ! -user "$uid" -exec chown -h "$uid" {} + 2>/dev/null || true
+      else
+        find "$path" -xdev -exec chown -h "$user" {} + 2>/dev/null || true
+      fi
+    fi
+    if [ -n "$group" ]; then
+      gid="$group"
+      case "$group" in *[!0-9]*) gid="$(getent group "$group" 2>/dev/null | cut -d: -f3)" ;; esac
+      if [ -n "$gid" ]; then
+        find "$path" -xdev ! -group "$gid" -exec chgrp -h "$gid" {} + 2>/dev/null || true
+      else
+        find "$path" -xdev -exec chgrp -h "$group" {} + 2>/dev/null || true
+      fi
     fi
     info "owner-permission: $path user=${user:-} group=${group:-} mode=${mode:-}"
   elif [ -e "$path" ]; then
@@ -178,6 +209,12 @@ HOME_DIR="/home/${USER_NAME}"
 CODE_NAME="${CODE_NAME:-code}"
 CODE_DIR="/home/${USER_NAME}/${CODE_NAME}"
 USER_SHELL="${USER_SHELL:-/bin/bash}"
+# setup bash replaces /usr/bin/bash with a script that dispatches on CB_BASH
+# (see use-bash). A login shell is told by argv[0] "-bash", which a script
+# loses, so log in with the real binary it dispatches to.
+if [[ "$USER_SHELL" == /bin/bash || "$USER_SHELL" == /usr/bin/bash ]] && [[ -x /usr/bin/bash.distro ]]; then
+  USER_SHELL=/usr/bin/bash.distro
+fi
 HOST_UID="${HOST_UID:-1000}"
 HOST_GID="${HOST_GID:-1000}"
 
@@ -360,6 +397,40 @@ find "$HOME_DIR" -xdev -path "$CODE_DIR" -prune -o ! -group "$HOST_GID" -exec ch
 # Apply after coder's uid exists, so a user name in the file resolves to the
 # host uid. A path that is not a mount point is left alone.
 apply_owner_permissions
+
+info "5b) Telling git the code folder is trustworthy (git safe.directory)..."
+# Step 5 skips $CODE_DIR because it cannot chown a bind mount -- and on an
+# engine that shares the host folder through a VM (Docker Desktop, Colima,
+# Podman machine) the mount ROOT arrives owned by 0:0 no matter who owns it on
+# the host, while everything *under* it maps to HOST_UID correctly. git checks
+# the owner of the repository directory before every command, so a booth whose
+# code folder is a git repo answered every git call with "detected dubious
+# ownership": git unusable in the project, on every Mac.
+#
+# safe.directory is the only lever left. The ownership cannot be fixed (a chown
+# on the mount root is silently ignored), and git reads this key only from
+# protected configuration -- the system file, never coder's own, so a repo
+# cannot grant it to itself. The code folder alone needs naming: a repo in a
+# subfolder is owned by HOST_UID like any other file there.
+#
+# What it gives up: git will work in the code folder even when it is genuinely
+# owned by someone else, not only when the engine made it look that way. In a
+# booth that folder is the user's own project, mounted by their own command, so
+# that trust is already given. On Linux the ownership matches and git never
+# consults the entry; it is set unconditionally rather than per engine so there
+# is one behaviour to reason about. See docs/BOOTH_ENGINES.md.
+#
+# Never fatal (this script runs under `set -e`): the system config is a file
+# like any other, and a booth started with a read-only root filesystem cannot
+# be written to. git not working in the project is worth a line in the log; a
+# booth that refuses to start over it is not.
+if command -v git >/dev/null 2>&1; then
+  if ! git config --system --get-all safe.directory 2>/dev/null | grep -qxF "$CODE_DIR"; then
+    git config --system --add safe.directory "$CODE_DIR" \
+      || printf '[cb-setup] could not record %s as a git safe.directory; git may refuse to run there\n' \
+         "$CODE_DIR" >&2
+  fi
+fi
 
 info "6) For Windows, find all mount point from the host and in each mount point, find all file/folder that is root:root and change them to coder:coder"
 if [ "${HOST_OS:-}" = "WIN" ]; then

@@ -1,0 +1,21 @@
+cb-version = "0.1.0"
+display-name = "Conda Notebook Kernel"
+display-disc = "Run notebooks in the conda environment"
+display-detail = """Registers the booth's conda environment as its own Jupyter kernel, "Python X.Y (conda)". \
+JupyterLab's stock Python kernel runs in the notebook's venv, so packages installed with conda are not \
+importable there; pick this kernel instead. Requires the conda extension and the notebook template: \
+python+conda+conda-kernel/notebook."""
+display-order = 13
+auto-select = false
+requires = ["notebook"]
+tags = [
+    "python",
+    "conda",
+    "kernel",
+    "notebook"
+]
+
+[segments]
+"Boothfile--70" = """
+setup conda-nb-kernel
+"""

@@ -16,7 +16,7 @@ Several of Omarchy's most-liked pieces already have an equal or stronger equival
 templates rather than baked into the default image:
 
 - **AI agent CLIs pre-wired** — `templates/ai-tools/` (claude-code, codex, gemini-cli, gh-copilot,
-  opencode, cursor, aider, goose, grok, warp, ollama, anythingllm, antigravity, herdr, oh-my-pi) is
+  opencode, cursor, aider, goose, grok, warp, ollama, antigravity, herdr, oh-my-pi) is
   broader than Omarchy's own bundle of ten.
 - **Editor choice** — `templates/tools/neovim` exists alongside the VS Code default.
 - **Curated app bundle** — `templates/desktops/` (Firefox, Chrome, Chromium, GIMP, Inkscape,

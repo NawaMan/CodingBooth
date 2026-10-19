@@ -223,7 +223,7 @@ Every sidecar is labeled for lifecycle management:
 Egress sidecars are cleaned up through multiple mechanisms:
 
 - **Normal exit** — `cleanupEgressResources()` stops the proxy, netns owner, and removes the egress network.
-- **Pre-run cleanup** — Before starting a new booth, leftover sidecars from previous abnormal exits are removed using label-based queries.
+- **Pre-run cleanup** — Before starting a new booth, leftover sidecars from previous abnormal exits are removed using label-based queries on the booth's own final container name (`cb.parent=<name>`), never the project name, so a running booth from a same-named folder keeps its sidecar.
 - **Lifecycle commands** — `codingbooth stop`, `remove`, and `prune` all handle sidecar cleanup.
 - **Daemon mode** — Sidecars are not auto-cleaned; use `codingbooth stop` to clean up.
 

@@ -1,0 +1,4 @@
+# Configured by: booth config --no-tui --overwrite --variant xfce --port 50781 --select fpc+lazarus
+
+variant = "xfce"
+port = "50781"

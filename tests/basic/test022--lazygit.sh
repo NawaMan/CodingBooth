@@ -11,9 +11,7 @@ source ../common--source.sh
 # Test: lazygit ships in the base image
 #
 # lazygit is installed by variants/base/setups/lazygit--setup.sh from the
-# Dockerfile, so every variant inherits it. It is also advertised in the login
-# welcome message — a tool nobody is told about is a tool nobody uses, so the
-# welcome line is guarded here too.
+# Dockerfile, so every variant inherits it.
 #
 # Deliberately NOT `set -e`: a booth that fails to start makes every capture
 # below empty, and under `set -e` the script would die on the first one having
@@ -52,24 +50,7 @@ else
 fi
 
 # -------------------------------------------------------
-# Test 3: the welcome message lists lazygit
-#
-# The welcome only prints for an interactive login shell, and the outer
-# `bash -lc` booth runs commands with is not interactive — so it never sets
-# _cb_welcome_shown and the inner `bash -lic` prints the banner.
-# -------------------------------------------------------
-ACTUAL=$(run_coding_booth --variant base -- 'bash -lic true 2>/dev/null | grep -c "^  lazygit "' 2>&1 | tail -1) || ACTUAL=""
-
-if [[ "$ACTUAL" == "1" ]]; then
-  print_test_result "true" "$0" "3" "welcome message lists lazygit"
-else
-  print_test_result "false" "$0" "3" "welcome message lists lazygit"
-  echo "  Matching welcome lines: ${ACTUAL:-<empty — the booth did not run>} (want 1)"
-  FAILED=$((FAILED + 1))
-fi
-
-# -------------------------------------------------------
-# Test 4: lazygit actually runs
+# Test 3: lazygit actually runs
 #
 # --version proves the file is executable; this proves it is lazygit. The
 # UI needs a TTY, so we cannot drive a staging session; `lazygit --config`
@@ -80,9 +61,9 @@ ACTUAL=$(run_coding_booth --variant base -- \
   2>&1 | tail -1) || ACTUAL=""
 
 if [[ "$ACTUAL" == "1" ]]; then
-  print_test_result "true" "$0" "4" "lazygit prints its default config"
+  print_test_result "true" "$0" "3" "lazygit prints its default config"
 else
-  print_test_result "false" "$0" "4" "lazygit prints its default config"
+  print_test_result "false" "$0" "3" "lazygit prints its default config"
   echo "  Matching config sections: ${ACTUAL:-<empty — the booth did not run>} (want 1)"
   FAILED=$((FAILED + 1))
 fi

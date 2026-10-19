@@ -229,8 +229,10 @@ You can define special arrays in `.booth/config.toml` to customize Docker intera
 
 - **`cmds`** — Default command to run inside the container. CLI `-- <cmd>` overrides this (does not append).
   ```toml
-  cmds = ["bash", "-lc", "make test"]
+  cmds = ["make", "test"]
   ```
+  Booth already runs the command through `bash -lc`, so don't add one yourself:
+  `["bash", "-lc", "make test"]` becomes `bash -lc 'bash -lc make test'`, which runs `make` alone.
 
 > These arrays allow you to version-control runtime and build options without hardcoding them into your CLI workflow.
 
@@ -685,6 +687,22 @@ Nothing else changes: the booth's own port is still `--port`, published ports ar
 still checked for collisions after resolution (including against the booth port,
 which a moved base can now reach), and `booth--expose +OFFSET` inside the container
 uses the same base.
+
+**The ceiling.** A resolved host port has to fit in 1–65535 like any other, and
+while the base follows the booth port that constrains which booth port is usable:
+a config with `+8888` cannot start from 60000, because 68888 is not a port.
+`NEXT` and `RANDOM` know this — they only scan bands that leave room for the
+largest offset in the config, so an auto-picked port never produces a mapping
+docker would refuse. A base you pin yourself gets the arithmetic checked instead,
+and is refused by name:
+
+```
+Error: published port '+8888:18888' resolves to host port 73888, which is above
+65535 (offset base 65000). Lower --port, or set --offset-base.
+```
+
+`--offset-base` takes the offsets off the booth port entirely, so a booth that
+needs a high front door and high service ports sets the base separately.
 
 ### Opening the browser
 
