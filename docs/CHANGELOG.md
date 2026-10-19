@@ -531,8 +531,8 @@ This file contains a list of changes for each released version.
     substitution, and bash 5.2 reads `&` in the replacement as the matched text, so every `&&`
     became `<head><head>`.
 
-- **EnvFolio 0.5.0: the command is now `folio`.** The base image and `tools/envfolio` install
-  EnvFolio 0.5.0, whose command is `folio` (`folio init`, `folio exec --secrets <entry> --
+- **EnvFolio 0.6.0: the command is now `folio`.** The base image and `tools/envfolio` install
+  EnvFolio 0.6.0, whose command is `folio` (`folio init`, `folio exec --secrets <entry> --
   <cmd>`); `envfolio` is gone, with no alias. The store commands are top level since 0.5.0:
   `folio init`, `path`, `backup`, `restore`, `export` and `import` (`folio store …` now stops
   and names the new command). The app, the setup (`setup envfolio`), the template
@@ -542,7 +542,9 @@ This file contains a list of changes for each released version.
   `--folio.tar.gz` / `.folio`. `+store-cache` now sets `FOLIO_STORE_DIR` and keeps the same cached
   folder, so a store already in `.booth/cache/` is found after a reconfigure (`booth config`) —
   until then the old `ENVFOLIO_STORE_DIR` in `config.toml` is ignored. Elsewhere, move
-  `~/.envfolio` to `~/.folio` and rename any `ENVFOLIO_STORE_DIR` you set yourself.
+  `~/.envfolio` to `~/.folio` and rename any `ENVFOLIO_STORE_DIR` you set yourself. New in 0.6.0:
+  `folio exec --from <file>` and `folio shell --from <file>` load entries from a `folio export`
+  file on a machine with no store.
 
 - **Fix: `booth --daemon -- <command>` ran only the command's first word.** `--` takes command
   words and runs them with `bash -lc`, which takes a single command string and treats anything
