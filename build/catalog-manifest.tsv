@@ -806,7 +806,7 @@ extension	nodejs+kernel	1.0.0	cb9232648b0d536319ea86808f9878fa8e76685413880d0277
 extension	nodejs+npm-cache	0.1.0	5dca7ee4a7c1545ea7519de97cd33ff205eecae0096da18d521a1205bbffb6cf	templates/languages/nodejs/npm-cache--extension.toml
 extension	nodejs+npm-install	1.0.0	7675b2e3d733a3e88a8c6dd6a6917a94213c10c2c0837010cf8f2f214e31756a	templates/languages/nodejs/npm-install--extension.toml
 extension	nodejs+npm-pkg	1.0.0	5b36389551c086306f39a7deb1b74124d23d97f09e7c52f6cc451a7712d6e1e6	templates/languages/nodejs/npm-pkg--extension.toml
-extension	nodejs+npm-upgrade	1.0.0	4d508e177dab3e8b53d91f1c6afce8db35c21713a9ea1cda53606b9c7a11aff7	templates/languages/nodejs/npm-upgrade--extension.toml
+extension	nodejs+npm-upgrade	2.0.0	8235325758788fd67331346f659cb961d93c1043a1f45a621f3d4949864b4e95	templates/languages/nodejs/npm-upgrade--extension.toml
 extension	nodejs+npmrc	1.0.0	b556f7f02973b95162084d943b83c2a34e58e098501e37b6d0bd42e5337bb299	templates/languages/nodejs/npmrc--extension.toml
 extension	nodejs+pnpm-cache	0.1.0	71063d79bc301628b8f38f75834cb6ace512f991ae4162b5c51d4b705a220ef0	templates/languages/nodejs/pnpm-cache--extension.toml
 extension	nodejs+pnpm-install	1.0.0	8c57b3e323ccbc352da7a3eb6a10281ed5b24c000c79819ac8831e5df8eadc2a	templates/languages/nodejs/pnpm-install--extension.toml

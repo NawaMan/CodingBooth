@@ -21,8 +21,8 @@ env RBENV_ROOT=/opt/rbenv
 env GEM_HOME=/home/coder/.gem
 env PATH=/home/coder/.gem/bin:/opt/rbenv/shims:/opt/rbenv/bin:$PATH
 setup ruby ${RUBY_VERSION}
-setup python-code-extension
 setup notebook ${NOTEBOOK_PORT}
 install gem ${GEM_PKGS}
+setup python-code-extension
 setup ruby-code-extension
 setup ruby-nb-kernel

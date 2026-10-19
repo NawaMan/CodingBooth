@@ -16,7 +16,7 @@ env PYTHONUNBUFFERED=1
 env VIRTUAL_ENV=/opt/python
 env PATH=/usr/local/uv/bin:/usr/local/uv:/opt/pyenv/bin:/opt/python/bin:$PATH
 setup python ${PYTHON_VERSION}
-setup python-code-extension
 setup notebook ${NOTEBOOK_PORT}
 setup octave-code-extension
+setup python-code-extension
 setup octave-nb-kernel

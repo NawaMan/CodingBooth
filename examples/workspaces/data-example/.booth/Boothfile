@@ -24,7 +24,7 @@ env PATH=/usr/local/uv/bin:/usr/local/uv:/opt/pyenv/bin:/opt/python/bin:$PATH
 setup python ${PYTHON_VERSION}
 setup sales-explorer-icon
 setup dbeaver ${DBEAVER_VERSION}
-install pip ${PIP_PKGS}
-setup python-code-extension
 setup notebook ${NOTEBOOK_PORT}
+install pip ${PIP_PKGS}
 setup nodejs-code-extension
+setup python-code-extension

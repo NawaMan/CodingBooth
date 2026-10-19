@@ -22,7 +22,7 @@ env PATH=/usr/local/uv/bin:/usr/local/uv:/opt/pyenv/bin:/opt/python/bin:$PATH
 setup python ${PYTHON_VERSION}
 install lsp ${LSP_SERVERS}
 setup lsp--taplo
-setup python-code-extension
 setup notebook ${NOTEBOOK_PORT}
 setup toml-code-extension
+setup python-code-extension
 setup bash-nb-kernel
