@@ -529,6 +529,7 @@ never the whole context, so editing source does not invalidate its layer.
 | `education/logo`           | Logo |
 | `education/scratch`        | Scratch |
 | `education/thonny`         | Thonny |
+| `fpc/lazarus--extension`   | Lazarus *(IDE on desktop variants; lazbuild everywhere)* |
 | `ides/clion`               | CLion |
 | `ides/codeserver`          | code-server |
 | `ides/datagrip`            | DataGrip |
