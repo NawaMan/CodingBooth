@@ -4,8 +4,8 @@
 set -euo pipefail
 
 if [ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ] && [ ! -f "$HOME/.claude/.credentials.json" ]; then
-    echo "No Claude login found: CLAUDE_CODE_OAUTH_TOKEN is not set in this booth." >&2
-    echo "Create one with 'claude setup-token' on the host, export it there, then restart the booth." >&2
+    echo "No Claude login found: ~/.claude/.credentials.json is missing in this booth." >&2
+    echo "Run 'claude' and '/login' on the host, then restart the booth." >&2
     echo "See README.md." >&2
     exit 1
 fi
