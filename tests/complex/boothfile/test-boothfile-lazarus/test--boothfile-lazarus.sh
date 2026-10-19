@@ -11,8 +11,6 @@
 # compiles and links, and a LazUtils console program builds and runs. Also
 # checks the LCL was prebuilt into the image, so the user's build compiles
 # only the project itself.
-#
-# lazarus--setup.sh is supplied under .booth/setups/ until the base image ships it.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
