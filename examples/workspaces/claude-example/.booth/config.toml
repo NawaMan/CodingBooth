@@ -1,8 +1,11 @@
-# Configured by: booth config --no-tui --overwrite --cmd bash --select claude-code+auto-accept+settings-cache+token-credential~credential
+# Configured by: booth config --no-tui --overwrite --cmd bash --select claude-code+auto-accept+settings-cache
 
 
 cmds = ["bash"]
 
-run-args = ["-e", "CLAUDE_CODE_OAUTH_TOKEN=${CLAUDE_CODE_OAUTH_TOKEN}"]
+run-args = [
+    "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
+    "-v", "~/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro"
+]
 
 cache-dirs = ["home/coder/.claude"]

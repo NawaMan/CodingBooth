@@ -75,7 +75,10 @@ The advantages, in CodingBooth's own vocabulary:
 - **go-example** — `gopls`, `delve`, the GoNB kernel, and code-server all assembled.
 - **java-example** — JDK 25, Maven, the JJava kernel, *and* Eclipse + IntelliJ GUIs.
 - **octave-example** — Octave + the Calysto kernel + gnuplot, preconfigured.
-- **claude-example** — Claude Code CLI preinstalled in a minimal booth.
+- **claude-example** — Claude Code CLI preinstalled in a minimal booth, logged in with the
+  host's own `claude` login (mounted read-only).
+- **claude-token-example** — the same booth, logged in with a `claude setup-token` token passed
+  in as `CLAUDE_CODE_OAUTH_TOKEN`, for hosts with no `claude` login to share.
 - **herdr-example** — a niche `herdr` tool plus a pinned clang/LLVM 18 toolchain in one selector.
 - **floci-example** — Floci (local AWS emulator) + AWS CLI + DinD in one selector, so
   `just run` creates an S3 bucket on `:4566` with no cloud account. *(Secondary: nested
@@ -248,6 +251,7 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 | cache-example | Persistence / cache |
 | clang-example | Reproducibility |
 | claude-example | Batteries-included |
+| claude-token-example | Batteries-included |
 | conda-example | Batteries-included (data-science stack) |
 | csharp-example | Reproducibility (pinned SDK) |
 | data-example | Multiple things bundled |

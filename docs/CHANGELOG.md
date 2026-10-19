@@ -4,6 +4,14 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Two Claude Code examples, one per way of logging in.** `claude-example` reuses the host's
+  `claude` login again: the default `credential` extension mounts `~/.claude.json` and
+  `~/.claude/.credentials.json` read-only, so logging in once on the host is enough. The token
+  setup it had switched to (`claude setup-token`, passed in as `CLAUDE_CODE_OAUTH_TOKEN`) moves to
+  the new `claude-token-example`, for hosts with no login files to share (CI, a server, macOS,
+  where the login is in the Keychain). Both keep `auto-accept`, `settings-cache`, `just ask` and an
+  example of its output.
+
 - **`booth config` keeps Boothfile lines in their order bands again when one template requires
   another.** Since requires-ordering arrived (the aws-cdk/nodejs fix), requiring a template
   pulled every line of *its extensions* ahead too, whatever their band: notebook requires python,
