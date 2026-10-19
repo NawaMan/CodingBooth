@@ -1,0 +1,6 @@
+lib/
+primefinder
+primefinder.res
+primefinder.lps
+backup/
+*.compiled

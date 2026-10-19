@@ -1,0 +1,4 @@
+language
+pascal
+lazarus
+desktop

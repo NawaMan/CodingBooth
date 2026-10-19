@@ -10,7 +10,9 @@ This file contains a list of changes for each released version.
   it adds the Lazarus IDE, a desktop icon, and the FPC sources and `make` that the IDE's first-run
   check asks for. The LCL is prebuilt into the image, so a user's first `lazbuild` compiles only
   the project. Select `fpc+lazarus`, or pin a series with `fpc+lazarus:4.4`. The old
-  `setup fpc --with-lazarus` flag is unchanged. Needs a rebuilt base image.
+  `setup fpc --with-lazarus` flag is unchanged. The new `lazarus-example` is a small Lazarus app
+  (Prime Finder) in an XFCE booth, with `just check`, `just run` and `just ide`. Needs a rebuilt
+  base image.
 
 - **TTT and Croft are catalog terminal editors.** `setup ttt` installs the TTT
   Editor release binary for amd64 and arm64, and installs `ripgrep` when `rg` is
