@@ -7,3 +7,8 @@ cd "$(dirname "$0")/.."
 # loader error. Clear them so the build always emits arch-correct output.
 rm -rf bin obj
 just run
+
+echo "=== Testing C# run with an upper bound ==="
+out="$(just run 5)"
+echo "$out"
+grep -qx 'Sum of 1..5 = 15' <<<"$out"
