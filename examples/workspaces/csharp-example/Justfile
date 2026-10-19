@@ -13,6 +13,6 @@ default:
 build:
     {{run-in-booth}} dotnet build --project .
 
-# Build and run
-run:
-    {{run-in-booth}} ./run-csharp.sh
+# Build and run; sums 1..N (default 10)
+run *args:
+    {{run-in-booth}} ./run-csharp.sh {{args}}
