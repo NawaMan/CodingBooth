@@ -43,7 +43,17 @@ cd tests && ./run-automate-tests.sh --only config-tui
 
 On failure, inspect `log--<testname>.log` (full tape + vhs output + cleaned
 frame) and `prj--<testname>/frame.clean.txt` (exactly what the TUI rendered).
-`./clean-all.sh` removes all `prj--`/`log--`/`run--` artifacts.
+Both live under `$TMPDIR/codingbooth-config-tui-tests/`, not in this directory.
+
+`run-all-tests.sh` retries a failing test once, and a retry re-runs the same
+script — which truncates that log and wipes that prj. So for a test that passed
+only on its second attempt, the two paths above hold the attempt that *passed*;
+the failure is kept beside them as `log--<testname>.attempt1.log` and
+`prj--<testname>--attempt1/frame.clean.txt`, and that is the pair to read. A
+first attempt with `vhs exited with code N` and `no frame.txt captured` failed
+to record at all, which is a different problem from a frame that came out wrong.
+
+`./clean-all.sh` removes all `prj--`/`log--`/`run--` artifacts, in both places.
 
 ## Writing a test
 
@@ -80,3 +90,26 @@ calling `run-tui` (e.g. `LAUNCH_ARGS=(--select go)`).
   Keep generous `Sleep`s and verify each tape against the live TUI — the `.txt`
   frame dump (no alternate screen) stacks every render, so `assert-frame` uses
   substring matches.
+
+### When a run wedges, and the ttyd backlog
+
+A tape that does not land where it expects can leave `vhs` wedged. `run-tui`
+caps it with `run-with-timeout 120`, and that cap has to be able to kill a **Go**
+process: an earlier version used `perl -e 'alarm …; exec …'`, and Go ignores
+SIGALRM, so a wedged vhs ran for 56 minutes under a 120-second limit. A wedged
+vhs also ignores SIGTERM — only SIGKILL ends it — so every branch of the guard
+escalates: `timeout -k 5` (or `gtimeout -k 5`) where coreutils is installed, a
+forked perl watchdog where it is not. A bare `timeout` sends SIGTERM and nothing
+after it. `tests/setups/test--tui-run-with-timeout.sh` locks both in.
+
+The reason this matters beyond one slow run: vhs starts its own `ttyd` and only
+reaps it on the way out, so a vhs that never returns leaks one. The leak then
+*causes* the next wedge — a machine was found with 115 stray `ttyd`, the oldest
+16 days, and clearing them made the wedging test pass on the retry. If the suite
+hangs on a TUI test, check for the backlog before suspecting the test:
+
+```bash
+pgrep -f 'ttyd --port=' | wc -l     # should be 0 between runs
+pkill -f 'ttyd --port='             # safe: booth containers' ttyd are not these
+./tests/config-tui/clean-all.sh     # scratch dirs (files only, no processes)
+```

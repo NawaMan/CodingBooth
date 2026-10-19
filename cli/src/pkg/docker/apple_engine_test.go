@@ -15,6 +15,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/nawaman/codingbooth/src/internal/fakebin"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
@@ -297,22 +298,73 @@ func TestImageInspectQuery(t *testing.T) {
 	}
 }
 
-// installFakeContainer puts a `container` script on PATH that logs its args
-// and prints appleListJSON for ls/inspect.
+// A stub `container` is told what to do through the environment, so that one
+// stub covers every test here: log the call, answer ls/inspect from a fixture,
+// or give one canned reply and exit code.
+const (
+	envCallLog = "CB_TEST_CALL_LOG" // append "container <args>" to this file
+	envListing = "CB_TEST_LISTING"  // answer ls and inspect from this file
+	envReply   = "CB_TEST_REPLY"    // one fakeReply, as JSON
+)
+
+// fakeReply is a single canned answer: print Out, exit with Code — and, when
+// Args is set, exit 1 instead unless it was called with exactly those
+// arguments, which is how a test says what the CLI must ask for.
+type fakeReply struct {
+	Args []string `json:"args,omitempty"`
+	Out  string   `json:"out,omitempty"`
+	Code int      `json:"code,omitempty"`
+}
+
+// TestMain lets a stub installed below answer as `container`, instead of
+// running this package's tests again; see the fakebin package for why a stub is
+// a copy of the test binary rather than a shell script.
+func TestMain(m *testing.M) {
+	fakebin.Serve(fakeContainerMain)
+	os.Exit(m.Run())
+}
+
+func fakeContainerMain(name string, args []string) int {
+	if log := os.Getenv(envCallLog); log != "" {
+		line := strings.Join(append([]string{name}, args...), " ") + "\n"
+		if file, err := os.OpenFile(log, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644); err == nil {
+			file.WriteString(line)
+			file.Close()
+		}
+	}
+	if listing := os.Getenv(envListing); listing != "" && len(args) > 0 && (args[0] == "ls" || args[0] == "inspect") {
+		data, err := os.ReadFile(listing)
+		if err != nil {
+			return 1
+		}
+		os.Stdout.Write(data)
+	}
+	if spec := os.Getenv(envReply); spec != "" {
+		var reply fakeReply
+		if err := json.Unmarshal([]byte(spec), &reply); err != nil {
+			return 1
+		}
+		if reply.Args != nil && !reflect.DeepEqual(args, reply.Args) {
+			return 1
+		}
+		os.Stdout.WriteString(reply.Out)
+		return reply.Code
+	}
+	return 0
+}
+
+// installFakeContainer puts a `container` on PATH that logs its args and prints
+// appleListJSON for ls/inspect, and returns the log it writes.
 func installFakeContainer(t *testing.T) string {
 	t.Helper()
-	dir := t.TempDir()
+	dir := fakebin.OnPath(t, "container")
+	listing := filepath.Join(dir, "list.json")
+	if err := os.WriteFile(listing, []byte(appleListJSON), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	log := filepath.Join(dir, "calls.log")
-	fixture := filepath.Join(dir, "list.json")
-	if err := os.WriteFile(fixture, []byte(appleListJSON), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	script := "#!/bin/sh\necho \"container $*\" >> '" + log + "'\n" +
-		"case \"$1\" in ls|inspect) /bin/cat '" + fixture + "' ;; esac\n"
-	if err := os.WriteFile(filepath.Join(dir, "container"), []byte(script), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	t.Setenv("PATH", dir)
+	t.Setenv(envCallLog, log)
+	t.Setenv(envListing, listing)
 	return log
 }
 
@@ -393,36 +445,39 @@ func TestDocker_DryrunPrintsTranslatedAppleCommand(t *testing.T) {
 	}
 }
 
-// fakeContainerScript puts a `container` whose body is the given shell script
-// alone on PATH.
-func fakeContainerScript(t *testing.T, body string) {
+// fakeContainerReply puts a `container` alone on PATH that gives one canned
+// reply to whatever it is asked.
+func fakeContainerReply(t *testing.T, reply fakeReply) {
 	t.Helper()
-	dir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(dir, "container"), []byte("#!/bin/sh\n"+body), 0o755); err != nil {
+	fakebin.OnPath(t, "container")
+	spec, err := json.Marshal(reply)
+	if err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("PATH", dir)
+	t.Setenv(envReply, string(spec))
 }
 
 func TestAppleNetworkGateway(t *testing.T) {
 	tests := []struct {
-		name   string
-		script string
-		want   string
+		name  string
+		reply fakeReply
+		want  string
 	}{
-		// The shape `container network inspect` prints (pretty JSON, an array).
-		// Shell built-ins only: PATH holds nothing but the fake.
-		{"reads the gateway", `[ "$1 $2 $3" = "network inspect default" ] || exit 1
-printf '%s\n' '[ { "id" : "default", "status" : { "ipv4Gateway" : "192.168.70.1", "ipv4Subnet" : "192.168.70.0/24" } } ]'
-`, "192.168.70.1"},
-		{"failing command falls back", "exit 1\n", AppleDefaultGateway},
-		{"invalid JSON falls back", "echo not-json\n", AppleDefaultGateway},
-		{"empty list falls back", "echo '[]'\n", AppleDefaultGateway},
-		{"no gateway falls back", `echo '[{"status":{}}]'` + "\n", AppleDefaultGateway},
+		// The shape `container network inspect` prints: pretty JSON, an array.
+		// Naming the arguments makes the answer conditional on them — the stub
+		// exits 1 for anything else — so this also pins what the CLI asks.
+		{"reads the gateway", fakeReply{
+			Args: []string{"network", "inspect", "default"},
+			Out:  `[ { "id" : "default", "status" : { "ipv4Gateway" : "192.168.70.1", "ipv4Subnet" : "192.168.70.0/24" } } ]` + "\n",
+		}, "192.168.70.1"},
+		{"failing command falls back", fakeReply{Code: 1}, AppleDefaultGateway},
+		{"invalid JSON falls back", fakeReply{Out: "not-json\n"}, AppleDefaultGateway},
+		{"empty list falls back", fakeReply{Out: "[]\n"}, AppleDefaultGateway},
+		{"no gateway falls back", fakeReply{Out: `[{"status":{}}]` + "\n"}, AppleDefaultGateway},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fakeContainerScript(t, tt.script)
+			fakeContainerReply(t, tt.reply)
 			if got := AppleNetworkGateway("default", false); got != tt.want {
 				t.Errorf("AppleNetworkGateway = %q, want %q", got, tt.want)
 			}
@@ -431,8 +486,8 @@ printf '%s\n' '[ { "id" : "default", "status" : { "ipv4Gateway" : "192.168.70.1"
 }
 
 func TestAppleNetworkGatewayDryrunRunsNothing(t *testing.T) {
-	// A command that would answer differently proves dryrun never asks it.
-	fakeContainerScript(t, `echo '[{"status":{"ipv4Gateway":"10.9.9.9"}}]'`+"\n")
+	// A reply that would answer differently proves dryrun never asks it.
+	fakeContainerReply(t, fakeReply{Out: `[{"status":{"ipv4Gateway":"10.9.9.9"}}]` + "\n"})
 	if got := AppleNetworkGateway("default", true); got != AppleDefaultGateway {
 		t.Errorf("dryrun gateway = %q, want the default %q", got, AppleDefaultGateway)
 	}
@@ -440,18 +495,18 @@ func TestAppleNetworkGatewayDryrunRunsNothing(t *testing.T) {
 
 func TestAppleServiceRunning(t *testing.T) {
 	tests := []struct {
-		name   string
-		script string
-		want   bool
+		name  string
+		reply fakeReply
+		want  bool
 	}{
-		{"running", `echo '{"status":"running","server":{"version":"1.5.0"}}'` + "\n", true},
-		{"stopped status", `echo '{"status":"stopped"}'` + "\n", false},
-		{"command fails", "exit 1\n", false},
-		{"not JSON", "echo running\n", false},
+		{"running", fakeReply{Out: `{"status":"running","server":{"version":"1.5.0"}}` + "\n"}, true},
+		{"stopped status", fakeReply{Out: `{"status":"stopped"}` + "\n"}, false},
+		{"command fails", fakeReply{Code: 1}, false},
+		{"not JSON", fakeReply{Out: "running\n"}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fakeContainerScript(t, tt.script)
+			fakeContainerReply(t, tt.reply)
 			if got := AppleServiceRunning(); got != tt.want {
 				t.Errorf("AppleServiceRunning = %t, want %t", got, tt.want)
 			}
@@ -501,6 +556,14 @@ func TestTranslatePushToLocalRegistryUsesHTTP(t *testing.T) {
 }
 
 func TestAppleMountConflicts(t *testing.T) {
+	// Apple container runs on macOS only, and so does the -v parsing this
+	// checks: a spec is split on ":", which a Windows source ("C:\p:/code")
+	// cannot survive. The mounts here are real paths on the host running the
+	// test, so there is nothing to assert where the engine cannot exist.
+	if runtime.GOOS == "windows" {
+		t.Skip("Apple container is macOS-only; a -v source here is a Unix path")
+	}
+
 	project := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(project, ".booth", "cache", "home"), 0o755); err != nil {
 		t.Fatal(err)

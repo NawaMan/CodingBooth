@@ -100,9 +100,103 @@ sidecars_supported() {
     return 1
 }
 
+# have_python3 reports whether `python3` is a Python that actually runs here.
+#
+# `command -v python3` does not answer that question on Windows. A stock PATH
+# carries the App Execution Aliases in %LOCALAPPDATA%\Microsoft\WindowsApps —
+# stubs named `python3` and `python` whose only job is to send whoever runs them
+# to the Microsoft Store:
+#
+#     $ python3 -c 'print(1)'
+#     Python was not found; run without arguments to install from the Microsoft
+#     Store, or disable this shortcut from Settings > Apps > ...
+#     $ echo $?
+#     49
+#
+# `command -v` finds that, so every caller that only asked whether python3
+# exists took the python3 branch and then watched it fail — the same "green (or
+# red) for the wrong reason" trap as the ROOT_RUN and setsid notes above.
+# port_is_bindable read exit 49 as "that port is taken", for all 100 candidates,
+# and pick_free_port gave up on a host with twelve thousand free ports — taking
+# every port-publishing test in basic/ with it. Ask for a Python that runs.
+#
+# The probe runs once per shell; the answer is cached for the rest of the suite.
+have_python3() {
+    if [[ -z "${_CB_HAVE_PYTHON3:-}" ]]; then
+        if python3 -c '' >/dev/null 2>&1; then
+            _CB_HAVE_PYTHON3=yes
+        else
+            _CB_HAVE_PYTHON3=no
+        fi
+    fi
+    [[ "$_CB_HAVE_PYTHON3" == yes ]]
+}
+
+# serve_dir_http DIR : serve DIR's files over HTTP on 127.0.0.1, on a free port,
+# until killed. Run it in the background and read the port with http_port_of:
+#
+#     serve_dir_http "$dir" & server_pid=$!
+#     port=$(http_port_of "$dir") || { kill $server_pid; ...; }
+#
+# `python3 -m http.server` was the only server the tests stood up, and on a
+# Windows host python3 is usually the Store stub (see have_python3), so the URL
+# came out as http://localhost:/x and the test failed on something it was not
+# testing. perl is the fallback for the reason no_tty_run reaches for it: Git
+# Bash and macOS both ship it. GET of a plain file is all a test needs.
+#
+# The port goes to DIR/.http-port. The server runs from inside DIR so neither
+# side has to translate a /tmp path for a native Windows Python. It execs, so
+# killing the background job's pid kills the server itself.
+serve_dir_http() {
+    cd "$1" || return 1
+    rm -f .http-port
+    if have_python3; then
+        exec python3 -c '
+import http.server, socketserver, os
+s = socketserver.TCPServer(("127.0.0.1", 0), http.server.SimpleHTTPRequestHandler)
+with open(".http-port.tmp", "w") as f: f.write(str(s.server_address[1]))
+os.replace(".http-port.tmp", ".http-port")
+s.serve_forever()
+'
+    fi
+    exec perl -MIO::Socket::INET -e '
+my $s = IO::Socket::INET->new(LocalAddr => "127.0.0.1", LocalPort => 0,
+                              Listen => 5, ReuseAddr => 1) or die "listen: $!\n";
+open(my $f, ">", ".http-port.tmp") or die; print $f $s->sockport; close $f;
+rename(".http-port.tmp", ".http-port") or die;
+while (my $c = $s->accept) {
+    my $req = <$c> // "";
+    while (my $line = <$c>) { last if $line =~ /^\r?\n$/ }
+    my ($path) = $req =~ m{^GET\s+/([^\s?]*)};
+    my $body;
+    if (defined $path && $path !~ m{\.\.} && -f $path && open(my $in, "<:raw", $path)) {
+        local $/; $body = <$in>; close $in;
+        print $c "HTTP/1.0 200 OK\r\nContent-Length: " . length($body) . "\r\nConnection: close\r\n\r\n$body";
+    } else {
+        print $c "HTTP/1.0 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+    }
+    close $c;
+}
+'
+}
+
+# http_port_of DIR : the port serve_dir_http DIR is listening on, waiting up to
+# 10s for it to come up. Fails (and prints nothing) if it never does.
+http_port_of() {
+    local i
+    for i in $(seq 1 50); do
+        if [[ -s "$1/.http-port" ]]; then
+            cat "$1/.http-port"
+            return 0
+        fi
+        sleep 0.2
+    done
+    return 1
+}
+
 no_tty_supported() {
     command -v setsid  >/dev/null 2>&1 && return 0
-    command -v python3 >/dev/null 2>&1 && return 0
+    have_python3 && return 0
     command -v perl    >/dev/null 2>&1 && return 0
     echo "SKIP: no setsid, python3 or perl here — cannot run a booth without a controlling terminal." >&2
     return 1
@@ -111,7 +205,7 @@ no_tty_supported() {
 no_tty_run() {
     if command -v setsid >/dev/null 2>&1; then
         setsid -w "$@"
-    elif command -v python3 >/dev/null 2>&1; then
+    elif have_python3; then
         python3 -c '
 import os, sys
 pid = os.fork()
@@ -141,6 +235,205 @@ exit(($? & 127) ? 128 + ($? & 127) : $? >> 8);
     else
         echo "no_tty_run: no setsid, python3 or perl — guard the test with no_tty_supported" >&2
         return 1
+    fi
+}
+
+# ── GNU tools a Mac does not have ────────────────────────────────────────────
+#
+# The suites were written against GNU userland, and three of the tools they
+# reach for behave differently (or are simply absent) on macOS. Each one failed
+# the same way: not "assertion false" but the test dying, or comparing against
+# an empty string, which reads as a product bug until you look at stderr.
+#
+#   timeout        util-linux; macOS ships nothing. `timeout: command not
+#                  found` under `set -e` takes the whole line with it, so the
+#                  variable the test was going to assert on is "".
+#   script         both have it, with incompatible syntax: util-linux takes
+#                  `script -qec CMD FILE`, BSD takes `script -q -e FILE CMD…`.
+#   touch -d       GNU parses relative dates ("1 year ago"); BSD wants an
+#                  absolute stamp via -t, and rejects the rest outright.
+#
+# Homebrew's coreutils, when installed, provides gtimeout; the fallback below
+# does not assume it. perl is the last resort for the same reason no_tty_run
+# uses it: macOS ships it, and alarm(2) plus a fork is all a watchdog needs.
+
+# timeout_run [-s SIG] SECONDS CMD... : run CMD, signalling it after SECONDS.
+# Exits with CMD's status, or 124 when the time ran out (as timeout does).
+#
+# The signal is put back to its default disposition in CMD before CMD starts,
+# because the suite runner may have taken it away. run-automate-tests.sh runs
+# each suite as an asynchronous job — `( … ) &` — and POSIX has a shell with no
+# job control ignore SIGINT and SIGQUIT in such a job. SIG_IGN survives exec, so
+# every descendant inherits it: the suite runner, the test, and CMD. Nothing
+# downstream can lift it either — a signal ignored on entry to a shell can
+# neither be trapped nor reset there — so `-s INT` is simply swallowed, and a
+# test that interrupts `booth logs -f` waits for a CLI that cannot die (which is
+# what parked basic/test032--logs.sh for an hour and a half). GNU timeout
+# un-ignores the signal itself; the uutils timeout and a bare fork do not, so the
+# shim goes in front of all three rather than only where it is known to be
+# missing.
+#
+# GRACE seconds after the signal, CMD is killed outright: a CMD that will not
+# answer should fail its test, not hold up the suite behind it. That case exits
+# 137, as timeout's own -k does, to tell "it died of the signal" (124) from "it
+# had to be killed" (137).
+timeout_run() {
+    local signal=TERM
+    if [[ "${1:-}" == "-s" ]]; then
+        signal="$2"; shift 2
+    fi
+    signal="${signal#SIG}"   # INT, not SIGINT: a perl %SIG key, and what -s takes
+    local seconds="$1" grace=5; shift
+
+    # Terminal access must not stop CMD.
+    #
+    # Every branch below runs CMD in a process group of its own, which is never
+    # the terminal's foreground group. A read of the terminal from such a group
+    # raises SIGTTIN, a tcsetattr raises SIGTTOU, and either one stops the whole
+    # group — CMD, its children, and the perl watchdog with them. A stopped
+    # watchdog never fires, so the call does not time out: it waits forever. Run
+    # from a shell, booth saw a terminal on stdin, started `docker run -i`,
+    # docker read the terminal, and complex/test-boothfile-bash sat for 2.5h on
+    # one `bash-3.2 --version`. CI has no terminal, so only a run from a shell
+    # ever sees it.
+    #
+    # Ignoring the two signals is what makes that read fail instead of freeze:
+    # the kernel skips the stop for a process that ignores the signal and the
+    # read returns EIO, so CMD fails its test in a second and the suite moves on.
+    # SIG_IGN survives exec, so it reaches CMD's own children — the docker CLI
+    # included, which is the one that actually touches the terminal. CMD's stdin
+    # is left as it is: a stdin the caller piped in still reaches CMD, and a test
+    # that needs a terminal of its own still gets one from pty_run.
+    #
+    # What the TTOU half gives up: a tcsetattr from the background now succeeds
+    # instead of stopping, so a CMD killed between "set raw" and "restore" leaves
+    # the terminal as it set it (`stty sane` puts it back). That is the trade the
+    # other way round from a suite that sits for hours, which is what it did.
+    #
+    # perl -e '…' SIG CMD… : un-ignore SIG, ignore the two stop signals, then
+    # *become* CMD, so the pid the watchdog signals is still CMD's own.
+    local -a unignore=()
+    if command -v perl >/dev/null 2>&1; then
+        unignore=(perl -e '
+my $signal = shift;
+$SIG{$signal} = "DEFAULT";
+$SIG{TTIN} = "IGNORE";
+$SIG{TTOU} = "IGNORE";
+exec { $ARGV[0] } @ARGV;
+print STDERR "$ARGV[0]: $!\n";
+exit(127);
+' "$signal")
+    fi
+    set -- ${unignore[@]+"${unignore[@]}"} "$@"
+
+    if command -v timeout >/dev/null 2>&1; then
+        timeout -s "$signal" -k "$grace" "$seconds" "$@"
+    elif command -v gtimeout >/dev/null 2>&1; then
+        gtimeout -s "$signal" -k "$grace" "$seconds" "$@"
+    elif command -v perl >/dev/null 2>&1; then
+        # CMD gets a process group of its own and the watchdog signals the
+        # *group*, which is what `timeout` does without --foreground. Signalling
+        # the one process is not enough: `bash -c "exec 3<>…; cat <&3"` leaves
+        # `cat` blocked on the read when its bash is killed, orphaned onto init
+        # and still holding the write end of the capture pipe — so `$(...)` waits
+        # for output from a process nobody is going to kill. That is how
+        # complex/test--tunnel-public-bind sat for 21 minutes on one 2-second
+        # read. The group goes to the harness's own if setpgid fails, so fall
+        # back to the single pid rather than signalling that.
+        SIG="$signal" SECS="$seconds" GRACE="$grace" perl -MPOSIX -e '
+my $pid = fork();
+defined $pid or die "fork: $!\n";
+if ($pid == 0) {
+    POSIX::setpgid(0, 0);
+    exec { $ARGV[0] } @ARGV;
+    print STDERR "$ARGV[0]: $!\n";
+    POSIX::_exit(127);
+}
+my $timedout = 0;
+my $killed = 0;
+# The group first, the bare process only if there is no group of its own
+# (setpgid can fail). kill returns how many it signalled, so the fallback needs
+# no getpgid — which perl POSIX does not even define, and asking for it took the
+# watchdog down with "Undefined subroutine" and left CMD running untimed.
+#
+# CONT behind the signal, every time. A stopped process does not act on a
+# catchable signal until it is continued, so a CMD that someone else stopped —
+# or that stopped itself on a terminal the ignores above do not cover — would
+# take the TERM pending and keep sitting there, and the deadline would come and
+# go with nothing to show for it. SIGKILL needs no help; sending CONT with it
+# costs nothing and keeps the two paths the same shape.
+my $signal_tree = sub {
+    my $sig = shift;
+    kill($sig, -$pid) or kill($sig, $pid);
+    kill("CONT", -$pid) or kill("CONT", $pid);
+};
+$SIG{ALRM} = sub {
+    if ($timedout) { $killed = 1; $signal_tree->("KILL"); return; }
+    $timedout = 1;
+    $signal_tree->($ENV{SIG});
+    alarm $ENV{GRACE};
+};
+alarm $ENV{SECS};
+waitpid($pid, 0);
+alarm 0;
+exit(137) if $killed;
+exit(124) if $timedout;
+exit(($? & 127) ? 128 + ($? & 127) : $? >> 8);
+' "$@"
+    else
+        echo "timeout_run: no timeout, gtimeout or perl here." >&2
+        return 1
+    fi
+}
+
+# pty_run [-t SECONDS] LOGFILE CMD... : run CMD on a pty of its own, with the
+# typescript in LOGFILE (/dev/null to discard). Exits with CMD's status.
+#
+# A test needs this when what it measures is the terminal itself — who owns the
+# pty a foreground booth starts on, say — which no redirect can fake.
+#
+# -t takes the deadline here rather than leaving it to the caller: timeout_run
+# can only wrap a real command, and the command here is `script`, which only
+# pty_run knows how to spell on this OS.
+pty_run() {
+    local limit=""
+    if [[ "${1:-}" == "-t" ]]; then
+        limit="$2"; shift 2
+    fi
+    local log="$1"; shift
+
+    local argv
+    if [[ "$HOST_OS" == "MAC" ]]; then
+        argv=(script -q -e "$log" "$@")
+    else
+        argv=(script -qec "$(quote_args "$@")" "$log")
+    fi
+
+    if [[ -n "$limit" ]]; then
+        timeout_run "$limit" "${argv[@]}"
+    else
+        "${argv[@]}"
+    fi
+}
+
+# quote_args CMD... : the arguments as one shell-quotable string, for the tools
+# that take a command line rather than an argument vector (util-linux script).
+quote_args() {
+    local out="" arg
+    for arg in "$@"; do
+        out+="${out:+ }$(printf '%q' "$arg")"
+    done
+    printf '%s' "$out"
+}
+
+# touch_year_ago PATH... : backdate PATH... by a year, for a test that needs a
+# file old enough to look stale (git's gc horizon, a cache's expiry).
+touch_year_ago() {
+    local stamp
+    if stamp=$(date -v-1y +%Y%m%d%H%M 2>/dev/null) && [[ -n "$stamp" ]]; then
+        touch -t "$stamp" "$@"          # BSD
+    else
+        touch -d '1 year ago' "$@"      # GNU
     fi
 }
 
@@ -201,7 +494,7 @@ ephemeral_port_floor() {
 port_is_bindable() {
   local port="$1"
 
-  if command -v python3 >/dev/null 2>&1; then
+  if have_python3; then
     # A bind with no listen and no connect leaves nothing behind when it closes,
     # so asking this question does not itself make the port unavailable.
     if python3 -c '
@@ -226,8 +519,14 @@ finally:
     ! lsof -iTCP:"$port" -sTCP:LISTEN -Pn 2>/dev/null | grep -q .
   elif command -v ss >/dev/null 2>&1; then
     ! ss -ltn "( sport = :$port )" 2>/dev/null | grep -q ":$port"
+  elif command -v nc >/dev/null 2>&1; then
+    ! nc -z 127.0.0.1 "$port" >/dev/null 2>&1
   else
-    ! (command -v nc >/dev/null 2>&1 && nc -z 127.0.0.1 "$port" >/dev/null 2>&1)
+    # Git Bash has none of the three, which is where a Windows host lands. Bash
+    # asks the same question itself: a connect to 127.0.0.1:<port> that succeeds
+    # means something is listening there. The subshell closes the descriptor on
+    # its way out, so the probe leaves nothing behind either.
+    ! (exec 3<>/dev/tcp/127.0.0.1/"$port") 2>/dev/null
   fi
 }
 
@@ -581,6 +880,26 @@ run_coding_booth() {
 
   trace_cmd '1;33' "> codingbooth $*"
 
+  # Container paths in the booth's own command have to survive this shell.
+  # Git Bash rewrites an argument that looks like a Unix absolute path into a
+  # Windows one, which is what makes `--code /tmp/x` reach the engine as
+  # `C:/Users/.../Temp/x` — and what turned
+  #
+  #     run_coding_booth -- ls /usr/local/bin/kubectx
+  #
+  # into `ls C:/Program Files/Git/usr/local/bin/kubectx`, so the test saw no
+  # output and blamed the setup. MSYS2_ARG_CONV_EXCL names prefixes to leave
+  # alone: the roots below exist only inside a booth, never as a host path a
+  # test would pass (a host path here is /c/… or /tmp/…). /tmp is deliberately
+  # absent — it is both, so a test that means the booth's /tmp says so itself,
+  # per command, as basic/test008 does. A caller's own value is kept.
+  #
+  # Set for the booth command only, not exported into the rest of the test.
+  local conv_excl="/usr;/opt;/etc;/var;/srv;/root;/home/coder;/bin;/sbin;/lib;/lib64;/dev;/proc;/sys;/booth;/workspace"
+  if [[ -n "${MSYS2_ARG_CONV_EXCL:-}" ]]; then
+    conv_excl="${MSYS2_ARG_CONV_EXCL};${conv_excl}"
+  fi
+
   # Optional forensics (CB_DIAG_LOG). Tests capture booth with `2>/dev/null`, so a
   # run that intermittently produces nothing leaves no evidence of why — the test
   # either sees an empty string or, with no `||` guard, `set -e` kills the script
@@ -602,7 +921,7 @@ run_coding_booth() {
     local _rc=0 _errfile
     _errfile=$(mktemp "${TMPDIR:-/tmp}/cb-diag-stderr.XXXXXX")
     printf '%s  === codingbooth %s\n' "$(date '+%H:%M:%S')" "$*" >>"$CB_DIAG_LOG"
-    "$booth_path" ${version_args[@]+"${version_args[@]}"} "$@" \
+    MSYS2_ARG_CONV_EXCL="$conv_excl" "$booth_path" ${version_args[@]+"${version_args[@]}"} "$@" \
       2>"$_errfile" || _rc=$?
     cat "$_errfile" >>"$CB_DIAG_LOG"
     cat "$_errfile" >&2
@@ -612,7 +931,289 @@ run_coding_booth() {
   fi
 
   # Safe expansion: avoids "unbound variable" under `set -u` with Bash 3.2 when the array is empty.
-  "$booth_path" ${version_args[@]+"${version_args[@]}"} "$@"
+  MSYS2_ARG_CONV_EXCL="$conv_excl" "$booth_path" ${version_args[@]+"${version_args[@]}"} "$@"
+}
+
+# ── Container paths survive the shell (Windows) ──────────────────────────────
+#
+# Git Bash rewrites an argument that looks like a Unix absolute path into a
+# Windows one before the program sees it. That is right for a Windows program
+# being handed a host path — it is how `booth --code /tmp/x` reaches docker as
+# `C:/Users/.../Temp/x` — and wrong for every path that belongs to the
+# *container*:
+#
+#     docker exec -u coder "$NAME" cat /home/coder/code/file
+#     cat: 'C:/Program Files/Git/home/coder/code/file': No such file or directory
+#
+# `docker exec` takes no host paths at all, and the host paths of `docker run`
+# and `docker create` (a -v source) are understood by Docker Desktop in the
+# shell's own `/c/Users/...` form, so for those subcommands the rewriting is
+# pure loss. MSYS_NO_PATHCONV
+# turns it off, and wrapping docker here rather than at each call site covers
+# every test that sources this file without touching one of them.
+#
+# Not for the others: `docker build -f <path>` and `docker cp`'s host side are
+# resolved by the CLI itself, locally, where a `/c/Users/...` path is not one.
+#
+# Defined only when there is a real docker to wrap, so `command -v docker` still
+# answers "no docker here" on a host without one — several tests skip on exactly
+# that. A test that wants the binary's own path must ask `type -P docker`:
+# `command -v` would name this function instead.
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]] && type -P docker >/dev/null 2>&1; then
+    docker() {
+        case "${1:-}" in
+            exec|run|create) MSYS_NO_PATHCONV=1 command docker "$@" ;;
+            *)        command docker "$@" ;;
+        esac
+    }
+    export -f docker
+fi
+
+# ── What this host can and cannot do ─────────────────────────────────────────
+#
+# The helpers below answer that, so a test does not assume the host is the one
+# it was written on. The suites run on Linux, macOS and Windows (Git Bash) —
+# booth is installed on all three — and each of these marks a place where one
+# of them cannot do what a test took for granted: hold a port open, keep a
+# permission bit, make a symlink, run an MSYS tool off a stubbed PATH, resolve
+# a Unix path. See also have_python3 above, the GNU-tool shims, and
+# tests/README.md.
+
+# occupy_port holds a port open for a while, for a case about what booth does
+# when a port is taken. It prints the PID of the holder, which the caller kills
+# when it is done, and returns 1 when this host has nothing that can listen —
+# the case then has to skip rather than assert on a port nobody is holding.
+#
+#     BUSY_PID="$(occupy_port "$port" 30)" || { echo "SKIP: ..."; exit 0; }
+#     # it returns as soon as the holder is started, so wait for the port to answer
+#     for _ in $(seq 1 50); do (exec 3<>"/dev/tcp/127.0.0.1/$port") 2>/dev/null && break; sleep 0.1; done
+#     ...
+#     kill "$BUSY_PID" 2>/dev/null || true
+#
+# python3 where it is real (see have_python3), else PowerShell, which a Windows
+# host always has and which is the only listener Git Bash can reach: it ships no
+# nc, and bash itself cannot listen, only connect.
+occupy_port() {
+  local port="$1" seconds="${2:-30}"
+  if have_python3; then
+    # Both streams to /dev/null, or the holder keeps the caller's command
+    # substitution open — PID="$(occupy_port …)" would wait out the whole
+    # sleep instead of returning the PID.
+    python3 -c "
+import socket, sys, time
+sock = socket.socket()
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+sock.bind(('127.0.0.1', int(sys.argv[1])))
+sock.listen()
+time.sleep(float(sys.argv[2]))
+" "$port" "$seconds" >/dev/null 2>&1 &
+    echo $!
+    return 0
+  fi
+  if command -v powershell.exe >/dev/null 2>&1; then
+    powershell.exe -NoProfile -Command "
+\$listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Parse('127.0.0.1'), $port)
+\$listener.Start()
+Start-Sleep -Seconds $seconds
+\$listener.Stop()" >/dev/null 2>&1 &
+    echo $!
+    return 0
+  fi
+  return 1
+}
+
+# have_symlinks reports whether this host makes real symbolic links, for a case
+# about what a script does when it finds one. Under Git Bash `ln -s` copies the
+# file instead unless MSYS was configured for native symlinks — and Windows only
+# allows those to an administrator or with Developer Mode on — so the "symlink"
+# a test laid down would be an ordinary file, and the case would quietly assert
+# the opposite of what it says. The only honest check is to try one.
+have_symlinks() {
+  local dir result=1
+  dir="$(mktemp -d)" || return 1
+  : > "$dir/target"
+  ln -s "$dir/target" "$dir/link" 2>/dev/null
+  [[ -L "$dir/link" ]] && result=0
+  rm -rf "$dir"
+  return $result
+}
+
+# is_link_or_copy reports whether a script put what it was asked to at path: the
+# symlink it made, or — on a host where `ln -s` copies instead (see
+# have_symlinks) — the copy that landed there. Insisting on -L there asserts
+# what the host can do, not what the script did.
+is_link_or_copy() {
+  if have_symlinks; then
+    [[ -L "$1" ]]
+  else
+    [[ -e "$1" ]]
+  fi
+}
+
+# unix_modes reports whether a file's permission bits mean what they say on this
+# host, so a case about 0600 or the exec bit can say what it is doing:
+#
+#     if unix_modes; then
+#       check 4 "init: keeps the staged file's mode" "600" "$(stat -c '%a' "$file")"
+#     fi
+#
+# Windows has no permission bits. `chmod` there sets a read-only flag at best,
+# a mode read back is whatever MSYS chooses to report (0644 for a plain file),
+# and `chmod +x` on an empty file does not even make it executable — MSYS reads
+# executability off the content, so a shebang or a PE header is what counts.
+# This is the shell side of cli/src/internal/hostskip, which the Go tests use
+# for the same reason.
+unix_modes() { [[ "$HOST_OS" != "WIN" ]]; }
+
+# utf8_locale prints a UTF-8 locale this host actually has, for the one kind of
+# command that needs one: GNU grep refuses `-P` unless the locale is unibyte or
+# UTF-8, and several product scripts read a version with `grep -oP`. Returns 1
+# when the host has none, so the caller can skip rather than run a script that
+# will die on its first version probe.
+#
+#     LANG="$(utf8_locale)" bash "$SETUPS/x--install.sh"     # or skip
+#
+# Deliberately *not* exported for the whole suite, and do not be tempted: MSYS
+# grep in a UTF-8 locale cannot match a character outside the BMP, so a UTF-8
+# LANG makes every emoji assertion silently stop matching while ASCII ones keep
+# working — dryrun/test031 grepped for "📦 Running booth in daemon mode" and went
+# red for exactly that reason, on a line that was right there in the output.
+# With no LANG, MSYS grep compares bytes and the emoji matches.
+#
+# Not exporting one is not enough, though: mintty, Git Bash's own terminal, sets
+# a UTF-8 LANG itself, so a suite started from it inherits one anyway. Match on
+# the text beside an emoji (or any non-BMP character), never the emoji itself.
+utf8_locale() {
+  local candidate available
+  available="$(locale -a 2>/dev/null || true)"
+  for candidate in C.utf8 C.UTF-8 en_US.utf8 en_US.UTF-8; do
+    if printf '%s\n' "$available" | grep -qix -- "$candidate"; then
+      echo "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+# ── A script written for the image, run on this host ─────────────────────────
+#
+# The setups suite runs real setup and launcher scripts on the host with their
+# tools stubbed, which is what makes it fast and image-free. Those scripts are
+# written for the one place they ever run — the image: Ubuntu, bash 5, GNU
+# userland — and a handful of them use something a macOS host has not got:
+# `${x,,}`, mapfile, `sed -i` with no suffix, `find -printf`, `stat -c`,
+# `grep -P`. The script is not wrong, and rewriting shipped container code so a
+# BSD host can run it would be churn for no gain, so the test asks the host
+# first and skips. Linux keeps the coverage, which is where CI runs it.
+#
+#     require_host_tools "booth--file-sync lists its staged files with find -printf" \
+#                        gnu-find gnu-stat
+#
+# Each feature is probed, never version-tested, so a Mac carrying Homebrew's
+# coreutils/gnu-sed takes the real branch and runs the case for real. See also
+# sed_inplace, which shims the one GNU-ism the tests themselves need, and
+# test--desktop-start-ports.sh, which probes the bash its *subject* will get
+# rather than the one running the test.
+#
+# missing_host_tools prints the named features this host lacks, "" when it has
+# them all. require_host_tools is the guard built on it: it prints the SKIP line
+# and exits the test, so it reads as one statement at the top of a file.
+missing_host_tools() {
+  local feature label missing=""
+  for feature in "$@"; do
+    case "$feature" in
+      bash4)    label="bash 4 (\${x,,}, mapfile)"
+                bash -c 'x=A; : "${x,,}"; mapfile -t _ </dev/null' ;;
+      gnu-sed)  label="GNU sed"
+                sed --version ;;
+      gnu-find) label="GNU find (-printf)"
+                find . -maxdepth 0 -printf '' ;;
+      gnu-stat) label="GNU stat (-c)"
+                stat -c '%a' . ;;
+      grep-P)   label="grep -P"
+                printf 'a1\n' | grep -qP '\d' ;;
+      *)        label="$feature"
+                echo "missing_host_tools: unknown feature \"$feature\"" >&2
+                false ;;
+    esac >/dev/null 2>&1 || missing+="${missing:+, }$label"
+  done
+  printf '%s' "$missing"
+}
+
+require_host_tools() {
+  local subject="$1"; shift
+  local missing
+  missing="$(missing_host_tools "$@")"
+  [[ -z "$missing" ]] && return 0
+  echo "SKIP: $subject, and this host has no $missing (bash ${BASH_VERSION%%(*} on $(uname -s))"
+  exit 0
+}
+
+# stub_path assembles the PATH for a setup script run against stubbed tools:
+# the given directories, and on Windows the one directory a stub cannot do
+# without.
+#
+#     OUT=$(env -i EUID=0 PATH="$(stub_path "$STUB/bin")" bash "$SETUPS/x--setup.sh")
+#
+# A setups test hands the script a PATH holding nothing but what it wants the
+# script to find, which is how the guard branches ("skips without XFCE") are
+# reached at all. On Linux and macOS that is the whole story. Under Git Bash it
+# is not: every tool in /usr/bin is an MSYS program that loads msys-2.0.dll, and
+# Windows resolves a program's DLLs through PATH — so `basename` copied into a
+# stub directory and run with `env -i PATH=<stub>` dies on
+#
+#     error while loading shared libraries: ?: cannot open shared object file
+#
+# before it can do anything, and every case in the file fails on its first line
+# of setup. /usr/bin goes on the *end*, after the stubs, so a tool the test put
+# there still wins and anything the test wanted missing (xfce4-session, i3,
+# apt-get) stays missing — none of them is a thing Git Bash ships.
+stub_path() {
+  local path
+  path="$(IFS=:; echo "$*")"
+  if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+    path="$path:$(dirname "$(command -v bash)")"
+  fi
+  echo "$path"
+}
+
+# host_path prints an existing directory the way the host's container engine
+# expects to be handed it: unchanged on Linux and macOS, and in Windows form
+# ("C:/Users/...") under Git Bash, where a source written the shell's way
+# ("/c/Users/...", "/tmp/...") is not a path Windows itself can resolve — booth
+# stats a mount source and drops the mount when it is missing, so such a path
+# never reaches docker at all.
+#
+#     mkdir -p "$TMP/data"
+#     run-args = ["-v", "$(host_path "$TMP/data"):/data"]
+host_path() {
+  local dir="$1"
+  if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+    (cd "$dir" && pwd -W)
+  else
+    (cd "$dir" && pwd)
+  fi
+}
+
+# booth_script_name is the name booth will call itself by in its own output:
+# the basename of the binary a test actually ran (ScriptName in the CLI, which
+# is filepath.Base(os.Args[0])).
+#
+# It is `codingbooth` on Linux and macOS and `codingbooth.exe` on Windows, where
+# `cli-build.sh` writes the host build. A dryrun expectation that spells it out
+# is therefore wrong on one platform or the other — it reaches the booth as
+# BOOTH_SCRIPT_NAME, and the "To open an interactive shell instead" hint prints
+# it. Use this instead of the literal:
+#
+#     SCRIPT_NAME="$(booth_script_name)"
+booth_script_name() {
+  local script_dir booth_path
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[1]}")" && pwd)"
+  if booth_path="$(find_local_booth_build "$script_dir")"; then
+    basename "$booth_path"
+  else
+    echo "codingbooth"
+  fi
 }
 
 # Get the version reported by the booth binary itself, so tests stay correct
@@ -638,6 +1239,15 @@ get_booth_version() {
 # Each attempt is preceded by a marker line so the two retries stay separable.
 # The caller is responsible for creating the log's parent directory.
 #
+# Booth is given /dev/null on stdin. A capture reads booth's output and never
+# writes to it, and booth passes `-i` to `docker run` whenever stdin is open —
+# so on a terminal the container's stdin is the suite's own terminal. That costs
+# twice over: the container swallows whatever the operator types at the running
+# suite, and if anything has put the call in a background process group, docker's
+# read of the terminal stops it (see timeout_run). test-boothfile-superfile
+# already spelled `</dev/null` into its *container* command to keep a TUI off the
+# terminal; this is the same fix, one level up, for every caller.
+#
 # Usage:
 #   ACTUAL=$(capture_codingbooth "head -1" --silence-build -- gcc --version)
 capture_codingbooth() {
@@ -660,12 +1270,12 @@ capture_codingbooth() {
   # dependent, so it only fires on a loaded machine — the failure then looks like
   # flakiness and the retry below hides it instead of fixing it.
   _capture_attempt 1 "$@"
-  out=$(run_coding_booth "$@" 2>>"$errdest") || out=""
+  out=$(run_coding_booth "$@" 2>>"$errdest" </dev/null) || out=""
   out=$(printf '%s\n' "$out" | eval "$pipeline")
   if [[ -z "$out" ]]; then
     sleep 2
     _capture_attempt 2 "$@"
-    out=$(run_coding_booth "$@" 2>>"$errdest") || out=""
+    out=$(run_coding_booth "$@" 2>>"$errdest" </dev/null) || out=""
     out=$(printf '%s\n' "$out" | eval "$pipeline")
   fi
   printf '%s\n' "$out"

@@ -2,13 +2,16 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 # rust-nb-kernel--setup.sh
-# NOTE: This script has not been tested -- no time (sorry). Please report success or failure. :-p
 #
 # Installs the Evcxr Jupyter kernel for Rust.
 # Evcxr provides an interactive Rust REPL in Jupyter notebooks.
+#
+# evcxr_jupyter (EVCXR_VERSION, default 0.22.0) comes prebuilt (sha256-checked) from
+# https://github.com/NawaMan/CodingBoothPrebuilt/releases for x86_64 and arm64;
+# any other version, Ubuntu or CPU is compiled with `cargo install`.
 #
 # Prereqs:
 #   - rust--setup.sh already ran successfully (cargo/rustc on PATH).
@@ -34,6 +37,8 @@ HOME=/root
 [ -f /root/.cargo/env ] && source /root/.cargo/env
 
 # ---------------- Defaults / Tunables ----------------
+EVCXR_VERSION="${EVCXR_VERSION:-0.22.0}"
+EVCXR_DIR="/opt/evcxr/evcxr_jupyter-${EVCXR_VERSION}"
 JUPYTER_KERNEL_PREFIX="${JUPYTER_KERNEL_PREFIX:-/usr/local}"
 KERNEL_NAME="${KERNEL_NAME:-rust}"
 KERNEL_DISPLAY_NAME="${KERNEL_DISPLAY_NAME:-Rust (Evcxr)}"
@@ -60,18 +65,25 @@ then
 fi
 
 # ---------------- Install Evcxr ----------------
-echo "📦 Installing evcxr_jupyter (this may take a while — it compiles from source)..."
-cargo install --locked evcxr_jupyter
-
-EVCXR_BIN="${CARGO_HOME:-$HOME/.cargo}/bin/evcxr_jupyter"
-if [ ! -x "${EVCXR_BIN}" ]; then
-  # Try finding it on PATH
-  EVCXR_BIN="$(command -v evcxr_jupyter 2>/dev/null || true)"
-  if [ -z "${EVCXR_BIN}" ]; then
-    echo "❌ evcxr_jupyter binary not found after cargo install." >&2
-    exit 1
-  fi
+SETUP_LIBS_DIR="${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}"
+if [ ! -r "${SETUP_LIBS_DIR}/prebuilt-source.sh" ]; then
+  SETUP_LIBS_DIR="$(dirname "$0")/libs"
 fi
+source "${SETUP_LIBS_DIR}/prebuilt-source.sh"
+
+rm -rf "${EVCXR_DIR}"
+if ! cb_prebuilt_install evcxr_jupyter "${EVCXR_VERSION}" native "${EVCXR_DIR}"; then
+  echo "📦 Compiling evcxr_jupyter ${EVCXR_VERSION} with cargo (this takes several minutes)..."
+  cargo install --locked evcxr_jupyter --version "=${EVCXR_VERSION}" --root "${EVCXR_DIR}"
+fi
+chmod -R a+rX "${EVCXR_DIR}"
+
+EVCXR_BIN="${EVCXR_DIR}/bin/evcxr_jupyter"
+if [ ! -x "${EVCXR_BIN}" ]; then
+  echo "❌ evcxr_jupyter binary not found at ${EVCXR_BIN}." >&2
+  exit 1
+fi
+ln -sfn "${EVCXR_BIN}" /usr/local/bin/evcxr_jupyter
 
 # ---------------- Create kernelspec manually ----------------
 # We create the kernelspec ourselves for reliable prefix-based install.

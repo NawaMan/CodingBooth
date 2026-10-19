@@ -16,6 +16,19 @@ bat README.md
 nvim
 ```
 
+### Run it
+
+```bash
+just --list
+just test                # check all nine brew tools, one script each
+just packages            # brew list --versions of the formulae installed on request
+just services            # a throwaway PostgreSQL, Redis and nginx — start, query, stop
+just bat                 # this README through bat
+```
+
+The checks are the scripts in `.cb-tests/`, so `just test` is the same run the example's own test
+does.
+
 ## What's included
 
 | Component | Details                                                                  |

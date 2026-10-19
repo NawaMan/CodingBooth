@@ -4,6 +4,545 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Lazarus is selectable: `fpc+lazarus`.** The new `lazarus` setup installs the Lazarus 4.4
+  toolchain from apt: `lazbuild`, the LCL (GTK2) and the gtk2 headers an LCL program links
+  against. Projects therefore build headless, in CI or on the base variant. On a desktop variant
+  it adds the Lazarus IDE, a desktop icon, and the FPC sources and `make` that the IDE's first-run
+  check asks for. The LCL is prebuilt into the image, so a user's first `lazbuild` compiles only
+  the project. Select `fpc+lazarus`, or pin a series with `fpc+lazarus:4.4`. The old
+  `setup fpc --with-lazarus` flag is unchanged. The new `lazarus-example` is a small Lazarus app
+  (Prime Finder) in an XFCE booth, with `just check`, `just run` and `just ide`. Needs a rebuilt
+  base image.
+
+- **Grok, Codex and Oh My Pi examples, next to the Claude ones.** `grok-example`, `codex-example`
+  and `omp-example` reuse the host's own login (`grok login`, `codex login`, omp's `/login`), and
+  `codex-token-example` and `omp-token-example` log in from an environment variable instead. Each
+  has `just ask`; Grok and omp also have `just vet`, which clones a repository into the booth and
+  has the agent review it with only read tools. Two new extensions make the token examples
+  possible: `codex+token-credential` forwards `CODEX_ACCESS_TOKEN` (ChatGPT Business/Enterprise)
+  and `CODEX_API_KEY`, and `oh-my-pi+token-credential` forwards a `claude setup-token` token as
+  `ANTHROPIC_OAUTH_TOKEN`, so omp runs Anthropic models on a Claude subscription. Codex also gets
+  `codex+settings-cache` (auto-selected), so its login and sessions survive a booth restart. Codex
+  gets no `just vet`: its sandbox needs Linux namespaces, which a booth container does not have,
+  and it reads files only through its shell.
+
+- **`claude-example`'s `just vet` no longer runs code from the repository it vets.** Restricting
+  Claude to `Read`, `Glob` and `Grep` left two ways in: the clone's `.claude/settings.json` hooks,
+  which Claude Code runs as shell commands when the session starts, and its `.mcp.json` servers,
+  which it starts as programs. A test repository carrying both showed they ran inside the booth,
+  where the Claude login is, before Claude read a file. `scripts/vet-repo.sh` now adds
+  `--setting-sources user` and `--strict-mcp-config`, and the same test repository runs nothing.
+
+- **TTT and Croft are catalog terminal editors.** `setup ttt` installs the TTT
+  Editor release binary for amd64 and arm64, and installs `ripgrep` when `rg` is
+  missing so workspace search works. `setup croft` installs the static musl
+  Croft build and checks it against the release `SHA256SUMS`. Select `ttt` or
+  `ttt:1.8.0`, and `croft` or `croft:0.2.32`. `ttt+config-shared` and
+  `croft+config-shared` bind-mount `~/.config/ttt/` and `~/.config/croft/`.
+  `$EDITOR` stays `fresh`. The Croft template warns that the base Console has
+  no way to quit Croft: the browser takes Ctrl+Q and closes the tab. Needs a
+  rebuilt base image.
+
+- **Two Claude Code examples, one per way of logging in.** `claude-example` reuses the host's
+  `claude` login again: the default `credential` extension mounts `~/.claude.json` and
+  `~/.claude/.credentials.json` read-only, so logging in once on the host is enough. The token
+  setup it had switched to (`claude setup-token`, passed in as `CLAUDE_CODE_OAUTH_TOKEN`) moves to
+  the new `claude-token-example`, for hosts with no login files to share (CI, a server, macOS,
+  where the login is in the Keychain). Both keep `auto-accept`, `settings-cache`, `just ask` and an
+  example of its output.
+
+- **`booth config` keeps Boothfile lines in their order bands again when one template requires
+  another.** Since requires-ordering arrived (the aws-cdk/nodejs fix), requiring a template
+  pulled every line of *its extensions* ahead too, whatever their band: notebook requires python,
+  so python's VS Code extension (65), notebook kernel (70) and requirements install (90) all
+  landed before `setup notebook` (60). For a kernel it was worse: the kernel requires notebook,
+  and the resulting cycle put `setup python-nb-kernel` before the notebook it needs. A requires
+  is now satisfied by the required template's own lines only, so `setup notebook` follows
+  `setup python` and the extensions stay in their bands. It only changes newly generated
+  Boothfiles; one you already have keeps its order until you re-run `booth config`, which then
+  reorders it (and rebuilds the image once). 27 example Boothfiles were regenerated; every change
+  is a reordering of the same lines.
+
+- **`nodejs+npm-upgrade` runs before the tools that install with npm (band 65 → 55).** It ran
+  after them, so `npm-pkg` packages and setups such as Playwright were installed with Node.js's
+  bundled npm, not the pinned `NPM_VERSION`. It now runs right after `setup nodejs`.
+
+- **Conda environments can run Jupyter notebooks: the new `python+conda-kernel` extension.**
+  JupyterLab and its stock *Python (venv)* kernel live in the notebook's own venv, so a package
+  installed with conda (`conda-pkg:rdkit`, or `conda install` in a terminal) imported fine from
+  the terminal and failed with `ModuleNotFoundError` in a notebook. The extension installs
+  `ipykernel` into the conda env and registers it as a second kernel, **Python X.Y (conda)**,
+  pointing at the env's real path under `/opt/conda-envs/`. `jupyter` in a terminal stays the
+  notebook's own (ipykernel's bare `jupyter` stub in the conda env would otherwise shadow it, and
+  `jupyter nbconvert` / `jupyter lab` would be "not found"). Select it with
+  `python+conda+conda-kernel/notebook`; it needs the notebook template, like `python+kernel`.
+  New setup `conda-nb-kernel`, so it needs a rebuilt base image.
+
+- **The conda example is now three examples on the notebook variant, simple to complex.** It
+  installs pandas, matplotlib and RDKit from conda-forge, and its notebooks run on the conda
+  kernel. (1) `just run` reads a web API's request log (`data/requests.csv`) and reports p50 / p95
+  / p99 latency and error rate per endpoint. (2) `Latency.ipynb` charts the same log and finds the
+  slow endpoint and a four-minute incident. (3) `Molecules.ipynb`, the Molecule Lab, draws a
+  dozen well-known drugs from their SMILES, checks Lipinski's rule of five, and highlights a
+  substructure search; `just molecule caffeine` gives the same descriptors on the command line.
+  It replaces the NumPy statistics script. Its tests check the kernel registration and run every
+  cell of both notebooks headlessly.
+
+- **The base image ships `tilde` again, beside Fresh: a menu-driven terminal editor with
+  Windows-style keys.** Ctrl+S saves, Ctrl+Q quits, Ctrl+C/X/V copy, cut and paste, and the menu
+  bar (F10 or a click) lists the rest, so someone who has never used a terminal editor can edit a
+  file without a key chart. It is Ubuntu's own package; `$EDITOR` stays `fresh`. About 6 MB. The
+  mouse works in Console UI panes: tilde turns mouse reporting on only for a terminal it knows as
+  xterm, and a tmux pane says `TERM=tmux-256color`, so a `tilde` wrapper in `/usr/local/bin` passes
+  `-T xterm-256color` under tmux or screen. A `-T` you pass yourself wins. Needs a rebuilt base
+  image.
+
+- **Fresh starts on the `dark` theme instead of `terminal`.** The base profile writes
+  `"theme": "dark"` into `~/.config/fresh/config.json` when that file has no theme, and
+  `fresh+theme` defaults to `dark`. A theme already in that file is kept, and a project whose
+  Boothfile already says `arg FRESH_THEME=terminal` stays on it; `fresh+theme:terminal` gets the
+  terminal's own colors back. Needs a rebuilt base image.
+
+- **MySQL starts on boot again (`setup mysql`).** Startup hooks run as the container user, and the
+  MySQL hook called `mysqld_safe --user=mysql` without `sudo`, so the server exited the moment it
+  started and the lamp, lemp and wordpress examples showed a page with no database behind it. The
+  hook also spent 30 seconds waiting for that server, holding up every hook after it (Apache
+  among them). It now starts the server, and creates the MySQL user for the container user, through
+  `sudo`, as the PostgreSQL hook does. The examples' own seed hooks had the same bug
+  (`mysql -u root` without `sudo`, so `lamp_demo`, `lemp_demo` and `wordpress` were never
+  created), and the lamp and lemp pages signed in to MySQL as `$USER` — `root` under Apache. The
+  pages now sign in as a read-only user the seed hook creates (`lamp_web`, `lemp_web`). The three
+  examples gained a test that boots the booth and checks the page or database answers.
+
+- **A booth container started with no command opens coder's login shell again.** booth-entry
+  falls back to a login shell when it is given no command, through `runuser -u coder --login`.
+  util-linux 2.41 in the Ubuntu 26.04 base refuses `--login` with `--user` ("mutually
+  exclusive"), so that container printed the error and exited. It now runs `runuser -l coder`.
+  The CLI always passes a command, so `booth` itself was not affected; a plain `docker run` of the
+  image with the entrypoint and nothing after it was.
+
+- **`use-bash 3.2 <cmd>` runs a command with Bash 3.2 as every bash it starts, `#!/bin/bash`
+  scripts included.** Before, `bash-3.2 ./script.sh` ran only that script on 3.2: a child it
+  started with `#!/bin/bash`, `#!/usr/bin/env bash` or `bash -c` was back on the distro bash, and
+  the only way around that was editing the shebang. Now `setup bash` diverts the distro bash to
+  `/usr/bin/bash.distro` and puts a dispatcher at `/usr/bin/bash` that runs `$CB_BASH` when set.
+  `use-bash` sets it, so the whole tree under the command follows, at any depth. With no command
+  it opens a 3.2 shell; `use-bash --list` shows the installed releases, and `use-bash distro
+  <cmd>` (or its version, as in `use-bash 5.3`) gets the image's bash back. Outside `use-bash` nothing changes, booth's own scripts
+  included. `bash+default` now does the same for the whole session: the release it logs in with
+  sets `CB_BASH`, so `#!/bin/bash` scripts and booth helpers run from that session are 3.2 too.
+  Coder now logs in with `/usr/bin/bash.distro` in any booth with `setup bash`, because a login
+  shell needs `argv[0]` `-bash` and a script dispatcher loses it. Try
+  `examples/workspaces/bash-example` (`just count`).
+
+- **`BOOTH=<command> just <recipe>` runs a starter Justfile's recipes through another booth
+  command than `./booth`.** The starter (`booth just-init`) and every example Justfile hard-coded
+  `./booth` in `{{run-in-booth}}`, its `--keep-alive` form and the `shell` recipe. A CodingBooth
+  checkout has no `./booth` in its examples (it is gitignored), and the one `update-booth.sh` writes
+  runs a downloaded release, so a worktree could not run an example's recipes against its own build.
+  Now they read `booth := env("BOOTH", "./booth")`: `BOOTH=../../../codingbooth just test` uses the
+  local build, and with `BOOTH` unset nothing changes. Existing project Justfiles keep working as
+  they are; copy the `booth :=` line from `docs/just/Justfile` to get the override.
+
+- **The `Start this booth? [y/N]` prompt no longer answers itself.** It could return at once and
+  abort as if you had said no — when keys typed earlier (a stray Enter) were still waiting on the
+  terminal, or when a previous program left the terminal in a mode where reads do not wait. Booth
+  now throws away input typed before the question (macOS, Linux, BSD), and when the terminal
+  returns no answer at all it refuses with `no answer could be read from the terminal` and points
+  at `stty sane` or `--dind-allowed` / `--privileged-allowed`, instead of the plain `aborted`.
+
+- **appwrite-example shows each ping arriving at Appwrite.** The starter's **Logs** list is only
+  the browser's side, and the console's Requests chart is a delayed usage statistic (it showed 2
+  for 4 pings). `just watch` follows Appwrite's request log and prints one line per `/v1/ping`,
+  and `just pings` prints the project's `pingCount` and `pingedAt`.
+
+- **android-example pins `engine = "docker"`.** On a Mac with Apple container running, a plain
+  `booth` picked Apple container, which refuses the example's `--device /dev/kvm`. The pin outranks
+  `CB_ENGINE`; `--engine <name>` still overrides it.
+
+- **An amd64 booth built under Rosetta on Apple Silicon now says why tarball installs fail.**
+  Ubuntu's security-patched tar extracts through `openat2`, which Docker Desktop's Rosetta amd64
+  emulation does not implement, so every `tar -x` failed with a "Function not implemented" line
+  per file — `jdk`, for one, so android-example could not build its booth. The new
+  `cb-check-tar-extract.sh` helper test-extracts first, and `jdk--setup.sh` and the prebuilt-asset
+  installer (`libs/prebuilt-source.sh`) now stop with one message naming the Docker Desktop setting
+  to turn off ("Use Rosetta for x86_64/amd64 emulation"). It does not make Rosetta work; QEMU
+  emulation, native builds and CI are unaffected. Takes effect once the base image is rebuilt.
+  Test: `setups/test--cb-check-tar-extract.sh`.
+
+- **`/proxy/<port>/` works for Vite apps in a plain tab, and next to other proxied apps.** An
+  app's root-absolute requests (`/v1/…`, `/@vite/client`, …) reach the booth root, which sends
+  them to an app port. It used to try the globe pane's `cb_proxy_port` cookie before the request's
+  Referer, so with a pane open on one app another app's tab sent its API calls to the wrong port
+  (the Appwrite console could not sign in while a Vite pane was open). The Referer now wins. And a
+  `/proxy/<port>/` page opened in a plain tab now sets that cookie too, as the globe pane does, so
+  a Vite dev server opened directly no longer fails on its second-level module imports. Takes
+  effect once the base image is rebuilt. appwrite-example's `just run` and `just web` print the
+  host and `/proxy/` URLs for the booth's actual port. Test: `setups/test--console-proxy-routing.sh`.
+
+- **Starting a DinD or egress booth no longer removes another booth's sidecar.** On start, a booth
+  clears sidecars and networks left over from its own earlier runs. It matched them by project
+  name, so a second booth from a folder with the same name — a worktree copy of an example, or any
+  run with `--name` — removed the running booth's sidecar, cutting that booth off its network and
+  ports. It now matches only its own final container name, and only networks named exactly
+  `<name>-<port>-net` or `<name>-<port>-egress-net`. Test: `complex/features/test-dind-twin-folders`.
+
+- **`expose list` works for DinD and egress booths.** In a booth with a DinD or egress sidecar,
+  `.booth/.tmp/ports.json` said `"published": null`, so `booth--expose list` inside showed no host
+  ports and `booth expose list` on the host said the booth publishes nothing. The manifest was
+  written after the `-p` flags had moved onto the sidecar, and it left out the front door on
+  purpose. It is now written first and lists the front door and every `-p` as the sidecar publishes
+  them. The host command reads the live bindings from the sidecar, since the booth itself has none.
+  Test: `complex/features/test-dind-twin-folders`.
+
+- **appwrite-example runs Appwrite's Svelte starter against its own server.** The
+  `starter-for-svelte/` copy was never wired up: the booth had no Node.js and its `.env` pointed at
+  Appwrite Cloud. The example now selects `nodejs` and exposes Vite on `+-4827:5173`. `just app`
+  signs in as the console admin, creates a `starter` project with a `localhost` web platform
+  (skipping whatever already exists), and writes `.env` with the host-side endpoint. `just web`
+  then serves the starter, so **Send a ping** answers from the booth's Appwrite. `just run` also
+  prints the console login now. Test: the example's `test001` runs `just app` and checks the ping.
+
+- **Removed: AFFiNE, AnythingLLM and Penpot.** The `affine-server`, `affine-desktop`,
+  `anythingllm` and `penpot` templates (with their extensions), their setups (`penpot-exporter`
+  too), and `affine-example` / `anythingllm-example` are gone. Each is a finished product used on
+  its own rather than a service a project builds on, and each keeps its content in its own
+  database, where it cannot be committed with the project. A booth whose `# Configured by:` header
+  still selects one fails to reconfigure until that selector is dropped. For diagrams that live in
+  git, use `excalidraw` or `mermaid`. For a local LLM, use `ollama` directly. The generic pieces
+  that first served AnythingLLM stay: the `@code` run-args mount source and the console proxy's
+  fallbacks for globe-pane apps.
+
+- **The XFCE dock is smaller.** Plank now defaults to 36px icons instead of its stock 48px, so the
+  strip it keeps free at the bottom of the screen — which maximized windows stop above — is
+  shorter. A size picked in Plank's Preferences still wins. Takes effect once the base image is
+  rebuilt.
+
+- **java-example: no more stray Lombok warning, and a real package name.** `just run` printed a
+  lone `WARNING: Please consider reporting this to the maintainers of class lombok.permit.Permit`:
+  JDK 25 warns when Lombok calls `sun.misc.Unsafe` during compilation, and the script's filter
+  removed the other three lines of that warning but not this one. `.mvn/jvm.config` now allows that
+  access in Maven's JVM, so nothing is printed — for `just build` too, which had no filter. The
+  example's code also moved from `com.example` to `io.codingbooth.example`.
+
+- **Fixed: on arm64, clicking a web-service desktop icon did nothing at all.** JupyterLab,
+  viewmd and a project's own icon (data-example's "Sales Explorer") all run `cb-web-open`, which
+  `exec`s the first browser it finds. Google publishes no Linux build of Chrome for arm64, so
+  `google-chrome--setup.sh` installs a placeholder at `/usr/local/bin/google-chrome` that explains
+  itself and exits 127 — and a placeholder is a real, executable file, so the `command -v
+  google-chrome` test that chose the browser said yes and the `exec` handed the click to it. The
+  working Firefox two branches down was never reached, and since a `.desktop` launcher is
+  `Terminal=false` the stub's explanation went nowhere: on every arm64 desktop booth — the default
+  on Apple Silicon — all three icons were silently dead. Each candidate is now required to *run*
+  (`--version` succeeds), not merely exist, so a stub is skipped and Firefox gets the click;
+  amd64, where Chrome is real, is unchanged and still gets a chromeless `--app` window. The
+  placeholder itself is unchanged — it is still what you want when you type `google-chrome`
+  yourself. Adding the `chromium` template remains the way to get an app-mode window on arm64.
+  Firefox is also handed `--new-tab` rather than `--new-window`: with Chrome gone, every icon on
+  the desktop lands on the Firefox branch, and a window apiece meant JupyterLab, the markdown
+  viewer and a project's own dashboard each claimed one. They now share a window as tabs, with the
+  clicked one active.
+  See [Desktop icons](BOOTH_SETUP.md#desktop-icons--cb-desktop-iconsh-and-cb-web-iconsh).
+
+- **The Jupyter Notebook desktop icon now opens on the project, not the Desktop.** On a desktop
+  variant, clicking the icon when JupyterLab was not yet running started it from `~/Desktop` —
+  XFCE runs a launcher in the folder its `.desktop` file lives in — so the file browser showed the
+  desktop shortcuts instead of `/home/coder/code`. `cb-web-open` now starts every not-yet-running
+  web service from the project folder (falling back to `$HOME`), which covers the other desktop
+  web-app icons too. A booth whose notebook is already running keeps its old folder until that
+  server is restarted.
+
+- **The desktop clipboard guide is now a real page, with videos.** The Help dialog's "Read this on
+  codingbooth.io" link (Clipboard tab) used to open `guides/clipboard.md` as raw text, with garbled
+  dashes and arrows. It now opens `guides/clipboard.html`: why the panel exists, where to click, and
+  a short video for each direction (into the booth, out of the booth), each with jump-to bookmarks
+  like the home-page demo. The old `.md` address redirects to the new page, so booths built before
+  this change still land on it.
+
+- **The i3 Help tab now names the keys a Mac can actually press.** It listed `Ctrl+Alt+…`
+  everywhere, which is right for the desktop but not for the keyboard in front of a Mac: the booth
+  is reached through noVNC, which rewrites a Mac's modifiers before the desktop sees them — left ⌘
+  arrives as Alt, right ⌘ as Super, and ⌥ as AltGr. So Control+Command is what triggers i3's
+  `Control+Mod1+…` bindings, and Option can never trigger anything. On a Mac the tab now prints
+  **Control+Command** (and **Command** for the bare mod), and adds a short note that Option will not
+  work however the key is labelled; every other viewer sees exactly what it saw before. The choice
+  follows the *browser*, like noVNC's own remap does, so opening a Linux host's booth from a Mac
+  laptop gets the Mac keys and the other way round. sway and Krohnkite still print their old labels.
+  See [Desktop tiling](GUIDE.md).
+
+- **The host's OS now reaches the booth under a name you can find: `BOOTH_HOST_OS`.** The value
+  was already passed, as the unprefixed `HOST_OS` (`MAC` / `LIN` / `WIN`), but every other fact the
+  launcher hands in is `BOOTH_`-prefixed, and `booth--envs` lists exactly what that prefix matches —
+  so a booth's own user or agent had no documented way to learn which OS was on the other side of
+  the mount. It is now also passed as `BOOTH_HOST_OS`, next to `BOOTH_HOST_UID`, `BOOTH_HOST_GID`
+  and `BOOTH_HOST_IP`. Same three tags, same source; useful mainly before handing someone a command
+  to run on their own machine, since the booth itself is Linux either way. `HOST_OS` keeps being
+  passed unchanged — `booth-entry` and `booth--file-sync` read it, and so may a startup script of
+  your own.
+  See [Environment variables](AGENT.md#6-environment-variables).
+
+- **Fixed: a shared package cache is writable again on a host whose uid is not 1000.**
+  `go+mod-cache` and `python+pip-cache` mount machine-wide volumes, and docker seeds a fresh volume
+  from the image — so a cache an image build left behind arrives owned by the build-time uid, 1000.
+  The `[[owner-permission]]` entries `booth-entry` applies on startup chowned such a mount's
+  directories and nothing else, so on every Mac (uid 501), and on any Linux account off 1000, the
+  files inside kept a uid coder does not have: `go build` died on `failed to trim cache: open
+  /home/coder/.cache/go-build/trim.txt: permission denied`, since a 1777 directory does not help an
+  open on a file that already exists. Ownership now covers everything in the tree, files included,
+  while the mode stays directory-only — Go makes the files in a module cache read-only so a build
+  cannot quietly mutate a verified dependency, and 1777 on them would undo that. Entries that already have the right owner are skipped, so a 26k-entry cache costs one
+  traversal per start, and the next start repairs a volume that is already in the broken state:
+  no need to drop the cache.
+  See [Owner and mode of a mount](IN-OUT.md#owner-and-mode-of-a-mount).
+
+- **The Console UI's toolbar keeps four layout buttons, and the keyboard gains the pane's Web
+  view, its Markdown viewer and i3's resize mode.** The toolbar is down to one terminal, two
+  columns, two rows and the 2×2 grid; the five three- and six-pane presets lose their buttons,
+  since `Ctrl+Alt+Enter` and the tiling keys reach any arrangement of up to six panes. Their names
+  still work everywhere a layout name goes — `#mode=left-main`, a `.booth/console.json` checked in
+  before this, a saved spec — and open exactly as before, now shown as **Other** (which is already
+  drawn in the layout's own shape). Three new shortcuts act on the focused pane: `Ctrl+Alt+w` for
+  its Web view, `Ctrl+Alt+m` for its Markdown viewer (starting `viewmd` if needed), and
+  `Ctrl+Alt+r` for resize mode, where `h` `j` `k` `l` or the arrows resize the pane and `Enter`,
+  `Esc` or `Ctrl+Alt+r` leaves — the same keys i3 uses, which the console had the machinery for but
+  never bound. `Ctrl+Alt+b` is unchanged: as in i3, it is where the next pane opens.
+  See [Layouts](BOOTH_CONSOLE.md#layouts) and [Keyboard Shortcuts (Tiling)](BOOTH_CONSOLE.md#keyboard-shortcuts-tiling).
+
+- **Fixed: the Console UI's `Ctrl+Alt` tiling shortcuts now work on a Mac.** Every one of them
+  did nothing there — focus, move, open, close, equalize — while working on Linux and Windows.
+  macOS calls the combination Control+Option, and Option is that layout's AltGr: the browser
+  reports `AltGraph` for it, which the console read as AltGr typing a character and skipped, the
+  guard that keeps a Windows AltGr out of the shortcuts. (Firefox on macOS goes further and drops
+  `altKey` altogether once Option composes a character, which the gate also required.) Option can
+  never be a real AltGr on a Mac, so that guard is now applied on the other platforms only, and
+  both of macOS's shapes count as the modifier. Windows AltGr is unchanged: it still types. On a
+  Mac the console also names the keys the way the keyboard does: the toolbar and pane tooltips and
+  CodingBooth Help say **Control+Option** there, and Help adds that VoiceOver claims those keys
+  while it is on. The one-line Keyboard Shortcut Hint writes them as symbols instead — `⌃⌥` and
+  `⌃⌥⇧` on a Mac, `^⎇` and `^⎇⇧` elsewhere, the caret a terminal already writes Control with —
+  drawn from the Nerd Font the console serves, so they never depend on the viewer's own fonts.
+  Hovering the hint spells them out and Help lists both forms.
+  See [Keyboard Shortcuts (Tiling)](BOOTH_CONSOLE.md#keyboard-shortcuts-tiling).
+
+- **Setups that compiled from source now install prebuilt, sha256-checked builds.** They come
+  from [CodingBoothPrebuilt](https://github.com/NawaMan/CodingBoothPrebuilt) (built on x86_64 and
+  arm64), and a version with no prebuilt build still compiles as before:
+  - `rust-nb-kernel`: evcxr_jupyter 0.22.0 installs in about 2s instead of a multi-minute
+    `cargo install`. Pin it with `EVCXR_VERSION`. It now lives in `/opt/evcxr`, readable by the
+    booth user, instead of root's cargo home.
+  - `scratch`: the Scratch 3 editor (scratch-gui 5.3.0, upstream's final release) installs in
+    about 9s instead of an npm/webpack build. Pin it with `SCRATCH_VERSION`; a source build now
+    uses that tag instead of upstream's latest commit. The license note now says AGPL-3.0.
+  - `excalidraw`: 0.18.1 installs in about 5s instead of a yarn build. yarn is installed only
+    when it has to build another `EXCALIDRAW_VERSION`.
+
+- **`setup ruby` installs a prebuilt Ruby from [ruby-builder](https://github.com/ruby/ruby-builder)**
+  when one exists for the version, Ubuntu release and CPU. It's checked against the release's
+  sha256 digest, extracted to `/opt/hostedtoolcache/Ruby` (the path its binaries expect) and
+  linked into rbenv. The default 3.4 installs in about 17s instead of a 3-4 minute compile; other
+  versions still build with `rbenv install`.
+
+- **New Haskell extension: Haskell Tools** (`haskell+tools`) installs `hlint`, `ormolu`,
+  `fourmolu` or `pandoc` as ready-made binaries, in seconds instead of 5-15 minutes of cabal
+  each. The default is `fourmolu,hlint`; pin with `@`, as in `hlint@3.10`. On arm64, where
+  upstream ships no hlint or ormolu, they come from CodingBoothPrebuilt.
+
+- **Fixed: arm64 and download breakages found in a platform audit.**
+  - `dbeaver` installs on arm64 (the aarch64 .deb), and pinned versions download again: they now
+    come from the GitHub release, since the dbeaver.io path 404s.
+  - JetBrains IDEs download again: every IDE now uses download.jetbrains.com, because the CDN host
+    404s every tarball. Rider and DataGrip also get their aarch64 builds on arm64.
+  - `kotlin --with-native` works again for Kotlin 2.x (the tarball was renamed). On arm64 it now
+    fails with a clear message, since JetBrains ships no Linux arm64 Kotlin/Native.
+  - `install brew` on an image without Homebrew installs Homebrew first, instead of failing
+    because `brew` is missing.
+
+- **`AGENT.md` — the guide baked into every booth for an AI agent — is rewritten around what an
+  agent does in there.** Orient, run, install, change the config, expose a port, set env vars,
+  write local templates and setups, find the templates for this version — each section points at
+  the local `/opt/codingbooth/docs/` file that goes deeper. It now says that `./booth config` and
+  `./booth template` work from inside a booth (only *starting* one is blocked), so with
+  `--writable-booth` an agent applies a change itself and otherwise proves it with `--dryrun`
+  first. It also covers idle shutdown during a long task, why `booth--restart` ends the agent's own
+  session, `/proxy/<port>/` for showing the user a server, and what a booth may lack (docker, open
+  network, a git identity). Corrected along the way: the persistence table, optional sudo, the
+  variant list, setup names, and links that did not resolve inside the image. See
+  [AGENT.md](AGENT.md).
+
+- **Fixed: two copy-paste examples that did not work.** The setup-header example in
+  [BOOTH_CUSTOMIZATION.md](BOOTH_CUSTOMIZATION.md#a-setup-that-is-its-own-template) had `← notes`
+  on its `cb-` lines, which are read as part of the value — copied as-is, `cb-band` failed with
+  `must be a non-negative number`. The `cmds` example in [BOOTH_RUN.md](BOOTH_RUN.md) used
+  `["bash", "-lc", "make test"]`, but booth already wraps the command in `bash -lc`, so it ran
+  `make` with no target; it is now `["make", "test"]`.
+
+- **`booth--info` no longer says `AGENT.md` is also at `~/AGENT.md`** — no such copy exists.
+  Needs a rebuilt base image.
+
+- **The welcome banner no longer lists `lazygit`.** Its "Handy commands" list is shorter;
+  `lazygit` is still installed in every booth. Needs a rebuilt base image.
+
+- **Language servers for terminal editors, and Fresh installs a missing one from its own LSP
+  popup.** A new `lsp` template installs the common servers, one `lsp--<server>--setup.sh` each:
+  `lsp+markdown` (marksman), `+toml` (taplo), `+yaml`, `+json` (JSON, HTML, CSS), `+bash`,
+  `+typescript`, `+python` (pylsp), `+sql` (sqls, amd64 only), `+tailwind`, `+terraform`,
+  `+dockerfile`, `+docker-compose`, `+c` (clangd, for gcc booths too), `+java` (jdtls), `+react`, and
+  `+svelte`. Each one also adds the matching VS Code extension (Even Better TOML, Red Hat YAML,
+  clangd, Svelte for VS Code, ...), which skips itself on a variant without VS Code or code-server.
+  Or type the names yourself: `lsp:marksman,taplo@0.10.0,yaml` takes any server or language name.
+  The Node-based ones pull in `nodejs`, pylsp pulls in `python`, and jdtls pulls in `java`. Any
+  other VS Code extension is still `code-ext-pkg:<id>,...`. Fresh and Helix start the servers
+  without any config. For Neovim, the new `neovim+lsp` adds a
+  system-wide `booth-lsp.lua` that enables every installed server, gopls, rust-analyzer, clangd and
+  jdtls included. It loads after your own `init.lua`, and `vim.g.booth_lsp = false` turns it off. In
+  Fresh, a missing server now gets an **Install <server> (booth)** row in the status-bar LSP popup.
+  The palette command **Booth: Install Language Server** lists them all. Either one runs the setup
+  with `sudo` and starts the server. An installed server auto-starts unless your `config.json`
+  says otherwise. A server installed this way lasts until the booth is rebuilt, so the message
+  names the `lsp+…` selection that keeps it.
+
+- **A new booth's apt snapshot is the one its images were built against, and `today` is a
+  week back.** `booth config` used to freeze a new booth's `install apt` to the day it was
+  configured, so a booth configured before an image rebuild could pin an older snapshot than
+  the image and fail to install `-dev` packages (apt cannot downgrade what the image already
+  has). It now stamps the release's own snapshot (`apt-snapshot.txt`), so images, the CLI and
+  the example workspaces all share one date. `today` — in `--apt-snapshot`, the TUI's `TODAY`,
+  `CB_APT_SNAPSHOT`, and the image build's fallback — now means seven days ago (UTC), a day the
+  snapshot service has published whatever your timezone. Existing booths keep their snapshot.
+  The release pin is now chosen when the release is cut and committed with it, instead of by
+  the image workflow. See [REPRODUCIBILITY.md](REPRODUCIBILITY.md#apt--pin-the-snapshot-not-the-package).
+
+- **Fixed: an auto-picked booth port no longer pushes a `+OFFSET` published port past 65535.**
+  `--port NEXT` / `--port RANDOM` settle the booth port before the `+OFFSET` mappings in the
+  config are resolved, and every one of them counts off that port — so a high pick overflowed.
+  A booth that drew 65000 with `-p +8888:18888` asked docker for host port 73888 and died on
+  `invalid hostPort: 73888`: a number in no config file, with nothing to say which mapping made
+  it or that the pick was the variable. It hit roughly one run in six of a config like
+  `data-example`'s. The scan now reserves the headroom the largest offset needs, so no pick can
+  produce a mapping docker would refuse; a port you pin yourself is checked and refused by name
+  instead. See [The offset base](BOOTH_RUN.md#the-offset-base).
+
+- **Fixed: `go` builds in a booth with the Go Download Cache no longer fail with "permission
+  denied" on their own cache.** `install go …@latest` in a Boothfile runs `go install` at image
+  build time, which fills `GOCACHE` at the very path the `mod-cache` extension mounts a volume
+  on. Docker pre-seeds a new volume from the image, uid and all, and `booth-entry`'s home
+  ownership sweep is `-xdev` — so it chowned the mount point and nothing inside it. On any host
+  whose uid is not the image's 1000, `go build` then died on
+  `open /home/coder/.cache/go-build/…: permission denied`. The extension now declares both cache
+  paths in `owner-permission.yaml`, which reaches inside the mounts; it also lets two host users
+  share the volumes. Existing volumes are repaired on the next start. Regenerate an affected
+  project's `.booth/` (`booth config --overwrite`) to pick it up.
+
+- **`setup bash` installs Bash 3.2 prebuilt instead of compiling it.** 3.2.48 to 3.2.57,
+  including the default 3.2.57, now come from the static builds published at
+  [NawaMan/Bash32Ubuntu](https://github.com/NawaMan/Bash32Ubuntu/releases) for x86_64 and
+  arm64, checked against each release's `.sha256`. A mismatch stops the setup. The image no
+  longer needs build-essential, bison or ncurses for it, and the setup takes seconds instead of
+  minutes. Any other release (`bash:5.2.37`, `bash:5.3`) is still built from source as before.
+
+- **`--help` is easier to scan: profiles and the everyday run flags are on it, and `config`,
+  `example` and `showcase` have their own rows.** The short page now lists `--profile` (see
+  [BOOTH_PROFILES.md](BOOTH_PROFILES.md)), `--keep-alive`, `--persist-home` and `--writable-booth`.
+  The safety overrides and rarely needed flags (`--ok-public`, `--dind-allowed`,
+  `--privileged-allowed`, `--hide-welcome`, `--no-sudo`, `--rootless`) moved off it; they are
+  unchanged and still in `--help --detail`, as is every flag on the short page. Under OTHER
+  COMMANDS, `config`, `example` and `showcase` each get a row with their own doc. Fixed:
+  `--help showcase` said "Unknown command" instead of showing the showcase help.
+
+- **The Booth panel shows how many pages are viewing the booth.** It reads `👁 1 viewer`, or
+  `👁 3 viewers · 1 in background`, in yellow once there is more than one, so a second tab or
+  someone else on another machine shows up. Every page with the overlay (the Console UI and every
+  wrapped variant) beats `POST /booth-messages/api/presence` every 5s. A tab that closes drops out
+  at once, one that crashed or lost its network drops out after 15s, and a background tab, whose
+  timers the browser slows down, stays counted for 90s. `GET /booth-messages/api/presence` reads
+  the count. Pages are counted, not people, and SSH, `booth exec` and inner URLs opened directly
+  are not counted. See [Viewer Count](BOOTH_UI_OVERLAY.md#viewer-count).
+
+- **superfile and differ are in every booth.** The base image now installs
+  [superfile](https://github.com/yorukot/superfile) 1.6.0 (`spf`), a modern file manager with Nerd
+  Font icons (the Console UI and the desktop terminals already have the font; a host terminal
+  needs its own), and [differ](https://github.com/JanSmrcka/differ) 1.8.1, so `differ review` works
+  in any booth. Midnight Commander stays the default: `$EXPLORER` and `explorer` still open `mc`.
+  Select the `superfile` or `differ` template to pick another release; a new `mc` template installs Midnight Commander from apt on an image built
+  without it. The base image grows by about 36 MB. Needs a rebuilt base image.
+
+- **differ is now in the catalog: `setup differ` and a `differ` AI-tools template.**
+  [differ](https://github.com/JanSmrcka/differ) reviews what a coding agent changed: `differ review`
+  in a git repository, comment on lines, and `S` sends the comments to an agent (claude, codex,
+  aider, ...) in another tmux pane, which the Console UI already uses; it pairs with `herdr` too.
+  Installed from the official release to `/usr/local/bin/differ` for amd64 and arm64, checked
+  against the release's `checksums.txt`; `--version X.Y.Z|latest` falls back to 1.8.1. The `e` key
+  opens `$EDITOR` (Fresh) at the top of the file; set `"editor_line_args": "{file}:{line}"` in
+  `~/.config/differ/config.json` to open Fresh at the line. Select `differ`, or `differ:1.8.1` to
+  pin a release.
+
+- **superfile is now in the catalog: `setup superfile` and a `superfile` tool template.** It is
+  the [superfile](https://github.com/yorukot/superfile) terminal file manager, installed from the
+  official release as `spf` (also `superfile`) for amd64 and arm64 and checked against the
+  release's checksums file. `--version X.Y.Z|latest` falls back to 1.6.0; releases before 1.6.0 publish no checksums and are
+  refused. The first start seeds
+  `~/.config/superfile/config.toml` with superfile's own default config, with update checks
+  turned off (`auto_check_update = false`); a config already there is left alone. Select
+  `superfile`, or `superfile:1.6.0` to pin a release.
+
+- **i3, sway and Krohnkite: the window gap is 4px by default, down from 8px.** The `i3+gaps`,
+  `sway+gaps` and `krohnkite+gaps` extensions (selected automatically) and their `*-gaps--setup.sh`
+  scripts all default to 4 now. An existing booth keeps the value its Boothfile already pins (for
+  example `arg I3_GAPS=8`) until it is reconfigured with `i3+gaps:4`, `sway+gaps:4` or
+  `krohnkite+gaps:4`.
+
+- **Fixed: another booth exiting could make `booth list`, `logs`, `stop` and the rest fail.** These
+  commands list every booth and then inspect each one. A booth removed between those two steps,
+  such as a `--rm` booth exiting or a `booth remove` in another terminal, failed the whole command
+  with `failed to inspect container "<name>"`, even when the booth named in the command was fine.
+  A booth that is gone by the time it is inspected is now skipped.
+
+- **Fresh is the default editor; tilde is gone from the base image.** `$EDITOR` and `editor` now
+  open [Fresh](https://getfresh.dev) 0.5.2, which the base image installs (the welcome banner says
+  `editor  Text editor (fresh)`). Fresh checks for upgrades and sends anonymous telemetry by
+  default, so the shell profile sets `"check_for_updates": false` in `~/.config/fresh/config.json`
+  when that file does not decide; set it to `true` to opt in. Fresh starts on the `terminal` theme
+  (the terminal's own colors) the same way: the profile writes `"theme": "terminal"` when the file
+  has no theme, and a theme already there is kept. Select the `fresh` template to pick another
+  release or a theme. `nano` stays as the simple fallback. Needs a rebuilt base image.
+
+- **Console UI: the mouse works in terminal programs, and a tmux copy reaches the host clipboard.**
+  A Console UI pane used to throw away every left-button event so that a drag stayed a browser
+  selection. As a result, Fresh, vim, htop and other programs that use the mouse got no clicks or
+  drags. tmux now gets every mouse event: it passes it to the program when the program asked for
+  the mouse, and starts a copy-mode selection when it did not. A finished selection, and a program's
+  own copy when it copies by OSC 52 (Fresh's Ctrl+C), leaves tmux as OSC 52 and the pane page
+  writes it to the host clipboard. **Shift+drag** still makes the browser's own selection. Use it
+  when a program has the mouse, or when the browser blocks the clipboard write, which is likely
+  over plain http to a remote host.
+  - **The scripts in the non-split terminal page work again.** That page's font-width fix and mouse
+    hook were syntax errors on Ubuntu 26.04 images. Its build step spliced them in with a bash
+    substitution, and bash 5.2 reads `&` in the replacement as the matched text, so every `&&`
+    became `<head><head>`.
+
+- **EnvFolio 0.5.0: the command is now `folio`.** The base image and `tools/envfolio` install
+  EnvFolio 0.5.0, whose command is `folio` (`folio init`, `folio exec --secrets <entry> --
+  <cmd>`); `envfolio` is gone, with no alias. The store commands are top level since 0.5.0:
+  `folio init`, `path`, `backup`, `restore`, `export` and `import` (`folio store …` now stops
+  and names the new command). The app, the setup (`setup envfolio`), the template
+  (`tools/envfolio`, `+store-cache`) and its `ENVFOLIO_VERSION` param keep their names. EnvFolio
+  renamed its own names with no fallback: the default store is `~/.folio` (was `~/.envfolio`), the
+  store variable is `FOLIO_STORE_DIR` (was `ENVFOLIO_STORE_DIR`), and backups and exports end in
+  `--folio.tar.gz` / `.folio`. `+store-cache` now sets `FOLIO_STORE_DIR` and keeps the same cached
+  folder, so a store already in `.booth/cache/` is found after a reconfigure (`booth config`) —
+  until then the old `ENVFOLIO_STORE_DIR` in `config.toml` is ignored. Elsewhere, move
+  `~/.envfolio` to `~/.folio` and rename any `ENVFOLIO_STORE_DIR` you set yourself.
+
+- **Fix: `booth --daemon -- <command>` ran only the command's first word.** `--` takes command
+  words and runs them with `bash -lc`, which takes a single command string and treats anything
+  after it as `$0`, `$1`, … The daemon path handed over the words as separate arguments, so
+  `booth --daemon -- sleep 600` ran `bash -lc sleep 600` — the script was `sleep`, with `600` as
+  its `$0` — and the command died immediately on `sleep: missing operand`. In daemon mode the
+  container stays up on the booth's own services, so the only trace was a line in
+  `docker logs`. A single-word command (`--daemon -- bash`) was unaffected, as were foreground
+  and command mode, which already joined the words. `booth exec --daemon` hands its command to the
+  engine as an argument vector, with no shell wrapper, so it was never affected.
+
 - **`booth config`: `--set` replaces only the key it names, and `--unset` drops one.** On a
   reconfigure, one `--set` used to replace every `--set` recorded in the header, so
   `--set egress-allowlist=b.com` silently dropped `timezone` and any other recorded key. Each key
@@ -28,12 +567,35 @@ This file contains a list of changes for each released version.
   it: the same absolute path, or where a relative gitdir (`git worktree add --relative-paths`)
   resolves from `/home/coder/code`. It is the repository the booth already writes to, so it does
   not ask for consent; see
-  [BOOTH_SECURITY.md](BOOTH_SECURITY.md#what-else-booth-asks-about). The booth also pins
-  `gc.worktreePruneExpire=never` (through `GIT_CONFIG_COUNT`), because the records of your other
-  worktrees hold host paths that do not exist in the container. Without it, the `git gc --auto`
-  a commit can trigger would delete the ones older than three months. A `git worktree prune` you
-  run in the booth still prunes them. If the main clone cannot be mounted, booth prints a warning
-  and starts as before. Submodules are not covered yet.
+  [BOOTH_SECURITY.md](BOOTH_SECURITY.md#what-else-booth-asks-about). If the main clone cannot be
+  mounted, booth prints a warning and starts as before. Submodules are not covered yet.
+  - **A booth no longer endangers your other worktrees.** git's records in `.git/worktrees/` hold
+    host paths, which do not exist in the container, so in any booth on the repository — the
+    main clone too — every worktree looked deleted (`prunable`), and a `git worktree prune` there
+    would have dropped them all. booth now also mounts each worktree's `.git` file, read-only and
+    just that one-line file, at the path its record names, so the records resolve. It still pins
+    `gc.worktreePruneExpire=never` (through `GIT_CONFIG_COUNT`), now in main-clone booths as well,
+    for any worktree it could not mirror.
+  - **booth undoes an in-booth `git worktree repair`.** From `/home/coder/code`, repair rewrites
+    the worktree's record to `/home/coder/code/.git`, after which the host treats it as deleted.
+    A booth on a worktree leaves its host path beside the record (`.git/worktrees/<id>/cb-host-path`,
+    which git deletes with the record), and every booth start on the repository writes that path
+    back — only when it still leads to the same worktree. Until then, a `git worktree prune` *on
+    the host* would still drop it, so run worktree commands on the host.
+
+- **Fix: git works in a booth's code folder on a VM-based engine.** On an engine that shares the
+  host folder through a VM — Docker Desktop (macOS, Windows, and on Linux), Podman machine,
+  Colima; observed on Docker Desktop for Mac — the mount root
+  `/home/coder/code` arrives owned by `0:0` however the host owns it — the files under it map to
+  your uid correctly, but git checks the owner of the repository directory before every command.
+  So in a booth whose project is a git repo, every git call failed with *"detected dubious
+  ownership"*: `git status`, `gh`, `lazygit`, an agent's commit, a build step calling
+  `git ls-files`. The ownership cannot be changed from inside the booth (a `chown` of a mount root
+  is silently ignored), so booth now names the code folder in git's system config as a
+  `safe.directory` on every start. Only that folder, and only in the system config, which nothing
+  in the project can write — a cloned repo cannot grant itself the same trust. A repo in a
+  subfolder never needed it. See
+  [BOOTH_ENGINES.md](BOOTH_ENGINES.md#who-owns-the-mounted-files).
 
 - **Fix: two tabs on one desktop booth no longer make it flicker.** Each viewer fitted the desktop
   to its own window, so with two open they took turns resizing it. Now one viewer fits it: the
@@ -123,7 +685,7 @@ This file contains a list of changes for each released version.
     bluej.org, and older versions as one `.deb`.
 
 - **Fresh is now in the catalog: `setup fresh` and a `fresh` tool template.** The script installs the official static musl release (the `fresh` binary, its install receipt, and icons) under `/opt/fresh-editor` for amd64 and arm64, and links `fresh` onto `PATH`. `--version X.Y.Z|latest` (fallback 0.5.2), checked against the release `.sha256`. Select `fresh` or `fresh:0.5.2`. `fresh+config-shared` bind-mounts `~/.config/fresh/` from `.booth/shared`. `fresh --cmd grammar list` and `fresh --cmd config show` are the checks that the editor runs.
-- **Fresh starts on Tokyo Night.** `fresh+theme` is selected with `fresh` and writes `theme` in `~/.config/fresh/config.json` at container start, leaving every other key alone. The default is `tokyo-night`. Pick another built-in with `fresh+theme:dracula` (`dark`, `gruvbox`, `high-contrast`, `light`, `nord`, `nostalgia`, `solarized-dark`, `terminal`). `fresh~theme` leaves the factory theme, `high-contrast`. The selected theme is written again on the next start.
+- **Fresh starts on the `terminal` theme, so it uses the terminal's own colors.** `fresh+theme` is selected with `fresh` and writes `theme` in `~/.config/fresh/config.json` at container start, leaving every other key alone. The default is `terminal`. Pick another built-in with `fresh+theme:dracula` (`dark`, `gruvbox`, `high-contrast`, `light`, `nord`, `nostalgia`, `solarized-dark`, `tokyo-night`). The selected theme is written again on the next start. `fresh~theme` leaves the theme to the user: the base image still starts Fresh on `terminal`, and a theme picked inside Fresh is kept.
 - **Wrapper `0.16.0` — `booth` on `PATH` finds the project itself, and every command works from
   a subfolder.** A wrapper with no lock beside it — the shell-config central copy, or one
   installed by a package manager such as Homebrew — walks up from the current folder to the

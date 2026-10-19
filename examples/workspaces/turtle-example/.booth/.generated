@@ -2,5 +2,5 @@
 # `booth config` compares against this to detect hand-edits before
 # overwriting them. Commit it. Delete it to have those files treated
 # as hand-written (booth config will then refuse to clobber them).
-Boothfile=sha256:97d81afcac0f31070b06288368b016a1372f1e422e0b8837f9f0132ef29e71e3
+Boothfile=sha256:c9c791c953b86af0f2c33700e218a4b462fa1e404cd5df00dc47da025c7b8bb1
 config.toml=sha256:795a79957bdac94170cc8dfe8cb8e16d7573fa32ab3bdc3a4d6afd2a8abe2fa7

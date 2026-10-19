@@ -75,24 +75,26 @@ The advantages, in CodingBooth's own vocabulary:
 - **go-example** — `gopls`, `delve`, the GoNB kernel, and code-server all assembled.
 - **java-example** — JDK 25, Maven, the JJava kernel, *and* Eclipse + IntelliJ GUIs.
 - **octave-example** — Octave + the Calysto kernel + gnuplot, preconfigured.
-- **claude-example** — Claude Code CLI preinstalled in a minimal booth.
+- **claude-example** — Claude Code CLI preinstalled in a minimal booth, logged in with the
+  host's own `claude` login (mounted read-only).
+- **claude-token-example** — the same booth, logged in with a `claude setup-token` token passed
+  in as `CLAUDE_CODE_OAUTH_TOKEN`, for hosts with no `claude` login to share.
+- **grok-example**, **codex-example**, **omp-example** — the same booth for Grok Build, OpenAI
+  Codex and Oh My Pi, each logged in with the host's own login and with `just ask`. Grok and omp
+  also have `just vet`; Codex has none, because its sandbox cannot start in a container.
+- **codex-token-example**, **omp-token-example** — logged in from an environment variable instead:
+  `CODEX_ACCESS_TOKEN` (ChatGPT Business/Enterprise) or `CODEX_API_KEY` for Codex, and a
+  `claude setup-token` token as `ANTHROPIC_OAUTH_TOKEN` for omp.
 - **herdr-example** — a niche `herdr` tool plus a pinned clang/LLVM 18 toolchain in one selector.
 - **floci-example** — Floci (local AWS emulator) + AWS CLI + DinD in one selector, so
   `just run` creates an S3 bucket on `:4566` with no cloud account. *(Secondary: nested
   containers — `floci start` runs the emulator image inside the DinD sidecar.)*
-- **anythingllm-example** — AnythingLLM RAG chat UI on `:3001` in one selector
-  (`anythingllm+autostart+expose+project-fs+passwordless`). `just run` waits for `/api/ping`. Pair with
-  `ollama+autostart` and point the UI at `http://127.0.0.1:11434`. First build
-  copies a large official image.
 - **appwrite-example** — Appwrite CLI + a self-hosted Appwrite console on `:8080` in
   one selector (`appwrite-server+autostart+expose`). The server is the official
   Compose stack inside DinD — there is no native install. `just run` waits for
-  `/v1/health/version` and points the CLI at localhost. *(Secondary: nested
+  `/v1/health/version` and points the CLI at localhost; `just web` runs Appwrite's Svelte
+  starter against that server, project and `.env` created for you. *(Secondary: nested
   containers and port exposure; first boot wants ~4GB RAM.)*
-- **affine-example** — self-hosted AFFiNE (docs + whiteboard) with PostgreSQL, Redis,
-  and Node.js 22 in one selector, so `just run` waits for the UI on `:13010`.
-  *(Secondary: port exposure — `+expose` publishes it to the host browser; first
-  visit creates the admin account. Data: `clean` / `+seed` / `+persist`.)*
 - **postgrest-example** — PostgreSQL + pgvector/pg_trgm + a REST API in one selector
   (`postgresql+pg-ext-pkg:pgvector,pg_trgm/postgrest+autostart+expose`), no server code written.
   `just seed` loads a product catalog, `just demo` walks a typo-tolerant trigram search and a
@@ -107,6 +109,10 @@ The advantages, in CodingBooth's own vocabulary:
 - **wails-android-example** — the same counter, `wails+android` plus emulator
   and KVM on xfce; `just build` emits an APK and `just run` launches it on an
   AVD. The SDK + NDK stay out of the desktop example on purpose.
+
+- **lsp-example** — five language servers (marksman, taplo, yaml, bash, TypeScript) installed
+  once and used by three terminal editors at the same time: Fresh, Helix, and Neovim, with no editor
+  config. A server that is missing installs from Fresh's own LSP popup.
 
 ## 🧹 Host stays clean — no global/system-wide installs
 
@@ -186,8 +192,6 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
   on 8090, all reached from the host browser through a single mapped port. *(Secondary:
   reproducibility — the Go toolchain is pinned in the Boothfile, PocketBase in `go.mod`, and the
   schema is Go migrations, so a fresh clone builds an identical database.)*
-- **affine-example** — self-hosted AFFiNE on 13010, published to the host, with Postgres
-  and Redis already in the booth.
 - *(Also strongly present in fastapi, nextjs, js, and every full-stack example above.)*
 
 ## 🔐 Credential seeding — host creds without secrets in the repo
@@ -244,17 +248,18 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 
 | Example | Primary advantage |
 |---|---|
-| affine-example | Batteries-included (self-hosted AFFiNE) |
 | android-example | Precise version compatibility |
 | angular-example | Host stays clean |
 | apt-example | Reproducibility (archive snapshot) |
-| anythingllm-example | Batteries-included (local RAG UI) |
 | appwrite-example | Batteries-included (local Appwrite) |
 | aws-example | Credential seeding |
 | bun-example | Host stays clean |
 | cache-example | Persistence / cache |
 | clang-example | Reproducibility |
 | claude-example | Batteries-included |
+| claude-token-example | Batteries-included |
+| codex-example | Batteries-included |
+| codex-token-example | Batteries-included |
 | conda-example | Batteries-included (data-science stack) |
 | csharp-example | Reproducibility (pinned SDK) |
 | data-example | Multiple things bundled |
@@ -272,6 +277,7 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 | fsharp-example | Host stays clean |
 | gcloud-example | Credential seeding |
 | go-example | Batteries-included / Standardize-to-Linux |
+| grok-example | Batteries-included |
 | haskell-example | Batteries-included (with baked-in repair) |
 | herdr-example | Batteries-included |
 | homebrew-example | Host stays clean |
@@ -285,6 +291,7 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 | lamp-example | Multiple things bundled |
 | latex-example | Host stays clean / batteries-included |
 | lemp-example | Multiple things bundled |
+| lsp-example | Batteries-included (language servers for three editors) |
 | mean-example | Multiple things bundled |
 | mern-example | Multiple things bundled |
 | mvn-deps-example | Pre-baked deps |
@@ -294,6 +301,8 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 | npm-example | Host stays clean |
 | npm-deps-example | Pre-baked deps |
 | octave-example | Batteries-included / notebook |
+| omp-example | Batteries-included |
+| omp-token-example | Batteries-included |
 | pern-example | Multiple things bundled |
 | php-example | Host stays clean |
 | pip-example | Host stays clean |

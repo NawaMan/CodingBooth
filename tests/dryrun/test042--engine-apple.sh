@@ -173,15 +173,22 @@ fi
 WRAP_PROJECT="$(mktemp -d)"
 WRAP_CACHE="$(mktemp -d)"
 printf '#!/bin/sh\n' > "$WRAP_PROJECT/booth"
+#
+# Each mount source is matched by the tail of its folder, with either separator
+# accepted: booth prints a host path the way the host writes it, which under Git
+# Bash is "C:\Users\...\Temp\tmp.X" where this shell says "/tmp/tmp.X" — the same
+# folder, spelled the way the engine there takes it.
+WRAP_CACHE_TAIL="$(basename "$WRAP_CACHE")"
+WRAP_PROJECT_TAIL="$(basename "$WRAP_PROJECT")"
 WRAP=$(XDG_CACHE_HOME="$WRAP_CACHE" run_coding_booth --code "$WRAP_PROJECT" --variant base --dryrun --engine apple 2>/dev/null || true)
-if printf '%s\n' "$WRAP" | grep -q -- "-v $WRAP_CACHE/codingbooth/apple-wrappers/[0-9a-f]*/booth:/home/coder/code/booth:ro" \
-  && ! printf '%s\n' "$WRAP" | grep -q -- "-v $WRAP_PROJECT/booth:"; then
+if printf '%s\n' "$WRAP" | grep -qE -- "$WRAP_CACHE_TAIL[/\\]codingbooth[/\\]apple-wrappers[/\\][0-9a-f]+[/\\]booth:/home/coder/code/booth:ro" \
+  && ! printf '%s\n' "$WRAP" | grep -qE -- "$WRAP_PROJECT_TAIL[/\\]booth:"; then
   pass 16 "apple mounts the booth wrapper from a copy outside the project"
 else
   fail 16 "apple mounts the booth wrapper from a copy outside the project" "$WRAP"
 fi
 DWRAP=$(XDG_CACHE_HOME="$WRAP_CACHE" run_coding_booth --code "$WRAP_PROJECT" --variant base --dryrun --engine docker 2>/dev/null || true)
-if printf '%s\n' "$DWRAP" | grep -q -- "-v $WRAP_PROJECT/booth:/home/coder/code/booth:ro"; then
+if printf '%s\n' "$DWRAP" | grep -qE -- "$WRAP_PROJECT_TAIL[/\\]booth:/home/coder/code/booth:ro"; then
   pass 17 "docker still mounts the booth wrapper from the project"
 else
   fail 17 "docker still mounts the booth wrapper from the project" "$DWRAP"

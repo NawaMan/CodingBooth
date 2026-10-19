@@ -28,6 +28,8 @@ source ../common--source.sh
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 START_CMD="$REPO_ROOT/variants/base/setups/cb-plank-start"
 
+require_host_tools "cb-plank-start reads its default dock items with mapfile" bash4
+
 STUB=$(mktemp -d)
 trap "rm -rf $STUB" EXIT
 mkdir -p "$STUB/bin" "$STUB/home" "$STUB/apps" "$STUB/skel"

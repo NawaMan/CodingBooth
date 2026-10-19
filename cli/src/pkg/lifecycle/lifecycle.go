@@ -561,6 +561,13 @@ func managedContainers(engine string, verbose bool) ([]managedContainer, error) 
 	for _, name := range names {
 		container, inspectErr := inspectManagedContainer(name, flags)
 		if inspectErr != nil {
+			// A container removed between the ps above and this inspect (a
+			// --rm booth exiting, another session's `booth remove`) is not an
+			// error: it is simply no longer one of the booths. Anything else is.
+			// A failed re-check keeps the original error rather than hiding it.
+			if exists, err := containerExists(name, flags); err == nil && !exists {
+				continue
+			}
 			return nil, inspectErr
 		}
 		container.Engine = engine

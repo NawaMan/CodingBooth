@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.1
 #
 # cb-web-open — open a booth web service (an HTTP server on an internal port) in
 # a browser window. Invoked at click time by the desktop launcher that
@@ -16,6 +16,11 @@
 #   URL_PATH      path to open (e.g. /lab)
 #   TOKEN_ENV     env var holding an access token to append as ?token= (optional)
 #   START_CMD     command that starts the service if it is not already listening
+#
+# START_CMD runs from the project folder (CB_WEB_START_DIR, default
+# /home/coder/code), not from wherever the launcher happened to run: XFCE starts
+# a desktop icon in ~/Desktop, and a service that serves its working directory
+# (JupyterLab) would otherwise open on the Desktop instead of the project.
 
 set -u
 
@@ -47,15 +52,41 @@ is_up() { (exec 3<>"/dev/tcp/127.0.0.1/${PORT}") 2>/dev/null; }
 
 if ! is_up && [ -n "$START_CMD" ]; then
   echo "cb-web-open: ${ID} not running — starting via '${START_CMD}'…" >&2
+  cd "${CB_WEB_START_DIR:-/home/coder/code}" 2>/dev/null || cd "$HOME" 2>/dev/null || true
   nohup $START_CMD >"/tmp/cb-web-${ID}.log" 2>&1 &
   for _ in $(seq 1 30); do is_up && break; sleep 1; done
 fi
 
-# Open in a dedicated app-mode window when possible (chromeless), else a normal
-# browser window, else whatever xdg-open resolves.
-if   command -v google-chrome     >/dev/null 2>&1; then exec google-chrome     --app="$URL"
-elif command -v chromium          >/dev/null 2>&1; then exec chromium          --app="$URL"
-elif command -v chromium-browser  >/dev/null 2>&1; then exec chromium-browser  --app="$URL"
-elif command -v firefox           >/dev/null 2>&1; then exec firefox --new-window "$URL"
-else                                                    exec xdg-open "$URL"
+# Does this name resolve to a browser that actually runs?
+#
+# Presence on PATH is not enough. On arm64, where Google publishes no Linux
+# build of Chrome, google-chrome--setup.sh installs a placeholder at
+# /usr/local/bin/google-chrome that prints an explanation and exits 127. It is
+# a real executable, so it satisfied the `command -v` test this chain used to
+# make, and `exec` then replaced this process with it — the working Firefox
+# further down was never reached. Every web-service icon on an arm64 desktop
+# (JupyterLab, viewmd, a project's own) silently did nothing when clicked,
+# because a .desktop launcher is Terminal=false and the stub's stderr goes
+# nowhere. Requiring --version to succeed separates a browser that runs from
+# one that merely exists; every real browser here answers it, the stub cannot.
+browser_ok() {
+  command -v "$1" >/dev/null 2>&1 && "$1" --version >/dev/null 2>&1
+}
+
+# Open in a dedicated app-mode window when possible (chromeless), else a tab in
+# whatever browser window is already open, else whatever xdg-open resolves.
+#
+# Firefox gets --new-tab, not --new-window: a desktop has one icon per web
+# service, and on arm64 — where Chrome does not exist and every icon lands on
+# this branch — --new-window meant JupyterLab, the markdown viewer and a
+# project's own dashboard each took over a separate window. --new-tab hands the
+# URL to the running instance, which opens it as the active tab; with no
+# instance yet Firefox still opens its first window, as it must. Chrome and
+# Chromium keep --app because a chromeless app window is the better shape where
+# it is available, and "a tab" is not a thing an app-mode window has.
+if   browser_ok google-chrome   ; then exec google-chrome    --app="$URL"
+elif browser_ok chromium        ; then exec chromium         --app="$URL"
+elif browser_ok chromium-browser; then exec chromium-browser --app="$URL"
+elif browser_ok firefox         ; then exec firefox --new-tab "$URL"
+else                                   exec xdg-open "$URL"
 fi

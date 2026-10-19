@@ -27,10 +27,22 @@ assert_mode() {
     local want="$2"
     local label="$3"
     local got
-    got=$(stat -c %a "$path" 2>/dev/null || echo "missing")
+    # GNU stat, then BSD (macOS), as test51 and test52 read a size. Without the
+    # second form `stat -c` fails, the error goes to /dev/null, and a directory
+    # that is right there reports "missing" — which is what Tests 28 and 29 said
+    # one line after Tests 26 and 27 had found the very same paths.
+    got=$(stat -c %a "$path" 2>/dev/null || stat -f %Lp "$path" 2>/dev/null || echo "missing")
     TEST_COUNT=$((TEST_COUNT + 1))
     local pad=$(printf '%*s' $((64 - ${#label} - 1)) '' | tr ' ' '.')
     echo -n "Test ${TEST_COUNT}: ${label} ${pad} "
+    # NTFS keeps no Unix mode: Git Bash reports every folder as 755 whatever
+    # chmod was asked for, so on a Windows host only the folder's existence is
+    # checkable (assert_file above). The mode is then the container's to set.
+    if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]] && [[ "$got" != "missing" ]]; then
+        PASS_COUNT=$((PASS_COUNT + 1))
+        echo -e "\033[33mSKIPPED\033[0m (no Unix modes on a Windows host)"
+        return
+    fi
     if [ "$got" == "$want" ]; then
         PASS_COUNT=$((PASS_COUNT + 1))
         echo -e "\033[32mPASSED\033[0m"
@@ -162,15 +174,15 @@ assert_file "$prj/.booth/cache/home/coder/.config/pcmanfm-qt/.mount-this" "lxqt+
 # Test 17: envfolio+store-cache creates the store's parent and the GPG keyring
 # 0700 — gpg and EnvFolio warn on a folder others can open, so the ":0700" suffix
 # must reach disk and must not reach the folder name. The store itself is a
-# folder inside the cached one (ENVFOLIO_STORE_DIR), because a mounted folder
-# holds .mount-this and `envfolio store init` only takes an empty one.
+# folder inside the cached one (FOLIO_STORE_DIR), because a mounted folder
+# holds .mount-this and `folio init` only takes an empty one.
 run rm -Rf $prj ; mkdir -p $prj
 run booth config $prj --no-tui --select "envfolio+store-cache"
 assert_file "$prj/.booth/cache/home/coder/.local/share/envfolio/.mount-this" "envfolio+store-cache creates the store's parent dir"
 assert_file "$prj/.booth/cache/home/coder/.gnupg/.mount-this" "envfolio+store-cache creates .gnupg dir"
 assert_mode "$prj/.booth/cache/home/coder/.local/share/envfolio" 700 "envfolio+store-cache creates the store's parent 0700"
 assert_mode "$prj/.booth/cache/home/coder/.gnupg" 700 "envfolio+store-cache creates .gnupg 0700"
-assert-line "$prj/.booth/config.toml" "run-args = " '["-e", "ENVFOLIO_STORE_DIR=/home/coder/.local/share/envfolio/store"]' \
-    "envfolio+store-cache points ENVFOLIO_STORE_DIR inside the cache"
+assert-line "$prj/.booth/config.toml" "run-args = " '["-e", "FOLIO_STORE_DIR=/home/coder/.local/share/envfolio/store"]' \
+    "envfolio+store-cache points FOLIO_STORE_DIR inside the cache"
 
 finally

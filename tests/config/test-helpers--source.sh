@@ -46,6 +46,17 @@ if [[ "$VERBOSE" == "true" ]]; then BUILD_ARGS=(); fi
 # above): every call to booth() happens from inside $prj, after `cd $prj`.
 _repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
+# booth() below runs the local build, and which file that is depends on the
+# host: `cli-build.sh` writes `codingbooth.exe` on Windows, where the
+# extensionless `codingbooth` beside it is the Linux cross-build and every
+# attempt to run it ends at exit 126. booth-bin--source.sh is the one place
+# that knows the difference (see tests/README.md).
+# shellcheck disable=SC1091
+source "$_repo_root/tests/booth-bin--source.sh"
+# pick_free_port, for port_args below.
+# shellcheck disable=SC1091
+source "$_repo_root/tests/common--source.sh"
+
 # test_label: this test's path relative to tests/, used to prefix a failure
 # message so it survives being flattened into a suite-wide log alongside every
 # other category's files (see assert-line's comment below) -- "catalog/test91-…"
@@ -64,12 +75,32 @@ else
 fi
 
 function booth() {
-    if [[ ! -d "$_repo_root/templates" || ! -x "$_repo_root/codingbooth" ]]; then
+    local booth_bin
+    if [[ ! -d "$_repo_root/templates" ]] || ! booth_bin="$(find_local_booth_build "$_repo_root")"; then
         echo "Error: templates directory or codingbooth binary not found under $_repo_root" >&2
         return 1
     fi
+
+    # A mount spec is a docker volume string the test asserts on verbatim, not a
+    # host path for Git Bash to rewrite: `--mount /data:/app/data` otherwise lands
+    # in config.toml as `C:\Program Files\Git\data;C:\Program Files\Git\app\data`
+    # (the colon read as a path-list separator). MSYS2_ARG_CONV_EXCL is a list of
+    # argument prefixes to leave alone, so each mount value names itself. A no-op
+    # off Windows.
+    local conv_excl="${MSYS2_ARG_CONV_EXCL:-}" arg prev=""
+    for arg in "$@"; do
+        case "$prev" in
+            --mount|--add-mount|--remove-mount) conv_excl="${conv_excl:+$conv_excl;}$arg" ;;
+        esac
+        case "$arg" in
+            --mount=*|--add-mount=*|--remove-mount=*) conv_excl="${conv_excl:+$conv_excl;}$arg" ;;
+        esac
+        prev="$arg"
+    done
+
+    MSYS2_ARG_CONV_EXCL="$conv_excl" \
     CB_TEMPLATES_PATH="$_repo_root/templates" \
-    "$_repo_root/codingbooth" "$@"
+    "$booth_bin" "$@"
 }
 
 # template-default <template> <PARAM>: the param's default, as the catalog
@@ -90,13 +121,27 @@ function run() {
     "$@" >> $log 2>&1
 }
 
+# port_args: fill PORT_ARGS with a --port for the booth about to run in $prj,
+# taken from pick_free_port. Left to the CLI, every booth here took its NEXT
+# scan from 12000 -- the same port the other suites' booths were scanning for
+# at the same moment, so one of them lost the bind:
+#   Bind for 127.0.0.1:12000 failed: port is already allocated
+# A port the test itself put in config.toml is the test's choice, so it stays.
+function port_args() {
+    PORT_ARGS=()
+    if ! grep -qE '^[[:space:]]*port[[:space:]]*=' "$prj/.booth/config.toml" 2>/dev/null; then
+        PORT_ARGS=(--port "$(pick_free_port)")
+    fi
+}
+
 function booth-collect() {
     local cmd="$1"
     if [[ "$VERBOSE" == "true" ]]; then
         echo "  > booth ${BUILD_ARGS[@]+${BUILD_ARGS[@]} }-- ${cmd}"
     fi
     cd $prj
-    booth ${BUILD_ARGS[@]+"${BUILD_ARGS[@]}"} -- "$cmd" > "$tmpfile"
+    port_args
+    booth ${BUILD_ARGS[@]+"${BUILD_ARGS[@]}"} ${PORT_ARGS[@]+"${PORT_ARGS[@]}"} -- "$cmd" > "$tmpfile"
     cd ..
     cat "$tmpfile" >> $log
     if [[ "$VERBOSE" == "true" ]]; then
@@ -110,7 +155,8 @@ function booth-collect-dind() {
         echo "  > booth ${BUILD_ARGS[@]+${BUILD_ARGS[@]} }--dind --dind-allowed -- ${cmd}"
     fi
     cd $prj
-    booth ${BUILD_ARGS[@]+"${BUILD_ARGS[@]}"} --dind --dind-allowed -- "$cmd" > "$tmpfile"
+    port_args
+    booth ${BUILD_ARGS[@]+"${BUILD_ARGS[@]}"} ${PORT_ARGS[@]+"${PORT_ARGS[@]}"} --dind --dind-allowed -- "$cmd" > "$tmpfile"
     cd ..
     cat "$tmpfile" >> $log
     if [[ "$VERBOSE" == "true" ]]; then
@@ -188,7 +234,8 @@ function assert-last() {
     echo "## Test ${TEST_COUNT} ###########################" >> $log
     run cd $prj
 
-    run booth -- "${CMD}"
+    port_args
+    run booth ${PORT_ARGS[@]+"${PORT_ARGS[@]}"} -- "${CMD}"
     FOUND="$(tail $log -n 1)"
     if [[ "${FOUND}" != "${EXPECTED}" ]]; then
         FAIL_COUNT=$((FAIL_COUNT + 1))

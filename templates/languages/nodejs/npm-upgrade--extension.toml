@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "2.0.0"
 display-name = "npm upgrade"
 display-disc = "Upgrade the global npm to a newer version than Node.js bundles"
 display-detail = "Runs `npm install -g npm@NPM_VERSION` at build time so the image ships a newer npm than the one bundled with the selected Node.js. Opt-in: without this extension the bundled npm (the version Node.js was released with) is kept as the reproducible baseline. Pin NPM_VERSION for reproducible builds; the default `latest` floats to the newest published npm at build time."
@@ -17,7 +17,10 @@ suggests = [
     "11",
 ]
 
+# --55: right after `setup nodejs` (50) and ahead of everything that installs with
+# npm at 60 -- npm-pkg, playwright, and the other tools that require nodejs -- so
+# they all use the upgraded npm rather than the bundled one.
 [segments]
-"Boothfile--65" = """
+"Boothfile--55" = """
 run npm install -g npm@${NPM_VERSION}
 """

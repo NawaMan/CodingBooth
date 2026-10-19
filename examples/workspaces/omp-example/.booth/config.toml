@@ -1,0 +1,11 @@
+# Configured by: booth config --no-tui --overwrite --cmd bash --select oh-my-pi+settings-cache
+
+
+cmds = ["bash"]
+
+run-args = [
+    "-v", "~/.omp/agent/agent.db:/etc/cb-home-seed/.omp/agent/agent.db:ro",
+    "-v", "~/.omp/agent/config.yml:/etc/cb-home-seed/.omp/agent/config.yml:ro"
+]
+
+cache-dirs = ["home/coder/.omp"]

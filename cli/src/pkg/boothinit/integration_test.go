@@ -132,7 +132,7 @@ func TestIntegration_Basic_SingleNeovim(t *testing.T) {
 
 	// Home files
 	require.Len(t, out.Home, 1)
-	assert.Equal(t, ".config/nvim/init.lua", out.Home[0].RelPath)
+	assert.Equal(t, filepath.FromSlash(".config/nvim/init.lua"), out.Home[0].RelPath)
 
 	// Home file copied
 	homePath := filepath.Join(targetDir, ".booth", "home", ".config", "nvim", "init.lua")
@@ -279,7 +279,7 @@ func TestIntegration_Complex_NeovimWithHome(t *testing.T) {
 
 	// Neovim home files present
 	require.Len(t, out.Home, 1)
-	assert.Equal(t, ".config/nvim/init.lua", out.Home[0].RelPath)
+	assert.Equal(t, filepath.FromSlash(".config/nvim/init.lua"), out.Home[0].RelPath)
 
 	// Go boothfile
 	require.NotNil(t, out.Boothfile)
@@ -420,7 +420,7 @@ func TestIntegration_InlineFiles_ClaudeCodeAcceptEdits(t *testing.T) {
 
 	// Inline home-seed file from accept-edits extension
 	require.Len(t, out.HomeSeed, 1)
-	assert.Equal(t, ".claude/settings.json", out.HomeSeed[0].RelPath)
+	assert.Equal(t, filepath.FromSlash(".claude/settings.json"), out.HomeSeed[0].RelPath)
 	assert.Contains(t, out.HomeSeed[0].Content, "Edit")
 	assert.Contains(t, out.HomeSeed[0].Content, "Write")
 

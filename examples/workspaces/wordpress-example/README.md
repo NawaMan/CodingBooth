@@ -20,6 +20,20 @@ Then open http://localhost:8080/ on the host. WordPress's web installer will app
 
 Both Apache and MySQL auto-start when the container boots.
 
+### Run it
+
+```bash
+just --list
+just installer           # ./demo.sh installer — follow http://localhost/ to the installer page
+just core                # ./demo.sh core — the WordPress version baked into /var/www/html
+just db                  # ./demo.sh db — the MySQL databases, `wordpress` among them
+just versions            # PHP, Composer, MySQL and Apache versions
+```
+
+With no booth running, each recipe starts one and stops it again afterwards, so it waits
+for the services the booth starts (up to 60s) before it checks anything. To browse the page,
+keep a booth up with `./booth run` or `just shell`.
+
 ## What's inside
 
 - `.booth/Boothfile` — PHP+Composer, MySQL, Apache+mod_php, and the project-local `wp-init` demo.

@@ -1,4 +1,4 @@
-cb-version = "1.0.1"
+cb-version = "1.0.2"
 display-name = "Accept Edits"
 display-disc = "Auto-accept all Claude Code operations (safe inside a booth)"
 display-order = 10
@@ -15,6 +15,12 @@ tags = [
 # before the session could start, on every single launch. Allowing a server means naming it:
 # add "mcp__<server>__*" to a project's own .claude/settings.json. Deny and ask rules still
 # accept wildcards anywhere, so the deny list below is unaffected.
+#
+# No rule for the `git push origin :branch` delete refspec either. Claude Code reads any rule
+# ending in ":*" as the legacy prefix syntax, so "Bash(git push * :*)" matched only a literal
+# "*" (it never blocked anything) and printed a "Permission deny rule" warning on every run.
+# The pattern cannot be written without that trailing ":*"; the --delete / -d rules cover the
+# flag forms.
 [files.home-seed]
 ".claude/settings.json" = """
 {
@@ -48,8 +54,10 @@ tags = [
             "Bash(git restore .)",
             "Bash(git restore -- .)",
             "Bash(git restore --staged *)",
+            "Bash(git push --delete*)",
             "Bash(git push * --delete*)",
-            "Bash(git push * :*)",
+            "Bash(git push -d*)",
+            "Bash(git push * -d*)",
             "Bash(git stash clear)",
             "Bash(rm -rf /*)",
             "Bash(rm -rf /)"

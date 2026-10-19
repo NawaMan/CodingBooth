@@ -57,7 +57,7 @@ check() {
 # run <path> <script> [args…] — sets OUT and RC; no TTY, as in a Docker build.
 run() {
     local path="$1"; shift
-    OUT=$(env -i EUID=0 HOME="$STUB" PATH="$path" "$BASH_BIN" "$SETUPS/$1" "${@:2}" 2>&1 < /dev/null) && RC=0 || RC=$?
+    OUT=$(env -i EUID=0 HOME="$STUB" PATH="$(stub_path "$path")" "$BASH_BIN" "$SETUPS/$1" "${@:2}" 2>&1 < /dev/null) && RC=0 || RC=$?
 }
 
 # ---- no Wayland desktop: every sway setup skips, exit 0, nothing installed ----

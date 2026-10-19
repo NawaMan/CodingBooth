@@ -122,15 +122,21 @@ check "…writes its settings there, not into the running one's" \
     "$(find "$RUN_HOME/.local/share" -name settings.json)"
 
 # --- refusals -----------------------------------------------------------------
+# The holder comes from occupy_port (common--source.sh) rather than an inline
+# python3: on a host where python3 is only the Microsoft Store's stub, that
+# listener never started and the launcher was handed a free port, so the case
+# failed on the fixture instead of on the refusal.
 busy=$(free_port)
-python3 -c "import socket,time;s=socket.socket();s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1);s.bind(('127.0.0.1',$busy));s.listen();time.sleep(30)" &
-LISTENER=$!
-for _ in $(seq 1 50); do (exec 3<>"/dev/tcp/127.0.0.1/$busy") 2>/dev/null && break; sleep 0.1; done
-LAUNCH_ARGS=("$busy")
-run_launcher
-kill "$LISTENER" 2>/dev/null || true
-check "a port already in use is refused, naming the way out" \
-    "$([[ "$RUN_EXIT" != 0 && "$RUN_OUT" == *"already in use"* && "$RUN_OUT" == *"start-codeserver <port>"* && "$RUN_OUT" != *"code-server --"* ]] && echo true || echo false)" "$RUN_OUT"
+if LISTENER="$(occupy_port "$busy" 30)"; then
+    for _ in $(seq 1 50); do (exec 3<>"/dev/tcp/127.0.0.1/$busy") 2>/dev/null && break; sleep 0.1; done
+    LAUNCH_ARGS=("$busy")
+    run_launcher
+    kill "$LISTENER" 2>/dev/null || true
+    check "a port already in use is refused, naming the way out" \
+        "$([[ "$RUN_EXIT" != 0 && "$RUN_OUT" == *"already in use"* && "$RUN_OUT" == *"start-codeserver <port>"* && "$RUN_OUT" != *"code-server --"* ]] && echo true || echo false)" "$RUN_OUT"
+else
+    echo "SKIP: nothing on this host can hold a port open; the in-use refusal is not checked"
+fi
 
 LAUNCH_ARGS=(notaport)
 run_launcher

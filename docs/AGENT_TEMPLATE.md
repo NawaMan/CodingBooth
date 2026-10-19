@@ -150,7 +150,7 @@ install go golang.org/x/tools/gopls@latest
 | `cache-dirs`    | []string   | Directories to persist in `.booth/cache/`                |
 | `shared-files`  | []string   | Files to bind-mount live from `.booth/shared/`           |
 | `shared-dirs`   | []string   | Directories to bind-mount live from `.booth/shared/`     |
-| `owner-permission` | array of tables | Mount points `booth-entry` updates on startup. Merged into `.booth/owner-permission.yaml`. `path` is absolute. `user`, `group`, and `mode` are optional; `mode` is a 3- or 4-digit octal string such as `"1777"`. A directory entry covers that directory and every directory under it. A path that is not a mount point is left alone. |
+| `owner-permission` | array of tables | Mount points `booth-entry` updates on startup. Merged into `.booth/owner-permission.yaml`. `path` is absolute. `user`, `group`, and `mode` are optional; `mode` is a 3- or 4-digit octal string such as `"1777"`. A directory entry sets the mode on that directory and every directory under it, and the owner on everything in the tree, files included. A path that is not a mount point is left alone. |
 | `unsupported-arch`      | []string | Architectures with no build (`"arm64"`, `"amd64"`)  |
 | `unsupported-arch-note` | string   | Why, and what to use instead — required with the above |
 
@@ -464,12 +464,20 @@ When multiple templates are selected, their outputs merge:
 
 | Type                   | Strategy         | Example                        |
 |------------------------|------------------|--------------------------------|
-| Boothfile segments     | Concatenate      | Sorted by order, tiebreak name |
+| Boothfile segments     | Concatenate      | Sorted by order, tiebreak name; `requires` wins (below) |
 | Startup segments       | Concatenate      | Sorted by order, tiebreak name |
 | Scalars (variant, etc) | Match-or-error   | Conflict = error               |
 | Arrays (run-args, etc) | Combine & dedup  | Flag-value pairs preserved     |
 | Files                  | Collect all      | From templates + extensions    |
 | Params                 | Error on conflict| Same key, different value      |
+
+**`requires` and Boothfile order.** A segment never lands ahead of a template it `requires`,
+even when its order (or name) would sort it first: `aws-cdk` requires `nodejs`, so
+`setup nodejs` comes first although both sit in band 50. The requirement is met by the required
+template's **own** segment, not by its extensions': notebook requires python, so it waits for
+`setup python` only, and python's `+vscode-ext` (65), `+kernel` (70) and post-setup (90)
+segments stay in their bands. An extension's own `requires` applies to its segments, as a
+kernel's `requires = ["notebook"]` keeps it after `setup notebook`.
 
 ---
 

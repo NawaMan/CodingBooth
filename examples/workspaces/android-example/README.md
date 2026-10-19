@@ -20,6 +20,8 @@ just build               # ./build-apk.sh
 
 The APK lands at `build/hello.apk`, signed with a debug keystore generated on first build.
 
+**On a Mac (Apple Silicon)**, turn Docker Desktop's Rosetta option off first — see [On a Mac](#on-a-mac-apple-silicon).
+
 The booth runs the **XFCE desktop variant** so the emulator has somewhere to draw: you can start it with a window, watch the app launch, and click around it in the browser, rather than only driving it through `adb`. Building the APK needs none of that — it works fine from a plain terminal.
 
 ## What's included
@@ -51,6 +53,40 @@ The trap is that everything else looks healthy: the APK builds, signs, verifies 
 ## Why no Gradle
 
 Gradle is what a real Android project uses, and nothing here stops you adding it (`booth config --select ...+gradle`). It is avoided in *this* example on purpose: on first run Gradle resolves the Android Gradle Plugin and its dependency tree from the network, so a green build would prove that the network worked, not that this booth's toolchain did. Driving the build tools directly keeps the example a genuine test of what the setup installed.
+
+## On a Mac (Apple Silicon)
+
+You can build and develop the app in the booth on a Mac. The one thing that does not work is the emulator *inside* the booth — run the APK on a real phone, or on the Android Emulator that Android Studio installs on the Mac itself.
+
+| | On a Mac |
+|---|---|
+| Build the APK in the booth (`just build`) | ✅ |
+| Install and run it on a real phone (`./device-connect.sh`) | ✅ — see [Architecture note](#architecture-note) |
+| Install and run it on the Mac's own Android Emulator | ✅ — see below |
+| The Android emulator inside the booth | ❌ — it cannot run under CPU translation |
+
+### Setting up
+
+The Android SDK is published for linux x86_64 only, so the booth is an amd64 image running under Docker Desktop's amd64 emulation. Two settings decide whether that works:
+
+- **Docker, not Apple container.** `.booth/config.toml` pins `engine = "docker"`, so a plain `booth` uses Docker even when Apple container is installed and running — which would otherwise be the default, and refuses this example's `--device /dev/kvm`. The pin outranks `CB_ENGINE`; pass `--engine <name>` to override it.
+- **Turn Rosetta off.** In Docker Desktop → Settings → General, "Use Rosetta for x86_64/amd64 emulation on Apple Silicon" must be **off**, then Apply & restart. The amd64 build then runs under QEMU. Under Rosetta, Ubuntu's tar cannot extract anything — it needs the `openat2` system call, which Rosetta does not implement — so the JDK install fails and the booth never builds. The setup stops with a message saying exactly this.
+
+The first build is a full one under emulation, so expect it to take several minutes longer than on an amd64 host.
+
+### Running the app on the Mac's own emulator
+
+Android Studio's emulator runs natively on Apple Silicon with an arm64 system image, entirely outside the booth. The APK the booth builds runs on it unchanged: `hello.apk` has no native code — only DEX bytecode and resources — so it does not care that it was built on x86_64 and runs on arm64.
+
+The project folder is mounted into the booth, so the APK is already on the Mac. Start an emulator from Android Studio's Device Manager, then from the Mac (not the booth):
+
+```bash
+cd examples/workspaces/android-example
+adb install -r build/hello.apk           # adb from Android Studio's platform-tools
+adb shell monkey -p com.example.hello -c android.intent.category.LAUNCHER 1
+```
+
+Dragging `build/hello.apk` onto the emulator window installs it too. If you add native code (NDK/C++) to an app, it needs arm64 libraries in the APK to run on the Mac's emulator.
 
 ## Running the app in the emulator
 
@@ -91,7 +127,7 @@ Two things to know before enabling it:
 - **Stop with `cb-android-emulator-stop`.** The emulator does not reliably save a Quick Boot snapshot on its own way out, so `adb emu kill` — or just closing the booth — restores the previously saved state and silently discards the session. The stop command saves first.
 - **It is about 2.8 GB** in `.booth/cache/`, mostly the RAM snapshot that makes the fast restore possible. That is local and gitignored, never committed; `rm -rf .booth/cache/home/coder/.android` reclaims it and gives you a clean device next start.
 
-It is off by default for that size, which is why this example does not ship with it. See [Local Cache](../../../docs/BOOTH_LOCALCACHE.md).
+It is off by default for that size, which is why this example does not ship with it. See [Local Cache](https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_LOCALCACHE.md).
 
 The window can take a minute to appear — longer without KVM. Once it is up:
 
@@ -141,6 +177,8 @@ Nothing host-specific is needed beyond the device itself. The node keeps its hos
 ## Architecture note
 
 Google publishes the Android platform tools, build tools and emulator for **linux x86_64 only**. To make this work out of the box on an arm64 host too (Apple Silicon, arm64 Linux), `.booth/config.toml` forces `--platform linux/amd64` on both `run-args` and `build-args` by default, via Docker's own amd64 emulation (Docker Desktop on Apple Silicon supports this through QEMU or the faster Rosetta option). On a real amd64 host (Linux or Windows, Intel/AMD) this is a no-op — it already matches, so nothing changes there. This has been verified end-to-end for `sdkmanager`/`aapt2`/`d8`/`apksigner` and a real `build-apk.sh` run; it's just a full, uncached rebuild the first time under emulation, so expect that one run to take several minutes longer than native. **Building an APK on Apple Silicon is fully solved this way, with no config changes needed.**
+
+**On a Mac, this needs Docker Desktop's Rosetta option turned off** — Rosetta cannot run Ubuntu's tar. (The example pins `engine = "docker"`, since Apple container refuses `--device /dev/kvm`.) See [On a Mac](#on-a-mac-apple-silicon).
 
 The default is driven by `${CB_ANDROID_PLATFORM:-linux/amd64}`, so set the `CB_ANDROID_PLATFORM` environment variable to override it — e.g. on an arm64 CI runner, `CB_ANDROID_PLATFORM=linux/arm64` cancels the forcing and restores the fast native skip (a few seconds) instead of paying for a full uncached emulated rebuild (which risks tripping `run-example-tests.sh`'s default 900s per-example timeout).
 

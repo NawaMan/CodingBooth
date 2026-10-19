@@ -1,7 +1,8 @@
 # {{run-in-booth}} runs a line in this project's booth (starting one if needed),
 # {{run-on-host}} keeps a line on the host. From `booth just-init`:
 # https://github.com/NawaMan/CodingBooth/blob/main/docs/just/Justfile
-run-in-booth := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+booth        := env("BOOTH", "./booth")
+run-in-booth := if env("BOOTH_CONTAINER_NAME", "") == "" { booth + " exec --run --" } else { "" }
 run-on-host  := if env("BOOTH_CONTAINER_NAME", "") == "" { "" } else { "echo 'just: this recipe runs on the host - exit the booth and run it there.' >&2; exit 2;" }
 
 [private]
@@ -12,10 +13,22 @@ default:
 version:
     {{run-in-booth}} bash-3.2 --version
 
-# Count zero arguments. The empty array must not abort under set -u.
+# Count zero arguments under bash 3.2. The empty array must not abort under set -u.
 count:
+    {{run-in-booth}} use-bash 3.2 ./scripts/count-args.sh
+
+# Count two arguments under bash 3.2
+count-two:
+    {{run-in-booth}} use-bash 3.2 ./scripts/count-args.sh one two
+
+# The same script on the image's own bash
+count-distro:
     {{run-in-booth}} ./scripts/count-args.sh
 
-# Count two arguments
-count-two:
-    {{run-in-booth}} ./scripts/count-args.sh one two
+# Each level of a #!/bin/bash script tree, on the image's bash
+which-bash:
+    {{run-in-booth}} ./scripts/which-bash.sh
+
+# The same tree under use-bash 3.2: every level is 3.2, declare -A fails
+which-bash-32:
+    {{run-in-booth}} use-bash 3.2 ./scripts/which-bash.sh

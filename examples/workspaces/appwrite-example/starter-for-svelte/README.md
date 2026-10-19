@@ -1,3 +1,7 @@
+> **In this example:** a copy of [appwrite/starter-for-svelte](https://github.com/appwrite/starter-for-svelte),
+> unchanged. Run it with `just web` from `appwrite-example/` — that writes `.env` for this booth's
+> own Appwrite. See the example's README.
+
 # Svelte starter kit with Appwrite
 
 Kickstart your Svelte development with this ready-to-use starter project integrated with [Appwrite](https://www.appwrite.io)

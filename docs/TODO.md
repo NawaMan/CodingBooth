@@ -304,6 +304,23 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
       size silently. `booth config` could say so when a desktop template is picked on `base`.
 
 ## Problems
+- [ ] **The host-escape warning judges only POSIX mount sources, so a Windows host gets none of it.**
+      `dangerousMount` (`cli/src/pkg/booth/host_escape_consent.go`) returns "not a host path" for
+      anything that does not start with `/`, which on Windows is every real mount a user writes:
+      `-v C:\Users\me\.ssh:/x` and `-v C:\:/host` start a booth with no warning and no question,
+      while the same booth on Linux stops and asks. The POSIX half now works on every host (it used
+      to be judged with `filepath.Clean`, which rewrote `/etc` as `\etc` and matched nothing), but
+      the Windows half needs its own list: the user profile and its dotfiles, `C:\Windows`,
+      `C:\ProgramData`, a bare drive root, and the `\\.\pipe\docker_engine` named pipe for the
+      engine socket. `docs/BOOTH_SECURITY.md` has to say which of them count as "as root" once
+      Docker Desktop's VM is in the middle.
+- [ ] **A linked git worktree gets no `.git` mount on a Windows host.** `resolveGitWorktreeMount`
+      (`cli/src/pkg/booth/git_worktree.go`) mirrors the main repository's `.git` at the host's own
+      absolute path, which only works where that path is also a path a container can hold: a
+      Windows gitdir (`C:/proj/.git`) is refused with a warning, so git inside the booth sees a
+      `.git` file pointing nowhere. The fix is a translated target — mount the main clone's `.git`
+      somewhere mountable and rewrite the worktree's `gitdir`/`commondir` to match — which is more
+      than the "same path on both sides" trick the Unix case gets away with.
 - [ ] **Open risks from the 0.79.0 catalog sweep (2026-10-03, n−1 rule applied).** Each is a
       guess until the full suite runs on the 26.04 images; drop the line once a run settles it.
       - **cuda reads NVIDIA's `ubuntu2404` repo on the 26.04 base** (`variants/base/setups/cuda--setup.sh`,
@@ -317,8 +334,7 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
         offered). Revisit each at the next sweep; none of the newer majors has been tried in a booth.
       - **Bumped but not yet built:** python 3.14.8 (default jumps a minor: 3.13 → 3.14 — watch
         packages without 3.14 wheels), zig 0.16.0 (0.15 → 0.16 breaks std APIs; zig-example code may
-        need updating), julia 1.13.1, anythingllm 1.17.0, appwrite-cli 28.1.0, hoppscotch 2026.9.0,
-        penpot 2.18.1, wails v3.0.0-beta.27, mermaid 11.17.2.
+        need updating), julia 1.13.1, appwrite-cli 28.1.0, hoppscotch 2026.9.0, wails v3.0.0-beta.27, mermaid 11.17.2.
       - **Not checked by the sweep:** greenfoot (no parseable latest), haskell's `recommended`
         (ghcup decides), older entries deep in the go/rust/python/scala/kotlin suggests lists.
 - [ ] **Desktop variants' clipboard still needs noVNC's manual side panel.** Investigated

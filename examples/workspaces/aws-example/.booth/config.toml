@@ -1,4 +1,4 @@
-# Configured by: booth config --no-tui --overwrite --variant notebook --select python+pip-config+vscode-ext/notebook/bash-nb-kernel/aws-cli+credential/claude-code+credential+settings-cache/antigravity+credential
+# Configured by: booth config --no-tui --overwrite --variant notebook --select python:3.13.12+pip-config+vscode-ext/lsp+toml/notebook:18888/bash-nb-kernel/aws-cli+credential/claude-code+credential+settings-cache
 
 variant = "notebook"
 
@@ -11,11 +11,7 @@ run-args = [
     "-v", "~/.aws/credentials:/etc/cb-home-seed/.aws/credentials:ro",
     "-v", "~/.aws/sso/cache:/etc/cb-home-seed/.aws/sso/cache:ro",
     "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
-    "-v", "~/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro",
-    "-v", "~/.config/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro",
-    "-v", "~/Library/Application Support/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro",
-    "-v", "~/AppData/Roaming/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro",
-    "-v", "~/.antigravity:/etc/cb-home-seed/.antigravity:ro"
+    "-v", "~/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro"
 ]
 
 cache-dirs = ["home/coder/.claude"]

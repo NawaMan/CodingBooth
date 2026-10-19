@@ -10,16 +10,9 @@ java:21
 go:1.24.13+linter
 python:3.12.12+uv
 EOF
-python3 -c "
-import http.server, socketserver, os, sys
-os.chdir('$recipe_dir')
-s = socketserver.TCPServer(('',0), http.server.SimpleHTTPRequestHandler)
-open('$recipe_dir/port', 'w').write(str(s.server_address[1]))
-s.serve_forever()
-" &
+serve_dir_http "$recipe_dir" &
 server_pid=$!
-sleep 1
-port=$(cat "$recipe_dir/port")
+port=$(http_port_of "$recipe_dir") || echo "recipe server did not come up" >&2
 
 run booth config $prj --no-tui --select "@@http://localhost:${port}/recipe.txt"
 

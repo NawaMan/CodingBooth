@@ -24,7 +24,9 @@ ACTUAL=$(run_coding_booth express --dryrun --code "$PROJECT" \
   --templates-path "$REPO/templates" --select go 2>&1 | strip_ansi || true)
 
 COMPILE=$(printf '%s\n' "$ACTUAL" | grep -F "compiling Boothfile '" || true)
-SPEC=$(printf '%s\n' "$COMPILE" | sed -n "s/.*compiling Boothfile '\\(.*\\)\\/Boothfile'.*/\\1/p")
+# Either separator: booth prints a host path the way the host writes it, so the
+# spec folder arrives as "...\.booth\Boothfile" under Git Bash.
+SPEC=$(printf '%s\n' "$COMPILE" | sed -n "s/.*compiling Boothfile '\\(.*\\)[\\/\\\\]Boothfile'.*/\\1/p")
 
 if [[ -n "$SPEC" && "$SPEC" != "$PROJECT/.booth" && "$SPEC" == *"codingbooth-express-"*".booth" ]]; then
   print_test_result "true" "$0" "1" "express --select compiles the spec Boothfile, not the project's"
@@ -34,7 +36,10 @@ else
   exit 1
 fi
 
-if printf '%s\n' "$ACTUAL" | grep -F -- "-v ${SPEC}:/home/coder/code/.booth:ro" >/dev/null \
+# The mount spec without the "-v " in front of it: a value booth has to quote
+# gets printed as `-v '<spec>'`, which it does for a Windows path, and the spec
+# itself is what this is about.
+if printf '%s\n' "$ACTUAL" | grep -F -- "${SPEC}:/home/coder/code/.booth:ro" >/dev/null \
   && printf '%s\n' "$ACTUAL" | grep -F -- "cb.booth-dir=${SPEC}" >/dev/null \
   && printf '%s\n' "$ACTUAL" | grep -F 'codingbooth-local:' >/dev/null \
   && ! printf '%s\n' "$ACTUAL" | grep -E 'cb\.variant=codeserver|BOOTH_HOST_PORT=12001' >/dev/null; then

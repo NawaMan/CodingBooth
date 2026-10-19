@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/nawaman/codingbooth/src/internal/hostskip"
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
@@ -400,7 +401,7 @@ func TestFilterMissingVolumeMounts_CreateMarker(t *testing.T) {
 	if err != nil || !info.IsDir() {
 		t.Fatalf("expected %s to be created: %v", created, err)
 	}
-	if info.Mode().Perm() != 0o700 {
+	if hostskip.UnixModes() && info.Mode().Perm() != 0o700 {
 		t.Errorf("created folder mode = %o, want 700", info.Mode().Perm())
 	}
 	if !containsPair(flat, "-v", created+":/home/coder/.cache/sccache") {

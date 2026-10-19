@@ -92,13 +92,18 @@ install `RUN` lines, so the script sees it. Verified end-to-end: generated Docke
 - **Idempotent / re-config behavior.** Re-running `booth config` keeps the snapshot:
   `applyBoothAptSnapshot` reads the existing Boothfile's `env APT_SNAPSHOT=` line and
   reuses it, so a reconfigure does not silently move apt to that day's archive. A new
-  booth gets today; `CB_APT_SNAPSHOT` overrides both. (Before this, every reconfigure
-  re-stamped today's date.)
+  booth gets the release's snapshot (`aptsnapshot.Default` — `apt-snapshot.txt`, stamped
+  into the binary by `build/cli-build.sh`), so it starts at its own image's snapshot and
+  never older; `CB_APT_SNAPSHOT` overrides both. (Before this, every reconfigure
+  re-stamped today's date, and a new booth got the configuration date.)
+- **`today` is a week back.** The keyword — flag, field, `CB_APT_SNAPSHOT`, and the image
+  build's own fallback — resolves to the UTC day seven days ago, so it never names a day
+  the snapshot service has not published yet in some timezone.
 - **Changing it on purpose: `--apt-snapshot` and the TUI field.** `booth config
   --apt-snapshot <id|today|none>`, or the Config tab's *Apt Snapshot* field (preloaded
   with the booth's current id; `TODAY` moves it, empty removes it). Precedence in
   `resolveBoothAptSnapshot`: the flag/field, then `CB_APT_SNAPSHOT`, then the existing
-  line, then today.
+  line, then the release's snapshot.
 - **A typed id is checked before anything is written** (`pkg/boothinit/aptsnapshot`,
   shared by the flag and the field): the `YYYYMMDDTHHMMSSZ` shape, a real date, not
   before `20230301T000000Z` (the service's first snapshot), and not in the future. Each

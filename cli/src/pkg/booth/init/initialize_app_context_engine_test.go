@@ -5,11 +5,12 @@
 package init
 
 import (
+	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/nawaman/codingbooth/src/internal/fakebin"
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
@@ -91,21 +92,29 @@ func TestResolveEngineConfig_EmptyResolvesToConcreteValue(t *testing.T) {
 	}
 }
 
+// TestMain lets a stub installed by pathWithRunningApple answer as the engine
+// binary it was installed as, instead of running this package's tests again;
+// see the fakebin package for why a stub is a copy of the test binary rather
+// than a shell script.
+func TestMain(m *testing.M) {
+	fakebin.Serve(fakeEngineMain)
+	os.Exit(m.Run())
+}
+
+// fakeEngineMain is every stub this package installs. Only `container` is asked
+// anything — whether its service is up — and here it always is.
+func fakeEngineMain(name string, args []string) int {
+	if name == "container" && len(args) >= 2 && args[0] == "system" && args[1] == "status" {
+		fmt.Println(`{"status":"running"}`)
+	}
+	return 0
+}
+
 // pathWithRunningApple puts docker and a `container` whose service reports
 // running alone on PATH, so Apple container is the default engine.
 func pathWithRunningApple(t *testing.T) {
 	t.Helper()
-	dir := t.TempDir()
-	scripts := map[string]string{
-		"docker":    "#!/bin/sh\n",
-		"container": "#!/bin/sh\n[ \"$1 $2\" = \"system status\" ] && echo '{\"status\":\"running\"}'\nexit 0\n",
-	}
-	for name, script := range scripts {
-		if err := os.WriteFile(filepath.Join(dir, name), []byte(script), 0o755); err != nil {
-			t.Fatal(err)
-		}
-	}
-	t.Setenv("PATH", dir)
+	fakebin.OnPath(t, "docker", "container")
 }
 
 func TestResolveEngineConfig_DefaultIsAppleWhenRunning(t *testing.T) {

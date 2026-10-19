@@ -1,0 +1,25 @@
+# Project-local template used by tests/complex/features/test-owner-permission-files.
+# A machine-wide volume on a path in coder's home, plus the [[owner-permission]]
+# entry booth-entry applies to it on startup — the shape every package-cache
+# extension (go+mod-cache, python+pip-cache) has, with none of their setups, so
+# the test runs on the base image and owns the volume it asserts on.
+display-name = "Owner-Permission Cache"
+display-disc = "Complex-test project-local template: a cache volume with an owner-permission entry"
+display-order = 1
+primary = true
+tags = ["test", "local", "owner-permission"]
+
+run-args = [
+    "-v", "cb-test-op-files:/home/coder/.cache/cb-op-test",
+]
+
+[[owner-permission]]
+path = "/home/coder/.cache/cb-op-test"
+user = "coder"
+group = "coder"
+mode = "1777"
+
+[segments]
+Boothfile = """
+# CB_OWNER_PERMISSION_TEST_v1
+"""

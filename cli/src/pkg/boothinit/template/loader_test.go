@@ -756,7 +756,9 @@ func TestParseInlineFiles_SingleFile(t *testing.T) {
 	files, err := parseInlineFiles(m)
 	require.NoError(t, err)
 	require.Len(t, files, 1)
-	assert.Equal(t, ".claude/settings.json", files[0].RelPath)
+	// Host-native, as everywhere else a RelPath is built (see the sibling
+	// TestLoadRegistry_ cases).
+	assert.Equal(t, filepath.Join(".claude", "settings.json"), files[0].RelPath)
 	assert.Equal(t, `{"key":"val"}`, files[0].Content)
 	assert.Empty(t, files[0].SourcePath)
 }

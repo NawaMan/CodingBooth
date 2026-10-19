@@ -196,6 +196,30 @@ var scenarios = {
     w.getElementById("bl-help-dialog-close").click();
     check("Got it closes Help", !help.classList.contains("visible"), "still visible");
     emit("DONE");
+  }]],
+
+  // noVNC hands the desktop an Alt when a Mac presses Command, and AltGr when
+  // it presses Option, so a tab listing Mod1 shortcuts has to print Command
+  // for a Mac viewer. The second argument forces the answer, so one browser
+  // can assert both. (The tab doing the printing is the i3 template's, which
+  // this image does not carry: tests/complex/desktop/test-i3-desktops asserts
+  // that it routes its labels through here.)
+  mackeys: [[SETTLE, function () {
+    var H = wrapDoc().defaultView.BoothHelp;
+    check("BoothHelp exposes modLabel", typeof H.modLabel === "function", typeof H.modLabel);
+    check("a Mac viewer is told Control+Command", H.modLabel("Ctrl+Alt", true) === "Control+Command",
+          H.modLabel("Ctrl+Alt", true));
+    check("a Mac viewer is told Command for the bare mod", H.modLabel("Alt", true) === "Command",
+          H.modLabel("Alt", true));
+    check("a Mac viewer is told right Command for Super", H.modLabel("Super", true) === "right Command",
+          H.modLabel("Super", true));
+    check("every other viewer keeps Ctrl+Alt", H.modLabel("Ctrl+Alt", false) === "Ctrl+Alt",
+          H.modLabel("Ctrl+Alt", false));
+    check("an unknown modifier passes through untouched", H.modLabel("Hyper", true) === "Hyper",
+          H.modLabel("Hyper", true));
+    check("this viewer (headless Chrome on Linux) is not a Mac", H.macViewer === false, String(H.macViewer));
+    check("and so is labelled as one", H.modLabel("Ctrl+Alt") === "Ctrl+Alt", H.modLabel("Ctrl+Alt"));
+    emit("DONE");
   }]]
 };
 

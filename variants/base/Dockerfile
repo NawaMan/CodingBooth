@@ -13,6 +13,24 @@ ARG LOCALE=en_US.UTF-8
 # is copied in, so the snapshot pin is inlined for these two base install steps.
 ARG APT_SNAPSHOT=
 
+# Every apt-get update and apt-get install below runs inside a retry loop. Plain
+# `apt-get update` treats an index it could not fetch as a warning and exits 0, so
+# a snapshot.ubuntu.com 503 surfaced one command later as "Unable to locate
+# package curl", with nothing left to retry — hence APT::Update::Error-Mode=any.
+# Installs get Acquire::Retries=5 (apt's per-file retry, default 3, with backoff)
+# and the same loop: a .deb that keeps 503ing fails the install, and the next
+# attempt fetches only what is still missing, since the downloaded archives stay
+# in /var/cache/apt/archives until the step cleans up. The loop is for outages
+# that outlast apt's own retries — a few minutes of 502/503 from the snapshot
+# service — waiting 15s, 30s, 45s, 60s between attempts. apt has no overall
+# time limit, and a desktop-kde build once hung in apt-get update for hours with
+# every connection closed, so each attempt also runs under `timeout`: 10 minutes
+# for update, 30 for install (a slow but healthy snapshot service took 15 for
+# this image's essentials). A killed install can leave packages half-configured,
+# so a failed attempt runs `dpkg --configure -a` before the next one. These
+# options are passed per command, not set in apt.conf.d, so the setups and
+# booths built on this image keep apt's usual behaviour.
+
 # The snapshot this image's packages come from, kept for apt--install.sh: a
 # Boothfile pinning an older one cannot always install on top of these packages,
 # and the script says so, with the fix. A different name from APT_SNAPSHOT on
@@ -49,8 +67,19 @@ RUN touch /tmp/startups.log \
 # purpose even once that's possible: a snapshotted root CA bundle is a stale
 # root CA bundle, and freshness is the point of this particular package.
 RUN set -euo pipefail \
-  ; apt-get update \
-  ; apt-get install -y --no-install-recommends ca-certificates \
+  ; for attempt in 1 2 3 4 5; do \
+      timeout --kill-after=30 600 apt-get update -o APT::Update::Error-Mode=any && break \
+    ; [ "$attempt" -lt 5 ] || exit 1 \
+    ; echo "⚠️  apt-get update failed (attempt $attempt of 5); retrying in $((attempt * 15))s" \
+    ; sleep $((attempt * 15)) \
+    ; done \
+  ; for attempt in 1 2 3 4 5; do \
+      timeout --kill-after=30 1800 apt-get install -y --no-install-recommends -o Acquire::Retries=5 ca-certificates && break \
+    ; dpkg --configure -a || true \
+    ; [ "$attempt" -lt 5 ] || exit 1 \
+    ; echo "⚠️  apt-get install failed (attempt $attempt of 5); retrying in $((attempt * 15))s" \
+    ; sleep $((attempt * 15)) \
+    ; done \
   ; rm -rf /var/lib/apt/lists/*
 
 # Essential system setup
@@ -62,26 +91,39 @@ RUN set -euo pipefail \
         *) echo "⚠️  APT_SNAPSHOT=${APT_SNAPSHOT} ignored on $(dpkg --print-architecture): no ports.ubuntu.com snapshots" ;; \
       esac \
     fi \
-  ; apt-get update "${SNAPSHOT_ARGS[@]}" \
-  ; apt-get install -y --no-install-recommends "${SNAPSHOT_ARGS[@]}" \
-  bash                   \
-  curl                   \
-  debian-archive-keyring \
-  file                   \
-  gettext-base           \
-  git                    \
-  gnupg                  \
-  less                   \
-  locales                \
-  sudo                   \
-  tar                    \
-  tini                   \
-  tzdata                 \
-  ttyd                   \
-  unzip                  \
-  wget                   \
-  xz-utils               \
-  zip                    \
+  ; for attempt in 1 2 3 4 5; do \
+      timeout --kill-after=30 600 apt-get update -o APT::Update::Error-Mode=any "${SNAPSHOT_ARGS[@]}" && break \
+    ; [ "$attempt" -lt 5 ] || exit 1 \
+    ; echo "⚠️  apt-get update failed (attempt $attempt of 5); retrying in $((attempt * 15))s" \
+    ; sleep $((attempt * 15)) \
+    ; done \
+  ; PACKAGES=( \
+      bash                   \
+      curl                   \
+      debian-archive-keyring \
+      file                   \
+      gettext-base           \
+      git                    \
+      gnupg                  \
+      less                   \
+      locales                \
+      sudo                   \
+      tar                    \
+      tini                   \
+      tzdata                 \
+      ttyd                   \
+      unzip                  \
+      wget                   \
+      xz-utils               \
+      zip                    \
+    ) \
+  ; for attempt in 1 2 3 4 5; do \
+      timeout --kill-after=30 1800 apt-get install -y --no-install-recommends -o Acquire::Retries=5 "${SNAPSHOT_ARGS[@]}" "${PACKAGES[@]}" && break \
+    ; dpkg --configure -a || true \
+    ; [ "$attempt" -lt 5 ] || exit 1 \
+    ; echo "⚠️  apt-get install failed (attempt $attempt of 5); retrying in $((attempt * 15))s" \
+    ; sleep $((attempt * 15)) \
+    ; done \
   ; rm -rf /var/lib/apt/lists/*      \
   ; rm -rf /var/cache/apt/archives/* \
   ; rm -rf /var/cache/apt/archives/partial/*
@@ -96,20 +138,33 @@ RUN set -euo pipefail \
         *) echo "⚠️  APT_SNAPSHOT=${APT_SNAPSHOT} ignored on $(dpkg --print-architecture): no ports.ubuntu.com snapshots" ;; \
       esac \
     fi \
-  ; apt-get update "${SNAPSHOT_ARGS[@]}" \
-  ; apt-get install -y --no-install-recommends "${SNAPSHOT_ARGS[@]}" \
-  direnv \
-  jq     \
-  mc     \
-  nano   \
-  nginx  \
-  socat  \
-  tilde    \
-  tig      \
-  tmux     \
-  tree     \
-  whiptail \
-  zsh      \
+  ; for attempt in 1 2 3 4 5; do \
+      timeout --kill-after=30 600 apt-get update -o APT::Update::Error-Mode=any "${SNAPSHOT_ARGS[@]}" && break \
+    ; [ "$attempt" -lt 5 ] || exit 1 \
+    ; echo "⚠️  apt-get update failed (attempt $attempt of 5); retrying in $((attempt * 15))s" \
+    ; sleep $((attempt * 15)) \
+    ; done \
+  ; PACKAGES=( \
+      direnv   \
+      jq       \
+      mc       \
+      nano     \
+      nginx    \
+      socat    \
+      tig      \
+      tilde    \
+      tmux     \
+      tree     \
+      whiptail \
+      zsh      \
+    ) \
+  ; for attempt in 1 2 3 4 5; do \
+      timeout --kill-after=30 1800 apt-get install -y --no-install-recommends -o Acquire::Retries=5 "${SNAPSHOT_ARGS[@]}" "${PACKAGES[@]}" && break \
+    ; dpkg --configure -a || true \
+    ; [ "$attempt" -lt 5 ] || exit 1 \
+    ; echo "⚠️  apt-get install failed (attempt $attempt of 5); retrying in $((attempt * 15))s" \
+    ; sleep $((attempt * 15)) \
+    ; done \
   ; rm -rf /var/lib/apt/lists/*      \
   ; rm -rf /var/cache/apt/archives/* \
   ; rm -rf /var/cache/apt/archives/partial/*
@@ -127,22 +182,16 @@ RUN set -euo pipefail \
 # matter which user or session starts the tmux server; a project's own
 # ~/.tmux.conf (if any) is read after this and can still override it.
 #
-# Mouse mode also captures left-drag. tmux 3.4's default MouseDragEnd1Pane is
-# copy-pipe-and-cancel: a reverse-video selection that vanishes on mouse-up.
-# ttyd 1.7.4 never honours OSC 52, so that copy never reaches the host
-# clipboard. Unbind left-drag / double-click / triple-click so xterm.js can
-# own selection. The pane page sets xterm.js shouldForceSelection so a
-# regular drag native-selects (trusted events) while mouse reporting stays
-# on for the wheel.
+# Mouse mode leaves the left button to tmux's own default bindings: a click
+# or drag goes to the app when the app asked for the mouse (Fresh, vim, htop),
+# and selects in copy-mode when it did not. tmux's copy, and an app's own copy,
+# reach the browser as OSC 52 (set-clipboard on lets an app's through too).
+# ttyd's xterm.js has no OSC 52 handler, so the pane page adds one that writes
+# the host clipboard (cbTermClipboard in nginx.conf.template and
+# ttyd-nerd-font-index--setup.sh). Shift+drag is the browser's own selection.
 RUN printf '%s\n' \
   'set -g mouse on' \
-  'unbind -T root MouseDrag1Pane' \
-  'unbind -T copy-mode MouseDrag1Pane' \
-  'unbind -T copy-mode-vi MouseDrag1Pane' \
-  'unbind -T copy-mode MouseDragEnd1Pane' \
-  'unbind -T copy-mode-vi MouseDragEnd1Pane' \
-  'unbind -T root DoubleClick1Pane' \
-  'unbind -T root TripleClick1Pane' \
+  'set -g set-clipboard on' \
   > /etc/tmux.conf
 
 RUN  set -euo pipefail \
@@ -198,11 +247,10 @@ RUN set -euo pipefail \
 ENV DONT_PROMPT_WSL_INSTALL=1
 
 # Set common tools aliases
-ENV EDITOR=tilde
+ENV EDITOR=fresh
 ENV EXPLORER=mc
 ENV GITVIEW=tig
 RUN set -euo pipefail                             \
-  ; ln -sf /usr/bin/tilde /usr/local/bin/editor   \
   ; ln -sf /usr/bin/mc    /usr/local/bin/explorer \
   ; ln -sf /usr/bin/tig   /usr/local/bin/gitview
 
@@ -258,6 +306,18 @@ RUN just--setup.sh
 # Git TUI (lazygit) - every booth can manage git from the terminal
 RUN lazygit--setup.sh
 
+# Modern file manager (superfile, spf) - pinned; the superfile template picks
+# another release. $EXPLORER and `explorer` stay Midnight Commander (mc).
+RUN superfile--setup.sh --version 1.6.0
+
+# Agent change review (differ) - pinned; review what an agent changed and send
+# it line comments in its tmux pane. The differ template picks another release.
+RUN differ--setup.sh --version 1.8.1
+
+# Default text editor (Fresh) - pinned; the fresh template picks another release
+RUN fresh--setup.sh --version 0.5.2 \
+  && ln -sf /usr/local/bin/fresh /usr/local/bin/editor
+
 # Fira Code Nerd Font - lets the built-in web terminal (ttyd) render icon
 # glyphs. ttyd's terminal renders client-side in the visitor's own browser, so
 # this alone does nothing visible; start-ttyd-split's nginx layer and
@@ -282,6 +342,8 @@ COPY --chmod=0755 booth--as-coder /usr/local/bin/booth--as-coder
 # CLI to stage such files for it (an image without it gets them mounted directly).
 COPY --chmod=0755 booth--file-sync /usr/local/bin/booth--file-sync
 LABEL com.codingbooth.file-sync="1"
+# Gives tilde the mouse inside tmux (Console UI panes); see the script.
+COPY --chmod=0755 tilde /usr/local/bin/tilde
 # Main CodingBooth profile script with helper functions
 COPY --chmod=0644 99z-cb--profile.sh /etc/profile.d/99z-cb--profile.sh
 # Startup file: to be executed at first container start

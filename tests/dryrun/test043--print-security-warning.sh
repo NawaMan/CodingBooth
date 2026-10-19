@@ -46,8 +46,11 @@ check 1 "plain booth has no warning" 0 "$EXIT" "$OUT" "No security warning."
 
 # Test 2: a run-arg on the command line
 EXIT=0; OUT=$(run_coding_booth print-security-warning --variant base --privileged 2>/dev/null) || EXIT=$?
+# "get root" and not the rest of the line: the impact is worded for where a way out lands on
+# this engine (the host, an engine VM, the WSL 2 VM), which depends on the machine the suite runs
+# on. The per-engine wording is pinned in cli/src/pkg/hostescape/hostescape_test.go.
 check 2 "--privileged is reported with its impact and link" 1 "$EXIT" "$OUT" \
-  "  - --privileged" "get root on the host" "$DOC#kernel-access" \
+  "  - --privileged" "get root" "$DOC#kernel-access" \
   "This only matters if the booth runs code you do not trust."
 
 # Test 3: run-args from config.toml
@@ -62,7 +65,9 @@ check 4 "--dind-allowed does not hide --dind" 1 "$EXIT" "$OUT" "--dind (privileg
 
 # Test 5: the run records the reasons on the container
 EXIT=0; OUT=$(run_coding_booth --dryrun --variant base --privileged -- sleep 1 2>&1) || EXIT=$?
+# A prefix, left open before the closing brace: the reason also carries "where" on an engine
+# whose way out does not land on the host itself.
 check 5 "a run labels the container with its reasons" 0 "$EXIT" "$OUT" \
-  'cb.security-warning=[{"kind":"kernel-access","what":"--privileged"}]'
+  'cb.security-warning=[{"kind":"kernel-access","what":"--privileged"'
 
 exit $FAILED

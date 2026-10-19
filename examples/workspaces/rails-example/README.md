@@ -36,6 +36,17 @@ bin/rails server -b 0.0.0.0
 
 Then open http://localhost:3000/ on the host — you should see the Rails welcome page.
 
+### Run it
+
+```bash
+just --list
+just versions            # Ruby, Rails and the PostgreSQL client
+just db                  # wait for the booth's PostgreSQL, then list its databases
+```
+
+There is no recipe for the scaffold or the server: `rails new` writes a whole app into this folder,
+and `bin/rails server` has to keep running. Do those in a booth, as above.
+
 ## What's inside
 
 - `.booth/Boothfile` — Ruby 3.3, Postgres (auto-starts), the Ruby VS Code extension, and `rails` installed via `install gem rails`.

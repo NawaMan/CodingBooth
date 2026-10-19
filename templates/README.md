@@ -144,7 +144,6 @@ share — never for a server's data folder.
 | kafka      | `booth-kafkadata-{name}`          | `/opt/kafkadata`       |
 | rabbitmq   | `booth-rabbitmqdata-{name}`       | `/opt/rabbitmq`        |
 | floci      | `booth-flocidata-{name}`          | `/home/coder/.floci`   |
-| penpot     | `booth-penpot-assets-{name}`      | `/opt/data/assets`     |
 
 These are **named Docker volumes** (not bind mounts), so Docker manages the storage. Booth creates
 one the first time it is needed, labelled `cb.project=<project>`, `cb.booth=<name>` and
@@ -359,8 +358,8 @@ fontconfig/GTK libraries Rust GUI crates link to), so it sits with the other sys
 | Template               | Display Name     |
 |------------------------|------------------|
 | `ai-tools/aider`           | Aider |
-| `ai-tools/anythingllm`     | AnythingLLM |
 | `ai-tools/claude-code`     | Claude Code |
+| `ai-tools/differ`          | differ (agent diff review) |
 | `ai-tools/gemini-cli`      | Gemini CLI |
 | `ai-tools/gh-copilot`      | GitHub Copilot CLI |
 | `ai-tools/goose`           | Goose |
@@ -417,6 +416,7 @@ fontconfig/GTK libraries Rust GUI crates link to), so it sits with the other sys
 | `tools/cmake`              | CMake |
 | `tools/conan`              | Conan |
 | `tools/conda`              | Conda (Miniforge) |
+| `tools/croft`              | Croft |
 | `tools/dblab`              | dblab |
 | `tools/dind`               | Docker-in-Docker |
 | `tools/direnv`             | direnv |
@@ -450,6 +450,7 @@ fontconfig/GTK libraries Rust GUI crates link to), so it sits with the other sys
 | `tools/lazygit`            | Lazygit |
 | `tools/lazysql`            | lazysql |
 | `tools/make`               | GNU Make |
+| `tools/mc`                 | Midnight Commander (mc) |
 | `tools/mkcert`             | mkcert |
 | `tools/neovim`             | Neovim |
 | `tools/nginx`              | nginx |
@@ -460,7 +461,9 @@ fontconfig/GTK libraries Rust GUI crates link to), so it sits with the other sys
 | `tools/sql-studio`         | sql-studio |
 | `tools/sqluv`              | sqluv |
 | `tools/stern`              | stern |
+| `tools/superfile`          | superfile (spf) |
 | `tools/terraform`          | Terraform |
+| `tools/ttt`                | TTT |
 | `tools/vhs`                | VHS (terminal/TUI recorder) |
 
 ### Order 50 — Extensions (run alongside parent)
@@ -526,6 +529,7 @@ never the whole context, so editing source does not invalidate its layer.
 | `education/logo`           | Logo |
 | `education/scratch`        | Scratch |
 | `education/thonny`         | Thonny |
+| `fpc/lazarus--extension`   | Lazarus *(IDE on desktop variants; lazbuild everywhere)* |
 | `ides/clion`               | CLion |
 | `ides/codeserver`          | code-server |
 | `ides/datagrip`            | DataGrip |
@@ -549,18 +553,16 @@ never the whole context, so editing source does not invalidate its layer.
 | `languages/scala`          | Scala |
 | `languages/wails`          | Wails v3 (experimental) |
 | `middlewares/postgrest`    | PostgREST |
-| `tools/affine-desktop`     | AFFiNE Desktop |
-| `tools/affine-server`      | AFFiNE Server |
 | `tools/android-sdk`        | Android SDK |
 | `tools/buf`                | Buf |
 | `tools/cypress`            | Cypress |
 | `tools/excalidraw`         | Excalidraw |
 | `tools/freeplane`          | Freeplane |
+| `tools/lsp`                | Language Servers *(any server by name — `lsp:marksman,taplo`)* |
 | `tools/mermaid`            | Mermaid |
 | `tools/n8n`                | n8n |
 | `tools/notebook`           | Jupyter Notebook |
 | `tools/obsidian`           | Obsidian |
-| `tools/penpot`             | Penpot (experimental) |
 | `tools/plantuml`           | PlantUML |
 | `tools/playwright`         | Playwright |
 | `tools/puppeteer`          | Puppeteer |
@@ -577,6 +579,7 @@ never the whole context, so editing source does not invalidate its layer.
 | `elixir/hex-pkg--extension`     | Hex Packages     |
 | `go/go-pkg--extension`          | Go Packages      |
 | `haskell/cabal-pkg--extension`  | Cabal Packages   |
+| `haskell/tools--extension`      | Haskell Tools    |
 | `lua/luarocks-pkg--extension`   | LuaRocks Packages|
 | `nodejs/npm-pkg--extension`     | npm Packages     |
 | `nodejs/yarn-pkg--extension`    | Yarn Packages    |
@@ -588,6 +591,43 @@ never the whole context, so editing source does not invalidate its layer.
 | `ruby/gem-pkg--extension`       | Gem Packages     |
 | `rust/cargo-pkg--extension`     | Cargo Packages   |
 | `tools/brew-pkg`                | brew Packages    |
+
+### Order 60 — Language servers (after the runtimes they run on)
+
+| Extension                          | Display Name |
+|------------------------------------|--------------|
+| `lsp/markdown--extension`          | Markdown (marksman; markdownlint in VS Code) |
+| `lsp/toml--extension`              | TOML (taplo; Even Better TOML in VS Code) |
+| `lsp/yaml--extension`              | YAML (yaml-language-server; Red Hat YAML in VS Code) *(requires nodejs)* |
+| `lsp/json--extension`              | JSON, HTML, CSS (vscode-langservers) *(requires nodejs)* |
+| `lsp/bash--extension`              | Bash (bash-language-server; Bash IDE in VS Code) *(requires nodejs)* |
+| `lsp/typescript--extension`        | TypeScript / JavaScript (typescript-language-server) *(requires nodejs)* |
+| `lsp/react--extension`             | React (typescript-language-server; React snippets in VS Code) *(requires nodejs)* |
+| `lsp/svelte--extension`            | Svelte (svelte-language-server; Svelte for VS Code) *(requires nodejs)* |
+| `lsp/python--extension`            | Python (pylsp) *(requires python)* |
+| `lsp/c--extension`                 | C / C++ (clangd; clangd in VS Code) |
+| `lsp/java--extension`              | Java (jdtls) *(requires java)* |
+| `lsp/sql--extension`               | SQL (sqls, amd64 only; SQLTools in VS Code) |
+| `lsp/tailwind--extension`          | Tailwind CSS *(requires nodejs)* |
+| `lsp/terraform--extension`         | Terraform (terraform-ls; HashiCorp Terraform in VS Code) |
+| `lsp/dockerfile--extension`        | Dockerfile (Docker in VS Code) *(requires nodejs)* |
+| `lsp/docker-compose--extension`    | Docker Compose (Docker in VS Code) *(requires nodejs)* |
+| `neovim/lsp--extension`            | Neovim LSP (enables the installed servers) |
+
+Each server is its own `lsp--<server>--setup.sh`, so the same binary serves every
+terminal editor: Fresh and Helix start it by its default name, and `neovim+lsp` seeds a
+system-wide `booth-lsp.lua` that enables the installed ones. `tools/lsp` follows the
+`code-ext-pkg` shape — curated extensions for the common languages, plus a variadic list
+(`install lsp ${LSP_SERVERS}`) that takes any server or language name, so `lsp:toml,yaml`
+and `lsp+toml+yaml` install the same thing. Inside a booth, Fresh's LSP popup also offers
+"Install <server>" for a missing one (the base image's `fresh-plugins/booth-lsp.ts`), which
+runs the same setup script. These sit at order 60 because the Node- and Python-based
+servers install with the runtime that order 50 put in place; servers that come with a
+language (gopls, rust-analyzer) stay in that language's template; clangd has `lsp+c` too,
+for a `gcc` booth. Each extension also emits its VS Code extension at order 65 (a guarded
+`*-code-extension` setup that skips without an editor), so one pick covers terminal editors
+and VS Code; where VS Code has the language built in (JSON, TypeScript) or the language
+template already auto-selects one (python, java), it adds none.
 
 ### Order 62 — Android emulator (needs the Android SDK from order 60)
 

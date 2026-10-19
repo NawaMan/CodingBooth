@@ -1,7 +1,7 @@
 # syntax=codingbooth/boothfile:1
 # Configured by: booth config --no-tui --overwrite --select ruby+vscode-ext+kernel+gem-pkg:pry,colorize/python/notebook
 
-env APT_SNAPSHOT=20260906T000000Z
+env APT_SNAPSHOT=20261004T000000Z
 
 arg GEM_PKGS=colorize,pry
 arg NOTEBOOK_PORT=18888
@@ -21,8 +21,8 @@ env RBENV_ROOT=/opt/rbenv
 env GEM_HOME=/home/coder/.gem
 env PATH=/home/coder/.gem/bin:/opt/rbenv/shims:/opt/rbenv/bin:$PATH
 setup ruby ${RUBY_VERSION}
-setup python-code-extension
 setup notebook ${NOTEBOOK_PORT}
 install gem ${GEM_PKGS}
+setup python-code-extension
 setup ruby-code-extension
 setup ruby-nb-kernel

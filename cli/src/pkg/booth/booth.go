@@ -200,8 +200,13 @@ func (booth *Booth) runAsDaemon() error {
 	userCmds := make([]string, 0, 64)
 
 	if booth.ctx.Cmds().Length() > 0 {
-		userCmds = append(userCmds, "bash", "-lc")
-		userCmds = append(userCmds, flattenArgs(booth.ctx.Cmds())...)
+		// One string, as runAsCommand does: `bash -lc` takes a single command
+		// and treats anything after it as $0, $1, ... So appending the words
+		// as separate arguments ran `bash -lc sleep 600` — the script was
+		// "sleep", with "600" as its $0 — and the booth's command died on
+		// "sleep: missing operand" while the container stayed up on its own
+		// services, so nothing but a line in `docker logs` said so.
+		userCmds = append(userCmds, "bash", "-lc", strings.Join(flattenArgs(booth.ctx.Cmds()), " "))
 	}
 
 	if !booth.ctx.Quiet() {
@@ -701,7 +706,7 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 
 	builder.CommonArgs.Append(ilist.NewList[string]("-v", codePath+":/home/coder/code"))
 	builder.CommonArgs.Append(ilist.NewList[string]("-w", "/home/coder/code"))
-	addGitWorktreeMount(builder, codePath)
+	addGitWorktreeMount(builder, codePath, ctx.Dryrun())
 
 	if !ctx.WritableBooth() {
 		addReadOnlyBoothDir(builder, codePath)
@@ -847,6 +852,7 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_ENV_FILE="+ctx.EnvFile()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_HOST_UID="+ctx.HostUID()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_HOST_GID="+ctx.HostGID()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_HOST_OS="+getHostOS()))
 
 	// How to reach the host from inside. The name always works (see --add-host
 	// above); the address is the host's own LAN IP, which is what a service
@@ -1588,9 +1594,9 @@ func formatPortMapping(public bool, hostPort, containerPort int) string {
 }
 
 // atCodeVolumeSource in a run-args -v spec means "the host project directory"
-// (the same path already mounted at /home/coder/code). AnythingLLM's
-// file-system agent realpath()s and rejects a symlink that points outside its
-// jail, so +project-fs bind-mounts the project a second time into that jail.
+// (the same path already mounted at /home/coder/code). A tool that realpath()s
+// and rejects a symlink pointing outside its own folder needs the project
+// bind-mounted a second time inside that folder.
 const atCodeVolumeSource = "@code"
 
 func rewriteAtCodeVolumeGroups(args *ilist.AppendableList[ilist.List[string]], codePath string) *ilist.AppendableList[ilist.List[string]] {

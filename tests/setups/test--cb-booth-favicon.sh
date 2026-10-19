@@ -106,12 +106,21 @@ check "ico bytes are copied through" \
 proj="$WORK/proj-skip"
 mkdir -p "$proj"
 printf '<svg xmlns="http://www.w3.org/2000/svg"></svg>' >"$proj/real.svg"
-ln -s real.svg "$proj/favicon.svg"
+# A real symlink or none at all: where `ln -s` copies instead of linking (see
+# have_symlinks in common--source.sh) the "symlink" would be a perfectly good
+# favicon, and the case would prove the opposite of what it says. The empty and
+# oversized candidates still carry it there.
+SKIP_DESC="symlink, empty file, and oversized file fall through to the built-in mark"
+if have_symlinks; then
+    ln -s real.svg "$proj/favicon.svg"
+else
+    SKIP_DESC="empty and oversized files fall through to the built-in mark (no symlinks on this host)"
+fi
 : >"$proj/favicon.png"
 dd if=/dev/zero of="$proj/favicon.ico" bs=1024 count=300 status=none
 out="$WORK/out-skip"
 run_pick "$proj" "$tiny_png" "$out"
-check "symlink, empty file, and oversized file fall through to the built-in mark" \
+check "$SKIP_DESC" \
     "$(grep -qF 'type="image/png"' "$out/link" && grep -qF 'skipping' "$PICK_ERR" && echo true || echo false)" \
     "$(cat "$PICK_ERR"; echo '---'; cat "$out/link")"
 

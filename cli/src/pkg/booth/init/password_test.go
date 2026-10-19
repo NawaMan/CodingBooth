@@ -8,10 +8,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
+	"github.com/nawaman/codingbooth/src/internal/hostskip"
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
@@ -33,9 +33,7 @@ func TestParseArgs_PublicFlag(t *testing.T) {
 }
 
 func TestValidatePasswordFile_PermissionsTooPermissive(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("permission check not applicable on Windows")
-	}
+	hostskip.NoUnixModes(t)
 
 	dir := t.TempDir()
 	pwFile := filepath.Join(dir, ".booth.password")
@@ -53,9 +51,7 @@ func TestValidatePasswordFile_PermissionsTooPermissive(t *testing.T) {
 }
 
 func TestValidatePasswordFile_CorrectPermissions(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("permission check not applicable on Windows")
-	}
+	hostskip.NoUnixModes(t)
 
 	// Need a git repo for the gitignore check to work
 	dir := t.TempDir()

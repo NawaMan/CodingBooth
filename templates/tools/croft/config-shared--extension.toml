@@ -1,0 +1,11 @@
+cb-version = "0.1.0"
+display-name = "Config Shared"
+display-disc = "Team-share Croft config via git (.booth/shared)"
+display-detail = """Live-bind-mounts ~/.config/croft/ for a shared config.json, keybindings, and snippets. Commit only config. Do not put API tokens or credential files in this tree."""
+display-order = 92
+auto-select = false
+tags = ["persistence", "shared", "croft", "editor", "git", "no-secrets"]
+
+shared-dirs = [
+    "home/coder/.config/croft",
+]

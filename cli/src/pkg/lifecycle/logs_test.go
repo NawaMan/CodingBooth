@@ -248,8 +248,8 @@ func TestPrintLogList(t *testing.T) {
 
 func TestLogsReadsTheContainerOutputOfTheOwningEngine(t *testing.T) {
 	log := installFakeEngines(t, map[string]fakeEngine{
-		"docker": {booths: []string{"web"}},
-		"podman": {booths: []string{"lab"}},
+		"docker": {Booths: []string{"web"}},
+		"podman": {Booths: []string{"lab"}},
 	})
 	if err := Logs([]string{"--name", "lab", "--tail", "5"}, io.Discard, io.Discard); err != nil {
 		t.Fatal(err)
@@ -260,7 +260,7 @@ func TestLogsReadsTheContainerOutputOfTheOwningEngine(t *testing.T) {
 }
 
 func TestLogsTailsTheServiceFileInARunningBooth(t *testing.T) {
-	log := installFakeEngines(t, map[string]fakeEngine{"docker": {booths: []string{"web"}}})
+	log := installFakeEngines(t, map[string]fakeEngine{"docker": {Booths: []string{"web"}}})
 	// The fake answers the exec that lists /tmp with nothing, so the service is
 	// reported missing — after the listing ran as root, not as coder.
 	err := Logs([]string{"--name", "web", "excalidraw"}, io.Discard, io.Discard)

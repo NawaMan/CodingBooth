@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desktop Clipboard — CodingBooth</title>
+    <meta name="description"
+        content="How to copy and paste between your computer and a CodingBooth desktop booth (XFCE, KDE, LXQt, Wayland) through noVNC's Clipboard panel — with short videos of both directions.">
+    <link rel="canonical" href="https://codingbooth.io/guides/clipboard.html">
+
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="CodingBooth">
+    <meta property="og:title" content="Copy & paste with a desktop booth">
+    <meta property="og:description"
+        content="Moving text in and out of a CodingBooth desktop through noVNC's Clipboard panel, shown step by step.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://codingbooth.io/guides/clipboard.html">
+    <meta property="og:image" content="https://codingbooth.io/images/guides/clipboard-into-booth-poster.jpg">
+    <meta property="og:locale" content="en_US">
+
+    <link rel="icon" type="image/png" sizes="32x32" href="../favicons/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="../favicons/favicon-192.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../favicons/apple-touch-icon.png">
+    <meta name="theme-color" content="#000d33">
+    <style>
+        :root {
+            --bg: #000d33;
+            --bg-elev: #001a4d;
+            --fg: #ffffff;
+            --fg-muted: #a8b3d1;
+            --accent: #fc962f;
+            --accent-strong: #e07a14;
+            --strip: #001871;
+            --border: #1a2856;
+            --code-bg: #000615;
+            --light-bg: #f4f6fa;
+            --light-bg-elev: #ffffff;
+            --light-fg: #000d33;
+            --light-fg-muted: #4a5568;
+            --light-border: #d8dde6;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            line-height: 1.6;
+        }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        code,
+        kbd {
+            font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        }
+
+        kbd {
+            font-size: 0.85em;
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-bottom-width: 2px;
+            border-radius: 4px;
+            padding: 1px 6px;
+            color: var(--fg);
+            white-space: nowrap;
+        }
+
+        .section-light kbd {
+            background: var(--light-bg-elev);
+            border-color: var(--light-border);
+            color: var(--light-fg);
+        }
+
+        .container {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .top-strip {
+            height: 4px;
+            background: var(--strip);
+        }
+
+        nav {
+            border-bottom: 1px solid var(--border);
+            background: rgba(0, 13, 51, 0.85);
+            backdrop-filter: blur(8px);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        nav .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 16px;
+            padding-bottom: 16px;
+            gap: 16px;
+        }
+
+        .brand {
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--fg);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand:hover {
+            text-decoration: none;
+        }
+
+        .brand img {
+            height: 28px;
+            width: 28px;
+            display: block;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            color: var(--fg-muted);
+        }
+
+        .nav-links a:hover {
+            color: var(--fg);
+            text-decoration: none;
+        }
+
+        .hero {
+            padding: 64px 0 44px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .hero h1 {
+            font-size: clamp(30px, 5vw, 48px);
+            margin: 0 0 16px;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+        }
+
+        .hero .tagline {
+            font-size: clamp(16px, 2.2vw, 19px);
+            color: var(--fg-muted);
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        .jump {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 28px;
+        }
+
+        .jump a {
+            border: 1px solid var(--border);
+            background: var(--bg-elev);
+            color: var(--fg);
+            border-radius: 999px;
+            padding: 6px 16px;
+            font-size: 14px;
+        }
+
+        .jump a:hover {
+            border-color: var(--accent);
+            text-decoration: none;
+        }
+
+        section {
+            padding: 56px 0;
+            border-bottom: 1px solid var(--border);
+            scroll-margin-top: 64px;
+        }
+
+        section h2 {
+            font-size: 30px;
+            margin: 0 0 12px;
+            letter-spacing: -0.01em;
+            text-align: center;
+        }
+
+        section .lead {
+            text-align: center;
+            color: var(--fg-muted);
+            max-width: 720px;
+            margin: 0 auto 32px;
+            font-size: 17px;
+        }
+
+        .section-light {
+            background: var(--light-bg);
+            color: var(--light-fg);
+            border-bottom-color: var(--light-border);
+        }
+
+        .section-light .lead {
+            color: var(--light-fg-muted);
+        }
+
+        .section-light a {
+            color: var(--accent-strong);
+        }
+
+        .split {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 40px;
+            align-items: center;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .split.wide-figure {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+        }
+
+        figure {
+            margin: 0;
+        }
+
+        figure img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .section-light figure img {
+            border-color: var(--light-border);
+            box-shadow: 0 6px 24px rgba(0, 13, 51, 0.12);
+        }
+
+        figcaption {
+            font-size: 13px;
+            color: var(--fg-muted);
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        .section-light figcaption {
+            color: var(--light-fg-muted);
+        }
+
+        .steps {
+            counter-reset: step;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .steps li {
+            counter-increment: step;
+            position: relative;
+            padding: 0 0 18px 44px;
+        }
+
+        .steps li::before {
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: #000d33;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+        }
+
+        .steps strong {
+            display: block;
+        }
+
+        .prose p {
+            margin: 0 0 14px;
+        }
+
+        .note {
+            border-left: 3px solid var(--accent);
+            background: var(--bg-elev);
+            padding: 12px 16px;
+            border-radius: 0 6px 6px 0;
+            font-size: 15px;
+            color: var(--fg-muted);
+            max-width: 780px;
+            margin: 28px auto 0;
+        }
+
+        .section-light .note {
+            background: var(--light-bg-elev);
+            color: var(--light-fg-muted);
+        }
+
+        /* Video player with bookmarks — the same player as the home page's demo. */
+        .demo {
+            text-align: center;
+        }
+
+        .demo-player video {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: block;
+        }
+
+        .section-light .demo-player video {
+            border-color: var(--light-border);
+            box-shadow: 0 6px 24px rgba(0, 13, 51, 0.12);
+        }
+
+        .demo-player {
+            display: inline-block;
+            max-width: 100%;
+            position: relative;
+        }
+
+        .demo-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 640px;
+            margin: 12px auto 0;
+        }
+
+        .demo-bar-row .demo-progress {
+            flex: 1;
+            margin: 0;
+            max-width: none;
+        }
+
+        .demo-ctrl {
+            width: 28px;
+            height: 28px;
+            flex: 0 0 auto;
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            background: var(--bg-elev);
+            color: var(--fg);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .section-light .demo-ctrl {
+            background: var(--light-bg-elev);
+            border-color: var(--light-border);
+            color: var(--light-fg);
+        }
+
+        .demo-ctrl:hover,
+        .section-light .demo-ctrl:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #000d33;
+        }
+
+        .demo-ctrl.demo-cc {
+            width: auto;
+            border-radius: 14px;
+            padding: 0 8px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            opacity: 0.55;
+        }
+
+        .demo-ctrl.demo-cc.is-on {
+            opacity: 1;
+        }
+
+        .demo-player video::cue {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #fff;
+            background: rgba(0, 13, 51, 0.88);
+        }
+
+        .demo-ctrl svg {
+            width: 12px;
+            height: 12px;
+            display: block;
+        }
+
+        .demo-progress {
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .section-light .demo-progress {
+            background: var(--light-border);
+        }
+
+        .demo-progress-bar {
+            height: 100%;
+            width: 0;
+            background: var(--accent);
+            transition: width 0.1s linear;
+        }
+
+        .demo-time {
+            flex: 0 0 auto;
+            font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+            font-size: 12px;
+            font-variant-numeric: tabular-nums;
+            color: var(--fg-muted);
+            user-select: none;
+            min-width: 76px;
+            text-align: right;
+        }
+
+        .section-light .demo-time {
+            color: var(--light-fg-muted);
+        }
+
+        .demo-points {
+            list-style: none;
+            text-align: left;
+            max-width: 780px;
+            margin: 24px auto 0;
+            padding: 0;
+            column-width: 320px;
+            column-gap: 28px;
+            font-size: 14px;
+            line-height: 1.55;
+            color: var(--fg-muted);
+        }
+
+        .demo-points li {
+            margin: 0 0 4px;
+            break-inside: avoid;
+            padding: 3px 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .demo-points li.active {
+            background: rgba(252, 150, 47, 0.14);
+            color: var(--fg);
+        }
+
+        .demo-points li.active .ts {
+            color: var(--accent-strong);
+        }
+
+        .section-light .demo-points {
+            color: var(--light-fg-muted);
+        }
+
+        .section-light .demo-points li.active {
+            background: rgba(252, 150, 47, 0.2);
+            color: var(--light-fg);
+        }
+
+        .demo-points .ts {
+            color: var(--accent);
+            font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+            font-size: 12.5px;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            margin-right: 8px;
+            background: transparent;
+            border: 0;
+            padding: 0;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        .section-light .demo-points .ts {
+            color: var(--accent-strong);
+        }
+
+        .demo-points .ts:hover,
+        .demo-points .ts:focus-visible {
+            color: var(--accent-strong);
+            text-decoration: underline;
+            outline: none;
+        }
+
+        .demo-points .tag {
+            display: inline-block;
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            padding: 1px 6px;
+            border-radius: 3px;
+            margin-right: 6px;
+            vertical-align: 1px;
+            background: var(--bg-elev);
+            color: var(--fg);
+        }
+
+        .section-light .demo-points .tag {
+            background: var(--light-border);
+            color: var(--light-fg);
+        }
+
+        .demo-points .tag.host {
+            background: #2f6f4f;
+            color: #fff;
+        }
+
+        .demo-points .tag.panel {
+            background: var(--accent);
+            color: #000d33;
+        }
+
+        .demo .caption {
+            color: var(--fg-muted);
+            font-size: 14px;
+            margin-top: 12px;
+        }
+
+        .section-light .demo .caption {
+            color: var(--light-fg-muted);
+        }
+
+        .tips {
+            max-width: 780px;
+            margin: 0 auto;
+            padding-left: 20px;
+        }
+
+        .tips li {
+            margin-bottom: 10px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: var(--fg-muted);
+            font-size: 14px;
+        }
+
+        footer {
+            padding: 32px 0;
+            text-align: center;
+            color: var(--fg-muted);
+            font-size: 14px;
+        }
+
+        footer a {
+            color: var(--fg-muted);
+        }
+
+        footer .footer-links {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 760px) {
+            .container {
+                padding: 0 16px;
+            }
+
+            .hero {
+                padding: 44px 0 32px;
+            }
+
+            section {
+                padding: 40px 0;
+            }
+
+            .split,
+            .split.wide-figure {
+                grid-template-columns: minmax(0, 1fr);
+                gap: 24px;
+            }
+
+            .split figure {
+                justify-self: center;
+            }
+
+            .nav-links {
+                gap: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="top-strip"></div>
+
+    <nav>
+        <div class="container">
+            <a href="../index.html" class="brand"><img src="../images/logo-image.png" alt="">CodingBooth</a>
+            <div class="nav-links">
+                <a href="../index.html">Home</a>
+                <a href="../more.html">More</a>
+                <a href="/blog/">Blog</a>
+                <a href="https://github.com/NawaMan/CodingBooth">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="container">
+            <h1>Copy &amp; paste with a desktop booth</h1>
+            <p class="tagline">
+                A desktop booth (XFCE, KDE, LXQt, Wayland) runs inside your browser over VNC, so your
+                computer and the booth each have their own clipboard. noVNC's <strong>Clipboard panel</strong>
+                connects them. This page shows how to use it, with a short video for each direction.
+            </p>
+            <div class="jump">
+                <a href="#why">Why a panel?</a>
+                <a href="#open">Open the panel</a>
+                <a href="#into">Into the booth</a>
+                <a href="#out">Out of the booth</a>
+                <a href="#tips">Tips</a>
+            </div>
+        </div>
+    </header>
+
+    <section id="why" class="section-light">
+        <div class="container">
+            <h2>Why a panel?</h2>
+            <p class="lead">Copy and paste work normally <em>inside</em> the desktop. To move text between the
+                desktop and your computer, it goes through the panel.</p>
+            <div class="split wide-figure">
+                <div class="prose">
+                    <p>The desktop runs inside the container. Your browser only receives a picture of it over
+                        VNC. When you press <kbd>Ctrl</kbd>+<kbd>C</kbd> in a booth app, the text goes to the
+                        <strong>booth's</strong> clipboard. When you copy on your computer, it goes to
+                        <strong>your</strong> clipboard. The two do not sync on their own.</p>
+                    <p>noVNC, the web viewer that shows the desktop, has a Clipboard panel with a text box.
+                        Text you put in the box goes to the booth's clipboard. Text you copy inside the booth
+                        shows up in the box.</p>
+                    <p>The same explanation is in the booth's <strong>CodingBooth Help</strong> dialog, under
+                        the <strong>Clipboard</strong> tab.</p>
+                </div>
+                <figure>
+                    <img src="../images/guides/clipboard-help-dialog.png" width="1300" height="785"
+                        alt="The CodingBooth Help dialog, open on its Clipboard tab, over an XFCE desktop. On the left edge, a hint reads 'Clipboard & extra keys are behind this tab'."
+                        loading="lazy">
+                    <figcaption>The booth's own Help dialog, with the hint that points at noVNC's tab.</figcaption>
+                </figure>
+            </div>
+        </div>
+    </section>
+
+    <section id="open">
+        <div class="container">
+            <h2>Open the Clipboard panel</h2>
+            <p class="lead">Two clicks on the left edge of the desktop.</p>
+            <div class="split">
+                <ol class="steps">
+                    <li><strong>Click the small tab on the left edge.</strong>
+                        It is a thin gray handle with an arrow, halfway down the desktop. The noVNC control bar
+                        slides out.</li>
+                    <li><strong>Click the clipboard icon.</strong>
+                        It is the second button (hover over it to see the <em>Clipboard</em> tooltip). A panel
+                        titled <em>Clipboard</em> opens with a text box.</li>
+                    <li><strong>Leave it open while you copy and paste.</strong>
+                        You can still use the desktop. Click the icon again to close the panel.</li>
+                </ol>
+                <figure>
+                    <img src="../images/guides/clipboard-novnc-bar.png" width="176" height="333"
+                        alt="noVNC's control bar slid out from the left edge, with the mouse over the second button and a 'Clipboard' tooltip showing.">
+                    <figcaption>The control bar, with the Clipboard button.</figcaption>
+                </figure>
+            </div>
+        </div>
+    </section>
+
+    <section id="into" class="section-light">
+        <div class="container demo">
+            <h2>Into the booth: computer → desktop</h2>
+            <p class="lead">Copy on your computer, paste into the panel's text box, then paste in the booth app.
+                In the video, the booth is on the left and an editor on the host computer is on the
+                right.</p>
+            <div class="demo-player">
+                <video src="../media/guides/clipboard-into-booth.mp4" autoplay loop muted playsinline
+                    preload="auto" width="1914" height="958"
+                    poster="../images/guides/clipboard-into-booth-poster.jpg"
+                    aria-label="Video: copying text from a host editor into VS Code inside a desktop booth through the noVNC Clipboard panel.">
+                    <track kind="subtitles" src="../media/guides/clipboard-into-booth.vtt" srclang="en" label="English"
+                        default>
+                </video>
+            </div>
+            <div class="demo-bar-row">
+                <button class="demo-ctrl demo-pause" type="button" aria-label="Pause video" title="Pause">
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <rect x="6" y="5" width="4" height="14" rx="1" />
+                        <rect x="14" y="5" width="4" height="14" rx="1" />
+                    </svg>
+                </button>
+                <button class="demo-ctrl demo-restart" type="button" aria-label="Restart from beginning"
+                    title="Restart">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
+                        stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 12a9 9 0 1 0 3-6.7" />
+                        <polyline points="3 4 3 9 8 9" />
+                    </svg>
+                </button>
+                <button class="demo-ctrl demo-cc is-on" type="button" aria-label="Hide subtitles"
+                    aria-pressed="true" title="Subtitles">CC</button>
+                <div class="demo-progress" aria-hidden="true">
+                    <div class="demo-progress-bar"></div>
+                </div>
+                <span class="demo-time" aria-hidden="true">0:00 / 0:00</span>
+            </div>
+            <ul class="demo-points">
+                <li><button type="button" class="ts" data-seek="0" title="Jump to 0:00">0:00</button><span
+                        class="tag">BOOTH</span>An empty VS Code inside the booth (left).</li>
+                <li><button type="button" class="ts" data-seek="6" title="Jump to 0:06">0:06</button><span
+                        class="tag panel">PANEL</span>Open the left-edge tab, then the Clipboard panel.</li>
+                <li><button type="button" class="ts" data-seek="13" title="Jump to 0:13">0:13</button><span
+                        class="tag host">HOST</span>Select text in the host editor and <strong>Copy</strong>.</li>
+                <li><button type="button" class="ts" data-seek="16" title="Jump to 0:16">0:16</button><span
+                        class="tag panel">PANEL</span><strong>Paste</strong> into the panel's text box. The
+                    booth now has the text.</li>
+                <li><button type="button" class="ts" data-seek="20" title="Jump to 0:20">0:20</button><span
+                        class="tag">BOOTH</span>In VS Code, <strong>Paste</strong> (or <kbd>Ctrl</kbd>+<kbd>V</kbd>).
+                </li>
+                <li><button type="button" class="ts" data-seek="22" title="Jump to 0:22">0:22</button><span
+                        class="tag">BOOTH</span>The text is in the booth app.</li>
+            </ul>
+        </div>
+    </section>
+
+    <section id="out">
+        <div class="container demo">
+            <h2>Out of the booth: desktop → computer</h2>
+            <p class="lead">Copy in the booth app. The text shows up in the panel's text box. Copy it from there,
+                then paste on your computer.</p>
+            <div class="demo-player">
+                <video src="../media/guides/clipboard-out-of-booth.mp4" autoplay loop muted playsinline
+                    preload="metadata" width="1914" height="958"
+                    poster="../images/guides/clipboard-out-of-booth-poster.jpg"
+                    aria-label="Video: copying text from a README inside a desktop booth out to a host editor through the noVNC Clipboard panel.">
+                    <track kind="subtitles" src="../media/guides/clipboard-out-of-booth.vtt" srclang="en" label="English"
+                        default>
+                </video>
+            </div>
+            <div class="demo-bar-row">
+                <button class="demo-ctrl demo-pause" type="button" aria-label="Pause video" title="Pause">
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <rect x="6" y="5" width="4" height="14" rx="1" />
+                        <rect x="14" y="5" width="4" height="14" rx="1" />
+                    </svg>
+                </button>
+                <button class="demo-ctrl demo-restart" type="button" aria-label="Restart from beginning"
+                    title="Restart">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
+                        stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 12a9 9 0 1 0 3-6.7" />
+                        <polyline points="3 4 3 9 8 9" />
+                    </svg>
+                </button>
+                <button class="demo-ctrl demo-cc is-on" type="button" aria-label="Hide subtitles"
+                    aria-pressed="true" title="Subtitles">CC</button>
+                <div class="demo-progress" aria-hidden="true">
+                    <div class="demo-progress-bar"></div>
+                </div>
+                <span class="demo-time" aria-hidden="true">0:00 / 0:00</span>
+            </div>
+            <ul class="demo-points">
+                <li><button type="button" class="ts" data-seek="1" title="Jump to 0:01">0:01</button><span
+                        class="tag">BOOTH</span>A README open in an app inside the booth.</li>
+                <li><button type="button" class="ts" data-seek="3" title="Jump to 0:03">0:03</button><span
+                        class="tag">BOOTH</span>Select a paragraph and <strong>Copy</strong>.</li>
+                <li><button type="button" class="ts" data-seek="10" title="Jump to 0:10">0:10</button><span
+                        class="tag panel">PANEL</span>Open the Clipboard panel. The copied text is already in
+                    the box.</li>
+                <li><button type="button" class="ts" data-seek="16" title="Jump to 0:16">0:16</button><span
+                        class="tag panel">PANEL</span>Select all in the box and <strong>Copy</strong>. Your
+                    computer now has the text.</li>
+                <li><button type="button" class="ts" data-seek="19" title="Jump to 0:19">0:19</button><span
+                        class="tag host">HOST</span>In the host editor, <strong>Paste</strong>.</li>
+                <li><button type="button" class="ts" data-seek="23" title="Jump to 0:23">0:23</button><span
+                        class="tag host">HOST</span>The booth's text is on your computer.</li>
+            </ul>
+        </div>
+    </section>
+
+    <section id="tips" class="section-light">
+        <div class="container">
+            <h2>Tips</h2>
+            <ul class="tips">
+                <li><strong>Plain text only.</strong> The panel carries text. Images, files and rich formatting
+                    do not go through it.</li>
+                <li><strong>Inside the desktop, nothing changes.</strong> <kbd>Ctrl</kbd>+<kbd>C</kbd> and
+                    <kbd>Ctrl</kbd>+<kbd>V</kbd> between booth apps work like on any desktop. Use the panel only
+                    to cross between the booth and your computer.</li>
+                <li><strong>If copied booth text does not show up in the box,</strong> copy it again in the booth
+                    app, using the app's own Copy (menu or <kbd>Ctrl</kbd>+<kbd>C</kbd>).</li>
+                <li><strong>In a booth terminal,</strong> copy is usually <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd>
+                    and paste is <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>V</kbd>, because plain
+                    <kbd>Ctrl</kbd>+<kbd>C</kbd> stops the running program.</li>
+                <li><strong>The panel keeps only the last text.</strong> A new copy on either side replaces
+                    it.</li>
+            </ul>
+            <p class="note">Why the panel is a manual step: browsers only let a web page read your clipboard
+                with your permission, and noVNC's automatic clipboard sync is not in a released version yet.
+                When it is, booths will pick it up and this page will be updated.</p>
+            <p style="text-align:center"><a href="../index.html" class="back-link">← Back to codingbooth.io</a></p>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-links">
+                <a href="../index.html">Home</a>
+                <a href="https://github.com/NawaMan/CodingBooth">GitHub</a>
+                <a href="https://github.com/NawaMan/CodingBooth/issues">Issues</a>
+                <a href="https://github.com/NawaMan/CodingBooth/releases">Releases</a>
+                <a href="https://github.com/NawaMan/CodingBooth/blob/main/CODINGBOOTH.md">User Manual</a>
+                <a href="https://github.com/sponsors/NawaMan">Sponsor</a>
+            </div>
+            <div>
+                © 2026 <a href="https://nawaman.net">NawaMan</a>
+                — <a href="https://github.com/NawaMan/CodingBooth/blob/main/LICENSE">Apache 2.0</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // The home page's video player: pause/restart, a subtitles toggle, a clickable progress bar, and a list of
+        // bookmarks that jump the video and highlight the current step. Each <section> holds one
+        // player and its bookmarks.
+        (function () {
+            const PLAY_ICON =
+                '<polygon points="7,5 19,12 7,19" fill="currentColor"/>';
+            const PAUSE_ICON =
+                '<rect x="6" y="5" width="4" height="14" rx="1"/>' +
+                '<rect x="14" y="5" width="4" height="14" rx="1"/>';
+
+            function formatTime(sec) {
+                if (!isFinite(sec) || sec < 0) return '0:00';
+                const m = Math.floor(sec / 60);
+                const s = Math.floor(sec % 60);
+                return m + ':' + String(s).padStart(2, '0');
+            }
+
+            document.querySelectorAll('.demo-player').forEach(player => {
+                const video = player.querySelector('video');
+                const row = player.nextElementSibling;
+                if (!video || !row || !row.classList.contains('demo-bar-row')) return;
+
+                const pauseBtn = row.querySelector('.demo-pause');
+                const pauseIcon = pauseBtn && pauseBtn.querySelector('svg');
+                const restartBtn = row.querySelector('.demo-restart');
+                const bar = row.querySelector('.demo-progress-bar');
+                const timeEl = row.querySelector('.demo-time');
+                if (!pauseBtn || !pauseIcon || !restartBtn || !bar) return;
+
+                function updateTime() {
+                    if (!timeEl) return;
+                    timeEl.textContent = formatTime(video.currentTime) + ' / ' + formatTime(video.duration);
+                }
+                updateTime();
+                video.addEventListener('loadedmetadata', updateTime);
+                video.addEventListener('durationchange', updateTime);
+
+                function setPaused(isPaused) {
+                    player.classList.toggle('is-paused', isPaused);
+                    pauseIcon.innerHTML = isPaused ? PLAY_ICON : PAUSE_ICON;
+                    pauseBtn.setAttribute('aria-label', isPaused ? 'Play' : 'Pause');
+                    pauseBtn.title = isPaused ? 'Play' : 'Pause';
+                }
+
+                pauseBtn.addEventListener('click', () => {
+                    if (video.paused) video.play(); else video.pause();
+                });
+
+                restartBtn.addEventListener('click', () => {
+                    video.currentTime = 0;
+                    video.play();
+                });
+
+                video.addEventListener('play', () => setPaused(false));
+                video.addEventListener('pause', () => setPaused(true));
+
+                video.addEventListener('timeupdate', () => {
+                    updateTime();
+                    if (!video.duration) return;
+                    bar.style.width = (video.currentTime / video.duration * 100) + '%';
+                });
+
+                const ccBtn = row.querySelector('.demo-cc');
+                const subs = video.textTracks && video.textTracks[0];
+                if (ccBtn && subs) {
+                    subs.mode = 'showing';
+                    ccBtn.addEventListener('click', () => {
+                        const on = subs.mode !== 'showing';
+                        subs.mode = on ? 'showing' : 'hidden';
+                        ccBtn.classList.toggle('is-on', on);
+                        ccBtn.setAttribute('aria-pressed', String(on));
+                        ccBtn.setAttribute('aria-label', on ? 'Hide subtitles' : 'Show subtitles');
+                    });
+                } else if (ccBtn) {
+                    ccBtn.hidden = true;
+                }
+
+                const track = bar.parentElement;
+                track.addEventListener('click', (e) => {
+                    if (!video.duration) return;
+                    const rect = track.getBoundingClientRect();
+                    const fraction = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+                    video.currentTime = fraction * video.duration;
+                });
+            });
+
+            document.querySelectorAll('.demo-points .ts[data-seek]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const scope = btn.closest('section') || document;
+                    const video = scope.querySelector('.demo-player video');
+                    if (!video) return;
+                    const seek = parseFloat(btn.dataset.seek);
+                    if (!isFinite(seek)) return;
+                    video.currentTime = seek;
+                    video.play();
+                    video.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                });
+            });
+
+            document.querySelectorAll('.demo-points').forEach(list => {
+                const points = Array.from(list.querySelectorAll('li'))
+                    .map(li => {
+                        const btn = li.querySelector('.ts[data-seek]');
+                        return btn ? { seek: parseFloat(btn.dataset.seek), li } : null;
+                    })
+                    .filter(p => p && isFinite(p.seek))
+                    .sort((a, b) => a.seek - b.seek);
+                if (!points.length) return;
+                const scope = list.closest('section') || document;
+                const video = scope.querySelector('.demo-player video');
+                if (!video) return;
+
+                function refresh() {
+                    const t = video.currentTime;
+                    let activeIdx = -1;
+                    for (let i = 0; i < points.length; i++) {
+                        if (points[i].seek <= t) activeIdx = i;
+                        else break;
+                    }
+                    points.forEach((p, i) => p.li.classList.toggle('active', i === activeIdx));
+                }
+                refresh();
+                video.addEventListener('timeupdate', refresh);
+                video.addEventListener('seeked', refresh);
+            });
+        })();
+    </script>
+</body>
+
+</html>

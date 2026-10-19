@@ -24,8 +24,20 @@ fail() { echo -e "${RED}✗${NC} $1"; exit 1; }
 CONTAINER_NAME="gleam-example"
 BOOTH_PORT="${CB_PORT:-50391}"
 # config.toml publishes +8000:8000 — relative to the booth port. Use that mapping as
-# shipped (no -p here), so the test proves what a user gets.
-SERVER_HOST_PORT=$((BOOTH_PORT + 8000))
+# shipped (no -p here), so the test proves what a user gets. The resolved host port
+# is read off the running container once it is up (see server_host_port), never
+# recomputed here: CB_PORT can be the keyword RANDOM, and $((RANDOM + 8000)) is
+# bash's own $RANDOM, which silently hands back a different unrelated port on every
+# evaluation. That is what made this test probe a port nothing was published on
+# while the booth was serving correctly one slot over.
+SERVER_HOST_PORT=""
+
+# server_host_port reports the host port the booth published the Wisp server's 8000
+# on. 'docker port' prints one line per address family (0.0.0.0 and [::]), so take
+# the first and keep what follows the last colon.
+server_host_port() {
+    docker port "$CONTAINER_NAME" 8000/tcp 2>/dev/null | head -1 | sed 's/.*://'
+}
 
 cleanup() {
     echo
@@ -53,6 +65,9 @@ pass "In-booth tests passed"
 
 echo
 echo "=== Testing host accessibility ==="
+SERVER_HOST_PORT="$(server_host_port)"
+[ -n "$SERVER_HOST_PORT" ] || fail "booth published no host port for 8000/tcp"
+echo "  Server published on host port ${SERVER_HOST_PORT}"
 docker exec -u coder "$CONTAINER_NAME" bash -lc "cd /home/coder/code && just start" || fail "just start failed"
 
 RESPONSE="$(curl -s --max-time 5 "http://localhost:${SERVER_HOST_PORT}/greet/host" || true)"

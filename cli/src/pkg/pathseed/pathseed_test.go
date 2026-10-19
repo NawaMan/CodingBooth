@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/nawaman/codingbooth/src/internal/hostskip"
 )
 
 func write(t *testing.T, path, content string) {
@@ -43,7 +45,9 @@ func TestApply_SeedsAMissingFile(t *testing.T) {
 	if got := read(t, filepath.Join(target, settings)); got != `{"a": 1}` {
 		t.Errorf("target = %q, want the seed", got)
 	}
-	if want := []string{settings}; !reflect.DeepEqual(seeded, want) {
+	// Apply reports host-native paths — the caller turns them into "/" for the
+	// message it prints (see seedFrom in booth.go).
+	if want := []string{filepath.FromSlash(settings)}; !reflect.DeepEqual(seeded, want) {
 		t.Errorf("seeded = %v, want %v", seeded, want)
 	}
 }
@@ -96,7 +100,7 @@ func TestApply_CopiesAMarkedFolderWhole(t *testing.T) {
 			t.Errorf("%s not copied: %v", f, err)
 		}
 	}
-	if want := []string{dir}; !reflect.DeepEqual(seeded, want) {
+	if want := []string{filepath.FromSlash(dir)}; !reflect.DeepEqual(seeded, want) {
 		t.Errorf("seeded = %v, want %v", seeded, want)
 	}
 }
@@ -134,6 +138,8 @@ func TestApply_SkipsFilesAtTheRoot(t *testing.T) {
 }
 
 func TestApply_KeepsTheSeedsPermissions(t *testing.T) {
+	hostskip.NoUnixModes(t)
+
 	seed, target := t.TempDir(), t.TempDir()
 	script := "home/coder/bin/hello"
 	write(t, filepath.Join(seed, script), "#!/bin/sh\n")

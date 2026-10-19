@@ -33,10 +33,13 @@ fi
 # the project, which CODE_NAME can move.
 claude_json="$HOME/.claude.json"
 if command -v jq &>/dev/null; then
-    # Step aside when the file is a bind mount: cache/ or shared/ owns it, and
-    # a persisted copy already carries the answer across restarts. Stamping it
-    # would write a booth-local path back into state the host may also read.
-    if awk -v p="$claude_json" '$5 == p { found = 1 } END { exit !found }' \
+    # Step aside when cache/ or shared/ owns the file: a persisted copy already
+    # carries the answer across restarts, and stamping it would write a
+    # booth-local path back into state the host may also read. Owned means
+    # bind-mounted at its path, or -- on an image with booth--file-sync -- staged
+    # under the file-sync root, whose plain-file copy is synced back out.
+    staged="/var/lib/codingbooth/file-sync$claude_json"
+    if awk -v p="$claude_json" -v s="$staged" '$5 == p || $5 == s { found = 1 } END { exit !found }' \
         /proc/self/mountinfo 2>/dev/null; then
         :
     else

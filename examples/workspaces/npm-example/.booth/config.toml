@@ -1,4 +1,4 @@
-# Configured by: booth config --no-tui --overwrite --select nodejs:22+npm-pkg:typescript,ts-node,prettier,eslint,cowsay,figlet-cli+npm-cache+pnpm-cache
+# Configured by: booth config --no-tui --overwrite --select nodejs:22+npm-pkg:typescript@^5,ts-node,prettier,eslint,cowsay,figlet-cli+npm-cache+pnpm-cache
 
 
 run-args = [

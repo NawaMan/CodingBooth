@@ -26,6 +26,48 @@ report with `print_test_result`; `config/` and `config-tui/` open with `begin` a
 `assert-file-contains` / `skip`; `wrapper/` uses `run_in_container` with `assert_not_contains`.
 Match the suite you are in rather than importing a habit from another one.
 
+## The Go suite runs on every host booth runs on
+
+`unit/` is the one suite that runs on Linux, macOS **and** Windows, because the CLI it tests is
+installed on all three. Two helpers in `cli/src/internal/` are what keep it that way; read their
+package comments before writing a test that reaches outside its own process.
+
+**A fake engine is a copy of the test binary, not a shell script** —
+`cli/src/internal/fakebin`. `exec.LookPath("docker")` on Windows only considers the extensions in
+`PATHEXT`, so an extensionless file with `#!/bin/sh` on the first line is not an executable there
+and the engine is simply never found: a test that installed one exercised the "no engine installed"
+path instead of the one it named, and the cases whose expectation happened to be the fallback
+passed while proving nothing. A stub installed by `fakebin` is a hard link to the running test
+binary, which re-enters its own `TestMain`, where `fakebin.Serve` hands it to the package's handler:
+
+```go
+func TestMain(m *testing.M) {
+    fakebin.Serve(fakeEngineMain)   // returns at once in the test process
+    os.Exit(m.Run())
+}
+```
+
+What the stub answers belongs to the package that installs it, driven by whatever the test put in
+the environment. Nothing is interpreted by a shell on the way, so the handler sees exactly the
+arguments the CLI passed — which a `cmd.exe` shim forwarding to `sh` cannot promise: it eats the
+braces in `--format {{.Names}}`.
+
+**Skip what a host does not have, by name** — `cli/src/internal/hostskip`. `hostskip.NoUnixModes`,
+`NoUnixPaths` and `NoSymlinks` skip a test whose *subject* only exists on a Unix host: a permission
+bit (Windows has none — `os.Chmod` toggles one read-only flag and `Stat` reports 0666 or 0777
+whatever was asked), `/etc` and `/dev`, a symlink this host will not create. Where only one
+assertion needs it, keep the rest of the test running:
+
+```go
+if hostskip.UnixModes() {
+    // the mode assertion only
+}
+```
+
+Reach for one only when the behaviour cannot exist there. A test that merely *expects* a Unix
+answer — a `/`-joined path, a host-native separator — belongs on every platform, with the
+expectation written so it holds on each (`filepath.Join`, `filepath.FromSlash`).
+
 ## Picking the booth to run
 
 Never resolve the binary inline. `booth-bin--source.sh` does it, `common--source.sh` already sources
@@ -82,6 +124,74 @@ calls to `pick_free_port` can return the same number. Say what you mean with
 port, one container asked to publish the same host port twice, or a case that passes while proving
 nothing because the "other" port was the same one.
 
+## `command -v python3` is not "python3 works"
+
+Ask `have_python3` from `common--source.sh`, never `command -v python3`:
+
+```bash
+have_python3 || { echo "SKIP: needs python3"; exit 0; }
+```
+
+A stock Windows PATH carries the App Execution Aliases in
+`%LOCALAPPDATA%\Microsoft\WindowsApps` — stubs named `python3` and `python` whose only job is to
+send whoever runs them to the Microsoft Store:
+
+```
+$ python3 -c 'print(1)'
+Python was not found; run without arguments to install from the Microsoft Store, ...
+$ echo $?
+49
+```
+
+`command -v` finds that. Every caller that only asked whether python3 *exists* took the python3
+branch and watched it fail: `port_is_bindable` read exit 49 as "that port is taken" — for all 100
+candidates — so `pick_free_port` gave up on a host with twelve thousand free ports, and every
+port-publishing test in `basic/` went down with it. `have_python3` runs `python3 -c ''` once and
+caches the answer.
+
+## What the host can and cannot do
+
+The rest of `common--source.sh`'s host helpers, for the same reason: a test that assumes the host
+is the one it was written on fails there for a reason that has nothing to do with booth. Each has
+the full story in its own comment.
+
+| Helper | Use it for | What it saves you from |
+|--------|-----------|------------------------|
+| `booth_script_name` | the name booth calls itself by in its output (`BOOTH_SCRIPT_NAME`, the "open a shell instead" hint) | the literal `codingbooth`, which is `codingbooth.exe` on Windows |
+| `host_path <dir>` | a `-v` source a test writes into a config | `/tmp/x` and `/c/Users/x`, which Windows cannot resolve, so booth drops the mount |
+| `stub_path <dir>…` | the PATH for a setup script run against stubbed tools | an MSYS tool that cannot load `msys-2.0.dll` because PATH no longer holds `/usr/bin` |
+| `occupy_port <port> [s]` | holding a port open for an "already in use" case | an inline `python3` listener that never started; it returns at once, so poll until the port answers |
+| `unix_modes` | a case about `0600` or the exec bit | a mode read back as `0644` on a host that has no modes |
+| `have_symlinks` | a case about what a script does *at* a symlink | `ln -s` copying the file instead, which proves the opposite |
+| `is_link_or_copy <path>` | asserting a script put its link there | `-L` being false for the copy `ln -s` left |
+| `utf8_locale` | the one command that needs a UTF-8 locale (`grep -oP` in a product script) | a script dying on its version probe where the shell has no locale |
+| `require_host_tools <subject> <feature>…` | a setups case whose *subject* needs bash 4 or GNU userland (`${x,,}`, `mapfile`, `sed -i`, `find -printf`, `stat -c`, `grep -P`) | eight red tests on macOS for scripts that are right about the image they run in; it prints the SKIP and exits |
+
+**Do not set a UTF-8 `LANG` for a whole run on Windows.** It looks like a fix — GNU grep refuses
+`-P` without a unibyte or UTF-8 locale, so `tests/setups/test--pg-ext-install` needs one for the
+script it runs — but MSYS grep *in* a UTF-8 locale cannot match a character outside the BMP. Set
+one, and `dryrun/test031`'s `grep '📦 Running booth in daemon mode'` stops matching a line that is
+right there in the output, while every ASCII pattern keeps working. `utf8_locale` exists so the one
+command that needs it gets it, and nothing else does.
+
+Two more things the shell does to a *container* path on Windows, both handled in
+`common--source.sh` so no test has to think about them: `docker exec` and `docker run` go through a
+wrapper that sets `MSYS_NO_PATHCONV=1` (without it, `docker exec … cat /home/coder/code/f` asks for
+`C:/Program Files/Git/home/coder/code/f`), and `run_coding_booth` excludes the booth's own roots
+from argument rewriting (`-- ls /usr/local/bin/x` reached the container as a Windows path). `/tmp`
+is excluded from that list on purpose — it is a host path *and* a booth path — so a test that means
+the booth's `/tmp` says so itself, per command: `MSYS2_ARG_CONV_EXCL='/tmp' run_booth exec … --dir /tmp`.
+
+A missing host *tool* is different: say so and skip the case, as `tests/setups` does for `jq`,
+`node` and `zip`. A skip names what is missing; a silent pass does not.
+
+```bash
+if ! command -v jq >/dev/null 2>&1; then
+  echo "SKIP: jq not installed on this host, and <script> parses its body with it"
+  exit 0
+fi
+```
+
 ## Running a booth with no controlling terminal
 
 A test that needs booth to find no terminal must take the runner from `common--source.sh`. Never
@@ -106,6 +216,26 @@ be gone, which means a new session.
 with `setsid: command not found` — and the weakest of them *passed* on it, because "non-zero exit
 and no container" is satisfied just as well by a missing binary as by booth refusing. A test that
 asserts a refusal must assert on the refusal's own text, or a broken harness reads as green.
+
+## A deadline never lets the terminal stop its command
+
+`timeout_run` runs its command in a process group of its own — that is what lets it signal the
+whole tree. That group is never the terminal's foreground group, so terminal access from it stops
+the group: SIGTTIN on a read, SIGTTOU on a `tcsetattr`. The watchdog stops with it, the deadline
+never fires, and the call waits forever rather than failing. Run from a shell, booth saw a terminal
+on stdin, started `docker run -i`, docker read the terminal, and `complex/test-boothfile-bash` sat
+for 2.5h on one `bash-3.2 --version`. CI has no terminal, so only a run from a shell ever saw it.
+
+Two things keep that from happening. `timeout_run` ignores SIGTTIN and SIGTTOU in its command, so
+the kernel skips the stop and the read fails with `EIO` instead — the test fails in a second and
+the suite moves on. `SIG_IGN` survives `exec`, so it reaches the command's children, the docker CLI
+included. And the watchdog sends CONT behind its signal, so a command stopped some other way still
+takes the deadline instead of outliving it.
+
+Stdin itself is left alone: a stdin you pipe in still reaches the command, and a test that needs a
+terminal of its own makes one with `pty_run`. What `capture_codingbooth` does is narrower — it
+hands booth `/dev/null`, because booth passes `-i` to `docker run` whenever stdin is open, and a
+container on the suite's own terminal swallows whatever the operator types at the running suite.
 
 ## `set -euo pipefail` will eat your test
 
@@ -218,6 +348,12 @@ a failed suite one more attempt — for `complex/`, only the tests that failed r
 The first attempt is kept, not overwritten: `tests/logs/<suite>.attempt1.log`, plus
 `complex-booth-calls.attempt1.log` for its trace. The final summary lists every test that passed
 only after a retry and names the log holding its failure. Read that log before calling it a flake.
+
+`config-tui/` keeps the same thing one level down, because a retry there re-runs the test script,
+whose `begin` truncates its log and wipes its prj directory: the first attempt's detailed log and
+captured frames are set aside as `log--<test>.attempt1.log` and `prj--<test>--attempt1/` under
+`$TMPDIR/codingbooth-config-tui-tests/`. Without them a VHS flake erases its own evidence, and
+"the frame came out wrong" is indistinguishable from "vhs never recorded".
 
 At the end of a run on Docker, `run-automate-tests.sh` prunes dangling images labelled
 `cb.managed=true`. These are copies that a test rebuild or variant refresh replaced. Left alone

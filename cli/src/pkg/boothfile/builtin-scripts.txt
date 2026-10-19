@@ -3,8 +3,6 @@
 # compiler to validate `setup <tool>` and `install <manager>` names.
 # Format: "setup <name>" or "install <name>", one per line.
 setup act
-setup affine-desktop
-setup affine-server
 setup aider
 setup alacritty
 setup alacritty-fancy
@@ -15,7 +13,6 @@ setup ansible
 setup ansible-code-extension
 setup ant
 setup antigravity
-setup anythingllm
 setup apache
 setup appwrite-cli
 setup appwrite-server
@@ -58,7 +55,9 @@ setup codex
 setup codex-code-extension
 setup conan
 setup conda
+setup conda-nb-kernel
 setup cpp-nb-kernel
+setup croft
 setup crystal
 setup crystal-code-extension
 setup cuda
@@ -70,6 +69,7 @@ setup default-terminal
 setup deno
 setup deno-code-extension
 setup deno-nb-kernel
+setup differ
 setup dind
 setup direnv
 setup dive
@@ -133,6 +133,7 @@ setup harlequin
 setup haskell
 setup haskell-code-extension
 setup haskell-nb-kernel
+setup haskell-tools
 setup heidisql
 setup helix
 setup helm
@@ -182,6 +183,7 @@ setup kubernetes-code-extension
 setup kustomize
 setup latex
 setup latex-code-extension
+setup lazarus
 setup lazydocker
 setup lazygit
 setup lazysql
@@ -189,12 +191,28 @@ setup libreoffice
 setup logo
 setup lombok-eclipse
 setup lombok-idea
+setup lsp--bash
+setup lsp--clangd
+setup lsp--docker-compose
+setup lsp--dockerfile
+setup lsp--jdtls
+setup lsp--marksman
+setup lsp--pylsp
+setup lsp--sqls
+setup lsp--svelte
+setup lsp--tailwindcss
+setup lsp--taplo
+setup lsp--terraform-ls
+setup lsp--typescript
+setup lsp--vscode-langservers
+setup lsp--yaml
 setup lua
 setup lua-code-extension
 setup lua-nb-kernel
 setup lxqt
 setup lxqt-wallpaper
 setup make
+setup markdown-code-extension
 setup material-cursors
 setup mermaid
 setup mermaid-code-extension
@@ -210,6 +228,7 @@ setup mysql
 setup n8n
 setup nbgrader
 setup neovim
+setup neovim-lsp
 setup network-whitelist
 setup nginx
 setup nim
@@ -228,8 +247,6 @@ setup opencode
 setup openssh
 setup opensshd
 setup orchis-gtk
-setup penpot
-setup penpot-exporter
 setup php
 setup php-code-extension
 setup plank
@@ -277,10 +294,12 @@ setup sccache
 setup scratch
 setup selenium
 setup spring-boot-code-extension
+setup sql-code-extension
 setup sql-studio
 setup sqlite
 setup sqluv
 setup stern
+setup superfile
 setup svelte-code-extension
 setup sway
 setup sway-ctrl-alt
@@ -294,6 +313,8 @@ setup terraform-code-extension
 setup texstudio
 setup thonny
 setup tls
+setup toml-code-extension
+setup ttt
 setup ttyd-nerd-font-index
 setup vhs
 setup viewmd
@@ -309,6 +330,7 @@ setup xfce
 setup xfce-theme
 setup xfce-wallpaper
 setup xonsh
+setup yaml-code-extension
 setup zig
 setup zig-code-extension
 install apt
@@ -326,6 +348,7 @@ install gem
 install go
 install hex
 install jetbrains-plugin
+install lsp
 install luarocks
 install npm
 install pecl

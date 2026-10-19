@@ -1,0 +1,11 @@
+# Configured by: booth config --no-tui --overwrite --cmd bash --select codex+settings-cache~vscode-ext/nodejs~npmrc~vscode-ext
+
+
+cmds = ["bash"]
+
+run-args = [
+    "-v", "~/.codex/auth.json:/etc/cb-home-seed/.codex/auth.json:ro",
+    "-v", "~/.codex/config.toml:/etc/cb-home-seed/.codex/config.toml:ro"
+]
+
+cache-dirs = ["home/coder/.codex"]

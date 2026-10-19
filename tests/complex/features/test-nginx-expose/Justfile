@@ -15,10 +15,14 @@
 #
 # No `just` on the host? `./booth exec --run -- just <recipe>` does the same.
 #
+# `BOOTH=<command> just <recipe>` drives the booth with <command> instead of
+# ./booth, such as a CodingBooth checkout's own build: BOOTH=../codingbooth.
+#
 # Created by `booth just-init`, from
 # https://github.com/NawaMan/CodingBooth/blob/main/docs/just/Justfile
 
-run-in-booth := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+booth        := env("BOOTH", "./booth")
+run-in-booth := if env("BOOTH_CONTAINER_NAME", "") == "" { booth + " exec --run --" } else { "" }
 run-on-host  := if env("BOOTH_CONTAINER_NAME", "") == "" { "" } else { "echo 'just: this recipe runs on the host - exit the booth and run it there.' >&2; exit 2;" }
 
 [private]
@@ -31,4 +35,4 @@ info:
 
 # Open a shell in this project's booth, starting it if needed.
 shell:
-    {{run-on-host}} ./booth shell --run
+    {{run-on-host}} {{booth}} shell --run

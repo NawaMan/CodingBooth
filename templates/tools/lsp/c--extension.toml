@@ -1,0 +1,15 @@
+cb-version = "0.1.0"
+display-name = "C / C++ (clangd)"
+display-disc = "clangd for terminal editors and VS Code; works beside gcc or clang"
+display-order = 19
+auto-select = false
+tags = ["lsp", "language-server", "c", "vscode"]
+
+[segments]
+"Boothfile--60" = """
+setup lsp--clangd
+"""
+# The VS Code side; skips itself on a variant without VS Code or code-server.
+"Boothfile--65" = """
+setup clang-code-extension
+"""

@@ -7,7 +7,7 @@
 # booth--as-coder [--login] [--] [COMMAND...]
 #
 # Run COMMAND as the booth's `coder` user — what `runuser -u coder -- COMMAND`
-# does (or `runuser -u coder --login` with --login) — and, in a booth started
+# does (or `runuser -l coder` with --login) — and, in a booth started
 # with --apple-low-ports, also hand coder the NET_BIND_SERVICE capability:
 # permission to open ports below 1024, and nothing else.
 #
@@ -46,7 +46,9 @@ fi
 
 if [ ! -f "$LOW_PORTS_MARKER" ]; then
   if [ "$login" = "true" ]; then
-    exec runuser -u "$USER_NAME" --login
+    # -l USER, not -u USER --login: util-linux 2.41 (Ubuntu 26.04) refuses
+    # --login together with --user ("mutually exclusive") and exits.
+    exec runuser -l "$USER_NAME"
   fi
   exec runuser -u "$USER_NAME" -- "$@"
 fi
@@ -61,7 +63,7 @@ as_coder=(setpriv --reuid="$user_uid" --regid="$user_gid" --init-groups
   --inh-caps=+net_bind_service --ambient-caps=+net_bind_service)
 
 if [ "$login" = "true" ]; then
-  # What `runuser --login` gives: a clean environment with TERM kept, the
+  # What `runuser -l` gives: a clean environment with TERM kept, the
   # user's HOME/SHELL/USER/LOGNAME, PATH from /etc/environment (pam_env), and
   # the home directory as the working directory.
   login_path="$(. /etc/environment 2>/dev/null; echo "${PATH:-/usr/local/bin:/usr/bin:/bin}")"

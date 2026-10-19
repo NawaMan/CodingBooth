@@ -5,7 +5,9 @@
 
 #
 # Test for Appwrite example.
-# Verifies the CLI is installed and the self-hosted API answers /v1/health/version.
+# Verifies the CLI is installed, the self-hosted API answers /v1/health/version,
+# and `just app` prepares the starter-for-svelte project so a ping from the
+# starter's browser origin is accepted.
 #
 
 set -euo pipefail
@@ -25,7 +27,9 @@ echo ""
 # First boot pulls the Appwrite Compose stack inside DinD — several minutes.
 # --dind-allowed: this example's dind = true would otherwise stop for a [y/N]
 # consent prompt on /dev/tty (see docs/BOOTH_SECURITY.md) — silent in a script.
-output=$("$BOOTH" --dind-allowed --variant base --port "${CB_PORT:-50280}" -- 'just run' 2>&1) || true
+# NEXT, not a number: then BOOTH_PORT holds "NEXT:50280" rather than a port, and
+# just app must take its host ports from BOOTH_HOST_PORT.
+output=$("$BOOTH" --dind-allowed --variant base --port "${CB_PORT:-NEXT:50280}" -- 'just run && just app && just pings' 2>&1) || true
 
 echo "$output"
 echo ""
@@ -50,6 +54,21 @@ if grep -q 'CLI and server are both working' <<< "$output"; then
     echo -e "${GREEN}✓${NC} demo.sh completed"
 else
     echo -e "${RED}✗${NC} demo.sh did not finish"
+    failed=1
+fi
+
+if grep -q 'ping: Pong!' <<< "$output" && grep -q 'Appwrite project ready for starter-for-svelte' <<< "$output"; then
+    echo -e "${GREEN}✓${NC} just app: starter project answers a ping from the starter's origin"
+else
+    echo -e "${RED}✗${NC} just app did not prepare the starter project"
+    failed=1
+fi
+
+# Clean data: the only ping so far is the one just app sent.
+if grep -q '^pingCount: 1$' <<< "$output"; then
+    echo -e "${GREEN}✓${NC} just pings: the project counted just app's ping"
+else
+    echo -e "${RED}✗${NC} just pings did not report pingCount: 1"
     failed=1
 fi
 

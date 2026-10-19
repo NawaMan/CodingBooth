@@ -1,7 +1,7 @@
 # syntax=codingbooth/boothfile:1
 # Configured by: booth config --no-tui --overwrite --expose +-7000:3000 --select dind/kind/aws-cli/go:1.25.3+vscode-ext/bun:1.3.6/python/notebook/claude-code/antigravity/libreoffice
 
-env APT_SNAPSHOT=20260906T000000Z
+env APT_SNAPSHOT=20261004T000000Z
 
 arg AWS_CLI_VERSION=latest
 arg BUN_VERSION=1.3.6
@@ -21,7 +21,6 @@ env PATH=/home/coder/go/bin:/usr/local/go-current/bin:$PATH
 setup go ${GO_VERSION}                                # GO tool chain
 install go golang.org/x/tools/gopls@latest            # GO language server
 install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
-setup docker-code-extension
 setup kind --kind-version ${KIND_VERSION}
 env CB_PYENV_ROOT=/opt/pyenv
 env CB_PY_STABLE=/opt/python
@@ -34,7 +33,8 @@ env PATH=/usr/local/uv/bin:/usr/local/uv:/opt/pyenv/bin:/opt/python/bin:$PATH
 setup python ${PYTHON_VERSION}
 setup antigravity
 setup libreoffice
-setup python-code-extension
 setup notebook ${NOTEBOOK_PORT}
 setup bun-code-extension
+setup docker-code-extension
 setup go-code-extension
+setup python-code-extension

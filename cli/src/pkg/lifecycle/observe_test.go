@@ -93,7 +93,7 @@ func TestObserveStateAndExitCodes(t *testing.T) {
 
 func TestExplicitEngineSelectsDuplicateName(t *testing.T) {
 	log := installFakeEngines(t, map[string]fakeEngine{
-		"docker": {booths: []string{"demo"}}, "podman": {booths: []string{"demo"}},
+		"docker": {Booths: []string{"demo"}}, "podman": {Booths: []string{"demo"}},
 	})
 	var output bytes.Buffer
 	if err := Observe("diff", []string{"demo"}, &output, &output); err == nil || !strings.Contains(err.Error(), "exists on both") {

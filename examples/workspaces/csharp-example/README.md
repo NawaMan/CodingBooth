@@ -1,6 +1,6 @@
 # C# Example
 
-This example is a minimal C# console app targeting .NET 9. The bundled `Program.cs` prints a greeting and then computes and prints the sum of the numbers 1 through 10. The point of this example is reproducibility: the .NET SDK channel is pinned, so every person and every CI run builds against the exact same SDK. That kills the classic "works on my machine" gap where one teammate's newer SDK silently changes build behavior or restores different package versions. Everyone gets byte-for-byte the same toolchain — and when you do want to move, you change the `DOTNET_CHANNEL` build arg once and the whole team moves together, deliberately rather than by accident.
+This example is a minimal C# console app targeting .NET 9. The bundled `Program.cs` prints a greeting and then computes and prints the sum of the numbers 1 through N — N is the first command-line argument, or 10 when none is given. The point of this example is reproducibility: the .NET SDK channel is pinned, so every person and every CI run builds against the exact same SDK. That kills the classic "works on my machine" gap where one teammate's newer SDK silently changes build behavior or restores different package versions. Everyone gets byte-for-byte the same toolchain — and when you do want to move, you change the `DOTNET_CHANNEL` build arg once and the whole team moves together, deliberately rather than by accident.
 
 **Stack:** .NET SDK 9.0, C#
 
@@ -13,7 +13,8 @@ booth
 
 # 2. Inside the booth — build and run
 just --list
-just run                 # ./run-csharp.sh
+just run                 # ./run-csharp.sh — sums 1..10
+just run 100             # sums 1..100
 ```
 
 ## What's included

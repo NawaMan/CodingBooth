@@ -46,7 +46,16 @@ run_in_container() {
     fi
     # ${arr[@]+"${arr[@]}"} — bash 3.2 (macOS) treats "${empty[@]}" as unset
     # under `set -u`; without the guard every non-DIND test dies here.
-    docker run --rm -i ${privileged[@]+"${privileged[@]}"} \
+    # MSYS_NO_PATHCONV=1 — Git Bash rewrites arguments that look like Unix
+    # absolute paths into Windows ones before the program sees them, which is
+    # right for a Windows program and wrong for docker's container-side paths:
+    # `-w /work` arrived as `-w C:/Program Files/Git/work` ("the working
+    # directory is invalid"), and `-v <repo>:/booth:ro` was mangled into a mount
+    # that left /booth empty, so every test here failed on a missing
+    # /booth/booth. Docker Desktop takes the shell's own `/c/Users/...` form for
+    # the host side, so switching the rewriting off for this one command is all
+    # it needs. The variable means nothing on Linux or macOS.
+    MSYS_NO_PATHCONV=1 docker run --rm -i ${privileged[@]+"${privileged[@]}"} \
         ${network[@]+"${network[@]}"} \
         -e "NO_DIND=$nodind" \
         -v "$REPO_ROOT":/booth:ro \

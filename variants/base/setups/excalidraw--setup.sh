@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.1
+# cb-version: 1.1.0
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -20,7 +20,10 @@ Examples:
   $0 16000     # use port 16000
 
 Notes:
-- Installs Node.js (if not present) and builds Excalidraw from source
+- Installs Node.js (if not present) to serve Excalidraw
+- Excalidraw ${EXCALIDRAW_VERSION} comes prebuilt (sha256-checked) from
+  https://github.com/NawaMan/CodingBoothPrebuilt/releases; when that is
+  unreachable it is built from the same upstream tag instead
 - Serves the static app with 'serve' on the configured port
 - Auto-starts in background at container startup
 USAGE
@@ -34,7 +37,7 @@ HOME=/root
 
 # ---- defaults / args ----
 EXCALIDRAW_PORT="${1:-20400}"
-EXCALIDRAW_VERSION="v0.18.1"
+EXCALIDRAW_VERSION="${EXCALIDRAW_VERSION:-0.18.1}"
 EXCALIDRAW_DIR="/opt/excalidraw"
 
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
@@ -64,49 +67,64 @@ else
   fi
 fi
 
-# ---- install yarn and serve globally ----
-echo "• Installing yarn and serve ..."
-npm install -g yarn serve
+# ---- install serve globally ----
+echo "• Installing serve ..."
+npm install -g serve
 
-# ---- clone and build excalidraw ----
-BUILD_DIR="/tmp/excalidraw-build"
-rm -rf "$BUILD_DIR"
+# ---- install the built app ----
+SETUP_LIBS_DIR="${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}"
+if [ ! -r "${SETUP_LIBS_DIR}/prebuilt-source.sh" ]; then
+  SETUP_LIBS_DIR="$(dirname "$0")/libs"
+fi
+source "${SETUP_LIBS_DIR}/prebuilt-source.sh"
 
-echo "• Cloning Excalidraw ${EXCALIDRAW_VERSION} ..."
-# github.com intermittently answers 429/503 during a full build sweep and git has
-# no --retry of its own. Clear the partial clone before retrying — git refuses to
-# clone into a non-empty directory.
-for attempt in 1 2 3; do
-  if git clone --depth 1 --branch "$EXCALIDRAW_VERSION" \
-       https://github.com/excalidraw/excalidraw.git "$BUILD_DIR"; then break; fi
-  if [ "$attempt" = 3 ]; then echo "❌ Excalidraw clone failed after 3 attempts"; exit 1; fi
-  echo "  ⚠️  clone failed — retrying in $((attempt * 5))s ..."
+build_from_source() {
+  local BUILD_DIR="/tmp/excalidraw-build" attempt
   rm -rf "$BUILD_DIR"
-  sleep $((attempt * 5))
-done
 
-cd "$BUILD_DIR"
+  echo "• Installing yarn ..."
+  npm install -g yarn
 
-# The 0.18.x releases declare "node": "18.0.0 - 22.x.x" and yarn refuses any
-# other Node, but they build fine on 24 (the nodejs template's default) and
-# upstream master already says ">=18". A .yarnrc line, not --ignore-engines:
-# build:app:docker runs a nested `yarn --cwd`, which does not inherit the flag.
-echo "ignore-engines true" >> .yarnrc
+  echo "• Cloning Excalidraw v${EXCALIDRAW_VERSION} ..."
+  # github.com intermittently answers 429/503 during a full build sweep and git has
+  # no --retry of its own. Clear the partial clone before retrying — git refuses to
+  # clone into a non-empty directory.
+  for attempt in 1 2 3; do
+    if git clone --depth 1 --branch "v${EXCALIDRAW_VERSION}" \
+         https://github.com/excalidraw/excalidraw.git "$BUILD_DIR"; then break; fi
+    if [ "$attempt" = 3 ]; then echo "❌ Excalidraw clone failed after 3 attempts"; exit 1; fi
+    echo "  ⚠️  clone failed — retrying in $((attempt * 5))s ..."
+    rm -rf "$BUILD_DIR"
+    sleep $((attempt * 5))
+  done
 
-echo "• Installing dependencies ..."
-yarn --network-timeout 600000 --frozen-lockfile || yarn --network-timeout 600000
+  cd "$BUILD_DIR"
 
-echo "• Building Excalidraw ..."
-NODE_ENV=production yarn build:app:docker
+  # The 0.18.x releases declare "node": "18.0.0 - 22.x.x" and yarn refuses any
+  # other Node, but they build fine on 24 (the nodejs template's default) and
+  # upstream master already says ">=18". A .yarnrc line, not --ignore-engines:
+  # build:app:docker runs a nested `yarn --cwd`, which does not inherit the flag.
+  echo "ignore-engines true" >> .yarnrc
 
-# ---- install built files ----
-echo "• Installing to ${EXCALIDRAW_DIR} ..."
-mkdir -p "$EXCALIDRAW_DIR"
-cp -r excalidraw-app/build/* "$EXCALIDRAW_DIR"/
+  echo "• Installing dependencies ..."
+  yarn --network-timeout 600000 --frozen-lockfile || yarn --network-timeout 600000
 
-# ---- clean up build artifacts ----
-cd /
-rm -rf "$BUILD_DIR"
+  echo "• Building Excalidraw ..."
+  NODE_ENV=production yarn build:app:docker
+
+  echo "• Installing to ${EXCALIDRAW_DIR} ..."
+  mkdir -p "$EXCALIDRAW_DIR"
+  cp -r excalidraw-app/build/* "$EXCALIDRAW_DIR"/
+
+  cd /
+  rm -rf "$BUILD_DIR"
+}
+
+rm -rf "$EXCALIDRAW_DIR"
+if ! cb_prebuilt_install excalidraw "$EXCALIDRAW_VERSION" any "$EXCALIDRAW_DIR"; then
+  build_from_source
+fi
+chmod -R a+rX "$EXCALIDRAW_DIR"
 
 # ---- create starter script (manual foreground launch) ----
 cat > "${STARTER_FILE}" <<'STARTER'

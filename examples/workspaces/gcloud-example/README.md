@@ -28,11 +28,26 @@ This means:
 ## Try It
 
 ```bash
-../../codingbooth
+./booth
 # Then in the container:
 gcloud auth list
 gcloud config list
 ```
+
+### Run it
+
+```bash
+just --list
+just check               # ./check-connection.sh — OK when gcloud has an active account
+just auth                # gcloud auth list
+just config              # gcloud config list — account, project, region
+just projects            # gcloud projects list
+just version             # gcloud --version — the only recipe that needs no credentials
+```
+
+Every recipe but `version` needs your host logged in to gcloud first (see
+[Prerequisites](#prerequisites)): they run against the login seeded from your host
+`~/.config/gcloud`, and without it `just check` reports `FAILED`.
 
 ## What's Mounted
 

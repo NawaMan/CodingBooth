@@ -1,7 +1,7 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --cmd bash --select claude-code
+# Configured by: booth config --no-tui --overwrite --cmd bash --select claude-code+auto-accept+settings-cache
 
-env APT_SNAPSHOT=20260906T000000Z
+env APT_SNAPSHOT=20261004T000000Z
 
 arg CLAUDE_CODE_VERSION=latest
 

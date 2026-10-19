@@ -27,6 +27,7 @@ ACTUAL=$(printf "%s\n" "$ACTUAL")
 
 HERE="$CURRENT_PATH"
 VERSION="$(get_booth_version)"
+SCRIPT_NAME="$(booth_script_name)"
 
 # Notice that there is not `-rm`
 EXPECT="\
@@ -68,7 +69,7 @@ docker \\
     -e 'BOOTH_CODE_PORT=10000' \\
     -e 'BOOTH_VERSION=${VERSION}' \\
     -e 'BOOTH_CONFIG_FILE=' \\
-    -e 'BOOTH_SCRIPT_NAME=codingbooth' \\
+    -e 'BOOTH_SCRIPT_NAME=${SCRIPT_NAME}' \\
     -e 'BOOTH_SCRIPT_DIR=${SCRIPT_DIR}' \\
     -e 'BOOTH_LIB_DIR=${LIB_DIR}' \\
     -e 'BOOTH_KEEP_ALIVE=true' \\
@@ -86,6 +87,7 @@ docker \\
     -e 'BOOTH_ENV_FILE=' \\
     -e 'BOOTH_HOST_UID=${HOST_UID}' \\
     -e 'BOOTH_HOST_GID=${HOST_GID}' \\
+    -e 'BOOTH_HOST_OS=${HOST_OS}' \\
     -e 'BOOTH_HOST_NAME=host.docker.internal' \\
     -e 'BOOTH_HOST_IP=XXXXX' \\
     '--pull=never' \\

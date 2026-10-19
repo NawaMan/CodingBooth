@@ -604,7 +604,7 @@ Every CodingBooth image comes with a curated baseline:
 - **Shells & process management:** `bash`, `zsh`, `tini`
 - **Networking & transfers:** `curl`, `wget`, `httpie`, `socat`
 - **Source control:** `git`, `gh`, `tig`
-- **Editors & file browsers:** `nano`, `tilde`, `ranger`, `less`
+- **Editors & file browsers:** `fresh`, `nano`, `ranger`, `less`
 - **Data processing:** `jq`, `yq`, `tree`
 - **Compression:** `unzip`, `zip`, `xz-utils`
 - **System utilities:** `ca-certificates`, `locales`, `sudo`
@@ -636,7 +636,7 @@ LEVEL is runtime order only; the order setups install in is the Boothfile's.
 - **Package install layer:** pip, uv, conda, npm, yarn, bun, deno, go, cargo, gem, brew, cabal, hex, luarocks, pecl, conan, apt (Debian/Ubuntu system packages, with `APT_SNAPSHOT` freeze)
 - **Cloud CLIs:** aws-cli, aws-cdk, aws-sam-cli, azure-cli, gcloud, firebase, appwrite-cli, floci (local AWS emulator)
 - **IDE / editor:** codeserver, bluej, neovim
-- **AI tools:** claude-code, codex, aider, cursor, gh-copilot, ollama, anythingllm, antigravity, warp
+- **AI tools:** claude-code, codex, aider, cursor, gh-copilot, ollama, antigravity, warp
 - **Browsers / databases / build tools:** chromium-browser; cloudbeaver; cmake; appwrite-server
 - **Code-server extensions:** bash, bun, clojure, codex, booth-message, booth-restart, booth-shutdown, ...
 - **Notebook kernels:** bash, ...

@@ -90,15 +90,39 @@ run_launcher() {
     home=$(mktemp -d "$WORK/home-XXXX")
     mkdir -p "$home/xdg"
     : > "$WORK/stub.log"
-    RUN_OUT=$(cd "$home" && env -i PATH="$WORK/bin:/usr/bin:/bin" HOME="$home" XDG_RUNTIME_DIR="$home/xdg" \
-        BASH_ENV="$WORK/missing-is-noop.sh" STUB_LOG="$WORK/stub.log" "${envs[@]}" \
-        timeout 20 bash "$launcher" "$@" 2>&1 </dev/null) && RUN_EXIT=0 || RUN_EXIT=$?
+    # timeout_run wraps `env`, not the other way round: it is resolved out here,
+    # where there is still a PATH, and `env -i` keeps the launcher's own
+    # environment as bare as before. `${envs[@]+…}` because bash 3.2 (macOS)
+    # calls an empty array unset, and this file runs under `set -u`.
+    RUN_OUT=$(cd "$home" && timeout_run 20 \
+        env -i PATH="$WORK/bin:/usr/bin:/bin" HOME="$home" XDG_RUNTIME_DIR="$home/xdg" \
+        BASH_ENV="$WORK/missing-is-noop.sh" STUB_LOG="$WORK/stub.log" ${envs[@]+"${envs[@]}"} \
+        bash "$launcher" "$@" 2>&1 </dev/null) && RUN_EXIT=0 || RUN_EXIT=$?
     BOUND=$(awk '$1=="websockify"{for(i=2;i<=NF;i++) if($i ~ /^(0\.0\.0\.0|127\.0\.0\.1):/) print $i}' "$WORK/stub.log")
+}
+
+# start-wayland expands "${COMPOSITOR_ARGS[@]}", which is empty for labwc, and
+# bash before 4.4 — macOS ships 3.2 — calls an empty array unset under `set -u`:
+# the launcher dies on its own expansion before it starts anything. It is right
+# for the bash 5 in the image it actually runs in, so this asks the shell that
+# would run it rather than changing the launcher. Behaviour, not a version test,
+# because the shell the launcher gets is whichever one that PATH finds.
+launcher_shell_allows_empty_arrays() {
+    env -i PATH="$WORK/bin:/usr/bin:/bin" bash -uc 'a=(); printf "%s" "${a[@]}"' >/dev/null 2>&1
 }
 
 for desktop in xfce:14444 kde:15555 lxqt:16666 wayland:17777; do
     name=${desktop%%:*}
     default=${desktop##*:}
+    # tr, not ${name^^}: that expansion is bash 4, and macOS ships bash 3.2.
+    upper=$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]')
+
+    if [[ "$name" == wayland ]] && ! launcher_shell_allows_empty_arrays; then
+        echo "SKIP: start-wayland needs a shell that allows an empty \"\${arr[@]}\" under set -u" \
+             "(bash 4.4+); this host runs the launchers with bash" \
+             "$(env -i PATH="$WORK/bin:/usr/bin:/bin" bash -c 'echo "${BASH_VERSION%%(*}"')"
+        continue
+    fi
     launcher="$WORK/start-$name"
     # The starter heredoc: `cat > <starter> <<'EOF'` ... `EOF`.
     awk -v name="$name" '
@@ -143,8 +167,8 @@ $RUN_OUT"
 
     # The desktop variant's wrapper passes the same port as an argument.
     check "start-$name-wrapped runs start-$name on $default" \
-        "$(grep -qE "^${name^^}_INNER_PORT=$default$" "$SETUPS/booth-message-desktop-wrapped--setup.sh" \
-            && grep -qF "export INNER_CMD=\"start-$name \$${name^^}_INNER_PORT\"" "$SETUPS/booth-message-desktop-wrapped--setup.sh" \
+        "$(grep -qE "^${upper}_INNER_PORT=$default$" "$SETUPS/booth-message-desktop-wrapped--setup.sh" \
+            && grep -qF "export INNER_CMD=\"start-$name \$${upper}_INNER_PORT\"" "$SETUPS/booth-message-desktop-wrapped--setup.sh" \
             && echo true || echo false)"
 done
 

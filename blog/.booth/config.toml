@@ -9,3 +9,5 @@ run-args = [
     "-v", "~/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro",
     "--publish", "41173:5173"
 ]
+
+cache-dirs = ["home/coder/.claude"]

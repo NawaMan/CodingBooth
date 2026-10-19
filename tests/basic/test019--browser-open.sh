@@ -28,6 +28,12 @@
 # appearing on whoever is running the suite. DISPLAY is set for the same reason
 # in reverse — on a headless Linux runner booth would correctly refuse to open
 # anything, and the point here is the decision, not the host's session.
+#
+# Windows is the exception to $BROWSER: booth ignores it there and calls
+# `rundll32 url.dll,FileProtocolHandler <url>` (open_browser.go). So on Windows
+# the stand-in is a rundll32.cmd placed first on PATH, which booth's LookPath
+# finds before System32's. Without it every run of this test opened real tabs
+# in the browser of whoever ran the suite, and saw nothing opened.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -74,6 +80,18 @@ chmod +x "$WORK/fake-browser.sh"
 export BROWSER="$WORK/fake-browser.sh"
 export DISPLAY="${DISPLAY:-:0}"
 
+if [[ "$HOST_OS" == "WIN" ]]; then
+  # cmd splits `url.dll,FileProtocolHandler` at the comma, so record the whole
+  # line and let opened_url pick the URL out of it.
+  printf '@echo %%*>>"%s"\r\n' "$(cygpath -w "$OPENED")" > "$WORK/rundll32.cmd"
+  export PATH="$WORK:$PATH"
+fi
+
+# The URL the stand-in was handed, "" if none. Not an error when none was.
+opened_url() {
+  { grep -o 'http[^[:space:]"]*' "$OPENED" 2>/dev/null || true; } | tr -d '\r\n'
+}
+
 # Runs one booth to completion, then reports the URL it opened (empty if none).
 # Daemon mode returns once the page is open, so there is no settling to wait on;
 # the extra second covers the opener being started rather than waited on.
@@ -85,7 +103,7 @@ run_booth() {
     run_coding_booth --code "$WORK" --variant base --name "$NAME" --port "$PORT" "$@" 2>&1
   } >> "$LOG" || true
   sleep 1
-  cat "$OPENED" 2>/dev/null | tr -d '\n'
+  opened_url
 }
 
 # --- 1 & 2: a UI booth opens its own URL, and the booth answers by then -------
@@ -217,7 +235,7 @@ exec_run() {
     run_coding_booth exec --code "$WORK" --name "$NAME" --port "$PORT" --run --keep-alive "$@" -- echo exec-ran 2>&1
   } >> "$LOG" || true
   sleep 1
-  cat "$OPENED" 2>/dev/null | tr -d '\n'
+  opened_url
 }
 
 URL="$(exec_run)"

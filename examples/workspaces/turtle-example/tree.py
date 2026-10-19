@@ -43,6 +43,7 @@ def main() -> None:
         turtle.Screen().tracer(0, 0)
     draw()
     if args.output:
+        turtle.update()  # tracer(0) holds the drawing back until an update
         turtle.getcanvas().postscript(file=args.output)
         return
     turtle.done()

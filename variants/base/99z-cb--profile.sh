@@ -23,8 +23,29 @@ alias grep='grep --color=auto'
 alias tree='tree -C'
 
 # Environment Defaults
-export EDITOR=${EDITOR:-tilde}
+export EDITOR=${EDITOR:-fresh}
 export TERM=${TERM:-xterm-256color}
+
+# Fresh (the default editor) checks for upgrades and sends anonymous telemetry
+# unless told not to. Turn both off when the config does not decide; a user who
+# wants them sets "check_for_updates": true, which is left alone.
+# The theme defaults to "dark" the same way: a
+# theme already in the file, from fresh+theme or the user, is left alone.
+_cb_fresh_conf="$HOME/.config/fresh/config.json"
+if [[ ! -s "$_cb_fresh_conf" ]]; then
+  mkdir -p "${_cb_fresh_conf%/*}" 2>/dev/null \
+    && printf '{"version":1,"check_for_updates":false,"theme":"dark"}\n' > "$_cb_fresh_conf" 2>/dev/null
+elif ! jq -e 'has("check_for_updates") and has("theme")' "$_cb_fresh_conf" >/dev/null 2>&1; then
+  _cb_fresh_tmp="$(mktemp)"
+  if jq 'if has("check_for_updates") then . else .check_for_updates = false end
+         | if has("theme") then . else .theme = "dark" end' \
+        "$_cb_fresh_conf" > "$_cb_fresh_tmp" 2>/dev/null; then
+    mv "$_cb_fresh_tmp" "$_cb_fresh_conf"
+  else
+    rm -f "$_cb_fresh_tmp"
+  fi
+fi
+unset _cb_fresh_conf _cb_fresh_tmp
 
 
 # ── Timer display + pending message notification (before each prompt) ──
@@ -154,12 +175,11 @@ if [ "${BOOTH_HIDE_WELCOME:-false}" != "true" ] && [ -z "${_cb_welcome_shown:-}"
   echo "  booth--msg        View and respond to pending messages"
   echo "  booth--restart    Restart this booth (re-reads config)"
   echo "  booth--shutdown   Shut down this booth"
-  echo "  editor            Text editor (tilde)"
+  echo "  editor            Text editor (fresh)"
   echo "  explorer          File manager (mc)"
   echo "  viewmd            Markdown viewer in your browser"
-  echo "  envfolio          Texts and secrets as env vars (on pass)"
+  echo "  folio             Texts and secrets as env vars (on pass)"
   echo "  just              Run recipes from a Justfile"
-  echo "  lazygit           Terminal UI for git"
   echo ""
   echo "Want a different UI? Exit and rerun booth with --variant codeserver or --variant desktop-xfce"
   echo ""

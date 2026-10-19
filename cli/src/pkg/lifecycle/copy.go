@@ -67,7 +67,7 @@ func Copy(args []string, stdout, stderr io.Writer) error {
 	// Prefixing a relative host path also prevents an operand such as '-q' from
 	// becoming an engine flag after the user protected it with '--'.
 	localPath := local.path
-	if localPath != "-" && !filepath.IsAbs(localPath) && !strings.HasPrefix(localPath, "."+string(filepath.Separator)) {
+	if localPath != "-" && !filepath.IsAbs(localPath) && !alreadyRelative(localPath) {
 		localPath = "." + string(filepath.Separator) + localPath
 	}
 	remotePath := remote.path
@@ -83,4 +83,15 @@ func Copy(args []string, stdout, stderr io.Writer) error {
 		return forwardExitCode("copy files", target.Name, err)
 	}
 	return nil
+}
+
+// alreadyRelative reports whether a path already says "here" for itself, so
+// that prefixing it again would only add noise. Windows counts both forms: a
+// shell there hands over "./output" as readily as ".\output", and ".\./output"
+// is nobody's idea of a path.
+func alreadyRelative(path string) bool {
+	if strings.HasPrefix(path, "./") {
+		return true
+	}
+	return filepath.Separator != '/' && strings.HasPrefix(path, "."+string(filepath.Separator))
 }

@@ -626,10 +626,13 @@
       border-color: var(--accent);
     }
 
-    /* A modifier key in the hint, drawn as an inverted key cap. */
+    /* A modifier key in the hint, drawn as an inverted key cap. The Nerd Font
+       the console serves is named first here because the symbols (⌃ ⌥ ⇧ ^ ⎇)
+       come out of it; the rest of the stack is for the moment before it
+       loads. */
     .shortcut-hint kbd {
       display: inline-block;
-      font-family: inherit;
+      font-family: "FiraCode Nerd Font Mono", "JetBrains Mono", "Fira Code", monospace;
       font-size: 12.5px;
       font-weight: 700;
       line-height: 1.2;
@@ -707,26 +710,11 @@
         <button data-layout="hsplit" title="Left - Right">
           <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="8" y1="1" x2="8" y2="13" stroke="currentColor" stroke-width="1"/></svg>
         </button>
-        <button data-layout="left-main" title="Left Main">
-          <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="10" y1="1" x2="10" y2="13" stroke="currentColor" stroke-width="1"/><line x1="10" y1="7" x2="15" y2="7" stroke="currentColor" stroke-width="1"/></svg>
-        </button>
-        <button data-layout="right-main" title="Right Main">
-          <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="6" y1="1" x2="6" y2="13" stroke="currentColor" stroke-width="1"/><line x1="1" y1="7" x2="6" y2="7" stroke="currentColor" stroke-width="1"/></svg>
-        </button>
         <button data-layout="vsplit" title="Top - Bottom">
           <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" stroke-width="1"/></svg>
         </button>
-        <button data-layout="top-main" title="Top Main">
-          <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="1" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1"/><line x1="8" y1="8" x2="8" y2="13" stroke="currentColor" stroke-width="1"/></svg>
-        </button>
-        <button data-layout="bottom-main" title="Bottom Main">
-          <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="1" y1="6" x2="15" y2="6" stroke="currentColor" stroke-width="1"/><line x1="8" y1="1" x2="8" y2="6" stroke="currentColor" stroke-width="1"/></svg>
-        </button>
         <button data-layout="quad" title="Quad">
           <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="8" y1="1" x2="8" y2="13" stroke="currentColor" stroke-width="1"/><line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" stroke-width="1"/></svg>
-        </button>
-        <button data-layout="grid6" title="Six (3 columns × 2 rows)">
-          <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="5.5" y1="1" x2="5.5" y2="13" stroke="currentColor" stroke-width="1"/><line x1="10.5" y1="1" x2="10.5" y2="13" stroke="currentColor" stroke-width="1"/><line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" stroke-width="1"/></svg>
         </button>
         <button id="tree-layout" title="Other layout" style="display:none"></button>
         <span id="shortcut-hint" class="shortcut-hint" aria-live="polite"></span>
@@ -784,6 +772,36 @@
       // Every layout, preset or not, is a tree from tiling.js.
       const Tiling = window.BoothTiling;
       const grid = document.getElementById("grid");
+      // macOS spells these keys Control+Option — Option is the Alt key — so
+      // every label the console shows says that there instead. The shortcuts
+      // are the same keys either way; tilingModifiers further down is where
+      // the Mac's own way of reporting them is read.
+      const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || "");
+
+      function modKeys(text) {
+        return isMac ? text.replace(/Ctrl\+Alt/g, "Control+Option") : text;
+      }
+
+      // The toolbar hint is read at a glance and has one line, so there the
+      // modifiers are symbols: Apple's own on a Mac, and on the other
+      // platforms the caret a terminal already writes Control with (^C) plus
+      // ISO 9995-7's Alt. Every glyph is in the Nerd Font the console serves
+      // (see the @font-face above and .shortcut-hint kbd below), so none of
+      // this depends on what the viewer has installed. Words stay everywhere
+      // with room for them: the tooltips, and CodingBooth Help's table.
+      function hintKeys(html) {
+        const control = isMac ? "⌃" : "^";
+        const alt = isMac ? "⌥" : "⎇";
+        return html
+          .replace(/Ctrl\+Alt\+Shift/g, control + alt + "⇧")
+          .replace(/Ctrl\+Alt/g, control + alt);
+      }
+
+      // What those symbols mean, for the hint's tooltip and for Help.
+      const hintLegend = isMac
+        ? "⌃⌥ is Control+Option, ⌃⌥⇧ adds Shift"
+        : "^⎇ is Ctrl+Alt, ^⎇⇧ adds Shift";
+
       // One pane per session start-ttyd-split runs (/s1/ … /s6/), stamped
       // from #pane-template before anything below looks them up.
       const paneTemplate = document.getElementById("pane-template").innerHTML;
@@ -791,6 +809,11 @@
         grid.insertAdjacentHTML("beforeend", paneTemplate.replace(/__N__/g, String(n)));
       }
       const panes = Array.from(grid.querySelectorAll(".pane"));
+      if (isMac) {
+        document.querySelectorAll("[title*='Ctrl+Alt']").forEach(function(element) {
+          element.title = modKeys(element.title);
+        });
+      }
       const dragOverlay = document.getElementById("drag-overlay");
       const layoutButtons = Array.from(document.querySelectorAll("[data-layout]"));
       const reloadButton = document.getElementById("reload");
@@ -1494,13 +1517,13 @@
         }
         shortcutHint.classList.toggle("mode", !!text);
         // The text is this page's own; only the modifiers become key caps.
-        shortcutHint.innerHTML = (text ||
+        shortcutHint.innerHTML = hintKeys((text ||
           "Ctrl+Alt+ h j k l focus · Enter open · f full · = equalize | Ctrl+Alt+Shift+ h j k l move · q close · x reset")
           .replace(/(Ctrl\+Alt\+Shift|Ctrl\+Alt)\+ ?/g, '<kbd><span>$1</span></kbd> ')
-          .replace(" | ", '<span class="hint-gap"></span>');
+          .replace(" | ", '<span class="hint-gap"></span>'));
         shortcutHint.title = text
-          ? "Keyboard Shortcut Hint — click to leave"
-          : "Keyboard Shortcut Hint — click for every console shortcut";
+          ? "Keyboard Shortcut Hint — " + hintLegend + " — click to leave"
+          : "Keyboard Shortcut Hint — " + hintLegend + " — click for every console shortcut";
       }
       shortcutHint.addEventListener("click", function() {
         if (resizeMode) setResizeMode(false);
@@ -1644,6 +1667,18 @@
         k: ["v", -0.05], arrowup: ["v", -0.05], j: ["v", 0.05], arrowdown: ["v", 0.05]
       };
 
+      // Ctrl+Alt held, and not something else that merely looks like it. On a
+      // Mac the browser reports Option as AltGraph (it is that layout's AltGr)
+      // and Firefox there drops altKey once Option composes a character, so
+      // both of those shapes are the modifier and the AltGr veto is off.
+      function tilingModifiers(e) {
+        if (!e.ctrlKey || e.metaKey) return false;
+        const altGraph = typeof e.getModifierState === "function" && e.getModifierState("AltGraph");
+        // AltGr arrives as Ctrl+Alt on Windows; it is typing a character.
+        if (altGraph && !isMac) return false;
+        return e.altKey || (isMac && altGraph);
+      }
+
       // By the key's label (i3 binds keysyms), falling back to its position
       // for a layout that gives Ctrl+Alt+<key> no plain character.
       function tilingKeyName(e) {
@@ -1652,6 +1687,15 @@
         if (/^Digit[0-9]$/.test(e.code || "")) return e.code.slice(5);
         if (e.code === "Equal" || e.code === "NumpadEqual") return "=";
         return (e.key || "").toLowerCase();
+      }
+
+      // A pane header's own button, pressed from the keyboard. Clicking it keeps
+      // the Web view's tab state and the Markdown viewer's start — the viewmd
+      // call, its busy guard, the toggle back to the terminal — in one place
+      // rather than a second copy of each here.
+      function clickPaneHeaderButton(selector) {
+        const button = document.querySelector(".pane-" + focusedPane + " " + selector);
+        if (button) button.click();
       }
 
       function tilingAction(key, shift) {
@@ -1667,9 +1711,13 @@
           case "v": return function() { setPendingSplit("v"); };
           case "e": return tilingToggleSplit;
           case "=": return tilingEqualize;
-          // Ctrl+Alt+r (resize mode) is off for now; dragging a divider resizes.
+          // i3's resize mode: h j k l (or arrows) resize, Enter, Esc or
+          // Ctrl+Alt+r again leaves. Dragging a divider still works.
+          case "r": return function() { setResizeMode(true); };
           case "enter": return function() { tilingOpen(null); };
           case "f": return tilingZoom;
+          case "w": return function() { clickPaneHeaderButton(".proxy-toggle"); };
+          case "m": return function() { clickPaneHeaderButton(".md-toggle"); };
           case "1": case "2": case "3": case "4": case "5": case "6":
             return function() { tilingGoTo(Number(key)); };
         }
@@ -1684,7 +1732,7 @@
         if (t && t.ownerDocument === document && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName || "")) return;
         e.preventDefault();
         e.stopImmediatePropagation();
-        if (key === "enter" || key === "escape" || (e.ctrlKey && e.altKey && key === "r")) {
+        if (key === "enter" || key === "escape" || (key === "r" && tilingModifiers(e))) {
           setResizeMode(false);
           return;
         }
@@ -1699,9 +1747,7 @@
           handleResizeKey(e);
           return;
         }
-        if (!e.ctrlKey || !e.altKey || e.metaKey) return;
-        // AltGr arrives as Ctrl+Alt on Windows; it is typing a character.
-        if (typeof e.getModifierState === "function" && e.getModifierState("AltGraph")) return;
+        if (!tilingModifiers(e)) return;
         const action = tilingAction(tilingKeyName(e), e.shiftKey);
         if (!action) return;
         e.preventDefault();
@@ -1754,8 +1800,11 @@
             ["Ctrl+Alt+b / Ctrl+Alt+v", "Next pane opens beside / below this one"],
             ["Ctrl+Alt+1 … 6", "Go to session 1 … 6, opening it if closed"],
             ["Ctrl+Alt+f", "The pane fills the console / back"],
+            ["Ctrl+Alt+w", "The pane's Web view / back to its terminal"],
+            ["Ctrl+Alt+m", "The pane's Markdown viewer (starts viewmd) / back to its terminal"],
             ["Ctrl+Alt+e", "Turn the pane's split the other way (side by side ↔ stacked)"],
             ["Ctrl+Alt+=", "Equalize: every pane in the layout the same size"],
+            ["Ctrl+Alt+r", "Resize mode: h j k l (or arrows) resize the pane, Enter or Esc leaves"],
             ["Ctrl+Alt+Shift+h / j / k / l", "Move the pane left / down / up / right"],
             ["Ctrl+Alt+Shift+q  or  −", "Close the pane — its session keeps running"],
             ["Ctrl+Alt+Shift+x  or  ⏻", "Reset the session: a fresh shell (asks first; stops what runs in it)"]
@@ -1764,21 +1813,33 @@
             return '<tr><td style="padding:2px 12px 2px 0;white-space:nowrap"><code>' + k[0] +
               '</code></td><td style="padding:2px 0">' + k[1] + '</td></tr>';
           }).join("");
-          window.BoothHelp.addTab("console", "Console Shortcuts",
+          window.BoothHelp.addTab("console", "Console Shortcuts", modKeys(
             '<p class="msg-dialog-lead">The console tiles its six sessions the way the ' +
             '<strong>i3</strong> window manager tiles windows, with <strong>Ctrl+Alt</strong> ' +
             'as the modifier. The toolbar has every 2×2 layout and the 3×2 grid, and its ' +
             '<strong>+</strong> / <strong>−</strong> buttons open and close panes; a shortcut ' +
             'can reach any arrangement of up to six. A layout without a button shows as ' +
             '<strong>Other</strong>.</p>' +
+            '<p>The toolbar\'s hint writes the modifiers short — <code>' + hintKeys("Ctrl+Alt") +
+            '</code> for Ctrl+Alt, <code>' + hintKeys("Ctrl+Alt+Shift") + '</code> with Shift, which ' +
+            'hovering it says too. The table spells them out.</p>' +
             '<table style="border-collapse:collapse;font-size:13px">' + rows + '</table>' +
             '<h3>Shortcut did nothing?</h3>' +
             '<p>A web tab showing an outside site keeps its keys to itself: click into a ' +
             'terminal pane first. Ctrl+Alt+arrows may be taken by your own desktop; ' +
-            'h/j/k/l always work.</p>' +
+            'h/j/k/l always work.' +
+            (isMac ? ' On a Mac, VoiceOver claims Control+Option as its own modifier ' +
+              'and takes these keys first while it is on.' : '') +
+            '</p>' +
+            '<h3>Mouse and copy</h3>' +
+            '<p>Clicks and drags go to the program in the pane when it uses the mouse ' +
+            '(Fresh, vim, htop). At a shell, a drag selects and copies to your clipboard ' +
+            'as you let go. <strong>Shift+drag</strong> always makes the browser\'s own ' +
+            'selection: use it when a program has the mouse, or when the browser blocks ' +
+            'the copy (plain http to a remote host).</p>' +
             '<img src="console-ui-tile-keys.webp" alt="Hold Ctrl+Alt, then press H J K L to focus ' +
             'the pane left, down, up or right" style="display:block;width:100%;max-width:405px;' +
-            'margin:14px auto 0;border-radius:8px" onerror="this.remove()">');
+            'margin:14px auto 0;border-radius:8px" onerror="this.remove()">'));
         });
       }
 

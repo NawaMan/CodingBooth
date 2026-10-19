@@ -1,0 +1,16 @@
+cb-version = "0.1.0"
+display-name = "Svelte (svelte-language-server)"
+display-disc = "svelte-language-server for .svelte; Svelte for VS Code"
+display-order = 17
+auto-select = false
+requires = ["nodejs"]
+tags = ["lsp", "language-server", "svelte", "vscode"]
+
+[segments]
+"Boothfile--60" = """
+setup lsp--svelte
+"""
+# The VS Code side; skips itself on a variant without VS Code or code-server.
+"Boothfile--65" = """
+setup svelte-code-extension
+"""

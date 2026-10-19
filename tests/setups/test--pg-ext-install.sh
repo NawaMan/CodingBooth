@@ -26,6 +26,8 @@ source ../common--source.sh
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PG_EXT_SCRIPT="$REPO_ROOT/variants/base/setups/pg-ext--install.sh"
 
+require_host_tools "pg-ext--install.sh reads the Postgres major version with grep -oP" grep-P
+
 STUB=$(mktemp -d)
 trap "rm -rf $STUB" EXIT
 mkdir -p "$STUB/bin" "$STUB/conf"
@@ -43,10 +45,27 @@ echo "STUB_APT_GET $*" >> "$STUB_LOG"
 EOF
 chmod +x "$STUB/bin/apt-get"
 
+# pg-ext--install.sh reads the server's major version with `grep -oP`, and GNU
+# grep refuses -P unless the locale is unibyte or UTF-8. Inside a booth that is
+# always true; a host shell may have no locale at all (Git Bash by default),
+# and the script then dies on that line with an empty log, which reads here as
+# "the install resolved nothing". The locale is set for this script's own run —
+# see utf8_locale in common--source.sh for why the suite must not set one
+# globally.
+PG_LOCALE="$(utf8_locale)" || PG_LOCALE=""
+PG_LOCALE_RUN=()
+if [[ -n "$PG_LOCALE" ]]; then
+    PG_LOCALE_RUN=(env "LANG=$PG_LOCALE")
+elif ! echo x | grep -qP x 2>/dev/null; then
+    echo "SKIP: this shell's grep refuses -P and the host has no UTF-8 locale to give it; pg-ext--install.sh reads the server version with grep -oP"
+    exit 0
+fi
+
 run_pg_ext_install() {
     rm -f "$STUB_LOG" 2>/dev/null || true
     rm -rf "$STUB/conf" && mkdir -p "$STUB/conf"
     PATH="$STUB/bin:$PATH" STUB_LOG="$STUB/log" CB_PG_CONF_DIR="$STUB/conf" \
+        ${PG_LOCALE_RUN[@]+"${PG_LOCALE_RUN[@]}"} \
         ${ROOT_RUN[@]+"${ROOT_RUN[@]}"} bash "$PG_EXT_SCRIPT" "$@" 2>&1
 }
 STUB_LOG="$STUB/log"

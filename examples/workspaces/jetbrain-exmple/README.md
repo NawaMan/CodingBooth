@@ -8,11 +8,11 @@ This example bundles a full lineup of JetBrains IDEs into a single CodingBooth d
 
 ```bash
 # 1. Launch the booth (requires a desktop variant)
-cd examples/jetbrain-exmple
-../../codingbooth
+cd examples/workspaces/jetbrain-exmple
+./booth
 
-# 2. Connect to the desktop via your browser
-#    Open http://localhost:16901 (noVNC)
+# 2. The desktop opens in your browser, on the booth port
+#    (http://localhost:10000 by default)
 
 # 3. Inside the desktop — launch any IDE from the application menu or terminal
 idea         # IntelliJ IDEA
@@ -20,6 +20,20 @@ pycharm      # PyCharm
 goland       # GoLand
 webstorm     # WebStorm
 ```
+
+### Run it
+
+```bash
+just --list
+just desktop             # ./booth — the KDE desktop in your browser
+just run                 # Demo.sh, Demo.py and Demo.java (JDK 24)
+just python-check        # python3 Demo_PythonCheck.py — interpreter, packages, kernels
+just ides                # where each of the nine IDE launchers is on PATH
+```
+
+`Demo.java` is an implicitly declared class — a preview feature on JDK 24 — so `just run` starts it
+with `java --enable-preview --source 24`. The image holds nine IDEs and is large: the first recipe
+to run builds it, which takes a while.
 
 ## Included IDEs
 

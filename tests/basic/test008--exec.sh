@@ -125,7 +125,13 @@ fi
 # -------------------------------------------------------
 # Test 6: --dir flag sets working directory
 # -------------------------------------------------------
-ACTUAL=$(run_booth exec "$NAME" --dir /tmp -- pwd)
+# MSYS2_ARG_CONV_EXCL: /tmp here is a folder *in the booth*, and Git Bash would
+# rewrite it to this machine's temp folder before booth saw it — docker exec then
+# refused the workdir ("Cwd must be an absolute path", since a Windows path is
+# not one to Linux). The variable names the one argument the shell must leave
+# alone; it means nothing elsewhere. A host path in the same command would still
+# be converted, which is why this is set per command and not for the suite.
+ACTUAL=$(MSYS2_ARG_CONV_EXCL='/tmp' run_booth exec "$NAME" --dir /tmp -- pwd)
 if [[ "$ACTUAL" == *"/tmp"* ]]; then
   print_test_result "true" "$0" "6" "Working directory via --dir flag"
 else

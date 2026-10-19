@@ -104,6 +104,7 @@ Node/pnpm — here the product *is* the booth tooling.
 | Why did a booth call return nothing? | `tests/logs/complex-booth-calls.log` — the complex suite traces every booth call's command, exit code, and stderr (tests themselves discard stderr). Set `CB_DIAG_LOG=<path>` to trace any suite; `CB_DIAG_LOG=/dev/null` to opt out. |
 | Rebuild base/variant images | `./build/docker-build.sh base` (or listed variants) — only when the change needs a new image |
 | Wrapper smoke tests | scripts under `tests/wrapper/` |
+| An example's `booth` / `just` recipe | `./examples/update-booth.sh` once per checkout (wrappers + locks at `version.txt`); after that `./booth` there runs this build, because `./build/cli-build.sh` seeds the shared cache for an `x.y.z--…` version. `BOOTH=../../../codingbooth just <recipe>` still works without it |
 | Blog (`blog/` is GeekPresent) | follow `blog/AGENTS.md` if present; otherwise treat as a nested site |
 
 **Prefer the smallest verification that matches the change.** A pure Go fix should not rebuild
@@ -255,14 +256,18 @@ Example: `0.77.0--rc2` → `0.77.0--anythingllm`. The pre-commit hook requires t
 match, so edit both. Do **not** use `build/set-version.sh` for this — it only accepts `--rc#`.
 
 That label is how the CLI and Docker image tags (`nawaman/codingbooth:base-0.77.0--anythingllm`)
-tell this session apart from main's `--rc` tag. After stamping, retag a local base rather than
+tell this session apart from main's `--rc` tag. After stamping, retag the local images rather than
 rebuilding Ubuntu:
 
 ```bash
 # from worktree/<name>/
 old=$(tr -d ' \t\n\r' < ../../version.txt)   # main clone, e.g. 0.77.0--rc2
 new=$(tr -d ' \t\n\r' < version.txt)         # this worktree, e.g. 0.77.0--anythingllm
-docker tag "nawaman/codingbooth:base-${old}" "nawaman/codingbooth:base-${new}"
+# Every variant built locally, not only base: a desktop or notebook example
+# would otherwise look for <variant>-${new} on Docker Hub, where it never exists.
+for img in $(docker images --format '{{.Repository}}:{{.Tag}}' nawaman/codingbooth | grep -- "-${old}\$"); do
+  docker tag "$img" "${img%-${old}}-${new}"
+done
 ./build/cli-build.sh
 ```
 

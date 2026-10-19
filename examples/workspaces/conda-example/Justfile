@@ -1,13 +1,30 @@
 # {{run-in-booth}} runs a line in this project's booth (starting one if needed),
 # {{run-on-host}} keeps a line on the host. From `booth just-init`:
 # https://github.com/NawaMan/CodingBooth/blob/main/docs/just/Justfile
-run-in-booth := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+booth        := env("BOOTH", "./booth")
+run-in-booth := if env("BOOTH_CONTAINER_NAME", "") == "" { booth + " exec --run --" } else { "" }
 run-on-host  := if env("BOOTH_CONTAINER_NAME", "") == "" { "" } else { "echo 'just: this recipe runs on the host - exit the booth and run it there.' >&2; exit 2;" }
 
 [private]
 default:
-    @just --list
+    @just --list --unsorted
 
-# Print stats for a list of numbers (`just run 1 2 3 4 5`)
+# 1. API latency report from data/requests.csv (`just run /api/search` for one endpoint)
 run *args:
-    {{run-in-booth}} ./run-stats.sh {{ args }}
+    {{run-in-booth}} ./run-latency.sh {{ args }}
+
+# 2. Run Latency.ipynb headlessly on the conda kernel, outputs into Latency.out.ipynb
+latency-notebook:
+    {{run-in-booth}} jupyter nbconvert --to notebook --execute Latency.ipynb --output Latency.out.ipynb
+
+# 3. Drug-likeness of a molecule, by name or SMILES (`just molecule caffeine`)
+molecule *args:
+    {{run-in-booth}} ./run-molecule.sh {{ args }}
+
+# 3. List the molecules the lab knows by name
+molecules:
+    {{run-in-booth}} ./run-molecule.sh --list
+
+# 3. Run Molecules.ipynb headlessly on the conda kernel, outputs into Molecules.out.ipynb
+molecule-notebook:
+    {{run-in-booth}} jupyter nbconvert --to notebook --execute Molecules.ipynb --output Molecules.out.ipynb

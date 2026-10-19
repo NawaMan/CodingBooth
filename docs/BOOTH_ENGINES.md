@@ -41,6 +41,27 @@ Native copy and inspection commands are covered in the [Booth tools engine table
 | `--privileged`, `--device`, `--pid/ipc/userns=host`, `--security-opt` run-args | yes | yes | no — the engine rejects them |
 | Bind mounts (`-v`) | yes | yes | yes (single-file mounts have a quirk — see its page) |
 
+## Who owns the mounted files
+
+booth aligns the booth's `coder` user with your host uid, so files in the code folder are yours to
+read and write on both sides. On a VM-based engine there is one exception: the **mount root** —
+`/home/coder/code` itself — arrives owned by `0:0` whoever owns it on the host. Everything *under*
+it maps to your uid as expected, and the folder is writable, so the only thing this breaks is a
+tool that checks who owns the directory. Observed on Docker Desktop for Mac; the share works the
+same way on the other VM-based engines, which have not been checked one by one.
+
+git is such a tool, and it checks before every command. A booth whose code folder is a git repo
+answered every `git` call with *"detected dubious ownership in repository at
+'/home/coder/code'"* — `git status`, `gh`, `lazygit`, an agent's commit, a build step calling
+`git ls-files`. The ownership cannot be fixed from inside (a `chown` of the mount root is silently
+ignored), so booth names the code folder in git's **system** config as a `safe.directory` on every
+start. A repo in a subfolder needs nothing: those files are owned by your uid like any other.
+
+That entry is set on every engine rather than only the VM-based ones, so there is one behaviour to
+reason about; where the ownership already matches, git never consults it. It applies to the
+booth's own code folder only, and lives in the system config, which nothing inside the project can
+write — so a cloned repo cannot grant itself the same trust.
+
 ## Where a way out lands
 
 Some settings give code in the booth a way out of the container (the full list is in
