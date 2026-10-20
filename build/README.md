@@ -104,24 +104,6 @@ Installs the Go programming language (v1.24.1).
 
 ---
 
-### bump-homebrew-formula.sh
-
-Points the Homebrew formula at a release's `booth` wrapper: rewrites `url` and `sha256` in
-`Formula/codingbooth.rb` of a clone of `NawaMan/homebrew-tap`. The `Bump Homebrew formula`
-workflow (`.github/workflows/bump-homebrew-formula.yaml`, secret `HOMEBREW_TAP_TOKEN`) runs it and
-pushes the tap; it is dispatched by hand after a release, not by `Release everything`. See
-[docs/HOMEBREW.md](../docs/HOMEBREW.md), Phase 3.
-
-```bash
-./build/bump-homebrew-formula.sh 0.81.0 ../homebrew-tap/Formula/codingbooth.rb   # then commit + push the tap
-```
-
-The sha256 comes from the published asset (an optional third argument, a local `booth`, must
-match it).
-Prints `changed` or `unchanged` last; rerunning for the same release changes nothing.
-
----
-
 ### clean-examples.sh
 
 Reclaims disk from the booths run in `examples/workspaces/` — without the collateral of

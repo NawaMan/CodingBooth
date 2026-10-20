@@ -2,9 +2,9 @@
 
 > Status: **Phase 1 done** (wrapper 0.16.0, shipped in release 0.80.0). **Phase 2 done on Linux**
 > (2026-10-20): `Formula/codingbooth.rb` in the tap points at the 0.80.0 `booth`; the Mac run
-> (step 8) is still open. **Phase 3:** the `Bump Homebrew formula` workflow is in, run by hand
-> after each release (not automatic while the release process matures); the `HOMEBREW_TAP_TOKEN`
-> secret (step 9) is still to be created. Phase 4 at **v1.0.0**. User-facing install docs stay in [BOOTH_INSTALL.md](BOOTH_INSTALL.md) until then.
+> (step 8) is still open. **Phase 3 done:** the tap's own `Bump formulas` workflow moves
+> `codingbooth` (and the tap's `folio` and `viewmd`) to their newest releases; it is run by hand
+> after a release, not automatic while the release process matures. Phase 4 at **v1.0.0**. User-facing install docs stay in [BOOTH_INSTALL.md](BOOTH_INSTALL.md) until then.
 
 ## Decision: package the wrapper, not the binary
 
@@ -171,27 +171,29 @@ mode. Publishing the tap before v1.0.0 is fine — nothing advertises it until P
    running inside a project and from a subfolder. (A grep of the wrapper found no bash-4-only
    features — `mapfile`, `declare -A`, `${x,,}` — but only a real run proves it.)
 
-### Phase 3 — Release automation (this repo)
+### Phase 3 — Release automation (in the tap)
 
 Lands after Phase 2 (the workflow edits a formula that must already exist). **Manual for now:**
-the release process is not mature yet, so the bump is its own workflow, dispatched by hand after a
-release has succeeded — not a step of `Release everything`. Once releases are routine, it can be
-called from `release-all.yaml` after `release`.
+the release process is not mature yet, so the bump is dispatched by hand after a release has
+succeeded — not a step of `Release everything`.
 
-9. **Token:** a fine-grained token with write access to `homebrew-tap` only, stored as a repo
-   secret (e.g. `HOMEBREW_TAP_TOKEN`).
-10. ✅ **Workflow** `Bump Homebrew formula` (`.github/workflows/bump-homebrew-formula.yaml`),
-    manual dispatch only: `gh workflow run "Bump Homebrew formula" --ref main` after the release
-    succeeded (optional input `version`; empty = `version.txt` on that branch). It clones the tap
-    with the token, runs [`build/bump-homebrew-formula.sh`](../build/bump-homebrew-formula.sh)
-    `<version> <formula>`, and commits `codingbooth <version>` straight to the tap's `main` (own
-    repo — no PR). The script downloads the **published** `booth` (so the release must exist),
-    checks it is the wrapper, and rewrites only `url` and `sha256` (the version comes from the
-    URL); a rerun for the same release changes nothing. Only `X.Y.Z` is accepted — never `--rc`.
-    The formula always gets the versioned URL, never the moving `latest` tag. No token, or any
-    failure, fails the run; the release itself is untouched. The `release-push` skill offers it
-    as its last step, with its own yes.
-    - Test: `tests/setups/test--bump-homebrew-formula.sh` (a fake release over `file://`).
+9. ✅ **No token.** The workflow lives in `NawaMan/homebrew-tap` itself, so it pushes with that
+   repo's own `GITHUB_TOKEN` (`contents: write`). A workflow here would need a cross-repo secret.
+10. ✅ **Workflow** `Bump formulas` (tap: `.github/workflows/bump-formulas.yaml`), manual dispatch
+    only: `gh workflow run "Bump formulas" -R NawaMan/homebrew-tap` after the release succeeded
+    (input `dry_run`: everything but the push). For **every** formula in the tap (`codingbooth`,
+    `folio`, `viewmd`) it runs `bin/bump-formula.sh`, which asks GitHub for the project's highest
+    stable release — drafts, pre-releases, `--rc` tags and the moving `latest` release never
+    count — and, when that is newer, downloads every asset of the new tag and rewrites each
+    `url`/`sha256` pair (one pair, or one per platform). Each bumped formula is committed as
+    `<name> <version>`, then `brew audit --strict --online`, `brew style`, `brew install` and
+    `brew test` run on Linux before one push to the tap's `main` (own repo — no PR). Nothing newer
+    = no commit; any failure = no push; the release itself is untouched. The `release-push` skill
+    offers it as its last step, with its own yes.
+    - Test: the tap's `tests/test-bump-formula.sh` (GitHub faked over `file://`); the workflow runs
+      it first.
+    - Not covered: the macOS assets of a per-platform formula (`viewmd`) get their sha256 from the
+      download but are not installed by the run.
 11. **Which version the formula follows:** the **release** version (1.0.0, 1.1.0, …), not the
     wrapper's own `VERSION=` (0.15.x). No new tagging needed; the cost is that `brew upgrade`
     sometimes reinstalls an unchanged wrapper, which is harmless.
