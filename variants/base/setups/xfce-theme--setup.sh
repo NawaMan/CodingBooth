@@ -10,7 +10,7 @@
 #   window borders       Greybird-dark-accessibility (3 px edges, easy to grab)
 #   icons                Reversal-dark     reversal-icons--setup.sh
 #   cursor               gruppled_white    gruppled-cursors--setup.sh
-#   cursor size          40                (the only size Gruppled ships)
+#   cursor size          24                (added by gruppled-cursors--setup.sh; 40 also there)
 #
 # The theme packs only install; this is the one script that picks defaults, so
 # run it after them. More themes are opt-in templates (tela-icons, orchis-gtk,
@@ -46,7 +46,7 @@ GTK_THEME="Greybird-dark"
 WM_THEME="Greybird-dark-accessibility"
 ICON_THEME="Reversal-dark"
 CURSOR_THEME="gruppled_white"
-CURSOR_SIZE=40
+CURSOR_SIZE=24
 
 # Greybird usually arrives with xfce4 already; named here so the look never
 # depends on a recommends chain that a future xfce4 package might drop.
