@@ -1,15 +1,10 @@
-from pathlib import Path
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-
 SECRET_KEY = "demo-only-not-for-production"
 DEBUG = True
 ALLOWED_HOSTS = ["*"]
 
-INSTALLED_APPS = [
-    "django.contrib.contenttypes",
-    "django.contrib.auth",
-]
+# The demo's views never touch a database, so no apps with models and no
+# database: nothing to migrate, and no db.sqlite3 written into the example.
+INSTALLED_APPS = []
 
 MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
@@ -17,12 +12,6 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "demo.urls"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
-}
+DATABASES = {}
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 USE_TZ = True
