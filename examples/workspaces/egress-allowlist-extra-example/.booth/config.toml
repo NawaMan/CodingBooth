@@ -1,8 +1,8 @@
-# Configured by: booth config --no-tui --overwrite --set egress --set egress-allowlist-file=.booth/egress/allowlist.txt --set egress-allowlist=example.com --select python:3.13~pip-config~vscode-ext
+# Configured by: booth config --no-tui --overwrite --set egress --set egress-allowlist-file=.booth/egress/allowlist.txt --set egress-allowlist=www.python.org --select python:3.13~pip-config~vscode-ext
 
 
 run-args = ["-e", "PYTHONDONTWRITEBYTECODE=1"]
 
 egress = true
-egress-allowlist = ["example.com"]
+egress-allowlist = ["www.python.org"]
 egress-allowlist-file = ".booth/egress/allowlist.txt"
