@@ -3,6 +3,10 @@
 Conventions for the setup scripts in `variants/base/setups/` — the trio of artifacts they produce,
 the ordering levels, and the shared helpers they reuse.
 
+At v0.80.0--rc1, the catalog contains **332 setup scripts** and **24 install scripts**.
+Helpers, libraries, assets and scripts parked under `future/` are counted separately or
+excluded; see the [catalog inventory](UNDERSTAND_SETUPS.md#catalog-inventory).
+
 > **Working on the catalog?** This file is the *reference*. The **`setup-work` skill** is the
 > workflow that uses it — adding, modifying, or fixing a setup, template, or extension, including
 > how to try a change without rebuilding an image.

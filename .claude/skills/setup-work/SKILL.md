@@ -57,8 +57,9 @@ meta-package, the other pins a version into `/opt` with `update-alternatives`. B
 purpose. If something close already exists, say what the new one adds before writing it — and
 prefer extending the existing script's flags over a second script.
 
-Check `variants/base/setups/future/` too — a script parked there was *tried and abandoned*
-(`ocaml--setup.sh`). Do not resurrect one without saying so.
+Check `variants/base/setups/future/` too, if present — scripts parked there were *tried and
+abandoned*. Read their status before proposing to restore them. OCaml was restored, as experimental, with a
+prebuilt toolchain after its original source build exhausted host memory.
 
 **Is it really a template?** If the thing is "X support for language Y" — a linter, a kernel, a VS
 Code extension, a package list, a credential mount — it is an **extension** of the existing parent,

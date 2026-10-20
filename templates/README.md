@@ -5,6 +5,10 @@ should take arguments, run-args and volume conventions, the autostart + expose p
 a per-order catalogue of what already exists. Read this before adding a template, so the new one
 lands in the same band as its neighbours.
 
+At v0.80.0--rc1, this tree contains **205 templates** and **341 extensions** in **9 categories**.
+The [catalog inventory](../docs/UNDERSTAND_SETUPS.md#catalog-inventory) gives the category breakdown
+and counting method. An extension is counted under its parent, including auto-selected extensions.
+
 > **Working on the catalog?** The **`setup-work` skill** is the workflow that uses this file —
 > adding, modifying, or fixing a setup, template, or extension, including how to try a change
 > without rebuilding an image.
@@ -385,6 +389,7 @@ fontconfig/GTK libraries Rust GUI crates link to), so it sits with the other sys
 | `languages/lua`            | Lua |
 | `languages/nim`            | Nim |
 | `languages/nodejs`         | Node.js |
+| `languages/ocaml`          | OCaml (prebuilt compiler, Dune, UTop, OCamlFormat; experimental) |
 | `languages/octave`         | GNU Octave |
 | `languages/php`            | PHP |
 | `languages/python`         | Python |

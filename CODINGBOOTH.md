@@ -6,6 +6,8 @@ This manual is the comprehensive feature reference for **CodingBooth** — a too
 
 For a marketing-oriented overview, see the [README](README.md).
 For deep architecture details, see [docs/implementations/](docs/implementations/).
+For current setup, template and extension counts, see the
+[catalog inventory](docs/UNDERSTAND_SETUPS.md#catalog-inventory).
 
 ---
 
@@ -139,7 +141,7 @@ Visit http://localhost:10000 in your browser to access the UI. See **[booth exam
 ### Try with `booth config`
 
 ```bash
-booth template list           # list 77+ templates
+booth template list           # list templates (see the current catalog inventory)
 booth config                  # interactive TUI
 # or:
 booth config --no-tui --select java+maven+m2/scala --select claude-code+auto-accept
@@ -519,7 +521,7 @@ Cycle-field edit mode, validation, and a warning when `.booth/` is unwritable. S
 ### Templates
 
 ```bash
-booth template list           # all 77+ templates across categories
+booth template list           # all templates across categories
 booth template help <name>    # template metadata
 ```
 

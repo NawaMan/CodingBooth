@@ -33,6 +33,17 @@ This file contains a list of changes for each released version.
   where the Claude login is, before Claude read a file. `scripts/vet-repo.sh` now adds
   `--setting-sources user` and `--strict-mcp-config`, and the same test repository runs nothing.
 
+- **OCaml returns as an experimental prebuilt toolchain.** Select `ocaml` (or `ocaml:5.4.1,1`) for
+  the compiler, Dune, UTop, OCamlFormat and opam. CodingBoothPrebuilt compiles the
+  versioned bundle on x86_64 and arm64 and verifies the extracted environment in a
+  fresh container as a non-root user. The setup checks the archive checksum and
+  requires a published bundle for the selected compiler, tool revision, Ubuntu
+  release and CPU; it never starts the memory-heavy source build on the host when
+  an archive is missing. Additional opam packages may still compile locally.
+  Replaces the parked installer. Experimental: no tests or example ship yet.
+  Needs a rebuilt base image. The catalog now has 332 setups, 205 templates and 341
+  extensions across 9 categories, plus 24 install scripts.
+
 - **TTT and Croft are catalog terminal editors.** `setup ttt` installs the TTT
   Editor release binary for amd64 and arm64, and installs `ripgrep` when `rg` is
   missing so workspace search works. `setup croft` installs the static musl

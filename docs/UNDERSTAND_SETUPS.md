@@ -3,6 +3,66 @@
 A map of how a booth gets its tools, from a bash script in `variants/base/setups/` to a running
 container. Read this first; the detailed references are linked from each section.
 
+## Catalog inventory
+
+Counts for **v0.80.0--rc1**, including the experimental OCaml prebuilt toolchain:
+
+| Kind | Count | What is counted |
+| --- | ---: | --- |
+| Setup scripts | **332** | Top-level `variants/base/setups/*--setup.sh` |
+| Install scripts | **24** | Top-level `variants/base/setups/*--install.sh` |
+| Templates | **205** | `templates/<category>/<name>/template.toml` |
+| Extensions | **341** | `*--extension.toml` beside a parent template, including auto-selected extensions |
+| Categories | **9** | Category directories containing `meta.toml` and templates |
+
+| Category | Templates | Extensions |
+| --- | ---: | ---: |
+| Languages | 37 | 121 |
+| Frameworks | 7 | 0 |
+| Middlewares | 8 | 18 |
+| Tools | 92 | 102 |
+| AI Tools | 16 | 31 |
+| IDEs | 15 | 29 |
+| Desktop | 19 | 36 |
+| Education | 8 | 4 |
+| Booth VM (macOS) | 3 | 0 |
+| **Total** | **205** | **341** |
+
+These are distinct layers, not a count of unique applications: one template can invoke several
+setups or only change configuration, and extensions can add tools, credentials, ports or other
+options. Setup counts exclude install scripts, helpers, libraries, assets and anything parked
+under `future/`. Template extensions are counted per parent, not by their often-repeated short
+names. Project-local templates and test fixtures are outside the shipped catalog.
+
+Recount from the repository root (Python 3):
+
+```sh
+python3 - <<'PY'
+from pathlib import Path
+setups = Path("variants/base/setups")
+print("Setups:", len(list(setups.glob("*--setup.sh"))))
+print("Installs:", len(list(setups.glob("*--install.sh"))))
+templates = extensions = categories = 0
+for meta in sorted(Path("templates").glob("*/meta.toml")):
+    parents = list(meta.parent.glob("*/template.toml"))
+    if not parents:
+        continue
+    count = sum(len(list(p.parent.glob("*--extension.toml"))) for p in parents)
+    print(f"{meta.parent.name}: {len(parents)} templates, {count} extensions")
+    templates += len(parents)
+    extensions += count
+    categories += 1
+print(f"Total: {templates} templates, {extensions} extensions, {categories} categories")
+PY
+```
+
+`build/gen-catalog-manifest.sh --check` independently checks the versioned manifest against
+the tree. Keep the counts in the README, config/setup guides, template authoring guide,
+implementation guide and website in sync when the catalog grows. Historical audits and
+prototype snapshots retain the counts for the versions they examined.
+
+## How the pieces fit
+
 | # | Piece | Lives in | In one line |
 | --- | --- | --- | --- |
 | 1 | **setup** | `variants/base/setups/*--setup.sh` | bash that gets a tool onto the image — and wires it into every shell |

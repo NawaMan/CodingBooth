@@ -238,6 +238,7 @@ setup nodejs-code-extension
 setup nodejs-nb-kernel
 setup notebook
 setup obsidian
+setup ocaml
 setup octave
 setup octave-code-extension
 setup octave-nb-kernel

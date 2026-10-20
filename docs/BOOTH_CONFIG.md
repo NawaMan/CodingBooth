@@ -655,7 +655,26 @@ Use `booth template` to explore what's available before running init.
 
 Use `--full` with `list` or `search` to include secondary (non-primary) templates.
 
-There are **190+ templates** across 7 categories: languages, middlewares, tools, IDEs, desktop, education, and AI tools. Browsers live under Desktop.
+The v0.80.0--rc1 catalog has **205 templates** and **341 extensions** across **9 categories**:
+Languages, Frameworks, Middlewares, Tools, AI Tools, IDEs, Desktop, Education, and Booth VM
+(macOS). Browsers live under Desktop. See the [catalog inventory](UNDERSTAND_SETUPS.md#catalog-inventory)
+for per-category counts and how to reproduce them.
+
+### OCaml prebuilt toolchain (experimental)
+
+OCaml is **experimental**: it ships without tests or an example, so expect rough edges.
+
+`--select ocaml` installs OCaml 5.4.1 with tool revision 1: Dune 3.24.0, UTop 2.17.0,
+OCamlFormat 0.29.0, and opam. `--select ocaml:5.4.1,1` pins both parts explicitly. The setup
+downloads a checksum-verified bundle from [CodingBoothPrebuilt](https://github.com/NawaMan/CodingBoothPrebuilt)
+for the booth's Ubuntu release and CPU. The bundle must be extracted at its fixed path under
+`/opt/ocaml/`; `/opt/ocaml-current` selects the installed environment.
+
+If the archive is unavailable, setup stops with the requested bundle name. It does not compile
+the toolchain locally. To explicitly build another bundle, run CodingBoothPrebuilt's workflow
+with `tools=ocaml`, `versions=<compiler>-tools<revision>` and the required Ubuntu release and
+architectures. `opam install <package>` inside the booth remains available and may compile
+additional project dependencies; it defaults to one build job.
 
 ---
 

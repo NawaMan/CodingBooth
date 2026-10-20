@@ -14,7 +14,8 @@
 - **Keep the language examples lean.** `java-example`, `nodejs-example`, `python-example`, `php-example` stay as basic toolchain demos; framework workspaces are siblings, not extensions.
 - **Optional:** `.cb-tests/test001-…-on-host.sh` to verify the example actually runs (mirror `java-example` and `python-example`).
 - **README.md** for every example — what it is, how to run, what to try.
-- **Excluded:** OCaml. Setup was parked in `variants/base/setups/future/`; do not propose OCaml-based examples.
+- **OCaml:** originally excluded because its source build exhausted host memory. The setup is
+  restored, as experimental, with a prebuilt toolchain in v0.80.0--rc1; a published example remains separate work.
 - **Parking policy.** If an example resists (toolchain bug, broken upstream tarball, incompatible base image, fragile native deps), park it under "Deferred / parked" and move on. Don't burn the stage on one stubborn item. The OCaml setup is the precedent: it failed, was moved to `variants/base/setups/future/`, and the example was dropped. That's the model.
 
 ---
@@ -176,4 +177,5 @@ Each is dominated by post-up admin work — realms, dynamic credentials, runner 
 ## Deferred / parked
 
 - **GPU-bearing AI examples** (CUDA, large LLMs, vLLM) — defer until host-side GPU passthrough is a first-class booth feature; CPU-only Stage 4 unlocks the AI surface without that dependency.
-- **OCaml-based examples** — excluded; setup was parked in `variants/base/setups/future/`.
+- **OCaml-based examples** — still deferred. The experimental prebuilt setup is
+  restored in v0.80.0--rc1, but no published example has been added.

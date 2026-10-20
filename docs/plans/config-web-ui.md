@@ -63,10 +63,11 @@ and recipes.
 product’s shipped templates, optionally a **specific release** of that catalog
 (`templates version`), plus any **local templates** from this project’s
 `.booth/templates/` (a local name overrides the stock one). Catalog size today:
-190+ templates across seven categories.
+205 templates and 341 extensions across nine categories in v0.80.0--rc1; see the
+[catalog inventory](../UNDERSTAND_SETUPS.md#catalog-inventory).
 
 **Category (template group)** — a named collection used to browse (Languages,
-Middlewares, Tools, AI Tools, IDEs, Desktop, Education). A template belongs to
+Frameworks, Middlewares, Tools, AI Tools, IDEs, Desktop, Education, Booth VM). A template belongs to
 **exactly one** category in the current data model. Cross-cutting findability is
 via **tags**, not multi-group membership.
 
