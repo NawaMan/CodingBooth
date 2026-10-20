@@ -31,25 +31,28 @@ else
 fi
 
 echo
-info "Allowed domain via explicit proxy: example.com (from egress-allowlist)"
-connect_code=$(curl -4 -sS --max-time 12 -o /dev/null -w '%{http_connect}' -x http://127.0.0.1:15001 https://example.com 2>/dev/null || true)
-if [[ "$connect_code" == "403" ]]; then
-    fail "example.com blocked by proxy (CONNECT $connect_code) — should be allowed via egress-allowlist"
+info "Allowed domain via explicit proxy: www.python.org (from egress-allowlist)"
+if curl -4 -I -sS --max-time 12 -x http://127.0.0.1:15001 https://www.python.org >/tmp/firewall-allow-extra.out; then
+    pass "www.python.org is reachable via egress proxy"
 else
-    pass "example.com allowed by egress proxy (CONNECT $connect_code)"
+    fail "www.python.org should be reachable via egress proxy (egress-allowlist)"
 fi
 
 echo
 info "Blocked domain via explicit proxy: reddit.com"
-if curl -4 -I -sS --max-time 12 -x http://127.0.0.1:15001 https://reddit.com >/tmp/firewall-blocked.out; then
-    fail "reddit.com should be blocked by proxy policy"
+# Only the proxy's own 403 proves the policy; any other failure (DNS, timeout) proves nothing.
+connect_code=$(curl -4 -sS --max-time 12 -o /dev/null -w '%{http_connect}' -x http://127.0.0.1:15001 https://reddit.com 2>/dev/null || true)
+if [[ "$connect_code" == "403" ]]; then
+    pass "reddit.com blocked by proxy policy (CONNECT 403)"
 else
-    pass "reddit.com blocked by proxy policy (expected)"
+    fail "reddit.com should be refused by the proxy with 403, got CONNECT $connect_code"
 fi
 
 echo
 info "Direct no-proxy bypass attempt should fail"
-if HTTPS_PROXY= HTTP_PROXY= curl -4 -I -sS --max-time 8 https://google.com >/tmp/firewall-bypass.out; then
+# --noproxy, not HTTPS_PROXY=: the booth also sets lowercase https_proxy, which curl
+# would still use, and the proxy's 403 would then pass for the firewall.
+if curl -4 -I -sS --noproxy '*' --max-time 8 https://google.com >/tmp/firewall-bypass.out; then
     fail "direct bypass should be blocked by firewall"
 else
     pass "direct bypass blocked by firewall (expected)"
