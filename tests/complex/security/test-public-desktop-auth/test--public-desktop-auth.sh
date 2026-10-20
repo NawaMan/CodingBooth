@@ -12,6 +12,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 source ../../../common--source.sh
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+VERSION="$(tr -d ' \t\n\r' < "$REPO_ROOT/version.txt")"
 NAME="public-desktop-auth-$$"
 CREATED=false
 cleanup() {
@@ -24,11 +25,11 @@ case_num=0
 for desktop in lxqt wayland; do
   case_num=$((case_num + 1))
   if [[ "$desktop" == lxqt ]]; then
-    image="${CB_LXQT_IMAGE:-nawaman/codingbooth:desktop-lxqt-latest}"
+    image="${CB_LXQT_IMAGE:-nawaman/codingbooth:desktop-lxqt-${VERSION}}"
   else
-    image="${CB_WAYLAND_IMAGE:-nawaman/codingbooth:desktop-wayland-latest}"
+    image="${CB_WAYLAND_IMAGE:-nawaman/codingbooth:desktop-wayland-${VERSION}}"
   fi
-  docker image inspect "$image" >/dev/null
+  docker image inspect "$image" >/dev/null 2>&1 || docker pull -q "$image" >/dev/null
   docker create --name "$NAME" --network none --hostname cb-auth.test \
     --add-host cb-auth.test:127.0.0.1 --shm-size 1g \
     --mount "type=bind,src=$REPO_ROOT,dst=/review,readonly" \
