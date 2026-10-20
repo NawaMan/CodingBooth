@@ -29,3 +29,6 @@ codingbooth\.io/tour(/|$)
 # and stays checked. Remove this line once the SaaS ships its GA domain (see
 # pkg/showcase/client.go's defaultBaseURL, which flips at the same time).
 ^https?://codingbooths\.online(/|$)
+
+# lsp-example's guide links to missing.md on purpose: it shows marksman flagging a broken link.
+/lsp-example/docs/missing\.md$
