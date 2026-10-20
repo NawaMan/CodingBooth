@@ -10,6 +10,10 @@ This file contains a list of changes for each released version.
   desktop-xfce variant and the xfce `modern-theme` extension. A theme already chosen in Settings
   or with `booth--theme set wm <name>` still wins. Alt + right-drag resizes from anywhere in a
   window regardless.
+- **The XFCE cursor is 40% smaller.** Gruppled only ships a 40 px cursor, and X never scales a
+  cursor, so `gruppled-cursors` now adds a 24 px size to every cursor (shrunk from the 40 px one,
+  animated frames included) and the default cursor size is 24. The 40 px size is still there:
+  `booth--theme set cursor-size 40` brings it back.
 - **Lazarus is selectable: `fpc+lazarus`.** The new `lazarus` setup installs the Lazarus 4.4
   toolchain from apt: `lazbuild`, the LCL (GTK2) and the gtk2 headers an LCL program links
   against. Projects therefore build headless, in CI or on the base variant. On a desktop variant

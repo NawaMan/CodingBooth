@@ -127,7 +127,7 @@ setup	gradle	1.0.0	b792a8ef7c2ada1b7c089c9787f5a197efcb56ddbc5cc02128e27a8691db3
 setup	graphviz-code-extension	0.1.0	a24c26b65c1078dac9728a7c7659999b2f6d615aa12c55deefbb784268f2d7f4	variants/base/setups/graphviz-code-extension--setup.sh
 setup	greenfoot	1.0.0	4dc357d5d473883f22cc9fc7af4dd079efd17710652feee778aa9294ca78455e	variants/base/setups/greenfoot--setup.sh
 setup	grok	1.0.0	4921ea18cabe3f4c781d5241ccfc5e854237246e1d06814a30d6b2712ea4962e	variants/base/setups/grok--setup.sh
-setup	gruppled-cursors	0.1.0	da95887cb60605cff5683031237481db262e2817fa30ef60867e0fad70d380f4	variants/base/setups/gruppled-cursors--setup.sh
+setup	gruppled-cursors	0.2.0	80b1a973e3b49777e175ccf87803b7f1fa2293e3103bbc81c87ef03b08dc9bd1	variants/base/setups/gruppled-cursors--setup.sh
 setup	harlequin	0.1.0	7d16f4a9d8afdbbf7beba8c5a83a72bdc3c790ce370e81474da53e8f131dd808	variants/base/setups/harlequin--setup.sh
 setup	haskell	1.0.0	9b52b1f086c217f186b0ed739a9951c52d6027c4a1236d41936462f78ed6d3bf	variants/base/setups/haskell--setup.sh
 setup	haskell-code-extension	1.0.0	da1b29d952efef7fc21ce36533c0d0689bcb2e8e80965ac45cd1376e86ebd485	variants/base/setups/haskell-code-extension--setup.sh
@@ -327,7 +327,7 @@ setup	wails-android	0.1.0	4f4373e30df218c77731d7c37a8b7a260aae56831b6e0b5eb8f287
 setup	warp	1.0.0	a7b2ea3c833b92cee4b52150e3d0be5bb7a7e290f045c40e2042ecc92441abbd	variants/base/setups/warp--setup.sh
 setup	wayland	1.0.1	747d3e8a63e3c66f281bfb1be44093a10344d7dcdf1f88263a99885131fc6dea	variants/base/setups/wayland--setup.sh
 setup	xfce	1.0.0	b767d43e8d75a62b44e8e69e25a87b8a2da65734e5122313b76669966a534dae	variants/base/setups/xfce--setup.sh
-setup	xfce-theme	0.2.0	d568fed0dfde06388d47fd91ee98e2051656b72ee436853e21b8f6724940b6f0	variants/base/setups/xfce-theme--setup.sh
+setup	xfce-theme	0.2.0	855c1941fc909ac660062148963a5e7dff3b676d45aff84377cdc1c775e8a65d	variants/base/setups/xfce-theme--setup.sh
 setup	xfce-wallpaper	1.0.0	90cef9dd780257750f474fbcfa0fb2f3a4fc5fb4c24b8e7e53e5cfee8d3bfe70	variants/base/setups/xfce-wallpaper--setup.sh
 setup	xonsh	0.1.0	4538540d06db3732825700112ac588f353978f14f6f982e35dc75b0d148286a3	variants/base/setups/xonsh--setup.sh
 setup	yaml-code-extension	0.1.0	a645a17343854b3f3fc21a01e0fb6346878cc777aacf9935aa9618e852138c19	variants/base/setups/yaml-code-extension--setup.sh
@@ -933,7 +933,7 @@ extension	webstorm+skip-first-run	0.1.0	7a6c8bdae2d2d0ced62f2ffa089e5b3860cfe626
 extension	xfce+desktop-icons-cache	0.1.0	b3f3c59113e2e61436a2b60c9c65bb078ad34a8eccd476ae0c0c9a6a7b675873	templates/desktops/xfce/desktop-icons-cache--extension.toml
 extension	xfce+desktop-icons-shared	0.1.0	b1bfcfbb9f6364a5ebd5801031c25e380bc2899c7e593e275c893f6bb841cdd0	templates/desktops/xfce/desktop-icons-shared--extension.toml
 extension	xfce+keyboard-shortcuts-shared	1.0.0	06150193d1174c91a807d3909f9f4c362c5d0afb2d355fe1b5783492be07013c	templates/desktops/xfce/keyboard-shortcuts-shared--extension.toml
-extension	xfce+modern-theme	0.1.1	b0e83d0cee1cc8b8f13f80beea62dc0f40872d400be0c928170811e5195a29dc	templates/desktops/xfce/modern-theme--extension.toml
+extension	xfce+modern-theme	0.1.1	dfe1310487225d7a106f24cfa308feeb9651eebb4fb5c5fa0dd6d355edcb315b	templates/desktops/xfce/modern-theme--extension.toml
 extension	xfce+plank	0.2.0	1cc8cd0207c4890dc3c0015a496ed4ddc23bb58a2d33516592fcefca2f044d37	templates/desktops/xfce/plank--extension.toml
 extension	xonsh+default	0.1.0	1000b342fc95b29f5ab64dd60561597d32bccb89f7fb5030963d42791308f3a2	templates/tools/xonsh/default--extension.toml
 extension	zig+vscode-ext	1.0.0	2ba2daee9a40beaa92949a9461dd8601bda9b1387d27af03b69b1857df5d1c32	templates/languages/zig/vscode-ext--extension.toml
