@@ -19,6 +19,7 @@ commit — they ride the same push.
 3.  version.txt/README.md: X.Y.Z → X.(Y+1).0--rc1 → commit "X.(Y+1).0--rc1"  → NO push
 4.  report
 5.  offer to dispatch `Release everything`, wait for a yes, then watch it
+6.  after a green release: offer to dispatch `Bump Homebrew formula`, wait for a yes, then watch it
 ```
 
 Steps 1–4 are recoverable — two local commits and a push. **Step 5 is not**: it publishes Docker
@@ -331,6 +332,28 @@ Never re-dispatch on the user's behalf after a failure. Report and ask.
 **Do not push the step-3 bump as part of this step.** Reopening the tree stays a separate act, so the
 release and the next cycle never collapse into one irreversible command.
 
+## 6. Offer to dispatch `Bump Homebrew formula` — then watch it
+
+Only after step 5's run is **green**: the workflow downloads the release's published `booth`, so it
+fails if the GitHub release is missing. It is deliberately **not** part of `Release everything`
+while the release process matures (docs/HOMEBREW.md, Phase 3) — so it gets its own offer and its own
+explicit yes. It pushes a commit to the public tap (`NawaMan/homebrew-tap`), which every
+`brew upgrade` then picks up.
+
+```bash
+gh workflow run "Bump Homebrew formula" --ref main     # version = version.txt on main
+sleep 5
+RUN=$(gh run list --workflow="Bump Homebrew formula" --limit 1 \
+        --json databaseId --jq '.[0].databaseId')
+gh run watch "$RUN" --exit-status
+```
+
+Report the result: "Homebrew formula → X.Y.Z", or "already points at X.Y.Z" (a rerun changes
+nothing). If it fails, nothing else is affected — the release is already out. The usual causes are
+a missing or expired `HOMEBREW_TAP_TOKEN` secret, or a release without a `booth` asset. Report and
+ask; do not re-dispatch on your own. By hand instead: `./build/bump-homebrew-formula.sh X.Y.Z
+<tap clone>/Formula/codingbooth.rb`, then commit and push the tap (`build/README.md`).
+
 ## The GitHub Actions release
 
 **Everything here is `workflow_dispatch` only — pushing does not start any of it.** The push makes
@@ -343,6 +366,7 @@ push succeeded.
 | **Publish docker images** | `publish-docker-images.yaml` | `nawaman/codingbooth:*` multi-arch images for all 7 variants, cosign-signed, plus integration tests |
 | **Release CodingBooth** | `release-binary-and-wrapper.yaml` | GitHub release: multi-platform binaries, the wrapper, examples, SHA256 checksums |
 | **Deploy Site to codingbooth.io** | `deploy-site.yaml` | The site, over SSH to DreamHost |
+| **Bump Homebrew formula** | `bump-homebrew-formula.yaml` | Not in the chain — step 6, by hand after a green release: the tap's formula → this release's `booth` |
 
 The three are each still individually dispatchable — `release-all.yaml` only sequences them, and is
 the right thing to dispatch for a release. Reach for an individual one when re-running a single

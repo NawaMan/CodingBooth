@@ -2,8 +2,9 @@
 
 > Status: **Phase 1 done** (wrapper 0.16.0, shipped in release 0.80.0). **Phase 2 done on Linux**
 > (2026-10-20): `Formula/codingbooth.rb` in the tap points at the 0.80.0 `booth`; the Mac run
-> (step 8) is still open. Phase 3 must land before the release after 0.80.0; Phase 4 at
-> **v1.0.0**. User-facing install docs stay in [BOOTH_INSTALL.md](BOOTH_INSTALL.md) until then.
+> (step 8) is still open. **Phase 3:** the `Bump Homebrew formula` workflow is in, run by hand
+> after each release (not automatic while the release process matures); the `HOMEBREW_TAP_TOKEN`
+> secret (step 9) is still to be created. Phase 4 at **v1.0.0**. User-facing install docs stay in [BOOTH_INSTALL.md](BOOTH_INSTALL.md) until then.
 
 ## Decision: package the wrapper, not the binary
 
@@ -172,16 +173,25 @@ mode. Publishing the tap before v1.0.0 is fine — nothing advertises it until P
 
 ### Phase 3 — Release automation (this repo)
 
-Lands after Phase 2 (the step edits a formula that must already exist) and before the release
-after 0.80.0, so that release bumps the formula on its own.
+Lands after Phase 2 (the workflow edits a formula that must already exist). **Manual for now:**
+the release process is not mature yet, so the bump is its own workflow, dispatched by hand after a
+release has succeeded — not a step of `Release everything`. Once releases are routine, it can be
+called from `release-all.yaml` after `release`.
 
 9. **Token:** a fine-grained token with write access to `homebrew-tap` only, stored as a repo
    secret (e.g. `HOMEBREW_TAP_TOKEN`).
-10. **Workflow step** in `.github/workflows/release-binary-and-wrapper.yaml`, after the versioned
-    publish: take the sha256 of `booth`, update `url` and `sha256` in the formula (the version
-    comes from the URL), and commit straight to the tap (own repo — no PR needed;
-    `brew bump-formula-pr` or a short `sed` script both work). Stable releases only — the existing `--rc` guard already ensures that. The
-    formula must always use versioned URLs, never the moving `latest` tag.
+10. ✅ **Workflow** `Bump Homebrew formula` (`.github/workflows/bump-homebrew-formula.yaml`),
+    manual dispatch only: `gh workflow run "Bump Homebrew formula" --ref main` after the release
+    succeeded (optional input `version`; empty = `version.txt` on that branch). It clones the tap
+    with the token, runs [`build/bump-homebrew-formula.sh`](../build/bump-homebrew-formula.sh)
+    `<version> <formula>`, and commits `codingbooth <version>` straight to the tap's `main` (own
+    repo — no PR). The script downloads the **published** `booth` (so the release must exist),
+    checks it is the wrapper, and rewrites only `url` and `sha256` (the version comes from the
+    URL); a rerun for the same release changes nothing. Only `X.Y.Z` is accepted — never `--rc`.
+    The formula always gets the versioned URL, never the moving `latest` tag. No token, or any
+    failure, fails the run; the release itself is untouched. The `release-push` skill offers it
+    as its last step, with its own yes.
+    - Test: `tests/setups/test--bump-homebrew-formula.sh` (a fake release over `file://`).
 11. **Which version the formula follows:** the **release** version (1.0.0, 1.1.0, …), not the
     wrapper's own `VERSION=` (0.15.x). No new tagging needed; the cost is that `brew upgrade`
     sometimes reinstalls an unchanged wrapper, which is harmless.
