@@ -1,9 +1,9 @@
 # Installing CodingBooth via Homebrew — plan
 
-> Status: **Phase 1 done** (wrapper 0.16.0, ships in release 0.80.0); Phases 2–4 open. Order:
-> Phase 2 right after 0.80.0 is released (the formula needs a release whose `booth` asset is
-> wrapper 0.16.0+), Phase 3 before the release after that, Phase 4 at **v1.0.0**. User-facing
-> install docs stay in [BOOTH_INSTALL.md](BOOTH_INSTALL.md) until then.
+> Status: **Phase 1 done** (wrapper 0.16.0, shipped in release 0.80.0). **Phase 2 done on Linux**
+> (2026-10-20): `Formula/codingbooth.rb` in the tap points at the 0.80.0 `booth`; the Mac run
+> (step 8) is still open. Phase 3 must land before the release after 0.80.0; Phase 4 at
+> **v1.0.0**. User-facing install docs stay in [BOOTH_INSTALL.md](BOOTH_INSTALL.md) until then.
 
 ## Decision: package the wrapper, not the binary
 
@@ -113,28 +113,25 @@ decides per subcommand, using only what every binary already understands:
    CHANGELOG Unreleased. The `README.md` install section waits for the tap (Phase 4) — there is
    nothing to `brew install` yet.
 
-### Phase 2 — The tap (new repo `NawaMan/homebrew-tap`)
+### Phase 2 — The tap (new repo `NawaMan/homebrew-tap`) ✅ Linux done (Mac open)
 
-Starts once 0.80.0 is released: every earlier release asset is the pre-0.16.0 wrapper, which has no
-global mode. The first formula points at the real 0.80.0 `booth` asset and its sha256 (the `1.0.0`
-below is only the shape). Publishing the tap before v1.0.0 is fine — nothing advertises it until
-Phase 4.
+Needs 0.80.0 or later: every earlier release asset is the pre-0.16.0 wrapper, which has no global
+mode. Publishing the tap before v1.0.0 is fine — nothing advertises it until Phase 4.
 
-6. The repo exists (created 2026-10-07; local clone `../homebrew-tap`, README only). Add
-   `Formula/codingbooth.rb`:
+6. ✅ `Formula/codingbooth.rb` in `../homebrew-tap` (the clone of `NawaMan/homebrew-tap`):
 
    ```ruby
    class Codingbooth < Formula
      desc "Reproducible, containerized dev environments for any project"
      homepage "https://codingbooth.io"
-     url "https://github.com/NawaMan/CodingBooth/releases/download/1.0.0/booth"
-     version "1.0.0"                  # the URL has no archive name, so state it
-     sha256 "<sha256 of that booth file>"
+     url "https://github.com/NawaMan/CodingBooth/releases/download/0.80.0/booth"
+     sha256 "965458b7c132474692247e82bfe866c2e6e64a78b5b370cde528006963fa7644"
      license "Apache-2.0"
 
+     # Not :github_latest: the repo also has a moving "latest" release.
      livecheck do
        url :stable
-       strategy :github_releases      # NOT :github_latest — the moving "latest" tag would win
+       strategy :github_releases
        regex(/^v?(\d+(?:\.\d+)+)$/i)
      end
 
@@ -157,12 +154,18 @@ Phase 4.
    end
    ```
 
-   The `test do` block works inside Homebrew's sandbox: `version` is handled before the wrapper's
-   curl check and needs no network.
-7. **Check locally with Linuxbrew:** `brew tap nawaman/tap <local path>`, then `brew install`,
-   `brew test`, `brew audit --strict --online codingbooth`, and re-run the trace table above. Then
-   `brew uninstall` and `brew untap`. This changes the real Homebrew install while it runs (adds a
-   tap, links `booth` into the brew `bin`; an installed `booth()` function hides that link).
+   No `version` line: brew reads it from the URL path (`/download/0.80.0/`), and
+   `brew audit --strict` rejects a stated one as redundant. The `test do` block works inside
+   Homebrew's sandbox: `version` is handled before the wrapper's curl check and needs no network.
+7. ✅ **Checked locally with Linuxbrew** (Homebrew 7.0.9, 2026-10-20). `brew tap nawaman/tap <local
+   path>` clones the path, so it only sees **committed** files. `brew install`, `brew test`,
+   `brew audit --strict --online`, `brew style` all pass; `brew livecheck` finds 0.80.0. The trace,
+   with the Cellar wrapper by full path in a scratch `HOME`: `version` outside a project; `install`
+   writes `./booth` (0.16.0) and a lock for binary 0.80.0; from a project subfolder `version`
+   reports the project's binary, `config --no-tui --dryrun` works, and a run mounts the project
+   root; `shell-config install` refuses and writes no rc file; `uninstall --wrapper -y` outside a
+   project refuses and names `brew uninstall codingbooth`. Then `brew uninstall` and `brew untap`.
+   (An installed `booth()` shell function hides the brew link — call it by path to test.)
 8. **Run it once on a Mac** — Apple Silicon, with the system's bash 3.2. Check `install`, plus
    running inside a project and from a subfolder. (A grep of the wrapper found no bash-4-only
    features — `mapfile`, `declare -A`, `${x,,}` — but only a real run proves it.)
@@ -175,9 +178,9 @@ after 0.80.0, so that release bumps the formula on its own.
 9. **Token:** a fine-grained token with write access to `homebrew-tap` only, stored as a repo
    secret (e.g. `HOMEBREW_TAP_TOKEN`).
 10. **Workflow step** in `.github/workflows/release-binary-and-wrapper.yaml`, after the versioned
-    publish: take the sha256 of `booth`, update `url`, `version` and `sha256` in the formula, and
-    commit straight to the tap (own repo — no PR needed; `brew bump-formula-pr` or a short `sed`
-    script both work). Stable releases only — the existing `--rc` guard already ensures that. The
+    publish: take the sha256 of `booth`, update `url` and `sha256` in the formula (the version
+    comes from the URL), and commit straight to the tap (own repo — no PR needed;
+    `brew bump-formula-pr` or a short `sed` script both work). Stable releases only — the existing `--rc` guard already ensures that. The
     formula must always use versioned URLs, never the moving `latest` tag.
 11. **Which version the formula follows:** the **release** version (1.0.0, 1.1.0, …), not the
     wrapper's own `VERSION=` (0.15.x). No new tagging needed; the cost is that `brew upgrade`
