@@ -48,7 +48,7 @@ fi
 PROBE='echo "WHO=$(whoami)"; echo "LOGIN=$(shopt -q login_shell && echo yes || echo no)"; echo "HOME=$HOME"; exit'
 
 RC=0
-printf '%s\n' "$PROBE" | timeout 120 docker run --rm -i --name "$NAME" \
+printf '%s\n' "$PROBE" | timeout_run 120 docker run --rm -i --name "$NAME" \
   -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
   -v "$AS_CODER:/usr/local/bin/booth--as-coder:ro" \
   --entrypoint tini "$IMAGE" -g -- /usr/local/bin/booth-entry \
