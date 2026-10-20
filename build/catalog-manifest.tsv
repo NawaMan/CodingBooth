@@ -237,6 +237,7 @@ setup	nodejs-code-extension	1.0.0	06e2a52486f776bb9685b286f98e817579723eb5aa0bbd
 setup	nodejs-nb-kernel	1.0.0	c14bb6754b327912cbe21b464ac50402f02624f62ecd6c4412d24600af580650	variants/base/setups/nodejs-nb-kernel--setup.sh
 setup	notebook	1.0.0	63475551c3f889f835ce34d82ec6362bf7dc71217e91700185ded96ee09ba4c1	variants/base/setups/notebook--setup.sh
 setup	obsidian	1.0.0	c611491e5fa1d0fadd8e67eb296ab9caba79efb27df15e287cb59417b518c60d	variants/base/setups/obsidian--setup.sh
+setup	ocaml	0.1.0	01bc2f5d5ffe860b1eea589c177b5b15f2c21aff80bb44111b4f5ffd0d9882fb	variants/base/setups/ocaml--setup.sh
 setup	octave	1.0.0	13512ef609c564ac17f75dfe9c1eaa4fbaf24811ff2e1e1be6a83789a75f3298	variants/base/setups/octave--setup.sh
 setup	octave-code-extension	1.0.0	27b2fdae57711ff302bf8e54ffb1e1801db11994c7a7877a612acc1a639a2dec	variants/base/setups/octave-code-extension--setup.sh
 setup	octave-nb-kernel	1.0.0	800150e1139736c66ae5095fae00e09c2126b04cb73d0e33fbbce5ecadfbdaf3	variants/base/setups/octave-nb-kernel--setup.sh
@@ -533,6 +534,7 @@ template	no-sudo	1.0.0	2a2a45035e22409fbc5b73e3de5870ca9f5a41a5b9470b8df34176f0f
 template	nodejs	1.0.0	1bd0eb933c905b9f431c86507df4190cdc0f315d12f98ad2a4a043c13b24bddd	templates/languages/nodejs/template.toml
 template	notebook	1.0.0	c97294c479fe442836fe9563b75e741f3b2cbae62a6bcfdef6edf7606cb38bfb	templates/tools/notebook/template.toml
 template	obsidian	1.0.0	7c39c40cad77d5a2a71c5da774414ff823ff3763d8941c154ad384d8b3695714	templates/tools/obsidian/template.toml
+template	ocaml	0.1.0	9385164ad0fc6a3f5afdc49ee0f3491487d01bb835b27bebac611e539b5806b4	templates/languages/ocaml/template.toml
 template	octave	1.0.0	1e1343507d54d758196791e0eb5367eb572558a11de061c7b4e11eaedaaa74fb	templates/languages/octave/template.toml
 template	oh-my-pi	1.0.0	f61b666f10af21eeafcefb31545620ab82b22627684749fb1602351c680fcbde	templates/ai-tools/oh-my-pi/template.toml
 template	ollama	1.0.0	5fdb875baa6eaf50f9441fd727fc92d3b2638de822e280b13d16b0e6048e701d	templates/ai-tools/ollama/template.toml

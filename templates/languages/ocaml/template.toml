@@ -1,0 +1,26 @@
+cb-version = "0.1.0"
+display-name = "OCaml [experimental]"
+display-disc = "Experimental — OCaml compiler with Dune, UTop and OCamlFormat"
+display-detail = "EXPERIMENTAL — new, not yet battle-tested; expect rough edges. Installs a prebuilt OCaml compiler and pinned developer tools from CodingBoothPrebuilt, including a usable opam environment. Requires a published archive for the selected version, Ubuntu release and CPU; never falls back to compiling the toolchain locally. Additional opam packages may compile from source."
+display-order = 77
+tags = ["ocaml", "functional", "compiled", "opam"]
+
+[params.OCAML_VERSION]
+default = "5.4.1"
+suggests = ["5.4.1"]
+
+[params.OCAML_TOOLS_REVISION]
+default = "1"
+suggests = ["1"]
+
+[segments]
+Boothfile = """
+setup ocaml --version ${OCAML_VERSION} --tools-revision ${OCAML_TOOLS_REVISION}
+env OPAMROOT=/opt/ocaml/ocaml-${OCAML_VERSION}-tools${OCAML_TOOLS_REVISION}/opam
+env OPAMSWITCH=booth
+env OCAML_HOME=/opt/ocaml/ocaml-${OCAML_VERSION}-tools${OCAML_TOOLS_REVISION}/opam/booth
+env OCAML_TOPLEVEL_PATH=/opt/ocaml-current/opam/booth/lib/toplevel
+env CAML_LD_LIBRARY_PATH=/opt/ocaml-current/opam/booth/lib/stublibs:/opt/ocaml-current/opam/booth/lib/ocaml/stublibs
+env PATH=/opt/ocaml-current/opam/booth/bin:/opt/ocaml-current/bin:${PATH}
+env OPAMJOBS=1
+"""

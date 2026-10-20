@@ -159,6 +159,10 @@ Not sure which example to start from? See **[Examples](EXAMPLES.md)** — the fu
 
 CodingBooth provides `config` and `template` commands to quickly create a new project.
 
+The v0.80.0--rc1 catalog contains **205 templates and 341 extensions across 9 categories**,
+with **332 setup scripts** and **24 install scripts**. See the
+[catalog inventory](docs/UNDERSTAND_SETUPS.md#catalog-inventory) for the breakdown and counting method.
+
 1. **List templates**:
    ```bash
    booth template list

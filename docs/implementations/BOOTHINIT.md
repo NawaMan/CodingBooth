@@ -448,13 +448,18 @@ The template library lives at the repository root under `templates/` and is pack
 ```
 templates/
 ├── README.md              # Authoring guidelines
-├── languages/             # 19 language templates (go, python, java, rust, ...)
-├── ai-tools/              # 5 AI tool templates (claude-code, codex, ...)
-├── tools/                 # 11 tool templates (notebook, neovim, dind, ...)
-├── ides/                  # 11 IDE templates (idea, pycharm, codeserver, ...)
-├── desktops/              # desktop environments, apps, and browsers (xfce, kde, chromium, ...)
-├── middlewares/           # databases and message brokers (postgresql, mysql, sqlite, redis, ...)
-└── education/             # education tools
+├── languages/             # 37 templates, 121 extensions
+├── frameworks/            # 7 templates
+├── middlewares/           # 8 templates, 18 extensions
+├── tools/                 # 92 templates, 102 extensions
+├── ai-tools/              # 16 templates, 31 extensions
+├── ides/                  # 15 templates, 29 extensions
+├── desktops/              # 19 templates, 36 extensions (including browsers)
+├── education/             # 8 templates, 4 extensions
+└── booth-vm/              # 3 templates
 ```
 
-Total: **58 templates** and **36 extensions** across **7 categories**.
+At v0.80.0--rc1: **205 templates** and **341 extensions** across **9 categories**.
+See the [catalog inventory](../UNDERSTAND_SETUPS.md#catalog-inventory) for definitions and
+reproducible counts. These selections generate configuration; the separate runtime catalog
+contains **332 setup scripts** and **24 install scripts**.

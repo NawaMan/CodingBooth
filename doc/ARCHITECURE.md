@@ -16,7 +16,8 @@ user-facing guides live in `../docs/` (`BOOTH_*.md`) with internals under
 
 > Facts below were verified against the tree at **v0.61.0-rc1**: 149 Go files
 > under `cli/src`, 294 TOML templates, 213 setup scripts, 7 image variants.
-> Counts drift; the shapes do not.
+> Counts drift; the shapes do not. For current catalog counts, see the
+> [catalog inventory](../docs/UNDERSTAND_SETUPS.md#catalog-inventory).
 
 ---
 
