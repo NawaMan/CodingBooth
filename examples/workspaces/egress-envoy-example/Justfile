@@ -34,17 +34,17 @@ verify:
 allowed:
     {{run-in-booth}} bash -c 'printf "%-12s " pypi.org; curl -4 -sS -o /dev/null --max-time 12 -x http://127.0.0.1:15001 -w "HTTP %{http_code}\n" https://pypi.org'
 
-# example.com, which envoy.yaml does not allow: the proxy must refuse it
+# reddit.com, which envoy.yaml does not allow: the proxy refuses it with a 403
 blocked:
-    {{run-in-booth}} bash -c 'if curl -4 -sSI -o /dev/null --max-time 12 -x http://127.0.0.1:15001 https://example.com; then echo "example.com was reachable - the policy is not applied" >&2; exit 1; fi; echo "example.com: blocked by the proxy, as expected"'
+    {{run-in-booth}} bash -c 'code=$(curl -4 -sS -o /dev/null --max-time 12 -x http://127.0.0.1:15001 -w "%{http_connect}" https://reddit.com 2>/dev/null || true); if [ "$code" != 403 ]; then echo "reddit.com: expected the proxy to refuse it with 403, got CONNECT $code" >&2; exit 1; fi; echo "reddit.com: blocked by the proxy (CONNECT 403)"'
 
 # Skip the proxy and connect directly: the firewall must refuse it
 bypass:
-    {{run-in-booth}} bash -c 'if HTTPS_PROXY= HTTP_PROXY= curl -4 -sSI -o /dev/null --max-time 8 https://google.com; then echo "google.com was reachable directly - the firewall is not applied" >&2; exit 1; fi; echo "direct connection: blocked by the firewall, as expected"'
+    {{run-in-booth}} bash -c 'if curl -4 -sSI -o /dev/null --noproxy "*" --max-time 8 https://google.com; then echo "google.com was reachable directly - the firewall is not applied" >&2; exit 1; fi; echo "direct connection: blocked by the firewall, as expected"'
 
 # The RBAC rules in .booth/egress/envoy.yaml - the whole allowlist
 policy:
-    sed -n '/envoy.filters.http.rbac/,/any: true/p' .booth/egress/envoy.yaml
+    sed -n '/envoy.filters.http.rbac/,/http.dynamic_forward_proxy/{/http.dynamic_forward_proxy/!p;}' .booth/egress/envoy.yaml
 
 # Open a shell in this project's booth, starting it if needed.
 shell:
