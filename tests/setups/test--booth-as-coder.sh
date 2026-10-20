@@ -98,8 +98,8 @@ check_has() { # desc needle actual
 rm -f "$MARKER"
 check "no marker: runs the command through runuser, as before" \
     "runuser -u coder -- echo hi" "$(run_helper -- echo hi)"
-check "no marker: --login is runuser --login, as before" \
-    "runuser -u coder --login" "$(run_helper --login)"
+check "no marker: --login is runuser -l" \
+    "runuser -l coder" "$(run_helper --login)"
 
 # 3-6. Marker: setpriv to coder with NET_BIND_SERVICE handed down.
 : > "$MARKER"
