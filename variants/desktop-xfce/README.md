@@ -3,7 +3,7 @@
 Lightweight desktop environment with full GUI support.
 
 **Includes:**
-- XFCE desktop environment: Greybird-dark apps, Greybird-dark-accessibility window borders (3 px
+- XFCE desktop environment: Greybird-dark apps, Greybird-dark-wide window borders (6 px
   edges, easy to grab for a resize), Reversal-dark icons, Gruppled White cursor — more themes via the `tela-icons`, `orchis-gtk` and `material-cursors` templates
 - `booth--theme` to show or switch the look from any shell (`booth--theme set icons Adwaita`)
 - [Plank Reloaded](https://github.com/zquestz/plank-reloaded) dock (Matte theme, always visible)

@@ -4,17 +4,18 @@
 # you may not use this file except in compliance with the License.
 
 # -----------------------------------------------------------------------------
-# Unit test: gruppled-cursors--setup.sh adds a 24px cursor size
+# Unit test: gruppled-cursors--setup.sh adds 24px and 30px cursor sizes
 #
 # Gruppled ships only a ~40px image per cursor and Xcursor never scales, so the
-# setup shrinks that image into an extra 24px one — the booth's default size.
+# setup shrinks that image into extra 24px and 30px ones — 30 is the booth's
+# default size.
 # This runs the real script against a synthetic theme tarball (curl stubbed)
 # and reads the Xcursor files back:
-#   - every cursor gains a 24px image, the 40px one is kept
+#   - every cursor gains a 24px and a 30px image, the 40px one is kept
 #   - every frame of an animated cursor is shrunk, delays kept, order kept
 #   - the hotspot scales with the image
 #   - a symlinked cursor is not processed twice; an empty file is left alone
-#   - a file that already has 24px is left byte-identical
+#   - a file that already has 24px and 30px is left byte-identical
 #
 # /usr/share/icons is redirected into a temp dir by cp/rm/ls stubs, so nothing
 # outside the temp dir is touched.
@@ -59,7 +60,8 @@ def write(path, chunks):
 d = sys.argv[1]
 write(f'{d}/left_ptr', [comment('Gruppled'), image(40, 40, 40, 10, 5, 50, 0xff336699)])
 write(f'{d}/watch', [image(39, 40, 40, 20, 20, dl, 0x80402010) for dl in (10, 20, 30)])
-write(f'{d}/already', [image(24, 24, 24, 1, 1, 0, 0xffffffff), image(48, 48, 48, 2, 2, 0, 0xffffffff)])
+write(f'{d}/already', [image(24, 24, 24, 1, 1, 0, 0xffffffff), image(30, 30, 30, 1, 1, 0, 0xffffffff),
+                       image(48, 48, 48, 2, 2, 0, 0xffffffff)])
 open(f'{d}/empty', 'wb').close()
 os.symlink('left_ptr', f'{d}/arrow')
 PY
@@ -147,19 +149,26 @@ check "left_ptr gains a 24x24 image, hotspot scaled to 6,3, colour kept" \
       "$(grep -qx "24 24x24 hot=6,3 delay=50 px=ff336699" <<<"$LEFT" && echo true || echo false)"
 check "left_ptr is resized once, though 'arrow' links to it" \
       "$(echo "$LEFT" | grep -c "^24 " | grep -qx 1 && echo true || echo false)"
+check "left_ptr gains a 30x30 image, hotspot scaled to 8,4, colour kept" \
+      "$(grep -qx "30 30x30 hot=8,4 delay=50 px=ff336699" <<<"$LEFT" && echo true || echo false)"
+check "left_ptr gets its 30px image once, though 'arrow' links to it" \
+      "$(echo "$LEFT" | grep -c "^30 " | grep -qx 1 && echo true || echo false)"
 check "left_ptr keeps its comment chunk" \
       "$(grep -qx "comments=1" <<<"$LEFT" && echo true || echo false)"
 
 # watch: nominal 39, 40x40 images -> 24/39 scale = 25x25; three frames, in order.
 check "every watch frame gains a small image, delays in order" \
       "$([[ "$(grep "^24 " <<<"$WATCH" | sed 's/.*delay=\([0-9]*\).*/\1/' | tr '\n' ' ')" == "10 20 30 " ]] && echo true || echo false)"
+# and 30/39 scale = 31x31, again three frames in order.
+check "every watch frame gains a 30px image, delays in order" \
+      "$([[ "$(grep "^30 31x31 " <<<"$WATCH" | sed 's/.*delay=\([0-9]*\).*/\1/' | tr '\n' ' ')" == "10 20 30 " ]] && echo true || echo false)"
 check "watch keeps its three 39px frames" \
       "$([[ "$(grep -c "^39 " <<<"$WATCH")" == 3 ]] && echo true || echo false)"
 check "a semi-transparent frame keeps its premultiplied colour" \
       "$(grep -q "^24 25x25 hot=12,12 delay=10 px=80402010$" <<<"$WATCH" && echo true || echo false)"
 
 check "an empty file is left empty" "$([[ -f "$OUT/empty" && ! -s "$OUT/empty" ]] && echo true || echo false)"
-check "a cursor that already has 24px is left byte-identical" \
+check "a cursor that already has 24px and 30px is left byte-identical" \
       "$(cmp -s "$OUT/already" "$STUB/already.orig" && echo true || echo false)"
 
 if [[ "$ALL_PASSED" != "true" ]]; then
