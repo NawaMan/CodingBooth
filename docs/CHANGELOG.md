@@ -13,7 +13,8 @@ This file contains a list of changes for each released version.
   ghcup installs beside the booth's own GHC; `ghc` in the terminal is unchanged. IHaskell 0.13 on
   GHC 9.10.3, ghcup's "recommended", kills the kernel ("ARR_WORDS object entered") when a cell
   that imports `Data.Map` also calls `insertWith`. `--ghc-version current` uses the booth's GHC
-  instead, and `--ihaskell-version` pins IHaskell.
+  instead, and `--ihaskell-version` pins IHaskell. `haskell-example` now selects the kernel and
+  ships `Haskell-Tour.ipynb`. Needs a rebuilt base image.
 - **GPG passphrase prompts can open as a desktop dialog: select `pinentry`.** Every booth already
   had `pinentry-curses`, so `folio secret show`, `pass show` or a signed commit asked for the
   key's passphrase inside the terminal, even on a desktop. The new `pinentry` template (Desktop
