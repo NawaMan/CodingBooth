@@ -4,6 +4,11 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Haskell booths get GHC in seconds, not 7 minutes.** `ghcup install ghc` downloads in
+  seconds, then spends 6-7 minutes in its install step during an image build. The `haskell` and
+  `haskell-nb-kernel` setups now unpack GHC prebuilt from CodingBoothPrebuilt (about 10 seconds),
+  already in ghcup's layout: `ghcup list` shows it as installed and `ghcup set` switches to it as
+  before. A GHC with no prebuilt build still installs through ghcup. Needs a rebuilt base image.
 - **The Haskell notebook kernel works, and installs in seconds.** `haskell+kernel` was broken for
   `coder`: IHaskell's data files sat in root's private cabal store, and the kernel's `--stack` flag
   made it download a GHC of its own and time out. The `haskell-nb-kernel` setup now installs a
@@ -22,6 +27,7 @@ This file contains a list of changes for each released version.
   (labwc, sway), `pinentry-gtk2` on XFCE, i3 and other X11 desktops, or a flavor you pin
   (`pinentry:qt`, `gtk2`, `gnome3`). A Console UI tab has no display and keeps the in-terminal
   prompt. It installs nothing on base, codeserver or notebook, so it is safe to select anywhere.
+
 - **XFCE window edges are easier to grab.** The default window border theme is now
   Greybird-dark-wide: Greybird-dark-accessibility (the same look as Greybird-dark) with its edges
   and corners widened to 6 px, where Greybird-dark's 1 px were nearly impossible to hit with the

@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.2.0
+# cb-version: 1.3.0
 
 # haskell-nb-kernel--setup.sh
 #
@@ -44,7 +44,7 @@ SETUP_LIBS_DIR="${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}"
 if [ ! -r "${SETUP_LIBS_DIR}/prebuilt-source.sh" ]; then
   SETUP_LIBS_DIR="$(dirname "$0")/libs"
 fi
-source "${SETUP_LIBS_DIR}/prebuilt-source.sh"
+source "${SETUP_LIBS_DIR}/ghc-source.sh"
 
 # ---------------- Load environment from profile.d ----------------
 [ -f /etc/profile.d/53-cb-python--profile.sh ] && source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
@@ -100,7 +100,7 @@ if [ "$KERNEL_GHC_VERSION" != "current" ] && [ "$("$GHC_BIN" --numeric-version)"
   if [ -x "$GHCUP" ]; then
     echo "📦 Installing GHC ${KERNEL_GHC_VERSION} for the kernel (the booth's ghc stays $("$GHC_BIN" --numeric-version))..."
     GHCUP_INSTALL_BASE_PREFIX="$HASKELL_ROOT" GHCUP_SKIP_UPDATE_CHECK=1 \
-      "$GHCUP" install ghc "$KERNEL_GHC_VERSION"
+      cb_ghc_install "$GHCUP" "$KERNEL_GHC_VERSION"
     GHC_BIN="${HASKELL_ROOT}/.ghcup/ghc/${KERNEL_GHC_VERSION}/bin/ghc"
     [ -x "$GHC_BIN" ] || { echo "❌ ghcup installed no ghc at ${GHC_BIN}" >&2; exit 1; }
     chmod -R a+rX "${HASKELL_ROOT}/.ghcup/ghc/${KERNEL_GHC_VERSION}"
