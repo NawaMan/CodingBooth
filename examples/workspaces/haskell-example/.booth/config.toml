@@ -1,5 +1,6 @@
-# Configured by: booth config --no-tui --overwrite --select haskell+kernel/notebook/claude-code
+# Configured by: booth config --no-tui --overwrite --variant notebook --select haskell+kernel/claude-code
 
+variant = "notebook"
 
 run-args = [
     "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
