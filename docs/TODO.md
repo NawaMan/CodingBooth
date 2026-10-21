@@ -582,7 +582,7 @@ Add or improve support for these developer tools and environments:
 - [ ] `mongodb`
 - [x] `mysql`
 - [x] `nodejs`
-- [ ] `ocaml` — experimental: prebuilt compiler and tools ship, untested; local source builds are never automatic.
+- [ ] `ocaml` — experimental: prebuilt compiler and tools ship; `ocaml-example` exercises them, no `tests/` suite; local source builds are never automatic.
 - [x] `php`
 - [x] `postgres`
 - [ ] `rabbitmq`

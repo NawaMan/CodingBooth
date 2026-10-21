@@ -1,0 +1,16 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --select ocaml
+
+env APT_SNAPSHOT=20261004T000000Z
+
+arg OCAML_TOOLS_REVISION=1
+arg OCAML_VERSION=5.4.1
+
+setup ocaml --version ${OCAML_VERSION} --tools-revision ${OCAML_TOOLS_REVISION}
+env OPAMROOT=/opt/ocaml/ocaml-${OCAML_VERSION}-tools${OCAML_TOOLS_REVISION}/opam
+env OPAMSWITCH=booth
+env OCAML_HOME=/opt/ocaml/ocaml-${OCAML_VERSION}-tools${OCAML_TOOLS_REVISION}/opam/booth
+env OCAML_TOPLEVEL_PATH=/opt/ocaml-current/opam/booth/lib/toplevel
+env CAML_LD_LIBRARY_PATH=/opt/ocaml-current/opam/booth/lib/stublibs:/opt/ocaml-current/opam/booth/lib/ocaml/stublibs
+env PATH=/opt/ocaml-current/opam/booth/bin:/opt/ocaml-current/bin:${PATH}
+env OPAMJOBS=1
