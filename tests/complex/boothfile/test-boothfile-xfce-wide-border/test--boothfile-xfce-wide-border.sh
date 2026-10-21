@@ -63,4 +63,14 @@ check 3 "every XPM matches its declared size" \
          END { if (bad || r != d[2]) print FILENAME }' \$f; done | wc -l" \
     "0"
 
+# Same theme setup: the default cursor is Gruppled at 30, a size its files
+# really carry (Xcursor never scales, so a missing size falls back to another).
+check 4 "the default cursor size is 30" \
+    "grep -o 'name=\"CursorThemeSize\" type=\"int\" value=\"[0-9]*\"' /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml" \
+    'name="CursorThemeSize" type="int" value="30"'
+
+check 5 "left_ptr carries a 30px image" \
+    "python3 -c 'import struct,sys; d=open(sys.argv[1],\"rb\").read(); n=struct.unpack(\"<I\",d[12:16])[0]; print(30 in {struct.unpack(\"<III\",d[16+12*i:28+12*i])[1] for i in range(n)})' \$(readlink -f /usr/share/icons/gruppled_white/cursors/left_ptr)" \
+    'True'
+
 exit $FAILED
