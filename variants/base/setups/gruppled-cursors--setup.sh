@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.2.0
+# cb-version: 0.3.0
 
 # gruppled-cursors--setup.sh — Gruppled Cursors by Craig Laparo (https://www.xfce-look.org/p/999974),
 # prebuilt White and Black variants installed system-wide. It does not change the
@@ -12,9 +12,11 @@
 # The pling download link is a signed, expiring URL, so this fetches the GitHub
 # re-upload instead (verified byte-identical to the pling tarball). The cursors
 # only carry a 40px image, and Xcursor never scales: at another size it uses the
-# nearest image a file has. So a 24px image, shrunk from the 40px one, is added
-# to every cursor here — 24 is the booth default (xfce-theme--setup.sh); 40 is
-# still there for `booth--theme set cursor-size 40`.
+# nearest image a file has. So 24px and 30px images, shrunk from the 40px one,
+# are added to every cursor here. Gruppled draws a small arrow on its canvas:
+# at 30 it is about 14x22, the size of Adwaita's at 24, so 30 is the booth
+# default (xfce-theme--setup.sh); 24 and 40 are there for
+# `booth--theme set cursor-size 24` / `40`.
 #
 # Usage: gruppled-cursors--setup.sh [VARIANTS] [REF]
 #   VARIANTS  comma-separated: white,black  (default: white,black)
@@ -29,7 +31,7 @@ fi
 
 VARIANTS="${1:-white,black}"
 GRUPPLED_REF="${2:-78cc51eea14b9f4f35c25e51b7a6b4e0e1259e0e}"
-SMALL_SIZE=24
+SMALL_SIZES=(24 30)
 
 apt--install.sh curl ca-certificates python3-minimal
 
@@ -125,7 +127,9 @@ for variant in ${VARIANTS//,/ }; do
     echo "❌ Unknown variant '$variant' (white|black)" >&2
     exit 1
   fi
-  add_cursor_size "$WORK_DIR/$theme/cursors" "$SMALL_SIZE"
+  for size in "${SMALL_SIZES[@]}"; do
+    add_cursor_size "$WORK_DIR/$theme/cursors" "$size"
+  done
   rm -rf "/usr/share/icons/$theme"
   cp -r "$WORK_DIR/$theme" "/usr/share/icons/$theme"
 done

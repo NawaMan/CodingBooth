@@ -20,10 +20,11 @@ This file contains a list of changes for each released version.
   `XFCE_BORDER` param sets the width (3 to 16; 3 is the accessibility theme as shipped). A theme
   already chosen in Settings or with `booth--theme set wm <name>` still wins. Alt + right-drag
   resizes from anywhere in a window regardless.
-- **The XFCE cursor is 40% smaller.** Gruppled only ships a 40 px cursor, and X never scales a
-  cursor, so `gruppled-cursors` now adds a 24 px size to every cursor (shrunk from the 40 px one,
-  animated frames included) and the default cursor size is 24. The 40 px size is still there:
-  `booth--theme set cursor-size 40` brings it back.
+- **The XFCE cursor is a normal size.** Gruppled only ships a 40 px cursor, which drew a
+  29 px-tall arrow, and X never scales a cursor. `gruppled-cursors` now adds 30 px and 24 px sizes
+  to every cursor (shrunk from the 40 px one, animated frames included), and the default is 30:
+  Gruppled draws a small arrow on its canvas, so at 30 it is about 22 px tall, the same as
+  Adwaita's at 24. `booth--theme set cursor-size 24` (smaller) or `40` (the old size) switches.
 - **Lazarus is selectable: `fpc+lazarus`.** The new `lazarus` setup installs the Lazarus 4.4
   toolchain from apt: `lazbuild`, the LCL (GTK2) and the gtk2 headers an LCL program links
   against. Projects therefore build headless, in CI or on the base variant. On a desktop variant
