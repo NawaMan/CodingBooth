@@ -1,1 +1,1 @@
-0.80.0--xfce-wide-border
+0.80.0
