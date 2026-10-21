@@ -1,0 +1,3 @@
+_build/
+# The repo ignores bin/ for build output; here it is Dune's executable sources.
+!bin/

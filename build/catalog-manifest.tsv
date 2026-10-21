@@ -237,7 +237,7 @@ setup	nodejs-code-extension	1.0.0	06e2a52486f776bb9685b286f98e817579723eb5aa0bbd
 setup	nodejs-nb-kernel	1.0.0	c14bb6754b327912cbe21b464ac50402f02624f62ecd6c4412d24600af580650	variants/base/setups/nodejs-nb-kernel--setup.sh
 setup	notebook	1.0.0	63475551c3f889f835ce34d82ec6362bf7dc71217e91700185ded96ee09ba4c1	variants/base/setups/notebook--setup.sh
 setup	obsidian	1.0.0	c611491e5fa1d0fadd8e67eb296ab9caba79efb27df15e287cb59417b518c60d	variants/base/setups/obsidian--setup.sh
-setup	ocaml	0.1.0	01bc2f5d5ffe860b1eea589c177b5b15f2c21aff80bb44111b4f5ffd0d9882fb	variants/base/setups/ocaml--setup.sh
+setup	ocaml	0.1.1	0ca2698f113a8208bd1edfabd25a1bc0497101901dc41c6d2666d8298df81f16	variants/base/setups/ocaml--setup.sh
 setup	octave	1.0.0	13512ef609c564ac17f75dfe9c1eaa4fbaf24811ff2e1e1be6a83789a75f3298	variants/base/setups/octave--setup.sh
 setup	octave-code-extension	1.0.0	27b2fdae57711ff302bf8e54ffb1e1801db11994c7a7877a612acc1a639a2dec	variants/base/setups/octave-code-extension--setup.sh
 setup	octave-nb-kernel	1.0.0	800150e1139736c66ae5095fae00e09c2126b04cb73d0e33fbbce5ecadfbdaf3	variants/base/setups/octave-nb-kernel--setup.sh
