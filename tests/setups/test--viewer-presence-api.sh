@@ -15,7 +15,9 @@
 #   - a hidden page is kept past that TTL (browsers slow a background tab's
 #     timers to about once a minute) and swept only after its own, longer one;
 #   - GET reads the count without registering anything;
-#   - a missing or malformed id is rejected and changes nothing.
+#   - a missing or malformed id is rejected and changes nothing;
+#   - every answer says how many viewers are expected (BOOTH_EXPECTED_VIEWER_COUNT,
+#     1 when unset or not a count), which the overlay shows the count above.
 # That the overlay beats, releases on close and shows the count is checked
 # live against a booth, not here.
 
@@ -53,15 +55,20 @@ check() {
 }
 
 # request <method> [json] — one request through --handle; sets OUT (status line + body).
+# EXPECTED, when set, is passed as BOOTH_EXPECTED_VIEWER_COUNT.
+EXPECTED=""
 request() {
     local method="$1" body="${2:-}"
+    local expected_env=()
+    [[ -n "$EXPECTED" ]] && expected_env=(BOOTH_EXPECTED_VIEWER_COUNT="$EXPECTED")
     OUT=$(printf '%s /booth-messages/api/presence HTTP/1.1\r\nContent-Type: application/json\r\nContent-Length: %s\r\n\r\n%s' \
             "$method" "${#body}" "$body" \
-          | env -i HOME="$STUB" PATH="$(stub_path "$STUB/bin")" BOOTH_PRESENCE_DIR="$DIR" "$BASH_BIN" "$API" --handle 2>&1 | tr -d '\r')
+          | env -i HOME="$STUB" PATH="$(stub_path "$STUB/bin")" BOOTH_PRESENCE_DIR="$DIR" "${expected_env[@]}" \
+                "$BASH_BIN" "$API" --handle 2>&1 | tr -d '\r')
 }
 beat() { request POST "$1"; }
 # counts <viewers> <background> — the last answer was a 200 with these counts.
-counts() { grep -q '^HTTP/1.0 200' <<< "$OUT" && grep -q "\"viewers\":$1,\"background\":$2}" <<< "$OUT"; }
+counts() { grep -q '^HTTP/1.0 200' <<< "$OUT" && grep -q "\"viewers\":$1,\"background\":$2," <<< "$OUT"; }
 # age <id> <state> <seconds> — make a page's last beat that long ago.
 age() { printf '%s %s\n' "$2" "$(( $(date +%s) - $3 ))" > "$DIR/$1"; }
 
@@ -106,7 +113,7 @@ request GET
 KEPT="$OUT"
 age tabD hidden 100
 request GET
-if counts 1 0 && grep -q '"viewers":2,"background":1}' <<< "$KEPT" && [[ ! -e "$DIR/tabD" ]]; then
+if counts 1 0 && grep -q '"viewers":2,"background":1,' <<< "$KEPT" && [[ ! -e "$DIR/tabD" ]]; then
     check "true"  "A hidden page is kept through throttled heartbeats and swept after its longer TTL"
 else
     check "false" "A hidden page is kept through throttled heartbeats and swept after its longer TTL" "kept=$KEPT out=$OUT"
@@ -133,6 +140,27 @@ if [[ "$REJECTED" -eq 6 ]] && counts 1 0 && [[ ! -e "$STUB/x" ]]; then
     check "true"  "Missing, empty, odd-character and over-long ids: 400, count unchanged"
 else
     check "false" "Missing, empty, odd-character and over-long ids: 400, count unchanged" "rejected=$REJECTED/6 out=$OUT"
+fi
+
+# ---- the expected count rides along on every answer ----
+request GET
+DEFAULT="$OUT"
+EXPECTED=3
+request GET
+SET="$OUT"
+EXPECTED=0
+request GET
+ZERO="$OUT"
+EXPECTED=lots
+request GET
+BAD="$OUT"
+EXPECTED=""
+if grep -q '"expected":1}' <<< "$DEFAULT" && grep -q '"expected":3}' <<< "$SET" \
+        && grep -q '"expected":0}' <<< "$ZERO" && grep -q '"expected":1}' <<< "$BAD"; then
+    check "true"  "The answer carries the expected count: 1 unset, as set, 0 kept, 1 for a non-count"
+else
+    check "false" "The answer carries the expected count: 1 unset, as set, 0 kept, 1 for a non-count" \
+        "default=$DEFAULT set=$SET zero=$ZERO bad=$BAD"
 fi
 
 [[ "$FAILED" -eq 0 ]] || exit 1

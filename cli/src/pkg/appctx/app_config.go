@@ -132,6 +132,11 @@ type AppConfig struct {
 	IdleShutdownTime  int    `toml:"idle-shutdown-time,omitempty"  envconfig:"CB_IDLE_SHUTDOWN_TIME" default:"0"`
 	IdleExitCode      int    `toml:"idle-exit-code,omitempty"      envconfig:"CB_IDLE_EXIT_CODE" default:"0"`
 
+	// ExpectedViewerCount is how many pages may view the booth before the Booth
+	// panel shows the viewer count: the count shows only when it is above this.
+	// 1 (the default) shows it once anyone besides you is in; 0 always shows it.
+	ExpectedViewerCount int `toml:"expected-viewer-count,omitempty" envconfig:"CB_EXPECTED_VIEWER_COUNT" default:"1"`
+
 	// AppleLowPorts lets coder open ports below 1024 on engine apple (Apple
 	// container leaves the kernel's limit at 1024; Docker sets it to 0). It
 	// hands coder only NET_BIND_SERVICE; see docs/CONTAINER_SUPPORT.md. Ignored
@@ -290,6 +295,7 @@ func (config AppConfig) String() string {
 	fmt.Fprintf(&str, "    IdleTime:          %d\n", config.IdleTime)
 	fmt.Fprintf(&str, "    IdleShutdownTime:  %d\n", config.IdleShutdownTime)
 	fmt.Fprintf(&str, "    IdleExitCode:      %d\n", config.IdleExitCode)
+	fmt.Fprintf(&str, "    ExpectedViewerCount: %d\n", config.ExpectedViewerCount)
 	fmt.Fprintf(&str, "    EgressAllowlist:  %q\n", config.EgressAllowlistFile)
 	fmt.Fprintf(&str, "    EgressPolicy:     %q\n", config.EgressPolicyFile)
 	fmt.Fprintf(&str, "    EgressAllowlist+: %v\n", config.EgressAllowlist)

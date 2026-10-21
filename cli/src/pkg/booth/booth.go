@@ -882,6 +882,10 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 		builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_IDLE_EXIT_CODE=%d", ctx.IdleExitCode())))
 	}
 
+	// Viewer count: the Booth panel shows it only above this many viewers.
+	// Always passed, so `echo $BOOTH_EXPECTED_VIEWER_COUNT` in the booth answers.
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_EXPECTED_VIEWER_COUNT=%d", ctx.ExpectedViewerCount())))
+
 	// Custom startup script
 	if ctx.Startup() != "" {
 		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_STARTUP="+ctx.Startup()))
