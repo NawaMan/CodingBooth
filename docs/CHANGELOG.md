@@ -4,6 +4,14 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **GPG passphrase prompts can open as a desktop dialog: select `pinentry`.** Every booth already
+  had `pinentry-curses`, so `folio secret show`, `pass show` or a signed commit asked for the
+  key's passphrase inside the terminal, even on a desktop. The new `pinentry` template (Desktop
+  tab) installs a graphical pinentry and makes it gpg's: `pinentry-qt` on KDE, LXQt and Wayland
+  (labwc, sway), `pinentry-gtk2` on XFCE, i3 and other X11 desktops, or a flavor you pin
+  (`pinentry:qt`, `gtk2`, `gnome3`). A Console UI tab has no display and keeps the in-terminal
+  prompt. It installs nothing on base, codeserver or notebook, so it is safe to select anywhere.
+
 - **XFCE window edges are easier to grab.** The default window border theme is now
   Greybird-dark-accessibility: the same look as Greybird-dark, with 3 px edges and corners instead
   of 1 px, which were nearly impossible to hit with the mouse for a resize. Applies to the

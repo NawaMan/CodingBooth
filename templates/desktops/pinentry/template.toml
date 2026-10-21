@@ -1,0 +1,29 @@
+cb-version = "0.1.0"
+display-name = "Pinentry (GUI)"
+primary = true
+display-disc = "GPG passphrase prompts as a desktop dialog — for EnvFolio, pass and gpg"
+display-detail = """\
+Installs a graphical pinentry that fits the desktop and makes it gpg's prompt, \
+so `folio secret show`, `pass show` or a signed commit run from a desktop \
+terminal ask for the key's passphrase in a dialog instead of inside the \
+terminal. auto picks pinentry-qt on KDE, LXQt and Wayland (labwc, sway) and \
+pinentry-gtk2 on XFCE, i3 and other X11 desktops; pick a flavor to override. \
+A Console UI tab has no display and keeps the in-terminal prompt. Does nothing \
+unless a desktop is installed — by a desktop variant or a desktop template — \
+so it is safe to select on any booth."""
+display-order = 56
+tags = [
+    "desktop",
+    "gpg",
+    "pinentry",
+    "secrets"
+]
+
+[params.PINENTRY_FLAVOR]
+default  = "auto"
+suggests = ["auto", "gtk2", "qt", "gnome3"]
+
+[segments]
+"Boothfile--60" = """
+setup pinentry --flavor ${PINENTRY_FLAVOR}
+"""
