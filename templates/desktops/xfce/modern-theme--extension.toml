@@ -1,9 +1,10 @@
-cb-version = "0.1.1"
+cb-version = "0.2.0"
 display-name   = "Modern Theme"
 display-disc   = "Greybird-dark apps and windows, Reversal-dark icons, Gruppled cursor"
 display-detail = """\
-Makes a modern dark look the default: Greybird-dark for apps, its accessibility \
-variant for window borders (3 px edges, easy to grab for a resize), \
+Makes a modern dark look the default: Greybird-dark for apps, Greybird-dark-wide \
+for window borders (the accessibility variant with its edges widened to \
+XFCE_BORDER px, 6 by default, easy to grab for a resize; 3 keeps it as shipped), \
 Reversal-dark icons and the Gruppled White cursor (size 24). Only what that look \
 needs is installed; more themes are opt-in templates (tela-icons, orchis-gtk, \
 material-cursors). Only the system defaults change, so \
@@ -20,10 +21,14 @@ tags = [
     "dark"
 ]
 
+[params.XFCE_BORDER]
+default  = "6"
+suggests = ["6", "3", "4", "8", "10"]
+
 # The packs only install; xfce-theme picks the defaults, so it goes last.
 [segments]
 "Boothfile--41" = """
 setup reversal-icons
 setup gruppled-cursors
-setup xfce-theme
+setup xfce-theme --border ${XFCE_BORDER}
 """

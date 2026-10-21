@@ -36,15 +36,16 @@ absent() { ! grep -q "^$1" "$boothfile"; }
 
 # --- plain xfce: both extensions come along --------------------------------
 run booth config $prj --no-tui --select 'xfce'
-assert-line "$boothfile" "setup xfce-theme" ""                   "xfce auto-selects +modern-theme"
+assert-line "$boothfile" "setup xfce-theme" ' --border ${XFCE_BORDER}' "xfce auto-selects +modern-theme"
+assert-line "$boothfile" "arg XFCE_BORDER=" "$(template-default xfce+modern-theme XFCE_BORDER)" "XFCE_BORDER defaults to the catalog's"
 assert-line "$boothfile" "setup plank" ' ${PLANK_VERSION}'       "xfce auto-selects +plank"
 assert-line "$boothfile" "arg PLANK_VERSION=" ""                 "PLANK_VERSION defaults to empty (latest)"
-check "setup xfce-theme runs after setup xfce" after_xfce 'setup xfce-theme'
+check "setup xfce-theme runs after setup xfce" after_xfce 'setup xfce-theme --border ${XFCE_BORDER}'
 check "setup plank runs after setup xfce"      after_xfce 'setup plank ${PLANK_VERSION}'
 # xfce-theme picks defaults out of what the packs installed, so it goes after them.
 after_packs() {
     local t p
-    t="$(line_of 'setup xfce-theme')"
+    t="$(line_of 'setup xfce-theme --border ${XFCE_BORDER}')"
     for p in reversal-icons gruppled-cursors; do
         p="$(line_of "setup $p")"
         [[ -n "$p" && -n "$t" && "$p" -lt "$t" ]] || return 1
@@ -71,10 +72,14 @@ assert-line "$boothfile" "setup vscode-copilot" ""               "vscode-copilot
 # --- each can be excluded ---------------------------------------------------
 run booth config $prj --no-tui --overwrite --select 'xfce~plank'
 check "xfce~plank drops setup plank"            absent 'setup plank'
-assert-line "$boothfile" "setup xfce-theme" ""                   "xfce~plank keeps +modern-theme"
+assert-line "$boothfile" "setup xfce-theme" ' --border ${XFCE_BORDER}' "xfce~plank keeps +modern-theme"
 
 run booth config $prj --no-tui --overwrite --select 'xfce~modern-theme'
 check "xfce~modern-theme drops setup xfce-theme" absent 'setup xfce-theme'
 assert-line "$boothfile" "setup plank" ' ${PLANK_VERSION}'       "xfce~modern-theme keeps +plank"
+
+# --- the window edge width is a param of +modern-theme ----------------------
+run booth config $prj --no-tui --overwrite --select 'xfce+modern-theme:8'
+assert-line "$boothfile" "arg XFCE_BORDER=" '8'                  "xfce+modern-theme:8 pins XFCE_BORDER"
 
 finally
