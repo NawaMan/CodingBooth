@@ -7,8 +7,8 @@
 # Unit test: gruppled-cursors--setup.sh adds 24px and 30px cursor sizes
 #
 # Gruppled ships only a ~40px image per cursor and Xcursor never scales, so the
-# setup shrinks that image into extra 24px and 30px ones — 30 is the booth's
-# default size.
+# setup shrinks that image into extra 24px and 30px ones, for a smaller cursor
+# than the booth's default 40.
 # This runs the real script against a synthetic theme tarball (curl stubbed)
 # and reads the Xcursor files back:
 #   - every cursor gains a 24px and a 30px image, the 40px one is kept
