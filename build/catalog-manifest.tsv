@@ -249,6 +249,7 @@ setup	opensshd	1.0.0	5c7dbf41db974b86119595853d8ec2f167dd6f0bd6f98e101f8faeb53ae
 setup	orchis-gtk	0.1.0	03bb0f3bb90620590a2cd7ab9682d99544ae0ec3bef77be80a7e83b78b3e4df2	variants/base/setups/orchis-gtk--setup.sh
 setup	php	1.0.0	397c63cb432fd45e81a827200be0a0bde3f1ac4bc6da62595944a4e51a3b0a93	variants/base/setups/php--setup.sh
 setup	php-code-extension	1.0.0	938a5949e6a3723c576a0b6f7c4bf04f346db5fb165b976774730f8974d74dbf	variants/base/setups/php-code-extension--setup.sh
+setup	pinentry	0.1.0	2d620aea1d4330e497c9325db624753b1aeba2b3f9d519b637d6b0328bac9ba4	variants/base/setups/pinentry--setup.sh
 setup	plank	0.3.0	3dfa45f945005656f46c6c42db17474d3ba080870fa1bb96d4654a0a4e18c551	variants/base/setups/plank--setup.sh
 setup	plantuml	1.0.0	d929a039b50ee7b0087b7fca824005a28e8fb8429e104a04b3357cab9bc9fcbe	variants/base/setups/plantuml--setup.sh
 setup	plantuml-code-extension	0.1.0	cbc444d18c725e8c48e6e0beb9a1a71c2b71a80bc72cc4a62ee1f0ab32ee1cd3	variants/base/setups/plantuml-code-extension--setup.sh
@@ -543,6 +544,7 @@ template	openssh	1.0.0	3f9a44c7fea93ca4024e7939267d8e200a8419bfda285dbc2e9a5f4e0
 template	orchis-gtk	0.1.0	90d120c836c889c8ee0f98ab8f29f20dd873e3ee952951daa39d475082bc0116	templates/desktops/orchis-gtk/template.toml
 template	php	1.0.0	1c7bf5b149e8922242abac9d78935da6c45881f91a58268e3fdada08e5cbaa63	templates/languages/php/template.toml
 template	phpstorm	1.0.0	e3f9978b35ff7170c9e2bf825a5a5c09c1b42ca9e50e84b6861d102ca31cef18	templates/ides/phpstorm/template.toml
+template	pinentry	0.1.0	e80d858c4783f8502498649e5b7be656b7b65b1d121032b765fb747ba3f63c95	templates/desktops/pinentry/template.toml
 template	plantuml	1.0.0	2ea1d2e1c098fadcbff7add437e7658f691d89a092f7b60a4cfd31a70e645b39	templates/tools/plantuml/template.toml
 template	playwright	1.1.0	6f06b677d48e14fb5efd6ff37e2a53289f4c8caf541899a47ded21b80e9ecd13	templates/tools/playwright/template.toml
 template	postgresql	2.0.0	28af9041e2355bb1ec03ccfd92698b5d03ddcca8519c41b92db23908ce2df49a	templates/middlewares/postgresql/template.toml
