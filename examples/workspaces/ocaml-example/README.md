@@ -24,6 +24,62 @@ just repl                  # UTop with the calc library loaded: Calc.calculate "
 
 Every recipe also works from the host; it runs in this project's booth, starting one if needed.
 
+## Trying it in UTop
+
+`just repl` opens UTop with the `calc` library loaded as the `Calc` module. End every phrase
+with `;;`.
+
+Run the whole thing:
+
+```ocaml
+Calc.calculate "1 + 2 * 3";;
+(* - : (string, string) result = Ok "(1 + (2 * 3)) = 7" *)
+
+Calc.calculate "1 / 0";;
+(* - : (string, string) result = Error "division by zero" *)
+```
+
+Look at the syntax tree the parser builds:
+
+```ocaml
+Calc.parse "-(2 + 3) * 4";;
+(* Ok (Calc.Bin (Calc.Mul, Calc.Neg (Calc.Bin (Calc.Add, Calc.Num 2, Calc.Num 3)), Calc.Num 4)) *)
+
+Calc.parse "(1 + 2";;
+(* Error "missing ')'" *)
+```
+
+Build a tree by hand and evaluate it:
+
+```ocaml
+open Calc;;
+let e = Bin (Add, Num 40, Bin (Mul, Num 1, Num 2));;
+to_string e;;     (* "(40 + (1 * 2))" *)
+eval e;;          (* Ok 42 *)
+```
+
+Write your own function over the tree — pattern matching is the fun part:
+
+```ocaml
+let rec count_nums = function
+  | Num _ -> 1
+  | Neg e -> count_nums e
+  | Bin (_, a, b) -> count_nums a + count_nums b;;
+
+Result.map count_nums (parse "1 + 2 * (3 - 4)");;   (* Ok 4 *)
+```
+
+Handy UTop commands:
+
+| Command                | What it does                               |
+|------------------------|--------------------------------------------|
+| `#show Calc;;`         | List the module's types and functions      |
+| `#typeof "Calc.eval";;`| Show the type of one value                 |
+| Tab                    | Complete a name, e.g. after `Calc.`        |
+| `#quit;;` or Ctrl+D    | Leave UTop                                 |
+
+After editing `src/calc.ml`, quit and run `just repl` again to pick up the change.
+
 ## What's included
 
 | Component  | Details                                                       |
