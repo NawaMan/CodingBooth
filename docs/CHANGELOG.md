@@ -13,11 +13,13 @@ This file contains a list of changes for each released version.
   prompt. It installs nothing on base, codeserver or notebook, so it is safe to select anywhere.
 
 - **XFCE window edges are easier to grab.** The default window border theme is now
-  Greybird-dark-accessibility: the same look as Greybird-dark, with 3 px edges and corners instead
-  of 1 px, which were nearly impossible to hit with the mouse for a resize. Applies to the
-  desktop-xfce variant and the xfce `modern-theme` extension. A theme already chosen in Settings
-  or with `booth--theme set wm <name>` still wins. Alt + right-drag resizes from anywhere in a
-  window regardless.
+  Greybird-dark-wide: Greybird-dark-accessibility (the same look as Greybird-dark) with its edges
+  and corners widened to 6 px, where Greybird-dark's 1 px were nearly impossible to hit with the
+  mouse for a resize. xfwm4 resizes only from the border it draws, so the edge width is the grab
+  width. Applies to the desktop-xfce variant and the xfce `modern-theme` extension, whose
+  `XFCE_BORDER` param sets the width (3 to 16; 3 is the accessibility theme as shipped). A theme
+  already chosen in Settings or with `booth--theme set wm <name>` still wins. Alt + right-drag
+  resizes from anywhere in a window regardless.
 - **The XFCE cursor is 40% smaller.** Gruppled only ships a 40 px cursor, and X never scales a
   cursor, so `gruppled-cursors` now adds a 24 px size to every cursor (shrunk from the 40 px one,
   animated frames included) and the default cursor size is 24. The 40 px size is still there:

@@ -7,11 +7,12 @@ arg CLAUDE_CODE_VERSION=latest
 arg NOTEBOOK_PORT=18888
 arg PLANK_VERSION=
 arg PYTHON_VERSION=3.13.12
+arg XFCE_BORDER=6
 
 setup xfce
 setup reversal-icons
 setup gruppled-cursors
-setup xfce-theme
+setup xfce-theme --border ${XFCE_BORDER}
 setup plank ${PLANK_VERSION}
 setup claude-code ${CLAUDE_CODE_VERSION}
 env CB_PYENV_ROOT=/opt/pyenv
