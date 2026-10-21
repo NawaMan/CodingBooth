@@ -4,6 +4,22 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Haskell booths get GHC in seconds, not 7 minutes.** `ghcup install ghc` downloads in
+  seconds, then spends 6-7 minutes in its install step during an image build. The `haskell` and
+  `haskell-nb-kernel` setups now unpack GHC prebuilt from CodingBoothPrebuilt (about 10 seconds),
+  already in ghcup's layout: `ghcup list` shows it as installed and `ghcup set` switches to it as
+  before. A GHC with no prebuilt build still installs through ghcup. Needs a rebuilt base image.
+- **The Haskell notebook kernel works, and installs in seconds.** `haskell+kernel` was broken for
+  `coder`: IHaskell's data files sat in root's private cabal store, and the kernel's `--stack` flag
+  made it download a GHC of its own and time out. The `haskell-nb-kernel` setup now installs a
+  prebuilt, checksum-checked IHaskell from CodingBoothPrebuilt into
+  `/opt/ihaskell/ihaskell-<ver>-ghc<ghc>`, readable by every user. It builds from source with
+  cabal only when no prebuilt build exists for that GHC. The kernel runs on GHC 9.12.4, which
+  ghcup installs beside the booth's own GHC; `ghc` in the terminal is unchanged. IHaskell 0.13 on
+  GHC 9.10.3, ghcup's "recommended", kills the kernel ("ARR_WORDS object entered") when a cell
+  that imports `Data.Map` also calls `insertWith`. `--ghc-version current` uses the booth's GHC
+  instead, and `--ihaskell-version` pins IHaskell. `haskell-example` now selects the kernel and
+  ships `Haskell-Tour.ipynb`. Needs a rebuilt base image.
 - **GPG passphrase prompts can open as a desktop dialog: select `pinentry`.** Every booth already
   had `pinentry-curses`, so `folio secret show`, `pass show` or a signed commit asked for the
   key's passphrase inside the terminal, even on a desktop. The new `pinentry` template (Desktop
