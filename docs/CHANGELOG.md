@@ -4,6 +4,13 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`ocaml-example`: an OCaml workspace on the experimental prebuilt toolchain.** A Dune
+  project with a `calc` CLI that parses an integer expression, prints it fully parenthesized
+  and evaluates it, with `just build`, `test`, `run`, `fmt` and `repl` (UTop with the library
+  loaded). Its tests cover the compiler, Dune, UTop, OCamlFormat and the opam switch, and need no
+  opam packages beyond the bundle. Runs on the current base image; the `ocaml` setup stays
+  `[experimental]`.
+
 - **The viewer count shows only when someone else is viewing: `--expected-viewer-count`.** The
   Booth panel no longer shows `👁 1 viewer` while you are alone. It shows the count once there
   are more viewers than expected, which is 1 by default. Set
