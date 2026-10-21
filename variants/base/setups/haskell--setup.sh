@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 set -Eeuo pipefail
 
@@ -20,6 +20,8 @@ Examples:
 
 Notes:
 - Installs under /opt/haskell/haskell-<GHCVER> and links /opt/haskell-stable
+- GHC comes prebuilt from https://github.com/NawaMan/CodingBoothPrebuilt when a build is
+  published for it (seconds instead of 6-7 minutes), else ghcup installs it
 - Binaries work in login & non-login shells via /usr/local/bin wrappers
 - VERSION PINNING: Installing via ghcup can be slow and may have issues.
   For simpler setups, consider using apt packages instead:
@@ -32,6 +34,12 @@ if [ "$EUID" -ne 0 ]; then
   echo "❌ This script must be run as root (use sudo)" >&2
   exit 1
 fi
+
+SETUP_LIBS_DIR="${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}"
+if [ ! -r "${SETUP_LIBS_DIR}/ghc-source.sh" ]; then
+  SETUP_LIBS_DIR="$(dirname "$0")/libs"
+fi
+source "${SETUP_LIBS_DIR}/ghc-source.sh"
 
 # --- defaults ---
 GHC_VERSION="recommended"
@@ -119,8 +127,8 @@ export PATH="${TARGET_DIR}/.ghcup/bin:${TARGET_DIR}/.cabal/bin:${PATH}"
 
 # --- explicitly install GHC and Cabal ---
 echo "📦 Installing GHC ${GHC_VERSION}..."
-"$GHCUP" install ghc "${GHC_VERSION}"
-"$GHCUP" set     ghc "${GHC_VERSION}"
+cb_ghc_install "$GHCUP" "${GHC_VERSION}"
+"$GHCUP" set ghc "${CB_GHC_VERSION:-${GHC_VERSION}}"
 
 echo "📦 Installing Cabal ${CABAL_VERSION}..."
 "$GHCUP" install cabal "${CABAL_VERSION}"
