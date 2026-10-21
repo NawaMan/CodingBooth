@@ -2,16 +2,23 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.1.0
+# cb-version: 1.2.0
 
 # haskell-nb-kernel--setup.sh
 #
 # Installs the IHaskell Jupyter kernel.
 # IHaskell provides interactive Haskell in Jupyter notebooks.
 #
-# Usage: haskell-nb-kernel--setup.sh [--ihaskell-version <ver>]
+# Usage: haskell-nb-kernel--setup.sh [--ihaskell-version <ver>] [--ghc-version <ver>|current]
 #
-# The kernel embeds the GHC API, so it is built for one exact GHC: the one on PATH.
+# The kernel embeds the GHC API, so it is built for one exact GHC. That is GHC 9.12.4 by
+# default, not the booth's own GHC: IHaskell 0.13 on GHC 9.10.3 (ghcup's "recommended")
+# kills the kernel ("ARR_WORDS object entered") when the first cell to import Data.Map
+# also calls insertWith/fromListWith. When the booth's GHC is another version, ghcup
+# installs the kernel's GHC beside it without changing the default, so `ghc` in the
+# terminal stays as it was; packages installed for that GHC are not visible in notebooks.
+# `--ghc-version current` uses the booth's GHC instead.
+#
 # For that GHC, IHaskell comes prebuilt (sha256-checked) from
 # https://github.com/NawaMan/CodingBoothPrebuilt/releases when a build is published for
 # it; otherwise it is built from source with cabal (about 11 minutes on 4 cores).
@@ -45,6 +52,7 @@ source "${SETUP_LIBS_DIR}/prebuilt-source.sh"
 
 # ---------------- Defaults / Tunables ----------------
 IHASKELL_VERSION="0.13.0.0"
+KERNEL_GHC_VERSION="9.12.4"
 JUPYTER_KERNEL_PREFIX="${JUPYTER_KERNEL_PREFIX:-/usr/local}"
 KERNEL_NAME="${KERNEL_NAME:-haskell}"
 KERNEL_DISPLAY_NAME="${KERNEL_DISPLAY_NAME:-Haskell (IHaskell)}"
@@ -52,7 +60,8 @@ KERNEL_DISPLAY_NAME="${KERNEL_DISPLAY_NAME:-Haskell (IHaskell)}"
 while [ $# -gt 0 ]; do
   case "$1" in
     --ihaskell-version) shift; IHASKELL_VERSION="${1:?--ihaskell-version needs a value}"; shift ;;
-    -h|--help) echo "Usage: $0 [--ihaskell-version <ver>]"; exit 0 ;;
+    --ghc-version)      shift; KERNEL_GHC_VERSION="${1:?--ghc-version needs a value}"; shift ;;
+    -h|--help) echo "Usage: $0 [--ihaskell-version <ver>] [--ghc-version <ver>|current]"; exit 0 ;;
     *) echo "❌ Unknown option: $1" >&2; exit 1 ;;
   esac
 done
@@ -83,8 +92,25 @@ then
   exit 2
 fi
 
-GHC_VERSION="$(ghc --numeric-version)"
-GHC_LIBDIR="$(ghc --print-libdir)"
+# ---------------- The kernel's GHC ----------------
+GHC_BIN="$(command -v ghc)"
+if [ "$KERNEL_GHC_VERSION" != "current" ] && [ "$("$GHC_BIN" --numeric-version)" != "$KERNEL_GHC_VERSION" ]; then
+  HASKELL_ROOT="$(readlink -f "${HASKELL_HOME:-/opt/haskell-stable}")"
+  GHCUP="${HASKELL_ROOT}/.ghcup/bin/ghcup"
+  if [ -x "$GHCUP" ]; then
+    echo "📦 Installing GHC ${KERNEL_GHC_VERSION} for the kernel (the booth's ghc stays $("$GHC_BIN" --numeric-version))..."
+    GHCUP_INSTALL_BASE_PREFIX="$HASKELL_ROOT" GHCUP_SKIP_UPDATE_CHECK=1 \
+      "$GHCUP" install ghc "$KERNEL_GHC_VERSION"
+    GHC_BIN="${HASKELL_ROOT}/.ghcup/ghc/${KERNEL_GHC_VERSION}/bin/ghc"
+    [ -x "$GHC_BIN" ] || { echo "❌ ghcup installed no ghc at ${GHC_BIN}" >&2; exit 1; }
+    chmod -R a+rX "${HASKELL_ROOT}/.ghcup/ghc/${KERNEL_GHC_VERSION}"
+  else
+    echo "⚠️  No ghcup to install GHC ${KERNEL_GHC_VERSION}; the kernel uses $("$GHC_BIN" --numeric-version)." >&2
+  fi
+fi
+GHC_VERSION="$("$GHC_BIN" --numeric-version)"
+GHC_LIBDIR="$("$GHC_BIN" --print-libdir)"
+GHC_BIN_DIR="$(dirname "$GHC_BIN")"
 VERSION_TAG="${IHASKELL_VERSION}-ghc${GHC_VERSION}"
 PREFIX="/opt/ihaskell/ihaskell-${VERSION_TAG}"
 IHASKELL_BIN="${PREFIX}/bin/ihaskell"
@@ -122,7 +148,7 @@ build_from_source() {
   rm -rf /var/lib/apt/lists/*
 
   echo "📦 Building IHaskell ${IHASKELL_VERSION} for GHC ${GHC_VERSION} via cabal..."
-  export CABAL_DIR="$TMP/cabal"
+  export CABAL_DIR="$TMP/cabal" PATH="${GHC_BIN_DIR}:${PATH}"
   cabal update
   rm -rf "$PREFIX"
   mkdir -p "$PREFIX/bin"
@@ -149,14 +175,23 @@ if [ ! -x "${IHASKELL_BIN}" ]; then
 fi
 
 # ---------------- Create kernelspec ----------------
-# --ghclib points the kernel at this image's GHC; the path compiled into the binary is the
-# one it was built against.
+# --ghclib points the kernel at the kernel's GHC; the path compiled into the binary is the
+# one it was built against. The launcher puts that GHC first on PATH, for the ghc and
+# ghc-pkg the kernel runs itself.
 TMPKDIR="$TMP/kernel/haskell"
 mkdir -p "${TMPKDIR}"
 
+cat > "${TMPKDIR}/ihaskell-kernel" <<LAUNCHER
+#!/bin/sh
+export PATH="${GHC_BIN_DIR}:\$PATH"
+exec "${IHASKELL_BIN}" kernel "\$1" --ghclib "${GHC_LIBDIR}" +RTS -M3g -N2 -RTS
+LAUNCHER
+chmod 0755 "${TMPKDIR}/ihaskell-kernel"
+
+KDIR="${JUPYTER_KERNEL_PREFIX}/share/jupyter/kernels/${KERNEL_NAME}"
 cat > "${TMPKDIR}/kernel.json" <<KJSON
 {
-  "argv": ["${IHASKELL_BIN}", "kernel", "{connection_file}", "--ghclib", "${GHC_LIBDIR}", "+RTS", "-M3g", "-N2", "-RTS"],
+  "argv": ["${KDIR}/ihaskell-kernel", "{connection_file}"],
   "display_name": "${KERNEL_DISPLAY_NAME}",
   "language": "haskell",
   "metadata": {
@@ -181,7 +216,6 @@ python -m jupyter kernelspec install "${TMPKDIR}" \
   --replace \
   --name="${KERNEL_NAME}"
 
-KDIR="${JUPYTER_KERNEL_PREFIX}/share/jupyter/kernels/${KERNEL_NAME}"
 chmod -R a+rX "${KDIR}" 2>/dev/null || true
 
 # ---------------- Verification ----------------
