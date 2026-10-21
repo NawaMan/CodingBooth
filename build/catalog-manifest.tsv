@@ -131,7 +131,7 @@ setup	gruppled-cursors	0.3.0	16441948327fa6f07fe39e0e0439123ab2a83418e146e4d0d04
 setup	harlequin	0.1.0	7d16f4a9d8afdbbf7beba8c5a83a72bdc3c790ce370e81474da53e8f131dd808	variants/base/setups/harlequin--setup.sh
 setup	haskell	1.0.0	9b52b1f086c217f186b0ed739a9951c52d6027c4a1236d41936462f78ed6d3bf	variants/base/setups/haskell--setup.sh
 setup	haskell-code-extension	1.0.0	da1b29d952efef7fc21ce36533c0d0689bcb2e8e80965ac45cd1376e86ebd485	variants/base/setups/haskell-code-extension--setup.sh
-setup	haskell-nb-kernel	1.0.0	97ff6f9e8caedf94e93f0f0518b93b40e3a3c7204eb87e9a45f0b456c84a8853	variants/base/setups/haskell-nb-kernel--setup.sh
+setup	haskell-nb-kernel	1.2.0	42044f3da59fefd61d4bd26f1b5a95ea1e1ba7d13158f9afbde0035db480619f	variants/base/setups/haskell-nb-kernel--setup.sh
 setup	haskell-tools	1.0.0	8953f1481b20fde900c2ce26bc45fb743f747151957140b4e95ea727093a47ad	variants/base/setups/haskell-tools--setup.sh
 setup	heidisql	0.1.0	b577d8e7a12a4e3264eaf5b9968f9dde580fce7f2c6874260855ab40d1c3b7db	variants/base/setups/heidisql--setup.sh
 setup	helix	1.0.0	7a017950fe6f47fc4b2498e32e6b8bdacaa61c759a4644893ff3a5bd19b65ee6	variants/base/setups/helix--setup.sh
@@ -728,7 +728,7 @@ extension	grok+plugins	1.0.0	ff59007f8d987158a8834922729aa734ade42ec33094125bc92
 extension	grok+settings-cache	1.0.0	2583191eb2cbe317b1e3c5e96aa5f7aee78ebb0f03c2507b0c088b730d98cd05	templates/ai-tools/grok/settings-cache--extension.toml
 extension	grok+token-credential	0.1.0	d31721bc9bbc0ee48af7533f4b98471b67fb2f7d641247491ce69bc75d31c183	templates/ai-tools/grok/token-credential--extension.toml
 extension	haskell+cabal-pkg	1.0.0	63e52f989b5cfcd43bb0f4ae4f9005a1fe0b7dade3f4cd30242ff72f4b85254f	templates/languages/haskell/cabal-pkg--extension.toml
-extension	haskell+kernel	1.0.0	72931bf5da2785e47664e1e4d4b6a3a13364310f91eba8d1a7dcd0465c365a23	templates/languages/haskell/kernel--extension.toml
+extension	haskell+kernel	1.0.1	49cd4dd531a1f9321dc0383a3dfb04d58d8a773b9d9c141bd1bb08e424c231c5	templates/languages/haskell/kernel--extension.toml
 extension	haskell+tools	1.0.0	8a72399d81d0152e1b73f0fdf87a23c460cb536b8053a3f850ffb59eeace09dc	templates/languages/haskell/tools--extension.toml
 extension	haskell+vscode-ext	1.0.0	d2665dcab2cc5f5a8f358d40f4879cb954ff967a8c765acc94fa80fbb0f81aaa	templates/languages/haskell/vscode-ext--extension.toml
 extension	helix+config-shared	1.0.0	9ad544f907b107c753b78473533b226b84719ae43c68ec8166c55b4176d6cf5c	templates/tools/helix/config-shared--extension.toml
