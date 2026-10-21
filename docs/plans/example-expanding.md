@@ -15,7 +15,7 @@
 - **Optional:** `.cb-tests/test001-…-on-host.sh` to verify the example actually runs (mirror `java-example` and `python-example`).
 - **README.md** for every example — what it is, how to run, what to try.
 - **OCaml:** originally excluded because its source build exhausted host memory. The setup is
-  restored, as experimental, with a prebuilt toolchain in v0.80.0--rc1; a published example remains separate work.
+  restored, as experimental, with a prebuilt toolchain in v0.80.0--rc1; `ocaml-example` (a Dune CLI) now uses it.
 - **Parking policy.** If an example resists (toolchain bug, broken upstream tarball, incompatible base image, fragile native deps), park it under "Deferred / parked" and move on. Don't burn the stage on one stubborn item. The OCaml setup is the precedent: it failed, was moved to `variants/base/setups/future/`, and the example was dropped. That's the model.
 
 ---
@@ -177,5 +177,5 @@ Each is dominated by post-up admin work — realms, dynamic credentials, runner 
 ## Deferred / parked
 
 - **GPU-bearing AI examples** (CUDA, large LLMs, vLLM) — defer until host-side GPU passthrough is a first-class booth feature; CPU-only Stage 4 unlocks the AI surface without that dependency.
-- **OCaml-based examples** — still deferred. The experimental prebuilt setup is
-  restored in v0.80.0--rc1, but no published example has been added.
+- **OCaml-based examples** — `ocaml-example` (Dune CLI, no opam packages) ships on the
+  experimental prebuilt setup. Examples that need opam packages compiled locally stay deferred.
