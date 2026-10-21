@@ -98,8 +98,10 @@ The wrapper handles these commands:
 | `install --cache=local [VERSION]`  | Download to .booth/tools/                        |
 | `update [VERSION]`                 | Re-download binary (force refresh)               |
 | `uninstall [SCOPES...] [-y]`       | Remove this project's booth (interactive by default). Scopes: `--shared-binary`, `--all-shared-binary`, `--wrapper`, `--all` (everything) |
-| `shell-config` / `shell-config install` | Install central wrapper + `booth()` into bash/zsh/fish (idempotent; bare `shell-config` = install) |
-| `shell-config uninstall`           | Remove marked shell block and central wrapper    |
+| `shell-config` / `shell-config install` | Install central wrapper + `booth()` + tab completion into bash/zsh/fish (idempotent; bare `shell-config` = install) |
+| `shell-config uninstall`           | Remove marked shell block, completion scripts, and central wrapper |
+| `completion bash\|zsh\|fish`        | Print the tab-completion script for that shell   |
+| `__complete <word>...`             | Completion candidates (internal; called by the scripts) |
 | `shell-config status`              | Show whether shell-config is installed           |
 | `create <dir>`                     | `mkdir <dir>` and `booth install` inside it      |
 | `run [ARGS...]`                    | Execute binary (after verification)              |
@@ -121,10 +123,33 @@ wrappers copy `./booth` into `$PWD` first (same as `install`). Non-TTY callers
 without a usable binary still get the hard “run `install`” error. Other binary
 commands never offer this.
 
+### Tab completion
+
+The binary owns completion: `codingbooth __complete <word>...` takes the words after `booth`, the
+last being the one under the cursor, and prints one candidate per line (`value<TAB>description`)
+then a directive line: `:words`, `:files`, or `:dirs`, with `,nospace` when the word is not done
+(`--set key=`). The command table it answers from is `cli/src/pkg/completion/spec.go`. The parsers
+have no framework to ask, so a test (`cli/src/cmd/codingbooth/complete_spec_test.go`) reads
+`main.go`, the hand-written parsers and the `flag.FlagSet`s, and fails when a flag or command is
+missing from the table or listed there without a parser.
+
+The wrapper's part:
+
+- `__complete` is handled before the curl check. Global mode hands it off to the project's wrapper
+  like any command, so the project's own binary answers, from the project root.
+- The binary is located and SHA-checked as a run does, but never downloaded. With no usable binary,
+  or one that exits non-zero (older than `__complete`), the wrapper answers with its own commands.
+- `completion bash|zsh|fish` prints the scripts. They call whatever the user typed (`booth`, the
+  shell function, or `./booth`) with `__complete`, so the same answer serves all three shells.
+- bash splits words at `=` and `:`; its script re-splits `COMP_LINE` on blanks and trims each
+  candidate back to bash's own current word.
+
 ### Shell-config
 
 `shell-config install` places a copy of the wrapper in the OS data directory and writes a
-marked `booth()` function into the user's shell startup files:
+marked `booth()` function into the user's shell startup files. For tab completion it writes
+`completion.bash` and `completion.zsh` beside the central wrapper, which the bash/zsh block
+sources, and a marked `~/.config/fish/completions/booth.fish`:
 
 | Shell | File |
 |-------|------|

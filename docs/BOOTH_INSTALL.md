@@ -65,14 +65,47 @@ install`: it is on `PATH` already, and a central copy would not follow
 ```bash
 ./booth shell-config install     # idempotent; bash + zsh + fish
 ./booth shell-config status
-./booth shell-config uninstall   # removes marked block + central wrapper
+./booth shell-config uninstall   # removes marked block, completion, central wrapper
 ```
 
-| Shell | Startup file |
-|-------|----------------|
-| bash  | `~/.bashrc` |
-| zsh   | `~/.zshrc` |
-| fish  | `~/.config/fish/functions/booth.fish` |
+| Shell | Startup file | Tab completion |
+|-------|--------------|----------------|
+| bash  | `~/.bashrc` | `completion.bash` beside the central wrapper, sourced by the block |
+| zsh   | `~/.zshrc` | `completion.zsh` beside the central wrapper, sourced by the block |
+| fish  | `~/.config/fish/functions/booth.fish` | `~/.config/fish/completions/booth.fish` |
+
+### Tab completion
+
+`shell-config install` also turns on tab completion for `booth` and `./booth`. It completes
+commands and subcommands, each command's flags, and the values a flag or argument takes:
+
+| Typing | Offers |
+|--------|--------|
+| `booth st<Tab>` | `start stats stop` (zsh and fish show what each does) |
+| `booth stop <Tab>`, `--name <Tab>` | the booths on this machine |
+| `--engine <Tab>`, `--variant <Tab>`, `--sudo <Tab>` | the values the flag accepts |
+| `--select go+<Tab>` | the `go` template's extensions; after a comma, templates |
+| `template show <Tab>` | template names, with their descriptions |
+| `--profile <Tab>` | this project's profiles (`.booth/<name>--config.toml`), comma lists too |
+| `--set <Tab>` | `config.toml` keys, as `key=` |
+| `--boothfile <Tab>`, `config <Tab>` | files and folders, as usual |
+| `-- <Tab>` | files: the rest of the line is the command run in the booth |
+
+The answers come from the project's own binary, so a project pinned to another version completes
+that version's flags. Nothing is downloaded on Tab. A project with no binary installed yet, or one
+older than completion, completes the wrapper's commands only. Templates come from the catalog
+already in the cache (or `--templates-path` / `CB_TEMPLATES_PATH`).
+
+zsh needs its completion system (`compinit`), which most setups load. If `.zshrc` loads it after
+the block, completion is registered at the first prompt.
+
+To set it up without `shell-config`, print the script for your shell:
+
+```bash
+source <(./booth completion bash)     # bash, e.g. in ~/.bashrc
+source <(./booth completion zsh)      # zsh, after compinit
+./booth completion fish > ~/.config/fish/completions/booth.fish
+```
 
 The block is fenced so you can delete it by hand:
 
@@ -400,7 +433,9 @@ Restart your shell after `shell-config uninstall` to drop the `booth` function.
 ~/                                    ← user home
 ├── .bashrc, .zshrc                              [layer 1: shell function]
 ├── .config/fish/functions/booth.fish            [layer 1: fish]
+├── .config/fish/completions/booth.fish          [layer 1: fish tab completion]
 ├── .local/share/codingbooth/booth               [layer 1: central wrapper] (Linux)
+├── .local/share/codingbooth/completion.{bash,zsh}  [layer 1: tab completion] (Linux)
 ├── .cache/codingbooth/versions/<v>/              [layer 6: shared cache]   (Linux)
 └── Library/Caches/codingbooth/versions/<v>/     [layer 6: shared cache]   (macOS)
 
