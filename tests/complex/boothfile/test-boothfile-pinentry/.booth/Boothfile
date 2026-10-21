@@ -1,0 +1,8 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --variant xfce --select pinentry
+
+env APT_SNAPSHOT=20261004T000000Z
+
+arg PINENTRY_FLAVOR=auto
+
+setup pinentry --flavor ${PINENTRY_FLAVOR}

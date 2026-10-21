@@ -250,6 +250,7 @@ setup opensshd
 setup orchis-gtk
 setup php
 setup php-code-extension
+setup pinentry
 setup plank
 setup plantuml
 setup plantuml-code-extension
