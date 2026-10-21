@@ -129,9 +129,9 @@ setup	greenfoot	1.0.0	4dc357d5d473883f22cc9fc7af4dd079efd17710652feee778aa9294ca
 setup	grok	1.0.0	4921ea18cabe3f4c781d5241ccfc5e854237246e1d06814a30d6b2712ea4962e	variants/base/setups/grok--setup.sh
 setup	gruppled-cursors	0.3.0	16441948327fa6f07fe39e0e0439123ab2a83418e146e4d0d0422bdb454e0320	variants/base/setups/gruppled-cursors--setup.sh
 setup	harlequin	0.1.0	7d16f4a9d8afdbbf7beba8c5a83a72bdc3c790ce370e81474da53e8f131dd808	variants/base/setups/harlequin--setup.sh
-setup	haskell	1.0.0	9b52b1f086c217f186b0ed739a9951c52d6027c4a1236d41936462f78ed6d3bf	variants/base/setups/haskell--setup.sh
+setup	haskell	1.1.0	6d9dd5528a64e540945a4d57915a322038a96c700838bb55878ab822b933f472	variants/base/setups/haskell--setup.sh
 setup	haskell-code-extension	1.0.0	da1b29d952efef7fc21ce36533c0d0689bcb2e8e80965ac45cd1376e86ebd485	variants/base/setups/haskell-code-extension--setup.sh
-setup	haskell-nb-kernel	1.0.0	97ff6f9e8caedf94e93f0f0518b93b40e3a3c7204eb87e9a45f0b456c84a8853	variants/base/setups/haskell-nb-kernel--setup.sh
+setup	haskell-nb-kernel	1.3.0	28894e3a13c54d1852b945d7bcc6c9db520808368f0206770a2a7ff59a1ff7bc	variants/base/setups/haskell-nb-kernel--setup.sh
 setup	haskell-tools	1.0.0	8953f1481b20fde900c2ce26bc45fb743f747151957140b4e95ea727093a47ad	variants/base/setups/haskell-tools--setup.sh
 setup	heidisql	0.1.0	b577d8e7a12a4e3264eaf5b9968f9dde580fce7f2c6874260855ab40d1c3b7db	variants/base/setups/heidisql--setup.sh
 setup	helix	1.0.0	7a017950fe6f47fc4b2498e32e6b8bdacaa61c759a4644893ff3a5bd19b65ee6	variants/base/setups/helix--setup.sh
@@ -387,6 +387,7 @@ helper	cb-web-open	1.1.1	564918a6c1c51a4c1a0f8aaae4a63b71c6aaa1d3b3e2bf5f033b8be
 helper	template-seup.sh	1.0.0	c9c0ad54732fdd56d2bb5ac692ebec0c6bd237af9a92fa7719922d4d7941d2f4	variants/base/setups/template-seup.sh
 lib	booth-proxy-response.conf	0.1.0	605ebfc3f0a878a1a68212190bf254cdfbb889393a0191d5855d5ad16e235a6b	variants/base/setups/libs/booth-proxy-response.conf
 lib	code-extension-source.sh	1.0.0	2c81911a7aeb0b25195cd4cd67785c9125d186d4eb99e6fe362d1b09bf875d0d	variants/base/setups/libs/code-extension-source.sh
+lib	ghc-source.sh	0.1.0	6a1ae90141958d158e5899f077855b7cd20b462ee217965448420b330f4eabc6	variants/base/setups/libs/ghc-source.sh
 lib	jetbrains-source.sh	0.1.0	dd1f0922678630909118a128d045d047eb49d0541ff439f72f3a1b5681290e8b	variants/base/setups/libs/jetbrains-source.sh
 lib	prebuilt-source.sh	0.1.1	014b77e8a84b3d36872954ce4690b1a6bd06cd5a63ad9bc91c9e999790901ac3	variants/base/setups/libs/prebuilt-source.sh
 lib	retry-source.sh	0.1.0	dc80e4474b59095be79b52489947dd6e7edae0bcb7efb5bc687b32e7f932d09e	variants/base/setups/libs/retry-source.sh
@@ -728,7 +729,7 @@ extension	grok+plugins	1.0.0	ff59007f8d987158a8834922729aa734ade42ec33094125bc92
 extension	grok+settings-cache	1.0.0	2583191eb2cbe317b1e3c5e96aa5f7aee78ebb0f03c2507b0c088b730d98cd05	templates/ai-tools/grok/settings-cache--extension.toml
 extension	grok+token-credential	0.1.0	d31721bc9bbc0ee48af7533f4b98471b67fb2f7d641247491ce69bc75d31c183	templates/ai-tools/grok/token-credential--extension.toml
 extension	haskell+cabal-pkg	1.0.0	63e52f989b5cfcd43bb0f4ae4f9005a1fe0b7dade3f4cd30242ff72f4b85254f	templates/languages/haskell/cabal-pkg--extension.toml
-extension	haskell+kernel	1.0.0	72931bf5da2785e47664e1e4d4b6a3a13364310f91eba8d1a7dcd0465c365a23	templates/languages/haskell/kernel--extension.toml
+extension	haskell+kernel	1.0.1	49cd4dd531a1f9321dc0383a3dfb04d58d8a773b9d9c141bd1bb08e424c231c5	templates/languages/haskell/kernel--extension.toml
 extension	haskell+tools	1.0.0	8a72399d81d0152e1b73f0fdf87a23c460cb536b8053a3f850ffb59eeace09dc	templates/languages/haskell/tools--extension.toml
 extension	haskell+vscode-ext	1.0.0	d2665dcab2cc5f5a8f358d40f4879cb954ff967a8c765acc94fa80fbb0f81aaa	templates/languages/haskell/vscode-ext--extension.toml
 extension	helix+config-shared	1.0.0	9ad544f907b107c753b78473533b226b84719ae43c68ec8166c55b4176d6cf5c	templates/tools/helix/config-shared--extension.toml
