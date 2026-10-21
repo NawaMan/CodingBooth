@@ -13,10 +13,9 @@
 # re-upload instead (verified byte-identical to the pling tarball). The cursors
 # only carry a 40px image, and Xcursor never scales: at another size it uses the
 # nearest image a file has. So 24px and 30px images, shrunk from the 40px one,
-# are added to every cursor here. Gruppled draws a small arrow on its canvas:
-# at 30 it is about 14x22, the size of Adwaita's at 24, so 30 is the booth
-# default (xfce-theme--setup.sh); 24 and 40 are there for
-# `booth--theme set cursor-size 24` / `40`.
+# are added to every cursor here. 40 is the booth default (xfce-theme--setup.sh);
+# Gruppled draws a small arrow on its canvas, so at 30 it is about 15x22, the
+# size of Adwaita's at 24 — `booth--theme set cursor-size 30` (or 24) for that.
 #
 # Usage: gruppled-cursors--setup.sh [VARIANTS] [REF]
 #   VARIANTS  comma-separated: white,black  (default: white,black)
