@@ -269,6 +269,9 @@ IDLE TIMEOUT:
   --idle-time <s>[,t]    Prompt after s seconds of idle; auto-shutdown after t seconds
                          (default t=60) if user does not respond
   --idle-exit-code <n>   Exit code when booth shuts down due to idle (default: 0)
+  --expected-viewer-count <n>
+                         Show the Booth panel's viewer count only above n viewers
+                         (default: 1; 0 always shows it)
 
 COMMANDS:
   All arguments after '--' are executed *inside* the container instead of starting
@@ -391,6 +394,8 @@ THIS LAUNCH:
   --log-time             Timestamp log lines.
   --idle-time <s>[,t]    Idle prompt, then shutdown.
   --idle-exit-code <n>   Exit code after an idle shutdown.
+  --expected-viewer-count <n>
+                         Show the viewer count only above n viewers (default 1).
   --show-run-time [epoch]
   --show-count-down <epoch>
   --count-down-exit-code <n>
@@ -497,6 +502,9 @@ IDLE TIMEOUT:
   --idle-time <s>[,t]    Prompt after s seconds of idle; auto-shutdown after t seconds
                          (default t=60) if user does not respond
   --idle-exit-code <n>   Exit code when booth shuts down due to idle (default: 0)
+  --expected-viewer-count <n>
+                         Show the Booth panel's viewer count only above n viewers
+                         (default: 1; 0 always shows it)
 
 COMMANDS:
   Arguments after '--' run inside the container instead of the default service.

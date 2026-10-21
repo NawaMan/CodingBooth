@@ -159,6 +159,9 @@ func (ctx AppContext) OkPublic() bool        { return ctx.values.Config.OkPublic
 func (ctx AppContext) Password() string      { return ctx.values.Config.Password }
 func (ctx AppContext) TLSCert() string       { return ctx.values.Config.TLSCert }
 func (ctx AppContext) TLSKey() string        { return ctx.values.Config.TLSKey }
+func (ctx AppContext) ExpectedViewerCount() int {
+	return ctx.values.Config.ExpectedViewerCount
+}
 func (ctx AppContext) EgressAllowlistFile() string {
 	return ctx.values.Config.EgressAllowlistFile
 }
@@ -284,6 +287,7 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    IdleTime:         %d\n", ctx.IdleTime())
 	fmt.Fprintf(&str, "    IdleShutdownTime: %d\n", ctx.IdleShutdownTime())
 	fmt.Fprintf(&str, "    IdleExitCode:     %d\n", ctx.IdleExitCode())
+	fmt.Fprintf(&str, "    ExpectedViewerCount: %d\n", ctx.ExpectedViewerCount())
 	fmt.Fprintf(&str, "    Public:           %t\n", ctx.Public())
 	fmt.Fprintf(&str, "    OkPublic:         %t\n", ctx.OkPublic())
 	fmt.Fprintf(&str, "    Password:         %s\n", maskStr(ctx.Password()))

@@ -143,6 +143,11 @@ func validateConfig(config *appctx.AppConfig) {
 	if err := validateEgressConfig(config); err != nil {
 		panic(err)
 	}
+	// The flag refuses a negative count itself; this catches config.toml and
+	// CB_EXPECTED_VIEWER_COUNT, which reach here unchecked.
+	if config.ExpectedViewerCount < 0 {
+		panic(fmt.Errorf("expected-viewer-count must be 0 or more, got %d", config.ExpectedViewerCount))
+	}
 }
 
 // resolveEngineConfig normalizes config.Engine to a concrete "docker",
@@ -557,6 +562,18 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 				return fmt.Errorf("--idle-exit-code requires an integer, got %q", v)
 			}
 			cfg.IdleExitCode = code
+			i += 2
+
+		case "--expected-viewer-count":
+			v, err := needValue(args, i, arg)
+			if err != nil {
+				return err
+			}
+			count, err := strconv.Atoi(v)
+			if err != nil || count < 0 {
+				return fmt.Errorf("--expected-viewer-count requires a non-negative integer, got %q", v)
+			}
+			cfg.ExpectedViewerCount = count
 			i += 2
 
 		case "--writable-booth":
