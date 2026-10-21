@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.2.0
+# cb-version: 1.3.0
 
 # -----------------------------------------------------------------------------
 # booth-message-api-server
@@ -24,7 +24,7 @@
 #   POST /booth-messages/api/viewmd        — start viewmd --daemon if it is not already serving
 #   POST /booth-messages/api/display-size  — fit the desktop to the browser {"width": W, "height": H}
 #   POST /booth-messages/api/display-lease — which viewer fits the desktop {"id": ID, "claim"|"release": true}
-#   GET  /booth-messages/api/presence      — how many pages are viewing this booth
+#   GET  /booth-messages/api/presence      — how many pages are viewing this booth, and how many are expected
 #   POST /booth-messages/api/presence      — a page's heartbeat {"id": ID, "visible": true|false} or {"id": ID, "release": true}
 #   POST /booth-messages/api/session-reset — end a Console UI pane's tmux session {"session": 1-6}
 #
@@ -395,7 +395,11 @@ handle_presence() {
         fi
         viewers=$((viewers + 1))
     done
-    send_response 200 "{\"ok\":true,\"viewers\":${viewers},\"background\":${background}}"
+    # expected: how many viewers the panel takes as normal; it shows the count
+    # only above this. Set from expected-viewer-count; a bad value falls back to 1.
+    local expected="${BOOTH_EXPECTED_VIEWER_COUNT:-1}"
+    [[ "$expected" =~ ^[0-9]+$ ]] || expected=1
+    send_response 200 "{\"ok\":true,\"viewers\":${viewers},\"background\":${background},\"expected\":$((10#$expected))}"
 }
 
 handle_idle_pause() {

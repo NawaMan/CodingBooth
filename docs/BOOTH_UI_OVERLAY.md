@@ -202,7 +202,7 @@ The API server (`booth-message-api-server`) is a lightweight HTTP server built w
 |--------|------|-------------|
 | GET | `/booth-messages/api/list` | Returns pending items as a JSON array |
 | POST | `/booth-messages/api/respond/<id>` | Writes a response file for the given ID |
-| GET | `/booth-messages/api/presence` | How many pages are viewing the booth — see [Viewer Count](#viewer-count) |
+| GET | `/booth-messages/api/presence` | How many pages are viewing the booth, and how many are expected — see [Viewer Count](#viewer-count) |
 | POST | `/booth-messages/api/presence` | A page's heartbeat (`{"id", "visible"}`) or its release on closing (`{"id", "release": true}`) |
 
 The server reads and writes JSON files in `.booth/.tmp/messages/` (bind-mounted from the host). This file-based approach means the CLI on the host and the API server inside the container share state without any network communication between host and container.
@@ -260,10 +260,25 @@ A message that shows up while the booth's tab is hidden or unfocused would other
 
 ## Viewer Count
 
-The Booth panel shows how many pages are viewing the booth right now: `👁 1 viewer`, or
-`👁 3 viewers · 1 in background`, in yellow once there is more than one. A second tab, a second
-window, and someone else on another machine all count, so it shows whether anyone else is in
-the booth.
+The Booth panel shows how many pages are viewing the booth right now, such as `👁 2 viewers` or
+`👁 3 viewers · 1 in background`, in yellow. A second tab, a second window, and someone else on
+another machine all count, so it shows whether anyone else is in the booth.
+
+It shows only when there are more viewers than expected. The expected count is 1 by default, so
+a booth with only you in it shows nothing.
+
+| Flag | `config.toml` | Environment | Default |
+|------|---------------|-------------|---------|
+| `--expected-viewer-count <n>` | `expected-viewer-count = n` | `CB_EXPECTED_VIEWER_COUNT` | `1` |
+
+`0` always shows the count, including `👁 1 viewer` when you are alone. A negative value is an
+error. To see the value in effect, run `echo $BOOTH_EXPECTED_VIEWER_COUNT` inside the booth: the
+CLI always passes it in. Every `/presence` answer also includes it as `expected`, and the panel
+reads it from there:
+
+```json
+{"ok":true,"viewers":2,"background":0,"expected":1}
+```
 
 Every page that loads the overlay (the Console UI and the wrapper page of every variant) picks a
 random id and beats `POST /booth-messages/api/presence` every 5s, saying whether it is in view.

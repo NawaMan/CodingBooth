@@ -92,6 +92,7 @@ docker \\
     -e 'BOOTH_HOST_OS=${HOST_OS}' \\
     -e 'BOOTH_HOST_NAME=host.docker.internal' \\
     -e 'BOOTH_HOST_IP=XXXXX' \\
+    -e 'BOOTH_EXPECTED_VIEWER_COUNT=1' \\
     '--pull=never' \\
     -e 'TZ=America/Toronto' \\
     nawaman/codingbooth:base-${VERSION} \\

@@ -237,6 +237,8 @@ var fieldDisplays = []fieldDisplay{
 		Detail: "Seconds the booth may stay idle before it shuts itself\ndown. 0 means never shut down on idle.\n\nExample: 1800 (30 minutes)"},
 	{Key: "idle-exit-code", Label: "Idle Exit Code", Group: "Session",
 		Detail: "Exit code reported when an idle shutdown fires."},
+	{Key: "expected-viewer-count", Label: "Expected Viewer Count", Group: "Session",
+		Detail: "How many pages may view the booth before the Booth\npanel shows the viewer count. It shows only above this.\nEmpty means 1: shown once anyone else is in.\n0 always shows it.\n\nExample: 2 (you and a pair partner)"},
 	{Key: "show-run-time", Label: "Show Run Time", Group: "Session",
 		Detail: "Show elapsed session time in the booth UI.\n\nA Unix epoch (seconds) to count up from, or any\nnon-empty value to count from container launch.\n\nExample: date +%s (to count from a specific moment),\nor just \"true\" to count from launch."},
 	{Key: "show-count-down", Label: "Show Count Down", Group: "Session",

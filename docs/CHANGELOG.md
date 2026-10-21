@@ -4,6 +4,14 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The viewer count shows only when someone else is viewing: `--expected-viewer-count`.** The
+  Booth panel no longer shows `👁 1 viewer` while you are alone. It shows the count once there
+  are more viewers than expected, which is 1 by default. Set
+  `--expected-viewer-count <n>`, `expected-viewer-count = n` in `config.toml`, or
+  `CB_EXPECTED_VIEWER_COUNT` to change it: 2 for a pair-programming booth, or 0 to always show
+  the count as before. The value is passed into the booth as `BOOTH_EXPECTED_VIEWER_COUNT`, and
+  the `/booth-messages/api/presence` answer includes it as `expected`. It is also a field in
+  `booth config`, under Session.
 - **Haskell booths get GHC in seconds, not 7 minutes.** `ghcup install ghc` downloads in
   seconds, then spends 6-7 minutes in its install step during an image build. The `haskell` and
   `haskell-nb-kernel` setups now unpack GHC prebuilt from CodingBoothPrebuilt (about 10 seconds),

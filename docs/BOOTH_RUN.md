@@ -532,6 +532,26 @@ or `CB_HIDE_WELCOME=true` in the environment. The setting is applied when the co
 is created, so it covers every shell in that booth. The pending-messages notice
 (`booth--msg`) is not part of the banner and still appears.
 
+### Expected Viewers (`--expected-viewer-count`)
+
+The Booth panel shows how many pages are viewing the booth, but only once there are more than
+you expect. The default, 1, keeps it hidden while you are alone and shows it as soon as a second
+tab or another machine opens the booth. Raise it when more viewers are normal, for example 2 for
+a pair-programming booth:
+
+```bash
+./booth --expected-viewer-count 2
+```
+
+```toml
+# .booth/config.toml
+expected-viewer-count = 2
+```
+
+or `CB_EXPECTED_VIEWER_COUNT=2` in the environment. `0` always shows the count. The value reaches
+the booth as `BOOTH_EXPECTED_VIEWER_COUNT`, so `echo $BOOTH_EXPECTED_VIEWER_COUNT` inside it shows
+what is in effect. See [Viewer Count](BOOTH_UI_OVERLAY.md#viewer-count).
+
 ### Ports Below 1024 on Apple Container (`--apple-low-ports`)
 
 Docker lets `coder` open ports below 1024 (`:80`, `:443`); Apple container does not. On engine
