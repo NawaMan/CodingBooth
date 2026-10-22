@@ -1,0 +1,26 @@
+cb-version = "0.1.0"
+display-name = "Goose (language)"
+display-disc = "Goose, a memory-safe systems language with no heap (command: goose-lang)"
+display-detail = "Installs the Goose compiler (aardappel/goose) with its standard library, bundled TinyCC, samples and docs, plus libc6-dev and gcc. The command is goose-lang, so it can sit beside the Goose AI agent, which owns goose. `goose-lang file.goose` runs a program in-process; `goose-lang build` makes a native executable with gcc; `goose-lang lsp` is the language server. Supports version pinning via the GOOSE_LANG_VERSION parameter."
+display-order = 73
+tags = [
+    "goose",
+    "goose-lang",
+    "systems",
+    "compiled",
+    "memory-safe"
+]
+unsupported-arch = ["arm64"]
+unsupported-arch-note = """\
+Goose publishes no linux/arm64 build, so it cannot be installed in a booth built on Apple \
+Silicon. The booth still builds — the setup warns and skips — but goose-lang will not be in it.\
+"""
+
+[params.GOOSE_LANG_VERSION]
+default = "latest"
+suggests = ["latest", "2026.3", "2026.2", "2026.1"]
+
+[segments]
+"Boothfile--60" = """
+setup goose-lang --version ${GOOSE_LANG_VERSION}
+"""

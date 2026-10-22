@@ -123,6 +123,7 @@ setup	go-code-extension	1.0.0	14b5c05adef0b6e5f5eb1593ef84feca1320bdf1ad6150cf84
 setup	go-nb-kernel	1.0.0	641f7383ccc93feedc8e7c68f474e713806f756c22ed215f5d6305ede6e5d2ba	variants/base/setups/go-nb-kernel--setup.sh
 setup	google-chrome	1.1.0	4747c061f49b7eea76796abc4425f0e563611222452911f064464f8531b1a21b	variants/base/setups/google-chrome--setup.sh
 setup	goose	1.0.0	138c554d9ab722ea3b71731ecad135583e355b03a5072c0e20ad3cfdf3ff0971	variants/base/setups/goose--setup.sh
+setup	goose-lang	0.1.0	f6dd97391ab0ed3ba9f7b2d0ee0227235c00b394a829e648a1306981fc5ec1b4	variants/base/setups/goose-lang--setup.sh
 setup	gradle	1.0.0	b792a8ef7c2ada1b7c089c9787f5a197efcb56ddbc5cc02128e27a8691db356b	variants/base/setups/gradle--setup.sh
 setup	graphviz-code-extension	0.1.0	a24c26b65c1078dac9728a7c7659999b2f6d615aa12c55deefbb784268f2d7f4	variants/base/setups/graphviz-code-extension--setup.sh
 setup	greenfoot	1.0.0	4dc357d5d473883f22cc9fc7af4dd079efd17710652feee778aa9294ca78455e	variants/base/setups/greenfoot--setup.sh
@@ -480,6 +481,7 @@ template	go	1.1.0	6c0ae065d0759a84b9c7e5b55bea6ae21dffc7efd2b9ba19dc3e17dcef297d
 template	goland	1.0.0	e657667702b91cc74de699fc1a4fd329c253579685824186871c7f9d9aadc111	templates/ides/goland/template.toml
 template	google-chrome	1.0.0	135a1bce24ab8dd6420199954a5ba74a5ccb6170a62a4a0a981b185830c68e83	templates/desktops/google-chrome/template.toml
 template	goose	1.0.0	d38a963864204dcc5282c8e1eebdf3c7c8b8f383a15929b5a9ca4f6f64982295	templates/ai-tools/goose/template.toml
+template	goose-lang	0.1.0	5b93d0b3b897a61eaa8956649e9b702c833b145dcdeb6eaba8aaa79da7ff03c7	templates/languages/goose-lang/template.toml
 template	gradle	1.1.0	9fad2bf6d08efb18785914de010ad2974776e88b84653fe83694f19f136afc20	templates/tools/gradle/template.toml
 template	graphviz	1.0.0	bbbbd39090cc84b3369e09a8b3d18d325456afc3aee99fc49cecb9b0d00c1ead	templates/tools/graphviz/template.toml
 template	greenfoot	1.0.0	0a2aca068f20647d5c7be614c31c19b4fc5eebe2b3e0d047970e89584521b904	templates/education/greenfoot/template.toml
