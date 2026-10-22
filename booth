@@ -1410,7 +1410,9 @@ EOF
 
 emit_zsh_completion() {
     cat <<'EOF'
-# CodingBooth tab completion for zsh (booth completion zsh).
+#compdef booth
+# CodingBooth tab completion for zsh (booth completion zsh). Works sourced, and
+# as an autoloaded `_booth` on fpath (Homebrew's site-functions).
 _booth() {
   local cmd="${words[1]/#\~/$HOME}"
   local -a lines items
@@ -1448,6 +1450,10 @@ else
     unfunction _booth_register
   }
   autoload -Uz add-zsh-hook && add-zsh-hook precmd _booth_register
+fi
+# Autoloaded by compinit: this file is the first call of _booth, so answer it.
+if [[ "${funcstack[1]}" == _booth ]]; then
+  _booth "$@"
 fi
 EOF
 }
@@ -1586,6 +1592,17 @@ GlobalDispatch() {
 
     case "${1-}" in
         shell-config) return 0 ;;
+        __complete)
+            # Answer here with the project's binary, from its root. Its wrapper
+            # may predate completion, and would download a binary on Tab.
+            local project
+            if project="$(find_project_booth_dir)"; then
+                TOOLS_DIR="$project/.booth/tools"
+                LOCK_FILE="$TOOLS_DIR/codingbooth.lock"
+                LOCAL_VERSION_FILE="$TOOLS_DIR/codingbooth-version"
+                cd "$project" || true
+            fi
+            return 0 ;;
         install|update|create)
             # Always $PWD. A project wrapper there runs it; this one would copy
             # itself over ./booth first (ensure_project_wrapper_for_install).

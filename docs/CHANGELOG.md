@@ -18,7 +18,8 @@ This file contains a list of changes for each released version.
   for `--profile`, `config.toml` keys for `--set`, and paths where a flag takes a file. The
   project's own binary answers (`booth __complete`, internal), and nothing is downloaded on Tab.
   Run `shell-config install` again to get it. `booth completion bash|zsh|fish` prints the script
-  for a manual setup. See [BOOTH_INSTALL.md](BOOTH_INSTALL.md#tab-completion).
+  for a manual setup; its zsh script also works as an autoloaded `_booth` on `fpath`, which is how
+  the Homebrew formula installs it. See [BOOTH_INSTALL.md](BOOTH_INSTALL.md#tab-completion).
 
 - **The viewer count shows only when someone else is viewing: `--expected-viewer-count`.** The
   Booth panel no longer shows `👁 1 viewer` while you are alone. It shows the count once there

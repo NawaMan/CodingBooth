@@ -99,6 +99,11 @@ already in the cache (or `--templates-path` / `CB_TEMPLATES_PATH`).
 zsh needs its completion system (`compinit`), which most setups load. If `.zshrc` loads it after
 the block, completion is registered at the first prompt.
 
+Homebrew's `booth` gets completion from the formula instead, in Homebrew's own completion folders
+(`etc/bash_completion.d`, `share/zsh/site-functions`, `share/fish/vendor_completions.d`). zsh and
+fish pick it up when Homebrew's [shell completion](https://docs.brew.sh/Shell-Completion) is set
+up; bash needs the `bash-completion` package.
+
 To set it up without `shell-config`, print the script for your shell:
 
 ```bash

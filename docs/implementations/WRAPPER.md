@@ -135,14 +135,19 @@ missing from the table or listed there without a parser.
 
 The wrapper's part:
 
-- `__complete` is handled before the curl check. Global mode hands it off to the project's wrapper
-  like any command, so the project's own binary answers, from the project root.
+- `__complete` is handled before the curl check. In global mode it is **not** handed off: the
+  lockless wrapper reads the project's lock and runs the project's own binary from the project
+  root. A project `./booth` older than completion would treat `__complete` as a binary command and
+  download one on Tab.
 - The binary is located and SHA-checked as a run does, but never downloaded. With no usable binary,
   or one that exits non-zero (older than `__complete`), the wrapper answers with its own commands.
 - `completion bash|zsh|fish` prints the scripts. They call whatever the user typed (`booth`, the
   shell function, or `./booth`) with `__complete`, so the same answer serves all three shells.
 - bash splits words at `=` and `:`; its script re-splits `COMP_LINE` on blanks and trims each
   candidate back to bash's own current word.
+- The zsh script starts with `#compdef booth` and ends by calling `_booth` when it runs as the
+  autoloaded `_booth` (`$funcstack[1]`), so it works both sourced and from `fpath` (Homebrew).
+  Without that last call, the first Tab only defines the function and completes nothing.
 
 ### Shell-config
 
@@ -205,7 +210,9 @@ forever.
 
 A wrapper whose real path contains `/Cellar/` is Homebrew's: `shell-config install` declines
 (Homebrew's booth is on `PATH` already, and a data-dir copy would never see `brew upgrade`), and
-`uninstall` outside a project refuses and points at `brew uninstall codingbooth`.
+`uninstall` outside a project refuses and points at `brew uninstall codingbooth`. Tab completion
+comes from the formula, which writes `booth completion bash|zsh|fish` into Homebrew's completion
+folders.
 
 Markers make the block easy to spot and delete:
 
