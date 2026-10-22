@@ -65,6 +65,31 @@ func ResolveTemplatesDir(version string) (string, func(), error) {
 	return templatesDir, cleanup, nil
 }
 
+// ResolveCachedTemplatesDir is ResolveTemplatesDir without the download: it
+// fails when the version's templates.zip is not already in the cache. For
+// callers that must stay quick and offline, such as shell completion.
+func ResolveCachedTemplatesDir(version string) (string, func(), error) {
+	cacheDir, err := getCacheDir()
+	if err != nil {
+		return "", nil, err
+	}
+	zipPath := filepath.Join(cacheDir, version, templateFile)
+	if _, err := os.Stat(zipPath); err != nil {
+		return "", nil, err
+	}
+
+	tmpDir, err := os.MkdirTemp("", "cb-init-")
+	if err != nil {
+		return "", nil, err
+	}
+	cleanup := func() { os.RemoveAll(tmpDir) }
+	if err := ExtractTemplatesZip(zipPath, tmpDir); err != nil {
+		cleanup()
+		return "", nil, err
+	}
+	return filepath.Join(tmpDir, "templates"), cleanup, nil
+}
+
 // downloadTemplatesZip downloads templates.zip from GitHub releases for the
 // given version and saves it to destPath.
 func downloadTemplatesZip(version, destPath string) error {
