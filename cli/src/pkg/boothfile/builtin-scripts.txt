@@ -124,6 +124,7 @@ setup go-code-extension
 setup go-nb-kernel
 setup google-chrome
 setup goose
+setup goose-lang
 setup gradle
 setup graphviz-code-extension
 setup greenfoot
