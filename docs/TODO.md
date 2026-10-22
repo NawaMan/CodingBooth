@@ -485,6 +485,20 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
       Then add `chromium+bookmarks-seed` (a copy of Chrome's — same `~/.chrome-data`, same format).
       Open questions: is `--no-sandbox` acceptable inside a booth, which is already the isolation
       boundary?
+- [ ] **Setups resolve "latest" through the unauthenticated GitHub API, which CI rate-limits.**
+      51 setups in `variants/base/setups/` run `curl https://api.github.com/repos/<o>/<r>/releases/latest`
+      with no token. That API allows 60 requests an hour per IP, and shared GitHub runners share IPs,
+      so a complex shard that installs a few such tools can hit the limit. The likely case:
+      `boothfile/test-boothfile-cmake` failed twice in release run 39367607965 (build step, ~5s, no
+      output kept), passed locally and passed on the next run. Unconfirmed, because the log drops the
+      build output.
+      Approach: resolve the version the way `codeserver--setup.sh` already does, by following the
+      `https://github.com/<o>/<r>/releases/latest` redirect and reading the tag from the `Location`.
+      That page is not rate-limited like the API. Put it in one shared helper rather than 51 copies.
+      Each touched setup needs a `cb-version` bump and a manifest regen (catalog versioning).
+      Open questions: also honour `GITHUB_TOKEN` when set (it helps CI, but a token must never be
+      baked into an image layer)? Should the complex runner keep the failing build's output, so the
+      next flake shows its real cause?
 - [x] `remove`/`stop`/`start`/`restart` parse flags after positional names, using the registered flag definitions. They also accept explicit `--engine` selection.
 - [ ] ...
 
