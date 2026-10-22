@@ -21,7 +21,7 @@ if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
     exit 0
 fi
 
-VERSION=0.16.0
+VERSION=0.17.0
 VERBOSE="${VERBOSE:-true}"
 
 # Resolve this wrapper's absolute path (follow symlinks). All project paths are
@@ -371,6 +371,7 @@ Wrapper commands:
   shell-config [install]         Install central wrapper + booth() in bash/zsh/fish
   shell-config uninstall         Remove shell function block and central wrapper
   shell-config status            Show shell-config install state
+  completion bash|zsh|fish       Print the tab-completion script (shell-config installs it)
   create <dir>                   mkdir <dir>, install booth into it (wrapper + binary),
                                  then add a starter Justfile (booth just-init)
 
@@ -1008,11 +1009,22 @@ shell_config_targets() {
     echo "$HOME/.bashrc"
     echo "$HOME/.zshrc"
     echo "${XDG_CONFIG_HOME:-$HOME/.config}/fish/functions/booth.fish"
+    fish_booth_completion_path
     echo "${XDG_CONFIG_HOME:-$HOME/.config}/fish/conf.d/codingbooth.fish"
 }
 
 fish_booth_function_path() {
     echo "${XDG_CONFIG_HOME:-$HOME/.config}/fish/functions/booth.fish"
+}
+
+fish_booth_completion_path() {
+    echo "${XDG_CONFIG_HOME:-$HOME/.config}/fish/completions/booth.fish"
+}
+
+# The bash and zsh completion scripts, beside the central wrapper; the rc block
+# sources the one for its shell.
+get_completion_script_path() {
+    echo "$(get_data_dir)/completion.$1"
 }
 
 # Escape a path for single-quoted shell embedding (bash/zsh/fish).
@@ -1027,8 +1039,10 @@ shell_single_quote() {
 # the central wrapper finds the project itself (GlobalDispatch).
 emit_bash_zsh_shell_config_block() {
     local central="$1"
-    local qcentral
+    local qcentral qbash qzsh
     qcentral="$(shell_single_quote "$central")"
+    qbash="$(shell_single_quote "$(get_completion_script_path bash)")"
+    qzsh="$(shell_single_quote "$(get_completion_script_path zsh)")"
     cat <<EOF
 ${SHELL_CONFIG_BEGIN}
 # CodingBooth: type \`booth\` from any directory. The central wrapper walks up
@@ -1042,6 +1056,12 @@ booth() {
   fi
   "\$_cb_central" "\$@"
 }
+# Tab completion for booth and ./booth.
+if [[ -n "\${ZSH_VERSION-}" ]]; then
+  [[ -r '${qzsh}' ]] && source '${qzsh}'
+elif [[ -n "\${BASH_VERSION-}" ]]; then
+  [[ -r '${qbash}' ]] && source '${qbash}'
+fi
 ${SHELL_CONFIG_END}
 EOF
 }
@@ -1175,10 +1195,21 @@ ShellConfigInstall() {
         echo "✓ fish: removed legacy $fish_legacy"
     fi
 
+    # Tab completion: bash/zsh scripts beside the central wrapper (the rc block
+    # sources them), fish's in its autoloaded completions dir.
+    emit_bash_completion > "$(get_completion_script_path bash)"
+    emit_zsh_completion  > "$(get_completion_script_path zsh)"
+    echo "✓ completion: $(get_completion_script_path bash) and .zsh"
+    local fish_completion
+    fish_completion="$(fish_booth_completion_path)"
+    { echo "$SHELL_CONFIG_BEGIN"; emit_fish_completion; echo "$SHELL_CONFIG_END"; } > "$fish_block"
+    install_marked_block "$fish_completion" "$fish_block"
+    echo "✓ completion: $fish_completion"
+
     rm -f "$bash_block" "$fish_block"
 
     echo ""
-    echo "Shell function installed (idempotent). Open a new shell or:"
+    echo "Shell function and tab completion installed (idempotent). Open a new shell or:"
     echo "  source ~/.bashrc    # or ~/.zshrc"
     echo "  # fish autoloads ~/.config/fish/functions/booth.fish"
     echo ""
@@ -1207,6 +1238,13 @@ ShellConfigUninstall() {
     else
         echo "  (no central wrapper at $central)"
     fi
+    local script
+    for script in "$(get_completion_script_path bash)" "$(get_completion_script_path zsh)"; do
+        if [[ -f "$script" ]]; then
+            rm -f "$script"
+            echo "✓ Removed completion script: $script"
+        fi
+    done
     # Remove data dir only if empty (do not touch shared binary cache).
     rmdir "$data_dir" 2>/dev/null || true
 
@@ -1253,9 +1291,10 @@ ShellConfigCommand() {
             cat <<EOF
 Usage: ./$(basename "$0") shell-config [install|uninstall|status|help]
 
-  install     Copy this wrapper to the OS data dir and install booth()
-              into ~/.bashrc, ~/.zshrc, and fish functions (default if omitted).
-  uninstall   Remove the marked shell block and the central wrapper.
+  install     Copy this wrapper to the OS data dir and install booth() and its
+              tab completion into ~/.bashrc, ~/.zshrc, and fish functions
+              (default if omitted).
+  uninstall   Remove the marked shell block, the completion, and the central wrapper.
   status      Show whether the function and central wrapper are installed.
 
 ./booth shell-config   is the same as   ./booth shell-config install
@@ -1265,6 +1304,202 @@ EOF
         *)
             echo "Unknown shell-config command: $sub" >&2
             echo "Use: shell-config [install] | uninstall | status | help" >&2
+            return 1
+            ;;
+    esac
+}
+
+# --- COMPLETION (tab completion for bash/zsh/fish) ---
+# The binary knows the commands and flags (`codingbooth __complete <words>`); the
+# scripts below only hand it the words and show what comes back. shell-config
+# installs them; `booth completion <shell>` prints one for a manual setup.
+
+# Wrapper commands, offered when no binary can answer (none installed here yet,
+# or one too old to know __complete).
+WRAPPER_COMMANDS=(install update uninstall create shell-config completion version help)
+
+# This project's installed binary, verified as a run verifies it, without ever
+# downloading. Prints its path; returns 1 if there is none to use.
+locate_installed_binary() {
+    [[ -f "$LOCK_FILE" ]] || return 1
+    local lock_version lock_cache platform binary_name binary_dir dest expected actual
+    lock_version=$(grep '^version=' "$LOCK_FILE" 2>/dev/null | cut -d= -f2- || true)
+    lock_cache=$(grep '^cache=' "$LOCK_FILE" 2>/dev/null | cut -d= -f2- || true)
+    [[ -n "$lock_version" ]] || return 1
+    [[ "$lock_cache" == "local" ]] || lock_cache="shared"
+    platform=$(detect_platform 2>/dev/null) || return 1
+    binary_name=$(get_binary_name "$platform")
+    binary_dir=$(find_binary_dir "$lock_version" "$platform" "$lock_cache") || return 1
+    dest="$binary_dir/$binary_name"
+    expected=$(grep "  $binary_name\$" "$binary_dir/codingbooth.sha256" 2>/dev/null | awk '{print $1}')
+    actual=$(hash_sha256 "$dest" 2>/dev/null | awk '{gsub(/^\\/, ""); print $1}')
+    [[ -n "$expected" && "$expected" == "$actual" ]] || return 1
+    printf '%s\n' "$dest"
+}
+
+# Usage: booth __complete <word>... — the last word is the one under the cursor.
+# Prints candidates one per line, then a `:<directive>` line (see
+# cli/src/pkg/completion). Never fails: no answer is an empty list.
+CompleteCommand() {
+    local binary
+    if binary="$(locate_installed_binary)" && "$binary" __complete "$@" 2>/dev/null; then
+        return 0
+    fi
+    CompleteWrapperOnly "$@"
+}
+
+CompleteWrapperOnly() {
+    local cur="${!#}" candidates=() c
+    if [[ $# -le 1 ]]; then
+        candidates=("${WRAPPER_COMMANDS[@]}")
+    elif [[ $# -eq 2 ]]; then
+        case "$1" in
+            shell-config) candidates=(install uninstall status help) ;;
+            completion)   candidates=(bash zsh fish) ;;
+            install|update|create) candidates=(--cache=shared --cache=local) ;;
+        esac
+    fi
+    for c in ${candidates[@]+"${candidates[@]}"}; do
+        [[ "$c" == "$cur"* ]] && printf '%s\n' "$c"
+    done
+    echo ":words"
+}
+
+emit_bash_completion() {
+    cat <<'EOF'
+# CodingBooth tab completion for bash (booth completion bash).
+_booth_completion() {
+    local cmd="${COMP_WORDS[0]}" cur="${COMP_WORDS[COMP_CWORD]}"
+    local line="${COMP_LINE:0:COMP_POINT}"
+    local -a words
+    # COMP_WORDS splits at = and :, which booth's words keep; split the line
+    # on blanks instead and trim back to bash's own word at the end.
+    read -r -a words <<< "$line"
+    [[ "$line" =~ [[:space:]]$ ]] && words+=("")
+    while [[ ${#words[@]} -gt 1 && "${words[0]}" != "$cmd" ]]; do
+        words=("${words[@]:1}")
+    done
+    local typed="${words[${#words[@]}-1]}"
+    [[ "$cmd" == "~/"* ]] && cmd="$HOME/${cmd#\~/}"
+
+    local IFS=$'\n'
+    local -a out
+    out=($("$cmd" __complete "${words[@]:1}" 2>/dev/null))
+    [[ ${#out[@]} -gt 0 ]] || return 0
+    local directive="${out[${#out[@]}-1]}"
+    unset "out[${#out[@]}-1]"
+
+    COMPREPLY=()
+    case "$directive" in
+        :files*) COMPREPLY=($(compgen -f -- "$cur")); compopt -o filenames 2>/dev/null ;;
+        :dirs*)  COMPREPLY=($(compgen -d -- "$cur")); compopt -o filenames 2>/dev/null ;;
+        *)
+            local trim="${typed%"$cur"}" item
+            for item in ${out[@]+"${out[@]}"}; do
+                item="${item%%$'\t'*}"
+                COMPREPLY+=("${item#"$trim"}")
+            done
+            ;;
+    esac
+    [[ "$directive" == *,nospace ]] && compopt -o nospace 2>/dev/null
+    return 0
+}
+complete -F _booth_completion booth
+EOF
+}
+
+emit_zsh_completion() {
+    cat <<'EOF'
+#compdef booth
+# CodingBooth tab completion for zsh (booth completion zsh). Works sourced, and
+# as an autoloaded `_booth` on fpath (Homebrew's site-functions).
+_booth() {
+  local cmd="${words[1]/#\~/$HOME}"
+  local -a lines items
+  lines=("${(@f)$("$cmd" __complete "${(@)words[2,CURRENT]}" 2>/dev/null)}")
+  (( ${#lines} )) || return 1
+  local directive="${lines[-1]}"
+  lines=("${(@)lines[1,-2]}")
+  case "$directive" in
+    :files*) _files; return ;;
+    :dirs*)  _files -/; return ;;
+  esac
+  local line value desc
+  for line in "${lines[@]}"; do
+    [[ -n "$line" ]] || continue
+    value="${line%%$'\t'*}"
+    desc=""
+    [[ "$line" == *$'\t'* ]] && desc="${line#*$'\t'}"
+    items+=("${value//:/\\:}${desc:+:$desc}")
+  done
+  (( ${#items} )) || return 1
+  if [[ "$directive" == *,nospace ]]; then
+    _describe -t booth-values 'booth' items -S ''
+  else
+    _describe -t booth-values 'booth' items
+  fi
+}
+if (( $+functions[compdef] )); then
+  compdef _booth booth
+else
+  # compinit has not run yet: register once it has (it may come later in .zshrc).
+  _booth_register() {
+    (( $+functions[compdef] )) || return 0
+    compdef _booth booth
+    add-zsh-hook -d precmd _booth_register
+    unfunction _booth_register
+  }
+  autoload -Uz add-zsh-hook && add-zsh-hook precmd _booth_register
+fi
+# Autoloaded by compinit: this file is the first call of _booth, so answer it.
+if [[ "${funcstack[1]}" == _booth ]]; then
+  _booth "$@"
+fi
+EOF
+}
+
+emit_fish_completion() {
+    cat <<'EOF'
+# CodingBooth tab completion for fish (booth completion fish).
+function __booth_complete
+    set -l tokens (commandline -opc)
+    set -l cur (commandline -ct)
+    set -l cmd $tokens[1]
+    set -e tokens[1]
+    set -l out (eval (string escape -- $cmd) __complete (string escape -- $tokens "$cur") 2>/dev/null)
+    test (count $out) -gt 0; or return
+    set -l directive $out[-1]
+    set -e out[-1]
+    switch $directive
+        case ':files*'
+            __fish_complete_path "$cur"
+        case ':dirs*'
+            __fish_complete_directories "$cur"
+        case '*'
+            printf '%s\n' $out
+    end
+end
+complete -c booth -f -a '(__booth_complete)'
+EOF
+}
+
+CompletionCommand() {
+    case "${1:-}" in
+        bash) emit_bash_completion ;;
+        zsh)  emit_zsh_completion ;;
+        fish) emit_fish_completion ;;
+        *)
+            cat >&2 <<EOF
+Usage: ./$(basename "$0") completion bash|zsh|fish
+
+Prints the tab-completion script for that shell. 'shell-config install' sets it
+up for you; to do it by hand instead:
+  bash:  source <(./booth completion bash)          # e.g. in ~/.bashrc
+  zsh:   source <(./booth completion zsh)           # after compinit in ~/.zshrc
+  fish:  ./booth completion fish > ~/.config/fish/completions/booth.fish
+EOF
+            [[ -z "${1:-}" ]] && return 1
+            [[ "$1" == help || "$1" == -h || "$1" == --help ]] && return 0
             return 1
             ;;
     esac
@@ -1357,6 +1592,17 @@ GlobalDispatch() {
 
     case "${1-}" in
         shell-config) return 0 ;;
+        __complete)
+            # Answer here with the project's binary, from its root. Its wrapper
+            # may predate completion, and would download a binary on Tab.
+            local project
+            if project="$(find_project_booth_dir)"; then
+                TOOLS_DIR="$project/.booth/tools"
+                LOCK_FILE="$TOOLS_DIR/codingbooth.lock"
+                LOCAL_VERSION_FILE="$TOOLS_DIR/codingbooth-version"
+                cd "$project" || true
+            fi
+            return 0 ;;
         install|update|create)
             # Always $PWD. A project wrapper there runs it; this one would copy
             # itself over ./booth first (ensure_project_wrapper_for_install).
@@ -1412,6 +1658,16 @@ GlobalDispatch "$@"
 case "${COMMAND}" in
     version) PrintVersion ; exit 0 ; ;;
     help)    PrintHelp    ; exit 0 ; ;;
+    __complete)
+        shift
+        CompleteCommand "$@"
+        exit 0
+        ;;
+    completion)
+        shift
+        CompletionCommand "$@"
+        exit $?
+        ;;
     shell-config)
         shift
         ShellConfigCommand "$@"

@@ -110,6 +110,9 @@ func main() {
 		case "print-default-allowlist.txt":
 			printDefaultAllowlist()
 			return
+		case "__complete":
+			runComplete(version, os.Args[2:])
+			return
 		default:
 			// If it starts with --, treat as run with options
 			if len(command) > 0 && command[0] == '-' {
