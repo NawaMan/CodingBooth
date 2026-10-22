@@ -11,15 +11,16 @@ This file contains a list of changes for each released version.
   opam packages beyond the bundle. Runs on the current base image; the `ocaml` setup stays
   `[experimental]`.
 
-- **Tab completion for `booth`.** `booth shell-config install` now turns on tab completion in
-  bash, zsh and fish, for both `booth` and `./booth`. It completes commands, each command's flags,
-  and their values: booth names for `stop`/`--name`, `--engine`/`--variant` values, templates and
-  their extensions in `--select go+…`, template names for `template show`, the project's profiles
-  for `--profile`, `config.toml` keys for `--set`, and paths where a flag takes a file. The
-  project's own binary answers (`booth __complete`, internal), and nothing is downloaded on Tab.
-  Run `shell-config install` again to get it. `booth completion bash|zsh|fish` prints the script
-  for a manual setup; its zsh script also works as an autoloaded `_booth` on `fpath`, which is how
-  the Homebrew formula installs it. See [BOOTH_INSTALL.md](BOOTH_INSTALL.md#tab-completion).
+- **Wrapper `0.17.0` — tab completion for `booth`.** `booth shell-config install` now turns on tab
+  completion in bash, zsh and fish, for both `booth` and `./booth`. It completes commands, each
+  command's flags, and their values: booth names for `stop`/`--name`, `--engine`/`--variant`
+  values, templates and their extensions in `--select go+…`, template names for `template show`,
+  the project's profiles for `--profile`, `config.toml` keys for `--set`, and paths where a flag
+  takes a file. The project's own binary answers (`booth __complete`, internal), and nothing is
+  downloaded on Tab. Run `shell-config install` again to get it. `booth completion bash|zsh|fish`
+  prints the script for a manual setup; its zsh script also works as an autoloaded `_booth` on
+  `fpath`, which is how the Homebrew formula installs it. See
+  [BOOTH_INSTALL.md](BOOTH_INSTALL.md#tab-completion).
 
 - **The viewer count shows only when someone else is viewing: `--expected-viewer-count`.** The
   Booth panel no longer shows `👁 1 viewer` while you are alone. It shows the count once there
