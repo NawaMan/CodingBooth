@@ -4,6 +4,18 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Goose, the systems language, is now in the catalog: `setup goose-lang`, a `goose-lang`
+  language template, and `goose-lang-example`.** [Goose](https://aardappel.github.io/goose/)
+  (aardappel/goose) is memory-safe with no heap, GC or lifetime annotations, and compiles to C.
+  The command is **`goose-lang`**, not upstream's `goose`: that name belongs to the Goose AI agent,
+  and the two install side by side. The setup unpacks the release (compiler, stdlib, bundled
+  TinyCC, samples, docs, VS Code `.vsix`) under `/usr/local/goose-lang-<version>`, checks its
+  sha256 against GitHub's asset digest, and adds `libc6-dev` (in-process runs fail with
+  `stdint.h not found` without it) and gcc (for `goose-lang build`; `--no-cc` skips it). Pin with
+  `--select goose-lang:2026.2`. Goose ships no linux/arm64 build, so on Apple Silicon the setup
+  warns and skips, and the template says so. The example runs a primes sieve both in-process
+  (`just run 20`) and as a native build (`just build`).
+
 - **`ocaml-example`: an OCaml workspace on the experimental prebuilt toolchain.** A Dune
   project with a `calc` CLI that parses an integer expression, prints it fully parenthesized
   and evaluates it, with `just build`, `test`, `run`, `fmt` and `repl` (UTop with the library
