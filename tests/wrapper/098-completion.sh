@@ -21,6 +21,8 @@ echo "=== NO BINARY ==="
 echo "=== SCRIPTS ==="
 ./booth completion bash | grep -q 'complete -F _booth_completion booth' && echo "bash-script"
 ./booth completion zsh  | grep -q 'compdef _booth booth' && echo "zsh-script"
+# Homebrew installs it as an autoloaded _booth: compinit needs the first line.
+[[ "$(./booth completion zsh | head -n 1)" == "#compdef booth" ]] && echo "zsh-autoloadable"
 ./booth completion fish | grep -q 'complete -c booth' && echo "fish-script"
 ./booth completion tcsh >/dev/null 2>&1 && echo "tcsh accepted" || echo "tcsh rejected"
 
@@ -37,6 +39,21 @@ touch .booth/gpu--config.toml
 echo "=== BINARY ==="
 ./booth __complete st
 ./booth __complete stop --engine=p
+
+echo "=== GLOBAL ==="
+# A lockless wrapper on PATH (central copy, Homebrew) answers for the project
+# around $PWD with that project's binary, from the project root.
+mkdir -p "$HOME/central" sub
+cp ./booth "$HOME/central/booth"
+(cd sub && "$HOME/central/booth" __complete --profile "")
+# A project whose ./booth predates completion is never run on Tab: it would
+# download its binary and print errors.
+mkdir -p "$HOME/old/.booth/tools" "$HOME/old/src"
+printf '#!/bin/bash\ntouch %s/old-wrapper-ran\necho "Binary missing, downloading"\nexit 1\n' "$HOME" > "$HOME/old/booth"
+chmod +x "$HOME/old/booth"
+printf 'version=0.79.0\ncache=shared\n' > "$HOME/old/.booth/tools/codingbooth.lock"
+(cd "$HOME/old/src" && "$HOME/central/booth" __complete shell-c)
+[[ -e "$HOME/old-wrapper-ran" ]] && echo "old wrapper ran" || echo "old wrapper not run"
 
 echo "=== SHELL-CONFIG ==="
 ./booth shell-config install >/dev/null
@@ -64,7 +81,8 @@ BASH
 
 no_binary="${LAST_OUTPUT#*=== NO BINARY ===}";       no_binary="${no_binary%%=== SCRIPTS ===*}"
 scripts="${LAST_OUTPUT#*=== SCRIPTS ===}";           scripts="${scripts%%=== BINARY ===*}"
-binary="${LAST_OUTPUT#*=== BINARY ===}";             binary="${binary%%=== SHELL-CONFIG ===*}"
+binary="${LAST_OUTPUT#*=== BINARY ===}";             binary="${binary%%=== GLOBAL ===*}"
+global="${LAST_OUTPUT#*=== GLOBAL ===}";             global="${global%%=== SHELL-CONFIG ===*}"
 shell_config="${LAST_OUTPUT#*=== SHELL-CONFIG ===}"; shell_config="${shell_config%%=== BASH TAB ===*}"
 bash_tab="${LAST_OUTPUT#*=== BASH TAB ===}";         bash_tab="${bash_tab%%=== UNINSTALL ===*}"
 uninstall="${LAST_OUTPUT#*=== UNINSTALL ===}"
@@ -78,12 +96,18 @@ assert_not_contains "$no_binary" "not installed"
 
 assert_contains "$scripts" "bash-script"
 assert_contains "$scripts" "zsh-script"
+assert_contains "$scripts" "zsh-autoloadable"
 assert_contains "$scripts" "fish-script"
 assert_contains "$scripts" "tcsh rejected"
 
 # With the binary: its commands and descriptions, and flag values.
 assert_contains "$binary" $'stop\tStop a running booth'
 assert_contains "$binary" "--engine=podman"
+
+assert_contains "$global" "gpu"
+assert_contains "$global" "shell-config"
+assert_contains "$global" "old wrapper not run"
+assert_not_contains "$global" "downloading"
 
 assert_contains "$shell_config" "completion.bash"
 assert_contains "$shell_config" "completion.zsh"
