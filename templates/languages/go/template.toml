@@ -1,4 +1,4 @@
-cb-version = "1.1.0"
+cb-version = "1.2.0"
 display-name = "Go"
 primary = true
 display-disc = "Go toolchain with gopls LSP and Delve debugger"
@@ -11,10 +11,10 @@ tags = [
 ]
 
 [params.GO_VERSION]
-default = "1.27.1"
+default = "1.27.3"
 suggests = [
-    "1.27.1",  "1.27.0",
-    "1.26.8",  "1.26.0",
+    "1.27.3",  "1.27.0",
+    "1.26.10", "1.26.0",
     "1.25.7",  "1.25.0",
     "1.24.13", "1.24.0",
     "1.23.12", "1.23.0",
