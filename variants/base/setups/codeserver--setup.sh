@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.1
+# cb-version: 1.1.0
 
 # codeserver--setup.sh
 # Installs code-server + Jupyter (Python venv). Bash kernel is installed via external script.
@@ -427,6 +427,18 @@ if [ ! -f "$MARKER" ]; then
 fi
 
 echo "Starting code-server. This may take sometime ..."
+
+# code-server runs on its own bundled Node, which carries its own root CA list
+# and so ignores the booth's ca-certificates. That list goes stale between
+# code-server releases: after the eMudhra CA key compromise (Oct 2026) the Node
+# shipped in code-server 4.141.0 still trusted the compromised chains. Have it
+# (and the extension host and terminals it spawns) verify against the system
+# store instead, which the image keeps current. Not --use-system-ca: that adds
+# the system roots to the bundled ones rather than replacing them.
+case " ${NODE_OPTIONS:-} " in
+  *" --use-openssl-ca "*) ;;
+  *) export NODE_OPTIONS="--use-openssl-ca${NODE_OPTIONS:+ $NODE_OPTIONS}" ;;
+esac
 
 # Ensure these vars are present in the code-server process environment
 SHELL="$DEFAULT_SHELL" \

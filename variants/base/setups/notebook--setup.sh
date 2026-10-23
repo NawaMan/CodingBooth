@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 
 # notebook--setup.sh
@@ -43,7 +43,10 @@ NOTEBOOK_DEFAULT_PORT="${1:-${NOTEBOOK_DEFAULT_PORT:-12222}}"
 # catching a real content change, not misfiring. Keep these in sync with the
 # identical pins in bash-nb-kernel--setup.sh -- both scripts run against the
 # same interpreter, and that one upgrades pip/setuptools/wheel again afterward.
-PIP_PIN_VERSION="26.2.1"
+# pip is also a trust-store floor: it verifies TLS with its own vendored certifi,
+# and 26.2.2 is the first to drop the compromised eMudhra roots (Oct 2026).
+# Never pin below it; python--setup.sh holds the same floor.
+PIP_PIN_VERSION="26.2.2"
 SETUPTOOLS_PIN_VERSION="84.0.0"
 WHEEL_PIN_VERSION="0.48.0"
 IPYKERNEL_VERSION="7.4.0"

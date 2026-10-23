@@ -319,6 +319,40 @@ to host-root. Every other layer holds today, but you can shrink the blast radius
 - **Use `--egress`** to restrict outbound connections when running third-party or untrusted
   dependencies (not a boundary in a `--dind` booth). See **[Egress](implementations/EGRESS.md)**.
 
+### Keep the booth's trust store current
+
+A booth trusts the certificate authorities its **image was built with**, and there is more than one
+list inside it. The system bundle (`ca-certificates`) serves curl, git, apt and Go programs, but
+pip uses its own vendored copy of certifi, and Node, code-server, Bun, Deno, uv, Java and Electron
+apps each bundle their own list too. A patched host does not change any of them, and rebuilding a
+project's image does not either while the build cache and the skip-unchanged fingerprint keep the
+old layers.
+
+When a CA is distrusted, as with the **eMudhra CA key compromise of October 2026**:
+
+1. **Move to a CodingBooth release that has the fix** (see the [CHANGELOG](CHANGELOG.md)). An old
+   pinned version keeps its old image; booths still on 0.77.x (Ubuntu 24.04) trust the compromised
+   eMudhra chains through curl itself.
+2. **Rebuild the project image fresh.** `booth --pull` fetches the base image again and skips the
+   unchanged-build check; with a new release's base image, every layer above it is rebuilt. On the
+   same base image the build cache still keeps each `setup` step's old download (pip, Node, a
+   JDK), so clear it first with `docker builder prune`, or rebuild once with
+   `build-args = ["--no-cache"]` in `.booth/config.toml`.
+3. **Check it** from inside the booth. The incident's test hosts must fail with a certificate error:
+
+   ```bash
+   curl https://dv-g3b-emudhra.we-have-a-problem.com/
+   curl https://dv-g3b-aaa-emudhra.we-have-a-problem.com/
+   ```
+
+   Repeat with each runtime the project uses (`pip download`, `node`, `java`), because each has its
+   own list. `tests/manual/run-emudhra-live-manual-test.sh` runs all of them against an image.
+
+Booth itself takes care of the ones it controls: the images install `ca-certificates` from the live
+archive (never a stale snapshot), the `python` setup holds pip and certifi above the fixed versions,
+code-server's bundled Node verifies against the system store, and the CLI is built with a Go
+toolchain that refuses the compromised keys.
+
 ---
 
 ## 6. Incident response: a mounted secret was exposed
