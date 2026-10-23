@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 # -----------------------------------------------------------------------------
 # python--setup.sh
@@ -33,7 +33,7 @@ HOME=/root
 PROFILE_FILE="/etc/profile.d/53-cb-python--profile.sh"  # profile to be run when login
 
 # Wanted python version
-PY_VERSION=${1:-3.14.8}
+PY_VERSION=${1:-3.14.9}
 
 # ---- validate python version format ----
 # accepts X.Y or X.Y.Z (exact patch recommended)
@@ -216,11 +216,18 @@ else
 
   # Create the venv
   uv venv --python "$UV_PY_EXE" "${ENV_PATH}"
-
-  # ✅ Ensure classic pip/setuptools/wheel exist inside the venv
-  # (some tooling calls 'pip' directly; uv alone won't provide that console script)
-  uv pip install --python "${ENV_PATH}/bin/python" --upgrade pip setuptools wheel
 fi
+
+# ✅ Ensure classic pip/setuptools/wheel exist inside the venv
+# (some tooling calls 'pip' directly; uv alone won't provide that console script).
+# Run on an existing venv too, so a re-run lifts an old pip over the floors.
+# The floors are trust-store fixes: pip TLS-verifies with its own vendored
+# certifi, not the system store, and both releases below drop the emSign roots
+# after the eMudhra CA key compromise (Oct 2026). Raise them, never lower them.
+CB_PIP_MIN="26.2.2"
+CB_CERTIFI_MIN="2026.10.19"
+uv pip install --python "${ENV_PATH}/bin/python" --upgrade \
+  "pip>=${CB_PIP_MIN}" setuptools wheel "certifi>=${CB_CERTIFI_MIN}"
 chmod -R 0777 "${ENV_PATH}"
 
 # maintain a series convenience symlink (e.g., py3.12 -> py3.12.11)
