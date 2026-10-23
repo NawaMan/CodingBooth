@@ -68,6 +68,18 @@ echo "📥 Downloading dependencies..."
 go mod download
 echo ""
 
+# The binary trusts what its Go toolchain's crypto/x509 trusts, so an older Go
+# ships a CLI that still accepts the compromised eMudhra CA keys. go.mod's
+# toolchain line makes the go command switch to it (GOTOOLCHAIN=auto, the
+# default); GOTOOLCHAIN=local would silently keep an older one, so check.
+MIN_GO=$(sed -n 's/^toolchain go//p' go.mod)
+USED_GO=$(go env GOVERSION); USED_GO=${USED_GO#go}
+if [[ -n "$MIN_GO" ]] && [[ "$(printf '%s\n%s\n' "$MIN_GO" "$USED_GO" | sort -V | head -1)" != "$MIN_GO" ]]; then
+    echo "❌ Error: building with Go ${USED_GO}, but go.mod requires toolchain go${MIN_GO}."
+    echo "   Upgrade Go, or unset GOTOOLCHAIN=local so the go command can fetch it."
+    exit 1
+fi
+
 # Create output directory
 mkdir -p "$OUTPUT_DIR"
 
