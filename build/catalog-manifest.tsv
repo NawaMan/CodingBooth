@@ -248,7 +248,7 @@ setup	ollama	1.0.0	9e4d1808163c76f0a4224270c76f09585ca7fd2f5fc7b94b6d023d9c9e1de
 setup	opencode	1.0.0	ca71227c4bd11873653df20062ec2dfe0603ba0c1bc18e6d30405532fd036a49	variants/base/setups/opencode--setup.sh
 setup	openssh	1.0.0	6a93cef06723e5533a896967d599f9699809d12de641ad055aa5f7354568d0ee	variants/base/setups/openssh--setup.sh
 setup	opensshd	1.0.0	5c7dbf41db974b86119595853d8ec2f167dd6f0bd6f98e101f8faeb53aed5ce6	variants/base/setups/opensshd--setup.sh
-setup	orca	0.1.0	d90d6f0aa1ebc02b200287a911640334c683247bb63f821f8883b82dd02ed46e	variants/base/setups/orca--setup.sh
+setup	orca	0.1.0	ccb5cc1a98ef0bc9c6c9bf28c7efb9dd5df736dbc79e53eca16f698ef96b9855	variants/base/setups/orca--setup.sh
 setup	orchis-gtk	0.1.0	03bb0f3bb90620590a2cd7ab9682d99544ae0ec3bef77be80a7e83b78b3e4df2	variants/base/setups/orchis-gtk--setup.sh
 setup	php	1.0.0	397c63cb432fd45e81a827200be0a0bde3f1ac4bc6da62595944a4e51a3b0a93	variants/base/setups/php--setup.sh
 setup	php-code-extension	1.0.0	938a5949e6a3723c576a0b6f7c4bf04f346db5fb165b976774730f8974d74dbf	variants/base/setups/php-code-extension--setup.sh
