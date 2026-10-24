@@ -52,10 +52,9 @@
     (an `fr` track gets its share of the free space, and the measured widths already
     sum to it), so nothing jumps on the first frame — but a track authored as a fixed
     `'360px'` rail comes out proportional. A drag is a RATIO editor.
-  - **Nothing is saved.** Each slide is its own page load, so a drag is gone the
-    moment you page away. In ADJUST mode a `widths` chip copies the dragged ratio to
-    the clipboard, to paste back into source — the same bargain every ADJUST gesture
-    makes. Double-click any divider to reset it to the authored widths.
+  - A drag is live only until reload — but in ADJUST mode **SAVE** writes the ratio
+    back as `widths={[…]}` (same registry as Blocks / Draw shapes). Double-click any
+    divider to reset it to the authored widths.
   - A focused handle owns ←/→ (Shift for a bigger step). It is the only control in
     the deck that may: `NavigationBar` claims the arrows on `window` in the bubble
     phase, so stopping the event at a *focused* handle is both sufficient and
@@ -86,19 +85,25 @@
     columns stack under 720px, which is the only place stacking is meaningful.
 -->
 <script lang="ts">
-	import { onMount, setContext, tick } from 'svelte';
+	import { onMount, onDestroy, setContext, tick } from 'svelte';
 	import { writable } from 'svelte/store';
+	import { browser } from '$app/environment';
 	import { getMode } from '$lib/presentation';
 	import { canAdjust, adjustMode } from '$lib/stores/adjustMode';
+	import {
+		nextDrawInstanceId,
+		reportShapeChanges,
+		withdrawShapeChanges
+	} from '$lib/stores/adjustChanges';
 	import { trackPointer } from '$lib/utils/drag';
 	import {
 		COLUMNS_CONTEXT,
 		alignment,
-		formatWidths,
 		gutterCenters,
 		parseGapPx,
 		parseTrackPx,
 		resizeTracks,
+		toWeights,
 		trackCount,
 		trackTemplate,
 		weightsTemplate
@@ -109,6 +114,8 @@
 	export let columns: number = 2;
 	/** The ratio: `[3, 2]`, `['360px', 1]`, or a raw `grid-template-columns` string. */
 	export let widths: string | Track[] | null = null;
+	/** Optional label for SAVE matching when several Columns share a slide. */
+	export let name: string = '';
 	/** Gutter between columns (any CSS length). `''` → the theme's `--columns-gap`. */
 	export let gap: string = '';
 	/** Block-axis alignment of the columns; a `<Column>` may override its own. */
@@ -160,7 +167,38 @@
 	let gapPx = 0;
 	let dirty = false;
 	let dragging: number | null = null;
-	let copied = false;
+
+	// SAVE registry — same shape channel as Draw (literal/attr rewrite of the tag).
+	const shapeInstance = nextDrawInstanceId();
+	const shapeKey = `${shapeInstance}:columns`;
+
+	/** `widths=` value text WITH delimiters (`{[…]}` or `"…"`), or null if unset. */
+	function widthsValue(w: string | Track[] | null): string | null {
+		if (w == null) return null;
+		if (typeof w === 'string') {
+			// Prefer the double-quoted form authors usually write for template strings.
+			return `"${w.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+		}
+		if (!Array.isArray(w) || !w.length) return null;
+		const parts = w.map((t) =>
+			typeof t === 'number' && Number.isFinite(t)
+				? String(t)
+				: typeof t === 'string'
+					? `'${t.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`
+					: String(t)
+		);
+		return `{[${parts.join(', ')}]}`;
+	}
+
+	function columnsOpenTag(widthsRaw: string | null): string {
+		const n = name ? ` name="${name}"` : '';
+		const w = widthsRaw ? ` widths=${widthsRaw}` : '';
+		return `<Columns${n}${w}>`;
+	}
+
+	// Mount-time widths (source form). Dragged ratio becomes fr weights for SAVE.
+	const initialWidthsRaw = widthsValue(widths);
+	const initialTag = columnsOpenTag(initialWidthsRaw);
 
 	$: template = stack ? 'minmax(0, 1fr)' : trackTemplate(columns, widths);
 	$: count = stack ? 1 : trackCount(columns, widths);
@@ -267,18 +305,26 @@
 		return total > 0 ? Math.round((tracksPx[index] / total) * 100) : 50;
 	}
 
-	async function copyWidths() {
-		const snippet = formatWidths(tracksPx);
-		if (!snippet) return;
-		try {
-			await navigator.clipboard.writeText(snippet);
-			copied = true;
-			setTimeout(() => (copied = false), 1200);
-		} catch {
-			// Clipboard blocked (insecure context / permission) — same fallback Block uses.
-			window.prompt('Copy this snippet:', snippet);
-		}
+	// Publish live widths for ADJUST SAVE (attribute rewrite of widths=… on <Columns>).
+	$: if (browser) {
+		const weights = dirty && tracksPx.length ? toWeights(tracksPx) : null;
+		const liveRaw =
+			weights && weights.length ? `{[${weights.join(', ')}]}` : initialWidthsRaw;
+		const newTag = columnsOpenTag(liveRaw);
+		reportShapeChanges(shapeInstance, [
+			{
+				key: shapeKey,
+				kind: 'Columns',
+				name,
+				dirty: dirty && newTag !== initialTag,
+				oldTag: initialTag,
+				newTag
+			}
+		]);
 	}
+	onDestroy(() => {
+		if (browser) withdrawShapeChanges(shapeInstance);
+	});
 </script>
 
 <div class="columns {klass}" class:text={isText} class:grabbable={showHandles} id={id || undefined} bind:this={el} style="{vars} {style}">
@@ -310,16 +356,6 @@
 		></div>
 	{/each}
 
-	{#if editing && mounted && tracksPx.length > 1}
-		<button
-			class="copy"
-			type="button"
-			on:pointerdown|stopPropagation
-			on:click|stopPropagation={copyWidths}
-		>
-			{copied ? 'Copied' : 'widths'}
-		</button>
-	{/if}
 </div>
 
 <style>
@@ -417,23 +453,6 @@
 	}
 	.handle:focus-visible::before {
 		box-shadow: 0 0 0 2px color-mix(in srgb, var(--columns-handle, #2980b9) 35%, transparent);
-	}
-
-	/* ADJUST-mode Copy: the dragged ratio as a `widths={[…]}` you paste back into
-	   source. Bottom-left, clear of Block's own Copy chip at the top. */
-	.copy {
-		position: absolute;
-		left: 0;
-		bottom: -1.9em;
-		font-size: 0.62em;
-		font-family: inherit;
-		line-height: 1;
-		padding: 0.35em 0.6em;
-		border-radius: 4px;
-		cursor: pointer;
-		color: var(--ctrl-strong-fg, #ffffff);
-		background: var(--ctrl-strong-bg, #2980b9);
-		border: 1px solid var(--ctrl-strong-border, #2980b9);
 	}
 
 	/* A pointer-driven grip a touch reader can drag is fine; the hover-only reveal is

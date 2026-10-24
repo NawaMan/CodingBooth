@@ -9,10 +9,12 @@ import { readSticky, readAdjustParam, resolveCanAdjust } from '$lib/adjust/adjus
 // pixels, then Copy (or, under `vite dev`, SAVE) the resulting tag back into source.
 //
 // Three stores:
-//   - adjustMode: is the mode currently ON? Persisted, so it survives navigation
-//     between slides. Every editor (Block, Draw, Columns) gates on
-//     `$canAdjust && $adjustMode`, so a stale `true` here is inert wherever the
-//     control isn't offered.
+//   - adjustMode: is the mode currently ON? Session-persisted so it survives full
+//     page navigations between slides *in this tab*, then fails closed when the tab
+//     closes. (It used to be localStorage — a single flip while authoring left the
+//     next day stuck in ADJUST on every deck until someone noticed. When in doubt:
+//     off.) Every editor (Block, Draw, Columns) gates on `$canAdjust && $adjustMode`,
+//     so a stale `true` here is inert wherever the control isn't offered.
 //   - canAdjust:  is the ADJUST control OFFERED here? True in `vite dev` always; in
 //     a built site it follows the sticky `?adjust` flag, and failing that whatever
 //     the current SLIDE declares (`adjust: true` in its pages.ts entry). Precedence
@@ -29,6 +31,16 @@ import { readSticky, readAdjustParam, resolveCanAdjust } from '$lib/adjust/adjus
 
 const MODE_KEY = 'adjustMode';
 const CAN_KEY = 'canAdjust';
+
+// Drop the old localStorage stickiness so a prior session cannot re-arm ADJUST on
+// every visit. Session storage (below) is the only home for the mode now.
+if (browser) {
+	try {
+		localStorage.removeItem(MODE_KEY);
+	} catch {
+		/* private mode / blocked storage — nothing to clear */
+	}
+}
 
 // Can SAVE reach a source tree? SAVE POSTs to /__geekpresent/adjust-save, an endpoint
 // that exists ONLY inside the vite dev server (adjust/devSavePlugin), where it rewrites
@@ -56,17 +68,17 @@ function recompute(): void {
 	canAdjust.set(resolveCanAdjust(import.meta.env.DEV, sticky(), declared));
 }
 
-// Is the mode currently ON? The only one of the three that is a plain localStorage mirror,
-// so it is the only one that moves onto persisted(). `booleanCodec` and not
-// `jsonCodec<boolean>` on purpose: a corrupt key must read as OFF, and JSON would hand
-// back a truthy object for `{"x":1}` — arming the authoring chrome nobody asked for.
+// Is the mode currently ON? Session storage — survives slide-to-slide full reloads in
+// this tab (GeekPresent navigates with location.href), cleared when the tab closes.
+// Default false: fail closed. `booleanCodec` and not `jsonCodec<boolean>` so a corrupt
+// key cannot arm the chrome (JSON would hand back a truthy object for `{"x":1}`).
 //
-// `sync: false` keeps today's behaviour: two windows on the same deck each hold their own
-// ADJUST state, so flipping the mode in the presenter console does not arm drag handles on
-// the audience's screen.
+// `sync: false` is redundant for session (per-tab already) but documents the intent:
+// two windows each hold their own ADJUST state.
 export const adjustMode = persisted<boolean>(MODE_KEY, false, {
 	codec: booleanCodec(),
-	sync: false
+	sync: false,
+	storage: 'session'
 });
 
 // NOT persisted stores, and deliberately left hand-rolled:

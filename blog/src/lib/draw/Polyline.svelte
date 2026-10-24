@@ -26,16 +26,18 @@
 	import DrawHandle from './DrawHandle.svelte';
 	import { fmtPoint, newEditorId, sharedAttrs } from './editing';
 	import { polylinePath, smoothPath } from './drawCore';
+	import { resolveRoughness, roughShape, seedOf, shapeIdentity } from './roughCore';
 	import {
 		DRAW_CONTEXT_KEY,
 		type DrawContext,
 		type DrawOnProps,
 		type Point,
+		type RoughProps,
 		type ShapeEditor,
 		type ShapeStyleProps
 	} from './types';
 
-	interface Props extends ShapeStyleProps, DrawOnProps {
+	interface Props extends ShapeStyleProps, DrawOnProps, RoughProps {
 		points: Point[];
 		/** Join the last point back to the first. */
 		close?: boolean;
@@ -61,6 +63,8 @@
 		points,
 		close = false,
 		smooth = false,
+		rough,
+		seed,
 		name = '',
 		grid = 1,
 		color,
@@ -73,6 +77,19 @@
 		id = '',
 		class: klass = ''
 	}: Props = $props();
+
+	// The Draw surface we sit in. Read at init (getContext must be), and up here
+	// rather than down with the editing chrome because the hand-drawn render
+	// below needs the surface's `rough` default.
+	const ctx = getContext<DrawContext | undefined>(DRAW_CONTEXT_KEY);
+
+	// --- Hand-drawn render ----------------------------------------------------
+	// Our own `rough` overrides the surface's; null means the ordinary render.
+	const roughness = $derived(resolveRoughness(rough, ctx?.rough ?? null));
+	// Seeded from the BASE points only, so dragging a waypoint in ADJUST keeps
+	// the wobble steady instead of re-rolling it under the cursor.
+	const roughSeed = $derived(seedOf(seed, shapeIdentity(name || 'Polyline', ...points.flat())));
+	const roughOpts = $derived(roughness != null ? { roughness, seed: roughSeed } : null);
 
 	// ADJUST-mode editing override: the editor is a coordinate FINDER — drags
 	// mutate this local (reset on reload), never the prop; Copy → paste is the
@@ -102,8 +119,17 @@
 
 	const d = $derived(smooth ? smoothPath(PTS, close) : polylinePath(PTS, close));
 
+	// One `d` per overlapping pen pass when rough, else the single clean stroke.
+	// Each becomes its own <path> so a draw-on reveal draws them in PARALLEL.
+	// Corners survive: roughShape splits a polyline into one run per segment.
+	const strokeDs = $derived(
+		(roughOpts
+			? roughShape({ kind: 'polyline', points: PTS, close, smooth }, roughOpts, '')
+			: [d]
+		).filter(Boolean)
+	);
+
 	// --- ADJUST-mode editing chrome ------------------------------------------
-	const ctx = getContext<DrawContext | undefined>(DRAW_CONTEXT_KEY);
 	const editing = $derived(ctx?.editing ?? false);
 
 	// Publish the LIVE geometry under our name so a <Sprite path="<name>"> can
@@ -117,7 +143,7 @@
 	const tagFor = (list: Point[]) =>
 		`<Polyline${name ? ` name="${name}"` : ''} ${pointsAttr(list)}` +
 		`${close ? ' close' : ''}${smooth ? ' smooth' : ''}` +
-		sharedAttrs({ color, thickness, dash, label, draw, drawDelay, grid, id, class: klass, style }) +
+		sharedAttrs({ color, thickness, dash, rough, seed, label, draw, drawDelay, grid, id, class: klass, style }) +
 		' />';
 	const snippet = $derived(tagFor(PTS));
 	const sourceSnippet = $derived(tagFor(points));
@@ -174,11 +200,11 @@
 	{#if isSelected && d}
 		<path class="draw-selglow" {d} />
 	{/if}
-	{#if d}
+	{#each strokeDs as sd, i (i)}
 		<path
 			class="draw-polyline-stroke"
 			class:draw-anim={drawSecs}
-			{d}
+			d={sd}
 			fill="none"
 			pathLength={drawSecs ? 1 : undefined}
 			style="stroke:{stroke}; stroke-width:{strokeWidth};{drawSecs
@@ -187,7 +213,7 @@
 			stroke-dasharray={drawSecs ? undefined : dasharray}
 			stroke-linejoin="round"
 		/>
-	{/if}
+	{/each}
 
 	{#if editing && d}
 		<!-- The hit stroke stays HOME even when selected: it is the only chrome

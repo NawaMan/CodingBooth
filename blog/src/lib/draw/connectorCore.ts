@@ -8,7 +8,7 @@
 // produce a drawable path rather than `NaNpx`.
 
 import { curvePath, finite, finitePoint, round, segmentAngle, shorten } from './drawCore';
-import type { Point } from './types';
+import type { PathShape, Point } from './types';
 
 export type { Point };
 
@@ -296,6 +296,11 @@ export interface ConnectorOptions {
 export interface ConnectorGeometry {
 	/** The shaft `d`, already pulled back behind whichever heads are present. */
 	d: string;
+	/** The same shaft as GEOMETRY rather than a `d` string, so a caller can
+	 *  re-render it another way — today, hand-drawn (<Connector rough>), which
+	 *  needs points to wobble and cannot get them back out of a `d`. An ortho
+	 *  route reports its bare corner points: a drawn elbow has no fillet. */
+	shape: PathShape;
 	/** Arrow tips — the true endpoints, on the box edges. */
 	start: Point;
 	end: Point;
@@ -380,8 +385,10 @@ export function connectorGeometry(a: Rect, b: Rect, opts: ConnectorOptions = {})
 		}
 		const here = polylineAt(points, labelAt);
 		label = perpendicular(here.point, here.angle, labelOffset);
+		const shaftPoints = dedupePoints(shaft);
 		return {
-			d: roundedPolylinePath(dedupePoints(shaft), route === 'ortho' ? radius : 0),
+			d: roundedPolylinePath(shaftPoints, route === 'ortho' ? radius : 0),
+			shape: { kind: 'polyline', points: shaftPoints },
 			start,
 			end,
 			startAngle,
@@ -404,6 +411,7 @@ export function connectorGeometry(a: Rect, b: Rect, opts: ConnectorOptions = {})
 	label = perpendicular(here.point, here.angle, labelOffset);
 	return {
 		d: curvePath(shaftStart, shaftEnd, cc1, cc2),
+		shape: { kind: 'cubic', from: shaftStart, to: shaftEnd, c1: cc1, c2: cc2 },
 		start,
 		end,
 		startAngle,
