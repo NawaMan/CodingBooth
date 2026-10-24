@@ -1,6 +1,6 @@
 # CodingBooth
 
-**Current Version:** 0.81.0--rc1
+**Current Version:** 0.81.0--gnupg-2.5
 
 ![Works On My Machine](docs/Works-On-My-Machine-small.png)
 
