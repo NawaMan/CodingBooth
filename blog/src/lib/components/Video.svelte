@@ -86,6 +86,7 @@
 	import { kioskActive } from '$lib/stores/kiosk';
 	import { clearKioskMediaHold, setKioskMediaHold } from '$lib/stores/kioskMediaHold';
 	import { spaceIntent } from '$lib/utils/stepKeys';
+	import { reportAction } from '$lib/record/recordBus';
 	import {
 		activeBookmarkIndex,
 		formatTime,
@@ -299,11 +300,15 @@
 
 	/** Seek to the next chapter. Also what CONTINUE and the presenter pulse do. */
 	function stepNext() {
-		if (nextMark) seekTo(nextMark.time);
+		if (!nextMark) return;
+		seekTo(nextMark.time);
+		if (drivesChrome) reportAction({ kind: 'step' });
 	}
 	/** Seek to the chapter before the active one. */
 	function stepPrev() {
-		if (active > 0) seekTo(marks[active - 1].time);
+		if (active <= 0) return;
+		seekTo(marks[active - 1].time);
+		if (drivesChrome) reportAction({ kind: 'step', back: true });
 	}
 
 	// Publish to the slide chrome exactly as a Steps build does — same store, same
@@ -320,7 +325,7 @@
 			kioskActive: $kioskActive
 		});
 	$: if (drivesChrome) {
-		activeSteps.set({ owner: token, ...build, next: stepNext });
+		activeSteps.set({ owner: token, ...build, next: stepNext, prev: stepPrev });
 	} else {
 		activeSteps.update((v) => (v && v.owner === token ? null : v));
 	}

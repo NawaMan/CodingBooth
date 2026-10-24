@@ -11,6 +11,37 @@ export type Point = [number, number];
 /** Where arrowheads go on a Line (and, in Phase 2, curved shafts). */
 export type ArrowMode = 'none' | 'start' | 'end' | 'both';
 
+/** The hand-drawn ("sloppy") render option — the Excalidraw look, on any
+ *  stroked shape. Shared by every shape component; `<Draw rough>` sets the
+ *  default for everything inside it, and a shape's own prop overrides that. */
+export interface RoughProps {
+	/** Draw this shape by hand instead of by machine. `true` is the standard
+	 *  wobble (same as `1`); a number is how sloppy, roughly 0.5 (barely) to 2
+	 *  (drunk). `false` or `0` opts a single shape OUT of an inherited
+	 *  `<Draw rough>`. Purely a RENDER option: every evaluator — sprites riding
+	 *  the path, arrow tangents, label placement, ADJUST handles — keeps using
+	 *  the true geometry, so nothing downstream judders. */
+	rough?: boolean | number;
+	/** Fix the wobble's random seed. Omit and it is derived from the shape's own
+	 *  geometry and name, which is stable across reloads and across SSR →
+	 *  hydration; set it when you want a particular draw of the same shape (or
+	 *  two identical shapes to differ). */
+	seed?: number;
+}
+
+/** Extra fill controls that only mean anything while `rough` is on: a hand
+ *  drawn shape fills with pen strokes, not a flat wash. Box shapes only. */
+export interface RoughFillProps {
+	/** How a filled shape gets its ink while rough. `hachure` (parallel pen
+	 *  strokes) is the default when `fill` is set and `rough` is on;
+	 *  `cross-hatch` crosses them; `solid` keeps the ordinary flat SVG fill. */
+	fillStyle?: 'solid' | 'hachure' | 'cross-hatch';
+	/** Spacing between fill strokes, canvas px (default 10). */
+	hachureGap?: number;
+	/** Direction of the fill strokes, degrees (default -45). */
+	hachureAngle?: number;
+}
+
 /** Props shared by every shape component. */
 export interface ShapeStyleProps {
 	/** Stroke color; overrides --draw-stroke (default currentColor). */
@@ -329,6 +360,10 @@ export interface BlockShapeRegistration {
 export interface DrawContext {
 	readonly width: number;
 	readonly height: number;
+	/** The surface's hand-drawn default, already resolved to a roughness
+	 *  number (or null for the ordinary machine-drawn render). Shapes read it
+	 *  and let their own `rough` prop override — see resolveRoughness. */
+	readonly rough: number | null;
 	/** True while ADJUST-mode editing is active (canAdjust && adjustMode).
 	 *  Shapes render handles/selection chrome only when this is on. */
 	readonly editing: boolean;

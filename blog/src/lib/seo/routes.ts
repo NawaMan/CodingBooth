@@ -4,11 +4,14 @@
 // plus the standalone Text routes (the home page and text.html). Lives in $lib so
 // the sitemap endpoint and any future consumer share one source of truth, and so
 // the list always tracks pages.ts without a second place to keep in sync.
+//
+// Decks may nest under a prefix (e.g. `references/shell`); path id mapping is
+// shared with the handout via deckPathCore.
 import type { Page } from '$lib/utils/navigate';
+import { pathsFromPagesFile, slideSitePath } from '$lib/handout/deckPathCore';
 
-// Eagerly import every presentation's pages.ts. The glob key is the module path,
-// e.g. '/src/routes/slides/pages.ts' — the second-to-last segment is the deck name.
-const pageModules = import.meta.glob<{ pages: Array<Page> }>('/src/routes/*/pages.ts', {
+// Eagerly import every presentation's pages.ts (any depth under routes/).
+const pageModules = import.meta.glob<{ pages: Array<Page> }>('/src/routes/**/pages.ts', {
 	eager: true
 });
 
@@ -27,8 +30,12 @@ const TEXT_ROUTES = [
 export function siteRoutes(): string[] {
 	const slideRoutes: string[] = [];
 	for (const [file, mod] of Object.entries(pageModules)) {
-		const deck = file.split('/').slice(-2, -1)[0]; // .../<deck>/pages.ts -> <deck>
-		for (const p of mod.pages) slideRoutes.push(`/${deck}/${p.path}`);
+		const paths = pathsFromPagesFile(file);
+		if (!paths) continue;
+		for (const p of mod.pages) {
+			const site = slideSitePath(paths.urlPath, p.path);
+			if (site) slideRoutes.push(site);
+		}
 	}
 	return [...TEXT_ROUTES, ...slideRoutes];
 }

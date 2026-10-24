@@ -71,6 +71,13 @@
 		unwrapAngles
 	} from './drawCore';
 	import {
+		resolveRoughness,
+		roughArrowHead,
+		roughShapes,
+		seedOf,
+		shapeIdentity
+	} from './roughCore';
+	import {
 		DRAW_CONTEXT_KEY,
 		type AnimEditor,
 		type ArrowMode,
@@ -82,12 +89,13 @@
 		type PathShape,
 		type PathStop,
 		type Point,
+		type RoughProps,
 		type SegmentShape,
 		type ShapeEditor,
 		type ShapeStyleProps
 	} from './types';
 
-	interface Props extends ShapeStyleProps, PathLabelProps, DrawOnProps {
+	interface Props extends ShapeStyleProps, PathLabelProps, DrawOnProps, RoughProps {
 		/** The pen's starting point (canvas px) — the first segment's default
 		 *  `from`. */
 		start: Point;
@@ -133,12 +141,29 @@
 		drawDelay,
 		stops,
 		animate,
+		rough,
+		seed,
 		name = '',
 		grid = 1,
 		style = '',
 		id = '',
 		class: klass = ''
 	}: Props = $props();
+
+	// The Draw surface we sit in. Read at init (getContext must be), and up here
+	// rather than down with the editing chrome because the hand-drawn render
+	// below needs the surface's `rough` default.
+	const ctx = getContext<DrawContext | undefined>(DRAW_CONTEXT_KEY);
+
+	// --- Hand-drawn render ----------------------------------------------------
+	// Our own `rough` overrides the surface's; null means the ordinary render.
+	const roughness = $derived(resolveRoughness(rough, ctx?.rough ?? null));
+	// Seeded from the BASE pen start and segment count only — never the live or
+	// per-stop geometry, or a morphing chain re-rolls its wobble every frame.
+	const roughSeed = $derived(
+		seedOf(seed, shapeIdentity(name || 'Path', start[0], start[1], segments.length))
+	);
+	const roughOpts = $derived(roughness != null ? { roughness, seed: roughSeed } : null);
 
 	// ADJUST-mode editing overrides: the editor is a coordinate FINDER — drags
 	// mutate these locals (reset on reload), never the props; Copy → paste is
@@ -211,6 +236,12 @@
 	const shaftShapes = $derived(shaftShapesOf(shapes));
 	const d = $derived(multiPath(shaftShapes));
 
+	// One `d` per overlapping pen pass when rough, else the single clean shaft.
+	// roughShapes keeps the whole chain ONE subpath per pass (one arrowhead, one
+	// draw-on reveal) while splitting each segment into its own run, so corners
+	// between segments stay sharp.
+	const shaftDs = $derived(roughOpts ? roughShapes(shaftShapes, roughOpts, '') : [d]);
+
 	// Heads sit on the ORIGINAL end/start points and end tangents.
 	const endShape = $derived(shapes.length ? shapes[shapes.length - 1] : null);
 	const startShape = $derived(shapes.length ? shapes[0] : null);
@@ -222,6 +253,18 @@
 			? polygonPoints(arrowHead(startShape.from, angleAt(startShape, 0) + Math.PI, size))
 			: null
 	);
+	// A drawn head is two open barbs rather than a filled triangle.
+	const endHeadD = $derived(
+		roughOpts && atEnd && endShape
+			? roughArrowHead(endShape.to, angleAt(endShape, 1), size, roughOpts, '')
+			: null
+	);
+	const startHeadD = $derived(
+		roughOpts && atStart && startShape
+			? roughArrowHead(startShape.from, angleAt(startShape, 0) + Math.PI, size, roughOpts, '')
+			: null
+	);
+	const originHeadD = $derived(roughOpts ? roughArrowHead([0, 0], 0, size, roughOpts, '') : '');
 
 	const stroke = $derived(color ?? 'var(--draw-stroke, currentColor)');
 	const strokeWidth = $derived(thickness ?? 'var(--draw-thickness, 4)');
@@ -255,10 +298,28 @@
 		const frame = (pct: number, body: string) => `${pct}% { ${body} }`;
 		let css = '';
 		if (geomStops) {
-			const shaftFrames = geomStops
-				.map((g) => frame(g.pct, `d: path("${sampleMultiPath(shaftShapesOf(g.shapes))}");${tf(g.ease)}`))
-				.join(' ');
-			css += `@keyframes ${animName} { ${shaftFrames} }`;
+			// Rough chains get ONE KEYFRAME SET PER PASS: each pass is its own
+			// <path> and keeps its own wobble across every stop (same seed, same
+			// per-segment sample count ⇒ matching command structure), so
+			// `d: path()` still tweens and the drawn chain morphs coherently.
+			if (roughOpts) {
+				for (let k = 0; k < shaftDs.length; k++) {
+					const frames = geomStops
+						.map((g) => {
+							const ds = roughShapes(shaftShapesOf(g.shapes), roughOpts, '');
+							return frame(g.pct, `d: path("${ds[k] ?? ''}");${tf(g.ease)}`);
+						})
+						.join(' ');
+					css += `@keyframes ${animName}-p${k} { ${frames} }`;
+				}
+			} else {
+				const shaftFrames = geomStops
+					.map((g) =>
+						frame(g.pct, `d: path("${sampleMultiPath(shaftShapesOf(g.shapes))}");${tf(g.ease)}`)
+					)
+					.join(' ');
+				css += `@keyframes ${animName} { ${shaftFrames} }`;
+			}
 			if (atEnd) {
 				// Unwrap the tangent angles across stops so the head takes the SHORTEST
 				// rotation between keyframes — an arc's end tangent comes back
@@ -324,16 +385,19 @@
 	// label anchored on 0,0) and positioned entirely by their transform frames.
 	const originHead = $derived(polygonPoints(arrowHead([0, 0], 0, size)));
 	const animOf = (suffix: string) => ` animation: ${animName}${suffix} ${animSecs}s ease-in-out both;`;
-	const shaftAnim = $derived.by(() => {
+	// Each rough pass rides its OWN geometry keyframes (`-p0`, `-p1`, …) but
+	// shares the one reveal track, so the passes stay in step as they draw on.
+	const shaftAnimOf = (i: number) => {
 		if (!animSecs) return '';
 		const parts: string[] = [];
-		if (geomAnim) parts.push(`${animName} ${animSecs}s ease-in-out both`);
+		if (geomAnim) {
+			parts.push(`${animName}${roughOpts ? `-p${i}` : ''} ${animSecs}s ease-in-out both`);
+		}
 		if (revealAnim) parts.push(`${animName}-reveal ${animSecs}s ease-in-out both`);
 		return parts.length ? ` animation: ${parts.join(', ')};` : '';
-	});
+	};
 
 	// --- ADJUST-mode editing chrome ------------------------------------------
-	const ctx = getContext<DrawContext | undefined>(DRAW_CONTEXT_KEY);
 	const editing = $derived(ctx?.editing ?? false);
 
 	// pathShapes drops a malformed (no-`to`) segment — TS forbids it, so it only
@@ -366,7 +430,7 @@
 	const tagFor = (st: Point, list: PathSegment[], sl: PathStop[] | undefined, dr: number | undefined, dd: number | undefined) =>
 		`<Path${name ? ` name="${name}"` : ''} start={${fmtPoint(st)}} segments={${segsLiteral(list)}}` +
 		stopsAttrFor(sl) +
-		sharedAttrs({ arrow, arrowSize, color, thickness, dash, label, labelText, labelAt, labelOffset, draw: dr, drawDelay: dd, grid, id, class: klass, style }) +
+		sharedAttrs({ arrow, arrowSize, color, thickness, dash, rough, seed, label, labelText, labelAt, labelOffset, draw: dr, drawDelay: dd, grid, id, class: klass, style }) +
 		' />';
 	const snippet = $derived(tagFor(START, SEGS, S, drawVal, drawDelayVal));
 	const sourceSnippet = $derived(tagFor(start, segments ?? [], stops, draw, drawDelay));
@@ -496,7 +560,11 @@
 	});
 
 	// Ref to the shaft path, so "+ keyframe" can read the live playhead time.
-	let shaftEl = $state<SVGPathElement>();
+	// One element per pen pass (just one when not rough). The ADJUST readout and
+	// AnimationBar probe read pass 0 — every pass shares the one timeline.
+	let shaftEls = $state<SVGPathElement[]>([]);
+	const shaftEl = $derived(shaftEls[0]);
+	const shaftAnimName = $derived(roughOpts ? `${animName}-p0` : animName);
 	let playhead = $state<number | null>(null);
 	$effect(() => {
 		if (!browser || !editing || !geomAnim) {
@@ -505,7 +573,7 @@
 		}
 		let raf = 0;
 		const loop = () => {
-			playhead = playheadPercent(shaftEl, animName, animSecs);
+			playhead = playheadPercent(shaftEl, shaftAnimName, animSecs);
 			raf = requestAnimationFrame(loop);
 		};
 		loop();
@@ -541,7 +609,7 @@
 		addStop() {
 			const list = materializeStops();
 			const sorted = [...list].sort((a, b) => finite(a.pct) - finite(b.pct));
-			const ph = playheadPercent(shaftEl, animName, animSecs);
+			const ph = playheadPercent(shaftEl, shaftAnimName, animSecs);
 			const target = ph != null ? Math.round(ph) : widestGapMid(sorted);
 			const { a, b, frac } = neighborsAt(sorted, target);
 			const ns: IdStop = { id: stopSeq++, pct: target };
@@ -589,7 +657,7 @@
 			});
 		},
 		preview() {
-			const pct = playheadPercent(shaftEl, animName, animSecs);
+			const pct = playheadPercent(shaftEl, shaftAnimName, animSecs);
 			if (pct == null) return null;
 			let drawn: number | null = null;
 			if (revealAnim && shaftEl && typeof getComputedStyle === 'function') {
@@ -617,43 +685,70 @@
 			     and the rules are plain CSS, so this prerenders and scrubs. -->
 			{@html `<style>${keyframesCss}</style>`}
 		{/if}
-		<path
-			bind:this={shaftEl}
-			class="draw-path-shaft"
-			class:draw-anim={drawSecs}
-			{d}
-			fill="none"
-			pathLength={drawSecs || revealAnim ? 1 : undefined}
-			style="stroke:{stroke}; stroke-width:{strokeWidth};{drawSecs
-				? ` animation-duration:${drawSecs}s;${delaySecs ? ` animation-delay:${delaySecs}s;` : ''}`
-				: ''}{revealAnim ? ' stroke-dasharray:1;' : ''}{shaftAnim}"
-			stroke-dasharray={drawSecs || revealAnim ? undefined : dasharray}
-			stroke-linejoin="round"
-			stroke-linecap="round"
-		/>
-		{#if endHead}
-			<polygon
-				points={geomAnim ? originHead : endHead}
-				class:head-anim={drawSecs}
-				style="fill:{stroke};{drawSecs
-					? ` animation-duration:${drawSecs * 0.2}s; animation-delay:${delaySecs + drawSecs * 0.8}s;`
-					: ''}{geomAnim ? animOf('-end') : ''}"
-				stroke="none"
+		{#each shaftDs as sd, i (i)}
+			<path
+				bind:this={shaftEls[i]}
+				class="draw-path-shaft"
+				class:draw-anim={drawSecs}
+				d={sd}
+				fill="none"
+				pathLength={drawSecs || revealAnim ? 1 : undefined}
+				style="stroke:{stroke}; stroke-width:{strokeWidth};{drawSecs
+					? ` animation-duration:${drawSecs}s;${delaySecs ? ` animation-delay:${delaySecs}s;` : ''}`
+					: ''}{revealAnim ? ' stroke-dasharray:1;' : ''}{shaftAnimOf(i)}"
+				stroke-dasharray={drawSecs || revealAnim ? undefined : dasharray}
+				stroke-linejoin="round"
+				stroke-linecap="round"
 			/>
+		{/each}
+		{#if endHead}
+			{#if endHeadD}
+				<path
+					d={geomAnim ? originHeadD : endHeadD}
+					fill="none"
+					stroke-linecap="round"
+					class:head-anim={drawSecs}
+					style="stroke:{stroke}; stroke-width:{strokeWidth};{drawSecs
+						? ` animation-duration:${drawSecs * 0.2}s; animation-delay:${delaySecs + drawSecs * 0.8}s;`
+						: ''}{geomAnim ? animOf('-end') : ''}"
+				/>
+			{:else}
+				<polygon
+					points={geomAnim ? originHead : endHead}
+					class:head-anim={drawSecs}
+					style="fill:{stroke};{drawSecs
+						? ` animation-duration:${drawSecs * 0.2}s; animation-delay:${delaySecs + drawSecs * 0.8}s;`
+						: ''}{geomAnim ? animOf('-end') : ''}"
+					stroke="none"
+				/>
+			{/if}
 		{/if}
 		{#if startHead}
-			<polygon
-				points={geomAnim ? originHead : startHead}
-				class:head-anim={drawSecs}
-				style="fill:{stroke};{drawSecs
-					? ` animation-duration:${drawSecs * 0.2}s; animation-delay:${delaySecs + drawSecs * 0.8}s;`
-					: ''}{geomAnim ? animOf('-start') : ''}"
-				stroke="none"
-			/>
+			{#if startHeadD}
+				<path
+					d={geomAnim ? originHeadD : startHeadD}
+					fill="none"
+					stroke-linecap="round"
+					class:head-anim={drawSecs}
+					style="stroke:{stroke}; stroke-width:{strokeWidth};{drawSecs
+						? ` animation-duration:${drawSecs * 0.2}s; animation-delay:${delaySecs + drawSecs * 0.8}s;`
+						: ''}{geomAnim ? animOf('-start') : ''}"
+				/>
+			{:else}
+				<polygon
+					points={geomAnim ? originHead : startHead}
+					class:head-anim={drawSecs}
+					style="fill:{stroke};{drawSecs
+						? ` animation-duration:${drawSecs * 0.2}s; animation-delay:${delaySecs + drawSecs * 0.8}s;`
+						: ''}{geomAnim ? animOf('-start') : ''}"
+					stroke="none"
+				/>
+			{/if}
 		{/if}
 		{#if labelText && labelXY}
 			<text
 				class="draw-label"
+				class:hand={!!roughOpts}
 				class:label-anim={drawSecs}
 				x={geomAnim ? 0 : labelXY[0]}
 				y={geomAnim ? 0 : labelXY[1]}
@@ -851,6 +946,25 @@
 	.draw-label {
 		stroke: none;
 		font-size: var(--draw-font-size, 32px);
+	}
+	/* The hand-lettered twin of --draw-stroke: a label on a hand-drawn shape
+	   should not be set in the deck's typeface. Overridable with
+	   --draw-font-family; the stack ends in `cursive` so SOMETHING handwritten
+	   shows even with no webfont installed. Drop a real one (Excalifont,
+	   Virgil, Caveat…) into static/fonts, @font-face it in global.css, and name
+	   it in --draw-font-family to get the full Excalidraw look. */
+	.draw-label.hand {
+		font-family: var(
+			--draw-font-family,
+			'Excalifont',
+			'Virgil',
+			'Comic Neue',
+			'Comic Sans MS',
+			'Segoe Print',
+			'Bradley Hand',
+			'Chalkboard SE',
+			cursive
+		);
 	}
 	/* Draw-on: the whole stroke draws itself, then the arrowhead(s)/label fade
 	   in over the final fifth. Durations/delays come inline from `draw`. */

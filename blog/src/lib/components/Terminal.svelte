@@ -65,7 +65,15 @@
     />
 
   A bare string in `lines` is shorthand for an output line. Tones are `ok` / `warn` /
-  `error` / `muted` / `plain`; every colour is a roles.css token (`--terminal-*`).
+  `error` / `muted` / `comment` / `dir` / `plain`; every colour is a roles.css token
+  (`--terminal-*`). A tone colours the whole line; to keep the start of it plain (a tree's
+  `├── `), put that part in `lead`: `{ lead: '│   └── ', out: '(T) region', tone: 'ok' }`.
+  A shell comment is an output line in tone `comment`: `{ out: '# list them', tone: 'comment' }`.
+  A folder, as `ls` draws one, is tone `dir`. To mix colours on one line, give `out` as a list:
+  a bare string takes the line's tone, `{ text, tone }` its own —
+  `{ out: ['GH_TOKEN <- [', { text: 'gh/token', tone: 'warn' }, ']'] }`.
+  A long command split with a trailing `\` carries on in `{ cmd: '…', cont: true }`: no
+  prompt, the text lined up under the command above.
 
   In normal slide flow the console hugs its content. Wrap it in a <Block> to pin and
   size it — Block fills its content by default, so the console stretches to the box and
@@ -98,6 +106,7 @@
 	import { activeSteps } from '$lib/stores/activeSteps';
 	import { kioskActive } from '$lib/stores/kiosk';
 	import { spaceIntent } from '$lib/utils/stepKeys';
+	import { reportAction } from '$lib/record/recordBus';
 	// Driving a group of staggered animations is one problem with one implementation,
 	// shared with AnimationBar and the presenter console. (Do not inline `a.play()`.)
 	import { pauseGroup, playGroup } from '$lib/utils/slideAnim';
@@ -174,10 +183,10 @@
 	let screenEl: HTMLElement;
 	let trackEl: HTMLElement;
 
-	let anims: Animation[] = [];  // the finite CSS animations of THIS session
-	let playhead = 0;             // ms into the envelope
+	let anims: Animation[] = []; // the finite CSS animations of THIS session
+	let playhead = 0; // ms into the envelope
 	let playing = false;
-	let ready = false;            // a real, seekable clock was found
+	let ready = false; // a real, seekable clock was found
 	let target: number | null = null; // where a forward step must stop (null = play on)
 	let raf = 0;
 	let dragging = false;
@@ -205,7 +214,7 @@
 
 	// Only the keyboard-owning instance publishes itself, matching who Space would drive.
 	$: drivesChrome = browser && animating && ready && keys === 'global' && markers.length > 0;
-	$: if (drivesChrome) activeSteps.set({ owner: token, ...build, next: stepNext });
+	$: if (drivesChrome) activeSteps.set({ owner: token, ...build, next: stepNext, prev: stepPrev });
 
 	// --- The clock -------------------------------------------------------------------
 	// One group, one playhead. Each animation is clamped to its own end so the staggered
@@ -272,8 +281,15 @@
 		}
 		raf = requestAnimationFrame(loop);
 	}
-	function startLoop() { if (!raf && browser) raf = requestAnimationFrame(loop); }
-	function stopLoop()  { if (raf) { cancelAnimationFrame(raf); raf = 0; } }
+	function startLoop() {
+		if (!raf && browser) raf = requestAnimationFrame(loop);
+	}
+	function stopLoop() {
+		if (raf) {
+			cancelAnimationFrame(raf);
+			raf = 0;
+		}
+	}
 
 	// --- Transport actions -------------------------------------------------------------
 
@@ -284,9 +300,17 @@
 		target = null;
 		playClock();
 	}
-	export function pause() { if (ready) pauseClock(); }
-	export function toggle() { playing ? pause() : play(); }
-	export function restart() { if (!ready) return; seek(0); pauseClock(); }
+	export function pause() {
+		if (ready) pauseClock();
+	}
+	export function toggle() {
+		playing ? pause() : play();
+	}
+	export function restart() {
+		if (!ready) return;
+		seek(0);
+		pauseClock();
+	}
 
 	/** Jump to a time and hold there. */
 	export function jumpTo(t: number) {
@@ -302,6 +326,7 @@
 		if (cp === null) return; // spent — Space pages the deck instead
 		target = cp;
 		playClock();
+		if (drivesChrome) reportAction({ kind: 'step' });
 	}
 
 	/** Jump back to the previous stop — the state the last forward step came from. */
@@ -310,6 +335,7 @@
 		const stop = prevCheckpoint(markers, playhead);
 		if (stop === null) return; // already at the beginning — Shift+Space pages back
 		jumpTo(stop);
+		if (drivesChrome) reportAction({ kind: 'step', back: true });
 	}
 
 	// --- Pointer seeking on the track ---------------------------------------------------
@@ -347,7 +373,9 @@
 		seek(timeAt(e.clientX));
 		trackEl.setPointerCapture?.(e.pointerId);
 	}
-	function onTrackMove(e: PointerEvent) { if (dragging) seek(timeAt(e.clientX)); }
+	function onTrackMove(e: PointerEvent) {
+		if (dragging) seek(timeAt(e.clientX));
+	}
 	function onTrackUp(e: PointerEvent) {
 		dragging = false;
 		trackEl.releasePointerCapture?.(e.pointerId);
@@ -361,10 +389,17 @@
 		// otherwise `hasNext` would claim a step we cannot take, and Space would neither
 		// step nor page, trapping the presenter on the slide.
 		const intent = spaceIntent(e, ready ? build : null);
-		if (intent === 'reveal') { e.preventDefault(); stepNext(); }
-		else if (intent === 'peel') { e.preventDefault(); stepPrev(); }
+		if (intent === 'reveal') {
+			e.preventDefault();
+			stepNext();
+		} else if (intent === 'peel') {
+			e.preventDefault();
+			stepPrev();
+		}
 	}
-	function onContinue() { stepNext(); }
+	function onContinue() {
+		stepNext();
+	}
 
 	onMount(() => {
 		if (!animating) return;
@@ -376,8 +411,13 @@
 		const take = () => {
 			collect();
 			if (!ready) return;
-			if (runsItself) { playing = true; startLoop(); }
-			else { seek(0); pauseClock(); }
+			if (runsItself) {
+				playing = true;
+				startLoop();
+			} else {
+				seek(0);
+				pauseClock();
+			}
 		};
 		collect();
 		if (ready) take();
@@ -425,16 +465,28 @@
 		<div class="screen" bind:this={screenEl}>
 			{#each schedule.lines as line, i (i)}
 				{#if line.kind === 'cmd'}
-					<div class="line cmd" style={rowStyle('cmd', line.delayMs, line.durationMs)}>{#if prompt}<span
-								class="prompt"
-								aria-hidden="true">{prompt}</span>{/if}<span
+					<div class="line cmd" style={rowStyle('cmd', line.delayMs, line.durationMs)}>
+						{#if prompt}<span class="prompt" class:cont={line.cont} aria-hidden="true"
+								>{prompt}</span
+							>{/if}<span
 							class="typed"
-							style={typedStyle(line.chars, line.delayMs, line.durationMs)}>{line.text}</span>{#if caret && animating}<span
-							class="gate"
-							style="animation-delay:{line.delayMs}ms; animation-duration:{line.durationMs}ms;"
-							aria-hidden="true"><span class="caret"></span></span>{/if}</div>
+							style={typedStyle(line.chars, line.delayMs, line.durationMs)}>{line.text}</span
+						>{#if caret && animating}<span
+								class="gate"
+								style="animation-delay:{line.delayMs}ms; animation-duration:{line.durationMs}ms;"
+								aria-hidden="true"><span class="caret"></span></span
+							>{/if}
+					</div>
 				{:else}
-					<div class="line out tone-{line.tone}" style={rowStyle('out', line.delayMs, line.durationMs)}>{line.text}</div>
+					<div
+						class="line out tone-{line.tone}"
+						style={rowStyle('out', line.delayMs, line.durationMs)}
+					>
+						{#if line.lead}<span class="lead">{line.lead}</span
+							>{/if}{#if line.parts}{#each line.parts as part, p (p)}{#if part.tone === line.tone}{part.text}{:else}<span
+										class="part tone-{part.tone}">{part.text}</span
+									>{/if}{/each}{:else}{line.text}{/if}
+					</div>
 				{/if}
 			{/each}
 
@@ -442,10 +494,13 @@
 				<!-- The resting caret on a fresh prompt: where the session leaves the machine. The
 				     ROW waits out the envelope too — otherwise its `$` (duration 0s, fill both →
 				     already finished) would sit under the blank transcript from the first frame. -->
-				<div class="line cmd rest" style={rowStyle('cmd', schedule.envelopeMs, 1)}>{#if prompt}<span class="prompt" aria-hidden="true">{prompt}</span>{/if}<span
+				<div class="line cmd rest" style={rowStyle('cmd', schedule.envelopeMs, 1)}>
+					{#if prompt}<span class="prompt" aria-hidden="true">{prompt}</span>{/if}<span
 						class="gate rest-gate"
 						style="animation-delay:{schedule.envelopeMs}ms;"
-						aria-hidden="true"><span class="caret"></span></span></div>
+						aria-hidden="true"><span class="caret"></span></span
+					>
+				</div>
 			{/if}
 		</div>
 
@@ -466,7 +521,9 @@
 		<div class="transport">
 			<button class="icon" on:click={toggle} aria-label={playing ? 'Pause' : 'Play'}>
 				{#if playing}
-					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+					<svg viewBox="0 0 24 24" aria-hidden="true"
+						><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg
+					>
 				{:else}
 					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
 				{/if}
@@ -507,7 +564,11 @@
 			</div>
 
 			<button class="icon" on:click={restart} aria-label="Restart">
-				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" /></svg>
+				<svg viewBox="0 0 24 24" aria-hidden="true"
+					><path
+						d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"
+					/></svg
+				>
 			</button>
 		</div>
 	{/if}
@@ -598,6 +659,10 @@
 		color: var(--terminal-prompt, #00b356);
 		font-weight: bold;
 	}
+	/* A continued command keeps the prompt's width, so its text lines up under the line above. */
+	.prompt.cont {
+		visibility: hidden;
+	}
 
 	/* `overflow: hidden` makes an inline-block's baseline its bottom margin edge, which
 	   would sink the typed text below the prompt. Pinning the box to exactly one row
@@ -647,6 +712,24 @@
 	}
 	.tone-muted {
 		opacity: 0.6;
+	}
+	/* A shell comment (`# what this does`): its own grey, in italics, like an editor draws one. */
+	.tone-comment {
+		color: var(--terminal-comment, #8b949e);
+		font-style: italic;
+	}
+	/* A folder, as `ls` and `tree` colour one: bold blue. */
+	.tone-dir {
+		color: var(--terminal-dir, #4f8fe6);
+		font-weight: bold;
+	}
+	/* A piece of a mixed line set back to plain, inside a line of another tone. */
+	.part.tone-plain {
+		color: var(--terminal-fg, #e6edf3);
+	}
+	/* A line's `lead` (a tree's `├── `) keeps the plain colour under any tone. */
+	.lead {
+		color: var(--terminal-fg, #e6edf3);
 	}
 
 	/* The caret rides the end of the typed text for free: `.typed` is an inline-block

@@ -32,6 +32,7 @@
 	import ChartLegend from './ChartLegend.svelte';
 	import ChartTooltip from './ChartTooltip.svelte';
 	import {
+		axisGutter,
 		bubbleRadius,
 		keyString,
 		linearScale,
@@ -110,18 +111,16 @@
 	// Axis labels: single-series labels the (one) left axis; multi is labelled by
 	// the legend instead.
 	const leftLabel = $derived(!multi ? shown[0]?.label : undefined);
-	const margin = $derived({
+	// The vertical margins are fixed; the LEFT one is sized to the tick text and
+	// lands further down, once the format exists (see `margin`). Splitting them
+	// breaks the cycle margin → plot → yScale → ticks → margin: the y range is
+	// vertical, so it only ever needed top/bottom.
+	const vMargin = $derived({
 		top: 18,
 		right: 18,
-		bottom: 40 + (x.label ? 22 : 0),
-		left: 52 + (leftLabel ? 20 : 0)
+		bottom: 40 + (x.label ? 22 : 0)
 	});
-	const plot = $derived({
-		left: margin.left,
-		right: width - margin.right,
-		top: margin.top,
-		bottom: height - margin.bottom
-	});
+	const yRange = $derived<[number, number]>([height - vMargin.bottom, vMargin.top]);
 
 	// Time axis: x values coerce to ms timestamps; the numeric scale then works
 	// unchanged and only the ticks/labels become calendar-aware (mirrors LineChart).
@@ -129,19 +128,6 @@
 	const xNum = (row: T): number =>
 		isTime ? toTime(valueOf(row, x.value)) : toNumber(valueOf(row, x.value));
 
-	const xScale = $derived(
-		linearScale(
-			numericExtent(data, (r: T) => xNum(r)),
-			[plot.left, plot.right],
-			{ nice: !isTime }
-		)
-	);
-	const timeT = $derived(
-		isTime ? timeTicks(xScale.domain[0], xScale.domain[1], x.ticks ?? 6) : null
-	);
-	const xAxisScale = $derived(
-		timeT ? { map: xScale.map, ticks: timeT.ticks, domain: xScale.domain } : xScale
-	);
 	const xTickText = (v: unknown): string => {
 		if (timeT) return x.format ? x.format(new Date(v as number)) : timeT.format(v as number);
 		return x.format ? x.format(v) : v === null || v === undefined ? '' : String(v);
@@ -159,7 +145,7 @@
 		}
 		return min === Infinity ? [NaN, NaN] : [min, max];
 	});
-	const yScale = $derived(linearScale(yExtent, [plot.bottom, plot.top], { nice: true }));
+	const yScale = $derived(linearScale(yExtent, yRange, { nice: true }));
 
 	// Shared size extent across every visible SIZED series, so bubbles are
 	// comparable between series (and NaN when no series carries a size accessor).
@@ -180,6 +166,35 @@
 		const fmt = !multi ? shown[0]?.format : undefined;
 		return fmt ? fmt(n) : Number.isFinite(n) ? n.toLocaleString('en-US') : String(v);
 	};
+
+	// The left gutter: as wide as the widest tick label actually rendered,
+	// floored at the 52 this used to hardcode, so a chart whose ticks already
+	// fit renders identically.
+	const margin = $derived({
+		...vMargin,
+		left: axisGutter(yScale.ticks.map(yFormat), { label: !!leftLabel })
+	});
+	const plot = $derived({
+		left: margin.left,
+		right: width - margin.right,
+		top: vMargin.top,
+		bottom: height - vMargin.bottom
+	});
+
+	const xScale = $derived(
+		linearScale(
+			numericExtent(data, (r: T) => xNum(r)),
+			[plot.left, plot.right],
+			{ nice: !isTime }
+		)
+	);
+
+	const timeT = $derived(
+		isTime ? timeTicks(xScale.domain[0], xScale.domain[1], x.ticks ?? 6) : null
+	);
+	const xAxisScale = $derived(
+		timeT ? { map: xScale.map, ticks: timeT.ticks, domain: xScale.domain } : xScale
+	);
 	const fmtSeries = (s: SeriesDef<T>, v: number): string =>
 		s.format ? s.format(v) : v.toLocaleString('en-US');
 

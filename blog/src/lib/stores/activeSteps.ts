@@ -31,6 +31,9 @@ export type ActiveSteps = {
 	hasPrev: boolean;
 	/** Take the next step — the same action as pressing Space. */
 	next: () => void;
+	/** Take a step back — the same action as Shift+Space. (What a VOD replay's
+	    `step back` calls.) */
+	prev?: () => void;
 };
 
 export const activeSteps = writable<ActiveSteps | null>(null);

@@ -57,12 +57,25 @@
 		type SideOpt
 	} from '$lib/draw/connectorCore';
 	import { arrowHead, defaultArrowSize, polygonPoints } from '$lib/draw/drawCore';
-	import { DRAW_CONTEXT_KEY, type ArrowMode, type DrawContext, type Point } from '$lib/draw/types';
+	import {
+		resolveRoughness,
+		roughArrowHead,
+		roughShape,
+		seedOf,
+		shapeIdentity
+	} from '$lib/draw/roughCore';
+	import {
+		DRAW_CONTEXT_KEY,
+		type ArrowMode,
+		type DrawContext,
+		type Point,
+		type RoughProps
+	} from '$lib/draw/types';
 
 	/** A Block `name`, a canvas point, or a literal box. */
 	type End = string | Point | Rect;
 
-	interface Props {
+	interface Props extends RoughProps {
 		from: End;
 		to: End;
 		/** How the shaft gets from one box to the other. */
@@ -119,6 +132,8 @@
 		from,
 		to,
 		route = 'straight',
+		rough,
+		seed,
 		arrow = 'end',
 		arrowSize,
 		gap = 8,
@@ -161,6 +176,25 @@
 	const atStart = $derived(arrow === 'start' || arrow === 'both');
 	const size = $derived(arrowSize ?? defaultArrowSize(thickness ?? 4));
 
+	// --- Hand-drawn render. Our own `rough` overrides the surface's; null means
+	// the ordinary render. A Connector inside a <Draw rough> follows the
+	// surface, so a diagram's boxes, strokes and arrows all read as one hand.
+	const roughness = $derived(resolveRoughness(rough, drawCtx?.rough ?? null));
+	// Seeded from the ENDPOINT NAMES, not the resolved boxes: a connector's
+	// geometry is recomputed whenever a Block moves, and re-seeding on that
+	// would make the wobble crawl as the layout settles.
+	const roughSeed = $derived(
+		seedOf(
+			seed,
+			shapeIdentity(
+				typeof from === 'string' ? from : 'from',
+				...(Array.isArray(from) ? from : []),
+				...(Array.isArray(to) ? to : [])
+			) + (typeof to === 'string' ? to : '')
+		)
+	);
+	const roughOpts = $derived(roughness != null ? { roughness, seed: roughSeed } : null);
+
 	const geo = $derived(
 		a && b
 			? connectorGeometry(a, b, {
@@ -181,6 +215,19 @@
 	const endHead = $derived(geo && atEnd ? polygonPoints(arrowHead(geo.end, geo.endAngle, size)) : null);
 	const startHead = $derived(
 		geo && atStart ? polygonPoints(arrowHead(geo.start, geo.startAngle, size)) : null
+	);
+	// One `d` per overlapping pen pass when rough, else the single clean shaft.
+	const shaftDs = $derived(
+		geo ? (roughOpts ? roughShape(geo.shape, roughOpts, '') : [geo.d]) : []
+	);
+	// A drawn head is two open barbs rather than a filled triangle.
+	const endHeadD = $derived(
+		roughOpts && geo && atEnd ? roughArrowHead(geo.end, geo.endAngle, size, roughOpts, '') : null
+	);
+	const startHeadD = $derived(
+		roughOpts && geo && atStart
+			? roughArrowHead(geo.start, geo.startAngle, size, roughOpts, '')
+			: null
 	);
 
 	const stroke = $derived(color ?? 'var(--draw-stroke, currentColor)');
@@ -209,39 +256,68 @@
 		role={name ? 'img' : undefined}
 		aria-label={name}
 	>
-		<path
-			d={g.d}
-			fill="none"
-			class:draw-anim={drawSecs}
-			pathLength={drawSecs ? 1 : undefined}
-			stroke-dasharray={drawSecs ? undefined : dasharray}
-			style="stroke:{stroke}; stroke-width:{strokeWidth};{drawSecs
-				? ` animation-duration:${drawSecs}s;${delaySecs ? ` animation-delay:${delaySecs}s;` : ''}`
-				: ''}"
-		/>
-		{#if endHead}
-			<polygon
-				points={endHead}
-				class:head-anim={drawSecs}
-				stroke="none"
-				style="fill:{stroke};{drawSecs
-					? ` animation-duration:${drawSecs * 0.2}s; animation-delay:${delaySecs + drawSecs * 0.8}s;`
+		{#each shaftDs as sd, i (i)}
+			<path
+				d={sd}
+				fill="none"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				class:draw-anim={drawSecs}
+				pathLength={drawSecs ? 1 : undefined}
+				stroke-dasharray={drawSecs ? undefined : dasharray}
+				style="stroke:{stroke}; stroke-width:{strokeWidth};{drawSecs
+					? ` animation-duration:${drawSecs}s;${delaySecs ? ` animation-delay:${delaySecs}s;` : ''}`
 					: ''}"
 			/>
+		{/each}
+		{#if endHead}
+			{#if endHeadD}
+				<path
+					d={endHeadD}
+					fill="none"
+					stroke-linecap="round"
+					class:head-anim={drawSecs}
+					style="stroke:{stroke}; stroke-width:{strokeWidth};{drawSecs
+						? ` animation-duration:${drawSecs * 0.2}s; animation-delay:${delaySecs + drawSecs * 0.8}s;`
+						: ''}"
+				/>
+			{:else}
+				<polygon
+					points={endHead}
+					class:head-anim={drawSecs}
+					stroke="none"
+					style="fill:{stroke};{drawSecs
+						? ` animation-duration:${drawSecs * 0.2}s; animation-delay:${delaySecs + drawSecs * 0.8}s;`
+						: ''}"
+				/>
+			{/if}
 		{/if}
 		{#if startHead}
-			<polygon
-				points={startHead}
-				class:head-anim={drawSecs}
-				stroke="none"
-				style="fill:{stroke};{drawSecs
-					? ` animation-duration:${drawSecs * 0.2}s; animation-delay:${delaySecs + drawSecs * 0.8}s;`
-					: ''}"
-			/>
+			{#if startHeadD}
+				<path
+					d={startHeadD}
+					fill="none"
+					stroke-linecap="round"
+					class:head-anim={drawSecs}
+					style="stroke:{stroke}; stroke-width:{strokeWidth};{drawSecs
+						? ` animation-duration:${drawSecs * 0.2}s; animation-delay:${delaySecs + drawSecs * 0.8}s;`
+						: ''}"
+				/>
+			{:else}
+				<polygon
+					points={startHead}
+					class:head-anim={drawSecs}
+					stroke="none"
+					style="fill:{stroke};{drawSecs
+						? ` animation-duration:${drawSecs * 0.2}s; animation-delay:${delaySecs + drawSecs * 0.8}s;`
+						: ''}"
+				/>
+			{/if}
 		{/if}
 		{#if label}
 			<text
 				class="connector-label"
+				class:hand={!!roughOpts}
 				class:label-anim={drawSecs}
 				x={g.label[0]}
 				y={g.label[1]}
@@ -281,6 +357,20 @@
 		display: block;
 		fill: none;
 		font-size: var(--draw-font-size, 32px);
+	}
+	/* The hand-lettered twin — see Line.svelte's .draw-label.hand. */
+	.connector-label.hand {
+		font-family: var(
+			--draw-font-family,
+			'Excalifont',
+			'Virgil',
+			'Comic Neue',
+			'Comic Sans MS',
+			'Segoe Print',
+			'Bradley Hand',
+			'Chalkboard SE',
+			cursive
+		);
 	}
 	.connector-label {
 		font-size: var(--draw-font-size, 32px);

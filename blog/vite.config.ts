@@ -1,6 +1,6 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
-import { adjustSavePlugin } from './src/lib/adjust/devSavePlugin';
+import { adjustSavePlugin, sourceStampPlugin } from './src/lib/adjust/devSavePlugin';
 
 // Absolute site base URL for SEO/social metadata (og:url, og:image, canonical,
 // sitemap). Consistent with the other GEEKPRESENT_* build vars in svelte.config.js.
@@ -17,6 +17,11 @@ const SITE_URL = (rawSiteUrl === undefined ? DEFAULT_SITE_URL : rawSiteUrl)
 
 export default defineConfig({
 	plugins: [
+		// Dev-only: the stamp that lets ADJUST SAVE follow a Block into the component
+		// it lives in. FIRST, ahead of sveltekit(): the Svelte compiler is also an
+		// `enforce: 'pre'` plugin, and within one tier order wins — after it, this
+		// would see compiled JS instead of markup and stamp nothing.
+		sourceStampPlugin(),
 		sveltekit(),
 		// Dev-only: ADJUST SAVE (Block patches) and ViewSource SAVE (full +page.svelte).
 		adjustSavePlugin()

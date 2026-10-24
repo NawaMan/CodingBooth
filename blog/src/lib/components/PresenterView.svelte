@@ -15,7 +15,7 @@
   The audience window pages from its own NavigationBar; the console has no such bar
   (SlideDeck gates it under `!present`), so this component's keydown drives BOTH the
   console's menus and its paging (see presenterKeyCore): T / C / A toggle the TOC /
-  reset-checks / reset-ink menus, Esc closes them, →/← page the deck, Space relays a
+  reset-checks / reset-ink menus, B hides/shows the audience's bars, Esc closes them, →/← page the deck, Space relays a
   CONTINUE pulse (advances a build, never pages), and Shift+Space walks back. Paging
   reuses the bottom bar's go()/doContinue(), so the audience follows exactly as a
   button click would — over the same localStorage nav / gp:continue channels.
@@ -30,6 +30,8 @@
 <script lang="ts">
 	import CtrlBtn from './CtrlBtn.svelte';
 	import PresenterAnim from './PresenterAnim.svelte';
+	import NoteEditor from './NoteEditor.svelte';
+	import { canSave } from '$lib/stores/adjustMode';
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
 	import { onMount, onDestroy } from 'svelte';
@@ -43,6 +45,7 @@
 	} from '$lib/stores/presenter';
 	import { canAnnotate, strokes, resetSlideInk, resetAllInk } from '$lib/stores/annotation';
 	import { presenterKeyIntent } from '$lib/chrome/presenterKeyCore';
+	import { audienceBare, setBareChoice } from '$lib/stores/chromeBare';
 	import { overviewOpen } from '$lib/stores/overviewOpen';
 	import type { Page } from '$lib/utils/navigate';
 	import type { AnimState } from '$lib/utils/slideAnim';
@@ -50,6 +53,7 @@
 	import { searchDocs } from '$lib/utils/searchCore';
 	import { deckSearchDocs } from '$lib/utils/searchIndex';
 	import { stepTocSelection } from '$lib/chrome/presenterTocCore';
+	import { openRecorderWindow } from '$lib/record/ticker';
 
 	/** This deck's slide list (for nav, the TOC, and the current/next lookup). */
 	export let pages: Array<Page> = [];
@@ -246,6 +250,41 @@
 		closeMenus();
 		overviewOpen.set(true);
 	}
+	// BARS — hide or show the audience window's tool bar and control bar. The click records a
+	// sticky choice (as `?bare` / `?bare=off` do), which the audience window follows at once.
+	function toggleBars() {
+		setBareChoice(!$audienceBare);
+	}
+
+	// ● REC (R) — the VOD Recorder, a window of its own that never navigates, which films
+	// the slides window and writes the timeline (record/, specs/VOD-RECORD-1.md).
+	function openRecorder() {
+		openRecorderWindow(deckKey);
+	}
+	$: barsText = $audienceBare ? '▭ Bars: hidden' : '▭ Bars: shown';
+
+	// NOTE EDIT — the slide's <Note> source, edited in place over the notes panel and
+	// written back by the dev server. A static host has no source tree, so the button
+	// does not grey out there: it refuses on press and says why (ADJUST SAVE's bargain).
+	let editingNote = false;
+	let noteRefused = false;
+	let noteRefusedTimer: ReturnType<typeof setTimeout> | undefined;
+	function editNote() {
+		if (editingNote) return;
+		closeMenus();
+		if (!$canSave) {
+			noteRefused = true;
+			clearTimeout(noteRefusedTimer);
+			noteRefusedTimer = setTimeout(() => (noteRefused = false), 2500);
+			return;
+		}
+		editingNote = true;
+	}
+	$: noteText = noteRefused ? 'NOT ALLOWED' : 'EDIT NOTE';
+	$: noteTitle = noteRefused
+		? 'Editing notes needs the dev server (pnpm dev) — there is no source to write here.'
+		: 'Edit this slide\'s speaker note (E)';
+
 	function onKeydown(e: KeyboardEvent) {
 		switch (presenterKeyIntent(e, $canAnnotate, tocOpen)) {
 			case 'close':
@@ -272,6 +311,18 @@
 				inkOpen = open;
 				break;
 			}
+			case 'bars':
+				e.preventDefault();
+				toggleBars();
+				break;
+			case 'record':
+				e.preventDefault();
+				openRecorder();
+				break;
+			case 'editNote':
+				e.preventDefault();
+				editNote();
+				break;
 			// Paging from the console — the same go()/doContinue() the bottom-bar
 			// buttons call, so the audience follows over the localStorage channel
 			// exactly as a click would. →/← page; Space relays a CONTINUE pulse that
@@ -447,6 +498,7 @@
 	});
 	onDestroy(() => {
 		if (timer) clearInterval(timer);
+		clearTimeout(noteRefusedTimer);
 		if (typeof document !== 'undefined') {
 			document.body.classList.remove('gp-present');
 			document.body.style.removeProperty('--gp-split');
@@ -484,6 +536,10 @@
 		</div>
 	</div>
 </div>
+
+{#if editingNote}
+	<NoteEditor route={$page.url.pathname} on:close={() => (editingNote = false)} />
+{/if}
 
 <!-- Draggable divider on the split line — resizes previews vs. notes (--gp-split). -->
 <div
@@ -564,6 +620,32 @@
 			</div>
 			{/if}
 		</div>
+
+		<!-- BARS (B) — the audience window's top and bottom bars. hoverText mirrors text so
+		     the label never changes width under the pointer. -->
+		<span class="bars-btn" title="Hide or show the bars on the audience screen (B)">
+			<CtrlBtn
+				text={barsText}
+				hoverText={barsText}
+				mnemonic="B"
+				isSelected={$audienceBare}
+				on:click={toggleBars}
+			/>
+		</span>
+
+		<span class="rec-btn" title="Record the slides window to a video for YouTube, with a replayable timeline (R)">
+			<CtrlBtn text="● REC" hoverText="● REC" mnemonic="R" on:click={openRecorder} />
+		</span>
+
+		<span class="note-btn" title={noteTitle}>
+			<CtrlBtn
+				text={noteText}
+				hoverText={noteText}
+				mnemonic={noteRefused ? '' : 'E'}
+				isSelected={editingNote}
+				on:click={editNote}
+			/>
+		</span>
 
 		<!-- Reset the speaker's ink. Shown only where the pen is offered, and it reports how
 		     much ink is on the current slide so "reset" is never a shot in the dark. -->
