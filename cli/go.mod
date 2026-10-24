@@ -2,6 +2,11 @@ module github.com/nawaman/codingbooth
 
 go 1.24.1
 
+// The toolchain is a trust-store floor, not a language level: Go 1.27.3 /
+// 1.26.10 are the first to refuse the compromised eMudhra CA keys
+// (CVE-2026-111943). build/cli-build.sh refuses to build with anything older.
+toolchain go1.27.3
+
 // No external dependencies yet - will be added as we port functionality
 
 require (

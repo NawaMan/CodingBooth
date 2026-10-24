@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.1.0
+# cb-version: 1.2.0
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -17,7 +17,7 @@ HOME=/root
 
 
 # --- Defaults ---
-GO_VERSION="${1:-1.27.1}"         # Replace with desired Go version
+GO_VERSION="${1:-1.27.3}"         # Replace with desired Go version
 
 LEVEL=57                          # See README.md - Profile Ordering
 
