@@ -248,6 +248,7 @@ setup	ollama	1.0.0	9e4d1808163c76f0a4224270c76f09585ca7fd2f5fc7b94b6d023d9c9e1de
 setup	opencode	1.0.0	ca71227c4bd11873653df20062ec2dfe0603ba0c1bc18e6d30405532fd036a49	variants/base/setups/opencode--setup.sh
 setup	openssh	1.0.0	6a93cef06723e5533a896967d599f9699809d12de641ad055aa5f7354568d0ee	variants/base/setups/openssh--setup.sh
 setup	opensshd	1.0.0	5c7dbf41db974b86119595853d8ec2f167dd6f0bd6f98e101f8faeb53aed5ce6	variants/base/setups/opensshd--setup.sh
+setup	orca	0.1.0	ccb5cc1a98ef0bc9c6c9bf28c7efb9dd5df736dbc79e53eca16f698ef96b9855	variants/base/setups/orca--setup.sh
 setup	orchis-gtk	0.1.0	03bb0f3bb90620590a2cd7ab9682d99544ae0ec3bef77be80a7e83b78b3e4df2	variants/base/setups/orchis-gtk--setup.sh
 setup	php	1.0.0	397c63cb432fd45e81a827200be0a0bde3f1ac4bc6da62595944a4e51a3b0a93	variants/base/setups/php--setup.sh
 setup	php-code-extension	1.0.0	938a5949e6a3723c576a0b6f7c4bf04f346db5fb165b976774730f8974d74dbf	variants/base/setups/php-code-extension--setup.sh
@@ -314,6 +315,7 @@ setup	tela-icons	0.1.0	c03be2a9ee42cdb1dea6bf9e5c6a3f94ca0d2c10862ab477365d71b9c
 setup	terraform	1.0.0	9b237381085ab277b124dccf125ded925371d6b8c579c776d4e60ed907de8341	variants/base/setups/terraform--setup.sh
 setup	terraform-code-extension	0.1.0	6b5ba52674ba1a5ae08cd54502c01f7ab11526ed973e985382b617ff95b1bf79	variants/base/setups/terraform-code-extension--setup.sh
 setup	texstudio	0.1.0	470bc74505458309fe2cce3d15c2022606cc460c0136f293a1fadf7a6a70767b	variants/base/setups/texstudio--setup.sh
+setup	thinkrail	0.1.0	b867328f48541b3e15e21bd7692be49cbf41de033702b70b3f89896cadfa5f03	variants/base/setups/thinkrail--setup.sh
 setup	thonny	1.0.0	a14c0b5793457d929adfcb899ee169b3dd57ea2efa6eb3a6a400ff7a9f7168d7	variants/base/setups/thonny--setup.sh
 setup	tls	1.0.0	719a92dd7d6975d798ad20ebd76a45d0e35af17ee6a440ce44cc437e3aa48b94	variants/base/setups/tls--setup.sh
 setup	toml-code-extension	0.1.0	b32c730a20ee3d570253cfffa23d2b9eeeee4ce8c3993b4c66aa4acf10b1f3ed	variants/base/setups/toml-code-extension--setup.sh
@@ -545,6 +547,7 @@ template	oh-my-pi	1.0.0	f61b666f10af21eeafcefb31545620ab82b22627684749fb1602351c
 template	ollama	1.0.0	5fdb875baa6eaf50f9441fd727fc92d3b2638de822e280b13d16b0e6048e701d	templates/ai-tools/ollama/template.toml
 template	opencode	1.0.0	2871adf254f8f249db6118eb8c330dd3321501b66f2769ee69b2c61b3b9bf470	templates/ai-tools/opencode/template.toml
 template	openssh	1.0.0	3f9a44c7fea93ca4024e7939267d8e200a8419bfda285dbc2e9a5f4e0db8ccd3	templates/tools/openssh/template.toml
+template	orca	0.1.0	104ea3d87f931fc11559fb95a3960d90b9583824aeefbc4c842416574c6ce0c8	templates/ai-tools/orca/template.toml
 template	orchis-gtk	0.1.0	90d120c836c889c8ee0f98ab8f29f20dd873e3ee952951daa39d475082bc0116	templates/desktops/orchis-gtk/template.toml
 template	php	1.0.0	1c7bf5b149e8922242abac9d78935da6c45881f91a58268e3fdada08e5cbaa63	templates/languages/php/template.toml
 template	phpstorm	1.0.0	e3f9978b35ff7170c9e2bf825a5a5c09c1b42ca9e50e84b6861d102ca31cef18	templates/ides/phpstorm/template.toml
@@ -588,6 +591,7 @@ template	swift	1.0.0	d0a4704c99d83b46d452be8d2a2ac6d2899f990c3306ab5d36557bc1db6
 template	tailwind	0.1.0	bb0ef9fede7cf622fa9e8f2980823836ce159361d22a3d4a634e5c8c2a445d36	templates/frameworks/tailwind/template.toml
 template	tela-icons	0.1.0	bc9fb120c9a2a35da5e4078832bc039a940fdefacc925f99eb66e6c3d55450f7	templates/desktops/tela-icons/template.toml
 template	terraform	1.0.0	151cdf8d4ddba87cd10e5b51a11c17d61e35a29be195131aec1ff425781da76c	templates/tools/terraform/template.toml
+template	thinkrail	0.1.0	5607ae0565dea0de475a063935904dd67545ed1beee013330a4fa2fcba16a06f	templates/ai-tools/thinkrail/template.toml
 template	thonny	1.0.0	64571e52b43139716e35c9bd72304a5642bd69c155b599bfdeba438e67388d0e	templates/education/thonny/template.toml
 template	ttt	0.1.0	adfb438fe97793ab15238e6dac6519fb2c3df1cf03229eff08210b5ac0a175ca	templates/tools/ttt/template.toml
 template	vhs	1.0.0	f2f8d6aca4c461eea09eb9922032616049a00be4f6994ab510538cda9cf29a07	templates/tools/vhs/template.toml
@@ -848,6 +852,8 @@ extension	opencode+settings-cache	1.0.0	730145895c15155043c10f19475682577b8b9a9a
 extension	openssh+credential	1.0.0	605b1875399044c02b199736d5ede36bf78ed1493da9ca748ac6205047b727fe	templates/tools/openssh/credential--extension.toml
 extension	openssh+expose	1.0.0	f88138a819c24a8c4a74ccfa14df73a3bac03e82e2713d3f899c30fcd7aa948b	templates/tools/openssh/expose--extension.toml
 extension	openssh+server	1.0.0	46290b15c093ae48ff741a1196268ea5e3edb3c1d2485055258aad2776c984a4	templates/tools/openssh/server--extension.toml
+extension	orca+expose	0.1.0	e0c3ec20bae9f489b4bda9a0d027b4584da3a0a6acbe3e1483aa711d37f8c7cc	templates/ai-tools/orca/expose--extension.toml
+extension	orca+serve	0.1.0	0d2893f53bf211ed1901cf9301008adc001d5827d6832c02d24a7193121134c3	templates/ai-tools/orca/serve--extension.toml
 extension	php+composer	0.1.0	f09b39d4b52798b2723f098179bfd1a72e4261b0cf0ac8137f769c6542c43af9	templates/languages/php/composer--extension.toml
 extension	php+composer-install	1.0.0	168df8033d46ba56955b2c8da1a48719b74b2a5bb8a847850ec5b82566f28136	templates/languages/php/composer-install--extension.toml
 extension	php+pecl-pkg	1.0.0	2aca90dbc112c9807d61bf93939644cae94b8f7b9eb7b4ee2519b4552ee32b1f	templates/languages/php/pecl-pkg--extension.toml
@@ -930,6 +936,8 @@ extension	sway+ctrl-alt	0.1.0	cc789939fc6e24738068644041470b81a7d065364da363a09b
 extension	sway+gaps	0.2.0	7262c863d0cebb6e392bb0ce8e982c3e426976b80f8692b6d8c65354eead9dd0	templates/desktops/sway/gaps--extension.toml
 extension	swift+vscode-ext	1.0.0	6cc024ba78d2963fe83b4e3d1c7171daa911be52ecd01d47b09baed3df3fd119	templates/languages/swift/vscode-ext--extension.toml
 extension	terraform+vscode-ext	0.1.0	8694236fe71c28f470b9de9c0d1004a5de0e6484f9d820f3b934523c3673bd8c	templates/tools/terraform/vscode-ext--extension.toml
+extension	thinkrail+autostart	0.1.0	376d0a609d59f086b8166c31c193601a28e3a2f32d03ef8881287915b27feb6c	templates/ai-tools/thinkrail/autostart--extension.toml
+extension	thinkrail+expose	0.1.0	b4732e458430d2ffd4228edac3593fc4ce5c584dba0744bc2a8936a6186b8bd6	templates/ai-tools/thinkrail/expose--extension.toml
 extension	ttt+config-shared	0.1.0	680b160a87365913a6bac4f1a50942431acca19e393fb673674869a5fb463488	templates/tools/ttt/config-shared--extension.toml
 extension	wails+android	0.1.0	9969ceb831f5dc53121d16794e2c3811fb630db50e2654ff1f3dec9a389bffcc	templates/languages/wails/android--extension.toml
 extension	wails+cross	0.1.0	25aa26c799d144a1ceadba10207544d514f145ec49f853e4b25d6c1893c0dbc4	templates/languages/wails/cross--extension.toml

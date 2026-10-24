@@ -4,6 +4,23 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **ThinkRail and Orca join the AI Tools catalog: two agent workbenches that run each task in its
+  own git worktree.**
+  - **ThinkRail** (`thinkrail`) is JetBrains' open-source agentic IDE: the pi coding agent with an
+    editor, terminals, and living specs. Its CLI serves the whole app as a web UI, so it runs on any
+    variant. `start-thinkrail` binds it to `0.0.0.0` on `THINKRAIL_PORT` (default 24242) and opens
+    the code folder as the project. Select `thinkrail+autostart+expose` to open it from the host
+    browser. The binary is checked against the release's `SHA256SUMS`. The UI has no login of its
+    own, so publish the port only on a trusted network.
+  - **Orca** (`orca`) installs from its release `.deb` (sha256-checked) and works two ways. On a
+    desktop variant the Orca app is on the desktop, running without Chromium's sandbox, which a
+    container cannot provide. On any variant, `orca-serve` runs Orca's headless runtime, which
+    serves a web client. `orca+serve+expose` starts it on boot and publishes `ORCA_PORT` (default
+    6768). `orca-pairing` prints the pairing link to open in the host browser, or to add under
+    *Remote Orca Servers* in the host's Orca. The link advertises the published host port, so
+    `orca+serve+expose:26768` works as published. Treat the link like a password. Upstream marks
+    `orca serve` as beta.
+
 - **GnuPG 2.5 in every booth.** Ubuntu 26.04 ships GnuPG 2.4.8, and the 2.4 series has reached
   its upstream end of life; 2.5 is the stable line and adds post-quantum (Kyber / ML-KEM) keys
   (`gpg --quick-gen-key you@example.com pqc`). The base image now builds GnuPG 2.5.24 from the
