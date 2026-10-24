@@ -1,4 +1,5 @@
 import { writable } from 'svelte/store';
+import { reportAction } from '$lib/record/recordBus';
 
 // The most recent NAMED trigger pulse this window has seen — the seam behind
 // a note-driven "start this animation": a <Note> line carrying
@@ -28,4 +29,5 @@ export const lastTrigger = writable<TriggerPulse | null>(null);
 export function fireTrigger(name: string): void {
 	if (!name) return;
 	lastTrigger.set({ name, ts: Date.now() });
+	reportAction({ kind: 'trigger', name }); // heard by a VOD recording; no-op otherwise
 }

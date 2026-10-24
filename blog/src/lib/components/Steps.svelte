@@ -17,6 +17,16 @@
       <Fragment tag="p" transition="fly">Then this one.</Fragment>
     </Steps>
 
+  The current step reaches the slide as a slot prop, `<Steps let:revealed>` — for
+  anything a Fragment cannot express, like a Group camera that moves on each Space
+  (animation/scene-camera.html).
+
+  Paging BACK into a build (PREV, ←, Shift+Space off the next slide) lands with it
+  spent — every Fragment showing — so the slide looks as it was left, and
+  Shift+Space peels it back from there. FIRST, NEXT, the TOC and a reload start
+  at `start` as before. `backTo="start"` opts a build out. (The mark PREV leaves
+  for us: utils/arrivalCore.ts.)
+
   Keys: Space advances, Shift+Space reverses. While steps remain, Space reveals the
   next Fragment; once the build is spent Space falls through to NavigationBar and
   pages to the NEXT slide (and symmetrically, Shift+Space peels back until nothing
@@ -51,6 +61,8 @@
 	import { getMode } from '$lib/presentation';
 	import { activeSteps } from '$lib/stores/activeSteps';
 	import { spaceIntent } from '$lib/utils/stepKeys';
+	import { reportAction } from '$lib/record/recordBus';
+	import { readArrivalAtEnd, clearArrival } from '$lib/utils/deckNav';
 
 	/** Transition each Fragment uses unless it overrides its own. */
 	export let transition: 'fade' | 'fly' | 'slide' | 'scale' | 'none' = 'fade';
@@ -61,6 +73,10 @@
 	/** Space/Shift+Space stepping. 'global' binds the whole deck (best: one Steps per
 	    slide); 'off' disables keys so you can drive it with bind:this. */
 	export let keys: 'global' | 'off' = 'global';
+	/** Where the build stands when the slide is reached by paging BACK (PREV / ← /
+	    Shift+Space): 'end' (every Fragment showing, as the slide was left) or
+	    'start' (the `start` count, as on any other arrival). */
+	export let backTo: 'end' | 'start' = 'end';
 	/** Also advance when the presenter console relays a CONTINUE pulse (gp:continue). */
 	export let continueKey = true;
 
@@ -81,7 +97,12 @@
 	// total: registered Fragment count. revealed: how many are currently showing.
 	// Fragments subscribe to `revealed` and compare it to their own index.
 	const total = writable(0);
-	const revealed = writable(start);
+	// Reached by PREV → start past the end, so every Fragment registers already
+	// showing (no fade, nothing gliding from step 0). onMount clamps it to the
+	// real count once they have all registered.
+	const ALL = Number.MAX_SAFE_INTEGER;
+	const arrivedBack = browser && !isText && backTo === 'end' && readArrivalAtEnd();
+	const revealed = writable(arrivedBack ? ALL : start);
 	const defaults = writable({ transition, duration });
 	$: defaults.set({ transition, duration });
 
@@ -103,11 +124,17 @@
 
 	/** Reveal the next hidden Fragment (no-op past the last). */
 	export function next() {
-		revealed.set(clamp($revealed + 1));
+		const was = $revealed;
+		const to = clamp(was + 1);
+		revealed.set(to);
+		if (drivesChrome && to !== was) reportAction({ kind: 'step' });
 	}
 	/** Hide the most recently revealed Fragment (no-op before the first). */
 	export function prev() {
-		revealed.set(clamp($revealed - 1));
+		const was = $revealed;
+		const to = clamp(was - 1);
+		revealed.set(to);
+		if (drivesChrome && to !== was) reportAction({ kind: 'step', back: true });
 	}
 	/** Show exactly `n` Fragments (clamped). */
 	export function goTo(n: number) {
@@ -133,7 +160,7 @@
 	// Only the keyboard-owning instance registers, matching who Space would drive.
 	const token = {};
 	$: drivesChrome = browser && !isText && keys === 'global';
-	$: if (drivesChrome) activeSteps.set({ owner: token, hasNext: !atEnd, hasPrev: !atStart, next });
+	$: if (drivesChrome) activeSteps.set({ owner: token, hasNext: !atEnd, hasPrev: !atStart, next, prev });
 
 	onDestroy(() => {
 		// Only clear it if we're still the registered build (a later Steps may own it).
@@ -164,6 +191,8 @@
 	}
 
 	onMount(() => {
+		if (browser) clearArrival();
+		if (arrivedBack) revealed.set($total);
 		if (browser && !isText && keys === 'global') {
 			window.addEventListener('keydown', onKeydown);
 			if (continueKey) window.addEventListener('gp:continue', onContinue);
@@ -178,5 +207,7 @@
 </script>
 
 <!-- display:contents → Steps adds no box of its own; Fragments lay out exactly
-     where they sit in the parent's flow. -->
-<div class="steps {klass}" id={id || undefined} style="display: contents; {style}"><slot /></div>
+     where they sit in the parent's flow. `let:revealed` hands the slide the
+     current step, for anything a Fragment can't express — a Group camera that
+     moves on each Space, say (see animation/scene-camera.html). -->
+<div class="steps {klass}" id={id || undefined} style="display: contents; {style}"><slot revealed={Math.min($revealed, $total)} /></div>

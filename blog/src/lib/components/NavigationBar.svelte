@@ -10,6 +10,7 @@
 	import { activeSteps } from '$lib/stores/activeSteps';
 	import { localNav, registerNav, unregisterNav } from '$lib/stores/localChrome';
 	import { spaceIntent, isInteractiveTarget } from '$lib/utils/stepKeys';
+	import { reportAction } from '$lib/record/recordBus';
 
 	export let firstLink = '';
 	export let prevLink  = '';
@@ -80,12 +81,14 @@
 	// Navigate to `href`, animating in `direction` when this deck uses view
 	// transitions (delegated to the shared deckNav helper so a followed navigation
 	// in SlideDeck animates identically).
-	function navigate(href: string, direction: Dir) {
-		pageNavigate(decorate(href), { viewTransitions, kind: kindFor(direction), direction });
+	// PREV (and ← / Shift+Space) lands on the previous slide with its build spent,
+	// as it was left; FIRST is a fresh start, so it does not.
+	function navigate(href: string, direction: Dir, arriveAtEnd = false) {
+		pageNavigate(decorate(href), { viewTransitions, kind: kindFor(direction), direction, arriveAtEnd });
 	}
 
 	$: onFirst = () => navigate(firstLink, 'back');
-	$: onPrev  = () => navigate(prevLink,  'back');
+	$: onPrev  = () => navigate(prevLink,  'back', true);
 	$: onNext  = () => navigate(nextLink,  'forward');
 	$: onLast  = () => navigate(lastLink,  'forward');
 
@@ -100,7 +103,15 @@
 
 	function doContinue() {
 		if (steps?.hasNext) steps.next();
-		onContinue?.();
+		runContinueHook();
+	}
+
+	/** The slide's own onContinue hook — reported to a VOD recording as `continue` (a build
+	    step reports itself as `step`), and replayed through `gp:slide-continue`. */
+	function runContinueHook() {
+		if (!onContinue) return;
+		onContinue();
+		reportAction({ kind: 'continue' });
 	}
 
 	function onTop() {
@@ -121,7 +132,7 @@
 		if (isInteractiveTarget(event.target)) return;
 		if (event.key === 'ArrowLeft' && prevLink) {
 			event.preventDefault();
-			navigate(prevLink, 'back');
+			navigate(prevLink, 'back', true);
 
 		} else if (event.key === 'ArrowRight' && nextLink) {
 			event.preventDefault();
@@ -138,7 +149,7 @@
 				navigate(nextLink, 'forward');
 			} else if (intent === 'page-prev' && prevLink) {
 				event.preventDefault();
-				navigate(prevLink, 'back');
+				navigate(prevLink, 'back', true);
 			}
 		}
 	}
@@ -146,7 +157,14 @@
 	// A CONTINUE pulse relayed from the presenter console (SlideDeck turns it into
 	// this DOM event) drives the same onContinue hook as the on-screen CONTINUE button.
 	function handleRelayedContinue() {
-		onContinue?.();
+		runContinueHook();
+	}
+
+	// A VOD replay's `continue` runs the hook alone — the build steps were recorded, and
+	// are replayed, as their own `step` lines.
+	function handleReplayedContinue() {
+		if (dormant) return;
+		runContinueHook();
 	}
 
 	// A slide-local pager (NOT the deckLevel one) publishes itself so the deck-level
@@ -159,6 +177,7 @@
 		if (browser && mode !== 'text' && !handout) {
 			window.addEventListener('keydown', handleGlobalKeydown);
 			window.addEventListener('gp:continue', handleRelayedContinue);
+			window.addEventListener('gp:slide-continue', handleReplayedContinue);
 		}
 		if (browser && !deckLevel && !handout) registerNav(navOwner);
 	});
@@ -167,6 +186,7 @@
 		if (browser) {
 			window.removeEventListener('keydown', handleGlobalKeydown);
 			window.removeEventListener('gp:continue', handleRelayedContinue);
+			window.removeEventListener('gp:slide-continue', handleReplayedContinue);
 			if (!deckLevel && !handout) unregisterNav(navOwner);
 		}
 	});

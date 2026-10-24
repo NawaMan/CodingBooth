@@ -49,6 +49,10 @@ export interface Stroke {
 	/** TEXT marks only: the font size in canvas px, stored so a re-theme or another window
 	    renders the label at the size it was placed rather than the current default. */
 	size?: number;
+	/** How long the hand took to draw it, in ms (pointer down → lift). Only the VOD
+	    recorder reads it, so a replayed stroke draws itself at the speed it was drawn
+	    instead of appearing whole (see record/timelineCore). Absent = drawn instantly. */
+	ms?: number;
 }
 
 /** One slide's ink, plus when it was last touched.
@@ -489,6 +493,8 @@ export function sanitizeStrokes(raw: unknown): Stroke[] {
 		// An unusable colour drops back to the theme token rather than costing the stroke —
 		// and is never passed through to the DOM, since it lands in an inline `style`.
 		if (isColor(s.color)) stroke.color = s.color as string;
+		const ms = finite(s.ms as number, 0);
+		if (ms > 0) stroke.ms = Math.round(ms);
 
 		// A TEXT mark carries a string, and a label with no words is nothing to draw — so a
 		// text mark whose content fails sanitation is DROPPED, not kept blank.

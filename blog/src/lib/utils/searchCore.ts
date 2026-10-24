@@ -72,19 +72,30 @@ export function stripToText(src: unknown): string {
 }
 
 /** Build a deck→path→text index from a `?raw` glob's module map. Keys look like
-    `/src/routes/<deck>/<slide-path>/+page.svelte`; the last two directory
-    segments are the deck and the slide path (which equals its pages.ts `path`).
-    Pure — searchIndex.ts feeds it the real glob, tests feed it a literal. */
+    `/src/routes/<deck>/<slide-path>/+page.svelte` or nested
+    `/src/routes/references/shell/<slide>/+page.svelte`. The deck id is the path under
+    `routes/` with SvelteKit `(groups)` stripped and `/` turned into `-` (same id the
+    handout and SlideDeck use: `slides`, `references-shell`). Pure — searchIndex.ts
+    feeds it the real glob, tests feed it a literal. */
 export function buildDeckIndex(
 	modules: Record<string, unknown>
 ): Record<string, Record<string, string>> {
 	const byDeck: Record<string, Record<string, string>> = {};
 	for (const [file, src] of Object.entries(modules ?? {})) {
-		const parts = file.split('/');
-		const path = parts[parts.length - 2];
-		const deck = parts[parts.length - 3];
-		if (!deck || !path) continue;
-		(byDeck[deck] ??= {})[path] = stripToText(src);
+		if (typeof file !== 'string') continue;
+		const m = file.match(/\/src\/routes\/(.+)\/([^/]+)\/\+page\.svelte$/);
+		if (!m) continue;
+		const slidePath = m[2];
+		if (!slidePath || !slidePath.endsWith('.html')) continue;
+		// Strip (route groups); map nested url path to single-segment deck id.
+		const urlPath = m[1]
+			.replace(/\/\([^/]+\)/g, '')
+			.replace(/^\([^/]+\)\//, '')
+			.replace(/\/{2,}/g, '/')
+			.replace(/^\/+|\/+$/g, '');
+		if (!urlPath || urlPath.startsWith('_')) continue;
+		const deck = urlPath.replace(/\//g, '-');
+		(byDeck[deck] ??= {})[slidePath] = stripToText(src);
 	}
 	return byDeck;
 }
