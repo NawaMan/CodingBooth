@@ -28,9 +28,10 @@
 	import ChartLegend from './ChartLegend.svelte';
 	import ChartTooltip from './ChartTooltip.svelte';
 	import {
+		axisGutter,
 		keyString,
-		linePath,
 		linearScale,
+		linePath,
 		nearestIndex,
 		numericExtent,
 		seriesColor,
@@ -121,18 +122,15 @@
 	// sides; plain multi-series is labelled by the legend instead.
 	const leftLabel = $derived(dual ? sA?.label : !multi ? shown[0]?.label : undefined);
 	const rightLabel = $derived(dual ? sB?.label : undefined);
-	const margin = $derived({
+	// The vertical margins are fixed; the tick-facing ones are sized to the text
+	// they must clear and land further down, once the formats exist (see
+	// `margin`). Splitting them breaks the cycle margin → plot → yScale → ticks
+	// → margin: a y range is vertical, so it only ever needed top/bottom.
+	const vMargin = $derived({
 		top: 18,
-		right: dual ? 52 + (rightLabel ? 20 : 0) : 18,
-		bottom: 40 + (x.label ? 22 : 0),
-		left: 52 + (leftLabel ? 20 : 0)
+		bottom: 40 + (x.label ? 22 : 0)
 	});
-	const plot = $derived({
-		left: margin.left,
-		right: width - margin.right,
-		top: margin.top,
-		bottom: height - margin.bottom
-	});
+	const yRange = $derived<[number, number]>([height - vMargin.bottom, vMargin.top]);
 
 	// Time axis: x values coerce to ms timestamps (Date / ISO string / number;
 	// invalid dates are blanks). The numeric scale then works unchanged; only the
@@ -142,22 +140,8 @@
 		isTime ? toTime(valueOf(row, x.value)) : toNumber(valueOf(row, x.value));
 	const xPix = (row: T): number => xScale.map(xNum(row));
 
-	const xScale = $derived(
-		linearScale(
-			numericExtent(data, (r: T) => xNum(r)),
-			[plot.left, plot.right],
-			{ nice: !isTime }
-		)
-	);
-
 	// Calendar ticks + default label formatter for a time axis; AxisDef.format
 	// (given a Date) overrides the labels.
-	const timeT = $derived(
-		isTime ? timeTicks(xScale.domain[0], xScale.domain[1], x.ticks ?? 6) : null
-	);
-	const xAxisScale = $derived(
-		timeT ? { map: xScale.map, ticks: timeT.ticks, domain: xScale.domain } : xScale
-	);
 	const xTickText = (v: unknown): string => {
 		if (timeT) return x.format ? x.format(new Date(v as number)) : timeT.format(v as number);
 		return x.format ? x.format(v) : v === null || v === undefined ? '' : String(v);
@@ -175,19 +159,15 @@
 		}
 		return min === Infinity ? [NaN, NaN] : [min, max];
 	});
-	const yScale = $derived(linearScale(yExtent, [plot.bottom, plot.top], { nice: true }));
+	const yScale = $derived(linearScale(yExtent, yRange, { nice: true }));
 
 	// Dual axis: an independent scale per side (each fitted to its own series);
 	// both fall back to the shared yScale when not dual.
 	const yA = $derived(
-		dual
-			? linearScale(numericExtent(data, sA.value), [plot.bottom, plot.top], { nice: true })
-			: yScale
+		dual ? linearScale(numericExtent(data, sA.value), yRange, { nice: true }) : yScale
 	);
 	const yB = $derived(
-		dual
-			? linearScale(numericExtent(data, sB.value), [plot.bottom, plot.top], { nice: true })
-			: yScale
+		dual ? linearScale(numericExtent(data, sB.value), yRange, { nice: true }) : yScale
 	);
 	const yFor = (key: string) => (dual ? (key === sA.key ? yA : yB) : yScale);
 
@@ -234,6 +214,37 @@
 		const fmt = !multi ? shown[0]?.format : undefined;
 		return fmt ? fmt(n) : Number.isFinite(n) ? n.toLocaleString('en-US') : String(v);
 	};
+
+	// Each gutter is as wide as the widest tick label that axis actually renders
+	// (the right one only when dual), floored at the 52 these used to hardcode.
+	const margin = $derived({
+		...vMargin,
+		left: axisGutter((dual ? yA : yScale).ticks.map(dual ? fmtAxis(sA) : yFormat), {
+			label: !!leftLabel
+		}),
+		right: dual ? axisGutter(yB.ticks.map(fmtAxis(sB)), { label: !!rightLabel }) : 18
+	});
+	const plot = $derived({
+		left: margin.left,
+		right: width - margin.right,
+		top: vMargin.top,
+		bottom: height - vMargin.bottom
+	});
+
+	const xScale = $derived(
+		linearScale(
+			numericExtent(data, (r: T) => xNum(r)),
+			[plot.left, plot.right],
+			{ nice: !isTime }
+		)
+	);
+
+	const timeT = $derived(
+		isTime ? timeTicks(xScale.domain[0], xScale.domain[1], x.ticks ?? 6) : null
+	);
+	const xAxisScale = $derived(
+		timeT ? { map: xScale.map, ticks: timeT.ticks, domain: xScale.domain } : xScale
+	);
 
 	// ── Hover tooltip (client-only enhancement) ──────────────────────────────
 	// Nothing here renders during SSR: `mounted` starts false, so the static SVG

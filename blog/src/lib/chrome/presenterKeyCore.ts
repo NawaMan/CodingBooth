@@ -9,6 +9,7 @@
 //   T — table of contents (jump menu)
 //   C — reset check-offs   (opens the menu; the destructive step stays a click)
 //   A — reset annotations  (ink; opens the menu — same softness)
+//   E — edit the speaker note (opens the editor; nothing is written until SAVE)
 //
 // A key TOGGLES its menu open, it never resets on its own: opening the menu is the
 // soft confirm the RESET menus already lean on, so no key destroys with one press.
@@ -41,6 +42,9 @@ export type PresenterKeyIntent =
 	| 'toc'
 	| 'checks'
 	| 'ink'
+	| 'bars'
+	| 'editNote'
+	| 'record'
 	| 'close'
 	| 'next'
 	| 'prev'
@@ -102,6 +106,15 @@ export function presenterKeyIntent(
 		case 'a':
 			// Inert unless the pen (and so the reset-ink control) is actually offered.
 			return inkOffered ? 'ink' : 'ignore';
+		case 'b':
+			// The audience window's bars, shown or hidden (stores/chromeBare).
+			return 'bars';
+		case 'e':
+			// The note editor (NoteEditor) over the notes panel.
+			return 'editNote';
+		case 'r':
+			// The VOD Recorder window (record/, specs/VOD-RECORD-1.md).
+			return 'record';
 		default:
 			return 'ignore';
 	}

@@ -80,8 +80,8 @@
 		appendixNavigation,
 		appendixRun,
 		carryReturnThrough,
-		readReturnParam,
-		returnHref,
+		exitHrefFromStack,
+		readReturnStack,
 		slidePathOf,
 		KIND_OUT
 	} from '$lib/utils/appendixCore';
@@ -131,38 +131,32 @@
 
 	$: currentPath = slidePathOf($page.url.pathname) ?? '';
 
-	// The caller, if the URL names one AND the deck actually contains it. The
-	// membership test is the second lock (appendixCore's syntax check is the first):
-	// an address that passes the pattern but names no slide in this deck would
-	// navigate to a 404, so treat it as no address at all and fall back to the deck.
+	// Full return stack from `?return=` (hub under, most recent caller on top).
+	// Syntax is validated in appendixCore; each pop resolves hub vs in-deck.
 	//
 	// `browser` guard: reading url.searchParams during PRERENDER is an error in SvelteKit,
 	// and rightly so — a prerendered file is one file, so it cannot depend on a query string
 	// that varies per visit. In the deck this never came up, because SlideDeck gates its slot
 	// on `initialized` and no slide has ever been server-rendered. The HANDOUT renders slides
 	// for real (routes/_handout/[deck].html), which is what surfaced it. At prerender there IS no
-	// caller, so `null` is the honest answer and the exit falls back to the deck's first
+	// caller, so `[]` is the honest answer and the exit falls back to the deck's first
 	// slide; hydration then reads the real `?return=` and the way out is restored.
-	$: returnTo = !browser
-		? null
-		: (() => {
-				const target = readReturnParam($page.url.searchParams);
-				return target && pages.some((p) => p.path === target) ? target : null;
-			})();
+	$: returnStack = browser ? readReturnStack($page.url.searchParams) : [];
+	$: returnTo = returnStack.length ? returnStack[returnStack.length - 1]! : null;
 
-	// The way out: back to the caller, or — lacking one — to the first slide of the
-	// linear order (never this appendix, when the appendix is hidden from that order).
+	// The way out: pop the stack (re-attach the remainder), or — lacking one — the
+	// first slide of the linear order (never this appendix when it is hidden).
 	$: deckHome = visiblePages(pages)[0]?.path;
-	$: exitHref = returnHref(returnTo) ?? (deckHome ? `./${deckHome}` : '');
+	$: exitHref = exitHrefFromStack(returnStack, pages, deckHome ?? null);
 
 	// This appendix's chapter — the contiguous run of hidden slides it belongs to.
 	// Empty when the slide is not hidden, i.e. an appendix sitting in the deck's
 	// normal flow: then the deck's OWN navigation applies, and we only thread the
-	// return address through it so paging on doesn't lose the way home.
+	// return stack through it so paging on doesn't lose the way home.
 	$: run = appendixRun(pages, currentPath);
 	$: navigation = run.length
-		? appendixNavigation(run, currentPath, exitHref, returnTo)
-		: carryReturnThrough(getPageNavigation(pages, currentPath, './'), returnTo);
+		? appendixNavigation(run, currentPath, exitHref, returnStack)
+		: carryReturnThrough(getPageNavigation(pages, currentPath, './'), returnStack);
 
 	// Which effect each edge of the bar performs. The NavigationBar picks its transition
 	// from the LEAVING slide's pages.ts entry, which cannot know that the slide it is
@@ -175,8 +169,8 @@
 	// The RETURN control is shown when there is somewhere to return TO, and on any
 	// hidden slide — which needs a way out even reached cold, being off the order.
 	// An in-flow appendix nobody called is just a slide, and gets no extra control.
-	$: showExit = Boolean(returnTo) || run.length > 0;
-	$: exitLabel = returnTo ? returnText : deckText;
+	$: showExit = returnStack.length > 0 || run.length > 0;
+	$: exitLabel = returnStack.length ? returnText : deckText;
 
 	// Paging strategy is the deck's, not ours — a View-Transition deck must animate
 	// out of an appendix exactly as it animates between slides, so RETURN goes through

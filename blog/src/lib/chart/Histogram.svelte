@@ -24,7 +24,15 @@
 	import { onMount, type Snippet } from 'svelte';
 	import Axis from './Axis.svelte';
 	import ChartTooltip from './ChartTooltip.svelte';
-	import { histogramBins, linearScale, nearestIndex, seriesColor, toNumber, valueOf } from './chartCore';
+	import {
+		axisGutter,
+		histogramBins,
+		linearScale,
+		nearestIndex,
+		seriesColor,
+		toNumber,
+		valueOf
+	} from './chartCore';
 	import type { Accessor, TooltipPoint } from './types';
 
 	interface Props {
@@ -83,32 +91,32 @@
 	const fill = $derived(seriesColor(color, 0));
 
 	// The binned distribution — pure, in chartCore. One entry per bucket.
-	const binList = $derived(histogramBins(data.map((row) => valueOf(row, value)), { bins: binCount, domain, edges }));
+	const binList = $derived(
+		histogramBins(
+			data.map((row) => valueOf(row, value)),
+			{ bins: binCount, domain, edges }
+		)
+	);
 
-	const margin = $derived({
+	// The vertical margins are fixed; the LEFT one is sized to the tick text and
+	// lands further down, once the format exists (see `margin`). Splitting them
+	// breaks the cycle margin → plot → yScale → ticks → margin: the y range is
+	// vertical, so it only ever needed top/bottom.
+	const vMargin = $derived({
 		top: 18,
 		right: 18,
-		bottom: 40 + (xLabel ? 22 : 0),
-		left: 52 + (label ? 20 : 0)
+		bottom: 40 + (xLabel ? 22 : 0)
 	});
-	const plot = $derived({
-		left: margin.left,
-		right: width - margin.right,
-		top: margin.top,
-		bottom: height - margin.bottom
-	});
+	const yRange = $derived<[number, number]>([height - vMargin.bottom, vMargin.top]);
 
 	// x spans exactly the outer bin edges (nice:false → no extra niced margin, so
 	// the first/last bars sit flush to the axis ends); its own nice ticks label it.
 	const xDomain = $derived<[number, number]>(
 		binList.length ? [binList[0].x0, binList[binList.length - 1].x1] : [0, 1]
 	);
-	const xScale = $derived(linearScale(xDomain, [plot.left, plot.right], { nice: false }));
 
 	const maxCount = $derived(binList.reduce((m, b) => Math.max(m, b.count), 0));
-	const yScale = $derived(
-		linearScale([0, maxCount], [plot.bottom, plot.top], { zero: true, nice: true })
-	);
+	const yScale = $derived(linearScale([0, maxCount], yRange, { zero: true, nice: true }));
 	const zeroY = $derived(yScale.map(0));
 
 	const fmtEdge = (v: number): string =>
@@ -117,6 +125,22 @@
 		const n = Number(v);
 		return Number.isFinite(n) ? Math.round(n).toLocaleString('en-US') : String(v);
 	};
+
+	// The left gutter: as wide as the widest tick label actually rendered,
+	// floored at the 52 this used to hardcode, so a chart whose ticks already
+	// fit renders identically.
+	const margin = $derived({
+		...vMargin,
+		left: axisGutter(yScale.ticks.map(yFormat), { label: !!label })
+	});
+	const plot = $derived({
+		left: margin.left,
+		right: width - margin.right,
+		top: vMargin.top,
+		bottom: height - vMargin.bottom
+	});
+
+	const xScale = $derived(linearScale(xDomain, [plot.left, plot.right], { nice: false }));
 	const binLabel = (b: { x0: number; x1: number }): string => `${fmtEdge(b.x0)}–${fmtEdge(b.x1)}`;
 
 	interface Bar {

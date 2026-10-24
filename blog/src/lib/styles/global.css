@@ -30,10 +30,12 @@ a {
     margin-bottom: 0.6em;
 }
 
-/* Unvisited links only — a darker blue. visited / other states keep the
-   inherited color above (left unchanged on purpose). */
+/* Unvisited links only; visited / other states keep the inherited color above
+   (left unchanged on purpose). This is the floor for a HAND-WRITTEN <a>; authored
+   links should use <Link>, which adds the stroke and the external tone on top.
+   Fallback must match --link-fg in roles.css — see the link family note there. */
 a:link {
-    color: var(--link-fg, #1E6FB0);
+    color: var(--link-fg, #58A6FF);
 }
 
 /* TRY: default orange for every heading. Experimental — we may revert. */
@@ -42,6 +44,40 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /** Fonts **/
+
+/* Hand-lettering for <Draw rough> labels — see specs/DRAW-4.md.
+ *
+ * Excalifont (the face Excalidraw itself uses), SIL Open Font License 1.1;
+ * the full licence and attribution are in static/fonts/Excalifont-OFL.txt.
+ * Only the Latin and Latin-Extended-A subsets are bundled — the unicode-range
+ * split means a deck with plain English labels fetches just the 25 KB first
+ * file and never asks for the second.
+ *
+ * `font-display: swap` so a slide never blocks on the font: labels paint in
+ * the fallback handwriting stack (.draw-label.hand) and re-letter when it
+ * lands. To use a different face, drop it here and set --draw-font-family. */
+
+@font-face {
+    font-family: 'Excalifont';
+    font-style: normal;
+    font-weight: normal;
+    font-display: swap;
+    src: url('/fonts/Excalifont-Regular-latin.woff2') format('woff2');
+    unicode-range: U+20-7e, U+a0-a3, U+a5-a6, U+a8-ab, U+ad-b1, U+b4, U+b6-b8,
+        U+ba-ff, U+131, U+152-153, U+2bc, U+2c6, U+2da, U+2dc, U+304, U+308,
+        U+2013-2014, U+2018-201a, U+201c-201e, U+2020, U+2022, U+2024-2026,
+        U+2030, U+2039-203a, U+20ac, U+2122, U+2212;
+}
+
+@font-face {
+    font-family: 'Excalifont';
+    font-style: normal;
+    font-weight: normal;
+    font-display: swap;
+    src: url('/fonts/Excalifont-Regular-latin-ext.woff2') format('woff2');
+    unicode-range: U+100-130, U+132-137, U+139-149, U+14c-151, U+154-17e, U+192,
+        U+1fc-1ff, U+218-21b, U+237, U+1e80-1e85, U+1ef2-1ef3, U+2113;
+}
 
 @font-face {
     font-family: 'Playfair Display Regular';

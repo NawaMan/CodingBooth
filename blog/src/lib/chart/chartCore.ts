@@ -238,6 +238,64 @@ export function niceTicks(min: number, max: number, count = 5): number[] {
 	return ticks;
 }
 
+/** Per-character width estimate for tick text, in logical px at the chart's
+ *  default 12px type. Deliberately an ESTIMATE, not a measurement: a chart has
+ *  to emit its complete <svg> from props alone during prerender (see
+ *  tests/ChartSsr.ssr.test.ts), and there is no element to measure on a server.
+ *  Gantt already sizes its lane gutter this way; this is the same trick, shared.
+ *  6.6 is a touch generous for digits and separators in the deck's type, which
+ *  is the safe direction to be wrong in — a gutter slightly too wide loses a few
+ *  px of plot, one slightly too narrow clips the numbers. */
+const TICK_CHAR_PX = 6.6;
+
+/** Tick mark + the breathing room between the text and the axis line. */
+const TICK_PADDING_PX = 14;
+
+/** Width of the rotated axis-label gutter, when a chart has one. */
+const AXIS_LABEL_PX = 20;
+
+/**
+ * How much horizontal room a y axis needs for the tick text it will actually
+ * render — the fix for a fixed inset that a wide number runs straight through
+ * (a `25,000,000` tick overlapping its own rotated "Requests" label).
+ *
+ * Pass the tick labels AFTER formatting, since that is what decides the width:
+ * `axisGutter(yScale.ticks.map(yFormat), { label: !!yAxisLabel })`.
+ *
+ * Total, like everything here: no labels, blank labels, or non-string entries
+ * all fall back to `min` rather than producing NaN.
+ *
+ * **`min` defaults to the 52 every chart used to hardcode**, so this can only
+ * ever widen a gutter, never narrow one — an existing deck whose ticks already
+ * fit renders identically, and only the charts that were clipping move.
+ * `max` caps a pathological format so it cannot eat the plot area.
+ */
+export function axisGutter(
+	labels: readonly string[] | null | undefined,
+	options: { label?: boolean; min?: number; max?: number; charWidth?: number } = {}
+): number {
+	const min = Number.isFinite(options.min) ? (options.min as number) : 52;
+	const max = Number.isFinite(options.max) ? (options.max as number) : 120;
+	const charWidth = Number.isFinite(options.charWidth)
+		? (options.charWidth as number)
+		: TICK_CHAR_PX;
+	const labelGutter = options.label ? AXIS_LABEL_PX : 0;
+
+	let widest = 0;
+	if (Array.isArray(labels)) {
+		for (const label of labels) {
+			if (typeof label !== 'string') continue;
+			if (label.length > widest) widest = label.length;
+		}
+	}
+
+	const needed = widest * charWidth + TICK_PADDING_PX + labelGutter;
+	// The floor carries the label gutter too, so a labelled axis with tiny ticks
+	// keeps the 52 + 20 it has today rather than dropping to a bare 52.
+	const floor = min + labelGutter;
+	return Math.round(Math.min(Math.max(needed, floor), max + labelGutter));
+}
+
 /**
  * Linear scale factory: maps a numeric domain onto a pixel range and carries
  * its own nice tick values. NaN-safe — a blank/uncoercible value maps to NaN so
@@ -457,10 +515,7 @@ export interface WaterfallOptions<T = any> {
  * input, since each contribution is coerced through toNumber and a non-finite
  * one becomes 0.
  */
-export function waterfallBars<T>(
-	rows: readonly T[],
-	options: WaterfallOptions<T>
-): WaterfallBar[] {
+export function waterfallBars<T>(rows: readonly T[], options: WaterfallOptions<T>): WaterfallBar[] {
 	const { x, value, isTotal, start = 0, endTotal = false, endTotalLabel = 'Total' } = options;
 
 	let running = Number.isFinite(start) ? start : 0;

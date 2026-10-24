@@ -306,7 +306,15 @@
 			{/if}
 
 			{#if live && !interactive && !isText}
-				<button type="button" class="pill" on:click={() => (armed = false)}>Release</button>
+				<!-- Highlighted while the frame is armed: after a shield click the
+				     presenter must know how to give the keyboard back. Quiet Open ↗
+				     stays a secondary pill; Release is the primary affordance. -->
+				<button
+					type="button"
+					class="pill release"
+					title="Stop interacting — restore slide keyboard / pointer"
+					on:click={() => (armed = false)}>Release</button
+				>
 			{/if}
 			<a class="pill" href={src} target="_blank" rel="noopener noreferrer">Open ↗</a>
 		</div>
@@ -417,6 +425,41 @@
 	}
 	.pill:hover {
 		background: color-mix(in srgb, var(--embed-accent, #2980B9) 30%, transparent);
+	}
+
+	/* Armed state only — this button is the way out of interaction. Accent fill +
+	   a soft halo so it is findable at a glance against the chrome bar. */
+	.pill.release {
+		font-weight: 700;
+		color: #ffffff;
+		border-color: var(--embed-accent, #2980b9);
+		background: var(--embed-accent, #2980b9);
+		box-shadow:
+			0 0 0 2px color-mix(in srgb, var(--embed-accent, #2980b9) 45%, transparent),
+			0 0 14px color-mix(in srgb, var(--embed-accent, #2980b9) 55%, transparent);
+		animation: gp-release-pulse 1.6s ease-in-out infinite;
+	}
+	.pill.release:hover {
+		background: color-mix(in srgb, var(--embed-accent, #2980b9) 85%, #ffffff);
+		filter: brightness(1.05);
+	}
+	@keyframes gp-release-pulse {
+		0%,
+		100% {
+			box-shadow:
+				0 0 0 2px color-mix(in srgb, var(--embed-accent, #2980b9) 40%, transparent),
+				0 0 10px color-mix(in srgb, var(--embed-accent, #2980b9) 40%, transparent);
+		}
+		50% {
+			box-shadow:
+				0 0 0 4px color-mix(in srgb, var(--embed-accent, #2980b9) 55%, transparent),
+				0 0 20px color-mix(in srgb, var(--embed-accent, #2980b9) 70%, transparent);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.pill.release {
+			animation: none;
+		}
 	}
 
 	/* Zoom cluster: −, the level, +. Grouped in one bordered capsule so it reads as

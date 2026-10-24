@@ -23,10 +23,11 @@
 	import ChartLegend from './ChartLegend.svelte';
 	import ChartTooltip from './ChartTooltip.svelte';
 	import {
+		axisGutter,
 		bandScale,
 		keyString,
-		linePath,
 		linearScale,
+		linePath,
 		nearestIndex,
 		numericExtent,
 		seriesColor,
@@ -128,21 +129,17 @@
 	const leftColor = $derived(leftSeries.length === 1 ? colorOf(leftSeries[0].key) : undefined);
 	const rightColor = $derived(rightSeries.length === 1 ? colorOf(rightSeries[0].key) : undefined);
 
-	const margin = $derived({
+	// The vertical margins are fixed; the tick-facing ones are sized to the text
+	// they must clear and land further down, once axisFormat exists (see
+	// `margin`). Splitting them breaks the cycle margin → plot → yScale → ticks
+	// → margin: a y range is vertical, so it only ever needed top/bottom.
+	const vMargin = $derived({
 		top: 18,
-		right: hasRight ? 52 + (rightLabel ? 20 : 0) : 18,
-		bottom: 40 + (x.label ? 22 : 0),
-		left: 52 + (leftLabel ? 20 : 0)
+		bottom: 40 + (x.label ? 22 : 0)
 	});
-	const plot = $derived({
-		left: margin.left,
-		right: width - margin.right,
-		top: margin.top,
-		bottom: height - margin.bottom
-	});
+	const yRange = $derived<[number, number]>([height - vMargin.bottom, vMargin.top]);
 
 	const categories = $derived(data.map((row) => valueOf(row, x.value)));
-	const xScale = $derived(bandScale(categories, [plot.left, plot.right]));
 
 	// [min, max] for one axis: stacked bars → the stack extent; otherwise every
 	// bar/line series on that axis contributes its own extent.
@@ -169,11 +166,9 @@
 	// Bars force a zero baseline on their axis; a line-only axis does not.
 	const leftHasBar = $derived(leftSeries.some((s) => s.mark === 'bar'));
 	const rightHasBar = $derived(rightSeries.some((s) => s.mark === 'bar'));
-	const yLeft = $derived(
-		linearScale(extentFor('left'), [plot.bottom, plot.top], { zero: leftHasBar, nice: true })
-	);
+	const yLeft = $derived(linearScale(extentFor('left'), yRange, { zero: leftHasBar, nice: true }));
 	const yRight = $derived(
-		linearScale(extentFor('right'), [plot.bottom, plot.top], { zero: rightHasBar, nice: true })
+		linearScale(extentFor('right'), yRange, { zero: rightHasBar, nice: true })
 	);
 	const yFor = (s: Resolved) => (s.axis === 'left' ? yLeft : yRight);
 
@@ -186,6 +181,29 @@
 		const n = Number(v);
 		return s?.format ? s.format(n) : Number.isFinite(n) ? n.toLocaleString('en-US') : String(v);
 	};
+
+	// Each gutter is as wide as the widest tick label that axis actually renders
+	// (the right one only when a series sits on it), floored at the 52 these
+	// used to hardcode.
+	const leftFormat = $derived(
+		axisFormat(leftLabel, leftSeries.length === 1 ? leftSeries[0] : undefined)
+	);
+	const rightFormat = $derived(
+		axisFormat(rightLabel, rightSeries.length === 1 ? rightSeries[0] : undefined)
+	);
+	const margin = $derived({
+		...vMargin,
+		left: axisGutter(yLeft.ticks.map(leftFormat), { label: !!leftLabel }),
+		right: hasRight ? axisGutter(yRight.ticks.map(rightFormat), { label: !!rightLabel }) : 18
+	});
+	const plot = $derived({
+		left: margin.left,
+		right: width - margin.right,
+		top: vMargin.top,
+		bottom: height - vMargin.bottom
+	});
+
+	const xScale = $derived(bandScale(categories, [plot.left, plot.right]));
 
 	interface Bar {
 		x: number;
@@ -437,7 +455,7 @@
 				right={plot.right}
 				top={plot.top}
 				bottom={plot.bottom}
-				format={axisFormat(leftLabel, leftSeries.length === 1 ? leftSeries[0] : undefined)}
+				format={leftFormat}
 				color={leftColor}
 				gridlines
 				label={leftLabel}
@@ -450,7 +468,7 @@
 					right={plot.right}
 					top={plot.top}
 					bottom={plot.bottom}
-					format={axisFormat(rightLabel, rightSeries.length === 1 ? rightSeries[0] : undefined)}
+					format={rightFormat}
 					color={rightColor}
 					label={rightLabel}
 				/>

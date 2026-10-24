@@ -15,7 +15,9 @@
   it) — pass `fill={false}` for pure positioning, where the content keeps its
   natural size. When ADJUST mode is ON, the wrapper grows a drag body + a bottom-right
   resize handle + an id/location bar carrying the send-to-back / bring-to-front
-  buttons. Dragging updates x/y/width/height live, and the box publishes its updated
+  / copy / delete buttons (Delete or Backspace deletes the selected Block too;
+  Ctrl+C / Ctrl+V copies and pastes it, the copy a live second instance — both
+  pending until SAVE, undoable with Ctrl+Z). Dragging updates x/y/width/height live, and the box publishes its updated
   OPENING tag — just
   `<Block … x={…} y={…} …>`, or `<Tag … />` for a self-closing wrapper (ImageBlock) —
   to the ADJUST change registry, so SAVE writes that one line back over the element's
@@ -26,19 +28,43 @@
   The drag math divides screen-pixel pointer deltas by the element's LIVE rendered
   scale (getBoundingClientRect().width / offsetWidth), so a drag tracks the cursor
   1:1 whether the deck is FITTED (fit-to-window) or SCALED to any zoom factor.
+
+  Inside a <Group>, x/y/width/height are the group's local units: the Block draws
+  at the group's mapping of them (and scales its content to match), drags in local
+  units, and SAVEs them unchanged. See Group.svelte.
 -->
 <script lang="ts">
 	import { adjustMode, canAdjust } from '$lib/stores/adjustMode';
 	import { record } from '$lib/stores/adjustHistory';
-	import { nextChangeId, reportChange, withdrawChange } from '$lib/stores/adjustChanges';
+	import { nextChangeId, reportChange, withdrawChange, type Geometry } from '$lib/stores/adjustChanges';
+	import { copyBlock, pasteRequests, type PasteRequest } from '$lib/stores/blockClipboard';
+	import { pasteBox, nextCopyName } from '$lib/adjust/pasteCore';
 	import { selectedBlock, nextBlockId } from '$lib/stores/selectedBlock';
-	import { reportAnchor, withdrawAnchor } from '$lib/stores/blockAnchors';
+	import { reportAnchor, withdrawAnchor, blockAnchors } from '$lib/stores/blockAnchors';
 	import { reportBlockZ, withdrawBlockZ, otherZValues } from '$lib/stores/blockOrder';
 	import { frontZ, backZ } from '$lib/utils/stackingCore';
 	import { trackPointer } from '$lib/utils/drag';
 	import { guardStyle } from '$lib/adjust/styleGuardCore';
+	import { getGroup } from '$lib/utils/groupContext';
+	import {
+		IDENTITY,
+		NOTHING_HIDDEN,
+		NOTHING_MOVED,
+		compose,
+		isHidden,
+		isIdentity,
+		moveFor,
+		moveFrame,
+		mapBox,
+		morphName,
+		visibleBox,
+		type Frame,
+		type HideState,
+		type MoveMap
+	} from '$lib/utils/groupCore';
 	import { browser } from '$app/environment';
-	import { onDestroy } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
+	import { get, readable } from 'svelte/store';
 
 	// Editing affordances only when the ADJUST control is BOTH available (dev or an
 	// opted-in `?adjust` session) and switched on. canAdjust keeps the published
@@ -53,17 +79,35 @@
 	const blockId = nextBlockId();
 	$: selected = editing && $selectedBlock === blockId;
 
-	// Escape clears the selection (only the selected Block listens, so exactly one
-	// handler is live). A drag's own Escape is handled by trackPointer's onCancel.
-	function handleDeselect(event: KeyboardEvent) {
-		if (event.key === 'Escape') selectedBlock.set(null);
+	// Keys for the selection (only the selected Block listens, so exactly one handler
+	// is live): Escape clears it, Delete / Backspace deletes the Block. A drag's own
+	// Escape is handled by trackPointer's onCancel. Capture phase, so a delete is
+	// swallowed before a page-level Backspace (AppendixPage's RETURN) can also act.
+	function handleSelectionKey(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
+			selectedBlock.set(null);
+			return;
+		}
+		// Ctrl/Cmd+C copies the Block — unless the author has text selected, which
+		// is an ordinary text copy and must stay one.
+		if ((event.ctrlKey || event.metaKey) && !event.shiftKey && !event.altKey && event.key.toLowerCase() === 'c') {
+			if (!deletable || isTyping(event.target) || window.getSelection()?.toString()) return;
+			event.preventDefault();
+			copyThis();
+			return;
+		}
+		if (event.key !== 'Delete' && event.key !== 'Backspace') return;
+		if (!deletable || isTyping(event.target)) return;
+		event.preventDefault();
+		event.stopImmediatePropagation();
+		deleteBlock();
 	}
 	$: if (browser) {
-		if (selected) window.addEventListener('keydown', handleDeselect);
-		else window.removeEventListener('keydown', handleDeselect);
+		if (selected) window.addEventListener('keydown', handleSelectionKey, true);
+		else window.removeEventListener('keydown', handleSelectionKey, true);
 	}
 	onDestroy(() => {
-		if (browser) window.removeEventListener('keydown', handleDeselect);
+		if (browser) window.removeEventListener('keydown', handleSelectionKey, true);
 		// Don't leave a destroyed Block as the selection target.
 		if (selected) selectedBlock.set(null);
 	});
@@ -125,6 +169,18 @@
 	    <Draw>): when set, the toolbar grows time/delay fields for the wrapped
 	    shape's self-draw. Plain Blocks leave it null. */
 	export let drawEdit: import('$lib/draw/types').DrawOnEditor | null = null;
+	/** Set only on a PASTED copy (rendered by its source Block, never authored):
+	    the source Block's name and mount-time geometry, which SAVE uses to find
+	    the element to duplicate. */
+	export let pasteOf: { name: string; before: Geometry } | null = null;
+	/** On a pasted copy: the blockId of the source Block that renders it, so a
+	    copy of the copy is rendered by — and saved from — that same source. */
+	export let pasteHost: number | null = null;
+	/** The route file this tag was written in. Never authored: in `pnpm dev` the
+	    source-stamp plugin adds it to every Block-family tag (adjust/sourceTag.ts),
+	    so SAVE can patch a Block that lives in a component — a shared scene —
+	    instead of looking for it in the slide. Empty in a build. */
+	export let __file = '';
 
 	/** Inline style for the root element, applied last so it wins — EXCEPT for the
 	    properties this Block writes itself (left/top/width/height/inset/position),
@@ -150,7 +206,49 @@
 
 	let el: HTMLElement;
 
-	const snap = (n: number) => (grid > 1 ? Math.round(n / grid) * grid : Math.round(n));
+	// Inside a <Group>, x/y/width/height are the group's LOCAL units and `frame`
+	// maps them onto the canvas; `box` is where this Block is actually drawn.
+	// Outside any group the frame is the identity and box === the props, so a
+	// plain Block renders exactly as before. Drags, SAVE and the readout stay in
+	// local units (the numbers in source); the anchor and the DOM are in canvas.
+	const group = getGroup();
+	const groupFrame = group?.frame ?? readable<Frame>(IDENTITY);
+	// Moved on this slide by the group's `move` (by name): one more map, about the
+	// Block's own centre, between its source numbers and the group's frame. The
+	// source numbers — what a drag changes and SAVE writes — stay where it is drawn.
+	const groupMoves = group?.moves ?? readable<MoveMap>(NOTHING_MOVED);
+	$: ownMove = moveFrame(moveFor($groupMoves, name), { x, y, width, height });
+	$: moved = !isIdentity(ownMove);
+	$: frame = moved ? compose($groupFrame, ownMove) : $groupFrame;
+	$: scaled = frame.s !== 1;
+	$: box = mapBox(frame, { x, y, width, height });
+	// The canvas, in local units: what bounds="canvas" clamps to.
+	$: stage = visibleBox(frame, canvasWidth, canvasHeight);
+	// The group's per-slide cast and morph names (see Group's `hide` / `morph`).
+	const groupHidden = group?.hidden ?? readable<HideState>(NOTHING_HIDDEN);
+	const groupMorph = group?.morph ?? readable<string | null>(null);
+	$: concealed = !!group && isHidden($groupHidden, name);
+	$: vtName = morphName($groupMorph, name);
+	// Glide (Group `glide`): a camera change within the slide animates instead of
+	// jumping. Not while editing — a drag must track the pointer, not chase it.
+	// Nor before the first frame is painted: a slide that opens part-way through
+	// a build (paged back into, see Steps) sets its camera during mount, and that
+	// is where it starts, not something to glide to.
+	const groupGlide = group?.glide ?? readable(0);
+	let settled = false;
+	onMount(() => {
+		if (!group) return;
+		let raf = requestAnimationFrame(() => {
+			raf = requestAnimationFrame(() => (settled = true));
+		});
+		return () => cancelAnimationFrame(raf);
+	});
+	$: gliding = settled && $groupGlide > 0 && !editing;
+	// The content layer keeps its transform even at 1× while gliding, so a zoom
+	// back to 1:1 animates down to it rather than snapping when `scaled` flips.
+	$: zoomLayer = scaled || gliding;
+
+	const snap =(n: number) => (grid > 1 ? Math.round(n / grid) * grid : Math.round(n));
 	const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 
 	// One pointer gesture, parameterised by which corner(s) it moves. `move` shifts
@@ -176,11 +274,21 @@
 		const ratio = typeof aspect === 'number' ? aspect : aspect === true ? startW / startH : null;
 
 		const free = bounds === 'none';
+		// Local bounds and units, fixed for the gesture (a camera doesn't move mid-drag).
+		const s = $groupFrame.s;
+		// A move's scale is about the centre: a resize then shows on the dragged
+		// edge at (1 + scale) / 2 of its size change, so the pointer is divided by that.
+		const grow = (1 + ownMove.s) / 2;
+		const right = stage.x + stage.width;
+		const bottom = stage.y + stage.height;
 		// The shared helper measures the live rendered scale from `el`, captures
-		// the pointer, and streams canvas-px deltas until pointerup / Esc.
+		// the pointer, and streams canvas-px deltas until pointerup / Esc — which
+		// the group's zoom turns into local units.
 		trackPointer(event, {
 			scaleFrom: el,
-			onMove: (dx, dy, e) => {
+			onMove: (cdx, cdy, e) => {
+				const dx = cdx / s / (mode === 'move' ? 1 : grow);
+				const dy = cdy / s / (mode === 'move' ? 1 : grow);
 				if (mode === 'move') {
 					// Hold Shift to lock the move to a single axis — whichever the pointer
 					// has travelled furthest along, from the drag's START. Re-evaluated on
@@ -193,8 +301,8 @@
 						if (Math.abs(dx) >= Math.abs(dy)) my = 0;
 						else mx = 0;
 					}
-					x = snap(free ? startX + mx : clamp(startX + mx, 0, canvasWidth - width));
-					y = snap(free ? startY + my : clamp(startY + my, 0, canvasHeight - height));
+					x = snap(free ? startX + mx : clamp(startX + mx, stage.x, right - width));
+					y = snap(free ? startY + my : clamp(startY + my, stage.y, bottom - height));
 				} else if (ratio && !e.altKey) {
 					// Aspect-locked: drive from the axis the pointer moved most, derive the
 					// other from `ratio`, then clamp to canvas + minSize without skewing —
@@ -210,13 +318,13 @@
 					}
 					if (w < minSize) { w = minSize; h = w / ratio; }
 					if (h < minSize) { h = minSize; w = h * ratio; }
-					if (!free && x + w > canvasWidth)  { w = canvasWidth  - x; h = w / ratio; }
-					if (!free && y + h > canvasHeight) { h = canvasHeight - y; w = h * ratio; }
+					if (!free && x + w > right)  { w = right  - x; h = w / ratio; }
+					if (!free && y + h > bottom) { h = bottom - y; w = h * ratio; }
 					width  = snap(w);
 					height = snap(h);
 				} else {
-					width = clamp(snap(startW + dx), minSize, free ? Infinity : canvasWidth - x);
-					height = clamp(snap(startH + dy), minSize, free ? Infinity : canvasHeight - y);
+					width = clamp(snap(startW + dx), minSize, free ? Infinity : right - x);
+					height = clamp(snap(startH + dy), minSize, free ? Infinity : bottom - y);
 				}
 			},
 			// On commit, record the net change (before → after) for global undo/redo —
@@ -265,11 +373,72 @@
 	// hand-authored `z={-1}` away — the button just won't produce that by surprise.
 	const sendToBack = () => setZ(Math.max(0, backZ(z, otherZValues(blockId))));
 
+	// Delete: a PENDING removal, like every other ADJUST edit. The Block hides (and
+	// drops its anchor, so arrows to it vanish), goes into the undo history, and
+	// reports itself `removed` so SAVE cuts the whole element out of the source —
+	// see patchSource's REMOVE mode. Only a tracked Block: a hosted Draw Rect/Ellipse
+	// or a KeyframeStudio ghost is not an element of the slide's own source.
+	let removed = false;
+	$: deletable = track;
+	function deleteBlock() {
+		if (!deletable || removed) return;
+		removed = true;
+		selectedBlock.set(null);
+		record({
+			undo: () => { removed = false; },
+			redo: () => { removed = true; },
+		});
+	}
+	// Copy / paste. Copy hands the clipboard this Block's box and the id of the
+	// SOURCE Block (itself, or the one that rendered this copy). Paste asks that
+	// source Block to render one more live instance of itself — see `copies` and
+	// the {#each} at the end of the markup. Pending until SAVE, like a delete.
+	let copied = false;
+	let copiedTimer: ReturnType<typeof setTimeout> | undefined;
+	function copyThis() {
+		if (!deletable || removed) return;
+		copyBlock({ host: pasteHost ?? blockId, x, y, width, height, z, baseName: pasteOf ? pasteOf.name : name });
+		copied = true;
+		clearTimeout(copiedTimer);
+		copiedTimer = setTimeout(() => (copied = false), 900);
+	}
+	onDestroy(() => clearTimeout(copiedTimer));
+
+	interface PastedCopy { key: number; name: string; x: number; y: number; width: number; height: number; z: number }
+	let copies: PastedCopy[] = [];
+	let lastPaste = 0;
+	function takePaste(req: PasteRequest | null) {
+		if (!req || req.host !== blockId || req.id <= lastPaste) return;
+		lastPaste = req.id;
+		// The canvas clamp assumes a stage at the origin, so inside a mapped group
+		// the copy just cascades unclamped (the drag that follows clamps it).
+		const plain = isIdentity($groupFrame);
+		const landed = pasteBox(req, req.n, bounds === 'canvas' && plain ? { width: canvasWidth, height: canvasHeight } : null);
+		const copy = { key: req.id, name: nextCopyName(req.baseName, get(blockAnchors).keys()), ...landed, z: req.z };
+		copies = [...copies, copy];
+		record({
+			undo: () => { copies = copies.filter((c) => c !== copy); },
+			redo: () => { copies = [...copies, copy]; },
+		});
+	}
+	// Only a source-backed Block hosts copies; a copy forwards to its host instead.
+	$: if (browser && deletable && !pasteOf) takePaste($pasteRequests);
+	// A fresh copy arrives selected, ready to drag.
+	onMount(() => { if (pasteOf) selectedBlock.set(blockId); });
+
+	function isTyping(target: EventTarget | null): boolean {
+		const node = target as HTMLElement | null;
+		return !!node && (node.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(node.tagName));
+	}
+
 	// Publish this Block's live z so its siblings' Front/Back can order against it.
 	// Browser-only: purely a ADJUST-mode aid, and SSR must not touch module state
 	// that outlives one render (unlike blockAnchors, which a Connector needs on the
 	// server).
-	$: if (browser) reportBlockZ(blockId, z);
+	$: if (browser) {
+		if (removed) withdrawBlockZ(blockId);
+		else reportBlockZ(blockId, z);
+	}
 	onDestroy(() => { if (browser) withdrawBlockZ(blockId); });
 
 	// When NOT editing, a bounds="none" element that bleeds past the canvas should
@@ -277,10 +446,11 @@
 	// Clip just THIS element to the canvas rectangle, computed in its own local
 	// coords (local L maps to canvas x+L, so the visible band is -x … canvasWidth-x).
 	// While editing, no clip — the off-stage part (and its handles) stays grabbable.
+	// Canvas units throughout (`box`): the clip is about the stage, not the group.
 	$: clipPath =
 		!editing && bounds === 'none'
-			? `inset(${Math.max(0, -y)}px ${Math.max(0, x + width - canvasWidth)}px` +
-			  ` ${Math.max(0, y + height - canvasHeight)}px ${Math.max(0, -x)}px)`
+			? `inset(${Math.max(0, -box.y)}px ${Math.max(0, box.x + box.width - canvasWidth)}px` +
+			  ` ${Math.max(0, box.y + box.height - canvasHeight)}px ${Math.max(0, -box.x)}px)`
 			: 'none';
 
 	// The applied z-index folds the AUTHOR z and the transient editing lift into
@@ -368,6 +538,17 @@
 	// module-level registry.
 	const changeId = nextChangeId();
 	const initial = { x, y, width, height, z };
+	// What a copy of THIS Block needs to find it in source at SAVE.
+	const sourceOf = {
+		name,
+		before: {
+			x: Math.round(initial.x),
+			y: Math.round(initial.y),
+			width: Math.round(initial.width),
+			height: Math.round(initial.height),
+			z: Math.round(initial.z),
+		},
+	};
 	$: initialZAttr = initial.z ? ` z={${Math.round(initial.z)}}` : '';
 	$: initialOpenTag =
 		`<${tag}${name ? ` name="${name}"` : ''}${attrs}${passAttrs} x={${Math.round(initial.x)}} y={${Math.round(initial.y)}}` +
@@ -378,9 +559,16 @@
 			id: changeId,
 			kind: tag,
 			name,
-			dirty: snippet !== initialSnippet,
-			oldTag: initialSnippet,
-			newTag: snippet,
+			file: __file || undefined,
+			// A pasted copy is dirty for as long as it exists — it is not in source
+			// yet. Deleting it (or undoing the paste) leaves nothing to save.
+			dirty: pasteOf ? !removed : removed || snippet !== initialSnippet,
+			removed: pasteOf ? false : removed,
+			pasteOf: pasteOf ?? undefined,
+			oldTag: pasteOf
+				? `(new: a copy of ${pasteOf.name ? `"${pasteOf.name}"` : `the ${tag} at ${pasteOf.before.x},${pasteOf.before.y}`} — insert it after that element)`
+				: initialSnippet,
+			newTag: removed ? '(deleted: remove this element, its children and closing tag)' : snippet,
 			// Structured geometry for the dev "Save" endpoint: `before` matches the
 			// source, `after` is what gets written.
 			before: {
@@ -410,13 +598,30 @@
 	// Plain object, not a `let`: mutating a field must not itself invalidate the
 	// reactive statement that writes it (that would be a self-triggering cycle).
 	const anchor = { name: '' };
-	$: if (track && name) {
+	$: if (track && name && !removed) {
 		// A renamed Block must not leave its old name behind in the registry.
 		if (anchor.name && anchor.name !== name) withdrawAnchor(anchor.name);
 		anchor.name = name;
-		reportAnchor(name, { x, y, width, height });
+		// Canvas coordinates — where the box is drawn — so a Connector or Spotlight
+		// outside the group still finds it.
+		reportAnchor(name, box);
+	}
+	// A deleted Block takes its anchor with it; undo re-reports through the block above.
+	$: if (removed && anchor.name) {
+		withdrawAnchor(anchor.name);
+		anchor.name = '';
 	}
 	onDestroy(() => withdrawAnchor(anchor.name));
+
+	// Inside a group, a named Block reports its LOCAL box there too, so the group's
+	// camera can `fit` / `focus` on it by name.
+	const memberKey = {};
+	// Where it is on THIS slide (moved), so a camera aims at the part, not its old spot.
+	$: if (group) {
+		if (track && name && !removed) group.register(memberKey, name, mapBox(ownMove, { x, y, width, height }));
+		else group.withdraw(memberKey);
+	}
+	onDestroy(() => group?.withdraw(memberKey));
 </script>
 
 <!-- svelte-ignore a11y-no-static-element-interactions a11y-no-noninteractive-element-interactions -->
@@ -425,18 +630,32 @@
 	class:editing={editing}
 	class:selected={selected}
 	class:active={dragging}
+	class:removed={removed}
+	class:pasted={!!pasteOf}
+	class:concealed
+	class:gliding
 	id={id || undefined}
+	data-gp-morph={vtName ?? undefined}
 	bind:this={el}
-	style="left:{x}px; top:{y}px; width:{width}px; height:{height}px; clip-path:{clipPath}; {zStyle} {guard.safe}"
+	style="left:{box.x}px; top:{box.y}px; width:{box.width}px; height:{box.height}px; clip-path:{clipPath}; {gliding ? `--gp-glide:${$groupGlide}s;` : ''} {zStyle} {guard.safe}"
 	on:pointerdown={(e) => startDrag('move', e)}
 	on:pointerenter={() => (hovered = true)}
 	on:pointerleave={() => (hovered = false)}
 >
-	<div class="fill-layer" class:loose={!fill}><slot /></div>
+	<!-- Zoomed by a group: the content lays out at its LOCAL size and is scaled up
+	     as a whole (text, borders, picture), inside the real-size box. The
+	     transform sits on this inner layer, never on the Block itself, so a
+	     View-Transition snapshot of the Block is the true box, painted crisp. -->
+	<div
+		class="fill-layer"
+		class:loose={!fill}
+		class:scaled={zoomLayer}
+		style={zoomLayer ? `width:${width}px; height:${height}px; transform:scale(${frame.s});` : undefined}
+	><slot /></div>
 
 	{#if editing}
 		<div class="readout">
-			{name ? name + ' · ' : ''}{Math.round(x)},{Math.round(y)} · {Math.round(width)}×{Math.round(height)}{z ? ' · z' + Math.round(z) : ''}
+			{name ? name + ' · ' : ''}{Math.round(x)},{Math.round(y)} · {Math.round(width)}×{Math.round(height)}{z ? ' · z' + Math.round(z) : ''}{scaled ? ' · ×' + +frame.s.toFixed(3) : ''}{moved ? ' · moved' : ''}
 			<button
 				class="zbtn" type="button" title="Send to back" aria-label="Send to back"
 				on:pointerdown|stopPropagation on:click|stopPropagation={sendToBack}
@@ -445,6 +664,18 @@
 				class="zbtn" type="button" title="Bring to front" aria-label="Bring to front"
 				on:pointerdown|stopPropagation on:click|stopPropagation={bringToFront}
 			>⤒</button>
+			{#if deletable}
+				<button
+					class="zbtn" type="button" title="Copy (Ctrl+C) — paste with Ctrl+V; SAVE writes the copy"
+					aria-label="Copy block"
+					on:pointerdown|stopPropagation on:click|stopPropagation={copyThis}
+				>{copied ? '✓' : '⧉'}</button>
+				<button
+					class="zbtn delete" type="button" title="Delete (Del) — undo with Ctrl+Z; SAVE writes it"
+					aria-label="Delete block"
+					on:pointerdown|stopPropagation on:click|stopPropagation={deleteBlock}
+				>✕</button>
+			{/if}
 		</div>
 		{#if ignoredGeometry.length || displacedBy.length}
 			<!-- The style/geometry collision, said out loud — ADJUST-mode only, so it
@@ -487,10 +718,67 @@
 	{/if}
 </div>
 
+<!-- Pasted copies: further live instances of this same Block, slot and all, as
+     siblings (so they position against the same canvas). Never authored — they
+     exist until SAVE writes them into source, or undo takes them away. -->
+{#each copies as c (c.key)}
+	<svelte:self
+		name={c.name} x={c.x} y={c.y} width={c.width} height={c.height} z={c.z}
+		{fill} {grid} {aspect} {canvasWidth} {canvasHeight} {bounds} {minSize}
+		{tag} {attrs} {selfClose} {track} {style} class={klass}
+		pasteOf={sourceOf} pasteHost={blockId} {__file}
+	><slot /></svelte:self>
+{/each}
+
 <style>
 	.movable {
 		position: absolute;
 		box-sizing: border-box;
+	}
+	/* Deleted in ADJUST, pending SAVE. Hidden rather than unmounted, so undo brings
+	   the content back exactly as it was (a Monaco editor, a video's position…). */
+	.movable.removed {
+		display: none;
+	}
+	/* Hidden by its group on this slide (Group `hide`). Visibility, not display:
+	   the box stays, so a morph still pairs it and fades it as it glides. In
+	   ADJUST it is faint instead — there to grab, plainly not on the slide. */
+	.movable.concealed {
+		visibility: hidden;
+	}
+	.movable.concealed.editing {
+		visibility: visible;
+		opacity: 0.3;
+	}
+	/* Gliding (Group `glide`): the box and the content's zoom animate together, on
+	   the same curve as the deck's morphs. A part leaving the shot fades out as it
+	   moves; visibility flips at the END of the fade (and at the start of a fade
+	   in), so a hidden part never takes a click mid-way. */
+	.movable.gliding {
+		--gp-glide-ease: cubic-bezier(0.65, 0, 0.35, 1);
+		transition:
+			left var(--gp-glide) var(--gp-glide-ease),
+			top var(--gp-glide) var(--gp-glide-ease),
+			width var(--gp-glide) var(--gp-glide-ease),
+			height var(--gp-glide) var(--gp-glide-ease),
+			opacity var(--gp-glide) var(--gp-glide-ease),
+			visibility var(--gp-glide) step-end;
+	}
+	.movable.gliding .fill-layer {
+		transition: transform var(--gp-glide) var(--gp-glide-ease);
+	}
+	.movable.gliding.concealed {
+		opacity: 0;
+	}
+	.movable.gliding:not(.concealed) {
+		transition-timing-function: var(--gp-glide-ease), var(--gp-glide-ease), var(--gp-glide-ease),
+			var(--gp-glide-ease), var(--gp-glide-ease), step-start;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.movable.gliding,
+		.movable.gliding .fill-layer {
+			transition: none;
+		}
 	}
 
 	/* The wrapped content fills the box by default: a Block is a sizing frame, and
@@ -510,6 +798,19 @@
 		position: static;
 		display: contents;
 	}
+	/* Scaled by a group: laid out at the local size (inline width/height), then
+	   zoomed from the top-left corner to fill the real box. A loose layer can't
+	   stay `display: contents` here — a transform needs a box to apply to. */
+	.fill-layer.scaled {
+		inset: auto;
+		left: 0;
+		top: 0;
+		transform-origin: 0 0;
+	}
+	.fill-layer.loose.scaled {
+		position: absolute;
+		display: block;
+	}
 	/* In edit mode the wrapper becomes a manipulable object: a dashed outline marks
 	   its bounds, the body is a move target, and text selection is suppressed so a
 	   drag never turns into a text highlight. */
@@ -522,6 +823,10 @@
 	}
 	.movable.active {
 		outline-style: solid;
+	}
+	/* A pasted copy is not in source until SAVE: warm outline, so it reads as new. */
+	.movable.editing.pasted {
+		outline-color: var(--adjust-warn-bg, #f0a33e);
 	}
 	/* A selected Block reads as the active object: a solid (not dashed) outline. */
 	.movable.selected {
@@ -649,6 +954,10 @@
 	}
 	.movable .readout .zbtn:hover {
 		background: rgba(255, 255, 255, 0.3);
+	}
+	.movable .readout .zbtn.delete:hover {
+		background: var(--adjust-warn-bg, #f0a33e);
+		color: var(--adjust-warn-fg, #1a1a1a);
 	}
 
 	/* Bottom-right resize grip. */

@@ -27,20 +27,29 @@
 	import '$lib/styles/presentation.css';
 	import '$lib/styles/tooltip.css';
 
-	import Copyright      from '$lib/components/Copyright.svelte';
+	import Copyright from '$lib/components/Copyright.svelte';
 	import TableOfContent from '$lib/components/TableOfContent.svelte';
-	import OverviewPage  from '$lib/components/OverviewPage.svelte';
-	import SlideToolbar   from '$lib/components/SlideToolbar.svelte';
-	import ControlBar     from '$lib/components/ControlBar.svelte';
-	import NavigationBar  from '$lib/components/NavigationBar.svelte';
-	import SlideMap       from '$lib/components/SlideMap.svelte';
-	import PresenterView  from '$lib/components/PresenterView.svelte';
-	import Seo            from '$lib/components/Seo.svelte';
+	import OverviewPage from '$lib/components/OverviewPage.svelte';
+	import SlideToolbar from '$lib/components/SlideToolbar.svelte';
+	import ControlBar from '$lib/components/ControlBar.svelte';
+	import NavigationBar from '$lib/components/NavigationBar.svelte';
+	import SlideMap from '$lib/components/SlideMap.svelte';
+	import PresenterView from '$lib/components/PresenterView.svelte';
+	import Seo from '$lib/components/Seo.svelte';
 	import { SITE_DESCRIPTION } from '$lib/seo/config';
 	import { pageRule, sheetMetrics } from '$lib/handout/handoutCore';
 	import { applyPageRule } from '$lib/handout/pageRuleDom';
 	import { printNotes } from '$lib/stores/printNotes';
 	import { overviewOpen } from '$lib/stores/overviewOpen';
+	import {
+		chromeBare,
+		setChromeBareDeck,
+		applyBareParam,
+		toggleBars
+	} from '$lib/stores/chromeBare';
+	import OnboardHint from '$lib/components/OnboardHint.svelte';
+	import { markOnboarded } from '$lib/stores/onboard';
+	import { DEFAULT_ONBOARD_DELAY_MS, isBeyondFirst, isFirstSlide } from '$lib/onboard/onboardCore';
 	import {
 		pageSourceCanView,
 		pageSourceCanEdit,
@@ -90,14 +99,22 @@
 		deckSourceHadFallback = has;
 	}
 
-	import { browser }    from '$app/environment';
-	import { page }       from '$app/stores';
-	import { base }       from '$app/paths';
+	import { browser } from '$app/environment';
+	import { page } from '$app/stores';
+	import { base } from '$app/paths';
 	import { onMount, tick } from 'svelte';
+	import { neighbourUrls, speculationRules } from '$lib/utils/preloadCore';
 	import { displayMode, displayFactor, clampFactor } from '$lib/stores/displayMode';
 	import type { DisplayMode } from '$lib/stores/displayMode';
-	import { adjustMode, canAdjust, canSave, setAdjustOffered, applyAdjustParam } from '$lib/stores/adjustMode';
+	import {
+		adjustMode,
+		canAdjust,
+		canSave,
+		setAdjustOffered,
+		applyAdjustParam
+	} from '$lib/stores/adjustMode';
 	import Annotate from '$lib/components/Annotate.svelte';
+	import type { FreehandInput } from '$lib/annotate/freehandCore';
 	import {
 		annotationMode,
 		canAnnotate,
@@ -107,7 +124,13 @@
 		inkStaleAfterMs
 	} from '$lib/stores/annotation';
 	import { captureSlide, downloadBlob } from '$lib/capture/captureSlide';
-	import { captureFileName, readCaptureParam, refusalText, resolveCanCapture, readSticky } from '$lib/capture/captureCore';
+	import {
+		captureFileName,
+		readCaptureParam,
+		refusalText,
+		resolveCanCapture,
+		readSticky
+	} from '$lib/capture/captureCore';
 	import { saveAdjust } from '$lib/stores/adjustSave';
 	import { getViewTransitions } from '$lib/presentation';
 	import KioskDialog from '$lib/components/KioskDialog.svelte';
@@ -127,9 +150,19 @@
 	} from '$lib/stores/kiosk';
 	import { DEFAULT_PAGE_MS, DEFAULT_STEP_MS, DEFAULT_WPM } from '$lib/kiosk/kioskCore';
 	import {
-		presenterMode, publishCurrentSlide, subscribeCurrentSlide, subscribeAnimCommand,
-		subscribeContinue, subscribeHighlight, subscribeTrigger, deckKeyFromPath, openPresenterWindow,
-		consoleLive, publishConsoleAlive, subscribeConsoleAlive, loadConsoleBeat
+		presenterMode,
+		publishCurrentSlide,
+		subscribeCurrentSlide,
+		subscribeAnimCommand,
+		subscribeContinue,
+		subscribeHighlight,
+		subscribeTrigger,
+		deckKeyFromPath,
+		openPresenterWindow,
+		consoleLive,
+		publishConsoleAlive,
+		subscribeConsoleAlive,
+		loadConsoleBeat
 	} from '$lib/stores/presenter';
 	import { consoleIsLive, CONSOLE_BEAT_MS, CONSOLE_TTL_MS } from '$lib/utils/consoleLiveCore';
 	import { roleOf } from '$lib/utils/relayCore';
@@ -137,9 +170,28 @@
 	import { setHighlight } from '$lib/stores/highlightTarget';
 	import { fireTrigger } from '$lib/stores/triggers';
 	import { collectFinite, applyState } from '$lib/utils/slideAnim';
+	import { get } from 'svelte/store';
+	import { activeSteps } from '$lib/stores/activeSteps';
+	import {
+		followRecorder,
+		setReportingDeck,
+		listen as listenRecorder,
+		post as postRecorder,
+		recorderState,
+		recordingLook,
+		replaying,
+		reportAction,
+		reportLeaving
+	} from '$lib/record/recordBus';
+	import { resolveHref, type TimelineAction } from '$lib/record/timelineCore';
 	import { navigate } from '$lib/utils/deckNav';
 	import { documentTitle, getPageNavigation } from '$lib/utils/navigate';
-	import type { Page }  from '$lib/utils/navigate';
+	import type { Page } from '$lib/utils/navigate';
+	import {
+		carryReturnThrough,
+		rememberReturnStack,
+		resolveReturnStack
+	} from '$lib/utils/appendixCore';
 
 	/** This deck's slide list — for the Table of Contents rendered in the shell. */
 	export let pages: Array<Page> = [];
@@ -158,7 +210,7 @@
 	    their own. Undefined falls back to the default card alt (see Seo). */
 	export let imageAlt: string | undefined = undefined;
 	/** Canvas size in px. Landscape: 1920x1080. Portrait (Tall): 1080x1920. */
-	export let width  = 1920;
+	export let width = 1920;
 	export let height = 1080;
 	/* Base font-size lever: every em-based size in the reused components scales
 	   from here in one place. The landscape canvas grew x1.5 from the original
@@ -231,6 +283,18 @@
 	   way under `?clean` / `?present`. */
 	export let toolBar = true;
 
+	/* Hide BOTH window-edge bars completely on every slide — no peek strip, PIN or not —
+	   for a deck that is only ever shown to an audience. Alt+. still raises them. The
+	   audience window goes bare by itself while a presenter console is live, and a sticky
+	   `?bare` / `?bare=off` outranks both (chrome/chromeBareCore). */
+	export let hideChrome = false;
+
+	/* Ask Chrome to preload the next and previous slide (speculation rules), so a page turn
+	   swaps in a page that has already loaded instead of showing a blank one while it starts.
+	   Off for a deck whose slides are too heavy to keep two extra copies of. Other browsers
+	   ignore it. See utils/preloadCore. */
+	export let preloadNeighbours = true;
+
 	/* Offer the ADJUST authoring control on EVERY slide of this deck, even in a build.
 	   Almost no deck wants this — ADJUST is off in production by default, and the usual
 	   way to demo it is per-slide: set `adjust: true` on the individual pages.ts entries
@@ -268,6 +332,12 @@
 	   highlight. Set false for a genuinely freehand highlighter. */
 	export let levelHighlight = true;
 
+	/* The PEN's freehand shape — perfect-freehand options over the defaults (size 12, thinning
+	   0.7, streamline 0.6, smoothing 0.5, round caps, no taper); see annotate/freehandCore.
+	   The ink is a filled outline that thins with the hand's speed. `false` restores the old
+	   constant-width pen line. */
+	export let freehand: FreehandInput | false = {};
+
 	/* Offer CAPTURE — download the current slide as a PNG at TRUE canvas resolution (1920x1080),
 	   not at whatever size the window is showing it. Annotations are included; the deck's own
 	   chrome is not. Like ANNOTATE this is deck-wide and sticky (`?capture`), because taking a
@@ -290,20 +360,43 @@
 
 	/* Words-per-minute when "use speaker notes for page timing" is on. */
 	export let kioskWpm = DEFAULT_WPM;
+	/** The first-visit hint (see <OnboardHint>): a viewer who sits on the first slide
+	   without paging or opening a bar is told about →/Space/← and the two bars. Per
+	   viewer, once per origin; never on a screen an audience watches. `false` opts out. */
+	export let onboardHint = true;
+	/** Idle ms on the first slide before that hint appears (a stray Enter/click/scroll
+	   brings it at once). */
+	export let onboardDelayMs = DEFAULT_ONBOARD_DELAY_MS;
 
-	let viewport:  HTMLElement;
+	let viewport: HTMLElement;
 	let container: HTMLElement;
-	let content:   HTMLElement;
+	let content: HTMLElement;
 
 	let mode: DisplayMode = $displayMode;
 	let factor = clampFactor($displayFactor);
 	let initialized = false;
+	// A slide Chrome preloaded (see preloadNeighbours) runs its scripts while still hidden.
+	// Until it is SHOWN it must stay silent — announce no slide to the console, tell no
+	// Recorder it arrived, start no kiosk, mount no slide — or a page nobody turned to yet
+	// would drive the others. So the deck starts on `prerenderingchange`, not before; the
+	// scripts are loaded and the shell hydrated by then, which is the time saved.
+	let activated = !(browser && (document as Document & { prerendering?: boolean }).prerendering);
 	// On-screen scale of the slide content set by adjustSize() (the FITTED fit factor,
 	// or the SCALED zoom factor), exposed to the content as --view-scale for any chrome
 	// that needs to counter the slide transform. (DISPLAY no longer uses it — it's a
 	// viewport control now, sized independently of the slide.)
 	let viewScale = 1;
 	$: isFitted = mode === 'FITTED';
+
+	// A VOD take (record or replay — see record/recordBus) shows the slide FITTED, whatever
+	// this window was set to, and puts the speaker's own choice back when it ends. Local to
+	// this window: the persisted displayMode is never written.
+	let lookHeld = false;
+	$: if (initialized && $recordingLook !== lookHeld) {
+		lookHeld = $recordingLook;
+		mode = lookHeld ? 'FITTED' : get(displayMode);
+		apply(true);
+	}
 	$: aspectRatio = width / height;
 
 	// Minimap state (SCALED only): which slice of the slide is currently on screen,
@@ -325,13 +418,26 @@
 	// the prerendered HTML — no flicker, works without JS. Last <link rel="icon">
 	// wins, so a slide's favicon (declared in its pages.ts entry) overrides both the
 	// site default (app.html) and any presentation favicon set in the deck's layout.
-	$: currentSlide   = $page.url.pathname.replace(/\/+$/, '').split('/').pop();
-	$: currentIndex   = pages.findIndex((p) => p.path === currentSlide);
+	$: currentSlide = $page.url.pathname.replace(/\/+$/, '').split('/').pop();
+	$: currentIndex = pages.findIndex((p) => p.path === currentSlide);
+	// Nested return stack (hub → deck → appendix…), carried in `?return=` and mirrored
+	// into sessionStorage so full-page NEXT/PREV that drop the query can restore it.
+	// Re-stamped on every deck-level link so closing RETURN and nested appendices unwind.
+	$: if (browser && activated) {
+		rememberReturnStack($page.url.searchParams, deckName, sessionStorage, pages);
+	}
+	$: returnStack =
+		browser && activated
+			? resolveReturnStack($page.url.searchParams, deckName, sessionStorage, pages)
+			: [];
 	// The current slide's neighbours in the linear order, for the ControlBar's ONE
 	// deck-level pager — the same helper each template used to call for its own bar,
 	// now computed once here. Hidden/appendix slides resolve to all-undefined links
 	// (and their own template keeps its RETURN pager, so this one goes dormant anyway).
-	$: deckNavigation = getPageNavigation(pages, currentSlide ?? '', './');
+	$: deckNavigation = carryReturnThrough(
+		getPageNavigation(pages, currentSlide ?? '', './'),
+		returnStack
+	);
 	$: currentFavicon = pages.find((p) => p.path === currentSlide)?.favicon;
 	// `?clean` hides all shell chrome (ToC, display-mode control, copyright, nav bar,
 	// minimap) for an unobstructed screen capture — e.g. the /tests calibration
@@ -353,6 +459,9 @@
 	// too), and it is the one mode that deliberately does NOT fit the slide to the window —
 	// fitting is what a human wants and exactly what a screenshot must not do.
 	$: shot = browser && $page.url.searchParams.has('shot');
+	// `?onboard` — show the first-visit hint now, on this slide, whatever this viewer has
+	// done before (and forget that they had). For trying the hint out, or demoing it.
+	$: onboardForced = browser && $page.url.searchParams.has('onboard');
 
 	// PRINTING one slide. The deck is a viewport — a canvas scaled to whatever window it found —
 	// and paper is not a window: it has a fixed size, no scrollbars and no JS. Left alone, Ctrl+P
@@ -393,7 +502,36 @@
 	// ordinary tabs of one deck both publish and both follow, so paging in either yanks
 	// the other. deckKey answers "which deck?"; the role answers "who may drive whom?".
 	$: relayRole = roleOf(present);
-	$: if (isTopWindow && currentSlide) publishCurrentSlide(deckKey, currentSlide, relayRole);
+	$: if (isTopWindow && activated && currentSlide)
+		publishCurrentSlide(deckKey, currentSlide, relayRole);
+
+	// First-visit hint. Reaching any slide past the first, by whatever route, is the proof
+	// the viewer found the way on — recorded on ARRIVAL, so keys, pager, TOC, links and a
+	// typed URL all count without hooking each one. Audience top window only: a ?clean
+	// tile or the console's preview arriving somewhere proves nothing about the viewer.
+	$: if (
+		isTopWindow &&
+		activated &&
+		!clean &&
+		!present &&
+		isBeyondFirst(pages, currentSlide ?? '')
+	) {
+		markOnboarded();
+	}
+	// Pointing at a bar (or tabbing into one) opens it — the hint's other lesson, learned.
+	// The overlay is pointer-events:none, so only its children (the bars, the minimap)
+	// raise these. Attached here rather than as on: attributes, which would make a plain
+	// <div> look interactive to the a11y lint. addEventListener dedupes a repeat.
+	$: if (chromeOverlay) {
+		chromeOverlay.addEventListener('pointerover', markOnboarded);
+		chromeOverlay.addEventListener('focusin', markOnboarded);
+	}
+	// Alt+. raises both bars from the keyboard — the same lesson.
+	$: if ($chromeArmed && !present) markOnboarded();
+	$: onboardFirst = isFirstSlide(pages, currentSlide ?? '');
+	// Never on a screen an audience may be watching, nor inside an embed.
+	$: onboardSuppressed =
+		!isTopWindow || !activated || $chromeBare || $kioskActive || $replaying || $recordingLook;
 	// Does THIS slide offer ADJUST? Its own pages.ts `adjust` flag, or the deck-wide
 	// `adjust` prop. Re-runs on every slide change, so paging off a ADJUST demo onto an
 	// ordinary slide takes the control away again. The sticky `?adjust` flag outranks
@@ -408,7 +546,9 @@
 	// per-slide flag to fold in, so this is set once from the prop rather than per page.
 	$: if (browser) setAnnotateOffered(annotate);
 	$: if (browser) applyAnnotateParam($page.url);
-	$: inkStaleAfterMs.set(Math.max(0, (Number(inkStaleAfter) || 24)) * 60 * 60 * 1000);
+	$: if (browser) setChromeBareDeck(hideChrome);
+	$: if (browser) applyBareParam($page.url);
+	$: inkStaleAfterMs.set(Math.max(0, Number(inkStaleAfter) || 24) * 60 * 60 * 1000);
 
 	// Point the ink at THIS slide. Ink is persisted per slide (stores/annotation.inkBook), so
 	// navigation does not destroy it — it just changes which page of the book we are looking
@@ -425,7 +565,11 @@
 		if (choice !== null) localStorage.setItem('canCapture', String(choice));
 	}
 	$: canCapture = browser
-		? resolveCanCapture(import.meta.env.DEV, readSticky(localStorage.getItem('canCapture')), capture)
+		? resolveCanCapture(
+				import.meta.env.DEV,
+				readSticky(localStorage.getItem('canCapture')),
+				capture
+			)
 		: false;
 
 	// Kiosk — offered like CAPTURE; running is a separate session (stores/kiosk).
@@ -501,10 +645,16 @@
 		if (browser) window.print();
 	}
 
-	// The current deck's name, from the URL: `/slides/title.html` -> `slides`. The handout for it
-	// lives OUTSIDE the deck at `/_handout/<deck>.html`, so whole-deck / grid options navigate
-	// there rather than printing in place — the handout is a different document.
-	$: deckName = ($page.url.pathname.replace(base, '').split('/').filter(Boolean)[0]) || '';
+	// Deck id for search / handout: every path segment before the slide (`*.html`),
+	// with `/` → `-`. Top-level `/slides/title.html` → `slides`; nested
+	// `/references/shell/block.html` → `references-shell` (matches handout + search index).
+	// The handout lives outside the deck at `/_handout/<id>.html`.
+	$: deckName = (() => {
+		const parts = $page.url.pathname.replace(base, '').split('/').filter(Boolean);
+		if (parts.length === 0) return '';
+		const deckParts = parts[parts.length - 1]?.endsWith('.html') ? parts.slice(0, -1) : parts;
+		return deckParts.join('-');
+	})();
 	function openHandout(query: string) {
 		printMenuOpen = false;
 		// A FULL navigation, not a client-side goto. The handout is a separate top-level document
@@ -563,7 +713,9 @@
 		const nodes = root.querySelectorAll(
 			':scope > button, :scope > .save-btn > button, :scope > .mode button, :scope > .annot-menu > .annot-hamburger'
 		);
-		return [...nodes].filter((el): el is HTMLElement => el instanceof HTMLElement && !(el as HTMLButtonElement).disabled);
+		return [...nodes].filter(
+			(el): el is HTMLElement => el instanceof HTMLElement && !(el as HTMLButtonElement).disabled
+		);
 	}
 
 	/** Enabled ☰ drop rows (OVERVIEW / KIOSK / …). */
@@ -728,7 +880,7 @@
 
 	/**
 	 * Alt+. raises both window-edge bars; while armed, a/j/z/p/m/t pick a bar control
-	 * and o/k/c/r/s/e pick a ☰ row (opening the drop if needed). Arrow keys rove focus
+	 * and o/k/b/c/r/s/e pick a ☰ row (opening the drop if needed). Arrow keys rove focus
 	 * along the bar and the ☰ drop. Esc disarms chrome and closes the ☰ drop.
 	 * Print-menu keys win when that flyout is open.
 	 */
@@ -751,7 +903,7 @@
 		// Arrow roving on the raised bar / ☰ (before letter mnemonics and before deck paging).
 		if (onToolbarArrows(e)) return;
 
-		// ☰ rows (underlined O/K/C/R/S/E): while the drop is open, or while chrome is
+		// ☰ rows (underlined O/K/B/C/R/S/E): while the drop is open, or while chrome is
 		// armed so a letter can open the drop and fire the row. Handled before bar
 		// letters so they never collide (bar uses a/j/z/p/m/t).
 		const moreIntent = moreMenuKeyIntent(e, $moreMenuOpen, $chromeArmed);
@@ -772,6 +924,11 @@
 					else if ($canKiosk) openKioskDialog();
 					closeMoreMenu();
 					break;
+				case 'bars':
+					closeMoreMenu();
+					toggleBars();
+					// No keepChromeArmed after hiding: the raise is what would hold the bars up.
+					return;
 				case 'capture':
 					if (canCapture) onCapture();
 					closeMoreMenu();
@@ -814,7 +971,11 @@
 				printMenuOpen = false;
 				if (browser && document.activeElement instanceof HTMLElement) {
 					const el = document.activeElement;
-					if (el.closest?.('.overlay') || el.closest?.('.annot-tools') || el.closest?.('.ctrl-bar')) {
+					if (
+						el.closest?.('.overlay') ||
+						el.closest?.('.annot-tools') ||
+						el.closest?.('.ctrl-bar')
+					) {
 						el.blur();
 					}
 				}
@@ -951,6 +1112,21 @@
 			console.warn('[adjust save] not written — Copy these by hand:', r.unmatched);
 		} else {
 			flashSave('SAVED', 1600);
+			// Re-read the slide from what was just written. Everything ADJUST sends
+			// describes itself relative to the source the page MOUNTED with (a Block's
+			// `before` box, a shape's `oldTag`), and the patcher refuses anything whose
+			// baseline no longer matches the file — the guard that stops a save from
+			// clobbering an edit made behind its back. Without a re-read that guard
+			// turns on the author: after the first write the file has moved on, the
+			// mounted baseline has not, and every later save is rejected as drift.
+			//
+			// The dev server also pushes a full-reload, which is what refreshes any
+			// OTHER tab on this slide. This reload is here because that push rides the
+			// HMR websocket, and a dev server reached through a port-forwarded
+			// container may have no live socket to the browser at all — while this
+			// response, on plain HTTP, is proof the write happened. Delayed just long
+			// enough for the SAVED flash to register as feedback.
+			setTimeout(() => location.reload(), 550);
 		}
 	}
 	// Open (or focus) the presenter console at the current slide — the PRESENT anchor's
@@ -964,28 +1140,33 @@
 	// as ONE <title> (the browser uses the FIRST <title>, so it can't stack the way
 	// the favicon links do): the current slide's own `title` from pages.ts, composed
 	// with this deck's `title` prop into "Slide — Deck". See documentTitle.
-	$: currentTitle   = pages.find((p) => p.path === currentSlide)?.title;
-	$: docTitle       = documentTitle(currentTitle, title);
+	$: currentTitle = pages.find((p) => p.path === currentSlide)?.title;
+	$: docTitle = documentTitle(currentTitle, title);
 	// SEO description/image cascade: the current slide's own pages.ts value, else
 	// the deck-level default. Emitted (with title/canonical/og/twitter) by <Seo>.
 	$: currentDescription = pages.find((p) => p.path === currentSlide)?.description ?? description;
-	$: currentImage       = pages.find((p) => p.path === currentSlide)?.image ?? image;
-	$: currentImageAlt    = pages.find((p) => p.path === currentSlide)?.imageAlt ?? imageAlt;
+	$: currentImage = pages.find((p) => p.path === currentSlide)?.image ?? image;
+	$: currentImageAlt = pages.find((p) => p.path === currentSlide)?.imageAlt ?? imageAlt;
 
 	// Recompute the minimap's "you are here" rectangle from the live scroll position.
 	// Only meaningful in SCALED when the scaled slide overflows the viewport (else
 	// there is nothing to pan, so the map is hidden).
 	function updateMap() {
-		if (!viewport || !container || mode !== 'SCALED' || clean) { mapVisible = false; return; }
-		const vw = viewport.clientWidth,  vh = viewport.clientHeight;
-		const sw = container.offsetWidth,  sh = container.offsetHeight;
+		if (!viewport || !container || mode !== 'SCALED' || clean) {
+			mapVisible = false;
+			return;
+		}
+		const vw = viewport.clientWidth,
+			vh = viewport.clientHeight;
+		const sw = container.offsetWidth,
+			sh = container.offsetHeight;
 		mapVisible = sw > vw + 1 || sh > vh + 1;
 		if (!mapVisible) return;
 		mapRect = {
-			left:   clamp01(viewport.scrollLeft / sw),
-			top:    clamp01(viewport.scrollTop  / sh),
-			width:  clamp01(vw / sw),
-			height: clamp01(vh / sh),
+			left: clamp01(viewport.scrollLeft / sw),
+			top: clamp01(viewport.scrollTop / sh),
+			width: clamp01(vw / sw),
+			height: clamp01(vh / sh)
 		};
 	}
 
@@ -994,8 +1175,8 @@
 	// child (top-left) — reachable, but jarring as an entry point.
 	function centerScroll() {
 		if (!viewport || !container) return;
-		viewport.scrollLeft = Math.max(0, (container.offsetWidth  - viewport.clientWidth)  / 2);
-		viewport.scrollTop  = Math.max(0, (container.offsetHeight - viewport.clientHeight) / 2);
+		viewport.scrollLeft = Math.max(0, (container.offsetWidth - viewport.clientWidth) / 2);
+		viewport.scrollTop = Math.max(0, (container.offsetHeight - viewport.clientHeight) / 2);
 	}
 
 	function adjustSize(recenter = false) {
@@ -1014,7 +1195,7 @@
 			// Exact factor: the frame is the canvas at `factor`, the content scales by
 			// the same factor from its top-left so the two stay flush. The .viewport
 			// scrolls/pans when this overflows the window.
-			container.style.width  = `${Math.round(width  * factor)}px`;
+			container.style.width = `${Math.round(width * factor)}px`;
 			container.style.height = `${Math.round(height * factor)}px`;
 			content.style.transform = `scale(${factor})`;
 			content.style.transformOrigin = 'top left';
@@ -1036,9 +1217,9 @@
 		const windowRatio = window.innerWidth / window.innerHeight;
 		if (windowRatio > aspectRatio) {
 			container.style.height = 'calc(100vh - 10px)';
-			container.style.width  = `${Math.round(container.clientHeight * aspectRatio)}px`;
+			container.style.width = `${Math.round(container.clientHeight * aspectRatio)}px`;
 		} else {
-			container.style.width  = 'calc(100vw - 10px)';
+			container.style.width = 'calc(100vw - 10px)';
 			container.style.height = `${Math.round(container.clientWidth / aspectRatio)}px`;
 		}
 		// Exact fit: scale the content's TRUE border-box down to the container's INNER
@@ -1064,10 +1245,101 @@
 		document.body.classList.remove('rendering');
 	}
 
+	/** Set this slide's finite animations to a relayed / replayed state. */
+	function applyAnim(cmd: { playing: boolean; fraction: number }) {
+		const root = document.querySelector('.content');
+		if (!root) return;
+		const anims = collectFinite(root);
+		if (anims.length) applyState(anims, cmd);
+	}
+
+	/** Perform one action a VOD replay sent — through the same function the live action
+	    used (see specs/VOD-RECORD-1.md). Ink is not here: the Recorder writes it to the
+	    ink book itself, and this window mirrors the book as it always does. */
+	function applyReplayed(a: TimelineAction) {
+		switch (a.kind) {
+			case 'goto': {
+				const target = resolveHref(a.href, deckKey);
+				// The same address again (the Recorder's "start from a fresh load") is a reload:
+				// a client-side goto to where we already are would change nothing.
+				if (target === $page.url.pathname.replace(/\/+$/, '') + $page.url.search) {
+					reportLeaving();
+					window.location.reload();
+					return;
+				}
+				const direction = a.back ? 'back' : 'forward';
+				const leaving = pages.find((p) => p.path === currentSlide);
+				const kind = (a.back ? leaving?.transitionBack : leaving?.transition) ?? 'slide';
+				navigate(target, { viewTransitions, kind, direction, arriveAtEnd: a.end === true });
+				return;
+			}
+			case 'step': {
+				const s = get(activeSteps);
+				if (a.back) s?.prev?.();
+				else s?.next();
+				return;
+			}
+			case 'continue':
+				window.dispatchEvent(new CustomEvent('gp:slide-continue'));
+				return;
+			case 'anim':
+				applyAnim(a);
+				return;
+			case 'trigger':
+				fireTrigger(a.name);
+				return;
+			case 'highlight':
+				setHighlight(a.name);
+				return;
+		}
+	}
+
+	// The neighbours to preload, as a speculation-rules script in <head>. Only the top window
+	// of a deck that pages by full loads (a View-Transition deck pages client-side, so there
+	// is nothing to preload), and only once this page is itself on screen.
+	$: if (browser && activated)
+		setPreload(
+			preloadNeighbours && isTopWindow && !viewTransitions && !shot
+				? speculationRules(neighbourUrls(deckNavigation, present))
+				: ''
+		);
+	function setPreload(rules: string) {
+		const old = document.getElementById('gp-preload');
+		if (old?.textContent === rules) return;
+		old?.remove();
+		if (!rules || !HTMLScriptElement.supports?.('speculationrules')) return;
+		const script = document.createElement('script');
+		script.type = 'speculationrules';
+		script.id = 'gp-preload';
+		script.textContent = rules;
+		document.head.appendChild(script);
+	}
+
 	onMount(() => {
 		if (!browser) return;
-		const unsubMode   = displayMode.subscribe(v   => { mode = v;                  if (initialized) apply(true); });
-		const unsubFactor = displayFactor.subscribe(v => { factor = clampFactor(v);   if (initialized) apply(true); });
+		if (activated) return startDeck();
+		let stop: (() => void) | undefined;
+		const show = () => {
+			activated = true;
+			stop = startDeck();
+		};
+		document.addEventListener('prerenderingchange', show, { once: true });
+		return () => {
+			document.removeEventListener('prerenderingchange', show);
+			stop?.();
+		};
+	});
+
+	function startDeck(): () => void {
+		const unsubMode = displayMode.subscribe((v) => {
+			if (lookHeld) return;
+			mode = v;
+			if (initialized) apply(true);
+		});
+		const unsubFactor = displayFactor.subscribe((v) => {
+			factor = clampFactor(v);
+			if (initialized) apply(true);
+		});
 		const onResize = () => adjustSize(false);
 		window.addEventListener('resize', onResize);
 
@@ -1078,7 +1350,9 @@
 		// The PRINT menu's "this slide + notes" grows the paper only for the print; once the
 		// dialog closes, the deck goes back to its screen self. `afterprint` fires whether the
 		// user printed or cancelled.
-		const onAfterPrint = () => { printNotesOverride = false; };
+		const onAfterPrint = () => {
+			printNotesOverride = false;
+		};
 		window.addEventListener('afterprint', onAfterPrint);
 
 		// Follow the OTHER window: when it announces a different slide, page there.
@@ -1094,49 +1368,66 @@
 		// other. A window's role is fixed for its lifetime — ?present can't change
 		// without a reload — so capturing it here rather than re-reading per event is
 		// exact, not an approximation.
-		const stopFollow = (window.self === window.top)
-			? subscribeCurrentSlide(deckKey, (path) => {
-				if (!path || path === currentSlide) return;
-				const target = present ? `./${path}?present` : `./${path}`;
-				const targetIndex = pages.findIndex((p) => p.path === path);
-				const direction = targetIndex >= 0 && targetIndex < (currentIndex ?? 0) ? 'back' : 'forward';
-				const leaving = pages.find((p) => p.path === currentSlide);
-				const kind = (direction === 'back' ? leaving?.transitionBack : leaving?.transition) ?? 'slide';
-				navigate(target, { viewTransitions, kind, direction });
-			}, relayRole)
-			: () => {};
+		const stopFollow =
+			window.self === window.top
+				? subscribeCurrentSlide(
+						deckKey,
+						(path) => {
+							if (!path || path === currentSlide) return;
+							if (get(replaying)) return; // a replay owns the deck — the console may not page it
+							const target = present ? `./${path}?present` : `./${path}`;
+							const targetIndex = pages.findIndex((p) => p.path === path);
+							const direction =
+								targetIndex >= 0 && targetIndex < (currentIndex ?? 0) ? 'back' : 'forward';
+							const leaving = pages.find((p) => p.path === currentSlide);
+							const kind =
+								(direction === 'back' ? leaving?.transitionBack : leaving?.transition) ?? 'slide';
+							navigate(target, { viewTransitions, kind, direction });
+						},
+						relayRole
+					)
+				: () => {};
 
 		// Apply relayed ANIMATE commands from the presenter console onto this window's
 		// live slide animations. Top window only (an iframe preview must not react).
-		const stopAnim = (window.self === window.top)
-			? subscribeAnimCommand(deckKey, (cmd) => {
-				const root = document.querySelector('.content');
-				if (!root) return;
-				const anims = collectFinite(root);
-				if (anims.length) applyState(anims, cmd);
-			})
-			: () => {};
+		const stopAnim =
+			window.self === window.top
+				? subscribeAnimCommand(deckKey, (cmd) => {
+						if (get(replaying)) return;
+						applyAnim(cmd);
+						reportAction({ kind: 'anim', ...cmd }); // the console scrubbed; a recording hears it
+					})
+				: () => {};
 
 		// A relayed CONTINUE pulse from the console becomes a `gp:continue` DOM event;
 		// NavigationBar routes it to the slide's onContinue hook. Top window only.
-		const stopContinue = (window.self === window.top)
-			? subscribeContinue(deckKey, () => window.dispatchEvent(new CustomEvent('gp:continue')))
-			: () => {};
+		const stopContinue =
+			window.self === window.top
+				? subscribeContinue(deckKey, () => {
+						if (!get(replaying)) window.dispatchEvent(new CustomEvent('gp:continue'));
+					})
+				: () => {};
 
 		// A relayed HIGHLIGHT from the console lights the named Block on this slide
 		// (see Spotlight / stores/highlightTarget). Top window only — an iframe preview
 		// must not react, exactly like the anim/continue relays above. `setHighlight`
 		// clears the store on `null`, so leaving a note line turns the spotlight off.
-		const stopHighlight = (window.self === window.top)
-			? subscribeHighlight(deckKey, (name) => setHighlight(name))
-			: () => {};
+		const stopHighlight =
+			window.self === window.top
+				? subscribeHighlight(deckKey, (name) => {
+						if (!get(replaying)) setHighlight(name);
+					})
+				: () => {};
 
 		// A relayed TRIGGER pulse from a checked <Note data-trigger> line fires the
 		// named local pulse (see stores/triggers) — a <Cursor startOn="name">, today,
 		// reacts. Top window only, same guard as the relays above.
-		const stopTrigger = (window.self === window.top)
-			? subscribeTrigger(deckKey, (name) => fireTrigger(name))
-			: () => {};
+		const stopTrigger =
+			window.self === window.top
+				? subscribeTrigger(deckKey, (name) => {
+						if (!get(replaying)) fireTrigger(name);
+					})
+				: () => {};
 
 		// Console presence. In the ?present window this is the CONSOLE, so heartbeat —
 		// stamp the shared key now (so an already-open audience flips at once) and keep
@@ -1155,9 +1446,65 @@
 			let lastBeat = loadConsoleBeat(deckKey);
 			const refresh = () => consoleLive.set(consoleIsLive(lastBeat, Date.now(), CONSOLE_TTL_MS));
 			refresh();
-			const stopBeat = subscribeConsoleAlive(deckKey, (ts) => { lastBeat = ts; refresh(); });
+			const stopBeat = subscribeConsoleAlive(deckKey, (ts) => {
+				lastBeat = ts;
+				refresh();
+			});
 			const poll = window.setInterval(refresh, CONSOLE_BEAT_MS);
-			stopConsole = () => { stopBeat(); window.clearInterval(poll); consoleLive.set(false); };
+			stopConsole = () => {
+				stopBeat();
+				window.clearInterval(poll);
+				consoleLive.set(false);
+			};
+		}
+
+		// VOD Recorder (record/recordBus). Only the deck's SLIDES window takes part — the top
+		// window that is not the console — since that is the window being filmed. It reports
+		// what it does while recording, says `here` when it has loaded (which replay waits on
+		// after a page turn), and obeys replayed commands. While replaying, the keyboard is
+		// held off (the pointer by the shield in the markup) so a stray key can't spoil a take.
+		let stopRecorder = () => {};
+		if (!present && window.self === window.top) {
+			setReportingDeck(deckKey);
+			const stopFollowRec = followRecorder(deckKey);
+			const sayHere = () =>
+				postRecorder({
+					type: 'here',
+					deck: deckKey,
+					here: {
+						href: $page.url.pathname + $page.url.search,
+						path: $page.url.pathname.replace(/\/+$/, ''),
+						width,
+						height,
+						title: docTitle
+					}
+				});
+			const stopListen = listenRecorder(deckKey, (m) => {
+				if (m.type === 'hello') sayHere();
+				else if (m.type === 'cmd' && get(recorderState) !== 'idle') applyReplayed(m.action);
+			});
+			const holdKeys = (e: KeyboardEvent) => {
+				if (!get(replaying)) return;
+				e.stopImmediatePropagation();
+				e.preventDefault();
+			};
+			window.addEventListener('keydown', holdKeys, true);
+			// Any unload navigate() did not announce (a plain link, the browser's Back) also
+			// freezes the video until the next page lands.
+			window.addEventListener('pagehide', reportLeaving);
+			// After the builds on this slide have registered (they do so as they mount, and a
+			// build reached by PREV settles a frame later) — replay's next `step` needs them.
+			let raf = requestAnimationFrame(() => {
+				raf = requestAnimationFrame(sayHere);
+			});
+			stopRecorder = () => {
+				cancelAnimationFrame(raf);
+				stopListen();
+				stopFollowRec();
+				setReportingDeck(null);
+				window.removeEventListener('keydown', holdKeys, true);
+				window.removeEventListener('pagehide', reportLeaving);
+			};
 		}
 
 		// NOTE: no ink subscription here. Ink rides a persisted(sync: true) store, so the
@@ -1176,12 +1523,13 @@
 			stopHighlight();
 			stopTrigger();
 			stopConsole(); // stop the heartbeat / presence tracking; clears consoleLive
+			stopRecorder();
 			setHighlight(null); // don't leave a stale spotlight across a deck swap
 			// Ink is NOT cleared here — it is meant to survive. That is the whole point.
 			window.removeEventListener('resize', onResize);
 			window.removeEventListener('afterprint', onAfterPrint);
 		};
-	});
+	}
 </script>
 
 <!-- Seo owns the <title> + SEO/social tags; the favicon link stays here (its
@@ -1205,32 +1553,46 @@
 
 <!-- .viewport is the screen-fixed pan area. It centres the frame when it fits and
      scrolls (top-left reachable, via `safe center`) when SCALED overflows it. -->
-<div class="viewport" class:zoom={!isFitted} class:shot bind:this={viewport} on:scroll={updateOverlay}>
+<div
+	class="viewport"
+	class:zoom={!isFitted}
+	class:shot
+	bind:this={viewport}
+	on:scroll={updateOverlay}
+>
 	<div
 		class="container {deckClass}"
 		class:fit-mode={isFitted}
 		class:zoom-mode={!isFitted}
-		class:clean={clean}
-		class:present={present}
+		class:clean
+		class:present
 		class:shot
 		class:fade-chrome={fadeChrome}
 		class:print-notes={wantsNotes}
-		style="--canvas-w:{width}px; --canvas-h:{height}px; --aspect:{aspectRatio}; --base-font:{baseFontSize}; --print-scale:{printMetrics.scale}; --print-w:{printMetrics.slideWidthPx}px; --print-h:{printMetrics.slideHeightPx}px; --print-notes-h:{printMetrics.notesHeightPx}px;{contentBackground ? ` --content-bg:${contentBackground};` : ''}{contentFont ? ` --content-font:${contentFont};` : ''}"
+		style="--canvas-w:{width}px; --canvas-h:{height}px; --aspect:{aspectRatio}; --base-font:{baseFontSize}; --print-scale:{printMetrics.scale}; --print-w:{printMetrics.slideWidthPx}px; --print-h:{printMetrics.slideHeightPx}px; --print-notes-h:{printMetrics.notesHeightPx}px;{contentBackground
+			? ` --content-bg:${contentBackground};`
+			: ''}{contentFont ? ` --content-font:${contentFont};` : ''}"
 		bind:this={container}
 	>
 		<div class="content" class:fill class:ready={initialized} bind:this={content}>
 			{#if initialized}
-			<slot />
-			<!-- Note-driven spotlight: a canvas-level singleton (like the minimap),
+				<slot />
+				<!-- Note-driven spotlight: a canvas-level singleton (like the minimap),
 			     inert until a <Note> line or a slide sets the highlightTarget store.
 			     Placed after the slot so it paints over the slide's own blocks. -->
-			<Spotlight canvasWidth={width} canvasHeight={height} />
-			<!-- The speaker's ink, the other canvas-level singleton. After Spotlight, so a
+				<Spotlight canvasWidth={width} canvasHeight={height} />
+				<!-- The speaker's ink, the other canvas-level singleton. After Spotlight, so a
 			     stroke lands on top of the cue it is drawn next to. Renders nothing at all
 			     until there is ink or the pen is armed — so it is inert (and SSR-inert) on
 			     every deck that never offers it. -->
-				<Annotate canvasWidth={width} canvasHeight={height} {inkColors} {levelHighlight} />
-			<!-- The all-slides grid (press O). Canvas-space, like the ToC — its tiles are
+				<Annotate
+					canvasWidth={width}
+					canvasHeight={height}
+					{inkColors}
+					{levelHighlight}
+					{freehand}
+				/>
+				<!-- The all-slides grid (press O). Canvas-space, like the ToC — its tiles are
 			     live `?clean` iframes of the real slides.
 
 			     Gated in MARKUP rather than hidden in CSS (which is how ?clean retires the
@@ -1243,33 +1605,27 @@
 			     live here for the console: `.viewport` is `position:fixed`, which always
 			     opens a stacking context, so no z-index in here could ever outrank
 			     PresenterView's bar (a later sibling of `.viewport`, not a descendant). -->
-			{#if !clean && !present}
-				<OverviewPage
-					{pages}
-					{width}
-					{height}
-					currentPath={currentSlide ?? ''}
-					deck={deckName}
-				/>
-			{/if}
-			<!-- Deck-level SOURCE panel for slides without ViewSource. MUST live in
+				{#if !clean && !present}
+					<OverviewPage {pages} {width} {height} currentPath={currentSlide ?? ''} deck={deckName} />
+				{/if}
+				<!-- Deck-level SOURCE panel for slides without ViewSource. MUST live in
 			     canvas space (this .content layer), not the window overlay: <Box>
 			     is position:absolute at 50%/50% of its containing block — the same
 			     placement ViewSource uses. In the overlay it anchored to the window
 			     and the 9999px dimming shadow painted half the screen wrong. -->
-			{#if browser && $deckSourceFallback && !$pageSourceHasOwner}
-				<CodeBox
-					code={$deckSourceFallback.code}
-					language="html"
-					title={$deckSourceFallback.path}
-					bind:expanded={deckSourceExpanded}
-					readOnly
-					edit
-					on:edit={() => openPageSourceEdit()}
-					class="gp-chrome no-print"
-				/>
-			{/if}
-			<Copyright />
+				{#if browser && $deckSourceFallback && !$pageSourceHasOwner}
+					<CodeBox
+						code={$deckSourceFallback.code}
+						language="html"
+						title={$deckSourceFallback.path}
+						bind:expanded={deckSourceExpanded}
+						readOnly
+						edit
+						on:edit={() => openPageSourceEdit()}
+						class="gp-chrome no-print"
+					/>
+				{/if}
+				<Copyright />
 			{/if}
 		</div>
 	</div>
@@ -1283,302 +1639,400 @@
      ANNOTATE toggle. Hidden by ?clean and in the presenter console (which has its own chrome).
      Each bar is also opt-out via `toolBar` / `controlBar` props (default on). -->
 {#if initialized && !clean && !present && (toolBar || controlBar)}
-<div class="overlay" class:fade-chrome={fadeChrome} style="--base-font:{baseFontSize};" bind:this={chromeOverlay}>
-	{#if toolBar}
-	<SlideToolbar {width} {height}>
-
-		<!-- KIOSK — empty when the deck does not offer it (zero footprint). Opens the
+	<div
+		class="overlay"
+		class:fade-chrome={fadeChrome}
+		style="--base-font:{baseFontSize};"
+		bind:this={chromeOverlay}
+	>
+		{#if toolBar}
+			<SlideToolbar {width} {height}>
+				<!-- KIOSK — empty when the deck does not offer it (zero footprint). Opens the
 		     pace dialog; Start / ?kiosk arms the runner. -->
-		{#snippet kioskItem()}
-			{#if $canKiosk}
-				<button
-					type="button"
-					class="annot-tool"
-					title="Kiosk — auto-advance this deck (step, then page, then loop)"
-					on:click={() => {
-						openKioskDialog();
-						if (browser && document.activeElement instanceof HTMLElement) {
-							document.activeElement.blur();
-						}
-					}}
-				>
-					<span class="tool-ico" aria-hidden="true">
-						<!-- play-in-circle -->
-						<svg viewBox="0 0 16 16" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.4">
-							<circle cx="8" cy="8" r="6" />
-							<path d="M6.5 5.5v5l4.5-2.5z" fill="currentColor" stroke="none" />
-						</svg>
-					</span>
-					<span class="tool-label"><span class="tool-mn">K</span>IOSK</span>
-				</button>
-			{/if}
-		{/snippet}
+				{#snippet kioskItem()}
+					{#if $canKiosk}
+						<button
+							type="button"
+							class="annot-tool"
+							title="Kiosk — auto-advance this deck (step, then page, then loop)"
+							on:click={() => {
+								openKioskDialog();
+								if (browser && document.activeElement instanceof HTMLElement) {
+									document.activeElement.blur();
+								}
+							}}
+						>
+							<span class="tool-ico" aria-hidden="true">
+								<!-- play-in-circle -->
+								<svg
+									viewBox="0 0 16 16"
+									width="1em"
+									height="1em"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="1.4"
+								>
+									<circle cx="8" cy="8" r="6" />
+									<path d="M6.5 5.5v5l4.5-2.5z" fill="currentColor" stroke="none" />
+								</svg>
+							</span>
+							<span class="tool-label"><span class="tool-mn">K</span>IOSK</span>
+						</button>
+					{/if}
+				{/snippet}
 
-		<!-- PRESENT — the anchor. Ensures the presenter console is running (opens it, or
+				<!-- BARS — hide both window-edge bars completely (bare chrome), or bring them back.
+		     The same sticky choice as `?bare` / `?bare=off` and the console's BARS toggle.
+		     While hidden, Alt+. raises them, so this row (or Alt+. → B) is still in reach. -->
+				{#snippet barsItem()}
+					<button
+						type="button"
+						class="annot-tool"
+						title={$chromeBare
+							? 'Show the tool bar and the control bar again (B)'
+							: 'Hide the tool bar and the control bar — Alt+. brings them back (B)'}
+						aria-keyshortcuts="b"
+						on:click={toggleBars}
+					>
+						<span class="tool-ico" aria-hidden="true">
+							<!-- a screen with a bar at its top and its bottom -->
+							<svg
+								viewBox="0 0 16 16"
+								width="1em"
+								height="1em"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="1.4"
+							>
+								<rect x="1.5" y="2" width="13" height="12" rx="1.2" />
+								<path d="M1.5 5h13M1.5 11h13" />
+							</svg>
+						</span>
+						<span class="tool-label"
+							>{$chromeBare ? 'SHOW' : 'HIDE'} <span class="tool-mn">B</span>ARS</span
+						>
+					</button>
+				{/snippet}
+
+				<!-- PRESENT — the anchor. Ensures the presenter console is running (opens it, or
 		     re-focuses the existing one); it is not a mode, so it carries no on/off state.
 		     Hidden with the whole overlay inside the console itself (the overlay is gated
 		     `!present`). -->
-		{#snippet presentBtn()}
-			<button
-				type="button"
-				class="annot-anchor"
-				title="PRESENT — open speaker console"
-				on:click={openPresenter}
-			><span class="tool-mn">P</span>RESENT</button>
-		{/snippet}
+				{#snippet presentBtn()}
+					<button
+						type="button"
+						class="annot-anchor"
+						title="PRESENT — open speaker console"
+						on:click={openPresenter}><span class="tool-mn">P</span>RESENT</button
+					>
+				{/snippet}
 
-		<!-- ADJUST — the old ADJUST toggle, moved into the menu and renamed. A sub-toggle
+				<!-- ADJUST — the old ADJUST toggle, moved into the menu and renamed. A sub-toggle
 		     that reads ADJUST:off / ADJUST:on in place (pinned width, so the label swap does
 		     not resize it), and only when the slide OFFERS layout ($canAdjust). SAVE appears
 		     beside it while ADJUST is on. The snippet also carries the divider that precedes
 		     the pair, so a deck that doesn't offer ADJUST leaves no dangling separator. -->
-		{#snippet adjustGroup()}
-			{#if $canAdjust}
-				<span class="annot-bar-sep" aria-hidden="true"></span>
-				<button
-					type="button"
-					class="annot-tab adjust-tab"
-					class:on={$adjustMode}
-					aria-pressed={$adjustMode}
-					aria-label={$adjustMode ? 'ADJUST on' : 'ADJUST off'}
-					title={$adjustMode
-						? 'ADJUST — placing blocks by hand (click to stop)'
-						: 'ADJUST — drag and resize blocks at exact pixels'}
-					on:click={() => adjustMode.update((v) => !v)}
-				>AD<span class="tool-mn">J</span>UST</button>
-				<!-- Save writes moved Blocks back to source via the vite-dev endpoint. Shown
+				{#snippet adjustGroup()}
+					{#if $canAdjust}
+						<span class="annot-bar-sep" aria-hidden="true"></span>
+						<button
+							type="button"
+							class="annot-tab adjust-tab"
+							class:on={$adjustMode}
+							aria-pressed={$adjustMode}
+							aria-label={$adjustMode ? 'ADJUST on' : 'ADJUST off'}
+							title={$adjustMode
+								? 'ADJUST — placing blocks by hand (click to stop)'
+								: 'ADJUST — drag and resize blocks at exact pixels'}
+							on:click={() => adjustMode.update((v) => !v)}
+							>AD<span class="tool-mn">J</span>UST</button
+						>
+						<!-- Save writes moved Blocks back to source via the vite-dev endpoint. Shown
 				     whenever ADJUST is on, and it fires in BOTH worlds — it isn't greyed out
 				     where it can't write. It answers on click instead: the verdict flashes as a
 				     badge (SAVED / NONE / 1 OF 2 / NOT ALLOWED) and, on a refusal, a tooltip says
 				     why. A control disabled from the start invites the audience to assume the
 				     feature is missing; one that refuses when pressed teaches that saving is
 				     *forbidden here*. -->
-				{#if $adjustMode}
-					<span class="save-btn" class:refused={saveRefused}>
-						<button
-							type="button"
-							class="annot-act save-act"
-							aria-label="Save layout to source"
-							title="SAVE — write the moved blocks back to the source file"
-							on:click={onSave}
-						>SAVE</button>
-						{#if saveLabel !== 'SAVE' || saveRefused}
-							<!-- The verdict badge, and (on a refusal) the reason under it. aria-live on
+						{#if $adjustMode}
+							<span class="save-btn" class:refused={saveRefused}>
+								<button
+									type="button"
+									class="annot-act save-act"
+									aria-label="Save layout to source"
+									title="SAVE — write the moved blocks back to the source file"
+									on:click={onSave}>SAVE</button
+								>
+								{#if saveLabel !== 'SAVE' || saveRefused}
+									<!-- The verdict badge, and (on a refusal) the reason under it. aria-live on
 							     the tip so the refusal is announced, not just drawn. One interpolation,
 							     not a run of them: text split across lines carries the SOURCE's newlines
 							     and indentation into textContent, so "1 tag" would read "1\n\t\t\ttag". -->
-							<span class="save-pop">
-								{#if saveLabel !== 'SAVE'}
-									<span class="save-flash">{saveLabel}</span>
-								{/if}
-								{#if saveRefused}
-									<span class="save-tip" role="status">{saveTip}</span>
+									<span class="save-pop">
+										{#if saveLabel !== 'SAVE'}
+											<span class="save-flash">{saveLabel}</span>
+										{/if}
+										{#if saveRefused}
+											<span class="save-tip" role="status">{saveTip}</span>
+										{/if}
+									</span>
 								{/if}
 							</span>
 						{/if}
-					</span>
-				{/if}
-			{/if}
-		{/snippet}
+					{/if}
+				{/snippet}
 
-		<!-- ☰ menu rows — plain `.annot-tool` buttons (SlideToolbar dresses them).
+				<!-- ☰ menu rows — plain `.annot-tool` buttons (SlideToolbar dresses them).
 		     Group order: navigate → export → source. Each row is icon + mnemonic label
 		     (+ shortcut / external cue); separators live in SlideToolbar between groups. -->
-		{#snippet printBtn()}
-			<!-- Nested flyout: hover (or click) opens a submenu to the LEFT of PRINT,
+				{#snippet printBtn()}
+					<!-- Nested flyout: hover (or click) opens a submenu to the LEFT of PRINT,
 			     so it stays attached to the ☰ panel instead of a second floating menu. -->
-			<div
-				class="print-flyout"
-				class:open={printMenuOpen}
-				role="presentation"
-				on:mouseenter={() => (printMenuOpen = true)}
-				on:mouseleave={() => (printMenuOpen = false)}
-			>
-				<button
-					type="button"
-					class="annot-tool"
-					aria-haspopup="menu"
-					aria-expanded={printMenuOpen}
-					title="Print current slide or whole deck (hover for options)"
-					on:click|stopPropagation={() => (printMenuOpen = !printMenuOpen)}
-				>
-					<span class="tool-ico" aria-hidden="true">
-						<svg viewBox="0 0 16 16" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.4">
-							<path d="M4 6V2h8v4" />
-							<path d="M4 11H2.5A1.5 1.5 0 0 1 1 9.5v-2A1.5 1.5 0 0 1 2.5 6h11A1.5 1.5 0 0 1 15 7.5v2A1.5 1.5 0 0 1 13.5 11H12" />
-							<rect x="4" y="11" width="8" height="4" rx="0.5" />
-						</svg>
-					</span>
-					<span class="tool-label">P<span class="tool-mn">R</span>INT</span>
-					<span class="tool-trail" aria-hidden="true">▸</span>
-				</button>
-				{#if printMenuOpen}
-					<div class="print-sub" role="menu" aria-label="Print options">
-						<button type="button" role="menuitem" on:click={() => printThisSlide(false)}>
-							<span class="print-sub-label">Current slide</span>
-							<kbd class="print-sub-kbd">c</kbd>
+					<div
+						class="print-flyout"
+						class:open={printMenuOpen}
+						role="presentation"
+						on:mouseenter={() => (printMenuOpen = true)}
+						on:mouseleave={() => (printMenuOpen = false)}
+					>
+						<button
+							type="button"
+							class="annot-tool"
+							aria-haspopup="menu"
+							aria-expanded={printMenuOpen}
+							title="Print current slide or whole deck (hover for options)"
+							on:click|stopPropagation={() => (printMenuOpen = !printMenuOpen)}
+						>
+							<span class="tool-ico" aria-hidden="true">
+								<svg
+									viewBox="0 0 16 16"
+									width="1em"
+									height="1em"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="1.4"
+								>
+									<path d="M4 6V2h8v4" />
+									<path
+										d="M4 11H2.5A1.5 1.5 0 0 1 1 9.5v-2A1.5 1.5 0 0 1 2.5 6h11A1.5 1.5 0 0 1 15 7.5v2A1.5 1.5 0 0 1 13.5 11H12"
+									/>
+									<rect x="4" y="11" width="8" height="4" rx="0.5" />
+								</svg>
+							</span>
+							<span class="tool-label">P<span class="tool-mn">R</span>INT</span>
+							<span class="tool-trail" aria-hidden="true">▸</span>
 						</button>
-						<button type="button" role="menuitem" on:click={() => printThisSlide(true)}>
-							<span class="print-sub-label">Current + notes</span>
-							<kbd class="print-sub-kbd">C</kbd>
-						</button>
-						<div class="print-menu-sep" role="separator"></div>
-						<button type="button" role="menuitem" on:click={() => openHandout('')}>
-							<span class="print-sub-label">Whole deck</span>
-							<kbd class="print-sub-kbd">w</kbd>
-						</button>
-						<button type="button" role="menuitem" on:click={() => openHandout('?notes')}>
-							<span class="print-sub-label">Whole + notes</span>
-							<kbd class="print-sub-kbd">W</kbd>
-						</button>
-						<div class="print-menu-sep" role="separator"></div>
-						<button type="button" role="menuitem" on:click={() => openHandout('?grid')}>
-							<span class="print-sub-label">Thumbnail grid</span>
-							<kbd class="print-sub-kbd">t</kbd>
-						</button>
-						<button type="button" role="menuitem" on:click={() => openHandout('?grid&notes')}>
-							<span class="print-sub-label">Notes grid</span>
-							<kbd class="print-sub-kbd">T</kbd>
-						</button>
+						{#if printMenuOpen}
+							<div class="print-sub" role="menu" aria-label="Print options">
+								<button type="button" role="menuitem" on:click={() => printThisSlide(false)}>
+									<span class="print-sub-label">Current slide</span>
+									<kbd class="print-sub-kbd">c</kbd>
+								</button>
+								<button type="button" role="menuitem" on:click={() => printThisSlide(true)}>
+									<span class="print-sub-label">Current + notes</span>
+									<kbd class="print-sub-kbd">C</kbd>
+								</button>
+								<div class="print-menu-sep" role="separator"></div>
+								<button type="button" role="menuitem" on:click={() => openHandout('')}>
+									<span class="print-sub-label">Whole deck</span>
+									<kbd class="print-sub-kbd">w</kbd>
+								</button>
+								<button type="button" role="menuitem" on:click={() => openHandout('?notes')}>
+									<span class="print-sub-label">Whole + notes</span>
+									<kbd class="print-sub-kbd">W</kbd>
+								</button>
+								<div class="print-menu-sep" role="separator"></div>
+								<button type="button" role="menuitem" on:click={() => openHandout('?grid')}>
+									<span class="print-sub-label">Thumbnail grid</span>
+									<kbd class="print-sub-kbd">t</kbd>
+								</button>
+								<button type="button" role="menuitem" on:click={() => openHandout('?grid&notes')}>
+									<span class="print-sub-label">Notes grid</span>
+									<kbd class="print-sub-kbd">T</kbd>
+								</button>
+							</div>
+						{/if}
 					</div>
-				{/if}
-			</div>
-		{/snippet}
-		<!-- CAPTURE — empty when the deck does not offer it (zero footprint). -->
-		{#snippet captureItem()}
-			<span class="capture-btn" class:refused={!!captureTip}>
-				{#if canCapture}
+				{/snippet}
+				<!-- CAPTURE — empty when the deck does not offer it (zero footprint). -->
+				{#snippet captureItem()}
+					<span class="capture-btn" class:refused={!!captureTip}>
+						{#if canCapture}
+							<button
+								type="button"
+								class="annot-tool"
+								disabled={capturing}
+								title="Download this slide as a PNG at canvas resolution"
+								on:click={onCapture}
+							>
+								<span class="tool-ico" aria-hidden="true">
+									<!-- camera -->
+									<svg
+										viewBox="0 0 16 16"
+										width="1em"
+										height="1em"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="1.4"
+									>
+										<path
+											d="M2.5 5.5h2l1-1.5h5l1 1.5H13.5A1.5 1.5 0 0 1 15 7v5.5A1.5 1.5 0 0 1 13.5 14h-11A1.5 1.5 0 0 1 1 12.5V7A1.5 1.5 0 0 1 2.5 5.5z"
+										/>
+										<circle cx="8" cy="9.5" r="2.2" />
+									</svg>
+								</span>
+								<span class="tool-label">
+									{#if captureLabel === 'CAPTURE'}
+										<span class="tool-mn">C</span>APTURE
+									{:else}
+										{captureLabel}
+									{/if}
+								</span>
+							</button>
+							{#if captureTip}
+								<span class="capture-tip" role="status">{captureTip}</span>
+							{/if}
+						{/if}
+					</span>
+				{/snippet}
+				<!-- OVERVIEW — same grid as the O key. -->
+				{#snippet overviewBtn()}
 					<button
 						type="button"
 						class="annot-tool"
-						disabled={capturing}
-						title="Download this slide as a PNG at canvas resolution"
-						on:click={onCapture}
+						title="All slides as a grid (O)"
+						aria-keyshortcuts="o"
+						on:click={() => {
+							overviewOpen.set(true);
+							// Drop focus so the ☰ :focus-within drop does not stick open over the grid.
+							if (browser && document.activeElement instanceof HTMLElement) {
+								document.activeElement.blur();
+							}
+						}}
 					>
 						<span class="tool-ico" aria-hidden="true">
-							<!-- camera -->
-							<svg viewBox="0 0 16 16" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.4">
-								<path d="M2.5 5.5h2l1-1.5h5l1 1.5H13.5A1.5 1.5 0 0 1 15 7v5.5A1.5 1.5 0 0 1 13.5 14h-11A1.5 1.5 0 0 1 1 12.5V7A1.5 1.5 0 0 1 2.5 5.5z" />
-								<circle cx="8" cy="9.5" r="2.2" />
+							<!-- 2×2 grid -->
+							<svg viewBox="0 0 16 16" width="1em" height="1em" fill="currentColor">
+								<rect x="1.5" y="1.5" width="5.5" height="5.5" rx="0.8" />
+								<rect x="9" y="1.5" width="5.5" height="5.5" rx="0.8" />
+								<rect x="1.5" y="9" width="5.5" height="5.5" rx="0.8" />
+								<rect x="9" y="9" width="5.5" height="5.5" rx="0.8" />
 							</svg>
 						</span>
-						<span class="tool-label">
-							{#if captureLabel === 'CAPTURE'}
-								<span class="tool-mn">C</span>APTURE
-							{:else}
-								{captureLabel}
-							{/if}
-						</span>
+						<span class="tool-label"><span class="tool-mn">O</span>VERVIEW</span>
 					</button>
-					{#if captureTip}
-						<span class="capture-tip" role="status">{captureTip}</span>
+				{/snippet}
+				<!-- SOURCE / EDIT — deck chrome in dev; ViewSource also offers them in builds. -->
+				{#snippet sourceItem()}
+					{#if $pageSourceCanView}
+						<button
+							type="button"
+							class="annot-tool"
+							title="View this slide's +page.svelte source"
+							on:click={() => openPageSource()}
+						>
+							<span class="tool-ico" aria-hidden="true">
+								<!-- code brackets -->
+								<svg
+									viewBox="0 0 16 16"
+									width="1em"
+									height="1em"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="1.5"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								>
+									<path d="M5.5 3.5 2 8l3.5 4.5" />
+									<path d="M10.5 3.5 14 8l-3.5 4.5" />
+								</svg>
+							</span>
+							<span class="tool-label"><span class="tool-mn">S</span>OURCE</span>
+						</button>
 					{/if}
-				{/if}
-			</span>
-		{/snippet}
-		<!-- OVERVIEW — same grid as the O key. -->
-		{#snippet overviewBtn()}
-			<button
-				type="button"
-				class="annot-tool"
-				title="All slides as a grid (O)"
-				aria-keyshortcuts="o"
-				on:click={() => {
-					overviewOpen.set(true);
-					// Drop focus so the ☰ :focus-within drop does not stick open over the grid.
-					if (browser && document.activeElement instanceof HTMLElement) {
-						document.activeElement.blur();
-					}
-				}}
-			>
-				<span class="tool-ico" aria-hidden="true">
-					<!-- 2×2 grid -->
-					<svg viewBox="0 0 16 16" width="1em" height="1em" fill="currentColor">
-						<rect x="1.5" y="1.5" width="5.5" height="5.5" rx="0.8" />
-						<rect x="9" y="1.5" width="5.5" height="5.5" rx="0.8" />
-						<rect x="1.5" y="9" width="5.5" height="5.5" rx="0.8" />
-						<rect x="9" y="9" width="5.5" height="5.5" rx="0.8" />
-					</svg>
-				</span>
-				<span class="tool-label"><span class="tool-mn">O</span>VERVIEW</span>
-			</button>
-		{/snippet}
-		<!-- SOURCE / EDIT — deck chrome in dev; ViewSource also offers them in builds. -->
-		{#snippet sourceItem()}
-			{#if $pageSourceCanView}
-				<button
-					type="button"
-					class="annot-tool"
-					title="View this slide's +page.svelte source"
-					on:click={() => openPageSource()}
-				>
-					<span class="tool-ico" aria-hidden="true">
-						<!-- code brackets -->
-						<svg viewBox="0 0 16 16" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M5.5 3.5 2 8l3.5 4.5" />
-							<path d="M10.5 3.5 14 8l-3.5 4.5" />
-						</svg>
-					</span>
-					<span class="tool-label"><span class="tool-mn">S</span>OURCE</span>
-				</button>
-			{/if}
-			{#if $pageSourceCanEdit}
-				<button
-					type="button"
-					class="annot-tool"
-					title="Edit source in a separate window (unscaled)"
-					on:click={() => openPageSourceEdit()}
-				>
-					<span class="tool-ico" aria-hidden="true">
-						<!-- pencil -->
-						<svg viewBox="0 0 16 16" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M11.5 2.5 13.5 4.5 5.5 12.5H3.5v-2z" />
-							<path d="M10 4l2 2" />
-						</svg>
-					</span>
-					<span class="tool-label"><span class="tool-mn">E</span>DIT</span>
-					<span class="tool-trail tool-ext" aria-hidden="true" title="Opens in a new window">
-						<!-- external-link -->
-						<svg viewBox="0 0 16 16" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M6.5 3.5H3.5v9h9v-3" />
-							<path d="M9.5 3.5h3v3" />
-							<path d="M12.5 3.5 7 9" />
-						</svg>
-					</span>
-				</button>
-			{/if}
-		{/snippet}
-	</SlideToolbar>
-	{/if}
+					{#if $pageSourceCanEdit}
+						<button
+							type="button"
+							class="annot-tool"
+							title="Edit source in a separate window (unscaled)"
+							on:click={() => openPageSourceEdit()}
+						>
+							<span class="tool-ico" aria-hidden="true">
+								<!-- pencil -->
+								<svg
+									viewBox="0 0 16 16"
+									width="1em"
+									height="1em"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="1.4"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								>
+									<path d="M11.5 2.5 13.5 4.5 5.5 12.5H3.5v-2z" />
+									<path d="M10 4l2 2" />
+								</svg>
+							</span>
+							<span class="tool-label"><span class="tool-mn">E</span>DIT</span>
+							<span class="tool-trail tool-ext" aria-hidden="true" title="Opens in a new window">
+								<!-- external-link -->
+								<svg
+									viewBox="0 0 16 16"
+									width="1em"
+									height="1em"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="1.5"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								>
+									<path d="M6.5 3.5H3.5v9h9v-3" />
+									<path d="M9.5 3.5h3v3" />
+									<path d="M12.5 3.5 7 9" />
+								</svg>
+							</span>
+						</button>
+					{/if}
+				{/snippet}
+			</SlideToolbar>
+		{/if}
 
-	<!-- ControlBar — the bottom-centre mirror of the tool bar, holding the navigation controls
+		<!-- ControlBar — the bottom-centre mirror of the tool bar, holding the navigation controls
 	     lifted out of the scaled slide: the Table of Contents (its flyout opening upward), the
 	     deck's ONE FIRST/PREV/CONTINUE/NEXT/LAST pager (fed the current slide's neighbours), and
 	     — portaled in from the live slide's plain (deck-level) AnimationBar — the central ANIMATE
 	     scrubber. The ControlBar publishes its own portal target (stores/localChrome.animBarSlot),
 	     so nothing needs wiring here; a scoped/driven bar stays in the slide. Opt-out via
 	     `controlBar={false}` on <SlideDeck>. -->
-	{#if controlBar}
-	<ControlBar>
-		{#snippet tocItem()}
-			<TableOfContent bar {pages} deck={deckName} {article} {articleText} {articleHref} />
-		{/snippet}
-		{#snippet navGroup()}
-			<NavigationBar
-				deckLevel
-				firstLink={deckNavigation.first ?? ''}
-				prevLink={deckNavigation.prev ?? ''}
-				nextLink={deckNavigation.next ?? ''}
-				lastLink={deckNavigation.last ?? ''}
-			/>
-		{/snippet}
-	</ControlBar>
-	{/if}
+		{#if controlBar}
+			<ControlBar>
+				{#snippet tocItem()}
+					<TableOfContent
+						bar
+						{pages}
+						deck={deckName}
+						{article}
+						{articleText}
+						{articleHref}
+						returnTo={returnStack}
+					/>
+				{/snippet}
+				{#snippet navGroup()}
+					<NavigationBar
+						deckLevel
+						firstLink={deckNavigation.first ?? ''}
+						prevLink={deckNavigation.prev ?? ''}
+						nextLink={deckNavigation.next ?? ''}
+						lastLink={deckNavigation.last ?? ''}
+					/>
+				{/snippet}
+			</ControlBar>
+		{/if}
 
-	{#if mapVisible}
-	<SlideMap {width} {height} rect={mapRect} />
-	{/if}
-</div>
+		{#if mapVisible}
+			<SlideMap {width} {height} rect={mapRect} />
+		{/if}
+	</div>
 {/if}
 
 <!-- Kiosk chrome: fixed window UI (not scaled with the canvas). Stays available even
@@ -1587,19 +2041,29 @@
 {#if initialized && browser && !clean && !present}
 	<KioskDialog />
 	<KioskIndicator />
-	<KioskRunner
-		{pages}
-		currentSlide={currentSlide ?? ''}
-		prefix="./"
-		wpm={kioskWpm}
+	<KioskRunner {pages} currentSlide={currentSlide ?? ''} prefix="./" wpm={kioskWpm} />
+	<OnboardHint
+		offered={onboardHint}
+		firstSlide={onboardFirst}
+		suppressed={onboardSuppressed}
+		bars={toolBar || controlBar}
+		delayMs={onboardDelayMs}
+		force={onboardForced}
+		themeClass={deckClass}
 	/>
+{/if}
+
+<!-- VOD replay: a transparent shield over everything, so a stray click on the slides
+     window cannot change what the replay is filming (the keyboard is held in onMount). -->
+{#if browser && $replaying && !present}
+	<div class="replay-shield" aria-hidden="true"></div>
 {/if}
 
 <!-- Presenter console (this window loaded with ?present). Mounts OVER the hidden
      canvas; the current slide's own <Note> supplies the notes panel. -->
 {#if initialized && present}
-<PresenterView {pages} {width} {height} />
-<!-- The all-slides grid, mounted for the CONSOLE specifically. A sibling of
+	<PresenterView {pages} {width} {height} />
+	<!-- The all-slides grid, mounted for the CONSOLE specifically. A sibling of
      PresenterView (not the audience mount above, inside `.viewport`) is required:
      `.viewport` is `position:fixed`, which unconditionally opens its own stacking
      context, so no z-index inside it can ever outrank a LATER root-level sibling
@@ -1613,14 +2077,14 @@
      tile CLICK does anything cross-window, by navigating this window (keeping
      `?present`, see OverviewPage's `jump()`), which the audience follows the same
      way PREV/NEXT/TOC already do (SlideDeck's publishCurrentSlide relay). -->
-<OverviewPage
-	{pages}
-	{width}
-	{height}
-	currentPath={currentSlide ?? ''}
-	deck={deckName}
-	{present}
-/>
+	<OverviewPage
+		{pages}
+		{width}
+		{height}
+		currentPath={currentSlide ?? ''}
+		deck={deckName}
+		{present}
+	/>
 {/if}
 
 <style>
@@ -1647,7 +2111,7 @@
 		display: flex;
 		flex-direction: column;
 		background: var(--surface-bg, #181818);
-		border: 1.5px solid var(--frame-border, #CCCCCC);
+		border: 1.5px solid var(--frame-border, #cccccc);
 		position: relative;
 	}
 	.container.fit-mode {
@@ -1656,7 +2120,7 @@
 		   still sets equivalent px inline (and tracks resize); this just owns first
 		   paint. Both axes are set EXPLICITLY (not width:auto + aspect-ratio) so the
 		   inner content's min-width can't inflate the frame back to canvas width. */
-		width:  min(calc(100vw - 10px), calc((100vh - 10px) * var(--aspect)));
+		width: min(calc(100vw - 10px), calc((100vh - 10px) * var(--aspect)));
 		height: min(calc(100vh - 10px), calc((100vw - 10px) / var(--aspect)));
 		/* Centre the content child so the exact-fit scale (adjustSize) letterboxes
 		   symmetrically about the centre — paired with transformOrigin 'center'. */
@@ -1677,7 +2141,7 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		color: var(--surface-fg, #C0F1FF);
+		color: var(--surface-fg, #c0f1ff);
 		background: var(--content-bg, var(--surface-bg, #181818));
 		font-family: var(--content-font, 'Noto Sans', 'Cormorant Garamond', serif);
 	}
@@ -1700,7 +2164,7 @@
 	   Opacity, never visibility/display: a ghosted control keeps its full hit area,
 	   so the pointer can find it exactly where it always was. */
 	.container.fade-chrome :global(.gp-chrome),
-	.overlay.fade-chrome   :global(.gp-chrome) {
+	.overlay.fade-chrome :global(.gp-chrome) {
 		opacity: 0.12;
 		transition: opacity 160ms ease;
 	}
@@ -1719,17 +2183,17 @@
 	.container.fade-chrome :global(.gp-chrome:focus-within),
 	.container.fade-chrome :global(.gp-chrome.expanded),
 	.container.fade-chrome :global(.gp-chrome.pinned),
-	.overlay.fade-chrome   :global(.gp-chrome:hover),
-	.overlay.fade-chrome   :global(.gp-chrome:focus-within),
-	.overlay.fade-chrome   :global(.gp-chrome.expanded),
-	.overlay.fade-chrome   :global(.gp-chrome.pinned) {
+	.overlay.fade-chrome :global(.gp-chrome:hover),
+	.overlay.fade-chrome :global(.gp-chrome:focus-within),
+	.overlay.fade-chrome :global(.gp-chrome.expanded),
+	.overlay.fade-chrome :global(.gp-chrome.pinned) {
 		opacity: 1;
 	}
 	/* No hover to reveal with (touch, pen): a ghosted control the reader cannot
 	   summon is just a lost control. Show everything. */
 	@media (hover: none) {
 		.container.fade-chrome :global(.gp-chrome),
-		.overlay.fade-chrome   :global(.gp-chrome) {
+		.overlay.fade-chrome :global(.gp-chrome) {
 			opacity: 1;
 		}
 	}
@@ -1787,8 +2251,8 @@
 	   token the demo slide's own prose uses, so chrome and slide are literally one colour. */
 	.save-btn.refused :global(.save-act),
 	.capture-btn.refused :global(button) {
-		color: var(--ctrl-forbidden-fg, #E5484D);
-		border-color: var(--ctrl-forbidden-fg, #E5484D);
+		color: var(--ctrl-forbidden-fg, #e5484d);
+		border-color: var(--ctrl-forbidden-fg, #e5484d);
 	}
 
 	/* SAVE's answer, popped under the icon: the verdict badge (SAVED / NONE / 1 OF 2 / NOT ALLOWED),
@@ -1813,12 +2277,12 @@
 		font-size: 0.72em;
 		font-weight: bold;
 		background: var(--tooltip-bg, #000000);
-		color: var(--annot-toggle-fg, #F0A33E);
+		color: var(--annot-toggle-fg, #f0a33e);
 		border: 1px solid var(--annot-bar-edge, rgba(255, 255, 255, 0.2));
 	}
 	.save-btn.refused .save-flash {
-		color: var(--ctrl-forbidden-fg, #E5484D);
-		border-color: var(--ctrl-forbidden-fg, #E5484D);
+		color: var(--ctrl-forbidden-fg, #e5484d);
+		border-color: var(--ctrl-forbidden-fg, #e5484d);
 	}
 	.save-tip {
 		max-width: 22em;
@@ -1828,8 +2292,8 @@
 		font-size: 0.68em;
 		font-weight: bold;
 		background: var(--tooltip-bg, #000000);
-		color: var(--tooltip-fg, #FFFFFF);
-		border: 1px solid var(--ctrl-forbidden-fg, #E5484D);
+		color: var(--tooltip-fg, #ffffff);
+		border: 1px solid var(--ctrl-forbidden-fg, #e5484d);
 	}
 
 	/* CAPTURE keeps the old anchored tooltip — it's still a dropdown row, not a bar icon. */
@@ -1849,8 +2313,8 @@
 		font-size: 0.72em;
 		font-weight: bold;
 		background: var(--tooltip-bg, #000000);
-		color: var(--tooltip-fg, #FFFFFF);
-		border: 1px solid var(--ctrl-forbidden-fg, #E5484D);
+		color: var(--tooltip-fg, #ffffff);
+		border: 1px solid var(--ctrl-forbidden-fg, #e5484d);
 	}
 
 	/* ── PRINT nested flyout (inside the ☰ dropdown) ───────────────────────────────
@@ -1897,6 +2361,13 @@
 	.container.clean :global(.nav),
 	.container.clean :global(.anim-bar) {
 		display: none;
+	}
+
+	.replay-shield {
+		position: fixed;
+		inset: 0;
+		z-index: 2147483647;
+		cursor: none;
 	}
 
 	/* `?present`: hide the whole slide canvas (frame, background, slide body, its

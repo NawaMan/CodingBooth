@@ -16,6 +16,7 @@
 	import { stepTocSelection } from '$lib/chrome/presenterTocCore';
 	import { deckSearchDocs } from '$lib/utils/searchIndex';
 	import { tocOpenRequest } from '$lib/stores/chromeArm';
+	import { carryReturn } from '$lib/utils/appendixCore';
 
 
     export let pages: Array<Page> = [];
@@ -30,6 +31,13 @@
 	    production, where they are derived from the index for the current deck — so
 	    a test can search deterministic text without depending on real slide files. */
 	export let docs: Array<SearchDoc> | null = null;
+
+	/** Return stack (or single name) to re-stamp on TOC links — same as ControlBar NEXT/PREV. */
+	export let returnTo: string | string[] | null = null;
+
+	function slideHref(path: string): string {
+		return carryReturn(`./${path}`, returnTo);
+	}
 
 	// Appendices (`hidden: true`) are reachable slides but not deck entries — the
 	// TOC lists the linear order, the same one →/Space walks. Filtering here rather
@@ -232,7 +240,7 @@
 					{#each hits as { path, title, snippet }, i}
 						<li class:current={path === currentPath} class:selected={i === selected}>
 							<a
-								href={`./${path}`}
+								href={slideHref(path)}
 								aria-current={path === currentPath ? 'page' : undefined}
 								use:scrollActiveIntoView={i === selected}
 							>
@@ -250,7 +258,7 @@
 				{#each listed as { path, title }, i}
 					<li class:current={path === currentPath} class:selected={i === selected}>
 						<a
-							href={`./${path}`}
+							href={slideHref(path)}
 							aria-current={path === currentPath ? 'page' : undefined}
 							use:scrollActiveIntoView={selected < 0 ? path === currentPath : i === selected}
 						>{title}</a>

@@ -26,98 +26,98 @@
 
 .gp-deck {
 	/* Canvas / surface */
-	--surface-bg:        var(--PAPER, #181818);
-	--surface-fg:        var(--INK, #C0F1FF);
-	--frame-border:      var(--LINE, #CCCCCC);
-	--page-bg:           var(--BACKDROP, #000000);
-	--page-title-fg:     var(--ACCENT-WARM, #F0A33E);  /* TitlePage / ContentPage titles */
-	--page-subtitle-fg:  var(--INK, #C0F1FF);          /* ContentPage subtitle */
-	--link-fg:           var(--LINK, #1E6FB0);         /* unvisited <a> */
+	--surface-bg: var(--PAPER, #181818);
+	--surface-fg: var(--INK, #c0f1ff);
+	--frame-border: var(--LINE, #cccccc);
+	--page-bg: var(--BACKDROP, #000000);
+	--page-title-fg: var(--ACCENT-WARM, #f0a33e); /* TitlePage / ContentPage titles */
+	--page-subtitle-fg: var(--INK, #c0f1ff); /* ContentPage subtitle */
+	--link-fg: var(--LINK, #58a6ff); /* <Link> and unvisited <a> */
 
 	/* Controls — nav buttons, TOC toggle, mode toggle (CtrlBtn) */
-	--ctrl-bg:           var(--PAPER-RAISED, #181818);
-	--ctrl-fg:           var(--INK-DIM, #333333);
+	--ctrl-bg: var(--PAPER-RAISED, #181818);
+	--ctrl-fg: var(--INK-DIM, #333333);
 	/* Prominent (in-page) CtrlBtn — filled accent-blue, white text, eye-catching. */
-	--ctrl-strong-bg:    var(--ACCENT, #2980B9);
-	--ctrl-strong-fg:    var(--ON-ACCENT, #FFFFFF);
-	--ctrl-strong-border:var(--ACCENT, #2980B9);
-	--ctrl-hover-bg:     var(--ACCENT, #2980B9);
-	--ctrl-selected-bg:  var(--ACCENT-2, #00B356);
-	--ctrl-active-shadow:var(--ACCENT, #0056B3);
-	--ctrl-disabled-fg:  var(--INK-DIM, #222222);
+	--ctrl-strong-bg: var(--ACCENT, #2980b9);
+	--ctrl-strong-fg: var(--ON-ACCENT, #ffffff);
+	--ctrl-strong-border: var(--ACCENT, #2980b9);
+	--ctrl-hover-bg: var(--ACCENT, #2980b9);
+	--ctrl-selected-bg: var(--ACCENT-2, #00b356);
+	--ctrl-active-shadow: var(--ACCENT, #0056b3);
+	--ctrl-disabled-fg: var(--INK-DIM, #222222);
 	/* A chrome control the slide WANTS you to press — the ADJUST button on a slide that
 	   teaches ADJUST. The chrome look is built to be missed; this one must not be. It is
 	   a FILLED pill, so it needs both the fill and an ink that reads on it (the warm
 	   accent is light, so the ink is near-black rather than the usual --on-accent white). */
-	--ctrl-featured-fg:  var(--ACCENT-WARM, #F0A33E);
-	--ctrl-featured-on:  var(--BACKDROP, #1A1206);
+	--ctrl-featured-fg: var(--ACCENT-WARM, #f0a33e);
+	--ctrl-featured-on: var(--BACKDROP, #1a1206);
 	/* A control REFUSING, and saying so — SAVE's NOT ALLOWED on a static build. Distinct
 	   from --ctrl-disabled-fg, which recedes; this has to be read from the back of a room. */
-	--ctrl-forbidden-fg: var(--DANGER, #E5484D);
-	--on-accent:         var(--ON-ACCENT, #FFFFFF);
+	--ctrl-forbidden-fg: var(--DANGER, #e5484d);
+	--on-accent: var(--ON-ACCENT, #ffffff);
 
 	/* Table of Contents popover */
-	--toc-bg:            var(--PANEL, #EEEEEE);
-	--toc-fg:            var(--INK, #111111);
-	--toc-border:        var(--LINE, #CCCCCC);
-	--toc-row-hover-bg:  var(--LINE, #DDDDDD);
+	--toc-bg: var(--PANEL, #eeeeee);
+	--toc-fg: var(--INK, #111111);
+	--toc-border: var(--LINE, #cccccc);
+	--toc-row-hover-bg: var(--LINE, #dddddd);
 	/* The current slide's row — a tint of the deck accent over the light panel, with the
 	   accent itself as the ink. color-mix keeps it a wash whatever the theme's accent. */
-	--toc-current-bg:    color-mix(in srgb, var(--ACCENT, #2980B9) 20%, var(--toc-bg, #EEEEEE));
-	--toc-current-fg:    var(--ACCENT, #2980B9);
+	--toc-current-bg: color-mix(in srgb, var(--ACCENT, #2980b9) 20%, var(--toc-bg, #eeeeee));
+	--toc-current-fg: var(--ACCENT, #2980b9);
 	/* The ↑/↓ keyboard cursor. It has to be legible ON TOP of the current-slide tint
 	   (the cursor often starts there), so it is an outline rather than a second fill. */
-	--toc-selected-outline: var(--ACCENT, #2980B9);
+	--toc-selected-outline: var(--ACCENT, #2980b9);
 
 	/* Deck overview — the all-slides grid (OverviewPage.svelte). A near-opaque scrim over
 	   the canvas, so the tiles (which are the real slides) carry the colour and the
 	   chrome around them recedes. The scrim keeps its alpha in the fallback: a theme
 	   that hands back an opaque PANEL here would let the slide underneath show
 	   through the grid. */
-	--overview-page-scrim-bg:       var(--SCRIM, #0C0F13F2);
-	--overview-page-head-fg:        var(--INK, #E6EDF3);
-	--overview-page-dim-fg:         var(--INK-DIM, #8A99A8);
-	--overview-page-tile-bg:        var(--PAPER-RAISED, #14181D);
-	--overview-page-tile-border:    var(--LINE, #2B3440);
-	--overview-page-tile-hover-border: var(--ACCENT, #2980B9);
-	--overview-page-current-border: var(--ACCENT-2, #00B356);   /* the slide you're on */
+	--overview-page-scrim-bg: var(--SCRIM, #0c0f13f2);
+	--overview-page-head-fg: var(--INK, #e6edf3);
+	--overview-page-dim-fg: var(--INK-DIM, #8a99a8);
+	--overview-page-tile-bg: var(--PAPER-RAISED, #14181d);
+	--overview-page-tile-border: var(--LINE, #2b3440);
+	--overview-page-tile-hover-border: var(--ACCENT, #2980b9);
+	--overview-page-current-border: var(--ACCENT-2, #00b356); /* the slide you're on */
 
 	/* Box overlay */
-	--box-bg:            var(--BACKDROP, #000000);
-	--box-border:        var(--ACCENT, #ADD8E6);
-	--box-btn-bg:        var(--ACCENT, #ADD8E6);
-	--box-btn-fg:        var(--ON-ACCENT, #000000);
+	--box-bg: var(--BACKDROP, #000000);
+	--box-border: var(--ACCENT, #add8e6);
+	--box-btn-bg: var(--ACCENT, #add8e6);
+	--box-btn-fg: var(--ON-ACCENT, #000000);
 
 	/* QuickCode — inline snippet box */
-	--quickcode-bg:      var(--PAPER-RAISED, #111111);
-	--quickcode-fg:      var(--INK, #FFFFFF);
+	--quickcode-bg: var(--PAPER-RAISED, #111111);
+	--quickcode-fg: var(--INK, #ffffff);
 
 	/* CodeDiff — before/after code with added/removed line styling. The screen is a
 	   dark code surface (like QuickCode); the add/del tokens are single accents that
 	   the component mixes toward transparent for the row wash + the accent bar, so a
 	   theme only moves the accent and the contrast follows. Add is green, del is red,
 	   whatever the theme's ink — a diff's colours carry meaning, not decoration. */
-	--codediff-bg:         var(--PAPER-RAISED, #111111);
-	--codediff-fg:         var(--INK, #FFFFFF);
-	--codediff-add:        var(--ACCENT-2, #00B356);   /* added lines: wash, bar, sign */
-	--codediff-del:        var(--DANGER, #E5484D);     /* removed lines */
-	--codediff-gutter-fg:  var(--INK, #C0F1FF);        /* line numbers + context sign; dimmed in-component */
+	--codediff-bg: var(--PAPER-RAISED, #111111);
+	--codediff-fg: var(--INK, #ffffff);
+	--codediff-add: var(--ACCENT-2, #00b356); /* added lines: wash, bar, sign */
+	--codediff-del: var(--DANGER, #e5484d); /* removed lines */
+	--codediff-gutter-fg: var(--INK, #c0f1ff); /* line numbers + context sign; dimmed in-component */
 
 	/* Callout — semantic admonition boxes (info / tip / warn / danger). Each kind
 	   is driven by a single accent; the component tints its own background and
 	   border from that accent (color-mix), so a theme only needs to move these. */
-	--callout-info-accent:   var(--ACCENT, #2980B9);
-	--callout-tip-accent:    var(--ACCENT-2, #00B356);
-	--callout-warn-accent:   var(--ACCENT-WARM, #F0A33E);
-	--callout-danger-accent: var(--DANGER, #E5484D);
+	--callout-info-accent: var(--ACCENT, #2980b9);
+	--callout-tip-accent: var(--ACCENT-2, #00b356);
+	--callout-warn-accent: var(--ACCENT-WARM, #f0a33e);
+	--callout-danger-accent: var(--DANGER, #e5484d);
 
 	/* Spotlight — the note-driven highlight overlay. As the speaker covers a Note
 	   line, the named Block is ringed and the rest of the canvas dims. The ring reads
 	   in the warm accent (a "look here" colour, distinct from the blue --ACCENT the
 	   Connector arrows use) and glows in the same tone; the scrim is plain black,
 	   softened by the component's own opacity. Fallbacks are the dark default. */
-	--spotlight-ring:  var(--ACCENT-WARM, #F0A33E);
-	--spotlight-glow:  var(--ACCENT-WARM, #F0A33E);
+	--spotlight-ring: var(--ACCENT-WARM, #f0a33e);
+	--spotlight-glow: var(--ACCENT-WARM, #f0a33e);
 	--spotlight-scrim: var(--BACKDROP, #000000);
 
 	/* Toast — a transient banner the speaker (or a build) raises over the live slide,
@@ -127,21 +127,21 @@
 	   annotate bar. The scrim is plain black (softened by the component's own opacity)
 	   and the faint ring reads in the warm "look here" accent the Spotlight ring uses,
 	   since it is the same act: pointing at something. Fallbacks are the dark default. */
-	--toast-bg:     rgba(20, 22, 26, 0.94);
-	--toast-fg:     var(--INK, #D7DDE5);
-	--toast-edge:   rgba(255, 255, 255, 0.16);
+	--toast-bg: rgba(20, 22, 26, 0.94);
+	--toast-fg: var(--INK, #d7dde5);
+	--toast-edge: rgba(255, 255, 255, 0.16);
 	--toast-shadow: rgba(0, 0, 0, 0.45);
-	--toast-scrim:  var(--BACKDROP, #000000);
-	--toast-ring:   var(--ACCENT-WARM, #F0A33E);
+	--toast-scrim: var(--BACKDROP, #000000);
+	--toast-ring: var(--ACCENT-WARM, #f0a33e);
 
 	/* Cursor — the fake mouse pointer that demos a UI without a live app. The
 	   glyph reads in the same warm "look here" accent as Spotlight/Toast (it IS
 	   a pointer, after all), with a dark outline so it stays legible over any
 	   backdrop it glides across; the click ripple echoes the glyph's own colour
 	   by default. Fallbacks are the dark default. */
-	--cursor-fill:    var(--ACCENT-WARM, #F0A33E);
+	--cursor-fill: var(--ACCENT-WARM, #f0a33e);
 	--cursor-outline: rgba(0, 0, 0, 0.55);
-	--cursor-ripple:  var(--ACCENT-WARM, #F0A33E);
+	--cursor-ripple: var(--ACCENT-WARM, #f0a33e);
 
 	/* Annotation — the speaker's ink (see components/Annotate.svelte). The pen reads in
 	   the same warm "look here" accent the Spotlight ring uses, since it is the same act:
@@ -157,17 +157,17 @@
 	   theme must override this to `multiply` (band tints the white page, dark text stays
 	   dark). Leave it at `screen` on a light theme and the highlighter blows out to a
 	   white smear over the very words it points at. */
-	--annot-pen:               var(--ACCENT-WARM, #F0A33E);
-	--annot-pen-glow:          rgba(0, 0, 0, 0.55);
-	--annot-highlighter:       #F5E663;
+	--annot-pen: var(--ACCENT-WARM, #f0a33e);
+	--annot-pen-glow: rgba(0, 0, 0, 0.55);
+	--annot-highlighter: #f5e663;
 	--annot-highlighter-alpha: 0.45;
 	--annot-highlighter-blend: screen;
 
 	/* The eraser's "this one goes" colour: a stroke under the eraser lights up in it before
 	   you delete, and the ERASE button wears it while armed. Red is the universal delete cue,
 	   and this default reads on the dark main deck; a light theme is free to pick its own. */
-	--annot-erase:             #FF5C5C;
-	--annot-erase-glow:        rgba(255, 92, 92, 0.75);
+	--annot-erase: #ff5c5c;
+	--annot-erase-glow: rgba(255, 92, 92, 0.75);
 
 	/* FREEZE's "this one gets kept" colour — the eraser's twin, and deliberately its opposite
 	   in temperature: erase is a hot red for a mark about to be destroyed, freeze is a cold
@@ -175,12 +175,12 @@
 	   selection is visible at once, which is the point of picking before committing), and one
 	   merely hovered gets the glow. Reads on the dark main deck; a light theme may pick its
 	   own, like every other token here. */
-	--annot-freeze:            #6FD3F5;
-	--annot-freeze-glow:       rgba(111, 211, 245, 0.75);
+	--annot-freeze: #6fd3f5;
+	--annot-freeze-glow: rgba(111, 211, 245, 0.75);
 
 	/* A TEXT label's fill. Defaults to the pen's colour, so untinted labels follow the ink
 	   through a re-theme; override for a deck that wants typed notes a different colour. */
-	--annot-text:              var(--annot-pen, #F0A33E);
+	--annot-text: var(--annot-pen, #f0a33e);
 
 	/* The pen's palette (PEN / HIGHLIGHT / swatches / UNDO / RESET / DONE) and the ANNOTATE
 	   toggle. Both float OVER the slide rather than sitting in the deck frame, so they carry
@@ -190,23 +190,23 @@
 	   reading, so it ghosts until pointed at — opacity, never visibility, so it keeps its
 	   full hit area and the pointer finds it exactly where it was (the same rule fadeChrome
 	   follows). Set it to 1 for a deck that would rather always see the pen. */
-	--annot-bar-bg:     rgba(20, 22, 26, 0.92);
-	--annot-bar-edge:   rgba(255, 255, 255, 0.16);
-	--annot-bar-fg:     var(--INK, #D7DDE5);
-	--annot-bar-hover:  rgba(255, 255, 255, 0.10);
-	--annot-bar-on-fg:  var(--ctrl-featured-on, #1A1206);
-	--annot-bar-done:   var(--ACCENT-2, #7FD1A0);
-	--annot-bar-idle:   0.28;
+	--annot-bar-bg: rgba(20, 22, 26, 0.92);
+	--annot-bar-edge: rgba(255, 255, 255, 0.16);
+	--annot-bar-fg: var(--INK, #d7dde5);
+	--annot-bar-hover: rgba(255, 255, 255, 0.1);
+	--annot-bar-on-fg: var(--ctrl-featured-on, #1a1206);
+	--annot-bar-done: var(--ACCENT-2, #7fd1a0);
+	--annot-bar-idle: 0.28;
 
 	/* The toggle reads in the pen's own colour so the control and the ink it produces are
 	   visibly the same thing; armed, it FILLS with that colour, because "the next click will
 	   draw" is a state worth being unmistakable about. */
-	--annot-toggle-bg:  rgba(20, 22, 26, 0.92);
-	--annot-toggle-fg:  var(--ACCENT-WARM, #F0A33E);
+	--annot-toggle-bg: rgba(20, 22, 26, 0.92);
+	--annot-toggle-fg: var(--ACCENT-WARM, #f0a33e);
 
 	/* The stale-ink notice — ink persists now, so a slide can greet you with marks you drew
 	   last week. Warm, like every other "look here" cue in the deck. */
-	--annot-stale-edge: var(--ACCENT-WARM, #F0A33E);
+	--annot-stale-edge: var(--ACCENT-WARM, #f0a33e);
 
 	/* Kiosk / auto-advance — booth chrome, bottom-left. Accent marks the dwell ring;
 	   danger is Stop. Idle opacity stays high so Pause/Stop stay findable mid-talk —
@@ -216,15 +216,15 @@
 	   +layout.svelte (that deck only) for narrower reach. Going below the default is
 	   only safe because Alt+. then K/U reach the panel without a mouse — see
 	   chrome/chromeArmCore.ts and AGENTS.md's KIOSK playbook. */
-	--kiosk-panel-bg:  rgba(20, 22, 26, 0.96);
-	--kiosk-edge:      rgba(255, 255, 255, 0.28);
-	--kiosk-fg:        var(--INK, #D7DDE5);
-	--kiosk-accent:    var(--ACCENT, #3FA9F5);
-	--kiosk-on-accent: var(--ON-ACCENT, #0A1620);
-	--kiosk-danger:    var(--DANGER, #E5484D);
-	--kiosk-track:     rgba(255, 255, 255, 0.15);
-	--kiosk-scrim:     rgba(0, 0, 0, 0.55);
-	--kiosk-idle:      0.6;
+	--kiosk-panel-bg: rgba(20, 22, 26, 0.96);
+	--kiosk-edge: rgba(255, 255, 255, 0.28);
+	--kiosk-fg: var(--INK, #d7dde5);
+	--kiosk-accent: var(--ACCENT, #3fa9f5);
+	--kiosk-on-accent: var(--ON-ACCENT, #0a1620);
+	--kiosk-danger: var(--DANGER, #e5484d);
+	--kiosk-track: rgba(255, 255, 255, 0.15);
+	--kiosk-scrim: rgba(0, 0, 0, 0.55);
+	--kiosk-idle: 0.6;
 
 	/* ADJUST-mode style/geometry collision badge — the note a Block shows when the
 	   author's `style` tried to set a property the x/y/width/height props own (see
@@ -233,22 +233,22 @@
 	   status line. AUTHOR-FACING ONLY: ADJUST chrome never ships in a published
 	   deck, so these are tuned for the editing surface, not the audience's screen.
 	   Dark ink, because the warm accent is a light surface. */
-	--adjust-warn-bg:  var(--ACCENT-WARM, #F0A33E);
-	--adjust-warn-fg:  var(--ON-ACCENT-WARM, #1A1A1A);
+	--adjust-warn-bg: var(--ACCENT-WARM, #f0a33e);
+	--adjust-warn-fg: var(--ON-ACCENT-WARM, #1a1a1a);
 
 	/* Stat / StatGroup — big-number KPI tiles. The figure reads in ink; the label
 	   and dividers derive from the same ink (dimmed in-component), so they stay
 	   legible in any theme. `accent` figures and trend chips pull the accent /
 	   positive / negative tones. Fallbacks mirror the dark default (light-on-dark),
 	   like --surface-fg; a theme reskins every Stat by moving these. */
-	--stat-value-fg:    var(--INK, #C0F1FF);
-	--stat-label-fg:    var(--INK, #C0F1FF);           /* dimmed via opacity in-component */
-	--stat-accent:      var(--ACCENT, #2980B9);
-	--stat-positive:    var(--ACCENT-2, #00B356);
-	--stat-negative:    var(--DANGER, #E5484D);
-	--stat-divider:     var(--INK, #C0F1FF);           /* softened via color-mix in-component */
-	--stat-card-bg:     var(--PAPER-RAISED, #1E1E1E);  /* raised panel behind a `card` group */
-	--stat-card-border: var(--LINE, #CCCCCC);          /* softened via color-mix in-component */
+	--stat-value-fg: var(--INK, #c0f1ff);
+	--stat-label-fg: var(--INK, #c0f1ff); /* dimmed via opacity in-component */
+	--stat-accent: var(--ACCENT, #2980b9);
+	--stat-positive: var(--ACCENT-2, #00b356);
+	--stat-negative: var(--DANGER, #e5484d);
+	--stat-divider: var(--INK, #c0f1ff); /* softened via color-mix in-component */
+	--stat-card-bg: var(--PAPER-RAISED, #1e1e1e); /* raised panel behind a `card` group */
+	--stat-card-border: var(--LINE, #cccccc); /* softened via color-mix in-component */
 
 	/* Quote — pull-quote with attribution. The quotation reads in ink; the author
 	   is ink and the role is that same ink dimmed (in-component), so they track the
@@ -256,13 +256,13 @@
 	   the left rule and the initials-avatar disc all pull the accent; the image
 	   avatar's ring derives from the line token, softened via color-mix so it reads
 	   on any surface. Fallbacks mirror the dark default (light-on-dark). */
-	--quote-fg:          var(--INK, #C0F1FF);
-	--quote-author-fg:   var(--INK, #C0F1FF);
-	--quote-cite-fg:     var(--INK, #C0F1FF);          /* dimmed via opacity in-component */
-	--quote-mark:        var(--ACCENT, #2980B9);       /* glyph, left rule tint, initials disc */
-	--quote-rule:        var(--ACCENT, #2980B9);
-	--quote-avatar-ring: var(--LINE, #CCCCCC);         /* softened via color-mix in-component */
-	--quote-border:      var(--LINE, #CCCCCC);         /* optional card border; softened in-component */
+	--quote-fg: var(--INK, #c0f1ff);
+	--quote-author-fg: var(--INK, #c0f1ff);
+	--quote-cite-fg: var(--INK, #c0f1ff); /* dimmed via opacity in-component */
+	--quote-mark: var(--ACCENT, #2980b9); /* glyph, left rule tint, initials disc */
+	--quote-rule: var(--ACCENT, #2980b9);
+	--quote-avatar-ring: var(--LINE, #cccccc); /* softened via color-mix in-component */
+	--quote-border: var(--LINE, #cccccc); /* optional card border; softened in-component */
 
 	/* Timeline / TimelineItem — a narrative event spine. The spine reads as a dim
 	   rule (the ink, softened via color-mix in-component); the marker dots and the
@@ -270,12 +270,12 @@
 	   dimmed (in-component), so they track the theme without a fragile muted token,
 	   like Stat/Quote. The icon glyph sits on the accent-filled dot, so it takes the
 	   on-accent ink. Fallbacks mirror the dark default (light-on-dark). */
-	--timeline-line:     var(--INK, #C0F1FF);          /* the spine; softened via color-mix in-component */
-	--timeline-dot:      var(--ACCENT, #2980B9);       /* marker fill (per-item `color` overrides) */
-	--timeline-time-fg:  var(--ACCENT, #2980B9);       /* the time / phase kicker */
-	--timeline-title-fg: var(--INK, #C0F1FF);
-	--timeline-body-fg:  var(--INK, #C0F1FF);          /* dimmed via opacity in-component */
-	--timeline-icon-fg:  var(--ON-ACCENT, #FFFFFF);    /* glyph on the accent-filled dot */
+	--timeline-line: var(--INK, #c0f1ff); /* the spine; softened via color-mix in-component */
+	--timeline-dot: var(--ACCENT, #2980b9); /* marker fill (per-item `color` overrides) */
+	--timeline-time-fg: var(--ACCENT, #2980b9); /* the time / phase kicker */
+	--timeline-title-fg: var(--INK, #c0f1ff);
+	--timeline-body-fg: var(--INK, #c0f1ff); /* dimmed via opacity in-component */
+	--timeline-icon-fg: var(--ON-ACCENT, #ffffff); /* glyph on the accent-filled dot */
 
 	/* Tabs / Tab — switch between panels in one slide. The inactive tab labels read
 	   in ink (dimmed in-component via opacity, like Stat/Timeline — no fragile muted
@@ -283,82 +283,102 @@
 	   accent indicator. The strip's baseline rule and the hover wash derive from the
 	   ink, softened via color-mix so they read on any surface. Fallbacks mirror the
 	   dark default (light-on-dark). */
-	--tabs-fg:        var(--INK, #C0F1FF);            /* inactive tab label (dimmed in-component) */
-	--tabs-active-fg: var(--INK, #C0F1FF);            /* the selected tab's label */
-	--tabs-indicator: var(--ACCENT, #2980B9);         /* the active-tab underline */
-	--tabs-rule:      var(--INK, #C0F1FF);            /* strip baseline rule; softened in-component */
-	--tabs-hover-bg:  var(--INK, #C0F1FF);            /* hover wash; softened in-component */
+	--tabs-fg: var(--INK, #c0f1ff); /* inactive tab label (dimmed in-component) */
+	--tabs-active-fg: var(--INK, #c0f1ff); /* the selected tab's label */
+	--tabs-indicator: var(--ACCENT, #2980b9); /* the active-tab underline */
+	--tabs-rule: var(--INK, #c0f1ff); /* strip baseline rule; softened in-component */
+	--tabs-hover-bg: var(--INK, #c0f1ff); /* hover wash; softened in-component */
 
 	/* Columns / Column — the gutter rule of a divided group. Derived from the ink and
 	   softened via color-mix in-component, like --stat-divider, so it reads as a
 	   hairline on any surface. The grid itself paints nothing else, except a
 	   draggable divider (`resizable` / ADJUST mode), which lights the accent on
 	   hover, focus and drag — the same "this is a control" cue the deck's chrome uses. */
-	--columns-divider: var(--INK, #C0F1FF);
-	--columns-handle:  var(--ACCENT, #2980B9);
+	--columns-divider: var(--INK, #c0f1ff);
+	--columns-handle: var(--ACCENT, #2980b9);
 
-	/* AppendixLink — the call into a hidden side slide. It reads as the deck's own
-	   accent (it is a move within the talk, not a link off it), but underlined
-	   DASHED: a detour you will be brought back from, unlike ordinary prose links.
-	   The hover brightening is mixed from this in-component, so a theme moves one
-	   token and both states follow. */
-	--appendix-link-fg: var(--ACCENT-WARM, #F0A33E);
+	/* Links — every link in a deck wears ONE colour and ONE thin dashed underline, and
+	   a trailing GLYPH says which kind it is:
+
+	     (none) an ordinary move inside the site   <Link>
+	     ↩      a detour you come back from        <AppendixLink>
+	     ↗      this leaves the site               <Link>, external
+
+	   So --link-fg is the colour, and the two per-kind tokens below exist only as
+	   escape hatches: each DEFAULTS to --link-fg, so out of the box all three match
+	   and only the glyph differs. A theme that wants to pull them apart by hue can,
+	   but it has to say so — nothing here does it by accident.
+
+	   Each hover is mixed from its own token in-component, so moving one value carries
+	   both states. A theme that is not dark MUST set --LINK (see themes.css): this
+	   fallback is the dark look, and a pale sky blue on light paper is exactly as
+	   unreadable as the reverse. */
+	--link-external-fg: var(--LINK-EXTERNAL, var(--link-fg));
+	--appendix-link-fg: var(--APPENDIX-LINK, var(--link-fg));
 
 	/* Hint — the faint bottom cue. It floats over whatever the slide put behind it
 	   (an image, a chart, someone else's website), so it can't rely on contrast with
 	   the deck surface: it carries its own translucent backdrop and rule, both mixed
 	   from these in-component. */
-	--hint-fg:     var(--INK, #C0F1FF);
-	--hint-bg:     var(--BACKDROP, #000000);
-	--hint-border: var(--INK, #C0F1FF);
+	--hint-fg: var(--INK, #c0f1ff);
+	--hint-bg: var(--BACKDROP, #000000);
+	--hint-border: var(--INK, #c0f1ff);
 
 	/* Web embeds (WebSite / WebPage) — the frame AROUND a live site. The site paints
 	   itself; only the fake browser bar, the border and the "click to interact"
 	   shield are ours. Fallbacks mirror the dark default (light-on-dark), like
 	   --surface-fg. The border and chrome tints are softened via color-mix
 	   in-component, so a theme only needs to move these. */
-	--embed-frame-bg:     var(--PAPER-RAISED, #1E1E1E);
-	--embed-frame-border: var(--LINE, #CCCCCC);
-	--embed-chrome-bg:    var(--PAPER-RAISED, #1E1E1E);
-	--embed-chrome-fg:    var(--INK, #C0F1FF);
-	--embed-accent:       var(--ACCENT, #2980B9);      /* armed ring + pill hover */
-	--embed-shield-bg:    var(--BACKDROP, #000000);    /* hover wash, at low alpha */
+	--embed-frame-bg: var(--PAPER-RAISED, #1e1e1e);
+	--embed-frame-border: var(--LINE, #cccccc);
+	--embed-chrome-bg: var(--PAPER-RAISED, #1e1e1e);
+	--embed-chrome-fg: var(--INK, #c0f1ff);
+	--embed-accent: var(--ACCENT, #2980b9); /* armed ring + pill hover */
+	--embed-shield-bg: var(--BACKDROP, #000000); /* hover wash, at low alpha */
 
 	/* Video player (Video) — our chrome around a <video>. The stage stays black
 	   whatever the theme: that is the letterbox behind the footage, not a surface. */
-	--video-bg:        #000000;                     /* the stage behind the frame */
-	--video-border:    var(--LINE, #CCCCCC);
-	--video-chrome-bg: var(--PAPER-RAISED, #1E1E1E);
-	--video-chrome-fg: var(--INK, #C0F1FF);
-	--video-accent:    var(--ACCENT, #2980B9);      /* progress fill + active chapter */
-	--video-track:     var(--INK, #C0F1FF);         /* empty track, at low alpha */
+	--video-bg: #000000; /* the stage behind the frame */
+	--video-border: var(--LINE, #cccccc);
+	--video-chrome-bg: var(--PAPER-RAISED, #1e1e1e);
+	--video-chrome-fg: var(--INK, #c0f1ff);
+	--video-accent: var(--ACCENT, #2980b9); /* progress fill + active chapter */
+	--video-track: var(--INK, #c0f1ff); /* empty track, at low alpha */
 
 	/* Terminal (Terminal) — our fake console. Like the video stage, the screen stays
 	   dark in every theme: it is a terminal being shown, not a surface being themed,
 	   so bg/fg are literals rather than palette lookups. Everything that carries
 	   MEANING — the prompt, the caret, the output tones — comes from the palette, so a
 	   theme reskins the session without bleaching the screen. */
-	--terminal-bg:        #0C0C0C;                  /* the screen behind the session */
-	--terminal-fg:        #E6EDF3;
-	--terminal-border:    var(--LINE, #CCCCCC);     /* softened via color-mix in-component */
-	--terminal-chrome-bg: var(--PAPER-RAISED, #1E1E1E);
-	--terminal-chrome-fg: var(--INK, #C0F1FF);
-	--terminal-prompt:    var(--ACCENT-2, #00B356);
-	--terminal-caret:     var(--ACCENT-2, #00B356); /* also the ACTIVE command's tick */
-	--terminal-ok:        var(--ACCENT-2, #00B356);
-	--terminal-warn:      var(--ACCENT-WARM, #F0A33E);
-	--terminal-error:     var(--DANGER, #E5484D);   /* `muted` is the fg, dimmed in-component */
-	--terminal-accent:    var(--ACCENT, #2980B9);   /* transport fill, knob, play disc */
-	--terminal-track:     #E6EDF3;                  /* empty track + ticks, at low alpha */
+	--terminal-bg: #0c0c0c; /* the screen behind the session */
+	--terminal-fg: #e6edf3;
+	--terminal-border: var(--LINE, #cccccc); /* softened via color-mix in-component */
+	--terminal-chrome-bg: var(--PAPER-RAISED, #1e1e1e);
+	--terminal-chrome-fg: var(--INK, #c0f1ff);
+	--terminal-prompt: var(--ACCENT-2, #00b356);
+	--terminal-caret: var(--ACCENT-2, #00b356); /* also the ACTIVE command's tick */
+	--terminal-ok: var(--ACCENT-2, #00b356);
+	--terminal-warn: var(--ACCENT-WARM, #f0a33e);
+	--terminal-error: var(--DANGER, #e5484d); /* `muted` is the fg, dimmed in-component */
+	--terminal-comment: #8b949e; /* `# …` lines; a literal, like the screen */
+	--terminal-dir: #4f8fe6; /* folders, bold, as ls and tree draw them */
+	--terminal-accent: var(--ACCENT, #2980b9); /* transport fill, knob, play disc */
+	--terminal-track: #e6edf3; /* empty track + ticks, at low alpha */
+
+	/* Typewriter — text typing itself out. It has NO colour of its own: the text is the
+	   slide's own text, in the slide's own font, and only the caret is the component's to
+	   draw. One token, therefore — the same green a console blinks, so a typed headline
+	   and a Terminal session on the next slide read as the same hand. */
+	--typewriter-caret: var(--ACCENT-2, #00b356);
 
 	/* Kbd — keycaps. A key is a raised surface with ink on it, so it borrows the
 	   raised-panel background and the deck's ink. The border (and the cap's bottom
 	   lip, drawn from it) is softened via color-mix in-component, so the cap reads
 	   as raised on any surface without knowing that surface's colour. */
-	--kbd-bg:     var(--PAPER-RAISED, #1E1E1E);
-	--kbd-fg:     var(--INK, #C0F1FF);
-	--kbd-border: var(--LINE, #CCCCCC);
-	--kbd-sep-fg: var(--INK, #C0F1FF);   /* the `+` and "then"; dimmed in-component */
+	--kbd-bg: var(--PAPER-RAISED, #1e1e1e);
+	--kbd-fg: var(--INK, #c0f1ff);
+	--kbd-border: var(--LINE, #cccccc);
+	--kbd-sep-fg: var(--INK, #c0f1ff); /* the `+` and "then"; dimmed in-component */
 
 	/* QRCode — the modules and the plate they sit on. The ONLY tokens here that do
 	   not track the theme: a QR must be dark-on-light to be read, so a dark deck's
@@ -366,30 +386,40 @@
 	   black on literal white, in every theme — the same call Video's letterbox and
 	   Terminal's screen make. A theme may still tint them, but it owns the contrast
 	   ratio when it does. The caption is ordinary text and does follow the ink. */
-	--qr-dark:        #000000;
-	--qr-light:       #FFFFFF;
-	--qr-caption-fg:  var(--INK, #C0F1FF);
+	--qr-dark: #000000;
+	--qr-light: #ffffff;
+	--qr-caption-fg: var(--INK, #c0f1ff);
 
 	/* Code title bar (CodeBox / JavaCodeBox) */
-	--code-title-bg:     var(--PAPER-RAISED, #1E1E1E);
-	--code-title-fg:     var(--INK, #FFFFFF);
+	--code-title-bg: var(--PAPER-RAISED, #1e1e1e);
+	--code-title-fg: var(--INK, #ffffff);
 	--code-title-border: var(--LINE, #333333);
 
 	/* Accents & inline */
-	--subtitle-rule:     var(--ACCENT, #F0F8FF);
-	--label-fg:          var(--ACCENT, #DEB887);
-	--media-frame:       var(--LINE, #FFFFFF);
+	--subtitle-rule: var(--ACCENT, #f0f8ff);
+	--label-fg: var(--ACCENT, #deb887);
+	--media-frame: var(--LINE, #ffffff);
 
 	/* Tooltip (kept dark-on-light: inverted from the surface) */
-	--tooltip-bg:        var(--INK, #000000);
-	--tooltip-fg:        var(--PAPER, #FFFFFF);
+	--tooltip-bg: var(--INK, #000000);
+	--tooltip-fg: var(--PAPER, #ffffff);
 
 	/* Progress bar (ProgressBar.svelte) — the "how far through the deck" bar. The fill
 	   is the deck accent; the track is a translucent wash of that same fill, so it reads
 	   over a light surface and a dark one alike without a second token to keep in step.
 	   Fallbacks are the dark default. */
-	--progress-fill:     var(--ACCENT, #2980B9);
-	--progress-track:    color-mix(in srgb, var(--progress-fill) 20%, transparent);
+	--progress-fill: var(--ACCENT, #2980b9);
+	--progress-track: color-mix(in srgb, var(--progress-fill) 20%, transparent);
+
+	/* Diagram node (TextBlock.svelte) — a bordered box on the canvas surface, its
+	   border and label in the canvas ink. Fallbacks are the dark default. */
+	--textblock-fg: var(--INK, #c0f1ff);
+	--textblock-bg: var(--PAPER, #181818);
+	--textblock-border: var(--INK, #c0f1ff);
+
+	/* Inline SVG (SvgBlock.svelte) — `currentColor` inside the drawing. The canvas
+	   ink by default, so a monochrome SVG follows the theme. */
+	--svgblock-fg: var(--INK, #c0f1ff);
 
 	/* ── METRICS (non-colour) ──────────────────────────────────────────────────
 	   Sizes and spacing a theme may legitimately want to move. Same contract as
@@ -398,19 +428,23 @@
 	   renders identically. */
 
 	/* Page header (ContentPage): title, subtitle, and the rule under them. */
-	--page-title-size:    2.5em;
+	--page-title-size: 2.5em;
 	--page-subtitle-size: 1.2em;
-	--page-title-gap:     0.5em;   /* title → subtitle */
-	--page-rule-gap:      15px;    /* header text → rule */
-	--page-rule-weight:   4.5px;   /* the rule's thickness (its colour is --subtitle-rule) */
-	--page-content-gap:   1em;     /* header → content */
+	--page-title-gap: 0.5em; /* title → subtitle */
+	--page-rule-gap: 15px; /* header text → rule */
+	--page-rule-weight: 4.5px; /* the rule's thickness (its colour is --subtitle-rule) */
+	--page-content-gap: 1em; /* header → content */
 
 	/* Columns: the gutter between columns. A per-group `gap` prop overrides it. */
-	--columns-gap:        2em;
+	--columns-gap: 2em;
 
 	/* Timeline: vertical space between events. A per-Timeline `gap` prop overrides it. */
-	--timeline-gap:       1.6em;
+	--timeline-gap: 1.6em;
 
 	/* Progress bar: its thickness (ProgressBar.svelte). */
-	--progress-height:    6px;
+	--progress-height: 6px;
+
+	/* Diagram node (TextBlock.svelte): border weight and corner rounding. */
+	--textblock-border-width: 2px;
+	--textblock-radius: 10px;
 }

@@ -43,6 +43,7 @@
 	import { afterNavigate }      from '$app/navigation';
 	import { onMount, onDestroy, tick } from 'svelte';
 	import { pauseGroup, playGroup } from '$lib/utils/slideAnim';
+	import { reportAction }       from '$lib/record/recordBus';
 	import { portal }             from '$lib/utils/portal';
 	import { animBarSlot, registerHostedAnim, unregisterHostedAnim } from '$lib/stores/localChrome';
 
@@ -260,9 +261,16 @@
 		startLoop();
 	}
 
-	function toggle() { playing ? pause() : play(); }
+	function toggle() { playing ? pause() : play(); report(); }
 
-	function restart() { seek(0); play(); }
+	function restart() { seek(0); play(); report(); }
+
+	// Tell a VOD recording what the speaker just did with the bar (a no-op otherwise).
+	// Called only from the user's own gestures, never from the sampling loop.
+	function report() {
+		if (duration <= 0) return;
+		reportAction({ kind: 'anim', playing, fraction: Math.max(0, Math.min(1, sample() / duration)) });
+	}
 
 	// Reveal the bar (one-way). While collapsed the animation just plays as authored
 	// (we never pause it) and the sampling loop is idle; expanding re-reads the live
@@ -281,9 +289,10 @@
 		dragging = true;
 		pause();                       // a scrub pauses: progress now follows the pointer
 		seek(timeAt(e.clientX));
+		report();
 		track.setPointerCapture(e.pointerId);
 	}
-	function onPointerMove(e: PointerEvent) { if (dragging) seek(timeAt(e.clientX)); }
+	function onPointerMove(e: PointerEvent) { if (dragging) { seek(timeAt(e.clientX)); report(); } }
 	function onPointerUp(e: PointerEvent) {
 		dragging = false;
 		track.releasePointerCapture?.(e.pointerId);
@@ -296,7 +305,9 @@
 		else if (e.key === 'ArrowRight') { pause(); seek(playhead + step); e.preventDefault(); }
 		else if (e.key === 'Home')       { pause(); seek(0);               e.preventDefault(); }
 		else if (e.key === 'End')        { pause(); seek(duration);        e.preventDefault(); }
-		else if (e.key === ' ')          { toggle();                       e.preventDefault(); }
+		else if (e.key === ' ')          { toggle();                       e.preventDefault(); return; }
+		else return;
+		report();
 	}
 
 	// (Re)detect this slide's animations and reset to the collapsed button. Runs on

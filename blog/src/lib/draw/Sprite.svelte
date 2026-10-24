@@ -71,6 +71,7 @@
 		polylinePath,
 		round,
 		smoothPath,
+		snapToAngles,
 		uniformLengthParams
 	} from './drawCore';
 	import {
@@ -622,6 +623,35 @@
 		return [round(cx + R * Math.sin(th)), round(cy - R * Math.cos(th))];
 	}
 
+	// --- What Shift does on a stop's handles (DrawHandle's `shiftSnap`) --------
+	// DrawHandle's default locks the point to H/V from the GRAB point, which for
+	// an endpoint is right but for a keyframe stop says nothing useful: it only
+	// keeps the stop on its own former row. What you author here are flight LEGS
+	// ("straight right, then straight down"), so Shift aligns against the stop
+	// that runs before this one instead. Both hooks below are still snapToAngles
+	// — only the reference point (and, for rotate, the step) changes.
+
+	/** Center of the stop preceding stop `i` ON THE TIMELINE — `RS` is markup
+	 *  order, `sorted` is the order the sprite actually flies. The first stop has
+	 *  no predecessor so it borrows its successor (a leg aligns the same either
+	 *  way); a lone stop has no leg at all and keeps the default Shift. */
+	function legAnchor(i: number): Point | null {
+		const s = RS[i];
+		if (!s || RS.length < 2) return null;
+		const k = sorted.indexOf(s);
+		const other = sorted[k - 1] ?? sorted[k + 1];
+		return other ? center(other) : null;
+	}
+
+	// Rotate detents. The grip ORBITS the center, and onRotate reads its angle
+	// back off atan2 — so locking it to an axis through the grab point yields
+	// whatever arbitrary angle that line happens to cross the orbit at, and round
+	// angles (the one thing Shift should give a rotate grip) are unreachable.
+	// Snapping around the CENTER at a fine step fixes exactly that. The
+	// projection shortens the radius off-detent, which onRotate ignores and the
+	// re-rendered gripPoint puts back on the orbit.
+	const ROT_STEP_DEG = 15;
+
 	// Geometry stays on the integer grid (matches DrawHandle's snapped points
 	// and Block's whole-pixel boxes), so copied stops read cleanly.
 	function onMove(i: number, p: Point) {
@@ -986,10 +1016,12 @@
 	{:else if isSelected && !entered}
 		<g class="draw-chrome" data-shape={name || 'Sprite'}>
 			{#each RS as s, i (i)}
+				{@const anchor = legAnchor(i)}
 				<DrawHandle
 					point={center(s)}
 					{grid}
 					title={`move · ${s.pct}%`}
+					shiftSnap={anchor ? (p) => snapToAngles(p, anchor) : undefined}
 					onselect={() => beginDrag(i)}
 					onmove={(p) => onMove(i, p)}
 					oncommit={() => endDrag(i)}
@@ -1007,6 +1039,7 @@
 					point={gripPoint(s)}
 					kind="bend"
 					title={`rotate · ${s.pct}%`}
+					shiftSnap={(p) => snapToAngles(p, center(s), ROT_STEP_DEG)}
 					onselect={() => beginDrag(i)}
 					onmove={(p) => onRotate(i, p)}
 					oncommit={() => endDrag(i)}
