@@ -1,0 +1,21 @@
+cb-version = "0.1.0"
+display-name = "ThinkRail Auto-Start"
+display-disc = "Start the ThinkRail web UI on container boot"
+display-detail = "Starts ThinkRail in the background when the booth starts, bound to 0.0.0.0 on THINKRAIL_PORT. The code folder is opened as the project when it is a git repo. Log: /tmp/thinkrail.log."
+display-order = 2
+auto-select = false
+tags = [
+    "thinkrail",
+    "autostart"
+]
+
+[segments]
+"startup--65.sh" = """
+# Auto-start ThinkRail in background
+PORT=${THINKRAIL_PORT}
+LOG_FILE="/tmp/thinkrail.log"
+
+nohup start-thinkrail "$PORT" > "$LOG_FILE" 2>&1 &
+
+echo "ThinkRail started on port $PORT (PID $!, log: $LOG_FILE)"
+"""

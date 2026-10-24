@@ -1,0 +1,22 @@
+cb-version = "0.1.0"
+display-name = "Orca Server Auto-Start"
+display-disc = "Start a headless Orca runtime on container boot (beta upstream)"
+display-detail = "Runs orca-serve in the background when the booth starts, so a browser or the host's Orca can pair with it. The pairing link is the credential and is printed only at start: run orca-pairing to see it again (log: /tmp/orca-serve.log). The link tells clients to dial localhost on the port the expose extension publishes; for clients on a LAN or Tailscale, set ORCA_PAIRING_ADDRESS (e.g. --env ORCA_PAIRING_ADDRESS=100.64.1.20:6768). Upstream marks orca serve as beta."
+display-order = 2
+auto-select = false
+tags = [
+    "orca",
+    "autostart",
+    "server"
+]
+
+[segments]
+"startup--65.sh" = """
+# Auto-start the headless Orca runtime in background
+PORT=${ORCA_PORT}
+LOG_FILE="/tmp/orca-serve.log"
+
+nohup orca-serve "$PORT" > "$LOG_FILE" 2>&1 &
+
+echo "Orca server started on port $PORT (PID $!, log: $LOG_FILE); run orca-pairing for its link"
+"""
