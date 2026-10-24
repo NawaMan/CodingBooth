@@ -125,6 +125,8 @@ export interface SharedShapeAttrs {
 	color?: string;
 	thickness?: number;
 	dash?: boolean | string;
+	rough?: boolean | number;
+	seed?: number;
 	label?: string;
 	labelText?: string;
 	labelAt?: number;
@@ -159,6 +161,13 @@ export function sharedAttrs(a: SharedShapeAttrs): string {
 	if (a.thickness != null) out += ` thickness={${fmtNum(a.thickness)}}`;
 	if (a.dash === true) out += ' dash';
 	else if (typeof a.dash === 'string' && a.dash) out += ` dash="${a.dash}"`;
+	// The hand-drawn option round-trips like any authored prop. `rough={false}`
+	// is meaningful (it opts a shape out of an inherited <Draw rough>), so it is
+	// emitted too — dropping it would silently re-roughen the shape on drag.
+	if (a.rough === true) out += ' rough';
+	else if (a.rough === false) out += ' rough={false}';
+	else if (typeof a.rough === 'number') out += ` rough={${fmtNum(a.rough)}}`;
+	if (a.seed != null) out += ` seed={${fmtNum(a.seed)}}`;
 	if (a.label) out += ` label="${a.label}"`;
 	if (a.labelText) out += ` labelText="${a.labelText}"`;
 	if (a.labelText && a.labelAt != null && a.labelAt !== 0.5) out += ` labelAt={${fmtNum(a.labelAt)}}`;

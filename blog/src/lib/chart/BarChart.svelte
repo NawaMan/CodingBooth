@@ -28,6 +28,7 @@
 	import ChartLegend from './ChartLegend.svelte';
 	import ChartTooltip from './ChartTooltip.svelte';
 	import {
+		axisGutter,
 		bandScale,
 		keyString,
 		linearScale,
@@ -114,21 +115,19 @@
 	// axis label only makes sense for a single series; multi-series is labelled
 	// by the legend, so drop the left axis label then.
 	const yAxisLabel = $derived(!multi ? shown[0]?.label : undefined);
-	const margin = $derived({
+
+	// The vertical margins are fixed; the LEFT one is sized to the tick text and
+	// so lands further down, once yFormat exists (see `margin`). Splitting them
+	// is what breaks the cycle margin → plot → yScale → ticks → margin: the y
+	// range is vertical, so it only ever needed top/bottom.
+	const vMargin = $derived({
 		top: 18,
 		right: 18,
-		bottom: 40 + (x.label ? 22 : 0),
-		left: 52 + (yAxisLabel ? 20 : 0)
+		bottom: 40 + (x.label ? 22 : 0)
 	});
-	const plot = $derived({
-		left: margin.left,
-		right: width - margin.right,
-		top: margin.top,
-		bottom: height - margin.bottom
-	});
+	const yRange = $derived<[number, number]>([height - vMargin.bottom, vMargin.top]);
 
 	const categories = $derived(data.map((row) => valueOf(row, x.value)));
-	const xScale = $derived(bandScale(categories, [plot.left, plot.right]));
 
 	// Stacked totals (used both for the y extent and the rects); one entry per row.
 	const stacks = $derived(stacked ? stackSeries(data, shown) : []);
@@ -146,9 +145,7 @@
 		}
 		return min === Infinity ? [NaN, NaN] : [min, max];
 	});
-	const yScale = $derived(
-		linearScale(yExtent, [plot.bottom, plot.top], { zero: true, nice: true })
-	);
+	const yScale = $derived(linearScale(yExtent, yRange, { zero: true, nice: true }));
 	const zeroY = $derived(yScale.map(0));
 
 	const yFormat = (v: unknown): string => {
@@ -156,6 +153,22 @@
 		const fmt = !multi ? shown[0]?.format : undefined;
 		return fmt ? fmt(n) : Number.isFinite(n) ? n.toLocaleString('en-US') : String(v);
 	};
+
+	// Now the left gutter: as wide as the widest tick label actually rendered,
+	// floored at the 52 this used to hardcode so a chart whose ticks already fit
+	// is untouched.
+	const margin = $derived({
+		...vMargin,
+		left: axisGutter(yScale.ticks.map(yFormat), { label: !!yAxisLabel })
+	});
+	const plot = $derived({
+		left: margin.left,
+		right: width - margin.right,
+		top: vMargin.top,
+		bottom: height - vMargin.bottom
+	});
+
+	const xScale = $derived(bandScale(categories, [plot.left, plot.right]));
 	const catLabel = (cat: unknown): string => (cat === null || cat === undefined ? '' : String(cat));
 	const fmtSeries = (s: SeriesDef<T>, v: number): string =>
 		s.format ? s.format(v) : v.toLocaleString('en-US');

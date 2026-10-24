@@ -28,6 +28,7 @@
 	import { browser } from '$app/environment';
 	import { annotationMode, canAnnotate } from '$lib/stores/annotation';
 	import { toolBarPinned } from '$lib/stores/chromePin';
+	import { chromeBare, bareTucked } from '$lib/stores/chromeBare';
 	import { chromeArmed, moreMenuOpen, closeMoreMenu, toggleMoreMenu } from '$lib/stores/chromeArm';
 	import { overviewOpen } from '$lib/stores/overviewOpen';
 	import SizeMode from './SizeMode.svelte';
@@ -49,6 +50,8 @@
 		sourceItem?: Snippet;
 		/** Kiosk / auto-advance menu row (empty when the deck does not offer it). */
 		kioskItem?: Snippet;
+		/** Hide / show both bars (bare chrome) menu row. */
+		barsItem?: Snippet;
 	}
 
 	let {
@@ -60,7 +63,8 @@
 		captureItem,
 		printBtn,
 		sourceItem,
-		kioskItem
+		kioskItem,
+		barsItem
 	}: Props = $props();
 
 	/** The menu root — so an outside click can tell "in the drop" from "elsewhere". */
@@ -137,6 +141,8 @@
 		class:armed={$chromeArmed}
 		class:menu-open={$moreMenuOpen}
 		class:overview-open={$overviewOpen}
+		class:bare={$chromeBare}
+		class:tucked={$chromeBare && $bareTucked}
 		role="group"
 		aria-label="Slide tools"
 		aria-hidden={$overviewOpen ? 'true' : undefined}
@@ -155,7 +161,14 @@
 				: 'PIN — keep this bar visible'}
 			onclick={() => toolBarPinned.update((v) => !v)}
 		>
-			<svg class="pin-icon" viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true" focusable="false">
+			<svg
+				class="pin-icon"
+				viewBox="0 0 24 24"
+				width="1em"
+				height="1em"
+				aria-hidden="true"
+				focusable="false"
+			>
 				<!-- Classic pushpin (Material-style): head + shaft + needle. currentColor tracks the tab. -->
 				<path
 					fill="currentColor"
@@ -186,8 +199,8 @@
 				: $annotationMode
 					? 'ANNOTATE — drawing (click to put the pen down)'
 					: 'ANNOTATE — draw on this slide'}
-			onclick={() => annotationMode.update((v) => !v)}
-		><span class="tool-mn">A</span>NNOTATE</button>
+			onclick={() => annotationMode.update((v) => !v)}><span class="tool-mn">A</span>NNOTATE</button
+		>
 
 		<!-- ADJUST + SAVE, slotted from SlideDeck (which owns the layout store). The snippet carries
 		     the separator before them, so a deck that doesn't offer ADJUST leaves no dangling
@@ -203,7 +216,7 @@
 
 		<span class="annot-bar-sep" aria-hidden="true"></span>
 
-		<!-- The hamburger menu. Groups: navigate (OVERVIEW, KIOSK) · export (CAPTURE, PRINT) ·
+		<!-- The hamburger menu. Groups: navigate (OVERVIEW, KIOSK, BARS) · export (CAPTURE, PRINT) ·
 		     source (SOURCE, EDIT). Separators sit between groups; empty capture/kiosk leave a
 		     zero-height row so the sep still reads as group boundaries. -->
 		<!-- pointerleave clears a dismissal: the pointer having genuinely left is the honest
@@ -222,9 +235,9 @@
 				aria-haspopup="menu"
 				aria-expanded={$moreMenuOpen}
 				aria-label="More tools (M)"
-				title="More — Overview, Kiosk, Capture, Print, Source, Edit"
-				onclick={() => toggleMoreMenu()}
-			>☰ (M)</button>
+				title="More — Overview, Kiosk, Bars, Capture, Print, Source, Edit"
+				onclick={() => toggleMoreMenu()}>☰ (M)</button
+			>
 			<!-- svelte-ignore a11y_click_events_have_key_events -->
 			<!-- Picking a row puts the menu away — the rows ACT (open OVERVIEW, print, …), they
 			     are not settings to leave sitting open. Caught by bubbling rather than wired per
@@ -244,6 +257,7 @@
 			>
 				{@render overviewBtn?.()}
 				{@render kioskItem?.()}
+				{@render barsItem?.()}
 				<div class="menu-sep" role="separator"></div>
 				{@render captureItem?.()}
 				{@render printBtn?.()}
@@ -295,6 +309,18 @@
 		transform: translateX(-50%) translateY(0);
 	}
 
+	/* BARE (see chrome/chromeBareCore) — hidden completely, no peek strip, PIN or not. Only
+	   Alt+. (`.armed`) brings it back; once it is up, hover / focus / an open ☰ hold it there
+	   until the pointer and focus leave. `visibility` keeps a hidden bar from being hovered
+	   or tabbed into, so nothing but Alt+. can start that. `.tucked` (just hidden by hand, see
+	   stores/chromeBare) hides it even under the pointer, until Alt+. raises it again. */
+	.annot-tools.bare:not(.armed):not(.menu-open):not(:hover):not(:focus-within),
+	.annot-tools.bare.tucked:not(.armed) {
+		transform: translateX(-50%) translateY(-120%);
+		visibility: hidden;
+		pointer-events: none;
+	}
+
 	/* OVERVIEW owns the screen — hide the window tool bar completely (not just tuck).
 	   The overlay sits at z-index 50 above the canvas-space overview scrim (45), so
 	   without this the peek strip and a pinned bar would paint over the grid. */
@@ -313,7 +339,7 @@
 	.annot-tools.armed {
 		box-shadow:
 			0 3px 14px rgba(0, 0, 0, 0.4),
-			0 0 0 2px color-mix(in srgb, var(--annot-toggle-fg, #F0A33E) 55%, transparent);
+			0 0 0 2px color-mix(in srgb, var(--annot-toggle-fg, #f0a33e) 55%, transparent);
 	}
 
 	/* The hamburger + its dropdown. position:relative anchors the panel under the ☰ at the bar's
@@ -327,7 +353,7 @@
 
 	/* PRESENT — a plain bar button (slotted from SlideDeck, dressed via :global). Half-faded at
 	   rest, full on its own hover; a click opens the console. It owns no menu now. */
-	/* Mnemonic underline — bar toggles (PRESENT / ANNOTATE / ADJUST) and ☰ rows (O/C/R/S/E/K)
+	/* Mnemonic underline — bar toggles (PRESENT / ANNOTATE / ADJUST) and ☰ rows (O/K/B/C/R/S/E)
 	   share this. Letters that are NOT in the word keep a trailing chip instead: FITTED (Z), ☰ (M). */
 	.annot-tools :global(.tool-mn) {
 		text-decoration: underline;
@@ -352,7 +378,7 @@
 		padding: 0.3em 0.75em;
 		border: 0;
 		background: transparent;
-		color: var(--annot-toggle-fg, #F0A33E);
+		color: var(--annot-toggle-fg, #f0a33e);
 		/* Word buttons must stay on one line (same bargain as FITTED (Z) / ☰ (M) chips). */
 		white-space: nowrap;
 	}
@@ -375,9 +401,11 @@
 		padding: 0.2em 0.4em;
 		border: 0;
 		background: transparent;
-		color: var(--annot-toggle-fg, #F0A33E);
+		color: var(--annot-toggle-fg, #f0a33e);
 		opacity: 0.6;
-		transition: opacity 120ms ease, background 120ms ease;
+		transition:
+			opacity 120ms ease,
+			background 120ms ease;
 	}
 	.annot-hamburger:hover,
 	.annot-menu:hover .annot-hamburger,
@@ -409,7 +437,9 @@
 		opacity: 0;
 		pointer-events: none;
 		transform: translateY(-8px);
-		transition: opacity 150ms ease, transform 150ms ease;
+		transition:
+			opacity 150ms ease,
+			transform 150ms ease;
 	}
 	/* Three independent ways in, OR'd: pointer, focus, and the `moreMenuOpen` latch that M
 	   and a click on ☰ set. The pointer and focus paths are GUARDED by `:not(.dismissed)`,
@@ -455,7 +485,7 @@
 		border: 0;
 		border-radius: 6px;
 		background: transparent;
-		color: var(--annot-toggle-fg, #F0A33E);
+		color: var(--annot-toggle-fg, #f0a33e);
 	}
 	.annot-drop :global(.annot-tool:hover:not(:disabled)) {
 		background: var(--annot-bar-hover, rgba(255, 255, 255, 0.1));
@@ -553,7 +583,7 @@
 		border: 0;
 		border-radius: 6px;
 		background: transparent;
-		color: var(--annot-toggle-fg, #F0A33E);
+		color: var(--annot-toggle-fg, #f0a33e);
 		font: inherit;
 		font-weight: bold;
 		letter-spacing: 0.03em;
@@ -610,9 +640,11 @@
 		border: 1px solid transparent;
 		border-radius: 999px;
 		background: transparent;
-		color: var(--annot-toggle-fg, #F0A33E);
+		color: var(--annot-toggle-fg, #f0a33e);
 		opacity: 0.62;
-		transition: opacity 120ms ease, background 120ms ease;
+		transition:
+			opacity 120ms ease,
+			background 120ms ease;
 		white-space: nowrap;
 	}
 	:global(.annot-tab:hover:not(:disabled)) {
@@ -621,8 +653,8 @@
 	}
 	:global(.annot-tab.on) {
 		opacity: 1;
-		background: var(--annot-pen, #F0A33E);
-		color: var(--annot-bar-on-fg, #1A1206);
+		background: var(--annot-pen, #f0a33e);
+		color: var(--annot-bar-on-fg, #1a1206);
 		border-color: transparent;
 	}
 	:global(.annot-tab:disabled) {
@@ -643,7 +675,7 @@
 		border: 1px solid var(--annot-bar-edge, rgba(255, 255, 255, 0.22));
 		border-radius: 999px;
 		background: transparent;
-		color: var(--annot-toggle-fg, #F0A33E);
+		color: var(--annot-toggle-fg, #f0a33e);
 		white-space: nowrap;
 	}
 	:global(.annot-act:hover) {

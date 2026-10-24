@@ -1,4 +1,5 @@
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
+import { reportAction } from '$lib/record/recordBus';
 
 // The name of the <Block> the deck is currently SPOTLIGHTING, or `null` for none.
 //
@@ -23,5 +24,8 @@ export const highlightTarget = writable<string | null>(null);
 
 /** Spotlight the Block named `name`, or clear the spotlight with `null`/`''`. */
 export function setHighlight(name: string | null): void {
-	highlightTarget.set(name ? name : null);
+	const next = name ? name : null;
+	if (get(highlightTarget) === next) return;
+	highlightTarget.set(next);
+	reportAction({ kind: 'highlight', name: next }); // heard by a VOD recording; no-op otherwise
 }

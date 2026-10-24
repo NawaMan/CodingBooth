@@ -22,10 +22,11 @@
 	--PAPER-RAISED: #1E1E1E;  /* buttons, code title bar            */
 	--PANEL:        #EEEEEE;  /* TOC popover                        */
 	--LINE:         #CCCCCC;  /* borders / dividers                 */
-	--ACCENT:       #2980B9;  /* hover, links, box border, rule     */
+	--ACCENT:       #2980B9;  /* hover, box border, rule            */
 	--ACCENT-2:     #00B356;  /* selected / success                 */
 	--ACCENT-WARM:  #F0A33E;  /* warm complement to ACCENT (titles) */
 	--ON-ACCENT:    #FFFFFF;  /* text over an accent fill           */
+	--LINK:         #58A6FF;  /* every link; the glyph says the kind */
 	--BACKDROP:     #000000;  /* letterbox + box overlay surface    */
 	--SCRIM:        #0C0F13F2;/* 8-digit: full-canvas dim (Overview)*/
 	--DANGER:       #E5484D;  /* error / danger accent (Callout)    */
@@ -44,10 +45,15 @@
 	--PAPER-RAISED: #1B241C;  /* buttons, code title bar                         */
 	--PANEL:        #EAF3EA;  /* TOC popover                                      */
 	--LINE:         #BFD9C2;  /* borders / dividers                              */
-	--ACCENT:       #2FA85F;  /* hover, links, box border, subtitle rule         */
+	--ACCENT:       #2FA85F;  /* hover, box border, subtitle rule                */
 	--ACCENT-2:     #5BE08C;  /* selected / success                             */
 	--ACCENT-WARM:  #6EE7A0;  /* titles — bright green (replaces dark's amber)    */
 	--ON-ACCENT:    #06210F;  /* text over an accent fill                        */
+	/* Links stay COOL in this deliberately monochrome-green theme, and that is the
+	   semantics rather than a lapse: green is the deck's own voice, so a link — which
+	   always leads somewhere else — is allowed to read as not-of-this-deck. A green
+	   link would also be near-invisible against green body ink. */
+	--LINK:         #58A6FF;  /* every link; the glyph says the kind             */
 	--BACKDROP:     #000000;  /* letterbox + box overlay surface                 */
 	--SCRIM:        #04120AF2;/* 8-digit: full-canvas dim (Overview)             */
 	--DANGER:       #F2686C;  /* error / danger accent — lifted to read on green */
@@ -81,6 +87,9 @@
 	--ACCENT-2:     #5A9367;
 	--ACCENT-WARM:  #B5712A;  /* deeper orange, readable on light paper */
 	--ON-ACCENT:    #FFFFFF;
+	/* Inverted for light paper — the role fallback is the DARK look, so a light theme
+	   has to say this or every link comes out washed out. */
+	--LINK:         #1E6FB0;  /* the classic dark blue, at home on cream */
 	--BACKDROP:     #E7DFCC;
 	--SCRIM:        #EFE9DAF2;/* 8-digit: full-canvas dim (Overview) — LIGHT here, so
 	                             the grid's own INK/LINE roles keep reading on it */

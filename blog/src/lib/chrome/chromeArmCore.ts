@@ -4,7 +4,7 @@
 // Global letters fight typing and deck paging; so the model is:
 //   1. Alt+. raises both bars (arm)
 //   2. While armed, a/j/z/p/m/t/u pick a bar control (u = pause/resume a live kiosk)
-//   3. ☰ rows (o/k/c/r/s/e) fire while armed OR while the more menu is open —
+//   3. ☰ rows (o/k/b/c/r/s/e) fire while armed OR while the more menu is open —
 //      so Alt+. → m → c runs CAPTURE, and a bare Alt+. → c does too. K is dual-purpose:
 //      opens the Kiosk dialog while off, toggles the panel's forced-visible pin while live.
 //   4. Esc (or timeout) disarms
@@ -57,6 +57,7 @@ export type ChromeKeyIntent =
 export type MoreMenuKeyIntent =
 	| 'overview'
 	| 'kiosk'
+	| 'bars'
 	| 'capture'
 	| 'print'
 	| 'source'
@@ -82,7 +83,7 @@ function mnemonicLetter(e: KeyboardEvent): string {
  * ☰ row mnemonic while the more menu is open, or while chrome is armed (so the
  * letter both opens the drop and runs the row — the underline is not a lie).
  *
- * Alphabet: O OVERVIEW · K KIOSK · C CAPTURE · R PRINT · S SOURCE · E EDIT.
+ * Alphabet: O OVERVIEW · K KIOSK · B BARS · C CAPTURE · R PRINT · S SOURCE · E EDIT.
  * PRINT uses R because P is PRESENT on the bar. Case-insensitive; print flyout
  * case-sensitive keys (cCwWtT) are handled separately once PRINT is open.
  */
@@ -101,6 +102,9 @@ export function moreMenuKeyIntent(
 			return 'overview';
 		case 'k':
 			return 'kiosk';
+		case 'b':
+			// Hide / show both bars (bare chrome).
+			return 'bars';
 		case 'c':
 			return 'capture';
 		case 'r':
@@ -130,13 +134,7 @@ export function chromeKeyIntent(e: KeyboardEvent, armed: boolean): ChromeKeyInte
 
 	// Esc closes ☰ / disarms chrome even if bars were only hover-opened (not Alt+.-armed),
 	// so Escape always has a way to dismiss the more menu.
-	if (
-		e.key === 'Escape' &&
-		!e.ctrlKey &&
-		!e.metaKey &&
-		!e.altKey &&
-		!e.defaultPrevented
-	) {
+	if (e.key === 'Escape' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.defaultPrevented) {
 		return 'disarm';
 	}
 

@@ -82,6 +82,18 @@ two disagree about process, the root file wins.
   `keys="global"` lets Space run it one command at a time and then page the deck. Don't put an
   `<AnimationBar />` on a Terminal slide — both would drive the same clock; pass
   `controls={false}` if you want the bar to own it),
+  `Typewriter` (the same typewriter OUT of the console — ordinary slide text revealing itself
+  one character at a time, in the deck's own font, wrapping like the prose it is. Terminal's
+  reveal is a monospace span's width clipped to whole `ch`; this is one finite CSS animation
+  *per character*, so an `<AnimationBar />` scrubs it (backwards too) and several may share one
+  slide — stagger them with `startMs`. It brings no transport of its own, which is exactly why
+  it may sit on a bar's slide where a Terminal may not. The line holds its full space from the
+  first frame (`visibility`, not `display`), so nothing reflows as it fills, and the *finished*
+  sentence is what prerenders, prints, and shows under `prefers-reduced-motion` — the animation
+  only ever hides what is already there. `startOn="name"` holds it at frame 0 until a named
+  `<Note data-trigger>` pulse, as `Cursor` does. Props `text`/`tag`/`charMs`/`startMs`/
+  `punctuationMs`/`caret`/`typing`; maths in `utils/typewriterCore.ts`, which cuts the string
+  into GRAPHEMES so an emoji is one keystroke, not two broken halves),
   `ViewSource` (optional per-slide `?raw` registration for ☰ → **SOURCE** / **EDIT**. In
   **`pnpm dev`**, SOURCE and EDIT are **deck-wide** even without ViewSource: the shell loads
   `+page.svelte` via `/__geekpresent/source-load` and hosts a canvas-space CodeBox or the
@@ -96,9 +108,18 @@ two disagree about process, the root file wins.
   on any slide reached by a CLIENT-SIDE navigation, i.e. a View-Transition deck or an appendix
   with `transition`, because Monaco's CDN loader renders blank after a `goto`; EDIT still opens
   the same unscaled popup),
-  `Block` / `ImageBlock` (absolutely-positioned
+  `Block` / `ImageBlock` / `TextBlock` (absolutely-positioned
   wrappers you place at exact canvas pixels — drag/resize them in **ADJUST mode**,
-  see that playbook), `Connector` (an arrow auto-routed between two *named* `Block`s —
+  see that playbook; `TextBlock` is the diagram box — border and centred label,
+  `<TextBlock name="api" …>API</TextBlock>`, styled by `--textblock-*` role tokens;
+  `SvgBlock` is an INLINE SVG filling its box — `svg={x}` from `import x from './x.svg?raw'`,
+  or shapes in its slot with a `viewBox` — so `currentColor` follows `--svgblock-fg`, which
+  an `ImageBlock` of the same file cannot; `fit` contain/cover/fill, markup in `utils/svgCore.ts`),
+  `Group` (a set of those Blocks that moves, zooms and pans as ONE — a camera on a drawing:
+  `focus="api" zoom={3}`, `fit`, `view`, or plain `x`/`y`/`scale`; per-slide `hide` and `move`; `glide`
+  to animate within a slide, `morph` to glide across slides; write the drawing once as a
+  *scene* component and give each slide its shot. See the playbook "Zoom and pan a drawing"),
+  `Connector` (an arrow auto-routed between two *named* `Block`s —
   see the diagram playbook), `Cursor` (a fake mouse pointer for demoing a UI without a
   live app — a `Sprite` wearing a pointer under the hood, riding `<Draw>`; `path` glides
   between named/literal points, or chain `script` — `warpTo`/`moveTo`/`around`/`attention`
@@ -120,6 +141,16 @@ two disagree about process, the root file wins.
   a `-QR.png`, and note `YouTube`'s `qr` prop is now optional for exactly that reason),
   `AppendixLink` (the call *into* an appendix — `<AppendixLink to="appendix-gc.html">how the GC
   marks</AppendixLink>`; it stamps the current slide as the return address, so you never type one),
+  `Link` (the anchor every slide and Text should write instead of a bare `<a>`. Every link wears
+  ONE colour (`--link-fg`) and ONE thin dashed underline; a trailing **glyph** says which kind it
+  is — **unmarked** an ordinary move inside the site, **↩** a detour you come back from (that is
+  `AppendixLink`), **↗** this leaves the site. So the glyph is the entire distinction, not
+  decoration on top of a colour that already said it. An absolute URL / `mailto:` / `tel:`
+  classifies itself and gets `target` + `rel="noopener noreferrer"` unasked; `newTab` forces the
+  window, and forcing it ON also earns the ↗, since the reader does leave. `glyph={false}` /
+  `icon` adjust the mark. Never hand-set a link colour on a slide — one role token moves them
+  all, and `--appendix-link-fg` / `--link-external-fg` are escape hatches that DEFAULT to
+  `--link-fg`. Logic in `utils/linkCore.ts`),
   `ProgressBar` (a thin "how far through the deck" bar that fills as you page — it reads `getProgress()`,
   so it needs no props; drop it in a deck's `+layout.svelte` after `setPages`, tagged `gp-chrome no-print`
   so it bows out of captures and printouts. geeklight wears one deck-wide),
@@ -127,9 +158,24 @@ two disagree about process, the root file wins.
   `Spotlight` (dims the canvas and rings a *named* `Block`, driven by a `<Note>` line the
   speaker covers in the console) and `Annotate` (the speaker's **pen** — freehand ink on the
   live slide, persisted per slide; see its playbook, and note the deck must pass `annotate`
-  to offer it),
+  to offer it), plus `OnboardHint` (window-fixed, outside the canvas: the first-visit hint.
+  A viewer who sits on the deck's first visible slide without paging or opening a bar is
+  told about →/Space/← and the two edge bars — after `onboardDelayMs` (default 8 s) of
+  nothing, or at once on a stray Enter/↑/↓, click or scroll. A paging key, a bar hover or
+  focus, Alt+., "Got it", or arriving at any later slide sets ONE per-origin flag
+  (`stores/onboard.ts`), and it never shows again. Never on a screen an audience may see:
+  off under `?clean`/`?present`, bare chrome (a live console, or bars hidden), kiosk, VOD record/replay
+  and embeds. On by default; `<SlideDeck onboardHint={false}>` opts out. **`?onboard`** on
+  any slide shows it at once and clears the flag — for trying or demoing it; only the
+  audience-screen cases above still hold it back. Rules in `onboard/onboardCore.ts`),
   plus framework-internal `Copyright`, `CtrlBtn`,
   `NavigationBar`, `TableOfContent`,
+  `NoteEditor` (the presenter console's **EDIT NOTE**, key **E** — edits the source between the
+  slide's `<Note>` and `</Note>` in place over the notes panel; SAVE goes through the dev-only
+  `/__geekpresent/note-load` / `note-save`, which find the note with Svelte's own parser (so a
+  `<Note>` inside a `QuickCode` sample never counts) and refuse rather than guess: no note, two
+  notes, a file changed since load, or an edit that would no longer parse. Static host: NOT
+  ALLOWED. Core: `note/noteSourceCore.ts`),
   `OverviewPage` (the all-slides grid — press **O**, click a slide to jump, Escape closes. `SlideDeck`
   mounts it; no slide places it. Tiles are live `?clean` iframes, lazy-mounted; `hidden` appendices
   are omitted. In **`pnpm dev`**, **EDIT** (or **E**) arms deck-structure editing: **ADD**, between-page
@@ -368,6 +414,15 @@ build steps, emphasis):
   ```
 - CSS `@keyframes` / `transition:` in a slide's `<style>` work too.
 - The `Box` component is already a worked example of CSS-transition choreography.
+- For **text arriving one character at a time**, use `Typewriter` (above) rather than a
+  timer that appends to a string: its per-character CSS rides the same scrubbable clock as
+  everything else here, and it prerenders as the finished sentence.
+- To **zoom and pan a whole drawing** — dive into one part, pan to the next, pull back — put
+  its Blocks in a `Group` and change the camera: `glide` animates it within a slide (stepped
+  by Space through `<Steps let:revealed>`), `morph` glides it across slides. See the playbook
+  "Zoom and pan a drawing" and `animation/scene-camera.html`. To move one part and keep it moved on
+  the slides after, see that playbook's "Move a part on one slide and leave it there"
+  (`animation/scene-move.html`); paging back into a build opens it spent.
 
 For **scrubbed, timeline animation** — shapes drawing themselves in, elements flying —
 use the Draw family (`$lib/draw`) with one `<AnimationBar />`: every shape's animation
@@ -429,6 +484,18 @@ highest authority first:
 Offered is not active: the mode still starts **off**. Precedence lives in
 `src/lib/layout/layoutAccessCore.ts` (pure, unit-tested).
 
+**SAVE writes a Block into the file that WROTE it** — the slide's `+page.svelte`, or a
+component under `src/routes/` the slide uses (a shared scene, e.g.
+`transition/CameraScene.svelte`), so a drag on any slide that shows the scene updates
+the scene for all of them. The browser can't know where a tag was authored, so the dev
+server says it at compile time: `sourceStampPlugin` (`adjust/devSavePlugin.ts`, listed
+FIRST in `vite.config.ts` — after `sveltekit()` it would see compiled JS) stamps every
+`Block`/`ImageBlock`/`TextBlock`/`SvgBlock` tag in a route file with `__file="…"`, the
+Block sends it with its change, and the endpoint patches that file — refusing any stamp
+outside `src/routes`. Logic in `adjust/sourceTag.ts`. Two limits: a tag inside a **`$lib`**
+component is never stamped (it belongs to whoever uses it, so SAVE still looks in the
+slide), and **Draw shapes** still save into the slide only.
+
 **SAVE cannot follow ADJUST into a build.** It POSTs to `/__geekpresent/adjust-save`,
 an endpoint that exists only inside the vite dev server; a static host has no source
 tree to rewrite. The button is **not** greyed out there — it looks ordinary and
@@ -475,6 +542,10 @@ There are two distinct causes, and the tooltip tells the one that actually happe
    ```svelte
    <ImageBlock src={photo} alt="…" x={760} y={560} width={320} height={320} />
    ```
+   An SVG with an animated GIF inside (an Excalidraw export) is frozen through `<img>`;
+   `live` inlines it in the browser so the GIF plays, and `live="after-transition"` waits
+   until the view transition that brought the slide in has landed (the GIF starts on the
+   settled slide, not mid-morph). The prerender stays the plain `<img>` either way.
 2. Have the user open the slide in their dev server. The top-centre tool bar
    (`📌 │ PRESENT │ ANNOTATE │ ADJUST │ DISPLAY │ ☰`) now shows an **ADJUST** toggle — turn it on. A dashed
    outline appears around each `Block`.
@@ -534,6 +605,17 @@ Nothing to place: `SlideDeck` mounts `<Annotate>` once, like `Spotlight`. One pr
   instead of sloping with your wrist. Anchored, not averaged: a mean y shifts as samples
   arrive and the band slides around under the cursor mid-swipe. `levelHighlight={false}` opts
   out.
+- **The pen is FREEHAND ink** — perfect-freehand, vendored as `annotate/freehandCore.ts` (MIT notice
+  inside; zero npm deps, and its output matches upstream 1.2.3 for the same input). A stroke is still
+  stored as centre-line `points`; the outline is DERIVED at render, a filled polygon that thins
+  where the hand moved fast (simulated pressure — no pressure is stored). Defaults: size 12,
+  thinning 0.7, streamline 0.6, smoothing 0.5, linear easing, round caps, no taper; override any
+  of them with `<SlideDeck freehand={{ … }}>`, or `freehand={false}` for the old constant-width
+  line. Only the pen: the highlighter stays a levelled band, line/arrow/rectangle stay crisp.
+  `size` is the width at middling pressure, NOT a ceiling — slow ink swells to
+  `freehandMaxRadius` (10.2px radius by default), which is also the eraser's reach. A freehand
+  pen commits with `simplifyPoints(…, 2)`, not 4: thinning reads the sample spacing, and the
+  coarser decimation flattened it and made the stroke jump at the lift.
 - **Anything clickable must out-rank the ink surface** (z-index 40). While armed it owns every
   pointer on the canvas — which is why the whole top-centre tool bar (the ANNOTATE toggle
   included) and the pen's own bar live *inside* `Annotate` at 42/41, above the surface. Put a
@@ -563,6 +645,16 @@ stay out of the audience's way. A speaker who is actively using one often wants 
 - **Default is auto-hide.** Offered is not active: a first visit still tucks. Click the pin to
   seat the bar fully open (`class="pinned"` forces `translateY(0)`); click again to return to
   auto-hide. The choice survives a slide change and a reload.
+- **Gone completely while presenting (BARE).** While a presenter console is live, the
+  audience window hides **both** bars outright — no peek strip, and PIN does not keep them.
+  `<SlideDeck hideChrome>` does the same on every slide without a console, and a sticky
+  `?bare` / `?bare=off` outranks both (`?bare=off` keeps the bars while a console runs).
+  The console's own **▭ Bars** button (key **B**) records that same choice, and the audience
+  window follows it at once through the `storage` event — no reload.
+  **Alt+.** still raises them, and hover / focus / an open ☰ hold them up until you leave.
+  A hidden bar is `visibility: hidden`, so nothing else — a stray pointer, a Tab — can bring
+  it back on the audience's screen. Pure core: `chrome/chromeBareCore.ts`; store:
+  `stores/chromeBare.ts`.
 - **Opt-out of a whole bar.** `<SlideDeck toolBar={false}>` / `controlBar={false}` (default
   **on**) drop the top authoring cluster or the bottom TOC/pager for a bare canvas. Independent
   of PIN. Hidden either way under `?clean` / `?present`.
@@ -694,6 +786,57 @@ sticky `?kiosk` / always in `pnpm dev`); **running** is a separate session.
   (source node stays visually hidden; the panel is window-fixed so it is not trapped under the
   canvas `transform`).
 
+### "Record the talk as a video (VOD Recorder)"
+
+For a YouTube upload: the speaker presents by hand, and the deck is recorded to a video file at the
+canvas size (1920×1080 for a stock deck) with a **timeline** text file of every action. Edit the
+timeline and **REPLAY** it to record again, hands off. Spec: `specs/VOD-RECORD-1.md`.
+
+- **Open it from the presenter console**: **● REC**, key **R**. It opens `/_recorder?deck=<deckKey>`,
+  a window of its own. Nothing to place on a slide.
+- **Why a third window:** paging is a full page load, and the `?present` console reloads with the
+  audience. A recording held by either would die at the first page turn. Don't try to move the
+  recorder into `SlideDeck`/`PresenterView`.
+- **REC** asks which tab to share (pick the slides tab), reloads the current slide so live and replay
+  start from the same state, hides both bars (`chromeBare` ORs in `recordingLook`), shows the slide
+  FITTED, then rolls. **STOP** saves the video (streamed to a chosen file, else a download) and the
+  `.timeline.txt`. Options: size (default the canvas), 30/60 fps, microphone, tab sound, keep the ink
+  already drawn.
+- **Exact size whatever the window**: every frame is redrawn letterboxed onto a canvas of the output
+  size (`MediaStreamTrackProcessor`/`Generator`, Chromium). A non-16:9 window gets black bars and a
+  warning, not a wrong-sized file.
+- **The timeline records OUTCOMES at the level the deck performed them**, reported by the slides
+  window through `record/recordBus.reportAction` (a no-op unless that window is being recorded):
+  `navigate()` → `goto`, a build's next/prev → `step` / `step back` (`ActiveSteps.prev` exists for
+  replay), a slide's `onContinue` → `continue`, `AnimationBar` gestures and console scrubs → `anim`,
+  `fireTrigger` → `trigger`, `setHighlight` → `highlight`. **A new way to change what is on screen
+  needs a `reportAction` call and a case in `SlideDeck.applyReplayed`**, or the replay will not
+  reproduce it.
+- **Ink is the Recorder's own job**: it diffs the ink book (a `sync: true` store it sees too) and
+  writes strokes back on replay, redrawn over `Stroke.ms`. `Annotate` only stamps that duration.
+- **Replay waits for `here` after every `goto`** (a command sent to a page still loading is lost),
+  then fires what fell due at once — no accumulated drift. While replaying, the slides window
+  ignores the keyboard, the pointer (a transparent shield) and every console relay.
+- **No blank frames between slides.** A full page load paints an empty shell until the slide
+  hydrates. The slides window says `leaving` (`navigate()`, the replay's reload, and `pagehide` for
+  anything else) and the Recorder freezes the picture on the last frame (`Capture.hold`) until the
+  next `here`, plus ~150 ms; 8 s at most. A client-side (View Transition) turn says nothing — its
+  animation is the picture. The live window still blinks; the video does not.
+- **Neighbours are preloaded.** `SlideDeck` writes a `<script type="speculationrules">` naming the
+  next and previous slide (`?present` ones in the console; `utils/preloadCore.ts`), so Chrome loads
+  them in a hidden tab and a page turn swaps in a page that is already running. A preloaded page runs
+  its scripts while hidden, so **`SlideDeck` starts nothing until `prerenderingchange`** (`activated`):
+  no relay announcement, no `here`, no kiosk, no slide mounted. Anything new that announces itself
+  across windows belongs in `startDeck()`, or behind `activated`. `preloadNeighbours={false}` opts a
+  heavy deck out; View-Transition decks page client-side and preload nothing.
+- **Record from the build, not `just dev`.** Dev fetches hundreds of unbundled modules per page
+  turn (~1 s blank); **`just serve-build`** builds and serves `docs/` on the same port, and
+  **`just serve`** serves the last build again without rebuilding (stop `just dev` first — they
+  share container port 5173).
+- Grammar, paths, the ink diff and the video settings are pure (`record/timelineCore.ts`), as is the
+  scheduler (`record/replayCore.ts`); the Recorder clocks from a Worker (`record/ticker.ts`) because
+  a background window's timers are throttled.
+
 **Every slide to a PNG, offline** — `utils/capture-slides.sh` (for OG/social images, thumbnails,
 a contact sheet). It drives a real headless Chrome, so unlike the in-app button it captures
 **everything** — iframes, video, Monaco — because the browser's own rasteriser does the drawing.
@@ -768,8 +911,8 @@ Don't compute arrow coordinates. Give each box a **`name`** and let **`Connector
 between them — then a ADJUST-mode drag moves the box *and* its arrows together.
 
 ```svelte
-<Block name="api" x={200} y={400} width={280} height={140}>API</Block>
-<Block name="db"  x={900} y={400} width={280} height={140}>DB</Block>
+<TextBlock name="api" x={200} y={400} width={280} height={140}>API</TextBlock>
+<TextBlock name="db"  x={900} y={400} width={280} height={140}>DB</TextBlock>
 
 <!-- AFTER the Blocks — see the ordering rule below -->
 <Connector from="api" to="db" label="query" />
@@ -795,6 +938,138 @@ between them — then a ADJUST-mode drag moves the box *and* its arrows together
   overlay with `pointer-events: none`, so it never eats a click.
 
 See `src/routes/slides/connector-component.html/` for a five-arrow, zero-coordinate diagram.
+
+### "Zoom and pan a drawing / move a set of Blocks as one (Group and scenes)"
+
+A **`Group`** holds Blocks (`Block`, `ImageBlock`, `TextBlock`, `SvgBlock`, and other Groups)
+authored in the group's **own** coordinates, and maps them onto the canvas with one uniform zoom
+plus one shift. Change one tag and every part moves. Aim it like a camera and the same drawing
+gives you a zoom, a pan or a pull back — within one slide, or from slide to slide.
+
+```svelte
+<script>
+  import Group from '$lib/components/Group.svelte';
+  import TextBlock from '$lib/components/TextBlock.svelte';
+</script>
+
+<Group name="scene" focus="api" zoom={3}>
+  <TextBlock name="api" x={620} y={380} width={340} height={220}>API</TextBlock>
+  <TextBlock name="db"  x={1160} y={420} width={340} height={220}>DB</TextBlock>
+</Group>
+```
+
+**Placing it — four ways, highest precedence first.** A camera prop whose name isn't a member falls
+through to the next, so a typo shows the drawing unzoomed rather than nothing.
+
+| Props | Effect |
+|---|---|
+| `view={{ x, y, width, height }}` | that rectangle of the drawing fills the canvas (centred, aspect kept) |
+| `fit="name"` `pad={0.1}` | that part — or a nested group, by its name — fills the canvas, with a margin |
+| `focus="name"` (or `focus={[x, y]}`) `zoom={3}` | that part's centre (or that point) sits at the canvas centre, zoomed |
+| `x` `y` `scale` | plain placement: the group's origin at (x, y), everything `scale`× |
+
+**Why it stays crisp.** A Group is *not* a CSS transform on a wrapper. Each member is redrawn at
+its true canvas box for every shot, and only its content is scaled inside that box. So text,
+borders and the small print stay sharp at 21×, a View-Transition snapshot of a part is the real
+box, and `Connector` / `Spotlight` find a grouped part by name at its zoomed position.
+
+**Per slide: `hide`.** `hide={['logo', 'cloud']}` takes parts off stage — or a nested group's name,
+which hides all of it. Hidden is `visibility`, not removal: the part keeps its box, so it fades
+out as it glides instead of popping. In ADJUST it shows faint and stays draggable.
+
+**Per slide: `move`.** `move={{ db: { x: 480, y: -40, scale: 1.2 } }}` puts parts somewhere else on
+this slide, by name like `hide` — or a nested group's name, which moves all of it. `x`/`y` are the
+drawing's units; `scale` is about the part's own centre. It is inherited down nested groups (an
+inner group's entry wins for its members), a camera `fit`/`focus` aims at the moved spot, and a
+`Connector` follows. The part's source `x`/`y` stay where it is DRAWN: a drag in ADJUST changes
+those (so every slide follows) and the slide's `move` still applies on top; the readout says
+`moved`.
+
+**Moving the camera WITHIN a slide — `glide`.** `glide={0.9}` animates any change of the camera,
+placement or `hide` over 0.9 s with ordinary CSS transitions: any browser, no deck setup. Drive the
+change from a build: `<Steps let:revealed>` hands the slide its current step, so each Space can pick
+the next shot (`animation/scene-camera.html` is the worked example). Glide switches off while
+ADJUST is on (a drag must track the pointer) and under `prefers-reduced-motion`.
+
+**Moving the camera ACROSS slides — `morph`.** In a View-Transition deck (`setViewTransitions(true)`
+in its layout; see "Add animations"), `morph="cam"` names every member `view-transition-name:
+cam-<name>`, so paging between two slides with different shots glides each part from its box on
+one to its box on the other. `morphOn="camera"` keeps those names to that one transition kind (the
+page's `transition` in `pages.ts`), so a plain `slide` to a neighbour leaves the parts alone; omit
+it when every transition in the deck should morph. Worked example: `transition/camera-*.html`.
+
+**The scene pattern — one drawing, many slides.** Write the drawing ONCE as a component holding the
+Group, and render it on every slide with that slide's shot:
+
+```svelte
+<!-- MyScene.svelte, next to the deck's pages.ts -->
+<script>
+  export let focus = null, zoom = 1, hide = [];
+</script>
+<Group name="scene" morph="my" {focus} {zoom} {hide}>
+  <TextBlock name="api" …>API</TextBlock>
+  …
+  <slot />   <!-- a slide's own extras, in scene coordinates -->
+</Group>
+
+<!-- zoom.html/+page.svelte -->
+<MyScene focus="api" zoom={3} />
+```
+
+- **Extras** go in the slot and ride the camera; something that must stay put on screen (a caption,
+  a button) goes outside the scene. A named slot between parts paints an extra at that depth — the
+  EP001 deck in CodingBoothPromotion uses `slot="after-booth"` to put a glow *behind* later parts.
+- **Per-part touches** (a different picture, an extra style or class on one slide) are the scene's
+  own props — expressions on `src` / `style` / `class` are fine. **Geometry must stay literal
+  numbers** (`x={620}`), or SAVE can't find the tag; move a part per slide with `move` instead.
+- **SAVE writes into the scene.** A drag in ADJUST on *any* slide that shows the scene lands in the
+  scene component, so every slide follows (see "Place an element visually"). It drags in the
+  drawing's own units whatever the zoom, so at 21× one unit is ~21 screen px.
+
+**Move a part on one slide and leave it there.** Each slide is its own page, so "where a part is"
+never carries over by itself: every slide states it. Have the scene forward `move` to its Group,
+once, as it forwards `hide` — then no part needs a prop of its own. The slides before the move pass
+nothing; the slide that moves it steps it on Space; every slide after passes the moved value, so
+paging forward shows no jump:
+
+```svelte
+<!-- MoveScene.svelte -->
+<script> export let move = {}; </script>
+<Group glide={0.9} {move}> …
+  <TextBlock name="db" x={1120} …>DB</TextBlock>
+</Group>
+
+<!-- the slide that moves it -->
+<Steps let:revealed><MoveScene move={revealed >= 1 ? { db: { x: 480 } } : {}} /> … <Fragment>…</Fragment></Steps>
+
+<!-- every slide after -->
+<MoveScene move={{ db: { x: 480 } }} />
+```
+
+Paging BACK into the moving slide (PREV, ←, Shift+Space off the next slide) opens its build
+**spent** — every Fragment showing, the part where it was left — so nothing jumps back and
+Shift+Space plays the move in reverse. This is true of every `<Steps>`, not only scenes: PREV
+leaves a short-lived mark in `sessionStorage` naming the slide it pages to (`utils/arrivalCore.ts`,
+written by `deckNav.navigate({ arriveAtEnd })`), and that slide's Steps reads it once. FIRST, NEXT,
+the TOC, a reload and the browser's Back button start at `start` as before; `backTo="start"` opts a
+build out. A glide arms only after the first frame is painted, so a slide that opens part-way
+through a build starts at that shot instead of gliding to it. Worked example:
+`animation/scene-move.html` → `scene-moved.html`. A presenter-console window that follows PREV
+does not get the mark, so it opens the build at the start.
+
+**Nesting.** Groups compose: an inner group's `x`/`y`/`scale` moves its members inside the outer
+drawing, and a **named** inner group publishes its extent, so an outer `fit="storage"` frames all of
+it, `hide={['storage']}` hides all of it and `move={{ storage: { y: -200 } }}` moves all of it.
+`hide`, `move`, `morph` and `glide` are inherited downward.
+
+**Limits.** A named camera (`fit` / `focus="name"`) resolves once its target has mounted — always so
+in the browser, but a server render (the handout, before hydration) draws the placement instead;
+`view` and a `focus` point are exact everywhere. While a glide runs, a `Connector` jumps to the
+final position rather than following. Draw shapes inside a Group are not mapped. The element is
+`display: contents`, so its `style` only carries inherited custom properties.
+
+Code: `Group.svelte`; maths in `utils/groupCore.ts` (pure, unit-tested); context in
+`utils/groupContext.ts`. Reference page: `references/layout/group.html`.
 
 ### "Host this alongside my existing blog / GitHub Pages site"
 

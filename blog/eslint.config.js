@@ -28,6 +28,10 @@ export default [
 		}
 	},
 	{
-		ignores: ['build/', '.svelte-kit/', 'dist/']
+		// Generated output and checkouts, none of it source. `docs/` is the built site
+		// (gitignored, rebuilt by `just build`), and `worktree/` holds linked agent
+		// worktrees — each a full second copy of `src/`, so linting it reports every
+		// problem twice and attributes it to the wrong tree.
+		ignores: ['build/', '.svelte-kit/', 'dist/', 'docs/', 'worktree/']
 	}
 ];
