@@ -1,0 +1,23 @@
+cb-version = "0.1.0"
+display-name = "Expose Orca Server Port"
+display-disc = "Expose the headless Orca runtime to the host network"
+display-detail = "Publishes ORCA_PORT so a browser or the host's Orca can reach the booth's Orca server. Pairing needs the link the server prints, but anything that can reach the port can attempt pairing, so keep it on a trusted network."
+display-order = 1
+auto-select = false
+tags = [
+    "orca",
+    "port",
+    "network"
+]
+
+# ORCA_HOST_PORT also goes in as an env var: orca-serve advertises it in the
+# pairing link, which is what the host browser dials.
+run-args = [
+    "-p", "${ORCA_HOST_PORT}:${ORCA_PORT}",
+    "-e", "ORCA_HOST_PORT=${ORCA_HOST_PORT}",
+]
+
+# Host-side port. Defaults to the port the service listens on, so moving the service
+# moves the published port with it. Override only when the host port is already taken.
+[params.ORCA_HOST_PORT]
+default = "${ORCA_PORT}"

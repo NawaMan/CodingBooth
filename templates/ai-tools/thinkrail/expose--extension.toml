@@ -1,0 +1,20 @@
+cb-version = "0.1.0"
+display-name = "Expose ThinkRail Port"
+display-disc = "Expose the ThinkRail web UI to the host network"
+display-detail = "Publishes THINKRAIL_PORT so the ThinkRail web UI opens from the host browser. The UI has no login of its own: anyone who can reach the published port can drive the agent, so keep it on a trusted network."
+display-order = 1
+auto-select = false
+tags = [
+    "thinkrail",
+    "port",
+    "network"
+]
+
+run-args = [
+    "-p", "${THINKRAIL_HOST_PORT}:${THINKRAIL_PORT}",
+]
+
+# Host-side port. Defaults to the port the service listens on, so moving the service
+# moves the published port with it. Override only when the host port is already taken.
+[params.THINKRAIL_HOST_PORT]
+default = "${THINKRAIL_PORT}"
