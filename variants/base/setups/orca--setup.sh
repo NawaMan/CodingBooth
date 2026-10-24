@@ -148,7 +148,19 @@ cat > "${PAIRING_FILE}" <<PAIRING
 #!/usr/bin/env bash
 # Print the pairing links of the auto-started Orca server.
 LOG="${SERVE_LOG}"
-if ! grep -qE '^(Web client URL|Pairing URL):' "\$LOG" 2>/dev/null; then
+has_link() { grep -qE '^(Web client URL|Pairing URL):' "\$LOG" 2>/dev/null; }
+# The server takes ~20s to print its link; while one is running, wait for it
+# (up to ORCA_PAIRING_WAIT seconds) instead of reporting that there is none.
+WAIT="\${ORCA_PAIRING_WAIT:-90}"
+if ! has_link && pgrep -f 'out/cli/index.js serve' >/dev/null; then
+  echo "⏳ Orca server is starting; waiting for its pairing link ..." >&2
+  for _ in \$(seq 1 "\$WAIT"); do
+    has_link && break
+    pgrep -f 'out/cli/index.js serve' >/dev/null || break
+    sleep 1
+  done
+fi
+if ! has_link; then
   echo "No pairing link yet — is the Orca server running? (log: \$LOG)" >&2
   echo "Start it with: orca-serve   (or select the orca+serve extension)" >&2
   exit 1
