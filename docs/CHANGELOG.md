@@ -4,6 +4,30 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Hardened against the eMudhra CA key compromise (October 2026).** Eight eMudhra intermediate CA
+  keys were recoverable, so anyone can mint certificates that clients trusting those chains accept.
+  A booth has several trust stores, and each needed its own fix:
+  - **pip** verifies with its own vendored certifi, not the system store, and pip 26.2.1 still
+    trusts the chains. The notebook and codeserver images were stuck on it by an exact pin in
+    `notebook` and `bash-nb-kernel` setups, so a rebuild alone could not fix them; both now pin
+    26.2.2. The `python` setup also holds `pip>=26.2.2` and `certifi>=2026.10.19`, and applies them
+    to an existing venv too.
+  - **code-server** runs on its own bundled Node, whose root list (code-server 4.141.0, Node
+    24.21.0) still trusted them. `start-codeserver` now sets `NODE_OPTIONS=--use-openssl-ca`, so
+    code-server, its extension host, and its terminals verify against the image's system store.
+  - **Go 1.27.3** (`go` setup and template default, from 1.27.1) and **Python 3.14.9** (`python`
+    default, from 3.14.8) are the fixed releases. The booth CLI itself is now built with Go
+    1.27.3 (`toolchain go1.27.3` in `cli/go.mod`; `build/cli-build.sh` refuses an older Go).
+  - Already fine when freshly built (checked against the incident's test hosts): the system
+    `ca-certificates`, Node 24.22.1 from the `nodejs` setup, Temurin JDK 25.0.5, Firefox 158.0.1,
+    system NSS, and VS Code's Electron.
+
+  **Existing booths keep their old image.** Move to this release and rebuild — see
+  [Security → Keep the booth's trust store current](BOOTH_SECURITY.md#keep-the-booths-trust-store-current).
+  Booths still on 0.77.x (Ubuntu 24.04) trust the chains even through curl. New guards:
+  `tests/basic/test038--trust-store-distrust.sh` (offline, by fingerprint) and
+  `tests/manual/run-emudhra-live-manual-test.sh` (live, against the incident's test hosts).
+
 - **Goose, the systems language, is now in the catalog: `setup goose-lang`, a `goose-lang`
   language template, and `goose-lang-example`.** [Goose](https://aardappel.github.io/goose/)
   (aardappel/goose) is memory-safe with no heap, GC or lifetime annotations, and compiles to C.

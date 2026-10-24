@@ -22,7 +22,7 @@ setup	azure-cli	1.0.0	98a239af8dceb156d984e50bca3cebcbddf28f78611837c695a77dc0e5
 setup	base-code-extension	1.0.0	8442e7a6aa51c3423207d8172d170208a5696abad356505cd95bb49983393db3	variants/base/setups/base-code-extension--setup.sh
 setup	bash	0.3.0	3f76c8ae3d334c61cc557b2f3ad423bbb9543f815da2a042054c4926e3473535	variants/base/setups/bash--setup.sh
 setup	bash-code-extension	1.0.0	739b732e27d197027422df407be931c49db8b64c2ba1cbb5b33378ba0fda4635	variants/base/setups/bash-code-extension--setup.sh
-setup	bash-nb-kernel	1.0.0	7b99d4bb4f5c20b73ade9ec071e6b7051c7372bbc23f7f8d80ecf4aab51b70cb	variants/base/setups/bash-nb-kernel--setup.sh
+setup	bash-nb-kernel	1.1.0	31a90639411242f5ad70ce76f8b6bc2fc8cd5e68b57a9f813e60dc2332c2da87	variants/base/setups/bash-nb-kernel--setup.sh
 setup	bluej	1.1.0	a36c1160117ebbd75b018a2ae5b219fd18a817330c914ef0af9b68e323128a21	variants/base/setups/bluej--setup.sh
 setup	booth-desktop-actions	1.0.0	b50ecaf9bd210ffc3205b61af3cac6388fc816a3a8d266a0251cf589cc2f326b	variants/base/setups/booth-desktop-actions--setup.sh
 setup	booth-message-codeserver-wrapped	1.0.0	c78340cbb22a400686bf4ccc5f99e42ea831576499dee5fd8dd0d669ea59adac	variants/base/setups/booth-message-codeserver-wrapped--setup.sh
@@ -49,7 +49,7 @@ setup	clojure-code-extension	1.0.0	701ebfa9133409194342e7219aaad39716bf1ca824a1e
 setup	cloudbeaver	1.0.0	0fc166fe6e7c21963e73f5aef0374fbb404faffcaf38096c8d6e961e0d60f463	variants/base/setups/cloudbeaver--setup.sh
 setup	cmake	1.0.0	6c78f883af7e7367c66c10fc35f0cd73695221dc1114a549d45d827c9488b14b	variants/base/setups/cmake--setup.sh
 setup	cmake-code-extension	0.1.0	d5358d9ef2d2c44609ff9aa96529a4f4cb5ae2310424ade736b28ea12c920185	variants/base/setups/cmake-code-extension--setup.sh
-setup	codeserver	1.0.1	e2cece3e38c83131118801638129936d048b52ea99a5c6ec79b61942484331b7	variants/base/setups/codeserver--setup.sh
+setup	codeserver	1.1.0	c4870be37ae1135819b27018867ab059c26a40c8648295b2817992a8ca3ae383	variants/base/setups/codeserver--setup.sh
 setup	codex	1.0.0	a0f76155dd0b93e901a5b994393d68d545214b3b568d1de237febc9a36d0962c	variants/base/setups/codex--setup.sh
 setup	codex-code-extension	1.0.0	076be4c351d968b8775495057013581f1190d7f0f3557742beec8e8324a04ea1	variants/base/setups/codex-code-extension--setup.sh
 setup	conan	1.0.0	d33c16ec6dc96f8aca41e01f0ca4f5386b4fa0b78d9f80e0c95622aa6131a211	variants/base/setups/conan--setup.sh
@@ -118,7 +118,7 @@ setup	ghostty-fancy	1.0.0	bc14a3b49c2cdae66514cdd66d3b874f0988728d8b3a831ce6490b
 setup	gimp	1.0.0	4b4effac44795f1c333af66c5f520921b98066c9dba84e8d5a3f096fd451b92a	variants/base/setups/gimp--setup.sh
 setup	gleam	0.1.0	a317faa2932885471191ed135455f3d35ac9205f94234b9e11fec72ce3899ca6	variants/base/setups/gleam--setup.sh
 setup	gleam-code-extension	0.1.0	3c69d444f944b4a29febf2da07ef1da671db38f78af0677b41e544aa26b7e0ec	variants/base/setups/gleam-code-extension--setup.sh
-setup	go	1.1.0	c97f35af6a3815a545e7fbdfe93fc0f89fa23c9b4c3cff27a3112f6753c3efb3	variants/base/setups/go--setup.sh
+setup	go	1.2.0	d54cbc8dceeba615fc1e7813d5b225d6710c68383d7f3f49028439b514f71c8b	variants/base/setups/go--setup.sh
 setup	go-code-extension	1.0.0	14b5c05adef0b6e5f5eb1593ef84feca1320bdf1ad6150cf845e96b39c822371	variants/base/setups/go-code-extension--setup.sh
 setup	go-nb-kernel	1.0.0	641f7383ccc93feedc8e7c68f474e713806f756c22ed215f5d6305ede6e5d2ba	variants/base/setups/go-nb-kernel--setup.sh
 setup	google-chrome	1.1.0	4747c061f49b7eea76796abc4425f0e563611222452911f064464f8531b1a21b	variants/base/setups/google-chrome--setup.sh
@@ -236,7 +236,7 @@ setup	nim-code-extension	1.0.0	59b4208b38f50b3d58ea827e9b367f11c88190ac9f76c4677
 setup	nodejs	1.0.0	fe8db1b693f5f5972bc442c0ea7e81c7bf7490bd3fd0150c8c64a9688b10681d	variants/base/setups/nodejs--setup.sh
 setup	nodejs-code-extension	1.0.0	06e2a52486f776bb9685b286f98e817579723eb5aa0bbda0284c83cdab81af8d	variants/base/setups/nodejs-code-extension--setup.sh
 setup	nodejs-nb-kernel	1.0.0	c14bb6754b327912cbe21b464ac50402f02624f62ecd6c4412d24600af580650	variants/base/setups/nodejs-nb-kernel--setup.sh
-setup	notebook	1.0.0	63475551c3f889f835ce34d82ec6362bf7dc71217e91700185ded96ee09ba4c1	variants/base/setups/notebook--setup.sh
+setup	notebook	1.1.0	51197a8d98fb4d432baeff886a29e25592902c71a1c23a9b3d73b9d975a82b9a	variants/base/setups/notebook--setup.sh
 setup	obsidian	1.0.0	c611491e5fa1d0fadd8e67eb296ab9caba79efb27df15e287cb59417b518c60d	variants/base/setups/obsidian--setup.sh
 setup	ocaml	0.1.1	0ca2698f113a8208bd1edfabd25a1bc0497101901dc41c6d2666d8298df81f16	variants/base/setups/ocaml--setup.sh
 setup	octave	1.0.0	13512ef609c564ac17f75dfe9c1eaa4fbaf24811ff2e1e1be6a83789a75f3298	variants/base/setups/octave--setup.sh
@@ -265,7 +265,7 @@ setup	protoc-gen-grpc-web	0.1.0	8bfbd439133b6c5475c83a25119409c654982384fb69482c
 setup	pulumi	1.0.0	bf6cf9071ea8fb0616f90e1ad611d8fdde40c30b14d02cedd842bc4c89daa1da	variants/base/setups/pulumi--setup.sh
 setup	puppeteer	1.0.0	517308d69698cc61a8ff6e95c59ec38cada967eee952534e4ab7b004a51eef4d	variants/base/setups/puppeteer--setup.sh
 setup	pycharm	1.0.0	7cc4dfbd461c763c7e56eea63ce60053d7277628c0a6b4c379b2d7ab59a69704	variants/base/setups/pycharm--setup.sh
-setup	python	1.0.0	b97ab385fe0554a7294aa908cd4f0629c51a71218814e81b3340eabeb0c6d99d	variants/base/setups/python--setup.sh
+setup	python	1.1.0	80ab680ee9fdf62ce3a15acd6ee4d975a04426d665f5db3ff907ee4b564e8e62	variants/base/setups/python--setup.sh
 setup	python-code-extension	1.0.0	dc43a56df63a4880c42d17c128dd6b9dbce6e387f65bbee9aa88122c76c95b9e	variants/base/setups/python-code-extension--setup.sh
 setup	python-nb-kernel	1.0.0	334b4f82403debaf8ff7e489ff3c2bd9aece6e4dd67c827e978bb7458a384934	variants/base/setups/python-nb-kernel--setup.sh
 setup	r-code-extension	1.0.0	8d7a601a2720f3ab924fb01bfe3b3b9f591df4d0a07f1561a683711f6c909467	variants/base/setups/r-code-extension--setup.sh
@@ -477,7 +477,7 @@ template	ghostty	1.0.0	dfd4b340de849325faebce647f64b0230fdea7b52208075fc01b4e050
 template	gimp	1.0.0	1855591e9d1aee68552d78e04c8f42d3c312421e8544d23f134f3ef53d82f85f	templates/desktops/gimp/template.toml
 template	git-credential	1.0.0	549e26c9ea8a3c7b95c9d4b859a0382020b0b273c57ab23216eb6f0d23a93148	templates/tools/git-credential/template.toml
 template	gleam	0.1.0	ea80483a07ee76e6e953d905248a5c9d47ca3e7b8831a15eb4a342d614355cac	templates/languages/gleam/template.toml
-template	go	1.1.0	6c0ae065d0759a84b9c7e5b55bea6ae21dffc7efd2b9ba19dc3e17dcef297d93	templates/languages/go/template.toml
+template	go	1.2.0	8f16643ccefe5622b7ccdd7ba28650bc41fdd98ec09ebf6491bcb81fe389be86	templates/languages/go/template.toml
 template	goland	1.0.0	e657667702b91cc74de699fc1a4fd329c253579685824186871c7f9d9aadc111	templates/ides/goland/template.toml
 template	google-chrome	1.0.0	135a1bce24ab8dd6420199954a5ba74a5ccb6170a62a4a0a981b185830c68e83	templates/desktops/google-chrome/template.toml
 template	goose	1.0.0	d38a963864204dcc5282c8e1eebdf3c7c8b8f383a15929b5a9ca4f6f64982295	templates/ai-tools/goose/template.toml
@@ -557,7 +557,7 @@ template	protobuf	1.0.0	349519f43d0d87a56498f4c87e5152dcf97de88f069902098b69a9b9
 template	pulumi	1.0.0	ab578054080f6fcd60dd69e74e90777c10f4d4d573f5e9194805ac7109d6af3c	templates/tools/pulumi/template.toml
 template	puppeteer	1.1.0	8fe6b84848d8ddaf3774d404d3e4c23ff8795d63fe5f7cdddfbd8602fc55bcac	templates/tools/puppeteer/template.toml
 template	pycharm	1.0.0	fce6bf6b03601f0e8618b6f519961351f97547b57320d1f248d13aba3c624300	templates/ides/pycharm/template.toml
-template	python	1.1.0	701f1787a204685ad25f74fb451e73e0d588923d3378aba996e903080895175d	templates/languages/python/template.toml
+template	python	1.2.0	94e2d3acff6d9ceefaed1354c7399da906aa56dcd5264602e2e44ba73ba39335	templates/languages/python/template.toml
 template	r	1.0.0	2eb580f5013744ee35ea4718fe25cb8be3ec55aae1b40fb34e4572b6b01ab78f	templates/languages/r/template.toml
 template	rabbitmq	2.0.0	2cb26d93d9230c5c534b30a18aea5a30bb2c05e3e2c2688a144c335d5a624d9e	templates/middlewares/rabbitmq/template.toml
 template	react	0.1.0	062f933af29662bb49fa653d33ee6ee96517a246f15ff0726dfd86be04f73ece	templates/frameworks/react/template.toml
