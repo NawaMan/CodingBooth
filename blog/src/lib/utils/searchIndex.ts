@@ -5,12 +5,13 @@
 // Eager + `?raw` means each slide's real source is inlined as a string at build
 // time, so the index survives prerender (a static site has no server to ask) and
 // cannot drift from what is on screen — the same reason ViewSource imports `?raw`.
-// The glob matches `<deck>/<slide>/+page.svelte` (two directories under routes),
-// so a deck's own `+page.svelte` redirect (one directory) is not swept in.
+// The glob matches any `…/<slide>.html/+page.svelte` under routes (including nested
+// decks like `references/shell/…`). Deck `+page.svelte` redirects and non-`.html`
+// routes are filtered out in buildDeckIndex.
 import { buildDeckIndex, type SearchDoc } from './searchCore';
 import type { Page } from './navigate';
 
-const slideSources = import.meta.glob<string>('/src/routes/*/*/+page.svelte', {
+const slideSources = import.meta.glob<string>('/src/routes/**/*.html/+page.svelte', {
 	query: '?raw',
 	import: 'default',
 	eager: true

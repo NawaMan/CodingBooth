@@ -72,9 +72,28 @@ export async function saveFreeze(insert: string, insertImports: string[] = []): 
 export async function saveAdjust(): Promise<SaveResult> {
 	// Blocks patch by geometry (robust to formatting); Draw shapes patch by a
 	// literal old→new tag swap (a Curve has no box to patch numerically).
-	const blockChanges = [...get(adjustChanges).values()]
-		.filter((e) => e.dirty)
-		.map((e) => ({ kind: e.kind, name: e.name || undefined, before: e.before, after: e.after }));
+	const dirty = [...get(adjustChanges).values()].filter((e) => e.dirty);
+	// Pastes go FIRST: each finds its original by the geometry it was mounted
+	// with, which a move or delete of that same original later in the batch
+	// would otherwise take away from it.
+	const pasteChanges = dirty
+		.filter((e) => e.pasteOf)
+		.map((e) => ({
+			kind: e.kind,
+			name: e.pasteOf!.name || undefined,
+			before: e.pasteOf!.before,
+			paste: { name: e.name || undefined, after: e.after },
+			file: e.file
+		}));
+	// `file`: the component a Block was written in, when it isn't the slide (the
+	// dev server's compile-time stamp); undefined drops out of the JSON entirely.
+	const blockChanges = dirty
+		.filter((e) => !e.pasteOf)
+		.map((e) =>
+			e.removed
+				? { kind: e.kind, name: e.name || undefined, before: e.before, remove: true, file: e.file }
+				: { kind: e.kind, name: e.name || undefined, before: e.before, after: e.after, file: e.file }
+		);
 	const drawChanges = [...get(shapeChanges).values()]
 		.filter((e) => e.dirty)
 		.map((e) => ({
@@ -87,5 +106,5 @@ export async function saveAdjust(): Promise<SaveResult> {
 			before: e.before,
 			after: e.after
 		}));
-	return post([...blockChanges, ...drawChanges]);
+	return post([...pasteChanges, ...blockChanges, ...drawChanges]);
 }

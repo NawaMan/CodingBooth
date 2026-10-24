@@ -33,6 +33,17 @@ export interface ChangedTagEntry {
 	    "Save" endpoint patches with, alongside the human-readable old/new tags. */
 	before: Geometry;
 	after: Geometry;
+	/** Deleted in ADJUST (pending until SAVE): the whole element goes, so `after`
+	    is moot. Always dirty. */
+	removed?: boolean;
+	/** A PASTED copy (pending until SAVE): not in the source yet. SAVE duplicates
+	    the original — found by this name / geometry — with this entry's own `name`
+	    and `after`. */
+	pasteOf?: { name: string; before: Geometry };
+	/** The route file the tag was written in, when it isn't the slide itself (a
+	    shared scene component) — stamped at compile time in dev, see
+	    adjust/sourceTag.ts. SAVE patches that file instead of the slide. */
+	file?: string;
 }
 
 const entries = writable<Map<number, ChangedTagEntry>>(new Map());

@@ -76,6 +76,12 @@
 		type AnnotateTool,
 		type Stroke
 	} from '$lib/annotate/annotateCore';
+	import {
+		freehandD,
+		freehandMaxRadius,
+		resolveFreehand,
+		type FreehandInput
+	} from '$lib/annotate/freehandCore';
 	import { barPos } from '$lib/stores/annotation';
 	import { trackPointer } from '$lib/utils/drag';
 	import type { Point } from '$lib/draw/types';
@@ -108,6 +114,12 @@
 		 *  levelHighlight). Set false to make Shift inert; the pen stays fully freehand and the
 		 *  arrow stays free-angle (still a straight tail→head line, just not axis-locked). */
 		snapPen?: boolean;
+		/** The PEN's freehand shape (perfect-freehand options, see annotate/freehandCore): a
+		 *  filled outline whose width breathes with the hand's speed. Any field left out takes
+		 *  the default (size 12, thinning 0.7, streamline 0.6, smoothing 0.5, round caps, no
+		 *  taper). `false` brings back the old constant-width line at `penWidth`. Only the pen
+		 *  is freehand — the highlighter stays a level band, and line/arrow/rectangle stay crisp. */
+		freehand?: FreehandInput | false;
 	}
 
 	let {
@@ -120,9 +132,14 @@
 		textSize = 44,
 		inkColors = [null, '#E5484D', '#3FA9F5', '#4BD07A', '#FFFFFF'],
 		levelHighlight = true,
-		snapPen = true
+		snapPen = true,
+		freehand = {}
 	}: Props = $props();
 
+	// The resolved pen shape, or null when the deck asked for the classic stroked pen.
+	const pen = $derived(freehand === false ? null : resolveFreehand(freehand));
+	/** Is this mark drawn as a filled freehand outline rather than a stroked line? */
+	const isFreehand = (tool: AnnotateTool) => tool === 'pen' && pen !== null;
 
 	// Armed = the control is offered here AND the speaker turned it on. Both halves matter:
 	// a stale persisted `true` must stay inert on a deck that never offers the pen.
@@ -150,6 +167,9 @@
 
 	let surface: SVGSVGElement | undefined = $state();
 	let live: Point[] = $state([]);
+	/** When the pen went down — so a committed stroke can carry how long it took to draw
+	    (`Stroke.ms`), which the VOD recorder replays at the same speed. Not reactive. */
+	let liveStartedAt = 0;
 	let seq = 0;
 
 	// ── The eraser ────────────────────────────────────────────────────────────────────────
@@ -177,9 +197,13 @@
 		for (let i = $strokes.length - 1; i >= 0; i--) {
 			const s = $strokes[i];
 			if (s.tool === 'text') {
-				if (hitText(p, s.points[0] ?? [0, 0], s.text ?? '', s.size ?? textSize, eraserRadius)) return s.id;
+				if (hitText(p, s.points[0] ?? [0, 0], s.text ?? '', s.size ?? textSize, eraserRadius))
+					return s.id;
 			} else {
-				const halfWidth = strokeWidth(s.tool, penWidth, highlighterWidth) / 2;
+				const halfWidth =
+					isFreehand(s.tool) && pen
+						? freehandMaxRadius(pen)
+						: strokeWidth(s.tool, penWidth, highlighterWidth) / 2;
 				if (hitStroke(p, s.points, eraserRadius + halfWidth)) return s.id;
 			}
 		}
@@ -300,7 +324,12 @@
 	function importsFor(tags: string[]): string[] {
 		const line = freezeImport(tags);
 		const m = /\{([^}]*)\}/.exec(line);
-		return m ? m[1].split(',').map((s) => s.trim()).filter(Boolean) : [];
+		return m
+			? m[1]
+					.split(',')
+					.map((s) => s.trim())
+					.filter(Boolean)
+			: [];
 	}
 
 	// ── Text: place, re-edit, drag ─────────────────────────────────────────────────────────
@@ -320,7 +349,8 @@
 		for (let i = $strokes.length - 1; i >= 0; i--) {
 			const s = $strokes[i];
 			if (s.tool !== 'text') continue;
-			if (hitText(p, s.points[0] ?? [0, 0], s.text ?? '', s.size ?? textSize, TEXT_GRAB_SLOP)) return s.id;
+			if (hitText(p, s.points[0] ?? [0, 0], s.text ?? '', s.size ?? textSize, TEXT_GRAB_SLOP))
+				return s.id;
 		}
 		return null;
 	}
@@ -349,7 +379,13 @@
 			if (text) updateStroke(id, { text });
 			else eraseStrokes([id]); // emptied → the label is gone, like erasing it
 		} else if (text) {
-			const stroke: Stroke = { id: `ink-${Date.now()}-${++seq}`, tool: 'text', points: [[x, y]], text, size };
+			const stroke: Stroke = {
+				id: `ink-${Date.now()}-${++seq}`,
+				tool: 'text',
+				points: [[x, y]],
+				text,
+				size
+			};
 			if (color) stroke.color = color;
 			addStroke(stroke);
 		}
@@ -412,8 +448,9 @@
 	let snapping = $state(false);
 
 	/** `null` colour → no inline style → the role token paints it. */
-	function paint(c: string | null | undefined): string {
-		return c ? `stroke:${c};` : '';
+	function paint(c: string | null | undefined, tool?: AnnotateTool): string {
+		if (!c) return '';
+		return tool && isFreehand(tool) ? `fill:${c};` : `stroke:${c};`;
 	}
 
 	/** The shape a gesture actually takes. A highlighter is LEVELLED — the band sits on the
@@ -430,7 +467,8 @@
 	function shapeOf(points: Point[], tool: AnnotateTool): Point[] {
 		if (tool === 'highlighter' && levelHighlight) return levelPoints(points);
 		if (tool === 'pen' && snapPen && snapping) return snapAxis(points);
-		if (tool === 'line' || tool === 'arrow') return snapPen && snapping ? snapAxis(points) : straightLine(points);
+		if (tool === 'line' || tool === 'arrow')
+			return snapPen && snapping ? snapAxis(points) : straightLine(points);
 		if (tool === 'rectangle') return straightLine(points); // two opposite corners; rectD normalises them
 		return points;
 	}
@@ -439,9 +477,10 @@
 	    closed box (rectD), every other stroke the smoothed ink line (strokeD). The points are
 	    already shaped by shapeOf, so this only chooses how they become a path — the geometry is
 	    the core's. (TEXT is never a path; it renders as an SVG <text>, not through here.) */
-	function dFor(points: Point[], tool: AnnotateTool): string {
+	function dFor(points: Point[], tool: AnnotateTool, complete = true): string {
 		if (tool === 'arrow') return arrowD(points, arrowHead);
 		if (tool === 'rectangle') return rectD(points);
+		if (isFreehand(tool)) return freehandD(points, pen, complete);
 		return strokeD(points);
 	}
 
@@ -509,6 +548,7 @@
 		snapping = ev.shiftKey; // Shift may already be held as the pen goes down
 		capture(ev.pointerId, true);
 		live = [pointFrom(ev)];
+		liveStartedAt = performance.now();
 	}
 
 	function onPointerMove(ev: PointerEvent): void {
@@ -560,12 +600,17 @@
 		// Decimate first, THEN shape: levelling/snapping reduces a stroke to two points, so
 		// simplifying afterwards would have nothing left to do — and the extent a shape reads
 		// should come from the samples the hand actually produced, not from a thinned subset.
-		const points = shapeOf(simplifyPoints(live, 4), drawTool);
+		// A freehand pen decimates no further than the live 2px gate already did: its width is
+		// SIMULATED from the spacing between samples, so thinning to an even 4px would flatten
+		// the speed it reads — and the committed outline would visibly jump from the live one.
+		const points = shapeOf(simplifyPoints(live, isFreehand(drawTool) ? 2 : 4), drawTool);
 		live = [];
 		if (points.length === 0) return;
 
 		const stroke: Stroke = { id: `ink-${Date.now()}-${++seq}`, tool: drawTool, points };
 		if (color) stroke.color = color;
+		const ms = Math.round(performance.now() - liveStartedAt);
+		if (ms > 0) stroke.ms = ms;
 		addStroke(stroke);
 	}
 
@@ -705,7 +750,9 @@
 		class:freezing={armed && $annotateTool === 'freeze'}
 		class:texting={armed && $annotateTool === 'text'}
 		viewBox="0 0 {canvasWidth} {canvasHeight}"
-		style="width:{canvasWidth}px; height:{canvasHeight}px; pointer-events:{armed ? 'auto' : 'none'};"
+		style="width:{canvasWidth}px; height:{canvasHeight}px; pointer-events:{armed
+			? 'auto'
+			: 'none'};"
 		aria-hidden="true"
 		onpointerdown={onPointerDown}
 		onpointermove={onPointerMove}
@@ -732,12 +779,13 @@
 				<path
 					class="annot-stroke"
 					class:highlighter={stroke.tool === 'highlighter'}
+					class:freehand={isFreehand(stroke.tool)}
 					class:erasing={eraseHoverId === stroke.id}
 					class:freezing={freezeHoverId === stroke.id}
 					class:frozen={frozenPick.includes(stroke.id)}
 					d={dFor(stroke.points, stroke.tool)}
 					stroke-width={strokeWidth(stroke.tool, penWidth, highlighterWidth)}
-					style={paint(stroke.color)}
+					style={paint(stroke.color, stroke.tool)}
 				/>
 			{/if}
 		{/each}
@@ -749,9 +797,10 @@
 			<path
 				class="annot-stroke"
 				class:highlighter={drawTool === 'highlighter'}
-				d={dFor(shapeOf(live, drawTool), drawTool)}
+				class:freehand={isFreehand(drawTool)}
+				d={dFor(shapeOf(live, drawTool), drawTool, false)}
 				stroke-width={strokeWidth(drawTool, penWidth, highlighterWidth)}
-				style={paint(color)}
+				style={paint(color, drawTool)}
 			/>
 		{/if}
 	</svg>
@@ -765,7 +814,9 @@
 			bind:this={textInput}
 			bind:value={editText}
 			maxlength={TEXT_MAX_LEN}
-			style="left:{editing.x}px; top:{editing.y}px; font-size:{editing.size}px; {color ? `color:${color};` : ''}"
+			style="left:{editing.x}px; top:{editing.y}px; font-size:{editing.size}px; {color
+				? `color:${color};`
+				: ''}"
 			aria-label="Annotation text"
 			onkeydown={onEditorKeydown}
 			onblur={commitText}
@@ -800,7 +851,13 @@
 	     it. Fully visible at rest, so the tools stay legible; the bar is draggable, so the
 	     speaker parks it clear of the slide the audience is reading rather than relying on it
 	     to fade. -->
-	<div class="annot-bar no-print" role="toolbar" aria-label="Annotation tools" bind:this={bar} style={barStyle}>
+	<div
+		class="annot-bar no-print"
+		role="toolbar"
+		aria-label="Annotation tools"
+		bind:this={bar}
+		style={barStyle}
+	>
 		<!-- Drag by the GRIP, not by the bar's face — a bar you drag by its body is a bar whose
 		     buttons you can no longer press. Double-click sends it home. -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -811,8 +868,8 @@
 			aria-label="Move the annotation bar"
 			title="Drag to move · double-click to reset"
 			onpointerdown={onGripDown}
-			ondblclick={homeBar}
-		>⠿</span>
+			ondblclick={homeBar}>⠿</span
+		>
 		<!-- The mode buttons, as icons — PEN LINE ARROW RECTANGLE HIGHLIGHT TEXT ERASE. The word
 		     lives on as the aria-label and the tooltip, so nothing is lost by dropping the text.
 		     ERASE is a MODE, not a colour of ink (it removes marks); it wears the erase tint when
@@ -942,7 +999,7 @@
 
 	.annot-stroke {
 		fill: none;
-		stroke: var(--annot-pen, #F0A33E);
+		stroke: var(--annot-pen, #f0a33e);
 		stroke-linecap: round;
 		stroke-linejoin: round;
 		/* The same crisp-at-scale glow Spotlight's ring uses, drawn in the SVG so it scales
@@ -961,7 +1018,7 @@
 	   the white page and dark text stays dark. Get it backwards and the highlighter smears
 	   over the very words it is meant to point at. */
 	.annot-stroke.highlighter {
-		stroke: var(--annot-highlighter, #F5E663);
+		stroke: var(--annot-highlighter, #f5e663);
 		opacity: var(--annot-highlighter-alpha, 0.45);
 		mix-blend-mode: var(--annot-highlighter-blend, screen);
 		filter: none;
@@ -974,7 +1031,7 @@
 	   specificity), so it comes AFTER that rule and restores full opacity, normal blend and
 	   its own glow — otherwise a translucent band would light only faintly. */
 	.annot-stroke.erasing {
-		stroke: var(--annot-erase, #FF5C5C);
+		stroke: var(--annot-erase, #ff5c5c);
 		opacity: 1;
 		mix-blend-mode: normal;
 		filter: drop-shadow(0 0 7px var(--annot-erase-glow, rgba(255, 92, 92, 0.75)));
@@ -991,7 +1048,7 @@
 	   highlights are keyed to different bar modes, and leaving FREEZE drops the pick. */
 	.annot-stroke.frozen,
 	.annot-stroke.freezing {
-		stroke: var(--annot-freeze, #6FD3F5);
+		stroke: var(--annot-freeze, #6fd3f5);
 		opacity: 1;
 		mix-blend-mode: normal;
 		filter: none;
@@ -1000,11 +1057,27 @@
 		filter: drop-shadow(0 0 7px var(--annot-freeze-glow, rgba(111, 211, 245, 0.75)));
 	}
 
+	/* A FREEHAND pen mark is an outline polygon (annotate/freehandCore), so it is FILLED with
+	   the colour a stroked mark would draw its line in, and carries no stroke of its own — a
+	   stroke would fatten it by its width and undo the thinning. Same tokens, same order as the
+	   stroked rules above, so the erase and freeze highlights land on it too. */
+	.annot-stroke.freehand {
+		fill: var(--annot-pen, #f0a33e);
+		stroke: none;
+	}
+	.annot-stroke.freehand.erasing {
+		fill: var(--annot-erase, #ff5c5c);
+	}
+	.annot-stroke.freehand.frozen,
+	.annot-stroke.freehand.freezing {
+		fill: var(--annot-freeze, #6fd3f5);
+	}
+
 	/* A TEXT label — FILLED (not stroked) with its own role token, which defaults to the pen's
 	   colour so untinted text follows the theme with the ink. The same glow the pen carries, so
 	   a label reads over whatever the slide put behind it. */
 	.annot-text {
-		fill: var(--annot-text, var(--annot-pen, #F0A33E));
+		fill: var(--annot-text, var(--annot-pen, #f0a33e));
 		font-family: inherit;
 		font-weight: 600;
 		white-space: pre;
@@ -1012,7 +1085,7 @@
 	}
 	/* A label the eraser is about to remove, lit in the erase colour like a stroke is. */
 	.annot-text.erasing {
-		fill: var(--annot-erase, #FF5C5C);
+		fill: var(--annot-erase, #ff5c5c);
 		filter: drop-shadow(0 0 7px var(--annot-erase-glow, rgba(255, 92, 92, 0.75)));
 	}
 
@@ -1028,7 +1101,7 @@
 		border: none;
 		border-left: 2px solid currentColor;
 		background: transparent;
-		color: var(--annot-text, var(--annot-pen, #F0A33E));
+		color: var(--annot-text, var(--annot-pen, #f0a33e));
 		font-family: inherit;
 		font-weight: 600;
 		line-height: 1;
@@ -1053,11 +1126,11 @@
 		border-radius: 10px;
 		font-size: calc(var(--base-font, 16px) * 0.75);
 		background: var(--annot-bar-bg, rgba(20, 22, 26, 0.92));
-		border: 1px solid var(--annot-stale-edge, #F0A33E);
+		border: 1px solid var(--annot-stale-edge, #f0a33e);
 		box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
 	}
 	.annot-stale-text {
-		color: var(--annot-bar-fg, #D7DDE5);
+		color: var(--annot-bar-fg, #d7dde5);
 		margin-right: 0.3em;
 	}
 
@@ -1110,7 +1183,7 @@
 		border-radius: 999px;
 		border: 1px solid transparent;
 		background: transparent;
-		color: var(--annot-bar-fg, #D7DDE5);
+		color: var(--annot-bar-fg, #d7dde5);
 		white-space: nowrap;
 	}
 	/* A mode button carries a glyph, not a word: a square-ish target with a larger icon inside.
@@ -1137,39 +1210,39 @@
 		background: var(--annot-bar-hover, rgba(255, 255, 255, 0.1));
 	}
 	.annot-btn.on {
-		background: var(--annot-pen, #F0A33E);
-		color: var(--annot-bar-on-fg, #1A1206);
+		background: var(--annot-pen, #f0a33e);
+		color: var(--annot-bar-on-fg, #1a1206);
 	}
 	/* The eraser armed: tint its button with the erase colour, not the pen's, so the bar
 	   itself says the next gesture DELETES. Same token the about-to-go strokes light up in. */
 	.annot-btn.erase.on {
-		background: var(--annot-erase, #FF5C5C);
-		color: var(--annot-bar-on-fg, #1A1206);
+		background: var(--annot-erase, #ff5c5c);
+		color: var(--annot-bar-on-fg, #1a1206);
 	}
 	/* FREEZE armed: the same trick the eraser plays, in freeze's own cold token — the bar says
 	   which of the two "point at a mark" modes you are in without reading the icon. */
 	.annot-btn.freeze.on,
 	.annot-btn.freeze-go {
-		background: var(--annot-freeze, #6FD3F5);
-		color: var(--annot-bar-on-fg, #1A1206);
+		background: var(--annot-freeze, #6fd3f5);
+		color: var(--annot-bar-on-fg, #1a1206);
 	}
 	/* The commit. Disabled until something freezable is picked, so an empty press is not a
 	   thing that can happen — the count on the face and the disabled state come from the same
 	   freezeCount, and cannot disagree. */
 	.annot-btn.freeze-go:disabled {
 		background: transparent;
-		color: var(--annot-bar-fg, #D7DDE5);
+		color: var(--annot-bar-fg, #d7dde5);
 	}
 	/* What just happened (FROZEN 2 / COPIED 2 / PLACE IT YOURSELF), or the standing hint. A
 	   write to your source must never be silent — the same rule ADJUST's SAVE flash follows. */
 	.annot-said {
 		font-size: 0.82em;
 		letter-spacing: 0.04em;
-		color: var(--annot-bar-done, #7FD1A0);
+		color: var(--annot-bar-done, #7fd1a0);
 		white-space: nowrap;
 	}
 	.annot-said.hint {
-		color: var(--annot-bar-fg, #D7DDE5);
+		color: var(--annot-bar-fg, #d7dde5);
 		opacity: 0.6;
 	}
 	.annot-btn:disabled {
@@ -1177,7 +1250,7 @@
 		cursor: default;
 	}
 	.annot-btn.keep {
-		color: var(--annot-bar-fg, #D7DDE5);
+		color: var(--annot-bar-fg, #d7dde5);
 		opacity: 0.75;
 	}
 
@@ -1194,7 +1267,7 @@
 		border: 1px solid transparent;
 		border-radius: 50%;
 		background: transparent;
-		color: var(--annot-bar-fg, #D7DDE5);
+		color: var(--annot-bar-fg, #d7dde5);
 		font: inherit;
 		font-size: 1.25em;
 		line-height: 1;
@@ -1216,18 +1289,18 @@
 		padding: 0;
 		border-radius: 50%;
 		border: 2px solid transparent;
-		background: var(--swatch, var(--annot-pen, #F0A33E));
+		background: var(--swatch, var(--annot-pen, #f0a33e));
 	}
 	/* The theme swatch has no hex of its own — it SHOWS the token, so it keeps meaning the
 	   right thing after a re-theme (which is exactly what storing `null` buys). */
 	.annot-swatch.theme {
-		background: var(--annot-pen, #F0A33E);
+		background: var(--annot-pen, #f0a33e);
 	}
 	.annot-swatch.theme.hl {
-		background: var(--annot-highlighter, #F5E663);
+		background: var(--annot-highlighter, #f5e663);
 	}
 	.annot-swatch.on {
-		border-color: var(--annot-bar-fg, #D7DDE5);
+		border-color: var(--annot-bar-fg, #d7dde5);
 		box-shadow: 0 0 0 2px var(--annot-bar-bg, rgba(20, 22, 26, 0.92));
 	}
 
@@ -1261,7 +1334,7 @@
 		padding: 0 0.35em 0 0.15em;
 		line-height: 1;
 		font-size: 1.1em;
-		color: var(--annot-bar-fg, #D7DDE5);
+		color: var(--annot-bar-fg, #d7dde5);
 		opacity: 0.5;
 	}
 	.annot-grip:hover {

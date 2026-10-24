@@ -51,8 +51,15 @@
 	import CtrlBtn from '$lib/components/CtrlBtn.svelte';
 
 	import { page } from '$app/stores';
-	import { appendixHref, slidePathOf, KIND_IN } from '$lib/utils/appendixCore';
+	import { browser } from '$app/environment';
+	import {
+		appendixHref,
+		readReturnStack,
+		slidePathOf,
+		KIND_IN
+	} from '$lib/utils/appendixCore';
 	import { navigate as pageNavigate } from '$lib/utils/deckNav';
+	import { linkGlyph } from '$lib/utils/linkCore';
 
 	// The keyframes the jump animates with. A plain global stylesheet rather than a
 	// scoped Svelte style block: the ::view-transition pseudo-elements belong to the
@@ -71,10 +78,19 @@
 	/** Animate the jump in (and let the appendix animate back out). */
 	export let transition = false;
 
-	// The return address is the slide we are ON. `$page` is populated during SSR too,
-	// so the href is in the prerendered markup rather than appearing on hydration.
+	// The return address is the slide we are ON, pushed onto any stack already in
+	// the URL (hub → deck → appendix). `$page` is populated during SSR too, so the
+	// href is in the prerendered markup rather than appearing on hydration.
+	//
+	// The stack, though, is read CLIENT-SIDE only. Touching `url.searchParams` while
+	// prerendering is a hard error in SvelteKit ("Cannot access url.searchParams on a
+	// page with prerendering enabled"), and it took down every /_handout/*.html — the
+	// one page that really does render slide markup on the server. Nothing is lost by
+	// waiting: a prerendered page has no query string, so there is no stack to read
+	// until a real visitor arrives with one. Same guard as `slide-pages/closing.html`.
 	$: from = slidePathOf($page.url.pathname);
-	$: href = appendixHref(to, from);
+	$: existing = browser ? readReturnStack($page.url.searchParams) : [];
+	$: href = appendixHref(to, from, existing);
 
 	// Without `transition` this handler does nothing and the browser just follows the
 	// href — a full page load, like the rest of a normal deck. With it, we take the
@@ -94,29 +110,42 @@
 		<CtrlBtn {text} hoverText={`Appendix: ${to}`} />
 	</a>
 {:else}
-	<a {href} class="appendix-link" on:click={onClick}><slot /></a>
+	<a
+		{href}
+		class="appendix-link"
+		on:click={onClick}
+	><slot /><span class="marker" aria-hidden="true">{linkGlyph('appendix')}</span></a>
 {/if}
 
 <style>
-	/* Reads as a link into a side page rather than as deck navigation: the accent
-	   colour of the deck, with a dashed underline saying "this is a detour, and you
-	   will be brought back". The var() fallbacks ARE the main deck's dark theme
-	   (see roles.css) — the `slides` deck sets no theme class. */
+	/* Identical to <Link> — one colour, one thin dashed underline. What says "this is
+	   a detour you will be brought back from" is the trailing ↩, not a second colour.
+	   These five declarations are duplicated from Link.svelte on purpose (a shared
+	   class would have to be global to cross the component boundary); keep the two in
+	   step if either moves. The var() fallbacks ARE the main deck's dark theme (see
+	   roles.css) — the `slides` deck sets no theme class. */
 	.appendix-link {
-		color: var(--appendix-link-fg, #F0A33E);
+		color: var(--appendix-link-fg, var(--link-fg, #58A6FF));
 		text-decoration: underline;
 		text-decoration-style: dashed;
+		text-decoration-thickness: 1px;
 		text-underline-offset: 0.18em;
 		cursor: pointer;
 	}
 	/* Hover brightens the one token rather than reading a second one, so a theme
 	   that moves --appendix-link-fg gets a matching hover for free. */
 	.appendix-link:hover {
-		color: color-mix(in srgb, var(--appendix-link-fg, #F0A33E) 75%, white);
+		color: color-mix(in srgb, var(--appendix-link-fg, var(--link-fg, #58A6FF)) 75%, white);
 	}
 	/* As a button the CtrlBtn owns the look entirely. */
 	.appendix-link.button {
 		text-decoration: none;
 		color: inherit;
+	}
+	/* inline-block keeps the underline out of the glyph — same trick as Link. */
+	.marker {
+		display: inline-block;
+		margin-left: 0.15em;
+		font-size: 0.85em;
 	}
 </style>

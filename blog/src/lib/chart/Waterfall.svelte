@@ -39,12 +39,13 @@
 	import Axis from './Axis.svelte';
 	import ChartTooltip from './ChartTooltip.svelte';
 	import {
+		axisGutter,
 		bandScale,
 		linearScale,
 		nearestIndex,
+		type WaterfallBar,
 		waterfallBars,
-		waterfallExtent,
-		type WaterfallBar
+		waterfallExtent
 	} from './chartCore';
 	import type { Accessor, AxisDef, TooltipPoint } from './types';
 
@@ -105,29 +106,19 @@
 		waterfallBars(data, { x: x.value, value, isTotal, start, endTotal, endTotalLabel })
 	);
 
-	const margin = $derived({
+	// The vertical margins are fixed; the LEFT one is sized to the tick text and
+	// lands further down, once the format exists (see `margin`). Splitting them
+	// breaks the cycle margin → plot → yScale → ticks → margin: the y range is
+	// vertical, so it only ever needed top/bottom.
+	const vMargin = $derived({
 		top: 18,
 		right: 18,
-		bottom: 40 + (x.label ? 22 : 0),
-		left: 52 + (label ? 20 : 0)
+		bottom: 40 + (x.label ? 22 : 0)
 	});
-	const plot = $derived({
-		left: margin.left,
-		right: width - margin.right,
-		top: margin.top,
-		bottom: height - margin.bottom
-	});
+	const yRange = $derived<[number, number]>([height - vMargin.bottom, vMargin.top]);
 
-	const xScale = $derived(
-		bandScale(
-			bars.map((b) => b.category),
-			[plot.left, plot.right]
-		)
-	);
 	// zero:true keeps the baseline visible — total columns are measured from it.
-	const yScale = $derived(
-		linearScale(waterfallExtent(bars), [plot.bottom, plot.top], { zero: true, nice: true })
-	);
+	const yScale = $derived(linearScale(waterfallExtent(bars), yRange, { zero: true, nice: true }));
 	const zeroY = $derived(yScale.map(0));
 
 	const fmt = (v: number): string =>
@@ -137,6 +128,27 @@
 	const signed = (v: number): string => (v > 0 ? `+${fmt(v)}` : fmt(v));
 	const catLabel = (cat: unknown): string => (cat === null || cat === undefined ? '' : String(cat));
 	const yFormat = (v: unknown): string => fmt(Number(v));
+
+	// The left gutter: as wide as the widest tick label actually rendered,
+	// floored at the 52 this used to hardcode, so a chart whose ticks already
+	// fit renders identically.
+	const margin = $derived({
+		...vMargin,
+		left: axisGutter(yScale.ticks.map(yFormat), { label: !!label })
+	});
+	const plot = $derived({
+		left: margin.left,
+		right: width - margin.right,
+		top: vMargin.top,
+		bottom: height - vMargin.bottom
+	});
+
+	const xScale = $derived(
+		bandScale(
+			bars.map((b) => b.category),
+			[plot.left, plot.right]
+		)
+	);
 
 	const fillOf = (bar: WaterfallBar): string =>
 		bar.kind === 'total'
@@ -315,7 +327,7 @@
 		return {
 			px,
 			leftPct: (px / width) * 100,
-			topPct: (Number.isFinite(topY) ? topY : (plot.top + plot.bottom) / 2) / height * 100,
+			topPct: ((Number.isFinite(topY) ? topY : (plot.top + plot.bottom) / 2) / height) * 100,
 			xValue: bar.category,
 			xLabel: x.format ? x.format(bar.category) : catLabel(bar.category),
 			points,

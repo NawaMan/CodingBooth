@@ -25,6 +25,7 @@
 	import { onMount, type Snippet } from 'svelte';
 	import { animBarSlot, hostedAnim } from '$lib/stores/localChrome';
 	import { controlBarPinned } from '$lib/stores/chromePin';
+	import { chromeBare, bareTucked } from '$lib/stores/chromeBare';
 	import { chromeArmed } from '$lib/stores/chromeArm';
 	import { overviewOpen } from '$lib/stores/overviewOpen';
 
@@ -58,6 +59,8 @@
 		class:pinned={$controlBarPinned}
 		class:armed={$chromeArmed}
 		class:overview-open={$overviewOpen}
+		class:bare={$chromeBare}
+		class:tucked={$chromeBare && $bareTucked}
 		role="group"
 		aria-label="Slide controls"
 		aria-hidden={$overviewOpen ? 'true' : undefined}
@@ -76,7 +79,14 @@
 				: 'PIN — keep this bar visible'}
 			onclick={() => controlBarPinned.update((v) => !v)}
 		>
-			<svg class="pin-icon" viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true" focusable="false">
+			<svg
+				class="pin-icon"
+				viewBox="0 0 24 24"
+				width="1em"
+				height="1em"
+				aria-hidden="true"
+				focusable="false"
+			>
 				<!-- Classic pushpin (Material-style): head + shaft + needle. currentColor tracks the tab. -->
 				<path
 					fill="currentColor"
@@ -163,7 +173,16 @@
 	.ctrl-bar.armed {
 		box-shadow:
 			0 -3px 14px rgba(0, 0, 0, 0.4),
-			0 0 0 2px color-mix(in srgb, var(--ctrl-bar-fg, var(--annot-toggle-fg, #F0A33E)) 55%, transparent);
+			0 0 0 2px
+				color-mix(in srgb, var(--ctrl-bar-fg, var(--annot-toggle-fg, #f0a33e)) 55%, transparent);
+	}
+
+	/* BARE — hidden completely, PIN or not, until Alt+. raises it (mirror of SlideToolbar). */
+	.ctrl-bar.bare:not(.armed):not(:hover):not(:focus-within),
+	.ctrl-bar.bare.tucked:not(.armed) {
+		transform: translateX(-50%) translateY(120%);
+		visibility: hidden;
+		pointer-events: none;
 	}
 
 	/* OVERVIEW owns the screen — hide the control bar completely (mirror of SlideToolbar). */
@@ -194,7 +213,9 @@
 		background: transparent;
 		color: var(--ctrl-bar-fg, var(--annot-toggle-fg, #f0a33e));
 		opacity: 0.62;
-		transition: opacity 120ms ease, background 120ms ease;
+		transition:
+			opacity 120ms ease,
+			background 120ms ease;
 	}
 	.ctrl-pin:hover {
 		opacity: 1;

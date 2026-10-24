@@ -39,6 +39,7 @@
 	import { canAdjust, adjustMode } from '$lib/stores/adjustMode';
 	import { trackPointer } from '$lib/utils/drag';
 	import { SvelteMap } from 'svelte/reactivity';
+	import { resolveRoughness } from './roughCore';
 	import {
 		DRAW_CONTEXT_KEY,
 		SPRITE_ISOLATION_KEY,
@@ -62,6 +63,11 @@
 		/** Editing-toolbar title + localStorage key for its position (mirrors
 		 *  KeyframeStudio's `name`), so two Draws on a page don't collide. */
 		name?: string;
+		/** Draw everything on this surface by hand — the Excalidraw look — instead
+		 *  of by machine. `true` is the standard wobble; a number (roughly 0.5–2)
+		 *  sets how sloppy. Every shape inside inherits it and can override with
+		 *  its own `rough`, including `rough={false}` to stay crisp. */
+		rough?: boolean | number;
 		children?: Snippet;
 		/** Inline style for the root element, applied last so it wins. */
 		style?: string;
@@ -80,6 +86,7 @@
 		description,
 		decorative = false,
 		name = '',
+		rough,
 		children,
 		style = '',
 		id = '',
@@ -127,6 +134,10 @@
 	// registration as an HTML sibling of the svg (HTML can't live inside it).
 	let blocks = $state<BlockShapeRegistration[]>([]);
 
+	// The surface's hand-drawn default, resolved once here so every shape reads
+	// a plain number (or null) rather than re-interpreting `true`.
+	const surfaceRough = $derived(resolveRoughness(rough, null));
+
 	// Named path sources: Line/Curve/Arc publish their live geometry by name so
 	// a <Sprite path="name"> can ride them. A SvelteMap so a late-registering
 	// shape still reaches a sprite that already looked its name up; each getter
@@ -139,6 +150,9 @@
 		},
 		get height() {
 			return height;
+		},
+		get rough() {
+			return surfaceRough;
 		},
 		get editing() {
 			return editing;
