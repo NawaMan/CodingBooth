@@ -118,6 +118,7 @@ setup	ghostty-fancy	1.0.0	bc14a3b49c2cdae66514cdd66d3b874f0988728d8b3a831ce6490b
 setup	gimp	1.0.0	4b4effac44795f1c333af66c5f520921b98066c9dba84e8d5a3f096fd451b92a	variants/base/setups/gimp--setup.sh
 setup	gleam	0.1.0	a317faa2932885471191ed135455f3d35ac9205f94234b9e11fec72ce3899ca6	variants/base/setups/gleam--setup.sh
 setup	gleam-code-extension	0.1.0	3c69d444f944b4a29febf2da07ef1da671db38f78af0677b41e544aa26b7e0ec	variants/base/setups/gleam-code-extension--setup.sh
+setup	gnupg	0.1.0	32050a0ef9245e8123fa4450a6d7f53fb47799acb5df69ba7efc1a33da056891	variants/base/setups/gnupg--setup.sh
 setup	go	1.2.0	d54cbc8dceeba615fc1e7813d5b225d6710c68383d7f3f49028439b514f71c8b	variants/base/setups/go--setup.sh
 setup	go-code-extension	1.0.0	14b5c05adef0b6e5f5eb1593ef84feca1320bdf1ad6150cf845e96b39c822371	variants/base/setups/go-code-extension--setup.sh
 setup	go-nb-kernel	1.0.0	641f7383ccc93feedc8e7c68f474e713806f756c22ed215f5d6305ede6e5d2ba	variants/base/setups/go-nb-kernel--setup.sh
