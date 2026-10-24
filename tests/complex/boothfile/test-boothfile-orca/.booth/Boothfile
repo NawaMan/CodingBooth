@@ -1,0 +1,5 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: orca installation via Boothfile
+# orca--setup.sh is supplied under .booth/setups/ until the base image ships it.
+setup orca

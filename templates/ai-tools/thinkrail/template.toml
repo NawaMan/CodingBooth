@@ -1,0 +1,28 @@
+cb-version = "0.1.0"
+display-name = "ThinkRail"
+display-disc = "JetBrains' agentic IDE, served as a web UI"
+display-detail = "Installs ThinkRail, JetBrains' open-source agentic IDE: the pi coding agent in isolated git-worktree workspaces, with an editor, terminals, and living specs (SPEC.md). The CLI serves the whole app as a web UI on THINKRAIL_PORT; run start-thinkrail, or select the autostart extension, and publish the port with the expose extension to open it from the host browser. Sign in with JetBrains AI in the UI, or bring your own provider via pi. App state lives in ~/.thinkrail."
+display-order = 26
+tags = [
+    "ai",
+    "thinkrail",
+    "jetbrains",
+    "agent",
+    "coding-agent",
+    "pi",
+    "worktree",
+    "web"
+]
+
+[params.THINKRAIL_VERSION]
+default = "latest"
+suggests = ["latest", "0.2.0"]
+
+[params.THINKRAIL_PORT]
+default = "24242"
+suggests = ["24242"]
+
+[segments]
+Boothfile = """
+setup thinkrail --version ${THINKRAIL_VERSION} --port ${THINKRAIL_PORT}
+"""
