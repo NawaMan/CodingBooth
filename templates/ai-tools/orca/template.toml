@@ -1,0 +1,28 @@
+cb-version = "0.1.0"
+display-name = "Orca"
+display-disc = "Orca agent development environment (desktop app + headless server)"
+display-detail = "Installs Orca, an agent development environment for running Claude Code, Codex and other agents in parallel, each task in its own git worktree, with terminals, diffs and an embedded browser. On a desktop variant the Orca app is on the desktop. On any variant, orca-serve runs a headless Orca runtime with a web client: select the serve extension to start it on boot and the expose extension to publish ORCA_PORT, then open the link orca-pairing prints in the host browser, or add it to the host's Orca under Settings → Remote Orca Servers. Agent CLIs and their logins must be in the booth too. CLI: orca-ide."
+display-order = 27
+tags = [
+    "ai",
+    "orca",
+    "agent",
+    "coding-agent",
+    "worktree",
+    "parallel",
+    "desktop",
+    "server"
+]
+
+[params.ORCA_VERSION]
+default = "latest"
+suggests = ["latest", "1.4.238"]
+
+[params.ORCA_PORT]
+default = "6768"
+suggests = ["6768"]
+
+[segments]
+Boothfile = """
+setup orca --version ${ORCA_VERSION} --port ${ORCA_PORT}
+"""
