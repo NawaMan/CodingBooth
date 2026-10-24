@@ -4,6 +4,19 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **GnuPG 2.5 in every booth.** Ubuntu 26.04 ships GnuPG 2.4.8, and the 2.4 series has reached
+  its upstream end of life; 2.5 is the stable line and adds post-quantum (Kyber / ML-KEM) keys
+  (`gpg --quick-gen-key you@example.com pqc`). The base image now builds GnuPG 2.5.24 from the
+  upstream release with the new `gnupg` setup, which checks the tarball's signature against the
+  GnuPG release keys (fingerprints fixed in the script) and the default version's pinned SHA256.
+  It installs into `/usr/local`, ahead of `/usr/bin` on PATH, and links against 26.04's own
+  libgcrypt, libassuan, libksba and npth, so only GnuPG itself is built; the compiler and headers
+  are removed again (+33 MB). Ubuntu's 2.4 packages stay installed, since apt and other packages
+  depend on them, so `/usr/bin/gpg` is still 2.4. gpg-agent keeps using `/usr/bin/pinentry`,
+  which the `pinentry` setup repoints at a desktop flavour. The setup fails if configure leaves
+  out a component (dirmngr without GnuTLS, keyboxd without SQLite) rather than let it fall
+  through to the 2.4 copy.
+
 - **Hardened against the eMudhra CA key compromise (October 2026).** Eight eMudhra intermediate CA
   keys were recoverable, so anyone can mint certificates that clients trusting those chains accept.
   A booth has several trust stores, and each needed its own fix:

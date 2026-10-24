@@ -119,6 +119,7 @@ setup ghostty-fancy
 setup gimp
 setup gleam
 setup gleam-code-extension
+setup gnupg
 setup go
 setup go-code-extension
 setup go-nb-kernel

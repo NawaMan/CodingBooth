@@ -297,6 +297,9 @@ RUN tls--setup.sh
 # Markdown viewer (viewmd) - every booth can serve a folder of .md files to a browser
 RUN viewmd--setup.sh
 
+# GnuPG 2.5 (Ubuntu ships the end-of-life 2.4) - built into /usr/local, ahead of /usr/bin on PATH
+RUN gnupg--setup.sh --version 2.5.24
+
 # Texts and secrets as env vars (envfolio, on pass) - every booth can keep and load its own
 RUN envfolio--setup.sh
 
