@@ -1,5 +1,4 @@
 # syntax=codingbooth/boothfile:1
 
 # Test: thinkrail installation via Boothfile
-# thinkrail--setup.sh is supplied under .booth/setups/ until the base image ships it.
 setup thinkrail
