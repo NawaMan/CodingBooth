@@ -249,6 +249,7 @@ setup ollama
 setup opencode
 setup openssh
 setup opensshd
+setup orca
 setup orchis-gtk
 setup php
 setup php-code-extension
@@ -315,6 +316,7 @@ setup tela-icons
 setup terraform
 setup terraform-code-extension
 setup texstudio
+setup thinkrail
 setup thonny
 setup tls
 setup toml-code-extension
