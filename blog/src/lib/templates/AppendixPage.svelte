@@ -203,6 +203,8 @@
 	// simply because the run's last NEXT is the exit.
 	function handleGlobalKeydown(event: KeyboardEvent) {
 		if (event.key !== 'Backspace' && event.key !== 'ArrowUp') return;
+		// Cmd+↑ is not ↑: it is the deck's FIRST (stepKeys.pageKeyIntent).
+		if (event.metaKey || event.ctrlKey || event.altKey) return;
 		// Never steal the key from someone typing (a Draw label, a filter box).
 		const el = event.target as HTMLElement | null;
 		if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
