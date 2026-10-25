@@ -1,0 +1,6 @@
+language
+lean
+ai
+claude-code
+neovim
+experimental

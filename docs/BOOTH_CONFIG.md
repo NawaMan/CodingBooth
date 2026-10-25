@@ -679,7 +679,7 @@ additional project dependencies; it defaults to one build job.
 ### Lean 4 theorem prover (experimental)
 
 Lean is **experimental**. It has examples and tests (`examples/workspaces/lean-example`,
-`lean-mathlib-example`, `lean-interact-example`, `lean-blueprint-example`), but it is new, so expect rough edges.
+`lean-mathlib-example`, `lean-agent-example`, `lean-interact-example`, `lean-blueprint-example`), but it is new, so expect rough edges.
 
 | Selection | Does |
 | --- | --- |
@@ -688,6 +688,8 @@ Lean is **experimental**. It has examples and tests (`examples/workspaces/lean-e
 | `lean+vscode-ext` *(auto)* | `leanprover.lean4`: language server, live errors, infoview |
 | `lean+mathlib-cache` | mounts the host's `~/.cache/mathlib` (writable, so booth asks for consent) |
 | `lean+interact` | LeanInteract: drive Lean from Python and Jupyter cells; needs `python`, and builds the Lean REPL into the image |
+| `lean+mcp` | lean-lsp-mcp: an MCP server that gives Claude Code (or another agent) Lean's goals, errors and search; plus ripgrep |
+| `lean+nvim` | lean.nvim for Neovim: the Lean language server and an infoview window; needs `neovim` |
 | `lean+blueprint` | leanblueprint: a LaTeX blueprint linked to Lean, built to PDF and to a web page with a dependency graph; needs `latex` and `python` |
 
 The project's `lean-toolchain` file decides which toolchain is used. The template's version is
@@ -704,9 +706,6 @@ booth downloads the toolchain again.
 - **A Lean notebook kernel** (cells written in Lean). The only one, `lean4_jupyter`, has not
   changed since 2024. For notebooks, `lean+interact` drives Lean from Python cells instead
   (`examples/workspaces/lean-interact-example`).
-- **An agent + Lean example and a Lean MCP server.** AI agents writing Lean proofs is a strong
-  use case, and the agent templates already combine with `lean`. A dedicated example waits
-  until the base template is no longer experimental.
 - **An education template** (Natural Number Game, Mathematics in Lean). These can build on
   `lean` later. They are not needed to try Lean.
 - **Lean 3.** It is no longer maintained, since the community moved to Lean 4. The catalog does not

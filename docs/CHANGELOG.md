@@ -42,7 +42,14 @@ This file contains a list of changes for each released version.
   `lean-mathlib-example` is a Mathlib project (infinitely many primes, √2 irrational, real
   inequalities) pinned to Mathlib v4.35.0, with tips for finding lemmas (`exact?`, F12). Its
   tests check that Mathlib comes from the cache, not a build. A default example run skips it,
-  because it unpacks about 7 GB. The new `lean-example` workspace
+  because it unpacks about 7 GB.
+  For AI agents, `lean+mcp` installs lean-lsp-mcp, an MCP server that gives Claude Code the
+  goal at any line and the errors in a file, so it proves step by step instead of guessing.
+  For terminal users, `lean+nvim` installs lean.nvim (the Lean language server and an infoview
+  in Neovim), set up system-wide with no plugin manager. `lean-agent-example` puts both beside
+  Claude Code: `just prove` has Claude fill in five `sorry`s, and `just nvim` opens them in
+  Neovim. Its tests drive the MCP server with a real MCP client, and check that lean.nvim
+  attaches the language server in a headless Neovim. The new `lean-example` workspace
   proves a sum's closed form and that a fast Fibonacci equals the textbook one. Its tests also
   check that Lean rejects a false theorem. Marked `[experimental]`.
 
