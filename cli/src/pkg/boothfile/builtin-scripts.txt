@@ -193,6 +193,8 @@ setup lean
 setup lean-blueprint
 setup lean-code-extension
 setup lean-interact
+setup lean-lsp-mcp
+setup lean-nvim
 setup lean-toolchain-file
 setup libreoffice
 setup logo

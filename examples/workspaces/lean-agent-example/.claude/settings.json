@@ -1,0 +1,11 @@
+{
+  "enabledMcpjsonServers": ["lean-lsp"],
+  "permissions": {
+    "allow": [
+      "mcp__lean-lsp__*",
+      "Bash(lake build:*)",
+      "Bash(lake env lean:*)",
+      "Edit(Exercises/**)"
+    ]
+  }
+}

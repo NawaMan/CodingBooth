@@ -1,0 +1,12 @@
+# Configured by: booth config --no-tui --overwrite --cmd bash --select lean:4.35.0+mcp+nvim/neovim/claude-code+auto-accept+settings-cache
+
+
+cmds = ["bash"]
+
+run-args = [
+    "-v", "~/.config/nvim:/etc/cb-home-seed/.config/nvim:ro",
+    "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
+    "-v", "~/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro"
+]
+
+cache-dirs = ["home/coder/.claude"]
