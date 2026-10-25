@@ -204,8 +204,6 @@ variants/base/_stage/
 /worktree/
 .claude/*
 !.claude/skills/
-# An example's own Claude Code project settings are part of the example.
-!examples/workspaces/*/.claude/settings.json
 
 !/build/
 # Wails v3 keeps packaging Taskfiles under the project build/ directory.
