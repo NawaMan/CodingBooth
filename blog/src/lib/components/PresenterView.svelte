@@ -335,6 +335,14 @@
 				e.preventDefault();
 				go(nav.prev, 'back');
 				break;
+			case 'first':
+				e.preventDefault();
+				go(nav.first, 'back');
+				break;
+			case 'last':
+				e.preventDefault();
+				go(nav.last, 'forward');
+				break;
 			case 'continue':
 				e.preventDefault();
 				doContinue();
