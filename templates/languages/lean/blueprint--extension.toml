@@ -1,0 +1,24 @@
+cb-version = "0.1.0"
+display-name = "Blueprint (LaTeX)"
+display-disc = "leanblueprint: a LaTeX blueprint linked to Lean, with a dependency graph"
+display-detail = """Installs leanblueprint, the tool large formalization projects use to plan and track \
+their work. You write the mathematics in LaTeX and tag each definition, lemma and theorem with the \
+Lean name that formalizes it (\\lean{...}), and mark it \\leanok once it is proved. It builds a PDF and \
+a web page with a dependency graph that colours each result by its state: stated, formalized, proved. \
+`leanblueprint checkdecls` checks that every name in the blueprint exists in Lean. Requires the \
+latex and python templates; adds graphviz and XeLaTeX on top of them. The leanblueprint command \
+looks for the project's git repository, so run it inside one."""
+display-order = 45
+auto-select = false
+requires = ["latex", "python"]
+tags = ["lean", "latex", "blueprint", "math", "documentation"]
+
+[params.LEAN_BLUEPRINT_VERSION]
+default = "0.0.20"
+suggests = ["0.0.20"]
+
+# Order 70: after Python, LaTeX and Lean.
+[segments]
+"Boothfile--70" = """
+setup lean-blueprint --version ${LEAN_BLUEPRINT_VERSION}
+"""

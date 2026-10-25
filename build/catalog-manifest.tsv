@@ -189,6 +189,7 @@ setup	lazydocker	1.0.0	d9578b308e4d6d396fc098f3072e0459ee0c4d8aed4ca9767a80fb5dd
 setup	lazygit	1.0.0	c4adfd559e2de777fecb0a7e83098499f06cc579d4c39424f07c3cb1d60d58b0	variants/base/setups/lazygit--setup.sh
 setup	lazysql	0.1.0	a4935fd619a7800684ed1257ec2559a115e89026b6b331146ade9698de023316	variants/base/setups/lazysql--setup.sh
 setup	lean	0.1.0	e0563b104c0d1e6dd35749e3b6609b6840fbfa3e7552d1b91e5db86620783669	variants/base/setups/lean--setup.sh
+setup	lean-blueprint	0.1.0	6822aea37305be0d2dbc039d8a70fe6d0573ed08a539bdc46188f332e34ead12	variants/base/setups/lean-blueprint--setup.sh
 setup	lean-code-extension	0.1.0	513d434971801d29f4a57f650ab4ab945a14d92e9108080229ed1d811e6c2c51	variants/base/setups/lean-code-extension--setup.sh
 setup	lean-interact	0.1.0	434fc4e12befea435dd02f98d4b48ac1092c0fdf669a05470afcbc23486976a4	variants/base/setups/lean-interact--setup.sh
 setup	lean-toolchain-file	0.1.0	64b58a4c3e4211ea7261de973e619583a2651d6927b946397f9719ea7bcce9e2	variants/base/setups/lean-toolchain-file--setup.sh
@@ -782,6 +783,7 @@ extension	kubectl+credential	1.0.0	cfe5dfe318edf1a5bfd1e3c8b2aada1aaf69d098e7eda
 extension	kubectl+vscode-ext	0.1.0	58eb9fda83ce456b5859c7812651cd5d31a9a88bc1f753f31b33f645bde9121b	templates/tools/kubectl/vscode-ext--extension.toml
 extension	latex+texstudio	0.1.0	b250edd359daa8f2cfbb8e66b024d4a2a201402fce28e86e987f74d7b38957e1	templates/tools/latex/texstudio--extension.toml
 extension	latex+vscode-ext	0.1.0	f70711697eab14c7fcb68378155697ee04f038471610b8ad8a6634a2bcb3c6fa	templates/tools/latex/vscode-ext--extension.toml
+extension	lean+blueprint	0.1.0	8792cebaaa59abe02915f503b1b468827a5f7178c98ac389fa70ea03051909b4	templates/languages/lean/blueprint--extension.toml
 extension	lean+interact	0.1.0	aa698453f037c433904308f0187722b24d65b5e7e52cd09bad24a99e8ab9d7be	templates/languages/lean/interact--extension.toml
 extension	lean+mathlib-cache	0.1.0	dad24fefe536ddce8b6c4938c5f899b81c0061717a31eee0fdab3ed88726d571	templates/languages/lean/mathlib-cache--extension.toml
 extension	lean+toolchain-file	0.1.0	84032dbc78a367c0fb68636484b83f2220e48f24598cf80b06fcc59074e853a9	templates/languages/lean/toolchain-file--extension.toml

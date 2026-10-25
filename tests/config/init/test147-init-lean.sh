@@ -77,6 +77,22 @@ interact_last() {
 }
 check "interact pulls in python; runs after python and lean" interact_last
 
+# --- blueprint: leanblueprint after LaTeX and Python, both pulled in -------
+run rm -Rf $prj
+mkdir -p $prj
+run booth config $prj --no-tui --select 'lean+blueprint'
+assert-line "$boothfile" "setup lean-blueprint" " --version \${LEAN_BLUEPRINT_VERSION}" "lean+blueprint adds setup lean-blueprint"
+blueprint_default="$(sed -n '/^\[params.LEAN_BLUEPRINT_VERSION\]/,/^default/s/^default = "\(.*\)"/\1/p' \
+    "$_repo_root/templates/languages/lean/blueprint--extension.toml")"
+assert-line "$boothfile" "arg LEAN_BLUEPRINT_VERSION=" "$blueprint_default" \
+                                                                       "LEAN_BLUEPRINT_VERSION default is the catalog's"
+blueprint_last() {
+    local t p b
+    t="$(line_of 'setup latex ')"; p="$(line_of 'setup python ')"; b="$(line_of 'setup lean-blueprint ')"
+    [[ -n "$t" && -n "$p" && -n "$b" && "$t" -lt "$b" && "$p" -lt "$b" ]]
+}
+check "blueprint pulls in latex + python; runs after both" blueprint_last
+
 # --- VS Code extension is auto-selected (its script skips itself without code-server)
 run rm -Rf $prj
 mkdir -p $prj
