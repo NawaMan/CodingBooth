@@ -38,7 +38,11 @@ This file contains a list of changes for each released version.
   work: the maths in LaTeX, each statement tagged with its Lean name, built to a PDF and to a
   web page with a dependency graph coloured by what is proved. `lean-blueprint-example` has a
   two-chapter blueprint with one theorem (Nicomachus) left as an exercise, and checks that every
-  `\lean{...}` name exists. The new `lean-example` workspace
+  `\lean{...}` name exists.
+  `lean-mathlib-example` is a Mathlib project (infinitely many primes, √2 irrational, real
+  inequalities) pinned to Mathlib v4.35.0, with tips for finding lemmas (`exact?`, F12). Its
+  tests check that Mathlib comes from the cache, not a build. A default example run skips it,
+  because it unpacks about 7 GB. The new `lean-example` workspace
   proves a sum's closed form and that a fast Fibonacci equals the textbook one. Its tests also
   check that Lean rejects a false theorem. Marked `[experimental]`.
 
