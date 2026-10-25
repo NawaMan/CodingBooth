@@ -91,7 +91,9 @@ declare -a FILTER_EXAMPLES=()
 # build, which stalls past EXAMPLE_TIMEOUT under a full run's cumulative
 # CPU/disk/memory pressure. `--example n8n` still runs it explicitly -- this
 # list is only consulted when no example/tag filter narrowed the run.
-declare -a DEFAULT_SKIP_EXAMPLES=(n8n-example)
+# lean-mathlib-example: unpacks ~7 GB of Mathlib into its .lake/ on first run (and needs the
+# host's ~/.cache/mathlib mount). `--example lean-mathlib-example` runs it explicitly.
+declare -a DEFAULT_SKIP_EXAMPLES=(n8n-example lean-mathlib-example)
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
