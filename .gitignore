@@ -70,6 +70,11 @@ cmake-build-*/
 
 # --- Lean (lake build output and fetched packages) ---
 .lake/
+# leanblueprint build output (web, pdf, the declaration list, plasTeX's aux file)
+**/blueprint/web/
+**/blueprint/print/
+**/blueprint/lean_decls
+**/blueprint/src/*.paux
 
 # --- Node ---
 node_modules/

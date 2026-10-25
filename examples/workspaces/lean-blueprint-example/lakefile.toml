@@ -1,0 +1,11 @@
+name = "odd_squares"
+version = "0.1.0"
+defaultTargets = ["OddSquares"]
+
+[[lean_lib]]
+name = "OddSquares"
+
+# What `leanblueprint checkdecls` runs: every \lean{...} name in the blueprint must exist.
+[[require]]
+name = "checkdecls"
+git = "https://github.com/PatrickMassot/checkdecls.git"
