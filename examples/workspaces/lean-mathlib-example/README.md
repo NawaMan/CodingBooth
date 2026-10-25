@@ -9,6 +9,7 @@ three classic results:
 | `MathlibExample/Primes.lean` | there are infinitely many primes | Euclid's proof, step by step, with Mathlib's lemmas about factorials and divisibility |
 | `MathlibExample/Sqrt2.lean` | √2 is irrational, so no fraction squares to 2 | using a general Mathlib theorem, then working with real numbers and fractions |
 | `MathlibExample/Inequalities.lean` | 2ab ≤ a² + b², a cube expansion, the triangle inequality | Mathlib's automation: `nlinarith`, `positivity`, `ring` |
+| `MathlibExample/Mine.lean` | (a + b)² = a² + 2ab + b² | a first proof of your own, in one `ring`; add your practice here |
 
 Setting Mathlib up is usually the hard part on a laptop. You need the right Lean version for the
 Mathlib version, and its prebuilt files (about 0.5 GB to download, about 7 GB unpacked), because
