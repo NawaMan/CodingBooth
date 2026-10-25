@@ -9,7 +9,7 @@
 	import { presenterMode } from '$lib/stores/presenter';
 	import { activeSteps } from '$lib/stores/activeSteps';
 	import { localNav, registerNav, unregisterNav } from '$lib/stores/localChrome';
-	import { spaceIntent, isInteractiveTarget } from '$lib/utils/stepKeys';
+	import { spaceIntent, pageKeyIntent, isInteractiveTarget } from '$lib/utils/stepKeys';
 	import { reportAction } from '$lib/record/recordBus';
 
 	export let firstLink = '';
@@ -137,6 +137,21 @@
 		} else if (event.key === 'ArrowRight' && nextLink) {
 			event.preventDefault();
 			navigate(nextLink, 'forward');
+
+		} else if (pageKeyIntent(event) !== 'ignore') {
+			// Home/End (Fn+←/→ on a Mac laptop, or Cmd+↑/↓) jump like FIRST/LAST;
+			// PageUp/PageDown — a clicker — page like ←/→. In an appendix the links are
+			// the run's own, so Home/End stay inside it, exactly as the buttons do.
+			const intent = pageKeyIntent(event);
+			const [href, dir, atEnd]: [string, Dir, boolean] =
+				intent === 'first' ? [firstLink, 'back', false]
+				: intent === 'last' ? [lastLink, 'forward', false]
+				: intent === 'prev' ? [prevLink, 'back', true]
+				: [nextLink, 'forward', false];
+			if (href) {
+				event.preventDefault();
+				navigate(href, dir, atEnd);
+			}
 
 		} else {
 			// Space advances: a <Steps> build swallows it while steps remain (that

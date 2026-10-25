@@ -8,6 +8,7 @@
 // intent that belongs to it, and neither can page a slide out from under a build.
 //
 // The arrow keys are deliberately not handled here — →/← always page, never step.
+// Neither do the other paging keys (pageKeyIntent, at the bottom): they never step.
 
 /** The build state a Space press is judged against (null = no build on this slide). */
 export interface BuildState {
@@ -52,4 +53,36 @@ export function spaceIntent(e: KeyboardEvent, build: BuildState | null): SpaceIn
 	if (e.defaultPrevented || !isSpaceKey(e) || isInteractiveTarget(e.target)) return 'ignore';
 	if (e.shiftKey) return build?.hasPrev ? 'peel' : 'page-prev';
 	return build?.hasNext ? 'reveal' : 'page-next';
+}
+
+/** What a paging key other than Space and ←/→ means: jump to an end, or step a slide. */
+export type PageKeyIntent = 'first' | 'last' | 'next' | 'prev' | 'ignore';
+
+/**
+ * The deck's other paging keys — the ones that never touch a build.
+ *
+ *   Home / End           FIRST / LAST   (on a Mac laptop: Fn+← / Fn+→ send these)
+ *   Cmd+↑ / Cmd+↓        FIRST / LAST   (the Mac's own "to the top / bottom")
+ *   PageUp / PageDown    PREV / NEXT    (what a presentation clicker sends)
+ *
+ * Any other modifier is a browser or OS chord and is left alone, as is a key a
+ * focused control already claimed (`defaultPrevented` — the AnimationBar rail's
+ * own Home/End). Whether the TARGET owns the key is the caller's call, as it is for
+ * the arrows: the deck's pager and the presenter console guard it differently.
+ */
+export function pageKeyIntent(e: KeyboardEvent): PageKeyIntent {
+	if (!e || e.defaultPrevented) return 'ignore';
+	if (e.altKey || e.ctrlKey || e.shiftKey) return 'ignore';
+	if (e.metaKey) {
+		if (e.key === 'ArrowUp') return 'first';
+		if (e.key === 'ArrowDown') return 'last';
+		return 'ignore';
+	}
+	switch (e.key) {
+		case 'Home':     return 'first';
+		case 'End':      return 'last';
+		case 'PageUp':   return 'prev';
+		case 'PageDown': return 'next';
+		default:         return 'ignore';
+	}
 }
