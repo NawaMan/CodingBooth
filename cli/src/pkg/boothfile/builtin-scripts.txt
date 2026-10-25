@@ -191,6 +191,7 @@ setup lazygit
 setup lazysql
 setup lean
 setup lean-code-extension
+setup lean-interact
 setup lean-toolchain-file
 setup libreoffice
 setup logo

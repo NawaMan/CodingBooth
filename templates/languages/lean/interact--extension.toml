@@ -1,0 +1,25 @@
+cb-version = "0.1.0"
+display-name = "LeanInteract (Python / Jupyter)"
+display-disc = "Drive Lean from Python and Jupyter notebooks with LeanInteract"
+display-detail = """Installs LeanInteract, a Python library that sends Lean code to a Lean REPL and returns \
+the result as Python objects: errors, warnings, and the open goals of each `sorry`. Use it in a \
+Python script or a Jupyter cell to check theorems, loop over candidate proofs, or feed results to \
+an AI model. This is how notebooks are used with Lean today. A Lean kernel (cells written in Lean) \
+is not offered, because the existing one is unmaintained. The REPL is built for the booth's default \
+toolchain when the image is built, so the first LeanREPLConfig() does not compile anything. A \
+project pinned to another toolchain builds its own REPL on first use, into the writable \
+/opt/lean-interact/cache. Requires the python template; add notebook for Jupyter."""
+display-order = 40
+auto-select = false
+requires = ["python"]
+tags = ["lean", "python", "jupyter", "notebook", "repl", "ai"]
+
+[params.LEAN_INTERACT_VERSION]
+default = "0.11.6"
+suggests = ["0.11.6"]
+
+# Order 70: after Python, Lean and the notebook server.
+[segments]
+"Boothfile--70" = """
+setup lean-interact --version ${LEAN_INTERACT_VERSION}
+"""

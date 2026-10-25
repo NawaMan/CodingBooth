@@ -28,8 +28,12 @@ This file contains a list of changes for each released version.
   `lean-toolchain` file into the image, so the first `lake build` does not download it.
   `lean+vscode-ext` installs `leanprover.lean4` with its infoview. `lean+mathlib-cache` is
   opt-in: it mounts the host's `~/.cache/mathlib`, so Mathlib's prebuilt files (about 0.5 GB for each
-  Mathlib version) are downloaded once and shared by all projects. Mathlib is never baked into the image. There is no
-  notebook kernel, because Lean has no mature Jupyter kernel. The new `lean-example` workspace
+  Mathlib version) are downloaded once and shared by all projects. Mathlib is never baked into the image. For Jupyter,
+  `lean+interact` installs LeanInteract, which drives Lean from Python cells: check a theorem,
+  read the goal at a `sorry`, step through a proof one tactic at a time, or search over candidate
+  proofs. It builds the Lean REPL when the image is built, so the first cell starts in seconds.
+  There is no Lean kernel (cells written in Lean), because the only one is unmaintained.
+  `lean-interact-example` is a notebook tour and a small proof-search script. The new `lean-example` workspace
   proves a sum's closed form and that a fast Fibonacci equals the textbook one. Its tests also
   check that Lean rejects a false theorem. Marked `[experimental]`.
 
