@@ -10,8 +10,9 @@ the image so the first `lake build` does not download it.
 For Mathlib, `lake exe cache get` downloads its prebuilt files instead of building for hours: \
 about 0.5 GB compressed into ~/.cache/mathlib, unpacked to about 7 GB in the project's .lake/. \
 The mathlib-cache extension shares the download with the host across every project. Never \
-baked into the image. No notebook kernel: Lean has no mature Jupyter kernel, and the VS Code \
-infoview is where Lean is actually written."""
+baked into the image. For Jupyter, the interact extension drives Lean from Python cells (LeanInteract); there is no \
+Lean kernel, because the existing one is unmaintained. The VS Code infoview is where Lean is \
+written by hand."""
 display-order = 78
 tags = [
     "lean",
