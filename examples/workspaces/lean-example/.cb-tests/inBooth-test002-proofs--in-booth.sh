@@ -8,7 +8,7 @@ grep -q "Build completed successfully" /tmp/lean-build.out || { echo "  ✗ lake
 if grep -qi "sorry" /tmp/lean-build.out; then echo "  ✗ a proof uses sorry"; fail=1; else echo "  ✓ no sorry"; fi
 
 got="$(just run 30 2>&1)"
-for want in "sumTo 30 = 465 = 30 * 31 / 2" "fastFib 30 = 832040"; do
+for want in "sumTo 30 = 465 = 30 * 31 / 2" "fastFib 30 = 832040" "oddSum 30 = 900 = 30 * 30"; do
     if [[ "$got" == *"$want"* ]]; then echo "  ✓ $want"; else echo "  ✗ expected '$want', got: $got"; fail=1; fi
 done
 exit $fail
