@@ -5,7 +5,9 @@ theorem prover, so the same file holds a program and a proof that the program is
 two samples. `LeanExample/Sum.lean` adds `0 + 1 + … + n` one number at a time and proves the sum
 always equals `n * (n + 1) / 2`. `LeanExample/Fib.lean` has the slow textbook Fibonacci and a fast
 one built on a loop, plus a proof that both give the same answer for every input. `Main.lean` runs
-the fast version, and the proof is what lets you trust its output. Lean needs one thing pinned:
+the fast version, and the proof is what lets you trust its output. `LeanExample/Odd.lean` proves
+that the first `n` odd numbers add up to `n²` (1 + 3 + 5 + 7 = 16 = 4²), one step per line, with
+a comment on each step. Start there if you are new to Lean. Lean needs one thing pinned:
 the toolchain named in `lean-toolchain`. That pin is baked into the image, so the first build does
 not download it.
 
@@ -24,11 +26,11 @@ booth
 # 2. Inside the booth
 just --list
 just build                           # lake build: checks every proof, builds the program
-just run 30                          # sumTo 30 = 465 = 30 * 31 / 2,  fastFib 30 = 832040
+just run 30                          # sumTo 30 = 465 …, fastFib 30 = 832040, oddSum 30 = 900
 just check LeanExample/Fib.lean      # check one file
 ```
 
-Open `LeanExample/Fib.lean` in code-server and put the cursor inside a proof. The **Lean
+Open `LeanExample/Odd.lean` in code-server and put the cursor inside a proof. The **Lean
 Infoview** panel shows the goal at that point: what is known and what is still to prove. That
 panel is where you write a Lean proof.
 
@@ -53,7 +55,7 @@ A proof that is left as `sorry` still compiles and gives only a warning. The tes
 | Toolchain       | elan in `/opt/elan`; Lean 4.35.0 from `lean-toolchain`, baked in by `lean+toolchain-file` |
 | Build           | lake (comes with the toolchain); `lakefile.toml`, no dependencies    |
 | VS Code support | `leanprover.lean4`: language server, live errors, the infoview       |
-| Proof samples   | `LeanExample/Sum.lean` (induction + `grind`), `LeanExample/Fib.lean` (a generalized loop invariant) |
+| Proof samples   | `LeanExample/Odd.lean` (an 8-step `calc` proof, one reason per line), `LeanExample/Sum.lean` (induction + `grind`), `LeanExample/Fib.lean` (a generalized loop invariant) |
 
 To change the version, edit `lean-toolchain` and keep the template pin the same, so that one
 toolchain is installed and not two:
@@ -88,7 +90,8 @@ toolchain into the image.
 ```
 LeanExample/Sum.lean     sumTo and its closed form, by induction
 LeanExample/Fib.lean     fib (spec), fastFib (impl), and fastFib_eq_fib
-LeanExample.lean         the library root, imports both
+LeanExample/Odd.lean     1 + 3 + … + (2n − 1) = n², step by step
+LeanExample.lean         the library root, imports all three
 Main.lean                the executable: lake exe lean_example [n]
 lakefile.toml            the package: one library, one executable
 lean-toolchain           the pinned toolchain (leanprover/lean4:v4.35.0)
