@@ -1,5 +1,0 @@
-language
-lean
-notebook
-python
-experimental

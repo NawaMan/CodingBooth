@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "lean-lsp": {
-      "command": "lean-lsp-mcp",
-      "args": []
-    }
-  }
-}

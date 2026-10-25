@@ -1,0 +1,4 @@
+# Configured by: booth config --no-tui --overwrite --select lean:4.35.0+mcp+nvim/neovim
+
+
+run-args = ["-v", "~/.config/nvim:/etc/cb-home-seed/.config/nvim:ro"]
