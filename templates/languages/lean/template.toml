@@ -1,0 +1,38 @@
+cb-version = "0.1.0"
+display-name = "Lean 4 [experimental]"
+display-disc = "Experimental — Lean 4 theorem prover and language, via elan and lake"
+display-detail = """EXPERIMENTAL — new, not yet battle-tested; expect rough edges. \
+Installs elan (Lean's toolchain manager, a rustup fork) into /opt/elan with a default \
+Lean 4 toolchain; lake, the build tool and package manager, comes with it. A project's own \
+lean-toolchain file wins over the default -- the toolchain-file extension bakes that pin into \
+the image so the first `lake build` does not download it.
+
+For Mathlib, `lake exe cache get` downloads its prebuilt files instead of building for hours: \
+about 0.5 GB compressed into ~/.cache/mathlib, unpacked to about 7 GB in the project's .lake/. \
+The mathlib-cache extension shares the download with the host across every project. Never \
+baked into the image. No notebook kernel: Lean has no mature Jupyter kernel, and the VS Code \
+infoview is where Lean is actually written."""
+display-order = 78
+tags = [
+    "lean",
+    "lean4",
+    "theorem-prover",
+    "proof",
+    "math",
+    "mathlib",
+    "functional",
+    "experimental",
+]
+
+[params.LEAN_VERSION]
+default = "stable"
+suggests = ["stable", "4.35.0", "nightly"]
+
+# Image environment, not a shell profile. `booth exec` runs the command with no
+# shell, so /etc/profile.d never runs: these mirror what the setup's profile sets.
+[segments]
+Boothfile = """
+env ELAN_HOME=/opt/elan
+env PATH=/opt/elan/bin:$PATH
+setup lean --version ${LEAN_VERSION}
+"""

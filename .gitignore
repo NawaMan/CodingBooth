@@ -68,6 +68,9 @@ target/
 build/
 cmake-build-*/
 
+# --- Lean (lake build output and fetched packages) ---
+.lake/
+
 # --- Node ---
 node_modules/
 dist/

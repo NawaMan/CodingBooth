@@ -676,6 +676,39 @@ with `tools=ocaml`, `versions=<compiler>-tools<revision>` and the required Ubunt
 architectures. `opam install <package>` inside the booth remains available and may compile
 additional project dependencies; it defaults to one build job.
 
+### Lean 4 theorem prover (experimental)
+
+Lean is **experimental**. It has an example and tests (`examples/workspaces/lean-example`), but
+it is new, so expect rough edges.
+
+| Selection | Does |
+| --- | --- |
+| `lean` (`lean:4.35.0`, `lean:nightly`) | elan in `/opt/elan` (writable), a default toolchain, lake |
+| `lean+toolchain-file` *(auto)* | bakes the project's `lean-toolchain` pin into the image |
+| `lean+vscode-ext` *(auto)* | `leanprover.lean4`: language server, live errors, infoview |
+| `lean+mathlib-cache` | mounts the host's `~/.cache/mathlib` (writable, so booth asks for consent) |
+
+The project's `lean-toolchain` file decides which toolchain is used. The template's version is
+only a fallback for a project that has no pin yet. Mathlib changes its pin often, so for a
+Mathlib project keep `toolchain-file` selected. If you do not, the first `lake` call in every new
+booth downloads the toolchain again.
+
+**Left out, on purpose:**
+
+- **Mathlib in the image.** Its prebuilt files unpack to about 7 GB for each Mathlib version, and
+  the version changes every few weeks. Baking them in would make the image huge and tie it to one
+  version. They go in `~/.cache/mathlib` (shared through `mathlib-cache`) and in the project's
+  own `.lake/`.
+- **A notebook kernel.** Lean has no mature Jupyter kernel. Lean proofs are written against the
+  infoview in VS Code, not in notebook cells.
+- **An agent + Lean example and a Lean MCP server.** AI agents writing Lean proofs is a strong
+  use case, and the agent templates already combine with `lean`. A dedicated example waits
+  until the base template is no longer experimental.
+- **An education template** (Natural Number Game, Mathematics in Lean). These can build on
+  `lean` later. They are not needed to try Lean.
+- **Lean 3.** It is no longer maintained, since the community moved to Lean 4. The catalog does not
+  offer it.
+
 ---
 
 ## What Gets Generated
