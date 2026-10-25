@@ -679,7 +679,7 @@ additional project dependencies; it defaults to one build job.
 ### Lean 4 theorem prover (experimental)
 
 Lean is **experimental**. It has examples and tests (`examples/workspaces/lean-example`,
-`lean-interact-example`, `lean-blueprint-example`), but it is new, so expect rough edges.
+`lean-mathlib-example`, `lean-interact-example`, `lean-blueprint-example`), but it is new, so expect rough edges.
 
 | Selection | Does |
 | --- | --- |
