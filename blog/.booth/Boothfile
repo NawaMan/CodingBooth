@@ -9,5 +9,7 @@ arg NODE_VERSION=22
 setup claude-code ${CLAUDE_CODE_VERSION}
 setup nodejs ${NODE_VERSION}
 install npm pnpm
+# package.json pins pnpm 11 (@pnpm/exe), a native binary that needs libatomic.
+install apt libatomic1
 setup nodejs-code-extension
 run --mount=type=bind,target=/tmp/ctx if [ -f /tmp/ctx/package.json ]; then mkdir -p /opt/pnpm-cache && cp /tmp/ctx/package.json /opt/pnpm-cache/ && cp /tmp/ctx/pnpm-lock.yaml /opt/pnpm-cache/ 2>/dev/null || true && cp /tmp/ctx/pnpm-workspace.yaml /opt/pnpm-cache/ 2>/dev/null || true && cp /tmp/ctx/.npmrc /opt/pnpm-cache/ 2>/dev/null || true && cd /opt/pnpm-cache && pnpm install; fi
