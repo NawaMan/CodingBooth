@@ -22,6 +22,8 @@
 //
 //   →      page next            ←      page prev
 //   Space  advance the build    Shift+Space  page prev (walk back)
+//   Home   first slide          End    last slide      (also Cmd+↑ / Cmd+↓)
+//   PageUp page prev            PageDown page next     (a clicker)
 //
 // Space returns 'continue' — the view relays the same CONTINUE pulse the button
 // fires, which steps an armed <Steps>/Video build in the audience window and pages
@@ -36,7 +38,7 @@
 // Total: garbage input → 'ignore', never throws.
 
 import { isChromeTypingTarget } from './chromeArmCore';
-import { isSpaceKey } from '$lib/utils/stepKeys';
+import { isSpaceKey, pageKeyIntent } from '$lib/utils/stepKeys';
 
 export type PresenterKeyIntent =
 	| 'toc'
@@ -48,6 +50,8 @@ export type PresenterKeyIntent =
 	| 'close'
 	| 'next'
 	| 'prev'
+	| 'first'
+	| 'last'
 	| 'continue'
 	| 'tocUp'
 	| 'tocDown'
@@ -78,6 +82,11 @@ export function presenterKeyIntent(
 
 	// The letters must never fire while the speaker is typing (the timer field).
 	if (isChromeTypingTarget(e?.target)) return 'ignore';
+
+	// Home/End, Cmd+↑/↓ and PageUp/PageDown — the same table the deck's pager reads,
+	// checked before the chord guard below because Cmd+↑/↓ is one of them.
+	const jump = pageKeyIntent(e);
+	if (jump !== 'ignore') return jump;
 
 	// A modifier means a browser/OS chord (Ctrl+A, Cmd+T…) — leave those alone.
 	// (Shift is NOT a chord here — Shift+Space is a real console gesture.)

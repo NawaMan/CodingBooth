@@ -38,6 +38,11 @@ two disagree about process, the root file wins.
   list it. **Contiguous** hidden entries are ONE appendix (a chapter you page through). You jump
   in with `AppendixLink` and leave by paging off the end of it; see the templates below and
   `slides/appendix-page.html`.
+- **Paging keys.** →/← and Space page (Space steps a build first). **Home/End** jump like
+  FIRST/LAST — on a Mac laptop that is **Fn+←/Fn+→**, and **Cmd+↑/Cmd+↓** does the same.
+  **PageUp/PageDown** (what a presentation clicker sends) page like ←/→. In an appendix the
+  ends are the run's own, as the buttons are. One table, `utils/stepKeys.pageKeyIntent`, read by
+  both `NavigationBar` and the presenter console (`chrome/presenterKeyCore.ts`).
 - **Templates** (`src/lib/templates/`): `TitlePage` (named slots `title` / `subtitle` / `subsubtitle`)
   and `ContentPage` (`title` + `subtitle` props + default slot). Both auto-insert the nav bar
   (`ContentPage` takes `nav={false}` to drop it). Third: `AppendixPage` — a slide you jump *into*
