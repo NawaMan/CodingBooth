@@ -93,6 +93,19 @@ blueprint_last() {
 }
 check "blueprint pulls in latex + python; runs after both" blueprint_last
 
+# --- mcp: lean-lsp-mcp for agents; nvim: lean.nvim, pulling in neovim -------
+run rm -Rf $prj
+mkdir -p $prj
+run booth config $prj --no-tui --select 'lean+mcp+nvim'
+assert-line "$boothfile" "setup lean-lsp-mcp" " --version \${LEAN_LSP_MCP_VERSION}" "lean+mcp adds setup lean-lsp-mcp"
+assert-line "$boothfile" "setup lean-nvim" " --version \${LEAN_NVIM_VERSION}"       "lean+nvim adds setup lean-nvim"
+nvim_after_neovim() {
+    local n l
+    n="$(line_of 'setup neovim ')"; l="$(line_of 'setup lean-nvim ')"
+    [[ -n "$n" && -n "$l" && "$n" -lt "$l" ]]
+}
+check "nvim pulls in neovim; lean.nvim installs after it" nvim_after_neovim
+
 # --- VS Code extension is auto-selected (its script skips itself without code-server)
 run rm -Rf $prj
 mkdir -p $prj
