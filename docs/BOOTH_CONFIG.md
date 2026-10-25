@@ -678,8 +678,8 @@ additional project dependencies; it defaults to one build job.
 
 ### Lean 4 theorem prover (experimental)
 
-Lean is **experimental**. It has an example and tests (`examples/workspaces/lean-example`), but
-it is new, so expect rough edges.
+Lean is **experimental**. It has examples and tests (`examples/workspaces/lean-example`,
+`lean-interact-example`, `lean-blueprint-example`), but it is new, so expect rough edges.
 
 | Selection | Does |
 | --- | --- |
@@ -688,6 +688,7 @@ it is new, so expect rough edges.
 | `lean+vscode-ext` *(auto)* | `leanprover.lean4`: language server, live errors, infoview |
 | `lean+mathlib-cache` | mounts the host's `~/.cache/mathlib` (writable, so booth asks for consent) |
 | `lean+interact` | LeanInteract: drive Lean from Python and Jupyter cells; needs `python`, and builds the Lean REPL into the image |
+| `lean+blueprint` | leanblueprint: a LaTeX blueprint linked to Lean, built to PDF and to a web page with a dependency graph; needs `latex` and `python` |
 
 The project's `lean-toolchain` file decides which toolchain is used. The template's version is
 only a fallback for a project that has no pin yet. Mathlib changes its pin often, so for a

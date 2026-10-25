@@ -33,7 +33,12 @@ This file contains a list of changes for each released version.
   read the goal at a `sorry`, step through a proof one tactic at a time, or search over candidate
   proofs. It builds the Lean REPL when the image is built, so the first cell starts in seconds.
   There is no Lean kernel (cells written in Lean), because the only one is unmaintained.
-  `lean-interact-example` is a notebook tour and a small proof-search script. The new `lean-example` workspace
+  `lean-interact-example` is a notebook tour and a small proof-search script.
+  `lean+blueprint` installs leanblueprint, which large formalization projects use to plan their
+  work: the maths in LaTeX, each statement tagged with its Lean name, built to a PDF and to a
+  web page with a dependency graph coloured by what is proved. `lean-blueprint-example` has a
+  two-chapter blueprint with one theorem (Nicomachus) left as an exercise, and checks that every
+  `\lean{...}` name exists. The new `lean-example` workspace
   proves a sum's closed form and that a fast Fibonacci equals the textbook one. Its tests also
   check that Lean rejects a false theorem. Marked `[experimental]`.
 
