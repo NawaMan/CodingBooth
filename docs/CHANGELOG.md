@@ -21,6 +21,18 @@ This file contains a list of changes for each released version.
     `orca+serve+expose:26768` works as published. Treat the link like a password. Upstream marks
     `orca serve` as beta.
 
+- **Lean 4 theorem prover, as an experimental `lean` language template.** `--select lean`
+  installs elan, Lean's toolchain manager, into a writable `/opt/elan` with a default toolchain
+  (`stable`, or a pin like `lean:4.35.0`), plus lake. Three extensions come with it.
+  `lean+toolchain-file` is selected automatically: it bakes the toolchain named in the project's
+  `lean-toolchain` file into the image, so the first `lake build` does not download it.
+  `lean+vscode-ext` installs `leanprover.lean4` with its infoview. `lean+mathlib-cache` is
+  opt-in: it mounts the host's `~/.cache/mathlib`, so Mathlib's prebuilt files (about 0.5 GB for each
+  Mathlib version) are downloaded once and shared by all projects. Mathlib is never baked into the image. There is no
+  notebook kernel, because Lean has no mature Jupyter kernel. The new `lean-example` workspace
+  proves a sum's closed form and that a fast Fibonacci equals the textbook one. Its tests also
+  check that Lean rejects a false theorem. Marked `[experimental]`.
+
 - **GnuPG 2.5 in every booth.** Ubuntu 26.04 ships GnuPG 2.4.8, and the 2.4 series has reached
   its upstream end of life; 2.5 is the stable line and adds post-quantum (Kyber / ML-KEM) keys
   (`gpg --quick-gen-key you@example.com pqc`). The base image now builds GnuPG 2.5.24 from the

@@ -1,0 +1,17 @@
+cb-version = "0.1.0"
+display-name = "Toolchain File"
+display-disc = "Install the toolchain the project pins in lean-toolchain"
+display-detail = """Bakes the toolchain a project pins in its lean-toolchain file into the image. Without \
+it the first `lake` in every fresh booth stops to download the pin -- and Mathlib projects pin a \
+new toolchain often, so it rarely matches the template's default. Only that file is copied into \
+the build, so editing source does not rebuild this step; changing the pin does. Does nothing in \
+a project without the file, so it is safe to leave selected."""
+display-order = 22
+auto-select = true
+tags = ["lean", "elan", "toolchain"]
+
+[segments]
+"Boothfile--56" = """
+copy .booth/Boothfile lean-toolchai[n] /tmp/cb-lean-toolchain/
+setup lean-toolchain-file /tmp/cb-lean-toolchain
+"""

@@ -189,6 +189,9 @@ setup lazarus
 setup lazydocker
 setup lazygit
 setup lazysql
+setup lean
+setup lean-code-extension
+setup lean-toolchain-file
 setup libreoffice
 setup logo
 setup lombok-eclipse
