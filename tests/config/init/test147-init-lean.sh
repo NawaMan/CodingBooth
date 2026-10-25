@@ -60,6 +60,23 @@ run booth config $prj --no-tui --select 'lean+mathlib-cache'
 assert-line "$config" "run-args = " \
     '["-v", "$HOME/.cache/mathlib:/home/coder/.cache/mathlib:create"]' "mathlib-cache mounts ~/.cache/mathlib"
 
+# --- interact: LeanInteract after both Python and Lean -----------------------
+run rm -Rf $prj
+mkdir -p $prj
+run booth config $prj --no-tui --select 'lean+interact'
+assert-line "$boothfile" "setup lean-interact" " --version \${LEAN_INTERACT_VERSION}" "lean+interact adds setup lean-interact"
+# Extension params are not in `booth template show`, so read the default from the file.
+interact_default="$(sed -n '/^\[params.LEAN_INTERACT_VERSION\]/,/^default/s/^default = "\(.*\)"/\1/p' \
+    "$_repo_root/templates/languages/lean/interact--extension.toml")"
+assert-line "$boothfile" "arg LEAN_INTERACT_VERSION=" "$interact_default" \
+                                                                       "LEAN_INTERACT_VERSION default is the catalog's"
+interact_last() {
+    local p l i
+    p="$(line_of 'setup python ')"; l="$(line_of 'setup lean ')"; i="$(line_of 'setup lean-interact ')"
+    [[ -n "$p" && -n "$l" && -n "$i" && "$p" -lt "$i" && "$l" -lt "$i" ]]
+}
+check "interact pulls in python; runs after python and lean" interact_last
+
 # --- VS Code extension is auto-selected (its script skips itself without code-server)
 run rm -Rf $prj
 mkdir -p $prj

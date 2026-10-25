@@ -1,0 +1,26 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --variant notebook --select python:3.12/lean:4.35.0+interact
+
+env APT_SNAPSHOT=20261004T000000Z
+
+arg LEAN_INTERACT_VERSION=0.11.6
+arg LEAN_VERSION=4.35.0
+arg PYTHON_VERSION=3.12
+
+env ELAN_HOME=/opt/elan
+env PATH=/opt/elan/bin:$PATH
+setup lean --version ${LEAN_VERSION}
+env CB_PYENV_ROOT=/opt/pyenv
+env CB_PY_STABLE=/opt/python
+env CB_VENV_ROOT=/opt/venvs
+env PIP_CACHE_DIR=/opt/pip-cache
+env PIP_DISABLE_PIP_VERSION_CHECK=1
+env PYTHONUNBUFFERED=1
+env VIRTUAL_ENV=/opt/python
+env PATH=/usr/local/uv/bin:/usr/local/uv:/opt/pyenv/bin:/opt/python/bin:$PATH
+setup python ${PYTHON_VERSION}
+copy .booth/Boothfile lean-toolchai[n] /tmp/cb-lean-toolchain/
+setup lean-toolchain-file /tmp/cb-lean-toolchain
+setup lean-code-extension
+setup python-code-extension
+setup lean-interact --version ${LEAN_INTERACT_VERSION}

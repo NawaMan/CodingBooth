@@ -687,6 +687,7 @@ it is new, so expect rough edges.
 | `lean+toolchain-file` *(auto)* | bakes the project's `lean-toolchain` pin into the image |
 | `lean+vscode-ext` *(auto)* | `leanprover.lean4`: language server, live errors, infoview |
 | `lean+mathlib-cache` | mounts the host's `~/.cache/mathlib` (writable, so booth asks for consent) |
+| `lean+interact` | LeanInteract: drive Lean from Python and Jupyter cells; needs `python`, and builds the Lean REPL into the image |
 
 The project's `lean-toolchain` file decides which toolchain is used. The template's version is
 only a fallback for a project that has no pin yet. Mathlib changes its pin often, so for a
@@ -699,8 +700,9 @@ booth downloads the toolchain again.
   the version changes every few weeks. Baking them in would make the image huge and tie it to one
   version. They go in `~/.cache/mathlib` (shared through `mathlib-cache`) and in the project's
   own `.lake/`.
-- **A notebook kernel.** Lean has no mature Jupyter kernel. Lean proofs are written against the
-  infoview in VS Code, not in notebook cells.
+- **A Lean notebook kernel** (cells written in Lean). The only one, `lean4_jupyter`, has not
+  changed since 2024. For notebooks, `lean+interact` drives Lean from Python cells instead
+  (`examples/workspaces/lean-interact-example`).
 - **An agent + Lean example and a Lean MCP server.** AI agents writing Lean proofs is a strong
   use case, and the agent templates already combine with `lean`. A dedicated example waits
   until the base template is no longer experimental.

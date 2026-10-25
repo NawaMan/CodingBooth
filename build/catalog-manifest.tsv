@@ -190,6 +190,7 @@ setup	lazygit	1.0.0	c4adfd559e2de777fecb0a7e83098499f06cc579d4c39424f07c3cb1d60d
 setup	lazysql	0.1.0	a4935fd619a7800684ed1257ec2559a115e89026b6b331146ade9698de023316	variants/base/setups/lazysql--setup.sh
 setup	lean	0.1.0	e0563b104c0d1e6dd35749e3b6609b6840fbfa3e7552d1b91e5db86620783669	variants/base/setups/lean--setup.sh
 setup	lean-code-extension	0.1.0	513d434971801d29f4a57f650ab4ab945a14d92e9108080229ed1d811e6c2c51	variants/base/setups/lean-code-extension--setup.sh
+setup	lean-interact	0.1.0	434fc4e12befea435dd02f98d4b48ac1092c0fdf669a05470afcbc23486976a4	variants/base/setups/lean-interact--setup.sh
 setup	lean-toolchain-file	0.1.0	64b58a4c3e4211ea7261de973e619583a2651d6927b946397f9719ea7bcce9e2	variants/base/setups/lean-toolchain-file--setup.sh
 setup	libreoffice	1.0.0	c20c5ac0724088909c1e0bfa1b844c4aaad47d8f25285ce54b9dfab40ba0c3fc	variants/base/setups/libreoffice--setup.sh
 setup	logo	0.1.0	508b45f46b768c84eca8adb35753e16e51e29bd72eebb4733620d0ae6df52875	variants/base/setups/logo--setup.sh
@@ -522,7 +523,7 @@ template	latex	0.1.0	166db2935d55e150cfd641cd13fa9b344dad0c99c6615b2219e2abb2a17
 template	lazydocker	1.0.0	d1489214f93a5c045e9dee8da67859ac6e9955321bac025ea758d42b6c7d2156	templates/tools/lazydocker/template.toml
 template	lazygit	1.0.0	beadc27bf3b3d5a49806bf1b77f5a468f420a1042688e9b15007511e7833970d	templates/tools/lazygit/template.toml
 template	lazysql	0.1.0	aa06755a09ac23b4bb4c2fd7c0632bdfc355a175c429b5d0a75beaeffe64ff2f	templates/tools/lazysql/template.toml
-template	lean	0.1.0	69f135832ffac2f1a138b6fb437de3c087a62e23892e3a254285ca934e994478	templates/languages/lean/template.toml
+template	lean	0.1.0	c9b0ac621897d8e771e0a64fcc074e56c2527c50f40eae5463aa4be709de60f0	templates/languages/lean/template.toml
 template	libreoffice	1.0.0	8b693055cc5e8dcd6c5f53d302ac127c8ad55a21eb3fa050420fa7d593208df3	templates/desktops/libreoffice/template.toml
 template	logo	0.1.0	04549157796baba24738e89cec29ab7fbf9131dbe17f12dcee9eb7670500abe0	templates/education/logo/template.toml
 template	lsp	0.1.0	0d1b6c17f354e0ea8bc1e53dda4dd5f56b68452ca549acdf9c2b063afd5a9aa4	templates/tools/lsp/template.toml
@@ -781,6 +782,7 @@ extension	kubectl+credential	1.0.0	cfe5dfe318edf1a5bfd1e3c8b2aada1aaf69d098e7eda
 extension	kubectl+vscode-ext	0.1.0	58eb9fda83ce456b5859c7812651cd5d31a9a88bc1f753f31b33f645bde9121b	templates/tools/kubectl/vscode-ext--extension.toml
 extension	latex+texstudio	0.1.0	b250edd359daa8f2cfbb8e66b024d4a2a201402fce28e86e987f74d7b38957e1	templates/tools/latex/texstudio--extension.toml
 extension	latex+vscode-ext	0.1.0	f70711697eab14c7fcb68378155697ee04f038471610b8ad8a6634a2bcb3c6fa	templates/tools/latex/vscode-ext--extension.toml
+extension	lean+interact	0.1.0	aa698453f037c433904308f0187722b24d65b5e7e52cd09bad24a99e8ab9d7be	templates/languages/lean/interact--extension.toml
 extension	lean+mathlib-cache	0.1.0	dad24fefe536ddce8b6c4938c5f899b81c0061717a31eee0fdab3ed88726d571	templates/languages/lean/mathlib-cache--extension.toml
 extension	lean+toolchain-file	0.1.0	84032dbc78a367c0fb68636484b83f2220e48f24598cf80b06fcc59074e853a9	templates/languages/lean/toolchain-file--extension.toml
 extension	lean+vscode-ext	0.1.0	ef46f57e4fd2d7611bee78ddbbc266ab87169d3048d57054f7f43f5028d154f4	templates/languages/lean/vscode-ext--extension.toml
