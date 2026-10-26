@@ -14,6 +14,9 @@
 # Test 3: run-args in config.toml (writable /etc) → host-mounts reason, exit 1
 # Test 4: --dind --dind-allowed → still reported (the flag skips the question only)
 # Test 5: --dryrun --privileged → the run command carries the cb.security-warning label
+# Test 6: --dind on Docker Engine (Linux) points at --dind-isolation; on a VM engine
+#         (Docker Desktop: macOS, Windows) it does not, since Kata is not available there
+# Test 7: --dind-isolation → nothing to report (the sidecar is its own VM)
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -69,5 +72,19 @@ EXIT=0; OUT=$(run_coding_booth --dryrun --variant base --privileged -- sleep 1 2
 # whose way out does not land on the host itself.
 check 5 "a run labels the container with its reasons" 0 "$EXIT" "$OUT" \
   'cb.security-warning=[{"kind":"kernel-access","what":"--privileged"'
+
+# Test 6: the --dind hint, only where the warning says "this machine"
+EXIT=0; OUT=$(run_coding_booth print-security-warning --variant base --dind 2>/dev/null) || EXIT=$?
+if [[ "$(uname -s)" == "Linux" ]] && ! docker info --format '{{.OperatingSystem}}' 2>/dev/null | grep -q "Docker Desktop"; then
+  check 6 "--dind on Docker Engine points at --dind-isolation kata" 1 "$EXIT" "$OUT" "--dind-isolation kata" "$DOC#dind-isolation"
+elif echo "$OUT" | grep -qF -- "--dind-isolation"; then
+  check 6 "--dind on a VM engine does not offer --dind-isolation" 1 "$EXIT" "$OUT" "(no --dind-isolation hint expected)"
+else
+  check 6 "--dind on a VM engine does not offer --dind-isolation" 1 "$EXIT" "$OUT"
+fi
+
+# Test 7: a Kata sidecar has nothing to report (and needs no Kata here: nothing starts)
+EXIT=0; OUT=$(run_coding_booth print-security-warning --variant base --dind-isolation 2>/dev/null) || EXIT=$?
+check 7 "--dind-isolation reports no security warning" 0 "$EXIT" "$OUT" "No security warning."
 
 exit $FAILED
