@@ -37,6 +37,7 @@ Native copy and inspection commands are covered in the [Booth tools engine table
 | Feature | Docker | Podman | Apple container |
 | --- | --- | --- | --- |
 | `--dind` (Docker-in-Docker sidecar) | yes | experimental (nested Podman sidecar) | no — refused, or another engine is picked |
+| `--dind-isolation kata` (DinD sidecar in a Kata VM) | experimental — Docker Engine on Linux with KVM ([Security](BOOTH_SECURITY.md#dind-isolation)) | no — refused | no — refused |
 | `--egress` (filtered outbound network) | yes | yes | no — refused, or another engine is picked |
 | `--privileged`, `--device`, `--pid/ipc/userns=host`, `--security-opt` run-args | yes | yes | no — the engine rejects them |
 | Bind mounts (`-v`) | yes | yes | yes (single-file mounts have a quirk — see its page) |
@@ -75,6 +76,10 @@ that way out reaches depends on the engine, and the security warning says so:
 | writable mount of a system path (`/etc`, `/run`, `/usr` …) | host files the system may rely on | only files your account can write | the shared files there, as you | the shared files there, as you |
 | writable mount of your home or its dotfiles | **code as you** | **code as you** | **code as you** | **code as you** |
 | `--network=host` | every service on this machine, localhost-only ones included | the same | the VM's network — and this machine's, where the engine forwards host networking | the same as VM-based |
+
+With `--dind-isolation kata` (experimental) on Docker Engine, `--dind` drops out of this table: the
+sidecar runs in its own Kata VM, which shares nothing from this machine, so booth does not report it
+or ask. See [Security → Contain it](BOOTH_SECURITY.md#dind-isolation).
 
 Two things that change the picture on a VM-based engine:
 
