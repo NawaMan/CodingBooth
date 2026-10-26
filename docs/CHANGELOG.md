@@ -21,6 +21,35 @@ This file contains a list of changes for each released version.
     `orca+serve+expose:26768` works as published. Treat the link like a password. Upstream marks
     `orca serve` as beta.
 
+- **Lean 4 theorem prover, as an experimental `lean` language template.** `--select lean`
+  installs elan, Lean's toolchain manager, into a writable `/opt/elan` with a default toolchain
+  (`stable`, or a pin like `lean:4.35.0`), plus lake. Three extensions come with it.
+  `lean+toolchain-file` is selected automatically: it bakes the toolchain named in the project's
+  `lean-toolchain` file into the image, so the first `lake build` does not download it.
+  `lean+vscode-ext` installs `leanprover.lean4` with its infoview. `lean+mathlib-cache` is
+  opt-in: it mounts the host's `~/.cache/mathlib`, so Mathlib's prebuilt files (about 0.5 GB for each
+  Mathlib version) are downloaded once and shared by all projects. Mathlib is never baked into the image. For Jupyter,
+  `lean+interact` installs LeanInteract, which drives Lean from Python cells: check a theorem,
+  read the goal at a `sorry`, step through a proof one tactic at a time, or search over candidate
+  proofs. It builds the Lean REPL when the image is built, so the first cell starts in seconds.
+  There is no Lean kernel (cells written in Lean), because the only one is unmaintained.
+  `lean+blueprint` installs leanblueprint, which large formalization projects use to plan their
+  work: the maths in LaTeX, each statement tagged with its Lean name, built to a PDF and to a
+  web page with a dependency graph coloured by what is proved.
+  `lean-mathlib-example` is a Mathlib project (infinitely many primes, √2 irrational, real
+  inequalities) pinned to Mathlib v4.35.0, with tips for finding lemmas (`exact?`, F12). Its
+  tests check that Mathlib comes from the cache, not a build. A default example run skips it,
+  because it unpacks about 7 GB.
+  For AI agents, `lean+mcp` installs lean-lsp-mcp, an MCP server that gives Claude Code the
+  goal at any line and the errors in a file, so it proves step by step instead of guessing.
+  For terminal users, `lean+nvim` installs lean.nvim (the Lean language server and an infoview
+  in Neovim), set up system-wide with no plugin manager. Complex tests cover these four
+  extensions on small real projects: a notebook run top to bottom, a blueprint built to PDF and
+  web, the MCP server driven by a real MCP client, and lean.nvim attaching the language server in
+  a headless Neovim. The new `lean-example` workspace
+  proves a sum's closed form and that a fast Fibonacci equals the textbook one. Its tests also
+  check that Lean rejects a false theorem. Marked `[experimental]`.
+
 - **GnuPG 2.5 in every booth.** Ubuntu 26.04 ships GnuPG 2.4.8, and the 2.4 series has reached
   its upstream end of life; 2.5 is the stable line and adds post-quantum (Kyber / ML-KEM) keys
   (`gpg --quick-gen-key you@example.com pqc`). The base image now builds GnuPG 2.5.24 from the

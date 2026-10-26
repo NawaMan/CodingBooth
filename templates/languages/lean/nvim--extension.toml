@@ -1,0 +1,21 @@
+cb-version = "0.1.0"
+display-name = "Neovim Plugin (lean.nvim)"
+display-disc = "lean.nvim: Lean 4 in Neovim, with the language server and an infoview"
+display-detail = """Installs lean.nvim, the Neovim plugin Lean users in the terminal use: it starts the \
+Lean language server for .lean files and opens an infoview window that shows the goal at the \
+cursor, plus \\alpha-style Unicode input. Installed system-wide and set up at startup with \
+require("lean").setup { mappings = true }, so it needs no plugin manager; \\i toggles the infoview. \
+Set vim.g.booth_lean = false in your init.lua to configure it yourself. Requires the neovim template."""
+display-order = 2
+auto-select = false
+requires = ["neovim"]
+tags = ["lean", "neovim", "editor", "lsp"]
+
+[params.LEAN_NVIM_VERSION]
+default = "v2026.4.1"
+suggests = ["v2026.4.1"]
+
+[segments]
+"Boothfile--65" = """
+setup lean-nvim --version ${LEAN_NVIM_VERSION}
+"""

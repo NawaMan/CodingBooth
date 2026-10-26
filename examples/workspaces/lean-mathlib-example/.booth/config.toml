@@ -1,0 +1,5 @@
+# Configured by: booth config --no-tui --overwrite --variant codeserver --select lean:4.35.0+vscode-ext+mathlib-cache
+
+variant = "codeserver"
+
+run-args = ["-v", "$HOME/.cache/mathlib:/home/coder/.cache/mathlib:create"]

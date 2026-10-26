@@ -676,6 +676,51 @@ with `tools=ocaml`, `versions=<compiler>-tools<revision>` and the required Ubunt
 architectures. `opam install <package>` inside the booth remains available and may compile
 additional project dependencies; it defaults to one build job.
 
+### Lean 4 theorem prover (experimental)
+
+Lean is **experimental**. It is new, so expect rough edges. There are two examples:
+`examples/workspaces/lean-example` (core Lean, quick to start) and `lean-mathlib-example`. The
+extensions without an example (`interact`, `blueprint`, `mcp`, `nvim`) are tested by the
+`tests/complex/boothfile/test-boothfile-lean-*` fixtures, which are small working projects too.
+
+| Selection | Does |
+| --- | --- |
+| `lean` (`lean:4.35.0`, `lean:nightly`) | elan in `/opt/elan` (writable), a default toolchain, lake |
+| `lean+toolchain-file` *(auto)* | bakes the project's `lean-toolchain` pin into the image |
+| `lean+vscode-ext` *(auto)* | `leanprover.lean4`: language server, live errors, infoview |
+| `lean+mathlib-cache` | mounts the host's `~/.cache/mathlib` (writable, so booth asks for consent) |
+| `lean+interact` | LeanInteract: drive Lean from Python and Jupyter cells; needs `python`, and builds the Lean REPL into the image |
+| `lean+mcp` | lean-lsp-mcp: an MCP server that gives Claude Code (or another agent) Lean's goals, errors and search; plus ripgrep |
+| `lean+nvim` | lean.nvim for Neovim: the Lean language server and an infoview window; needs `neovim` |
+| `lean+blueprint` | leanblueprint: a LaTeX blueprint linked to Lean, built to PDF and to a web page with a dependency graph; needs `latex` and `python` |
+
+The project's `lean-toolchain` file decides which toolchain is used. The template's version is
+only a fallback for a project that has no pin yet. Mathlib changes its pin often, so for a
+Mathlib project keep `toolchain-file` selected. If you do not, the first `lake` call in every new
+booth downloads the toolchain again.
+
+To give Claude Code the Lean tools, select `lean+mcp` with `claude-code` and add the server to the
+project, either with `claude mcp add lean-lsp lean-lsp-mcp` or with a `.mcp.json`:
+
+```json
+{ "mcpServers": { "lean-lsp": { "command": "lean-lsp-mcp" } } }
+```
+
+Run `lake build` once first: the server starts `lake serve` in the project.
+
+**Left out, on purpose:**
+
+- **Mathlib in the image.** Its prebuilt files unpack to about 7 GB for each Mathlib version, and
+  the version changes every few weeks. Baking them in would make the image huge and tie it to one
+  version. They go in `~/.cache/mathlib` (shared through `mathlib-cache`) and in the project's
+  own `.lake/`.
+- **A Lean notebook kernel** (cells written in Lean). The only one, `lean4_jupyter`, has not
+  changed since 2024. For notebooks, `lean+interact` drives Lean from Python cells instead.
+- **An education template** (Natural Number Game, Mathematics in Lean). These can build on
+  `lean` later. They are not needed to try Lean.
+- **Lean 3.** It is no longer maintained, since the community moved to Lean 4. The catalog does not
+  offer it.
+
 ---
 
 ## What Gets Generated
