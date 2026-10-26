@@ -601,7 +601,7 @@ never the whole context, so editing source does not invalidate its layer.
 
 | Extension                          | Display Name |
 |------------------------------------|--------------|
-| `lsp/markdown--extension`          | Markdown (marksman; markdownlint in VS Code) |
+| `lsp/markdown--extension`          | Markdown (marksman; markdownlint in VS Code; auto) |
 | `lsp/toml--extension`              | TOML (taplo; Even Better TOML in VS Code) |
 | `lsp/yaml--extension`              | YAML (yaml-language-server; Red Hat YAML in VS Code) *(requires nodejs)* |
 | `lsp/json--extension`              | JSON, HTML, CSS (vscode-langservers) *(requires nodejs)* |
@@ -617,11 +617,16 @@ never the whole context, so editing source does not invalidate its layer.
 | `lsp/terraform--extension`         | Terraform (terraform-ls; HashiCorp Terraform in VS Code) |
 | `lsp/dockerfile--extension`        | Dockerfile (Docker in VS Code) *(requires nodejs)* |
 | `lsp/docker-compose--extension`    | Docker Compose (Docker in VS Code) *(requires nodejs)* |
-| `neovim/lsp--extension`            | Neovim LSP (enables the installed servers) |
+| `lsp/haskell--extension`           | Haskell (HLS from the haskell template's ghcup) *(requires haskell)* |
+| `lsp/zig--extension`               | Zig (zls, matched to the booth's Zig) *(requires zig)* |
+| `neovim/lsp--extension`            | Neovim LSP (enables the installed servers; auto) |
+| `ttt/lsp--extension`               | TTT LSP (adds the installed servers to TTT's settings; auto) |
 
 Each server is its own `lsp--<server>--setup.sh`, so the same binary serves every
-terminal editor: Fresh and Helix start it by its default name, and `neovim+lsp` seeds a
-system-wide `booth-lsp.lua` that enables the installed ones. `tools/lsp` follows the
+terminal editor: Fresh and Helix start it by its default name, `neovim+lsp` seeds a
+system-wide `booth-lsp.lua` that enables the installed ones, and `ttt+lsp` adds them to
+TTT's `settings.json` at container start. Both come selected with their editor, and
+`lsp+markdown` with `lsp`; the rest stay opt-in, since most pull in a runtime. `tools/lsp` follows the
 `code-ext-pkg` shape — curated extensions for the common languages, plus a variadic list
 (`install lsp ${LSP_SERVERS}`) that takes any server or language name, so `lsp:toml,yaml`
 and `lsp+toml+yaml` install the same thing. Inside a booth, Fresh's LSP popup also offers
