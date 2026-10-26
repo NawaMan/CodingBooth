@@ -1,0 +1,16 @@
+cb-version = "0.1.0"
+display-name = "Haskell (HLS)"
+display-disc = "Haskell Language Server for terminal editors (haskell+vscode-ext covers VS Code)"
+display-detail = """Puts haskell-language-server-wrapper on PATH, which is the command Fresh, Helix, TTT and \
+Neovim start for .hs files. It uses the HLS the haskell template already installs through ghcup and \
+installs one only if that is missing. HLS has a build for each GHC it supports, and the setup warns \
+when the booth's GHC is not one of them. Pin an HLS release with lsp:hls@2.11.0."""
+display-order = 26
+auto-select = false
+requires = ["haskell"]
+tags = ["lsp", "language-server", "haskell"]
+
+[segments]
+"Boothfile--60" = """
+setup lsp--hls
+"""
