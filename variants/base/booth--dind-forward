@@ -44,9 +44,22 @@ forward() {
 
 # published_ports reads `docker ps --format '{{.Ports}}'` lines such as
 # "0.0.0.0:8080->80/tcp, [::]:8080->80/tcp" and prints each host port bound on
-# all interfaces, once.
+# all interfaces, once. Docker folds consecutive publishes into a range
+# ("0.0.0.0:30080-30084->30080-30084/tcp", as kind's NodePorts appear); a range is
+# expanded, up to MAX_RANGE ports so a wide one cannot start thousands of socats.
+MAX_RANGE=1000
 published_ports() {
-  grep -oE '(0\.0\.0\.0|\[::\]|::):[0-9]+->[0-9]+/tcp' | sed -E 's/^.*:([0-9]+)->.*$/\1/' | sort -un
+  local spec low high
+  grep -oE '(0\.0\.0\.0|\[::\]|::):[0-9]+(-[0-9]+)?->[0-9]+(-[0-9]+)?/tcp' \
+    | sed -E 's/^.*:([0-9]+(-[0-9]+)?)->.*$/\1/' \
+    | while read -r spec; do
+        low="${spec%-*}"
+        high="${spec#*-}"
+        if (( high - low >= 0 && high - low < MAX_RANGE )); then
+          seq "$low" "$high"
+        fi
+      done \
+    | sort -un
 }
 
 for port in "$@"; do

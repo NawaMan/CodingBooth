@@ -70,6 +70,7 @@ func TestKataDindSidecarArgs_DefaultSize(t *testing.T) {
 func TestKataDindStartupScript(t *testing.T) {
 	for _, want := range []string{
 		"mount -o remount,rw /sys/fs/cgroup",
+		"mknod /dev/kmsg c 1 11",
 		"> /etc/resolv.conf",
 		"mkfs.ext4",
 		"mount -o loop /dind-disk/docker.img /var/lib/docker",
