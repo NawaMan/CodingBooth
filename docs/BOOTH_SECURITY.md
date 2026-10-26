@@ -299,6 +299,48 @@ sidecar's daemon — sees only the VM's own devices (`ram*`, its storage loop di
 `pmem0` guest image) and the guest kernel; **none of the host's `nvme*` / `sd*` disks**, which the
 plain `--dind` sidecar exposes.
 
+#### What it gains — and what it does not
+
+It turns `--dind` from *"code in the booth can get root on this machine"* into *"code in the booth
+can get root in a throwaway VM"*.
+
+**Gains**
+
+- **The documented escape is closed.** A `--privileged` container started through the daemon no
+  longer gets this machine's disks, kernel modules, `core_pattern` or files. The daemon and everything
+  it runs are inside a VM that has none of your folders.
+- **A kernel exploit lands in a throwaway kernel.** The sidecar's containers share the VM's guest
+  kernel, not this machine's; getting out takes a hypervisor escape as well.
+- **`--dind` is usable with code you do not fully trust** — AI agents, a cloned repo, its
+  dependencies — that need Docker for builds, tests or compose. With no consent prompt, unattended
+  runs (CI, scripts, agents) need no `--dind-allowed`.
+- **The booth costs nothing.** It stays an ordinary container: same `coder` uid, mounts and devices
+  (what rootless Docker could not keep), and the host needs no sysctl and no Docker restart.
+
+**Not protected** — these are the same as in any booth:
+
+- **The booth itself.** Code in it still reaches the code folder (read-write), every credential you
+  mount in (`dind-example` and `kind-example` mount `~/.claude/.credentials.json` and
+  `~/.docker/config.json`), and the network. Kata does nothing for those; see §3.
+- **The network.** The VM has full outbound access and can reach your LAN and `host.docker.internal`.
+  This isolates the host's files and kernel, not its network — and `--egress` cannot be combined with
+  it yet.
+- **The hypervisor.** A QEMU/KVM escape would still reach the host. Rarer and much harder, not
+  impossible.
+
+**Costs**
+
+- Linux only, with KVM and Kata installed (about 1 GB).
+- A VM per booth: 2 GB of memory by default (`--dind-vm-memory`), and a slower start.
+- Networking is different (see below): `localhost` works through a forwarder, and `booth expose list`
+  is incomplete.
+- Experimental, and it tracks a moving target: Kata's shims and defaults change between releases.
+
+**When to use it.** Docker in a booth that runs code you do not fully trust: a real gain. A trusted
+project of your own: optional overhead. On macOS and Windows it is not available (Docker Desktop's
+single VM, which shares your home folder, is the weaker setup there — see
+[Engines](BOOTH_ENGINES.md#where-a-way-out-lands)).
+
 #### What it needs
 
 | Need | How to check / get it |
