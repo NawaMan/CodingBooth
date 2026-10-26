@@ -646,7 +646,14 @@ Starts the container in the background (detached). Commonly used for IDE variant
 CodingBooth automatically manages host-to-container port mappings.
 
 **Default behavior**
-The container exposes port 10000. If that port is unavailable, it tries 10001, 10002, and so on.
+The default is `NEXT`: the first free port of 10000, 11000, 12000, and so on. A second booth
+therefore never collides with the first.
+
+A fixed number (`--port 10000`, or `port = "10000"` in `.booth/config.toml`) does not move. If the
+port is already in use, booth stops before starting anything and suggests `--port NEXT`. The same
+check covers fixed published ports such as `-p 4566:4566`. A `+OFFSET` port follows the booth
+port, so it cannot collide this way. The check covers TCP ports from 1024 up, published on all
+interfaces or on 127.0.0.1.
 
 **Overrides**
 - Environment variable: `CB_PORT`
