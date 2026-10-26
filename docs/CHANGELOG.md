@@ -115,6 +115,14 @@ This file contains a list of changes for each released version.
   out a component (dirmngr without GnuTLS, keyboxd without SQLite) rather than let it fall
   through to the 2.4 copy.
 
+- **EnvFolio 0.8.0.** The base image and `tools/envfolio` install EnvFolio 0.8.0 (was 0.6.0).
+  New since 0.6.0: `folio exec`/`folio shell --vars <file>` (a committable file naming which
+  variables to set and where each comes from), `folio vars check`, `folio export --vars`,
+  `folio completion bash|zsh`, and `--store-passphrase-fd` / `--file-passphrase-fd`. **Breaking
+  (0.7.0):** `--passphrase-stdin` / `--passphrase-fd` are renamed `--store-passphrase-…` for
+  `init` and `--file-passphrase-…` for `backup`, `restore`, `export`, `import` and `--from`; the
+  old names stop and say the new one.
+
 - **Hardened against the eMudhra CA key compromise (October 2026).** Eight eMudhra intermediate CA
   keys were recoverable, so anyone can mint certificates that clients trusting those chains accept.
   A booth has several trust stores, and each needed its own fix:

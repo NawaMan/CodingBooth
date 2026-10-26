@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 2.2.0
+# cb-version: 2.3.0
 
 set -Eeuo pipefail
 
@@ -13,9 +13,9 @@ Usage:
   $0 [<X.Y.Z>|latest]
 
 Examples:
-  $0                         # install the pinned default (0.6.0)
-  $0 --version 0.6.0         # pin a specific version
-  $0 0.6.0                   # same, in the form a Boothfile emits
+  $0                         # install the pinned default (0.8.0)
+  $0 --version 0.8.0         # pin a specific version
+  $0 0.8.0                   # same, in the form a Boothfile emits
   $0 --version latest        # install the latest GitHub release
 
 Notes:
@@ -33,7 +33,7 @@ USAGE
 # No version given means the pinned default, not 'latest': the base image then
 # gets the same EnvFolio on every build, and an upstream release that is not out
 # yet (a draft is invisible to the API) cannot silently pick an older one.
-ENVFOLIO_DEFAULT_VER="0.6.0"   # also the fallback when 'latest' cannot be resolved
+ENVFOLIO_DEFAULT_VER="0.8.0"   # also the fallback when 'latest' cannot be resolved
 REQ_VER="$ENVFOLIO_DEFAULT_VER"
 while [[ $# -gt 0 ]]; do
   case "$1" in
