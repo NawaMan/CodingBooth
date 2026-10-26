@@ -8,8 +8,9 @@
 # (tests/setups/test--console-tiling.sh); this is the page side it cannot see —
 # keys pressed inside a ttyd terminal reaching the console, panes moving
 # without their terminals reloading, and the Help dialog's added tab actually
-# showing (an added tab once rendered inside the hidden General panel), and the
-# shortcuts arriving as Windows and macOS deliver them, both emulated.
+# showing (an added tab once rendered inside the hidden General panel), the
+# shortcuts arriving as Windows and macOS deliver them, both emulated, and
+# panes moved by dragging their headers and renamed.
 #
 # Browser checks are capability-gated like test027: they need Node 22+ and a
 # Chrome/Chromium binary (CB_CHROMIUM_PATH, or google-chrome / chromium on PATH).
@@ -47,7 +48,7 @@ fi
 # 127.0.0.1, cross-origin to the console on localhost.
 mkdir -p "$WORK/.booth"
 cat > "$WORK/.booth/console.json" <<EOF
-{ "layout": "grid6", "panes": { "5": { "web": true, "tabs": ["127.0.0.1:$PORT/__booth/health"] } } }
+{ "layout": "grid6", "panes": { "5": { "web": true, "tabs": ["127.0.0.1:$PORT/__booth/health"] }, "6": { "name": "docs" } } }
 EOF
 
 # console-spec=shared (with .booth/ writable) so the layout saves land in
@@ -105,6 +106,8 @@ cat > "$WORK/.booth/console.json" <<EOF
   "panes": {
     "5": { "web": true, "tabs": ["127.0.0.1:$PORT/__booth/health", { "x": 1 }, ":3000/</script>stray<!--<script>"] },
     "2": "oops",
+    "3": { "name": "logs" },
+    "4": { "name": 42 },
     "9": { "web": true, "tabs": [":3000"] } } }
 EOF
 docker restart "$NAME" >/dev/null 2>&1 || true
@@ -114,7 +117,7 @@ if ! wait_ready; then
 fi
 browser_phase fallback
 
-EXPECTED=25
+EXPECTED=32
 if [[ "$ALL" != true || "$CASES" -lt "$EXPECTED" ]]; then
   if [[ "$CASES" -lt "$EXPECTED" ]]; then
     print_test_result "false" "$0" "$((CASES + 1))" "Only $CASES of $EXPECTED browser cases reported"
