@@ -53,9 +53,14 @@ const (
 //   - overlayfs cannot use virtio-fs as its upper layer, and every docker volume
 //     reaches the VM over virtio-fs, so /var/lib/docker is a sparse ext4 file on
 //     the volume, loop-mounted inside the VM.
+//   - A non-privileged container's /dev has no /dev/kmsg, so a --privileged
+//     container the sidecar starts inherits none either — and kubelet (kind's
+//     node) will not start without it ("open /dev/kmsg: no such file or
+//     directory"). It is created here: the guest kernel's, not the host's.
 const kataDindStartupScript = `set -e
 mount -o remount,rw /sys
 mount -o remount,rw /sys/fs/cgroup
+[ -e /dev/kmsg ] || mknod /dev/kmsg c 1 11
 if [ -n "$DIND_NAMESERVERS" ]; then echo "$DIND_NAMESERVERS" | tr ';' '\n' > /etc/resolv.conf; fi
 [ -f /dind-disk/docker.img ] || { truncate -s ` + kataDindDiskSize + ` /dind-disk/docker.img; mkfs.ext4 -q /dind-disk/docker.img; }
 mount -o loop /dind-disk/docker.img /var/lib/docker

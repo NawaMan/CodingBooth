@@ -68,8 +68,8 @@ This file contains a list of changes for each released version.
   `localhost`. Size the VM with `--dind-vm-memory` / `--dind-vm-cpus` (Kata's default is 2 GB and 1
   CPU). Every setting also has a `config.toml` key, an environment variable and a `booth config`
   field. A Kata booth gets no consent prompt. The `--dind` warning on Docker Engine now points at
-  this option. Not yet supported: `--egress` together with it, and `kind-example` (kind binds its API
-  server to the sidecar's loopback). See
+  this option. `dind-example` and `kind-example` work under it unchanged. Not yet supported: `--egress`
+  together with it. See
   [Security → Contain it](BOOTH_SECURITY.md#dind-isolation).
 
 - **ThinkRail and Orca join the AI Tools catalog: two agent workbenches that run each task in its
