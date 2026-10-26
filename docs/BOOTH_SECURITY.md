@@ -383,7 +383,7 @@ as it appears (checked every 2 s). So `docker run -p 8080:80 nginx` then `curl l
 as with plain `--dind`. It needs an image with the current `booth-entry`; on an older one, use
 `$BOOTH_DIND_HOST:<port>`.
 
-Inside the sidecar's VM, three things are done differently from `docker:dind`, each because Kata
+Inside the sidecar's VM, four things are done differently from `docker:dind`, each because Kata
 requires it:
 
 - **No `--privileged`.** Kata's `--privileged` passes the host's devices into the VM — the very
@@ -392,6 +392,9 @@ requires it:
   `/sys` and `/sys/fs/cgroup` read-write.
 - **DNS.** Docker's embedded resolver (`127.0.0.11`) does not answer inside the VM, so the sidecar
   gets this machine's upstream nameservers.
+- **`/dev/kmsg`.** A non-privileged container has none, so neither does a `--privileged` container
+  the sidecar starts — and kubelet (kind's node) will not start without it. The sidecar creates the
+  guest kernel's.
 - **Storage.** overlayfs cannot run on virtio-fs, through which every volume reaches the VM, so the
   sidecar's `/var/lib/docker` is a sparse 64 GB ext4 file, loop-mounted in the VM, removed with it.
 
@@ -418,9 +421,11 @@ docker run --rm --privileged alpine sh -c 'ls /dev | grep -E "^(nvme|sd)"'   # n
 #### Known limits (experimental)
 
 - **Not with `--egress`** yet (refused).
-- **A port published on the sidecar's loopback only** (`127.0.0.1:...`) cannot be forwarded. kind
-  publishes its API server that way, so `kind-example` needs `networking.apiServerAddress: "0.0.0.0"`
-  in its cluster config under Kata (not done yet).
+- **A port published on the sidecar's loopback only** (`127.0.0.1:...`) cannot be forwarded: publish
+  on all interfaces. kind's default does bind its API server to loopback; `kind-example` sets
+  `networking.apiServerAddress: "0.0.0.0"`, so it works unchanged (verified: cluster Ready, `kubectl`
+  through `localhost:6443`, the hello service on `localhost:30081`). Give kind more room than the
+  default 2 GB VM for real workloads (`--dind-vm-memory 4g`).
 - **A port the booth itself listens on** keeps the booth's listener; the sidecar's container on the
   same port is then reachable only at `$BOOTH_DIND_HOST:<port>`.
 - **`booth expose list`** reports the booth's own ports; the run-args ports the sidecar publishes are
