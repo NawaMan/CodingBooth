@@ -1,8 +1,15 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --variant base --select ttt
+# Configured by: booth config --no-tui --overwrite --variant base --select ttt/lsp
 
 env APT_SNAPSHOT=20261004T000000Z
 
+arg LSP_SERVERS=
+arg TTT_BORDER_STYLE=rounded
+arg TTT_THEME=zenith
 arg TTT_VERSION=latest
 
 setup ttt --version ${TTT_VERSION}
+install lsp ${LSP_SERVERS}
+setup lsp--marksman
+setup ttt-lsp
+setup markdown-code-extension
