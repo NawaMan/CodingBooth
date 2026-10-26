@@ -148,6 +148,19 @@ assert.equal(S(T.move(P('h(1,v(2,3))'), 3, 'down')), 'v(h(1,2),3)', 'a bottom pa
 assert.equal(S(T.move(P('v(h(1,2),3)'), 3, 'down')), 'v(h(1,2),3)', 'already the whole bottom: unchanged');
 assert.equal(S(T.move(P('h(1@70,2)'), 1, 'right')), 'h(2@70,1@30)', 'a swap keeps the sizes where they are');
 
+// ---- mouse drops: swap and dock ----
+assert.equal(S(T.swap(P('h(1@60,2@40)'), 1, 2)), 'h(2@60,1@40)', 'swap: each takes the other\'s spot and size');
+assert.equal(S(T.swap(T.presetTree('quad'), 1, 4)), 'h(v(4,3),v(2,1))', 'swap across columns');
+assert.equal(S(T.swap(P('h(1,2)'), 1, 3)), 'h(1,2)', 'swap with a hidden pane: unchanged');
+assert.equal(S(T.swap(P('h(1,2)'), 2, 2)), 'h(1,2)', 'swap with itself: unchanged');
+assert.equal(S(T.dock(P('h(1,2)'), 1, 2, 'down')), 'v(2,1)', 'dock below the only other pane');
+assert.equal(S(T.dock(P('h(1,2,3)'), 3, 1, 'left')), 'h(3@25,1@25,2@50)', 'dock beside, same way: shares the target\'s space');
+assert.equal(S(T.dock(P('h(1,v(2,3))'), 1, 3, 'right')), 'v(2,h(3,1))', 'dock across: a new split in the target\'s spot');
+assert.equal(S(T.dock(T.presetTree('quad'), 1, 4, 'up')), 'h(3,v(2@50,1@25,4@25))', 'the emptied column collapses');
+assert.equal(T.matchPreset(T.dock(P('v(1,2)'), 2, 1, 'right')).name, 'hsplit', 'a drop that lands on a preset shows as it');
+assert.equal(S(T.dock(P('h(1,2)'), 1, 1, 'left')), 'h(1,2)', 'dock onto itself: unchanged');
+assert.equal(S(T.dock(P('h(1,2)'), 1, 3, 'left')), 'h(1,2)', 'dock onto a hidden pane: unchanged');
+
 // ---- insert / remove / toggle / resize ----
 assert.equal(S(T.insert(P('1'), 1, 2, undefined, 'h')), 'h(1,2)', 'a lone pane splits the fallback way');
 assert.equal(S(T.insert(P('1'), 1, 2, undefined, 'v')), 'v(1,2)');
@@ -175,6 +188,6 @@ assert.equal(S(T.dragDivider(P('h(1,v(2,3))'), [1], 0, 0.25)), 'h(1,v(2@25,3@75)
 assert.equal(S(T.dragDivider(P('h(1,2)'), [], 0, 0.01)), 'h(1@10,2@90)', 'a drag stops at the minimum share');
 assert.equal(S(T.dragDivider(P('h(1,2)'), [], 1, 0.3)), 'h(1,2)', 'no such divider: unchanged');
 
-console.log('PASS: text form, presets, 31 reachable shapes, six panes, focus, move, insert, remove, toggle, resize, drag');
+console.log('PASS: text form, presets, 31 reachable shapes, six panes, focus, move, swap, dock, insert, remove, toggle, resize, drag');
 JS
-print_test_result true "$0" 1 "Console tiling tree: nine preset names behind four toolbar buttons, all 31 layouts of up to 4 panes, six panes, driven the way i3 drives them, equalize"
+print_test_result true "$0" 1 "Console tiling tree: nine preset names behind four toolbar buttons, all 31 layouts of up to 4 panes, six panes, driven the way i3 drives them, mouse swap/dock, equalize"

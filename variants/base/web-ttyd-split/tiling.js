@@ -415,6 +415,46 @@
     return normalize(t);
   }
 
+  // A mouse drop on the middle of another pane: the two trade places, each
+  // taking the other's spot and size.
+  function swap(tree, a, b) {
+    if (a === b) return tree;
+    var shown = panes(tree);
+    if (shown.indexOf(a) < 0 || shown.indexOf(b) < 0) return tree;
+    var t = clone(tree);
+    (function walk(node) {
+      if (isLeaf(node)) {
+        if (node.pane === a) node.pane = b;
+        else if (node.pane === b) node.pane = a;
+        return;
+      }
+      node.children.forEach(walk);
+    })(t);
+    return t;
+  }
+
+  // A mouse drop on an edge of another pane: `pane` leaves its spot and takes
+  // that side ("left", "right", "up", "down") of `target`, the two sharing
+  // what was the target's space. A split running the same way just gains a
+  // child, by normalize.
+  function dock(tree, pane, target, side) {
+    if (pane === target) return tree;
+    var shown = panes(tree);
+    if (shown.indexOf(pane) < 0 || shown.indexOf(target) < 0) return tree;
+    var t = remove(tree, pane);
+    var chain = ancestors(t, target);
+    var dir = side === "left" || side === "right" ? "h" : "v";
+    var before = side === "left" || side === "up";
+    var pair = {
+      dir: dir,
+      children: before ? [leaf(pane), leaf(target)] : [leaf(target), leaf(pane)],
+      sizes: [0.5, 0.5]
+    };
+    if (!chain.length) return pair;
+    chain[0].node.children[chain[0].index] = pair;
+    return normalize(t);
+  }
+
   // i3's `layout toggle split`: the split holding the pane turns the other way.
   function toggleSplit(tree, pane) {
     var t = clone(tree);
@@ -473,6 +513,8 @@
     move: move,
     insert: insert,
     remove: remove,
+    swap: swap,
+    dock: dock,
     toggleSplit: toggleSplit,
     equalize: equalize,
     resize: resize
