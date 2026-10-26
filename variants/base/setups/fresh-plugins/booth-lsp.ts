@@ -38,7 +38,7 @@ interface Server {
   command: string;
   args: string[];
   /** A runtime the setup needs that the base image does not have. */
-  needs?: "node" | "python" | "java";
+  needs?: "node" | "python" | "java" | "haskell" | "zig";
 }
 
 const SERVERS: Server[] = [
@@ -62,6 +62,8 @@ const SERVERS: Server[] = [
   { setup: "clangd", extension: "c", languages: ["c", "cpp"], command: "clangd", args: [] },
   { setup: "jdtls", extension: "java", languages: ["java"], command: "jdtls", args: [], needs: "java" },
   { setup: "svelte", extension: "svelte", languages: ["svelte"], command: "svelteserver", args: ["--stdio"], needs: "node" },
+  { setup: "hls", extension: "haskell", languages: ["haskell"], command: "haskell-language-server-wrapper", args: ["--lsp"], needs: "haskell" },
+  { setup: "zls", extension: "zig", languages: ["zig"], command: "zls", args: [], needs: "zig" },
 ];
 
 /** File names of open buffers that belong to a language, so an install can start its server. */
@@ -84,6 +86,8 @@ const LANGUAGE_FILES: Record<string, RegExp> = {
   cpp: /\.(cc|cpp|cxx|c\+\+|hh|hpp|hxx)$/i,
   java: /\.java$/i,
   svelte: /\.svelte$/i,
+  haskell: /\.l?hs$/i,
+  zig: /\.zig$/i,
 };
 
 let installing: string | null = null;
@@ -110,6 +114,8 @@ function runtimeMissing(server: Server): string | null {
   if (server.needs === "node" && !onPath("npm")) return "Node.js (select the nodejs template)";
   if (server.needs === "python" && !editor.fileExists("/opt/python/bin/pip")) return "Python (select the python template)";
   if (server.needs === "java" && !onPath("java")) return "Java 21+ (select the java template)";
+  if (server.needs === "haskell" && !onPath("ghcup")) return "Haskell (select the haskell template)";
+  if (server.needs === "zig" && !onPath("zig")) return "Zig (select the zig template)";
   return null;
 }
 

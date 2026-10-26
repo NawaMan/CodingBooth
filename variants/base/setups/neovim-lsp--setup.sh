@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 # neovim-lsp--setup.sh — Enable Neovim's built-in LSP client for the booth's language servers.
 set -Eeuo pipefail
@@ -17,7 +17,7 @@ Notes:
 - Writes /usr/local/share/nvim/site/plugin/booth-lsp.lua, which Neovim loads for every
   user from its system runtime path, after the user's own init.lua
 - At startup it enables each known server that is on PATH (the lsp template's, plus
-  gopls, rust-analyzer, and clangd), through vim.lsp.config / vim.lsp.enable (Neovim 0.11+)
+  gopls, rust-analyzer, clangd, and the haskell template's HLS), through vim.lsp.config / vim.lsp.enable (Neovim 0.11+)
 - Opt out from your own config with: vim.g.booth_lsp = false
 - No plugin manager, no nvim-lspconfig needed; with nvim-lspconfig installed the
   two configs merge
@@ -73,6 +73,10 @@ local servers = {
                    root_markers = { 'compile_commands.json', 'compile_flags.txt', '.clangd', '.git' } },
   pylsp        = { cmd = { 'pylsp' },                               filetypes = { 'python' },
                    root_markers = { 'pyproject.toml', 'setup.py', 'setup.cfg', 'requirements.txt', '.git' } },
+  hls          = { cmd = { 'haskell-language-server-wrapper', '--lsp' }, filetypes = { 'haskell', 'lhaskell', 'cabal' },
+                   root_markers = { 'hie.yaml', 'stack.yaml', 'cabal.project', 'package.yaml', '.git' } },
+  zls          = { cmd = { 'zls' },                                 filetypes = { 'zig', 'zir' },
+                   root_markers = { 'zls.json', 'build.zig', '.git' } },
 }
 
 for name, config in pairs(servers) do

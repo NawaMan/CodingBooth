@@ -1,8 +1,8 @@
-cb-version = "0.1.0"
+cb-version = "0.2.0"
 display-name = "Markdown (marksman)"
 display-disc = "marksman for terminal editors; markdownlint in VS Code"
 display-order = 10
-auto-select = false
+auto-select = true
 tags = ["lsp", "language-server", "markdown", "vscode"]
 
 [segments]

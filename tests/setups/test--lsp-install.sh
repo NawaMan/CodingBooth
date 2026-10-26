@@ -26,7 +26,7 @@ STUB=$(mktemp -d)
 trap "rm -rf $STUB" EXIT
 cp "$REPO_ROOT/variants/base/setups/lsp--install.sh" "$STUB/"
 MARKER="$STUB/invoked.log"
-for name in marksman taplo pylsp clangd typescript; do
+for name in marksman taplo pylsp clangd typescript hls zls; do
     cat > "$STUB/lsp--${name}--setup.sh" << EOF
 #!/bin/bash
 echo "${name} \$*" >> "$MARKER"
@@ -73,7 +73,17 @@ else
     pass_fail false "cpp resolves to clangd and react to typescript" "rc=$RC calls=$(cat "$MARKER") out=$OUT"
 fi
 
-# 3. No names is a no-op, not a failed build.
+# 3. The Haskell and Zig aliases, and an HLS pin.
+: > "$MARKER"
+RC=0
+OUT=$(run_install "haskell@2.11.0,zig") || RC=$?
+if [ "$RC" -eq 0 ] && [ "$(cat "$MARKER")" = $'hls --version 2.11.0\nzls ' ]; then
+    pass_fail true "haskell resolves to hls (with its pin) and zig to zls"
+else
+    pass_fail false "haskell resolves to hls (with its pin) and zig to zls" "rc=$RC calls=$(cat "$MARKER") out=$OUT"
+fi
+
+# 4. No names is a no-op, not a failed build.
 : > "$MARKER"
 RC=0
 OUT=$(run_install "") || RC=$?
@@ -83,7 +93,7 @@ else
     pass_fail false "an empty list installs nothing and exits 0" "rc=$RC calls=$(cat "$MARKER") out=$OUT"
 fi
 
-# 4. An unknown name fails before anything runs past it, and lists what exists.
+# 5. An unknown name fails before anything runs past it, and lists what exists.
 : > "$MARKER"
 RC=0
 OUT=$(run_install no-such-server) || RC=$?
@@ -94,7 +104,7 @@ else
     pass_fail false "an unknown name fails and lists the servers" "rc=$RC out=$OUT"
 fi
 
-# 5. --list names every setup it can find.
+# 6. --list names every setup it can find.
 RC=0
 OUT=$(run_install --list) || RC=$?
 if [ "$RC" -eq 0 ] && grep -q "Servers:.*clangd.*marksman.*pylsp.*taplo" <<< "$OUT"; then
