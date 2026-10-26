@@ -1,0 +1,13 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --variant codeserver --select lean:4.35.0+vscode-ext
+
+env APT_SNAPSHOT=20261004T000000Z
+
+arg LEAN_VERSION=4.35.0
+
+env ELAN_HOME=/opt/elan
+env PATH=/opt/elan/bin:$PATH
+setup lean --version ${LEAN_VERSION}
+copy .booth/Boothfile lean-toolchai[n] /tmp/cb-lean-toolchain/
+setup lean-toolchain-file /tmp/cb-lean-toolchain
+setup lean-code-extension

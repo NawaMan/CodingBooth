@@ -1,0 +1,17 @@
+cb-version = "0.1.0"
+display-name = "Mathlib Cache"
+display-disc = "Share Mathlib's downloaded build cache with the host's ~/.cache/mathlib"
+display-detail = """Bind-mounts your host's ~/.cache/mathlib into the booth. `lake exe cache get` keeps \
+the prebuilt Mathlib files it downloads there -- about 0.5 GB compressed, 9000 files, per \
+Mathlib version -- so with this selected, each version is downloaded once for every project and \
+every booth, instead of once per booth (a second project then unpacks in seconds); booth creates the folder when it is missing. The unpacked copy (about 7 GB) still lives in \
+each project's own .lake/, which persists with the project. The mount is writable, so booth asks for \
+consent before starting (code in the booth can write to your host home) and a non-interactive \
+start needs --privileged-allowed. Not selected by default; only useful for Mathlib projects."""
+display-order = 30
+auto-select = false
+tags = ["lean", "mathlib", "cache"]
+
+run-args = [
+    "-v", "$HOME/.cache/mathlib:/home/coder/.cache/mathlib:create"
+]

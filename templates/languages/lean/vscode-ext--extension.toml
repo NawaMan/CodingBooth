@@ -1,0 +1,16 @@
+cb-version = "0.1.0"
+display-name = "Lean 4 VS Code Extension"
+display-disc = "Lean 4 language support and infoview for VS Code"
+display-detail = "Installs the official leanprover.lean4 extension: the language server (from the project's own toolchain), live error checking, and the infoview -- the goal-state panel Lean proofs are written against. Lean is hard to use without it."
+display-order = 1
+auto-select = true
+tags = [
+    "lean",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup lean-code-extension
+"""

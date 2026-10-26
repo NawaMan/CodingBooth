@@ -1,0 +1,22 @@
+cb-version = "0.1.0"
+display-name = "Lean MCP Server (for AI agents)"
+display-disc = "lean-lsp-mcp: let Claude Code and other agents see Lean's goals and errors"
+display-detail = """Installs lean-lsp-mcp, an MCP server that connects an AI agent to Lean's language \
+server. Through it the agent reads the goal at any line, the errors in a file, hover \
+information and search results, so it can write a proof step by step and check each step, the \
+way a person does with the infoview. Also installs ripgrep for its local search. Register it in \
+a project with a .mcp.json ({"mcpServers": {"lean-lsp": {"command": "lean-lsp-mcp"}}}) or \
+`claude mcp add lean-lsp lean-lsp-mcp`. Pairs with the claude-code template. Installed in its \
+own virtualenv on the system Python, so it needs no python template."""
+display-order = 50
+auto-select = false
+tags = ["lean", "mcp", "ai", "agent", "claude"]
+
+[params.LEAN_LSP_MCP_VERSION]
+default = "0.31.0"
+suggests = ["0.31.0"]
+
+[segments]
+"Boothfile--70" = """
+setup lean-lsp-mcp --version ${LEAN_LSP_MCP_VERSION}
+"""

@@ -1,0 +1,13 @@
+name = "mathlib_example"
+version = "0.1.0"
+defaultTargets = ["MathlibExample"]
+
+[[lean_lib]]
+name = "MathlibExample"
+
+# Mathlib at the tag that matches lean-toolchain. `lake exe cache get` downloads its
+# prebuilt files for exactly this revision, so nothing of Mathlib is built here.
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.35.0"
