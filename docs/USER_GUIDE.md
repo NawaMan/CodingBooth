@@ -169,7 +169,8 @@ More: [booth connect](https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOT
 ### Arrange the console and desktop
 
 The base variant's browser terminal (the Console UI) splits into panes and tabs with i3-style
-`Ctrl+Alt` shortcuts, and a project can check in a starting layout. Desktop booths can tile
+`Ctrl+Alt` shortcuts or by dragging pane headers, its panes can be named, and a project can check
+in a starting layout. Desktop booths can tile
 windows (i3, KDE Krohnkite, sway) and share the clipboard with the host.
 
 More: [Console layout](https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_CONSOLE.md) ·

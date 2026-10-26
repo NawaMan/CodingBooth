@@ -94,8 +94,17 @@
       user-select: none;
     }
 
+    body.dragging-pane {
+      cursor: grabbing;
+      user-select: none;
+    }
+
+    /* From the press on a header, not only once it is a drag: the pointer
+       can be over a terminal before it has moved far enough to count. */
     body.dragging-col .pane iframe,
-    body.dragging-row .pane iframe {
+    body.dragging-row .pane iframe,
+    body.pressing-pane .pane iframe,
+    body.dragging-pane .pane iframe {
       pointer-events: none;
     }
 
@@ -348,6 +357,72 @@
 
     .pane-header.web-addr-open .pane-title {
       display: none;
+    }
+
+    /* A renamed pane keeps its name in Web view, beside the address bar. */
+    .pane.named .pane-header.web-addr-open .pane-title {
+      display: block;
+      flex: 0 1 auto;
+      max-width: 30%;
+      color: var(--text);
+    }
+
+    /* Renaming: the title becomes a field, whatever the pane shows. */
+    .pane-header.renaming .pane-title {
+      display: block;
+      flex: 1;
+      max-width: none;
+    }
+
+    .pane-header.renaming .proxy-addr,
+    .pane-header.renaming .proxy-page-title {
+      display: none;
+    }
+
+    .pane-title-input {
+      width: 100%;
+      box-sizing: border-box;
+      background: var(--bg);
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      color: var(--text);
+      font: inherit;
+      padding: 1px 6px;
+      outline: none;
+    }
+
+    /* A pane is moved by dragging its header, while there is somewhere to
+       move it to. */
+    .grid.can-drag-panes .pane-header {
+      cursor: grab;
+    }
+
+    /* Pressing a header to drag it never selects its text. */
+    .pane-header {
+      user-select: none;
+    }
+
+    .pane-header input {
+      user-select: text;
+    }
+
+    .pane.drag-source {
+      opacity: 0.55;
+    }
+
+    .pane-drop-indicator {
+      position: absolute;
+      z-index: 15;
+      display: none;
+      box-sizing: border-box;
+      border: 2px solid var(--accent);
+      border-radius: 6px;
+      background: rgba(47, 141, 255, 0.22);
+      pointer-events: none;
+    }
+
+    .pane-drop-indicator.active {
+      display: block;
     }
 
     .proxy-addr {
@@ -678,6 +753,10 @@
       cursor: row-resize;
     }
 
+    .drag-overlay.axis-move {
+      cursor: grabbing;
+    }
+
     /* Below this width, side-by-side terminals get too cramped, so every
        column-based layout collapses to a single stacked column. Keep this
        value in sync with the compactQuery matchMedia() in the script below. */
@@ -731,7 +810,7 @@
     <template id="pane-template">
       <section class="pane pane-__N__" data-pane="__N__">
         <div class="pane-header">
-          <span class="pane-title">Session __N__</span>
+          <span class="pane-title" title="Session __N__ — double-click to rename (Ctrl+Alt+n); drag the header to move the pane">Session __N__</span>
           <span class="proxy-page-title" data-session="__N__" title="">
             <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5h4.2L9.5 4v6.5H3z" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M7.2 1.5V4H9.5" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>
           </span>
@@ -852,6 +931,15 @@
         return "single";
       }
 
+      // A pane's name: one line of plain text, its spaces collapsed, at most
+      // PANE_NAME_MAX characters — or "" for none.
+      const PANE_NAME_MAX = 32;
+      function cleanPaneName(value) {
+        if (typeof value !== "string") return "";
+        const name = value.replace(/\s+/g, " ").trim();
+        return Array.from(name).length <= PANE_NAME_MAX ? name : "";
+      }
+
       function readConsoleConfig() {
         const out = { layout: "", panes: {} };
         let raw;
@@ -887,6 +975,12 @@
           if (cfg.web === true || cfg.web === false) pane.web = cfg.web;
           else if (cfg.web !== undefined) warnConsoleConfig("pane " + n + ": \"web\" must be true or false; left a terminal");
           if (cfg.force === true) pane.force = true;
+          if (cfg.name !== undefined) {
+            const name = cleanPaneName(cfg.name);
+            if (name) pane.name = name;
+            else warnConsoleConfig("pane " + n + ": \"name\" must be text of 1 … " + PANE_NAME_MAX +
+              " characters; shown as Session " + n);
+          }
           if (cfg.tabs !== undefined && !Array.isArray(cfg.tabs)) {
             warnConsoleConfig("pane " + n + ": \"tabs\" must be a list of addresses; ignored");
           }
@@ -932,16 +1026,25 @@
 
       // Mirrors the shape readConsoleConfig() above expects back — a
       // terminal pane is simply absent, matching how an absent pane in the
-      // file already means "leave it as a terminal" on the read side.
+      // file already means "leave it as a terminal" on the read side, unless
+      // it has a name: { "name": "server" } alone is still a terminal.
       function buildCurrentConsoleSpec() {
         var spec = { layout: consoleLayoutText(), panes: {} };
         panes.forEach(function(pane) {
-          if (!pane.classList.contains("mode-web")) return;
           var session = pane.getAttribute("data-pane");
-          var tabs = getPaneState(session).tabs
-            .map(function(t) { return t.display; })
-            .filter(function(d) { return !!d; });
-          if (tabs.length) spec.panes[session] = { web: true, tabs: tabs };
+          var entry = {};
+          var name = paneName(Number(session));
+          if (name) entry.name = name;
+          if (pane.classList.contains("mode-web")) {
+            var tabs = getPaneState(session).tabs
+              .map(function(t) { return t.display; })
+              .filter(function(d) { return !!d; });
+            if (tabs.length) {
+              entry.web = true;
+              entry.tabs = tabs;
+            }
+          }
+          if (Object.keys(entry).length) spec.panes[session] = entry;
         });
         return spec;
       }
@@ -991,6 +1094,128 @@
           });
         }, 600);
       }
+
+      // ── Pane names ──
+      // A pane's label in place of "Session N". .booth/console.json's "name"
+      // is the starting default and this browser's rename wins over it,
+      // unless the file forces the pane, as it does the pane's tabs. Only
+      // renames are kept here; clearing one goes back to the file's name, or
+      // Session N. The tmux session behind it stays s1 … s6.
+      let renamingPane = null;  // the pane whose name is being typed
+      let paneDrag = null;      // a pane being dragged by its header (Tiling, below)
+      const paneNamesStorageKey = "cb.webSplit." + projectName + ".names";
+      const localPaneNames = (function() {
+        let saved = {};
+        try {
+          const parsed = JSON.parse(window.localStorage.getItem(paneNamesStorageKey) || "{}");
+          if (isPlainObject(parsed)) saved = parsed;
+        } catch (_error) {
+          // Unreadable: no renames.
+        }
+        const out = {};
+        for (let n = 1; n <= Tiling.MAX_PANES; n++) {
+          const cfg = consoleConfig.panes[String(n)] || {};
+          const forced = cfg.name && (cfg.force === true || cfg.web === false);
+          const name = cleanPaneName(saved[String(n)]);
+          if (name && !forced) out[n] = name;
+        }
+        return out;
+      })();
+
+      function savePaneNames() {
+        try {
+          window.localStorage.setItem(paneNamesStorageKey, JSON.stringify(localPaneNames));
+        } catch (_error) {
+          // Ignore localStorage write failures (private mode / restricted env).
+        }
+      }
+
+      function paneName(n) {
+        const cfg = consoleConfig.panes[String(n)];
+        return localPaneNames[n] || (cfg && cfg.name) || "";
+      }
+
+      function paneLabel(n) {
+        return paneName(n) || "Session " + n;
+      }
+
+      function applyPaneName(n) {
+        const pane = panes[n - 1];
+        if (!pane) return;
+        const label = paneLabel(n);
+        const title = pane.querySelector(".pane-title");
+        if (renamingPane !== n) title.textContent = label;
+        const tip = label + (label === "Session " + n ? "" : " (session " + n + ")") +
+          " — double-click to rename (Ctrl+Alt+n); drag the header to move the pane";
+        title.title = isMac ? modKeys(tip) : tip;
+        pane.querySelector(".term-frame").title = label;
+        pane.classList.toggle("named", !!paneName(n));
+      }
+
+      function setPaneName(n, value) {
+        const name = cleanPaneName(value);
+        if (name) localPaneNames[n] = name;
+        else delete localPaneNames[n];
+        savePaneNames();
+        applyPaneName(n);
+        setTilingStatus();
+        scheduleConsoleSave();
+      }
+
+      // Double-click the title, or Ctrl+Alt+n: the title turns into a field.
+      // Enter or leaving it keeps the name, Esc keeps the old one.
+      function startRename(n) {
+        const pane = panes[n - 1];
+        if (!pane || renamingPane !== null) return;
+        const header = pane.querySelector(".pane-header");
+        const title = pane.querySelector(".pane-title");
+        const input = document.createElement("input");
+        input.className = "pane-title-input";
+        input.type = "text";
+        input.maxLength = PANE_NAME_MAX;
+        input.spellcheck = false;
+        input.autocomplete = "off";
+        input.placeholder = "Session " + n;
+        input.setAttribute("aria-label", "Name of session " + n);
+        input.value = paneName(n);
+        renamingPane = n;
+        header.classList.add("renaming");
+        updatePaneDragAffordance();
+        title.textContent = "";
+        title.appendChild(input);
+        let done = false;
+        function finish(save, refocus) {
+          if (done) return;
+          done = true;
+          const value = input.value;
+          renamingPane = null;
+          header.classList.remove("renaming");
+          title.textContent = "";   // takes the field away; its blur is ignored
+          if (save) setPaneName(n, value);
+          else applyPaneName(n);
+          updatePaneDragAffordance();
+          if (refocus) focusPaneContent(n);
+        }
+        input.addEventListener("keydown", function(e) {
+          if (e.key === "Enter" || e.key === "Escape") {
+            e.preventDefault();
+            finish(e.key === "Enter", true);
+          }
+          e.stopPropagation();
+        });
+        input.addEventListener("blur", function() { finish(true, false); });
+        input.focus();
+        input.select();
+      }
+
+      panes.forEach(function(pane) {
+        const n = Number(pane.dataset.pane);
+        applyPaneName(n);
+        pane.querySelector(".pane-title").addEventListener("dblclick", function(e) {
+          if (e.target.closest("input")) return;
+          startRename(n);
+        });
+      });
 
       const layoutStorageKey = "cb.webSplit." + projectName + ".layout";
       const splitStorageKey = "cb.webSplit." + projectName + ".splits";
@@ -1331,6 +1556,7 @@
         order.forEach(function(n) { placeAt(panes[n - 1], geometry.panes[n]); });
         if (!compact) geometry.handles.forEach(addTreeHandle);
         refreshTilingFocus();
+        updatePaneDragAffordance();
       }
 
       function setTreeLayout(tree, options = {}) {
@@ -1442,6 +1668,121 @@
       window.addEventListener("pointercancel", endTreeDrag);
       window.addEventListener("blur", endTreeDrag);
 
+      // ── Tiling: moving a pane with the mouse ──
+      // Drag a pane by its header. Dropped on the middle of another pane, the
+      // two trade places (tiling.js swap); dropped near one of its edges, it
+      // takes that side of it (dock). A press that moves less than
+      // PANE_DRAG_START is still a click. Once it is a drag, the drag overlay
+      // covers the panes so their iframes never take the pointer.
+      const PANE_DRAG_START = 5;    // px
+      const PANE_DOCK_EDGE = 0.25;  // of the target's width / height
+      const dropIndicator = document.createElement("div");
+      dropIndicator.className = "pane-drop-indicator";
+      dropIndicator.setAttribute("aria-hidden", "true");
+      grid.appendChild(dropIndicator);
+
+      // Only while there is somewhere to move a pane to.
+      function canDragPanes() {
+        return !!currentTree && zoomPane === null && !compactQuery.matches &&
+          renamingPane === null && Tiling.panes(currentTree).length > 1;
+      }
+
+      function updatePaneDragAffordance() {
+        grid.classList.toggle("can-drag-panes", canDragPanes());
+      }
+
+      // The pane under the pointer, other than the one dragged, and where on
+      // it: the edge it is nearest when within PANE_DOCK_EDGE, else "center".
+      function paneDropAt(x, y) {
+        let drop = null;
+        Tiling.panes(currentTree).forEach(function(target) {
+          if (target === paneDrag.pane) return;
+          const r = panes[target - 1].getBoundingClientRect();
+          if (x < r.left || x > r.right || y < r.top || y > r.bottom) return;
+          const u = (x - r.left) / r.width;
+          const v = (y - r.top) / r.height;
+          const nearest = [["left", u], ["right", 1 - u], ["up", v], ["down", 1 - v]]
+            .sort(function(a, b) { return a[1] - b[1]; })[0];
+          drop = { target: target, zone: nearest[1] < PANE_DOCK_EDGE ? nearest[0] : "center" };
+        });
+        return drop;
+      }
+
+      // Where the pane would land: all of the target for a swap, its half on
+      // that side for a dock.
+      function showDropIndicator(drop) {
+        dropIndicator.classList.toggle("active", !!drop);
+        if (!drop) return;
+        const el = panes[drop.target - 1];
+        let x = el.offsetLeft, y = el.offsetTop, w = el.offsetWidth, h = el.offsetHeight;
+        if (drop.zone === "left" || drop.zone === "right") {
+          w /= 2;
+          if (drop.zone === "right") x += w;
+        } else if (drop.zone === "up" || drop.zone === "down") {
+          h /= 2;
+          if (drop.zone === "down") y += h;
+        }
+        dropIndicator.style.left = x + "px";
+        dropIndicator.style.top = y + "px";
+        dropIndicator.style.width = w + "px";
+        dropIndicator.style.height = h + "px";
+      }
+
+      panes.forEach(function(pane) {
+        const header = pane.querySelector(".pane-header");
+        header.addEventListener("pointerdown", function(event) {
+          if (event.button !== 0 || !canDragPanes()) return;
+          if (event.target.closest("button, input, label, a, .proxy-page-title")) return;
+          paneDrag = { pane: Number(pane.dataset.pane), header: header, pointerId: event.pointerId,
+                       x: event.clientX, y: event.clientY, active: false, drop: null };
+          document.body.classList.add("pressing-pane");
+        });
+      });
+
+      function movePaneDrag(event) {
+        if (!paneDrag) return;
+        if (event.buttons === 0) {   // let go somewhere this page never heard of
+          endPaneDrag(true);
+          return;
+        }
+        if (!paneDrag.active) {
+          if (Math.hypot(event.clientX - paneDrag.x, event.clientY - paneDrag.y) < PANE_DRAG_START) return;
+          paneDrag.active = true;
+          try {
+            paneDrag.header.setPointerCapture(paneDrag.pointerId);
+          } catch (_e) {
+            // The overlay below still keeps the iframes out of it.
+          }
+          document.body.classList.add("dragging-pane");
+          dragOverlay.classList.add("active", "axis-move");
+          panes[paneDrag.pane - 1].classList.add("drag-source");
+        }
+        paneDrag.drop = paneDropAt(event.clientX, event.clientY);
+        showDropIndicator(paneDrag.drop);
+      }
+
+      function endPaneDrag(cancel) {
+        if (!paneDrag) return;
+        const drag = paneDrag;
+        paneDrag = null;
+        document.body.classList.remove("pressing-pane");
+        if (!drag.active) return;
+        document.body.classList.remove("dragging-pane");
+        dragOverlay.classList.remove("active", "axis-move");
+        panes[drag.pane - 1].classList.remove("drag-source");
+        showDropIndicator(null);
+        if (cancel || !drag.drop || !currentTree) return;
+        applyTree(drag.drop.zone === "center"
+          ? Tiling.swap(currentTree, drag.pane, drag.drop.target)
+          : Tiling.dock(currentTree, drag.pane, drag.drop.target, drag.drop.zone));
+        setFocusedPane(drag.pane, true);
+      }
+
+      window.addEventListener("pointermove", movePaneDrag);
+      window.addEventListener("pointerup", function() { endPaneDrag(false); });
+      window.addEventListener("pointercancel", function() { endPaneDrag(true); });
+      window.addEventListener("blur", function() { endPaneDrag(true); });
+
       // ── Tiling: focus ──
       function refreshTilingFocus() {
         const shown = visiblePanes();
@@ -1510,10 +1851,10 @@
         if (resizeMode) {
           text = "Resize: h j k l or arrows · Enter or Esc to finish";
         } else if (zoomPane !== null) {
-          text = "Session " + zoomPane + " full · Ctrl+Alt+F to restore";
+          text = paneLabel(zoomPane) + " full · Ctrl+Alt+F to restore";
         } else if (pendingSplit && pendingSplit.pane === focusedPane) {
           text = "Next pane opens " + (pendingSplit.dir === "h" ? "beside" : "below") +
-            " session " + focusedPane + " · Ctrl+Alt+Enter";
+            " " + paneLabel(focusedPane) + " · Ctrl+Alt+Enter";
         }
         shortcutHint.classList.toggle("mode", !!text);
         // The text is this page's own; only the modifiers become key caps.
@@ -1557,7 +1898,7 @@
       function resetSession(n) {
         const pane = panes[n - 1];
         if (!pane) return;
-        if (!window.confirm("Reset session " + n + "?\n\nIts shell, and anything running in it, " +
+        if (!window.confirm("Reset session " + n + (paneName(n) ? " (" + paneName(n) + ")" : "") + "?\n\nIts shell, and anything running in it, " +
             "will be stopped and a fresh shell started.")) {
           focusPaneContent(n);
           return;
@@ -1718,6 +2059,7 @@
           case "f": return tilingZoom;
           case "w": return function() { clickPaneHeaderButton(".proxy-toggle"); };
           case "m": return function() { clickPaneHeaderButton(".md-toggle"); };
+          case "n": return function() { unzoom(); startRename(focusedPane); };
           case "1": case "2": case "3": case "4": case "5": case "6":
             return function() { tilingGoTo(Number(key)); };
         }
@@ -1743,6 +2085,12 @@
       }
 
       function onTilingKey(e) {
+        if (paneDrag && paneDrag.active && e.key === "Escape") {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          endPaneDrag(true);
+          return;
+        }
         if (resizeMode) {
           handleResizeKey(e);
           return;
@@ -1802,6 +2150,7 @@
             ["Ctrl+Alt+f", "The pane fills the console / back"],
             ["Ctrl+Alt+w", "The pane's Web view / back to its terminal"],
             ["Ctrl+Alt+m", "The pane's Markdown viewer (starts viewmd) / back to its terminal"],
+            ["Ctrl+Alt+n", "Rename the pane (or double-click its title)"],
             ["Ctrl+Alt+e", "Turn the pane's split the other way (side by side ↔ stacked)"],
             ["Ctrl+Alt+=", "Equalize: every pane in the layout the same size"],
             ["Ctrl+Alt+r", "Resize mode: h j k l (or arrows) resize the pane, Enter or Esc leaves"],
@@ -1831,6 +2180,11 @@
             (isMac ? ' On a Mac, VoiceOver claims Control+Option as its own modifier ' +
               'and takes these keys first while it is on.' : '') +
             '</p>' +
+            '<h3>Moving and naming panes</h3>' +
+            '<p>Drag a pane by its header. Drop it on the middle of another pane and the two ' +
+            'trade places; drop it near an edge and it takes that side. <strong>Esc</strong> ' +
+            'cancels. Double-click a pane\'s title, or press Ctrl+Alt+n, to give it a name; ' +
+            'an empty name goes back to the default.</p>' +
             '<h3>Mouse and copy</h3>' +
             '<p>Clicks and drags go to the program in the pane when it uses the mouse ' +
             '(Fresh, vim, htop). At a shell, a drag selects and copies to your clipboard ' +

@@ -26,6 +26,15 @@ This file contains a list of changes for each released version.
   - Fresh's **Install <server>** row and Neovim's `booth-lsp.lua` know both new servers. Fresh's
     half needs a rebuilt base image.
 
+- **Console UI: move panes with the mouse, and name them.** Drag a pane by its header: dropped
+  on the middle of another pane the two trade places, dropped near one of its edges it takes that
+  side, with an outline showing where it will land and `Esc` to cancel. Terminals do not reload,
+  as with the `Ctrl+Alt` keys. Double-click a pane's title, or press `Ctrl+Alt+n`, to give it a
+  name in place of `Session N`; the browser remembers it. `.booth/console.json` takes a per-pane
+  `"name"` as the starting label (`"3": { "name": "server" }` is still a terminal), and
+  `console-spec` saves names back, terminal panes included. Older images ignore `"name"`.
+  See [Moving and Naming Panes](BOOTH_CONSOLE.md#moving-and-naming-panes).
+
 - **ThinkRail and Orca join the AI Tools catalog: two agent workbenches that run each task in its
   own git worktree.**
   - **ThinkRail** (`thinkrail`) is JetBrains' open-source agentic IDE: the pi coding agent with an
