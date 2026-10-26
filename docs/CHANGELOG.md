@@ -44,6 +44,10 @@ This file contains a list of changes for each released version.
   host with `booth exec`. CodingBooth Help now lists rename (double-click), drag and force-reset.
   See [Layouts](BOOTH_CONSOLE.md#layouts).
 
+- **tmux's status bar is a soft pastel purple** in place of its bright default green — the bar
+  along the bottom of every Console UI pane. Set in `/etc/tmux.conf`, so a `~/.tmux.conf` still
+  overrides it.
+
 - **ThinkRail and Orca join the AI Tools catalog: two agent workbenches that run each task in its
   own git worktree.**
   - **ThinkRail** (`thinkrail`) is JetBrains' open-source agentic IDE: the pi coding agent with an
