@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 # Installs language servers by name, each through its own lsp--<name>--setup.sh.
 # Usage: lsp--install.sh <name[@version]> [name[@version]...]
@@ -35,7 +35,7 @@ case "${1:-}" in
         echo "Installs language servers. No names is a no-op."
         echo
         echo "Servers:   $(available | tr '\n' ' ')"
-        echo "Languages: markdown toml terraform sql json html css javascript react tailwind python c cpp java"
+        echo "Languages: markdown toml terraform sql json html css javascript react tailwind python c cpp java haskell zig"
         exit 0
         ;;
 esac
@@ -70,6 +70,8 @@ for spec in "$@"; do
         c|cpp|c++|cxx)          name="clangd" ;;
         java)                   name="jdtls" ;;
         react|jsx|tsx)          name="typescript" ;;
+        haskell|hs)             name="hls" ;;
+        zig)                    name="zls" ;;
     esac
 
     script="lsp--${name}--setup.sh"
