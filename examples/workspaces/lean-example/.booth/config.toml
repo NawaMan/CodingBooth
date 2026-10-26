@@ -1,0 +1,3 @@
+# Configured by: booth config --no-tui --overwrite --variant codeserver --select lean:4.35.0+vscode-ext
+
+variant = "codeserver"
