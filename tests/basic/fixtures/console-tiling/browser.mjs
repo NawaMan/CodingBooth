@@ -169,6 +169,10 @@ try {
       "An unknown layout falls back to one that shows every pane given tabs (pane 5: the 3x2 grid, as Other)", f);
     report(f.web5 && f.tabs5.length === 2 && !f.tabs5.some((src) => /google|object/i.test(src || "")) && !f.web2,
       "Pane 5 keeps its two real tabs; a non-address tab and a non-object pane are skipped, not opened", f);
+    const names = await evaluate(`[3, 4].map(n => document.querySelector('.pane-' + n + ' .pane-title').textContent)`);
+    report(names[0] === "logs" && names[1] === "Session 4"
+        && warnings.some((w) => /pane 4: "name"/.test(w)),
+      "A valid name in a broken console.json is still used; a name that is not text falls back to Session N, with a warning", { names });
     const mine = warnings.filter((w) => w.startsWith(".booth/console.json"));
     report(mine.some((w) => /layout/.test(w)) && mine.some((w) => /pane 2/.test(w)) && mine.some((w) => /pane "9"/.test(w)) && mine.some((w) => /is not an address/.test(w)),
       "Each thing console.json had wrong is named in a console warning", mine);
@@ -267,6 +271,12 @@ try {
         && l.addOff && !l.removeOff && l.handles === "xxyyy",
       "console.json's grid6 still opens six live sessions in three columns — as Other, now the toolbar has no grid6 button — pane 5 in Web view, + greyed at six", l);
 
+    const named6 = await evaluate(`(() => { const p = document.querySelector('.pane-6');
+      return { title: p.querySelector('.pane-title').textContent, named: p.classList.contains('named'),
+        frame: p.querySelector('.term-frame').title }; })()`);
+    report(named6.title === "docs" && named6.named && named6.frame === "docs",
+      "console.json's \"name\" labels pane 6 in place of Session 6", named6);
+
     // Pane 5 shows an outside (cross-origin) site; pane 6, after it, a terminal.
     const before = await evaluate(origin(6));
     await evaluate(`document.getElementById('reload').click()`);
@@ -353,6 +363,42 @@ try {
         && dialogs.length >= 2 && newId && newId !== firstId,
       "Reset session asks first: Cancel keeps session 2 running, Ctrl+Alt+Shift+x then OK gives the pane a fresh one", { firstId, keptId, newId, asked });
 
+    // A program ignoring the hangup outlives a plain reset; Shift+click on ⏻
+    // forces it, and that kills it. Each runs in session 2 as a shell job.
+    const alive = (tag) => {
+      try { execFileSync("docker", ["exec", container, "pgrep", "-f", "-x", `sleep ${tag}`], { stdio: "ignore" }); return true; } catch { return false; }
+    };
+    const stubborn = async (tag) => {
+      await until(termReady(2));
+      tmux("send-keys", "-t", "s2", `bash -c 'trap "" HUP TERM; exec sleep ${tag}' &`, "Enter");
+      for (let i = 0; i < 20 && !alive(tag); i++) await sleep(200);
+      return alive(tag);
+    };
+    const resetAndWait = async (click) => {
+      const before = sessionId();
+      await evaluate(click);
+      let now = before;
+      for (let i = 0; i < 40 && (!now || now === before); i++) { await sleep(250); now = sessionId(); }
+      return now && now !== before;
+    };
+    const plainStarted = await stubborn(7771);
+    const plainReset = await resetAndWait(`document.querySelector('.session-reset[data-session="2"]').click()`);
+    await sleep(500);
+    const survivedPlain = alive(7771);
+    const forcedStarted = await stubborn(7772);
+    dialogs.length = 0;
+    const forcedReset = await resetAndWait(`document.querySelector('.session-reset[data-session="2"]')
+      .dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }))`);
+    const forceAsked = dialogs.slice();
+    const survivedForce = alive(7772);
+    try { execFileSync("docker", ["exec", container, "pkill", "-KILL", "-f", "-x", "sleep 7771"], { stdio: "ignore" }); } catch {}
+    const forceHelp = await evaluate(`(document.getElementById('bl-help-panel-console') || {}).textContent || ''`);
+    report(plainStarted && plainReset && survivedPlain && forcedStarted && forcedReset && !survivedForce
+        && forceAsked.some((m) => /Force-reset session 2/.test(m))
+        && /Shift\+click ⏻/.test(forceHelp) && /Double-click the title/.test(forceHelp) && /Drag the header/.test(forceHelp),
+      "Shift+click ⏻ force-resets: kills a program that outlived a plain reset; Help lists it with rename and drag",
+      { plainStarted, plainReset, survivedPlain, forcedStarted, forcedReset, survivedForce, forceAsked, helpHasRows: forceHelp.length });
+
     // ---- the pane header's own buttons, from the keyboard ----
     //
     // Ctrl+Alt+w and Ctrl+Alt+m press the focused pane's Web view and Markdown
@@ -403,6 +449,109 @@ try {
         && resizedLayout.preset === "quad",
       "Ctrl+Alt+r enters resize mode: h j k l resize the focused pane, Esc leaves, the layout is still quad",
       { inResize, beforeResize, afterResize, leftResize, preset: resizedLayout.preset });
+
+    // ---- moving a pane with the mouse, by its header ----
+    const readSpec = () => { try { return JSON.parse(execFileSync("docker", ["exec", container, "cat", "/home/coder/code/.booth/console.json"], { encoding: "utf8" })); } catch { return {}; } };
+    const headerAt = (n) => evaluate(`(() => { const r = document.querySelector('.pane-${n} .pane-title').getBoundingClientRect();
+      return { x: r.left + r.width * 0.6, y: r.top + r.height / 2 }; })()`);
+    const paneSpot = (n, fx, fy) => evaluate(`(() => { const r = document.querySelector('.pane-${n}').getBoundingClientRect();
+      return { x: r.left + r.width * ${fx}, y: r.top + r.height * ${fy} }; })()`);
+    const boxes = `Object.fromEntries([1,2,3,4].map(n => { const r = document.querySelector('.pane-' + n).getBoundingClientRect();
+      return [n, Math.round(r.left) + ',' + Math.round(r.top)]; }))`;
+    // Press on the header, move past the start distance, then on to `to`. The
+    // title's middle, not its start: the floating Booth panel sits over the
+    // top-left pane's corner.
+    async function dragPane(from, to, beforeRelease) {
+      await send("Input.dispatchMouseEvent", { type: "mousePressed", x: from.x, y: from.y, button: "left", buttons: 1, clickCount: 1 });
+      await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: from.x + 10, y: from.y + 10, button: "left", buttons: 1 });
+      await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: to.x, y: to.y, button: "left", buttons: 1 });
+      await sleep(150);
+      const during = await evaluate(`(() => ({ indicator: document.querySelector('.pane-drop-indicator').classList.contains('active'),
+        overlay: document.getElementById('drag-overlay').classList.contains('active') }))()`);
+      if (beforeRelease) await beforeRelease();
+      await send("Input.dispatchMouseEvent", { type: "mouseReleased", x: to.x, y: to.y, button: "left", buttons: 0, clickCount: 1 });
+      await sleep(400);
+      return during;
+    }
+
+    await evaluate(`document.querySelector('[data-layout="quad"]').click()`);
+    await sleep(400);
+    const quadBoxes = await evaluate(boxes);
+    const swapOrigins = await evaluate(`[1,4].map(n => document.querySelector('.pane-' + n + ' .term-frame').contentWindow.performance.timeOrigin)`);
+    const swapDuring = await dragPane(await headerAt(1), await paneSpot(4, 0.5, 0.5));
+    const swapped = await evaluate(boxes);
+    const swapLayout = await evaluate(LAYOUT);
+    const swapAfter = await evaluate(`[1,4].map(n => document.querySelector('.pane-' + n + ' .term-frame').contentWindow.performance.timeOrigin)`);
+    const swapState = await evaluate(STATE);
+    report(swapDuring.indicator && swapDuring.overlay && swapped[4] === quadBoxes[1] && swapped[1] === quadBoxes[4]
+        && swapLayout.preset === null && swapLayout.otherLit && swapState.hash.replace(/@\d+/g, "") === "#mode=h(v(4,3),v(2,1))"
+        && swapState.focused === "1"
+        && JSON.stringify(swapAfter) === JSON.stringify(swapOrigins),
+      "Dragging pane 1's header onto the middle of pane 4 swaps the two — h(v(4,3),v(2,1)), Other as a keyboard move would be — without reloading either terminal",
+      { quadBoxes, swapped, swapDuring, preset: swapLayout.preset, otherLit: swapLayout.otherLit, hash: swapState.hash, focused: swapState.focused });
+
+    await evaluate(`document.querySelector('[data-layout="hsplit"]').click()`);
+    await sleep(400);
+    await dragPane(await headerAt(2), await paneSpot(1, 0.5, 0.92));
+    const docked = await evaluate(LAYOUT);
+    let dockSaved = "";
+    for (let i = 0; i < 20 && dockSaved !== "vsplit"; i++) { await sleep(250); dockSaved = readSpec().layout || ""; }
+    report(docked.preset === "vsplit" && docked.active === "12" && dockSaved === "vsplit",
+      "Dragging pane 2 near the bottom edge of pane 1 docks it below: two columns become vsplit, saved to console.json",
+      { preset: docked.preset, dockSaved });
+
+    const beforeCancel = await evaluate(`location.hash`);
+    const cancelDuring = await dragPane(await headerAt(1), await paneSpot(2, 0.5, 0.5), () => key("", "Escape", "Escape", 27));
+    const afterCancel = await evaluate(`(() => ({ hash: location.hash,
+      indicator: document.querySelector('.pane-drop-indicator').classList.contains('active'),
+      overlay: document.getElementById('drag-overlay').classList.contains('active'),
+      faded: !!document.querySelector('.pane.drag-source') }))()`);
+    const header1 = await headerAt(1);
+    await send("Input.dispatchMouseEvent", { type: "mousePressed", x: header1.x, y: header1.y, button: "left", buttons: 1, clickCount: 1 });
+    await send("Input.dispatchMouseEvent", { type: "mouseReleased", x: header1.x, y: header1.y, button: "left", buttons: 0, clickCount: 1 });
+    await sleep(300);
+    const afterClick = await evaluate(`location.hash`);
+    report(cancelDuring.indicator && afterCancel.hash === beforeCancel && !afterCancel.indicator && !afterCancel.overlay
+        && !afterCancel.faded && afterClick === beforeCancel,
+      "Esc cancels a pane drag, and a plain click on a header moves nothing", { beforeCancel, afterCancel, afterClick });
+
+    // ---- naming a pane ----
+    const title1 = await headerAt(1);
+    await send("Input.dispatchMouseEvent", { type: "mousePressed", x: title1.x, y: title1.y, button: "left", buttons: 1, clickCount: 1 });
+    await send("Input.dispatchMouseEvent", { type: "mouseReleased", x: title1.x, y: title1.y, button: "left", buttons: 0, clickCount: 1 });
+    await send("Input.dispatchMouseEvent", { type: "mousePressed", x: title1.x, y: title1.y, button: "left", buttons: 1, clickCount: 2 });
+    await send("Input.dispatchMouseEvent", { type: "mouseReleased", x: title1.x, y: title1.y, button: "left", buttons: 0, clickCount: 2 });
+    await sleep(300);
+    const editing = await evaluate(`!!document.querySelector('.pane-1 .pane-title-input') && document.activeElement === document.querySelector('.pane-1 .pane-title-input')`);
+    await typeLine("my   server ");
+    await sleep(300);
+    const NAME1 = `(() => ({ title: document.querySelector('.pane-1 .pane-title').textContent,
+      named: document.querySelector('.pane-1').classList.contains('named'),
+      input: !!document.querySelector('.pane-title-input') }))()`;
+    const renamed = await evaluate(NAME1);
+    let namedSpec = {};
+    for (let i = 0; i < 20 && !(namedSpec.panes && namedSpec.panes["1"] && namedSpec.panes["1"].name); i++) { await sleep(250); namedSpec = readSpec(); }
+    const p1 = (namedSpec.panes || {})["1"] || {};
+    const p6 = (namedSpec.panes || {})["6"] || {};
+    report(editing && renamed.title === "my server" && renamed.named && !renamed.input
+        && p1.name === "my server" && p1.web === undefined && p6.name === "docs",
+      "Double-clicking a title renames the pane; the name is saved to console.json, a terminal pane as { name } alone",
+      { editing, renamed, panes: namedSpec.panes });
+
+    await send("Page.navigate", { url: url + "?renamed=1" });
+    await until(`document.readyState === 'complete' && !!document.querySelector('.pane-1 .pane-title')`);
+    await sleep(500);
+    const kept = await evaluate(NAME1);
+    await key("ca", "1", "Digit1", 49);
+    await key("ca", "n", "KeyN", 78);
+    const byKey = await evaluate(`document.activeElement === document.querySelector('.pane-1 .pane-title-input')`);
+    await send("Input.dispatchKeyEvent", { type: "rawKeyDown", key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 });
+    await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 });
+    await sleep(300);
+    const escaped = await evaluate(NAME1);
+    report(kept.title === "my server" && byKey && escaped.title === "my server" && !escaped.input,
+      "A renamed pane keeps its name after a reload; Ctrl+Alt+n opens the field and Esc leaves the name as it was",
+      { kept, byKey, escaped });
 
     // ---- the same shortcuts as Windows and a Mac deliver them ----
     //
