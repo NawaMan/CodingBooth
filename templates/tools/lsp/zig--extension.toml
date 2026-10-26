@@ -1,0 +1,15 @@
+cb-version = "0.1.0"
+display-name = "Zig (zls)"
+display-disc = "zls for terminal editors (zig+vscode-ext covers VS Code)"
+display-detail = """Installs zls, the Zig language server. A zls release works only with the Zig X.Y it \
+was made for, so the setup picks the newest zls for the booth's `zig version`. Pin one with \
+lsp:zls@0.16.1."""
+display-order = 27
+auto-select = false
+requires = ["zig"]
+tags = ["lsp", "language-server", "zig"]
+
+[segments]
+"Boothfile--60" = """
+setup lsp--zls
+"""

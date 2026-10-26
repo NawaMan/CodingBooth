@@ -1,14 +1,16 @@
-cb-version = "0.1.0"
+cb-version = "0.2.0"
 display-name = "LSP"
 display-disc = "Start Neovim's built-in LSP client for the booth's language servers"
 display-detail = """Neovim has an LSP client but starts no server until a config enables one. This adds a \
 system-wide plugin (/usr/local/share/nvim/site/plugin/booth-lsp.lua) that, at startup, enables every \
 installed server it knows: the lsp template's (lsp+markdown, lsp:taplo,yaml, ...) plus gopls, \
-rust-analyzer, and clangd from the go, rust, and clang templates (jdtls and svelteserver too). It loads after your own init.lua, \
-so it works beside +config and +config-shared; set vim.g.booth_lsp = false there to turn it off. \
-Needs Neovim 0.11 or newer, and no plugin manager or nvim-lspconfig."""
+rust-analyzer, clangd, and HLS from the go, rust, clang, and haskell templates (jdtls, svelteserver, and zls too). \
+It enables only servers that are on PATH, so with none installed it does nothing. Selected with neovim; \
+deselect it with neovim~lsp. It loads after your own init.lua, so it works beside +config and \
++config-shared; set vim.g.booth_lsp = false there to turn it off. Needs Neovim 0.11 or newer, and no \
+plugin manager or nvim-lspconfig."""
 display-order = 30
-auto-select = false
+auto-select = true
 tags = ["neovim", "lsp", "language-server"]
 
 [segments]

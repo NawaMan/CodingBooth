@@ -1,0 +1,17 @@
+cb-version = "0.1.0"
+display-name = "LSP"
+display-disc = "Point TTT at the booth's language servers"
+display-detail = """TTT starts only the language servers listed under lsp.servers in \
+~/.config/ttt/settings.json. At each container start this adds an entry for every server it knows \
+that is on PATH: the lsp template's (lsp+markdown, lsp+java, lsp:taplo,yaml, ...) plus gopls, \
+rust-analyzer, and HLS from the go, rust, and haskell templates. Each entry is added once and \
+entries you wrote are never changed, so deleting one turns that server off for good. With no \
+servers installed it writes nothing. Selected with ttt; deselect it with ttt~lsp."""
+display-order = 20
+auto-select = true
+tags = ["ttt", "lsp", "language-server"]
+
+[segments]
+"Boothfile--60" = """
+setup ttt-lsp
+"""

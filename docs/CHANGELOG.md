@@ -4,6 +4,28 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Every terminal editor now uses the booth's language servers without extra setup, and the `lsp`
+  template adds Haskell and Zig.**
+  - **TTT** used none of them before: it starts only the servers listed under `lsp.servers` in
+    `~/.config/ttt/settings.json`, and a booth wrote none. The new `ttt+lsp`, selected with `ttt`,
+    adds an entry at container start for each server on PATH, from `lsp+…` and from the language
+    templates (gopls, rust-analyzer, HLS). An entry is added once, and one you edit or delete stays
+    that way. Python gets `pylsp`, which is what the booth installs.
+  - **TTT starts on the zenith theme with rounded borders.** The new `ttt+theme`, also selected with
+    `ttt`, sets `theme` and `editor.borderStyle` only where `settings.json` has none, so a theme picked
+    inside TTT stays. `ttt+theme:dracula,double` picks others; `ttt~theme` keeps TTT's own defaults.
+  - **`neovim+lsp` is now selected with `neovim`.** It enables only servers that are on PATH, so a
+    booth with none is unchanged. Deselect it with `neovim~lsp`.
+  - **`lsp+markdown` (marksman) is now selected with `lsp`.** It has no runtime to pull in. `lsp+bash`
+    stays opt-in, because bash-language-server needs Node.js.
+  - **`lsp+haskell`** puts `haskell-language-server-wrapper` on PATH for non-login shells, which is
+    the command Fresh, Helix, TTT and Neovim start. It reuses the HLS the `haskell` template already
+    installs, and warns when HLS has no build for the booth's GHC. **`lsp+zig`** installs zls,
+    choosing the newest release for the booth's `zig version`, because a zls release works with one
+    Zig X.Y only. They pull in `haskell` and `zig`; `lsp:haskell,zig` and `lsp:hls@2.11.0` work too.
+  - Fresh's **Install <server>** row and Neovim's `booth-lsp.lua` know both new servers. Fresh's
+    half needs a rebuilt base image.
+
 - **ThinkRail and Orca join the AI Tools catalog: two agent workbenches that run each task in its
   own git worktree.**
   - **ThinkRail** (`thinkrail`) is JetBrains' open-source agentic IDE: the pi coding agent with an

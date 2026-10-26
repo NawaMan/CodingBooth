@@ -204,6 +204,7 @@ setup lsp--bash
 setup lsp--clangd
 setup lsp--docker-compose
 setup lsp--dockerfile
+setup lsp--hls
 setup lsp--jdtls
 setup lsp--marksman
 setup lsp--pylsp
@@ -215,6 +216,7 @@ setup lsp--terraform-ls
 setup lsp--typescript
 setup lsp--vscode-langservers
 setup lsp--yaml
+setup lsp--zls
 setup lua
 setup lua-code-extension
 setup lua-nb-kernel
@@ -328,6 +330,7 @@ setup thonny
 setup tls
 setup toml-code-extension
 setup ttt
+setup ttt-lsp
 setup ttyd-nerd-font-index
 setup vhs
 setup viewmd
