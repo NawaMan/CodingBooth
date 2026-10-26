@@ -1,20 +1,21 @@
-cb-version = "0.1.0"
+cb-version = "0.2.0"
 display-name = "Language Servers"
 primary = true
-display-disc = "Language servers for terminal editors (Fresh, Helix, Neovim)"
+display-disc = "Language servers for terminal editors (Fresh, Helix, Neovim, TTT)"
 display-detail = """Installs language servers that any LSP editor can use, and the matching VS Code \
-extension where one exists. Fresh and Helix start the servers on their own; Neovim needs \
-neovim+lsp; the VS Code half skips itself on a variant without VS Code or code-server. Pick a \
-language below (lsp+markdown, lsp+c, lsp+react, ...), or type server names into this template's \
+extension where one exists. Fresh and Helix start the servers on their own; Neovim and TTT do \
+through neovim+lsp and ttt+lsp, both selected with their editor. The VS Code half skips itself on a \
+variant without VS Code or code-server. lsp+markdown is selected with this template. Pick another \
+language below (lsp+c, lsp+react, lsp+haskell, ...), or type server names into this template's \
 list: lsp:marksman,taplo,yaml. A name is a server or the language it serves, with an optional \
 @version (taplo@0.10.0). Servers: marksman, taplo, terraform-ls, sqls, yaml, bash, \
 vscode-langservers (JSON, HTML, CSS), typescript (also React), svelte, tailwindcss, dockerfile, \
-docker-compose, pylsp, clangd, jdtls. The Node-based ones need the nodejs template, pylsp needs \
-python, and jdtls needs java. Inside the booth, Fresh's LSP popup also offers "Install <server>" \
+docker-compose, pylsp, clangd, jdtls, hls, zls. The Node-based ones need the nodejs template, pylsp \
+needs python, jdtls needs java, hls needs haskell, and zls needs zig. Inside the booth, Fresh's LSP popup also offers "Install <server>" \
 for a missing one; that install lasts until the booth is rebuilt, so select it here to keep it. \
 Any other VS Code extension, by id: code-ext-pkg:publisher.name,..."""
 display-order = 24
-tags = ["lsp", "language-server", "editor", "fresh", "helix", "neovim", "packages"]
+tags = ["lsp", "language-server", "editor", "fresh", "helix", "neovim", "ttt", "packages"]
 
 [params.LSP_SERVERS]
 default = ""
