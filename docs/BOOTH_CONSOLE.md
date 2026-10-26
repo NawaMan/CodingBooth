@@ -178,6 +178,8 @@ Any arrangement without a button of its own — the five names above, five panes
 
 The **+** and **−** buttons beside **Reload** open a pane next to the focused one and close the focused one, the same as `Ctrl+Alt+Enter` and `Ctrl+Alt+Shift+q`; they turn grey at six panes and at one. Going from `quad` to six panes one at a time passes through five; both show as Other. Closing a pane only hides it: its session keeps running, and opening it again shows it as it was. To really end one, **reset** it — the ⏻ in a terminal pane's header, or `Ctrl+Alt+Shift+x` on the focused pane. It asks first, then ends that pane's tmux session (`s1` … `s6`), stopping whatever runs there, and the pane reconnects to a fresh shell.
 
+A reset ends the session the way tmux does, with a hangup, and a program that ignores it — or one that left the session on its own (`setsid`, `nohup`, a daemon it started) — keeps running. For a pane that is still stuck, **Shift+click** the ⏻ to **force-reset** it: after asking, it kills everything started from that session (each pane's process tree, plus any process still carrying its `TMUX_PANE`) with `SIGTERM`, then `SIGKILL` a second later for what is left, with no chance to clean up, and then resets it. A process run with `sudo` is killed too. It is deliberately mouse-only, with no shortcut. The same command works outside the page, for when the browser tab itself is frozen: `booth--console-reset 3 --force` from another terminal in the booth, or `booth exec -- booth--console-reset 3 --force` on the host (without `--force` it is a plain reset). It only ever reaches the six pane sessions, never the tmux server or the console itself.
+
 **Reload** reloads what every visible pane shows. A terminal reattaches to its tmux session, so the shell and anything running in it carry on; a web tab reloads its page — for an outside site, the page the tab opened on, since where it has navigated since cannot be read.
 
 ---
@@ -202,6 +204,9 @@ The Console UI tiles its six sessions the way the **i3** window manager tiles wi
 | `Ctrl+Alt+Shift+h` / `j` / `k` / `l` (or arrows) | Move the pane left / down / up / right |
 | `Ctrl+Alt+Shift+q` (or **−**) | Close the pane — it is only hidden; its session keeps running |
 | `Ctrl+Alt+Shift+x` (or the pane's ⏻) | Reset the session: after asking, end its shell and anything running in it, and start a fresh one |
+| **Shift+click** the pane's ⏻ | Force-reset a stuck session: after asking, kill everything started from it, then start a fresh one |
+| Double-click the pane's title | [Rename](#moving-and-naming-panes) the pane |
+| Drag the pane's header | [Move](#moving-and-naming-panes) it: onto the middle of another pane to swap, near an edge to dock |
 
 The focused pane has a highlighted border once there is more than one. The shortcuts work from inside a terminal or a booth web tab (`:3000` and the like). A web tab showing an outside site keeps its keys to itself, so click into a terminal pane first. `Ctrl+Alt+arrows` may be taken by your own desktop; `h`/`j`/`k`/`l` always work. On a Mac, VoiceOver claims Control+Option as its own modifier and takes these keys first while it is on.
 
