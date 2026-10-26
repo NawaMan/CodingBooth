@@ -56,7 +56,7 @@ func buildPortManifest(ctx appctx.AppContext) PortManifest {
 
 	// Front door first, so the list reads top-down from the booth's own URL.
 	containerPort := 10000
-	if ctx.Public() && !ctx.Dind() && !ctx.Egress() {
+	if ctx.Public() && !sharesSidecarNetns(ctx) {
 		containerPort = 10443
 	}
 	raw := formatPortMapping(ctx.Public(), ctx.PortNumber(), containerPort)

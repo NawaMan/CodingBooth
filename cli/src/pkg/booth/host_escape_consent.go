@@ -247,7 +247,9 @@ func escapeTarget(ctx appctx.AppContext, env consentEnv) hostescape.Where {
 // sockets, and host networking still do.
 func hostEscapeReasons(ctx appctx.AppContext, env consentEnv) []hostescape.Reason {
 	var found []hostescape.Reason
-	if ctx.Dind() {
+	// A --dind-isolation kata sidecar is its own VM and shares nothing from this
+	// machine, so --dind does not reach it the way the privileged sidecar does.
+	if ctx.Dind() && !ctx.DindKata() {
 		found = append(found, hostescape.Reason{Kind: hostescape.KindDind, What: "--dind (privileged Docker-in-Docker sidecar)"})
 	}
 	found = append(found, dangerousRunArgs(flattenUserArgs(ctx), env)...)

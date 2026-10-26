@@ -111,6 +111,13 @@ var fieldDisplays = []fieldDisplay{
 	// --- Container ---
 	{Key: "dind", Label: "Docker-in-Docker", Group: "Container",
 		Detail: "Enable a Docker-in-Docker sidecar. Requires --privileged.\n\nWARNING: the sidecar runs privileged, so code in the\nbooth can reach its daemon and use it to step outside\nthe booth's isolation and touch the host. Only enable\nfor booths whose code you trust."},
+	{Key: "dind-isolation", Label: "DinD Isolation", Group: "Container",
+		Options: []string{"", "kata", "none"},
+		Detail:  "EXPERIMENTAL. How the Docker-in-Docker sidecar is\nisolated. Setting a mode turns DinD on.\n\n(default) / none = a privileged docker:dind container\nkata = the sidecar runs in its own Kata Containers VM,\nso a way out of the daemon lands in a throwaway VM,\nnot on this machine. Needs Linux, Docker Engine,\n/dev/kvm and Kata installed — see\ndocs/BOOTH_SECURITY.md#dind-isolation"},
+	{Key: "dind-vm-memory", Label: "DinD VM Memory", Group: "Container",
+		Detail: "EXPERIMENTAL. With DinD Isolation = kata: memory for\nthe sidecar's VM (Kata's default is 2 GB). Images and\ncontainers the sidecar runs share it.\n\nEmpty = Kata's default.\nExample: 4g, 8g, 4096m\n\nIgnored without DinD Isolation."},
+	{Key: "dind-vm-cpus", Label: "DinD VM CPUs", Group: "Container",
+		Detail: "EXPERIMENTAL. With DinD Isolation = kata: CPUs for\nthe sidecar's VM (Kata's default is 1).\n\nEmpty = Kata's default.\nExample: 4\n\nIgnored without DinD Isolation."},
 	{Key: "keep-alive", Label: "Keep Alive", Group: "Container",
 		Detail: "Preserve container after exit.\nResume later with: booth start <name>"},
 	{Key: "daemon", Label: "Daemon", Group: "Container",

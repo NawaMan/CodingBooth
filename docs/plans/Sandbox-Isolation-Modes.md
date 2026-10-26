@@ -2,6 +2,14 @@
 
 **Status:** Designed, implementation deferred. Tracking sbx maturity via `.github/workflows/sbx-watch.yaml`.
 
+> **Naming (2026-10-25):** when this is picked up, it is to be named **`--booth-isolation`**
+> (`--booth-isolation[=kata|gvisor|sysbox]`) rather than `--sandbox` / `--sandbox-mode`, to pair with
+> the DinD-only **`--dind-isolation`** that shipped first (experimental, Kata only). Same idea, one
+> level up: `--dind-isolation` isolates only the DinD sidecar and leaves the booth an ordinary
+> container; `--booth-isolation` would isolate the booth itself. What `--dind-isolation kata` learned
+> about Kata (no `--privileged`, embedded DNS, overlayfs on virtio-fs, sizing by annotation) is in
+> [BOOTH_SECURITY.md → Contain it](../BOOTH_SECURITY.md#dind-isolation).
+
 ## Context
 
 CodingBooth runs dev environments in Docker containers (shared host kernel: namespaces +
