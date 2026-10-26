@@ -53,8 +53,10 @@ check 11 "No consent prompt (sidecar is its own VM)" has_not "$ACTUAL" "reach th
 FROM_ENV=$(CB_DIND_ISOLATION=kata run_coding_booth --config test--config.toml --dryrun 2>&1 | strip_ansi)
 check 12 "CB_DIND_ISOLATION=kata selects it"         has "$FROM_ENV" "--runtime io.containerd.kata.v2"
 
-TMP_CONFIG=$(mktemp --suffix=.toml)
-trap 'rm -f "$TMP_CONFIG"' EXIT
+# mktemp -d, not --suffix: BSD mktemp (macOS) has no --suffix.
+TMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TMP_DIR"' EXIT
+TMP_CONFIG="$TMP_DIR/config.toml"
 printf 'variant = "base"\ndind-isolation = "kata"\ndind-vm-memory = "4g"\ndind-vm-cpus = "2"\n' > "$TMP_CONFIG"
 FROM_TOML=$(run_coding_booth --config "$TMP_CONFIG" --dryrun 2>&1 | strip_ansi)
 check 13 "dind-isolation in config.toml selects it (and implies dind)" has "$FROM_TOML" "--runtime io.containerd.kata.v2"
