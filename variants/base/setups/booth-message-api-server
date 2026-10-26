@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.3.0
+# cb-version: 1.4.0
 
 # -----------------------------------------------------------------------------
 # booth-message-api-server
@@ -26,7 +26,7 @@
 #   POST /booth-messages/api/display-lease — which viewer fits the desktop {"id": ID, "claim"|"release": true}
 #   GET  /booth-messages/api/presence      — how many pages are viewing this booth, and how many are expected
 #   POST /booth-messages/api/presence      — a page's heartbeat {"id": ID, "visible": true|false} or {"id": ID, "release": true}
-#   POST /booth-messages/api/session-reset — end a Console UI pane's tmux session {"session": 1-6}
+#   POST /booth-messages/api/session-reset — end a Console UI pane's tmux session {"session": 1-6, "force": bool}
 #
 # Usage: booth-message-api-server <port>
 # -----------------------------------------------------------------------------
@@ -179,24 +179,26 @@ handle_respond() {
 }
 
 # The Console UI's "Reset session" (it asks first): ends pane N's tmux
-# session, s1 … s6, and with it the shell and anything running there. The
-# pane then reconnects, and start-ttyd-split's `tmux new-session -A` starts a
-# fresh one. Only the six pane sessions, matched by exact name ("=s3"), so
-# nothing else in the booth's tmux can be reached from here.
+# session, s1 … s6, and with it the shell and anything running there; with
+# "force": true (Shift+click on ⏻), booth--console-reset --force kills
+# everything started from it first. The pane then reconnects, and
+# start-ttyd-split's `tmux new-session -A` starts a fresh one. Only the six
+# pane sessions, matched by exact name ("=s3"), so nothing else in the
+# booth's tmux can be reached from here.
 handle_session_reset() {
-    local n
+    local n force
     n=$(printf '%s' "$1" | jq -r '.session // empty' 2>/dev/null)
     if [[ ! "$n" =~ ^[1-6]$ ]]; then
         send_response 400 '{"error":"session must be 1 to 6"}'
         return
     fi
-    # Not running (never opened, or already ended) is fine: the next
-    # connection starts it fresh either way.
-    tmux kill-session -t "=s$n" >/dev/null 2>&1 || true
-    if command -v booth--lifecycle-log >/dev/null 2>&1; then
-        booth--lifecycle-log console-session-reset "session=s$n" >/dev/null 2>&1 || true
+    force=$(printf '%s' "$1" | jq -r 'if .force == true then "true" else "false" end' 2>/dev/null)
+    if [[ "$force" == true ]]; then
+        booth--console-reset "$n" --force >/dev/null 2>&1 || true
+    else
+        booth--console-reset "$n" >/dev/null 2>&1 || true
     fi
-    send_response 200 "{\"ok\":true,\"session\":$n}"
+    send_response 200 "{\"ok\":true,\"session\":$n,\"force\":${force:-false}}"
 }
 
 handle_viewmd_start() {
