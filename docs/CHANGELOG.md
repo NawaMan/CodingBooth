@@ -26,6 +26,28 @@ This file contains a list of changes for each released version.
   - Fresh's **Install <server>** row and Neovim's `booth-lsp.lua` know both new servers. Fresh's
     half needs a rebuilt base image.
 
+- **Console UI: move panes with the mouse, and name them.** Drag a pane by its header: dropped
+  on the middle of another pane the two trade places, dropped near one of its edges it takes that
+  side, with an outline showing where it will land and `Esc` to cancel. Terminals do not reload,
+  as with the `Ctrl+Alt` keys. Double-click a pane's title, or press `Ctrl+Alt+n`, to give it a
+  name in place of `Session N`; the browser remembers it. `.booth/console.json` takes a per-pane
+  `"name"` as the starting label (`"3": { "name": "server" }` is still a terminal), and
+  `console-spec` saves names back, terminal panes included. Older images ignore `"name"`.
+  See [Moving and Naming Panes](BOOTH_CONSOLE.md#moving-and-naming-panes).
+
+- **Console UI: force-reset a stuck pane.** A plain reset (⏻, `Ctrl+Alt+Shift+x`) ends the pane's
+  tmux session with a hangup, which a program ignoring it survives. **Shift+click** the ⏻ to
+  force it: after asking, everything started from the session — its process tree plus anything
+  still carrying its `TMUX_PANE`, `setsid` and `nohup` escapees included — gets `SIGTERM`, then
+  `SIGKILL`, before the fresh shell starts. Mouse-only on purpose. When the tab itself is frozen,
+  the new `booth--console-reset <1-6> [--force]` does the same from another terminal, or from the
+  host with `booth exec`. CodingBooth Help now lists rename (double-click), drag and force-reset.
+  See [Layouts](BOOTH_CONSOLE.md#layouts).
+
+- **tmux's status bar is a soft pastel purple** in place of its bright default green — the bar
+  along the bottom of every Console UI pane. Set in `/etc/tmux.conf`, so a `~/.tmux.conf` still
+  overrides it.
+
 - **ThinkRail and Orca join the AI Tools catalog: two agent workbenches that run each task in its
   own git worktree.**
   - **ThinkRail** (`thinkrail`) is JetBrains' open-source agentic IDE: the pi coding agent with an

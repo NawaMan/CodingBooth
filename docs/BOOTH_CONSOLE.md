@@ -27,6 +27,7 @@ Back to [README](../README.md)
 - [When the File Is Wrong](#when-the-file-is-wrong)
 - [Layouts](#layouts)
 - [Keyboard Shortcuts (Tiling)](#keyboard-shortcuts-tiling)
+- [Moving and Naming Panes](#moving-and-naming-panes)
 - [Saving Layout Changes Back](#saving-layout-changes-back)
 - [Why a Separate File](#why-a-separate-file)
 - [Examples](#examples)
@@ -51,6 +52,7 @@ The file is:
   "layout": "<layout-name>",
   "panes": {
     "<pane-number>": {
+      "name": "<label>",
       "web": true,
       "tabs": ["<address>", "..."],
       "force": true
@@ -61,6 +63,7 @@ The file is:
 
 - **`layout`** — one of the nine [layout names](#layouts), four of which have a toolbar button: `single`, `hsplit`, `left-main`, `right-main`, `vsplit`, `top-main`, `bottom-main`, `quad`, `grid6` — or a [tiling layout](#tiling-layouts) such as `h(1,v(2,3))`. Anything else is ignored.
 - **`panes`** — an object keyed by pane number as a string (`"1"` through `"6"`). A pane not listed here stays a terminal.
+  - **`name`** — the label in the pane's header in place of `Session N`: plain text, up to 32 characters, spaces collapsed. A pane can have a name and nothing else — `"3": { "name": "server" }` is still a terminal. The tmux session behind it stays `s3`; see [Moving and Naming Panes](#moving-and-naming-panes).
   - **`web`** — must be `true` for the pane to open in Web view at all. A pane listed with `"web": false` (or without `"tabs"`) is left as a terminal, same as not listing it.
   - **`tabs`** — an array of addresses, one per tab to open in that pane, in order. The last one ends up active. An empty or missing list leaves the pane as a terminal even with `"web": true`.
   - **`force`** — `true` makes this pane's entry win over whatever this browser already saved for it (see [Forcing a Pane](#forcing-a-pane)). Only meaningful alongside `"web": true`; `"web": false` already forces on its own.
@@ -102,7 +105,7 @@ On each load, in order:
 
 1. **The URL hash** (`#mode=quad`) — if you followed a link that names a layout.
 2. **What you last set in this browser** (`localStorage`) — a pane you've ever opened in Web view, even once, keeps whatever it was left as, forever, regardless of what the file says.
-3. **`.booth/console.json`** — applies only to a layout nobody has picked yet, or a pane with no tabs ever recorded in this browser.
+3. **`.booth/console.json`** — applies only to a layout nobody has picked yet, or a pane with no tabs ever recorded in this browser. A pane's `name` works the same way: it shows until you rename the pane in this browser.
 4. **The built-in default** — a single terminal pane.
 
 This means editing the file after the fact doesn't retroactively change anyone's already-customized console — it only changes what a *fresh* browser (or a fresh `localStorage`) sees — unless the pane is forced.
@@ -127,6 +130,8 @@ Use it when the pane's contents are part of the project's setup rather than a st
 }
 ```
 
+A forced pane's `name`, when the file gives one, wins the same way: a rename lasts until the next load.
+
 The trade-off: a forced pane never remembers your own changes across reloads. The layout itself (step 2 for `layout`) is not affected by `force`.
 
 ---
@@ -143,6 +148,7 @@ The console always loads, whatever `console.json` holds. Each thing it cannot us
 | No `"layout"`, but tabs in pane 2 or above | The same: those panes are shown, not left hidden |
 | A pane key that is not `"1"` … `"6"`, or a pane that is not an object | That pane is ignored |
 | `"web"` that is not `true` / `false` | The pane stays a terminal |
+| `"name"` that is not text, is empty, or is over 32 characters | The pane is shown as `Session N`; the rest of its entry still applies |
 | A tab that is not a string or a port number | That tab is skipped; the pane's other tabs open |
 | A tab with `</script>` or `<!--` in it | Read like any other text; it cannot end the page's own scripts |
 
@@ -172,6 +178,8 @@ Any arrangement without a button of its own — the five names above, five panes
 
 The **+** and **−** buttons beside **Reload** open a pane next to the focused one and close the focused one, the same as `Ctrl+Alt+Enter` and `Ctrl+Alt+Shift+q`; they turn grey at six panes and at one. Going from `quad` to six panes one at a time passes through five; both show as Other. Closing a pane only hides it: its session keeps running, and opening it again shows it as it was. To really end one, **reset** it — the ⏻ in a terminal pane's header, or `Ctrl+Alt+Shift+x` on the focused pane. It asks first, then ends that pane's tmux session (`s1` … `s6`), stopping whatever runs there, and the pane reconnects to a fresh shell.
 
+A reset ends the session the way tmux does, with a hangup, and a program that ignores it — or one that left the session on its own (`setsid`, `nohup`, a daemon it started) — keeps running. For a pane that is still stuck, **Shift+click** the ⏻ to **force-reset** it: after asking, it kills everything started from that session (each pane's process tree, plus any process still carrying its `TMUX_PANE`) with `SIGTERM`, then `SIGKILL` a second later for what is left, with no chance to clean up, and then resets it. A process run with `sudo` is killed too. It is deliberately mouse-only, with no shortcut. The same command works outside the page, for when the browser tab itself is frozen: `booth--console-reset 3 --force` from another terminal in the booth, or `booth exec -- booth--console-reset 3 --force` on the host (without `--force` it is a plain reset). It only ever reaches the six pane sessions, never the tmux server or the console itself.
+
 **Reload** reloads what every visible pane shows. A terminal reattaches to its tmux session, so the shell and anything running in it carry on; a web tab reloads its page — for an outside site, the page the tab opened on, since where it has navigated since cannot be read.
 
 ---
@@ -189,12 +197,16 @@ The Console UI tiles its six sessions the way the **i3** window manager tiles wi
 | `Ctrl+Alt+f` | The pane fills the console; again to restore |
 | `Ctrl+Alt+w` | The pane's Web view; again for its terminal |
 | `Ctrl+Alt+m` | The pane's Markdown viewer — starts `viewmd` if needed; again for its terminal |
+| `Ctrl+Alt+n` | [Rename](#moving-and-naming-panes) the pane |
 | `Ctrl+Alt+e` | Turn the pane's split the other way (side by side ↔ stacked) |
 | `Ctrl+Alt+=` | Equalize: every pane in the layout the same size, same layout |
 | `Ctrl+Alt+r` | Resize mode: `h` `j` `k` `l` or arrows resize the focused pane, `Enter`, `Esc` or `Ctrl+Alt+r` leaves |
 | `Ctrl+Alt+Shift+h` / `j` / `k` / `l` (or arrows) | Move the pane left / down / up / right |
 | `Ctrl+Alt+Shift+q` (or **−**) | Close the pane — it is only hidden; its session keeps running |
 | `Ctrl+Alt+Shift+x` (or the pane's ⏻) | Reset the session: after asking, end its shell and anything running in it, and start a fresh one |
+| **Shift+click** the pane's ⏻ | Force-reset a stuck session: after asking, kill everything started from it, then start a fresh one |
+| Double-click the pane's title | [Rename](#moving-and-naming-panes) the pane |
+| Drag the pane's header | [Move](#moving-and-naming-panes) it: onto the middle of another pane to swap, near an edge to dock |
 
 The focused pane has a highlighted border once there is more than one. The shortcuts work from inside a terminal or a booth web tab (`:3000` and the like). A web tab showing an outside site keeps its keys to itself, so click into a terminal pane first. `Ctrl+Alt+arrows` may be taken by your own desktop; `h`/`j`/`k`/`l` always work. On a Mac, VoiceOver claims Control+Option as its own modifier and takes these keys first while it is on.
 
@@ -217,6 +229,21 @@ A booth image older than this feature does not know tree layouts: it ignores one
 
 ---
 
+## Moving and Naming Panes
+
+**Drag a pane by its header** to move it with the mouse — anywhere on the header except its buttons and address bar. While you drag, a blue outline shows where it will land:
+
+- **The middle of another pane** — the two trade places, each taking the other's spot and size.
+- **Near an edge of another pane** (its outer quarter) — the pane takes that side of it, the two sharing what was its space. Dropping pane 2 at the bottom of pane 1 in two columns gives two rows.
+
+`Esc` cancels the drag, and a click that barely moves is just a click. Terminals never reload when a pane moves, as with the keyboard, and a drop that lands on the shape of a toolbar layout lights its button. There is nothing to drag with one pane showing, while one fills the console (`Ctrl+Alt+f`), or on a narrow screen, where the panes are stacked.
+
+**Double-click a pane's title**, or press `Ctrl+Alt+n`, to name it. Type the name and press `Enter` (or click away); `Esc` keeps the old one. The name replaces `Session N` in the header, stays beside the address bar in Web view, and shows in the console's hints; hovering it still says which session it is. Clearing the name goes back to the default — the pane's `name` in [`console.json`](#file-format), or `Session N`. A name is only a label: the tmux session behind the pane is still `s1` … `s6`.
+
+Your names are remembered in the browser, like the layout. With [`console-spec`](#saving-layout-changes-back) set, they are saved to `console.json` too, so a fresh browser opens with them.
+
+---
+
 ## Saving Layout Changes Back
 
 By default, `console.json` only ever flows one way: the container reads it at boot, but your later customizing of the Console UI (switching a pane to Web view, opening tabs, resizing) is remembered in `localStorage` only — the file on disk never changes. `--console-spec <mode>` (or `console-spec = "..."` in `.booth/config.toml`) turns on saving the current layout and tabs back to the file itself, so the *next* fresh browser — a teammate, or you on another machine — starts from what you last had, without anyone editing JSON by hand.
@@ -232,7 +259,7 @@ Leaving `console-spec` unset keeps the read-only behavior documented above: an e
 
 `shared` needs `--writable-booth` because `.booth/` is otherwise bind-mounted read-only; without it, a `shared` save fails cleanly (logged, not fatal) and the change still lives on in `localStorage` for that browser. `cache` never needs `--writable-booth` — `.booth/.tmp/` is always mounted read-write, the same mount used for session/idle/lifecycle state — but because it isn't git-tracked, it only helps *your* next session, not a teammate's.
 
-Saving is automatic and debounced: there's no explicit "save" button, it just happens shortly after you change layout or tabs. A preset is saved by name while its dividers are where the preset puts them, and as its whole tree once you have dragged them — `"layout": "h(v(1@30,3),v(2,4))"`, which reads back as `quad` with those positions — so the file reproduces the screen exactly.
+Saving is automatic and debounced: there's no explicit "save" button, it just happens shortly after you change layout, tabs or a pane's name. A named terminal pane is saved as its name alone (`"3": { "name": "server" }`). A preset is saved by name while its dividers are where the preset puts them, and as its whole tree once you have dragged them — `"layout": "h(v(1@30,3),v(2,4))"`, which reads back as `quad` with those positions — so the file reproduces the screen exactly.
 
 **Caveat: takes effect on next restart, not live.** `index.html` is rendered once, from `console.json`'s contents at that moment, when the container boots — the same static page is then served for the container's entire lifetime. A save updates the file on disk right away, but the *currently running* container keeps serving the page it already rendered, so even a brand-new browser tab against that same running container won't see the change until the container restarts. This mirrors the read-only file's own load-once behavior — it isn't unique to saving.
 

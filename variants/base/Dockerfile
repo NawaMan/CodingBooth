@@ -189,9 +189,13 @@ RUN set -euo pipefail \
 # ttyd's xterm.js has no OSC 52 handler, so the pane page adds one that writes
 # the host clipboard (cbTermClipboard in nginx.conf.template and
 # ttyd-nerd-font-index--setup.sh). Shift+drag is the browser's own selection.
+#
+# The status bar is a soft pastel purple in place of tmux's bright green,
+# which every Console UI pane shows along its bottom.
 RUN printf '%s\n' \
   'set -g mouse on' \
   'set -g set-clipboard on' \
+  'set -g status-style "bg=#b9aee0,fg=#2a2440"' \
   > /etc/tmux.conf
 
 RUN  set -euo pipefail \
