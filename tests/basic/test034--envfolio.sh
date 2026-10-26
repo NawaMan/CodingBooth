@@ -74,7 +74,7 @@ fi
 SCRIPT='
 set -e
 PW=booth-test-passphrase
-printf "%s\n" "$PW" | folio init --new-key --name Test --email test@example.com --passphrase-stdin >/dev/null 2>&1
+printf "%s\n" "$PW" | folio init --new-key --name Test --email test@example.com --store-passphrase-stdin >/dev/null 2>&1
 printf "%s\n" "$PW" > /tmp/ef-pw
 printf "pinentry-mode loopback\npassphrase-file /tmp/ef-pw\n" >> ~/.gnupg/gpg.conf
 folio text insert -t hello-text app/greeting >/dev/null 2>&1
