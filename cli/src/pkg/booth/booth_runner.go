@@ -59,6 +59,8 @@ func (runner *BoothRunner) Run() error {
 	ctx = ResolveRelativePorts(ctx)
 	ctx = NormalizePortMappings(ctx)
 	ctx = CheckPublicPortsExposed(ctx)
+	// After the port steps above, so a +OFFSET mapping is probed as the port it claims.
+	ctx = CheckHostPortsFree(ctx)
 	ctx = ShowDebugBanner(ctx)
 	ctx = PrepareBoothTmp(ctx)
 	// WritePortManifest and ApplyEnvFile both run after PrepareBoothTmp so the
