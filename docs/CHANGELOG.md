@@ -4,6 +4,14 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A fixed port that is already taken now stops the booth with a clear error.** Before, a fixed
+  booth port (`--port 10000`, `port = "10000"`) or a fixed published port (`-p 4566:4566`) that
+  another booth held reached `docker run`, which failed with "port is already allocated" and
+  named neither the mapping nor a fix. Booth now checks those ports first, names each busy one,
+  and suggests `--port NEXT` or a `+OFFSET` port. Ports picked by NEXT/RANDOM and `+OFFSET` ports
+  are unchanged. `docs/AGENT_SETUP.md` gains a recipe for an agent running its own booth beside
+  the user's, and `BOOTH_RUN.md` no longer says the default port steps by 1.
+
 - **Every terminal editor now uses the booth's language servers without extra setup, and the `lsp`
   template adds Haskell and Zig.**
   - **TTT** used none of them before: it starts only the servers listed under `lsp.servers` in

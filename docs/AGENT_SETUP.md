@@ -226,6 +226,37 @@ Ground rules:
 - A second booth from the same folder is named `<project>-<port>`. Pass that name to `exec`,
   `stop` and `remove` to target it.
 
+### Your own booth, beside the user's
+
+To try a change without touching the booth the user is working in, start one of your own. Choose
+its name yourself and let booth choose its port:
+
+```bash
+name="$(basename "$PWD")-agent-$RANDOM"
+./booth --daemon --port NEXT --name "$name"
+./booth exec --name "$name" -- just test
+./booth remove --name "$name"           # when you are done
+```
+
+- **Name it yourself.** You then know the name before the run, so there is nothing to look up. A
+  lifecycle command with no name (`./booth stop`, `./booth exec`) acts on the folder's *first*
+  booth, which is usually the user's, so pass `--name` on every call.
+- **Pass `--port NEXT`** even when `.booth/config.toml` sets a fixed `port`. The flag wins over the
+  file, and NEXT picks the first free port at or above 10000, stepping by 1000. Service ports
+  published as `+OFFSET` move with it.
+- **A fixed service port stays fixed.** An expose such as `-p 4566:4566` cannot be shared, so a
+  second booth stops with `host port 4566 is already in use` before anything starts. Tell the user;
+  do not stop the booth that holds the port.
+- **Databases are per booth, the code is not.** Catalog database volumes are named after the booth,
+  so your booth starts with empty databases. But both booths mount the same project folder, so an
+  edit in one is an edit in the other.
+- **To change code, use a git worktree.** It is a folder of its own, so the user's files are not
+  touched, and its booth gets its own name without `--name`. Plain `./booth` there is fine; run
+  `git worktree add` on the host.
+
+For a one-shot command, `./booth exec --port NEXT --name '{project}-{port}' --run -- just test`
+starts a booth with a unique name and runs the command in it. Remove that booth when you are done.
+
 Useful while debugging: `./booth logs` (`--startup`, `lifecycle`), `./booth --dryrun --verbose`
 (the `docker run` it would execute), `./booth expose list` (published ports and tunnels).
 
@@ -253,7 +284,8 @@ Useful while debugging: `./booth logs` (`--startup`, `lifecycle`), `./booth --dr
 | `docker: permission denied` | User not in the `docker` group (`sudo usermod -aG docker $USER`, log out/in) |
 | "cannot run on Linux rootless Docker" | Unsupported; use rootful Docker or Docker Desktop |
 | `booth config` refuses: hand-written file | Someone edited it in a way config cannot read back. Show the user `--beside` (writes `.new` to merge) vs `--overwrite` (keeps theirs as `.bak`); let them choose |
-| Port already in use | `--port NEXT`, or stop what holds it (if it is not the user's) |
+| `booth port … is already in use` | `--port NEXT`, or stop what holds it (if it is not the user's) |
+| `host port … is already in use` | A fixed expose (`-p 4566:4566`) is held by another booth. Ask the user; `+OFFSET` exposes do not collide |
 | Booth refuses to start: `cache/` not gitignored, or an env file would be committed | Add the reported path to `.booth/.gitignore` |
 | A tool is missing after a change | A resumed keep-alive container — `./booth remove`, then `./booth` |
 
