@@ -35,6 +35,15 @@ This file contains a list of changes for each released version.
   `console-spec` saves names back, terminal panes included. Older images ignore `"name"`.
   See [Moving and Naming Panes](BOOTH_CONSOLE.md#moving-and-naming-panes).
 
+- **Console UI: force-reset a stuck pane.** A plain reset (⏻, `Ctrl+Alt+Shift+x`) ends the pane's
+  tmux session with a hangup, which a program ignoring it survives. **Shift+click** the ⏻ to
+  force it: after asking, everything started from the session — its process tree plus anything
+  still carrying its `TMUX_PANE`, `setsid` and `nohup` escapees included — gets `SIGTERM`, then
+  `SIGKILL`, before the fresh shell starts. Mouse-only on purpose. When the tab itself is frozen,
+  the new `booth--console-reset <1-6> [--force]` does the same from another terminal, or from the
+  host with `booth exec`. CodingBooth Help now lists rename (double-click), drag and force-reset.
+  See [Layouts](BOOTH_CONSOLE.md#layouts).
+
 - **ThinkRail and Orca join the AI Tools catalog: two agent workbenches that run each task in its
   own git worktree.**
   - **ThinkRail** (`thinkrail`) is JetBrains' open-source agentic IDE: the pi coding agent with an

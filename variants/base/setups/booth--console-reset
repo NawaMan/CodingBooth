@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# cb-version: 0.1.0
+
+# -----------------------------------------------------------------------------
+# booth--console-reset <1-6> [--force]
+#
+# Resets a Console UI pane's session: ends tmux session sN, and with it the
+# shell and whatever runs there. The pane reconnects to a fresh shell
+# (start-ttyd-split's `tmux new-session -A`). The Console UI's ⏻ calls this
+# through booth-message-api-server; it also works from another pane or from
+# the host (`booth exec -- booth--console-reset 3 --force`) when the browser
+# tab itself is stuck.
+#
+# Plain, it ends the session the way tmux does: a SIGHUP, which a program
+# that ignores it, or one that moved to its own session (setsid, nohup, a
+# daemon it started), survives.
+#
+# --force first kills everything started from the session — each pane's
+# process tree, plus every process still carrying one of its panes'
+# TMUX_PANE — with SIGTERM, then SIGKILL a second later for what is left.
+# No chance to clean up. Only the six pane sessions, by exact name ("=s3"),
+# so the tmux server, ttyd and the console itself are never reached.
+# -----------------------------------------------------------------------------
+
+set -uo pipefail
+
+N=""
+FORCE=false
+for arg in "$@"; do
+    case "$arg" in
+        --force|-f) FORCE=true ;;
+        -h|--help)  sed -n '8,25p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        *)          [[ -z "$N" ]] && N="$arg" || { echo "booth--console-reset: unexpected argument: $arg" >&2; exit 2; } ;;
+    esac
+done
+if [[ ! "$N" =~ ^[1-6]$ ]]; then
+    echo "Usage: booth--console-reset <1-6> [--force]" >&2
+    exit 2
+fi
+SESSION="s$N"
+
+# Run from inside the very session it resets, killing that pane's shell
+# closes the session under us; finish the job regardless.
+trap '' HUP
+
+# Every process started from the session, never this one or its parents
+# (it may be running in that session).
+session_pids() {
+    local panes pane_ids=() roots=() line pid ppid
+    panes=$(tmux list-panes -s -t "=$SESSION" -F '#{pane_id} #{pane_pid}' 2>/dev/null) || return 0
+    while read -r line; do
+        [[ -z "$line" ]] && continue
+        pane_ids+=("${line%% *}")
+        roots+=("${line##* }")
+    done <<< "$panes"
+    [[ ${#roots[@]} -eq 0 ]] && return 0
+
+    declare -A found=() children=() keep=()
+    while read -r pid ppid; do
+        children[$ppid]+="$pid "
+    done < <(ps -e -o pid=,ppid=)
+
+    local stack=("${roots[@]}")
+    while [[ ${#stack[@]} -gt 0 ]]; do
+        pid=${stack[-1]}
+        unset 'stack[-1]'
+        [[ -n "${found[$pid]:-}" ]] && continue
+        found[$pid]=1
+        for ppid in ${children[$pid]:-}; do stack+=("$ppid"); done
+    done
+
+    # Escapees: reparented away from the tree, but they still carry the
+    # pane's TMUX_PANE. Unreadable environs (other users) are skipped.
+    local env_file id
+    for env_file in /proc/[0-9]*/environ; do
+        pid=${env_file#/proc/}; pid=${pid%/environ}
+        [[ -n "${found[$pid]:-}" ]] && continue
+        for id in "${pane_ids[@]}"; do
+            if tr '\0' '\n' < "$env_file" 2>/dev/null | grep -qxF "TMUX_PANE=$id"; then
+                found[$pid]=1
+                break
+            fi
+        done
+    done
+
+    pid=$$
+    while [[ -n "$pid" && "$pid" != 0 ]]; do
+        keep[$pid]=1
+        pid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')
+    done
+    for pid in "${!found[@]}"; do
+        [[ -z "${keep[$pid]:-}" ]] && echo "$pid"
+    done
+}
+
+signal_all() {
+    local sig="$1" pid
+    shift
+    for pid in "$@"; do
+        # A process run with sudo belongs to root; the booth's sudo can end it.
+        kill "-$sig" "$pid" 2>/dev/null || sudo -n kill "-$sig" "$pid" 2>/dev/null || true
+    done
+}
+
+KILLED=0
+if [[ "$FORCE" == true ]]; then
+    mapfile -t pids < <(session_pids)
+    if [[ ${#pids[@]} -gt 0 ]]; then
+        KILLED=${#pids[@]}
+        signal_all TERM "${pids[@]}"
+        sleep 1
+        # Again, not the same list: what it forked meanwhile counts too.
+        mapfile -t pids < <(session_pids)
+        [[ ${#pids[@]} -gt 0 ]] && signal_all KILL "${pids[@]}"
+    fi
+fi
+
+# Not running (never opened, or already ended) is fine: the next connection
+# starts it fresh either way.
+tmux kill-session -t "=$SESSION" >/dev/null 2>&1 || true
+
+if command -v booth--lifecycle-log >/dev/null 2>&1; then
+    booth--lifecycle-log console-session-reset "session=$SESSION" "force=$FORCE" >/dev/null 2>&1 || true
+fi
+
+if [[ "$FORCE" == true ]]; then
+    echo "Session $N reset (forced: $KILLED process(es) signalled)"
+else
+    echo "Session $N reset"
+fi

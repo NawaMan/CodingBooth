@@ -363,6 +363,42 @@ try {
         && dialogs.length >= 2 && newId && newId !== firstId,
       "Reset session asks first: Cancel keeps session 2 running, Ctrl+Alt+Shift+x then OK gives the pane a fresh one", { firstId, keptId, newId, asked });
 
+    // A program ignoring the hangup outlives a plain reset; Shift+click on ⏻
+    // forces it, and that kills it. Each runs in session 2 as a shell job.
+    const alive = (tag) => {
+      try { execFileSync("docker", ["exec", container, "pgrep", "-f", "-x", `sleep ${tag}`], { stdio: "ignore" }); return true; } catch { return false; }
+    };
+    const stubborn = async (tag) => {
+      await until(termReady(2));
+      tmux("send-keys", "-t", "s2", `bash -c 'trap "" HUP TERM; exec sleep ${tag}' &`, "Enter");
+      for (let i = 0; i < 20 && !alive(tag); i++) await sleep(200);
+      return alive(tag);
+    };
+    const resetAndWait = async (click) => {
+      const before = sessionId();
+      await evaluate(click);
+      let now = before;
+      for (let i = 0; i < 40 && (!now || now === before); i++) { await sleep(250); now = sessionId(); }
+      return now && now !== before;
+    };
+    const plainStarted = await stubborn(7771);
+    const plainReset = await resetAndWait(`document.querySelector('.session-reset[data-session="2"]').click()`);
+    await sleep(500);
+    const survivedPlain = alive(7771);
+    const forcedStarted = await stubborn(7772);
+    dialogs.length = 0;
+    const forcedReset = await resetAndWait(`document.querySelector('.session-reset[data-session="2"]')
+      .dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }))`);
+    const forceAsked = dialogs.slice();
+    const survivedForce = alive(7772);
+    try { execFileSync("docker", ["exec", container, "pkill", "-KILL", "-f", "-x", "sleep 7771"], { stdio: "ignore" }); } catch {}
+    const forceHelp = await evaluate(`(document.getElementById('bl-help-panel-console') || {}).textContent || ''`);
+    report(plainStarted && plainReset && survivedPlain && forcedStarted && forcedReset && !survivedForce
+        && forceAsked.some((m) => /Force-reset session 2/.test(m))
+        && /Shift\+click ⏻/.test(forceHelp) && /Double-click the title/.test(forceHelp) && /Drag the header/.test(forceHelp),
+      "Shift+click ⏻ force-resets: kills a program that outlived a plain reset; Help lists it with rename and drag",
+      { plainStarted, plainReset, survivedPlain, forcedStarted, forcedReset, survivedForce, forceAsked, helpHasRows: forceHelp.length });
+
     // ---- the pane header's own buttons, from the keyboard ----
     //
     // Ctrl+Alt+w and Ctrl+Alt+m press the focused pane's Web view and Markdown
