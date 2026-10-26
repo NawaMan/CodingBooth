@@ -204,6 +204,15 @@ CONTAINER MODE:
   --tls-key <path>       TLS private key file for HTTPS (used with --public)
   --dind                 Enable a Docker-in-Docker sidecar and set DOCKER_HOST.
                          The sidecar is privileged, so booth asks before starting it.
+  --dind-isolation[=kata]
+                         EXPERIMENTAL. Run the --dind sidecar in its own Kata VM
+                         instead of privileged on this machine (implies --dind; no
+                         prompt). Needs Linux, Docker Engine, /dev/kvm and Kata.
+                         Also: dind-isolation = "kata", CB_DIND_ISOLATION=kata.
+  --dind-vm-memory <size> / --dind-vm-cpus <n>
+                         EXPERIMENTAL. Size that VM (Kata's default: 2g, 1 CPU).
+                         Also: dind-vm-memory / dind-vm-cpus, CB_DIND_VM_MEMORY /
+                         CB_DIND_VM_CPUS.
   --dind-allowed         Start a --dind booth without asking. Command line only:
                          there is no config.toml key or environment variable for it.
   --privileged-allowed   Start without asking when run-args give the booth a way onto
@@ -289,6 +298,11 @@ NOTES:
   - WARNING: the DinD sidecar runs privileged, so code in the booth can reach
     its daemon and use it to step outside the booth's isolation and touch the
     host. Only enable --dind for booths whose code you trust.
+  - With --dind-isolation kata (experimental), the sidecar is a Kata VM instead:
+    a way out of its daemon lands in that VM, not on this machine. The booth
+    joins the sidecar's network (it no longer shares its namespace), reaches the
+    daemon as DOCKER_HOST=tcp://<sidecar>:2375, and forwards localhost:<port> to
+    the sidecar for each -p in run-args. See docs/BOOTH_SECURITY.md#dind-isolation.
   - Before starting a booth that can reach the host as root (--dind, or run-args
     such as --privileged, --cap-add SYS_ADMIN, --pid=host, --device, a docker.sock
     mount, a writable mount of /etc or ~), booth lists what it found and asks.
@@ -405,6 +419,8 @@ THIS LAUNCH:
 
 HOST REACH:
   --dind / --dind-allowed / --privileged-allowed / --rootless / --egress
+  --dind-isolation[=kata] / --dind-vm-memory / --dind-vm-cpus
+                         DinD sidecar in a Kata VM (experimental).
   --public / --ok-public / --tls-cert <file> / --tls-key <file>
   --vm-memory / --vm-cpus / --vm-shm-size / --apple-low-ports
                          Apple container only.
@@ -469,6 +485,7 @@ CONTAINER MODE:
   --tls-cert <path>      TLS certificate file (used with --public)
   --tls-key <path>       TLS private key file (used with --public)
   --dind                 Enable Docker-in-Docker sidecar (privileged: asks first)
+  --dind-isolation[=kata] Run the DinD sidecar in its own Kata VM (experimental)
   --dind-allowed         Start a --dind booth without asking (command line only)
   --privileged-allowed   Allow --privileged-like run-args without asking (command line only)
   --rootless             Skip the Linux rootless/userns-remap refusal (unsupported)

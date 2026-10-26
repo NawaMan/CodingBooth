@@ -105,6 +105,9 @@ func Impact(kind Kind, where Where) string {
 	return could + "reach the host."
 }
 
+// DindIsolationHint points a --dind warning on Docker Engine at the way to contain it.
+var DindIsolationHint = "To contain it, run the sidecar in its own VM: --dind-isolation kata (experimental; Linux with KVM and Kata Containers installed). Setup: " + DocURL + "#dind-isolation"
+
 // Link is the documentation link for a kind.
 func Link(kind Kind) string {
 	return DocURL + "#" + string(kind)
@@ -122,6 +125,9 @@ func Format(reasons []Reason) string {
 		fmt.Fprintf(&str, "\n  - %s\n", reason.What)
 		fmt.Fprintf(&str, "      %s\n", Impact(reason.Kind, reason.Where))
 		fmt.Fprintf(&str, "      %s\n", Link(reason.Kind))
+		if reason.Kind == KindDind && reason.Where == WhereHost {
+			fmt.Fprintf(&str, "      %s\n", DindIsolationHint)
+		}
 	}
 	str.WriteString("\n" +
 		"  This only matters if the booth runs code you do not trust.\n" +
