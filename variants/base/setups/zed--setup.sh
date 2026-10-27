@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.2.0
+# cb-version: 0.3.0
 
 # zed--setup.sh — Install the Zed editor from its official release tarball, then wrap it for containers
 set -Eeuo pipefail
@@ -109,20 +109,33 @@ ln -sfn "$ZED_HOME" "$ZED_LINK"
 # keeps per-path trust in the trusted_worktrees table of its database, where a
 # path also covers everything under it. The launcher adds /home/coder/code
 # there. Zed rewrites that table from memory while it runs, so this only
-# happens when Zed is not running. The database is Zed's own and appears on
-# its first run, so that very first launch still asks once.
+# happens when Zed is not running.
+# A booth's home is usually fresh, so the database often does not exist yet.
+# Then the launcher creates it holding just that table, with Zed's own DDL.
+# Zed's migration for the table is CREATE TABLE IF NOT EXISTS, so on its first
+# run Zed builds the rest of the database around it and keeps the row.
 cat > "$ZED_BIN" <<EOF
 #!/usr/bin/env bash
 export ZED_ALLOW_EMULATED_GPU="\${ZED_ALLOW_EMULATED_GPU:-1}"
 
 ZED_TRUSTED_DIR=/home/coder/code
 ZED_DB="\${XDG_DATA_HOME:-\$HOME/.local/share}/zed/db/0-stable/db.sqlite"
-if [[ -f "\$ZED_DB" ]] && command -v python3 >/dev/null 2>&1 \\
+if command -v python3 >/dev/null 2>&1 \\
         && ! pgrep -u "\$(id -u)" -x zed-editor >/dev/null 2>&1; then
     python3 - "\$ZED_DB" "\$ZED_TRUSTED_DIR" >/dev/null 2>&1 <<'TRUST' || true
-import sqlite3, sys
+import os, sqlite3, sys
 db, path = sys.argv[1], sys.argv[2]
+fresh = not os.path.exists(db)
+if fresh:
+    os.makedirs(os.path.dirname(db), exist_ok=True)
 conn = sqlite3.connect(db, timeout=2)
+if fresh:
+    conn.execute("""CREATE TABLE IF NOT EXISTS trusted_worktrees (
+        trust_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        absolute_path TEXT,
+        user_name TEXT,
+        host_name TEXT
+    ) STRICT""")
 has_table = conn.execute(
     "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'trusted_worktrees'").fetchone()
 if has_table and not conn.execute(
@@ -131,7 +144,7 @@ if has_table and not conn.execute(
     conn.execute(
         "INSERT INTO trusted_worktrees(absolute_path, user_name, host_name) VALUES (?, NULL, NULL)",
         (path,))
-    conn.commit()
+conn.commit()
 conn.close()
 TRUST
 fi
@@ -201,6 +214,6 @@ Settings seeding — to reuse your host settings, add to .booth/config.toml:
 
 Notes:
 - Rendering uses Mesa's software Vulkan driver; there is no GPU in a booth.
-- /home/coder/code is always trusted (no Restricted Mode) from the second launch on.
+- /home/coder/code is always trusted (no Restricted Mode).
 - See: https://zed.dev/docs/linux
 EON
