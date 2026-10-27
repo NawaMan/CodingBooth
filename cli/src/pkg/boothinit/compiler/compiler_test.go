@@ -1315,6 +1315,58 @@ func TestCompile_VmSizingConflict(t *testing.T) {
 	assert.Contains(t, err.Error(), "vm-cpus")
 }
 
+// dind+kata writes dind-isolation and its VM size from runtime params, which stay out
+// of the Boothfile so a new size does not rebuild the image.
+func TestCompile_DindIsolationFromRuntimeParams(t *testing.T) {
+	yes := true
+	resolved := &selection.ResolvedSelection{
+		Templates: []selection.SelectedTemplate{
+			{
+				Template: &tmpl.Template{
+					Name:              "dind",
+					Dind:              &yes,
+					BoothfileSegments: []tmpl.Segment{{Order: 50, Content: "setup dind"}},
+				},
+				ParamValues: map[string]string{},
+			},
+			{
+				Template: &tmpl.Template{
+					Name:          "kata",
+					DindIsolation: "kata",
+					DindVmMemory:  "${DIND_VM_MEMORY}",
+					DindVmCpus:    "${DIND_VM_CPUS}",
+					Params: map[string]tmpl.Param{
+						"DIND_VM_MEMORY": {Default: "4g", Runtime: true},
+						"DIND_VM_CPUS":   {Default: "2", Runtime: true},
+					},
+				},
+				ParamValues: map[string]string{"DIND_VM_MEMORY": "8g", "DIND_VM_CPUS": "4"},
+			},
+		},
+	}
+
+	out, err := Compile(resolved)
+	require.NoError(t, err)
+	assert.True(t, out.Config.Dind)
+	assert.Equal(t, "kata", out.Config.DindIsolation)
+	assert.Equal(t, "8g", out.Config.DindVmMemory, "the param is expanded into dind-vm-memory")
+	assert.Equal(t, "4", out.Config.DindVmCpus, "the param is expanded into dind-vm-cpus")
+	require.NotNil(t, out.Boothfile)
+	assert.NotContains(t, out.Boothfile.Content, "DIND_VM", "a runtime param must not become a Boothfile arg")
+}
+
+func TestCompile_DindIsolationConflict(t *testing.T) {
+	resolved := &selection.ResolvedSelection{
+		Templates: []selection.SelectedTemplate{
+			{Template: &tmpl.Template{Name: "a", DindVmCpus: "2"}, ParamValues: map[string]string{}},
+			{Template: &tmpl.Template{Name: "b", DindVmCpus: "4"}, ParamValues: map[string]string{}},
+		},
+	}
+	_, err := Compile(resolved)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "dind-vm-cpus")
+}
+
 // A template's Cache paths are recorded in config.toml, like its Shared paths: a fresh
 // clone has no .booth/cache/, and a start re-creates the paths from config.toml alone.
 func TestCompile_CachePathsRecordedInConfig(t *testing.T) {

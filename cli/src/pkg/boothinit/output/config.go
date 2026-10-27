@@ -45,6 +45,15 @@ func SerializeConfigToml(cfg *ConfigToml, command, adjustCommand string) string 
 	if cfg.VmShmSize != "" {
 		fmt.Fprintf(&b, "vm-shm-size = %q\n", cfg.VmShmSize)
 	}
+	if cfg.DindIsolation != "" {
+		fmt.Fprintf(&b, "dind-isolation = %q\n", cfg.DindIsolation)
+	}
+	if cfg.DindVmMemory != "" {
+		fmt.Fprintf(&b, "dind-vm-memory = %q\n", cfg.DindVmMemory)
+	}
+	if cfg.DindVmCpus != "" {
+		fmt.Fprintf(&b, "dind-vm-cpus = %q\n", cfg.DindVmCpus)
+	}
 
 	if len(cfg.Cmds) > 0 {
 		b.WriteString("\n")
