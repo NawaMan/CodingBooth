@@ -38,6 +38,10 @@ func (runner *BoothRunner) Run() error {
 	}); err != nil {
 		return err
 	}
+	// Settle whether a requested --dind-isolation can run here before the consent
+	// below: when it cannot, the booth falls back to the privileged sidecar, which
+	// that consent then covers.
+	ctx = ResolveDindIsolation(ctx)
 	// Ask before anything is built or started if this booth could reach the host as root.
 	if err := EnsureHostEscapeConsent(ctx); err != nil {
 		return err
@@ -228,6 +232,10 @@ func SetupDind(ctx appctx.AppContext) appctx.AppContext {
 			fmt.Fprintf(os.Stderr, "   Error: %v\n", err)
 			fmt.Fprintf(os.Stderr, "   Check if any port is already in use.\n")
 			fmt.Fprintf(os.Stderr, "   Use 'lsof -i :<port>' or 'ss -tlnp | grep <port>' to find the process.\n")
+		}
+		// The network was made for this sidecar; do not leave it behind.
+		if createdNet && !ctx.Dryrun() {
+			_ = docker.Docker(docker.DockerFlags{Silent: true, Engine: ctx.Engine()}, "network", ilist.NewList(ilist.NewList("rm", dindNet)))
 		}
 		os.Exit(1)
 	}

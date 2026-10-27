@@ -37,7 +37,7 @@ Native copy and inspection commands are covered in the [Booth tools engine table
 | Feature | Docker | Podman | Apple container |
 | --- | --- | --- | --- |
 | `--dind` (Docker-in-Docker sidecar) | yes | experimental (nested Podman sidecar) | no — refused, or another engine is picked |
-| `--dind-isolation kata` (DinD sidecar in a Kata VM) | experimental — Docker Engine on Linux with KVM ([Security](BOOTH_SECURITY.md#dind-isolation)) | no — refused | no — refused |
+| `--dind-isolation kata` (DinD sidecar in a Kata VM) | experimental — Docker Engine on Linux with KVM; Docker Desktop falls back ([Security](BOOTH_SECURITY.md#dind-isolation)) | no — falls back to the plain sidecar, with a warning | no — `--dind` is refused on apple, or another engine is picked |
 | `--egress` (filtered outbound network) | yes | yes | no — refused, or another engine is picked |
 | `--privileged`, `--device`, `--pid/ipc/userns=host`, `--security-opt` run-args | yes | yes | no — the engine rejects them |
 | Bind mounts (`-v`) | yes | yes | yes (single-file mounts have a quirk — see its page) |

@@ -126,8 +126,9 @@ func TestCheckDindIsolationEngine(t *testing.T) {
 	}{
 		{name: "off", config: appctx.AppConfig{Engine: "podman"}},
 		{name: "docker", config: appctx.AppConfig{Engine: "docker", Dind: true, DindIsolation: "kata"}},
-		{name: "podman", config: appctx.AppConfig{Engine: "podman", Dind: true, DindIsolation: "kata"}, wantErr: "needs engine docker"},
-		{name: "apple", config: appctx.AppConfig{Engine: "apple", Dind: true, DindIsolation: "kata"}, wantErr: "needs engine docker"},
+		// Not refused here: an engine Kata cannot run on falls back at the start of the run
+		// (booth.ResolveDindIsolation), with a warning and the usual --dind consent.
+		{name: "podman", config: appctx.AppConfig{Engine: "podman", Dind: true, DindIsolation: "kata"}},
 		{name: "egress", config: appctx.AppConfig{Engine: "docker", Dind: true, DindIsolation: "kata", Egress: true}, wantErr: "cannot be combined with --egress"},
 	}
 	for _, c := range cases {
