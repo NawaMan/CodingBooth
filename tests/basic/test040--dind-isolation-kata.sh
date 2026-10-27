@@ -32,7 +32,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BOOTH="$(find_local_booth_build "$SCRIPT_DIR")"
 
 TEST_DIR=$(mktemp -d)
-NAME="cb-test039-kata-$$"
+NAME="cb-test040-kata-$$"
 PORT="$(pick_free_port)"
 FWD_PORT="$(pick_free_port_other_than "$PORT")"
 SIDECAR="$NAME-$PORT-dind"
