@@ -6,6 +6,7 @@ package booth
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -211,6 +212,20 @@ func startDindSidecar(ctx appctx.AppContext, dindName, dindNet string, hostPort 
 	// own -p mapping cannot bind.
 	releasePortReservation()
 
+	// --dind-isolation kata: a different sidecar altogether (dind_kata.go).
+	if ctx.DindKata() {
+		if err := prepareKataDind(ctx); err != nil {
+			return err
+		}
+		memMiB, cpus := kataDindVmSize(ctx)
+		args := kataDindSidecarArgs(dindName, dindNet, ctx.Name(), extraPorts, upstreamNameservers(os.ReadFile), memMiB, cpus)
+		flags.Silent = false
+		if err := docker.Docker(flags, args[0], ilist.NewList(ilist.NewListFromSlice(args[1:]))); err != nil {
+			return fmt.Errorf("failed to start the Kata DinD sidecar: %w", err)
+		}
+		return nil
+	}
+
 	// Detect if running on Docker Desktop
 	isDockerDesktop := isDockerDesktop(ctx)
 
@@ -304,7 +319,12 @@ func waitForDindReady(ctx appctx.AppContext, dindName, dindNet string) {
 		fmt.Printf("Waiting for DinD to become ready at tcp://%s:2375 ...\n", dindName)
 	}
 
+	// A Kata sidecar boots a VM, formats its storage disk on first start and
+	// only then starts dockerd, so it gets longer.
 	maxAttempts := 40
+	if ctx.DindKata() {
+		maxAttempts = 160
+	}
 	for i := 0; i < maxAttempts; i++ {
 		// Try to connect to DinD daemon
 		flags := docker.DockerFlags{

@@ -455,7 +455,7 @@ template	dbeaver	1.0.0	9a6b7e2cf1207078797494e6299da6ab3def54ae587c64fc0e3259593
 template	dblab	0.1.0	c3579457835a9652de02d55f82ba7f8a480842b33863eab2170cc316522e0982	templates/tools/dblab/template.toml
 template	deno	1.1.0	fb2f939bc2f658ddbc7d1fa9cc63dd94819a9544384902d850d804a8ab31ee72	templates/languages/deno/template.toml
 template	differ	0.1.1	47c13097b97399764c8e31dc05e070bf9125162ba6502386fd987d82e7364bd0	templates/ai-tools/differ/template.toml
-template	dind	1.0.0	161056c65c1dc9aa8061d30bf40302952a00ee6fa029449d5c51ea291454525d	templates/tools/dind/template.toml
+template	dind	1.1.0	cdddfa4b3a2b72b9a5d7a90edc59fad19b2da3d6ffc6db7e9753aefcd0e67e1f	templates/tools/dind/template.toml
 template	direnv	1.0.0	37ee50a7cf5e643d444eb8bf6be17ac10b0c490cd5e85bb396266584a9ec25fe	templates/tools/direnv/template.toml
 template	dive	1.0.0	a1b366ad07d23aaa671bfb1c8d910e92620300202955adbaf20adcb9246968f6	templates/tools/dive/template.toml
 template	django	0.1.0	004c4fa533496c61891206bc45d4d1de8e2ec0797944daffb21be651a68b9718	templates/frameworks/django/template.toml
@@ -685,6 +685,7 @@ extension	deno+pkg	1.0.0	bc98fcffdc39afef07a01707d717fe866e6025d65b7db7d2ae5a89a
 extension	deno+tool	1.0.0	9e737dbf6bf07c4624845f1ead09659638863163950afcd6e7ba3e2beae9d9c3	templates/languages/deno/tool--extension.toml
 extension	deno+vscode-ext	1.0.0	fc1360450c9c278a4a193233c79206348498065a529e22477ae04589d299efdd	templates/languages/deno/vscode-ext--extension.toml
 extension	dind+docker-config	1.0.0	8b24d3247c3d783f3b385d32fce3682ba9751f70b5bd623a43887b6b4a65030c	templates/tools/dind/docker-config--extension.toml
+extension	dind+kata	0.1.0	024733b60ecdc60c28db9b21f973cd93441b43d5a2faff8674b1b2a8376d86d8	templates/tools/dind/kata--extension.toml
 extension	dind+vscode-ext	0.1.0	51bcffed1587dfba73f076884452aa031b4e0215947ca84ea4e134e3a44444d0	templates/tools/dind/vscode-ext--extension.toml
 extension	dotnet+dotnet-pkg	1.0.0	b0b9b42250738481a0a2ca98fc73cf0fca94389c9ca682b530eaa3da1f8d3a1e	templates/languages/dotnet/dotnet-pkg--extension.toml
 extension	dotnet+vscode-ext	0.1.0	63d64c32f5bbb41d6910575e0bc11feff8fc96d0c9b5813fec2066cea5b3957e	templates/languages/dotnet/vscode-ext--extension.toml

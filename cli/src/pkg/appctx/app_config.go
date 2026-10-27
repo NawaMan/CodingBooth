@@ -151,6 +151,20 @@ type AppConfig struct {
 	VmCpus    string `toml:"vm-cpus,omitempty"     envconfig:"CB_VM_CPUS"`
 	VmShmSize string `toml:"vm-shm-size,omitempty" envconfig:"CB_VM_SHM_SIZE"`
 
+	// DindIsolation runs the --dind sidecar under a stronger isolation than a
+	// privileged container (experimental). "" or "none" = today's privileged
+	// docker:dind; "kata" = the sidecar runs in its own Kata Containers VM (Linux,
+	// Docker Engine, KVM). Setting a mode implies --dind. DindVmMemory and
+	// DindVmCpus size that VM (Kata's defaults: 2 GB, 1 CPU); they only apply to a
+	// VM-based mode. See docs/BOOTH_SECURITY.md#dind-isolation.
+	DindIsolation string `toml:"dind-isolation,omitempty" envconfig:"CB_DIND_ISOLATION"`
+	DindVmMemory  string `toml:"dind-vm-memory,omitempty" envconfig:"CB_DIND_VM_MEMORY"`
+	DindVmCpus    string `toml:"dind-vm-cpus,omitempty"   envconfig:"CB_DIND_VM_CPUS"`
+	// DindIsolationUnavailable is why a requested --dind-isolation could not be
+	// had on this machine (set by booth.ResolveDindIsolation, which then falls
+	// back to the plain privileged sidecar). Never read from config or env.
+	DindIsolationUnavailable string `toml:"-" ignored:"true"`
+
 	// DindAllowed and PrivilegedAllowed pre-approve a booth that can reach the host (the --dind
 	// sidecar; --privileged-like run-args). They come only from the command line: no config.toml
 	// key and no environment variable, so a cloned repo can never grant them to itself.
@@ -160,7 +174,7 @@ type AppConfig struct {
 	// Public exposes the booth on all interfaces (0.0.0.0) with password auth and HTTPS.
 	// Password is resolved at startup from .booth/.booth.password or interactive stdin.
 	// These are never read from TOML or environment variables.
-	Public              bool     `toml:"-" ignored:"true"`
+	Public bool `toml:"-" ignored:"true"`
 	// OkPublic is the one-off "I mean it" acknowledgement for starting a --public
 	// booth that already has another port published — no persistence, same as
 	// Public/Password: a repo's config.toml must not be able to pre-approve this.
@@ -282,6 +296,9 @@ func (config AppConfig) String() string {
 	fmt.Fprintf(&str, "    VmShmSize:         %s\n", config.VmShmSize)
 	fmt.Fprintf(&str, "    Pull:              %t\n", config.Pull)
 	fmt.Fprintf(&str, "    Dind:              %t\n", config.Dind)
+	fmt.Fprintf(&str, "    DindIsolation:     %q\n", config.DindIsolation)
+	fmt.Fprintf(&str, "    DindVmMemory:      %s\n", config.DindVmMemory)
+	fmt.Fprintf(&str, "    DindVmCpus:        %s\n", config.DindVmCpus)
 	fmt.Fprintf(&str, "    Sudo:              %t\n", config.Sudo)
 	fmt.Fprintf(&str, "    Egress:           %t\n", config.Egress)
 	fmt.Fprintf(&str, "    EgressMode:       %q\n", config.EgressMode)

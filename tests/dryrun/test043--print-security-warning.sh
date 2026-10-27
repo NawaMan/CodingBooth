@@ -14,6 +14,10 @@
 # Test 3: run-args in config.toml (writable /etc) → host-mounts reason, exit 1
 # Test 4: --dind --dind-allowed → still reported (the flag skips the question only)
 # Test 5: --dryrun --privileged → the run command carries the cb.security-warning label
+# Test 6: --dind on Docker Engine (Linux) points at --dind-isolation; on a VM engine
+#         (Docker Desktop: macOS, Windows) it does not, since Kata is not available there
+# Test 7: --dind-isolation → nothing to report where Kata runs; the fallback where it does not
+# Test 8: --dind-isolation with Kata hidden → the fallback banner and the --dind warning
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -69,5 +73,34 @@ EXIT=0; OUT=$(run_coding_booth --dryrun --variant base --privileged -- sleep 1 2
 # whose way out does not land on the host itself.
 check 5 "a run labels the container with its reasons" 0 "$EXIT" "$OUT" \
   'cb.security-warning=[{"kind":"kernel-access","what":"--privileged"'
+
+# Test 6: the --dind hint, only where the warning says "this machine"
+EXIT=0; OUT=$(run_coding_booth print-security-warning --variant base --dind 2>/dev/null) || EXIT=$?
+if [[ "$(uname -s)" == "Linux" ]] && ! docker info --format '{{.OperatingSystem}}' 2>/dev/null | grep -q "Docker Desktop"; then
+  check 6 "--dind on Docker Engine points at --dind-isolation kata" 1 "$EXIT" "$OUT" "--dind-isolation kata" "$DOC#dind-isolation"
+elif echo "$OUT" | grep -qF -- "--dind-isolation"; then
+  check 6 "--dind on a VM engine does not offer --dind-isolation" 1 "$EXIT" "$OUT" "(no --dind-isolation hint expected)"
+else
+  check 6 "--dind on a VM engine does not offer --dind-isolation" 1 "$EXIT" "$OUT"
+fi
+
+# Test 7: a Kata sidecar has nothing to report — where this machine can run it. Where it
+#         cannot, the run would fall back to the privileged sidecar, and that is reported.
+EXIT=0; OUT=$(run_coding_booth print-security-warning --variant base --dind-isolation 2>/dev/null) || EXIT=$?
+if kata_supported 2>/dev/null; then
+  check 7 "--dind-isolation reports no security warning (Kata runs here)" 0 "$EXIT" "$OUT" "No security warning."
+else
+  check 7 "--dind-isolation without Kata reports the fallback" 1 "$EXIT" "$OUT" \
+    "NOT AVAILABLE ON THIS MACHINE" "--dind (privileged Docker-in-Docker sidecar)"
+fi
+
+# Test 8: Kata out of reach (its shim hidden from PATH, as on a Linux host without Kata):
+#         the fallback banner and the --dind warning, so a real run would ask first.
+TMP_BIN=$(mktemp -d)
+ln -s "$(command -v docker)" "$TMP_BIN/docker"
+EXIT=0; OUT=$(PATH="$TMP_BIN:/usr/bin:/bin" run_coding_booth print-security-warning --variant base --dind-isolation 2>/dev/null) || EXIT=$?
+rm -rf "$TMP_BIN"
+check 8 "--dind-isolation with no Kata here warns of the privileged fallback" 1 "$EXIT" "$OUT" \
+  "NOT AVAILABLE ON THIS MACHINE" "PLAIN, PRIVILEGED DinD sidecar" "--dind (privileged Docker-in-Docker sidecar)"
 
 exit $FAILED

@@ -272,6 +272,193 @@ GPU booth to say "yes" would only teach people to say it without reading.
 > there are other ways to hurt yourself with it. Treat `run-args` as a trusted, advanced surface —
 > the same trust rule as `--dind`: read what a cloned repo puts there before you run it.
 
+<a id="dind-isolation"></a>
+
+### Contain it: `--dind-isolation kata` (experimental)
+
+> **Experimental.** Verified by hand on one host (below); not yet covered by a container test, and
+> its interface may change.
+
+`--dind-isolation kata` runs the DinD sidecar in its own **[Kata Containers](https://katacontainers.io/)
+VM** instead of `--privileged` on this machine. The booth itself stays an ordinary container: same
+`coder` user, same mounts, same devices. Only the daemon moves behind a VM boundary, so a way out of
+it lands **in that VM, not on this machine**. The VM shares nothing from this machine — the sidecar
+mounts no host folder.
+
+```bash
+./booth --dind-isolation              # bare = kata; implies --dind
+./booth --dind-isolation=kata
+```
+
+Or `dind-isolation = "kata"` in `.booth/config.toml`, `CB_DIND_ISOLATION=kata`, the **DinD
+Isolation** field in `booth config`, or the `dind+kata` template extension, which also sizes the VM
+(`booth config --select 'dind+kata'` for 4 GB and 2 CPUs, `'dind+kata:8g,4'` to choose). It does not ask for consent: there is nothing on this machine
+for it to reach. Every run prints an `experimental` warning.
+
+**What the escape test shows.** The same test as above — a nested `--privileged alpine` on the
+sidecar's daemon — sees only the VM's own devices (`ram*`, its storage loop disk, Kata's read-only
+`pmem0` guest image) and the guest kernel; **none of the host's `nvme*` / `sd*` disks**, which the
+plain `--dind` sidecar exposes.
+
+#### What it gains — and what it does not
+
+It turns `--dind` from *"code in the booth can get root on this machine"* into *"code in the booth
+can get root in a throwaway VM"*.
+
+**Gains**
+
+- **The documented escape is closed.** A `--privileged` container started through the daemon no
+  longer gets this machine's disks, kernel modules, `core_pattern` or files. The daemon and everything
+  it runs are inside a VM that has none of your folders.
+- **A kernel exploit lands in a throwaway kernel.** The sidecar's containers share the VM's guest
+  kernel, not this machine's; getting out takes a hypervisor escape as well.
+- **`--dind` is usable with code you do not fully trust** — AI agents, a cloned repo, its
+  dependencies — that need Docker for builds, tests or compose. With no consent prompt, unattended
+  runs (CI, scripts, agents) need no `--dind-allowed`.
+- **The booth costs nothing.** It stays an ordinary container: same `coder` uid, mounts and devices
+  (what rootless Docker could not keep), and the host needs no sysctl and no Docker restart.
+
+**Not protected** — these are the same as in any booth:
+
+- **The booth itself.** Code in it still reaches the code folder (read-write), every credential you
+  mount in (`dind-example` and `kind-example` mount `~/.claude/.credentials.json` and
+  `~/.docker/config.json`), and the network. Kata does nothing for those; see §3.
+- **The network.** The VM has full outbound access and can reach your LAN and `host.docker.internal`.
+  This isolates the host's files and kernel, not its network — and `--egress` cannot be combined with
+  it yet.
+- **The hypervisor.** A QEMU/KVM escape would still reach the host. Rarer and much harder, not
+  impossible.
+
+**Costs**
+
+- Linux only, with KVM and Kata installed (about 1 GB).
+- A VM per booth: 2 GB of memory by default (`--dind-vm-memory`), and a slower start.
+- Networking is different (see below): `localhost` works through a forwarder, and `booth expose list`
+  is incomplete.
+- Experimental, and it tracks a moving target: Kata's shims and defaults change between releases.
+
+**When to use it.** Docker in a booth that runs code you do not fully trust: a real gain. A trusted
+project of your own: optional overhead. On macOS and Windows it is not available (Docker Desktop's
+single VM, which shares your home folder, is the weaker setup there — see
+[Engines](BOOTH_ENGINES.md#where-a-way-out-lands)).
+
+#### What it needs
+
+| Need | How to check / get it |
+| --- | --- |
+| Linux, x86_64 or arm64 | Not Docker Desktop (macOS, Windows, or Docker Desktop for Linux) — its VM has no Kata. Podman falls back to its plain sidecar (below). |
+| Hardware virtualisation | `ls -l /dev/kvm`. VT-x / AMD-V on in the BIOS; inside a cloud VM, nested virtualisation. |
+| Docker Engine, rootful | Docker 23+ runs a containerd shim by name, so **no `daemon.json` change and no Docker restart**. |
+| Kata Containers | Unpack the static release and put its shim on PATH (below). About 1 GB on disk. |
+
+```bash
+# Kata 4.x (the static release ships the Rust shim)
+V=4.3.1
+curl -fLO https://github.com/kata-containers/kata-containers/releases/download/$V/kata-static-$V-amd64.tar.zst
+zstd -dc kata-static-$V-amd64.tar.zst | sudo tar -x -C /
+sudo ln -sf /opt/kata/runtime-rs/bin/containerd-shim-kata-v2 /usr/local/bin/containerd-shim-kata-v2
+
+# Proof it works: the kernel differs from the host's
+docker run --rm --runtime io.containerd.kata.v2 alpine uname -r
+```
+
+booth checks the engine, Linux, Docker Desktop, `/dev/kvm` and the shim at the very start of the run,
+before it asks, builds or creates anything.
+
+#### When this machine cannot run Kata
+
+A project can ask for Kata in its committed `.booth/config.toml` (`dind-isolation = "kata"`) and still
+open for a teammate on macOS, Windows, Docker Desktop, or Linux without KVM or Kata. There the booth
+**falls back to the plain, privileged `--dind` sidecar — never silently**:
+
+```
+⚠️ ⚠️ ⚠️  DIND ISOLATION (KATA) WAS ASKED FOR, BUT IS NOT AVAILABLE ON THIS MACHINE  ⚠️ ⚠️ ⚠️
+    --dind-isolation kata needs Linux (Docker Engine with KVM); this is darwin. ...
+    Going on runs the PLAIN, PRIVILEGED DinD sidecar instead — not a Kata VM.
+    Booth asks before it does; --dind-allowed goes on without asking.
+```
+
+followed by the usual `--dind` warning and [consent](#booth-asks-before-it-starts-one-of-these):
+
+| | What happens |
+| --- | --- |
+| With a terminal | the banner and warning, then `Start this booth? [y/N]` |
+| No terminal (CI, scripts, agents) | refused, naming `--dind-allowed` — so a job that counted on Kata fails closed |
+| `--dind-allowed` on the command line | the banner and warning, then it starts the plain sidecar without asking |
+
+The same applies whether Kata was asked for by flag, `CB_DIND_ISOLATION` or `config.toml`.
+`booth print-security-warning` reports the fallback the same way, and `--dryrun` shows what this
+machine would run. (On rootless Podman the plain sidecar lands as your own account, so there, as for
+any `--dind`, booth does not ask — the banner still shows.) The first run builds a small local image, `codingbooth-dind-kata:1` (`docker:dind` plus
+`e2fsprogs`).
+
+#### What changes inside the booth
+
+A VM has its own network, so the booth can no longer share the sidecar's network namespace:
+
+| | `--dind` | `--dind-isolation kata` |
+| --- | --- | --- |
+| Booth's network | the sidecar's namespace | the DinD network, beside the sidecar |
+| `DOCKER_HOST` | `tcp://localhost:2375` | `tcp://<booth>-<port>-dind:2375` (also in `BOOTH_DIND_HOST`) |
+| `localhost:<port>` → a container the sidecar runs | shared namespace | forwarded by `booth--dind-forward` (below) |
+| Booth's own port | published by the sidecar | published by the booth |
+| `run-args` `-p` | published by the sidecar | still published by the sidecar |
+
+`booth--dind-forward` (started by the startup hook `56-cb-dind-forward--startup.sh`) puts each port
+back on the booth's loopback: the `run-args` publishes at once, and every port a container in the
+sidecar publishes on all interfaces, as it appears (checked every 2 s). So `docker run -p 8080:80 nginx` then `curl localhost:8080` works
+as with plain `--dind`. It needs a base image built with that hook; on an older one, use
+`$BOOTH_DIND_HOST:<port>`.
+
+Inside the sidecar's VM, four things are done differently from `docker:dind`, each because Kata
+requires it:
+
+- **No `--privileged`.** Kata's `--privileged` passes the host's devices into the VM — the very
+  exposure this mode removes — so the sidecar gets `--cap-add ALL` and unconfined
+  AppArmor/seccomp/system paths instead, all of which apply only inside the VM, and remounts its
+  `/sys` and `/sys/fs/cgroup` read-write.
+- **DNS.** Docker's embedded resolver (`127.0.0.11`) does not answer inside the VM, so the sidecar
+  gets this machine's upstream nameservers.
+- **`/dev/kmsg`.** A non-privileged container has none, so neither does a `--privileged` container
+  the sidecar starts — and kubelet (kind's node) will not start without it. The sidecar creates the
+  guest kernel's.
+- **Storage.** overlayfs cannot run on virtio-fs, through which every volume reaches the VM, so the
+  sidecar's `/var/lib/docker` is a sparse 64 GB ext4 file, loop-mounted in the VM, removed with it.
+
+#### Sizing the VM
+
+Kata's default VM is **2 GB and 1 CPU**, shared by everything the sidecar runs. Raise it with
+`--dind-vm-memory 8g` / `--dind-vm-cpus 4` (also `dind-vm-memory` / `dind-vm-cpus`,
+`CB_DIND_VM_MEMORY` / `CB_DIND_VM_CPUS`, and the TUI). They are ignored, with a note, without
+`--dind-isolation`.
+
+#### How to tell it is running in Kata
+
+```bash
+# On the host: the sidecar's runtime and its VM process
+docker inspect -f '{{.HostConfig.Runtime}}' <booth>-<port>-dind     # io.containerd.kata.v2
+pgrep -af qemu-system | grep -c kata                                 # one VM per Kata container
+
+# In the booth
+echo "$BOOTH_DIND_ISOLATION"                          # kata
+docker run --rm alpine uname -r                       # Kata's guest kernel, not the host's
+docker run --rm --privileged alpine sh -c 'ls /dev | grep -E "^(nvme|sd)"'   # nothing
+```
+
+#### Known limits (experimental)
+
+- **Not with `--egress`** yet (refused).
+- **A port published on the sidecar's loopback only** (`127.0.0.1:...`) cannot be forwarded: publish
+  on all interfaces. kind's default does bind its API server to loopback; `kind-example` sets
+  `networking.apiServerAddress: "0.0.0.0"`, so it works unchanged (verified: cluster Ready, `kubectl`
+  through `localhost:6443`, the hello service on `localhost:30081`). Give kind more room than the
+  default 2 GB VM for real workloads (`--dind-vm-memory 4g`).
+- **A port the booth itself listens on** keeps the booth's listener; the sidecar's container on the
+  same port is then reachable only at `$BOOTH_DIND_HOST:<port>`.
+- **`booth expose list`** reports the booth's own ports; the run-args ports the sidecar publishes are
+  not listed for a Kata booth.
+- Startup is slower (a VM boots, and the first run builds the image and formats the disk).
+
 ### What does *not* fix it
 
 Don't rely on these — they don't close the escape:
@@ -292,8 +479,9 @@ Don't rely on these — they don't close the escape:
   re-enables unprivileged userns for *every* process) or to install a permissive host AppArmor
   profile. Either way it requires host-admin action and a security trade-off elsewhere — so it is a
   deliberate host-configuration decision, not a free win.
-- **VM-isolated runtime** (Kata / Firecracker, or a VM-per-booth model) — even a sidecar/kernel
-  escape lands in a disposable VM, not the real host. Strongest option; heaviest setup.
+- **VM-isolated sidecar: `--dind-isolation kata`** (experimental) — the sidecar runs in its own
+  Kata VM, so even a sidecar/kernel escape lands in a disposable VM, not the real host. Strongest
+  option; needs KVM and Kata installed. See **[Contain it](#dind-isolation)** above.
 - **Rootless Podman** (`--engine podman`, see **[Podman support](PODMAN_SUPPORT.md)**) — container
   root is your own account, so a breakout lands as you, not as host root. (Docker's `userns-remap`
   and rootless mode would do the same, but CodingBooth does not support them — it cannot keep project

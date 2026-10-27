@@ -100,6 +100,31 @@ sidecars_supported() {
     return 1
 }
 
+# kata_supported reports whether this host can run a --dind-isolation kata
+# sidecar: Linux, engine docker on Docker Engine (not Docker Desktop, whose VM
+# has no Kata), /dev/kvm, and Kata's containerd shim on PATH. Elsewhere — macOS,
+# Windows, a CI runner without KVM or Kata — a test that needs it skips:
+#
+#     kata_supported || exit 0
+kata_supported() {
+    local engine reason=""
+    engine="$(printf '%s' "${CB_ENGINE:-docker}" | tr '[:upper:]' '[:lower:]')"
+    if [[ "$(uname -s)" != "Linux" ]]; then
+        reason="needs Linux (this is $(uname -s))"
+    elif [[ "$engine" != "docker" ]]; then
+        reason="needs engine docker (this is $engine)"
+    elif docker info --format '{{.OperatingSystem}}' 2>/dev/null | grep -q "Docker Desktop"; then
+        reason="needs Docker Engine, not Docker Desktop"
+    elif [[ ! -e /dev/kvm ]]; then
+        reason="needs /dev/kvm"
+    elif ! command -v containerd-shim-kata-v2 >/dev/null 2>&1; then
+        reason="needs Kata Containers (containerd-shim-kata-v2 on PATH)"
+    fi
+    [[ -z "$reason" ]] && return 0
+    echo "SKIP: --dind-isolation kata $reason — see docs/BOOTH_SECURITY.md#dind-isolation." >&2
+    return 1
+}
+
 # have_python3 reports whether `python3` is a Python that actually runs here.
 #
 # `command -v python3` does not answer that question on Windows. A stock PATH

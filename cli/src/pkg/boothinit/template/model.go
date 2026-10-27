@@ -56,6 +56,11 @@ type Template struct {
 	VmMemory  string
 	VmCpus    string
 	VmShmSize string
+	// --dind-isolation and its VM size (dind-isolation, dind-vm-memory,
+	// dind-vm-cpus in config.toml); ${PARAM} references are expanded.
+	DindIsolation string
+	DindVmMemory  string
+	DindVmCpus    string
 
 	// Config array values (combine-and-dedup merge strategy)
 	Cmds      []string

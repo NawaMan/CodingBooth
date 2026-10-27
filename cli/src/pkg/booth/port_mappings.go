@@ -230,7 +230,7 @@ func NormalizePortMappings(ctx appctx.AppContext) appctx.AppContext {
 	// The booth publishes its own port too, and it is added later in the run — so a
 	// run-args mapping that lands on it would otherwise reach docker unchallenged.
 	mappings := collectPortMappings(ctx.RunArgs(), "run-args")
-	if !ctx.Dind() && !ctx.Egress() {
+	if !sharesSidecarNetns(ctx) {
 		containerPort := 10000
 		if ctx.Public() {
 			containerPort = 10443

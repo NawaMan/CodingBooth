@@ -1,0 +1,29 @@
+cb-version = "0.1.0"
+display-name = "Kata VM isolation (experimental)"
+display-disc = "Run the DinD sidecar in its own Kata VM instead of privileged on this machine"
+display-detail = """EXPERIMENTAL. Runs the Docker-in-Docker sidecar in its own Kata Containers VM \
+(`dind-isolation = "kata"`). A plain DinD sidecar is privileged on this machine, so code in the booth \
+can reach root here through it; in a Kata VM, a way out of the daemon lands in that VM, which shares \
+nothing from this machine. The booth itself is unchanged.
+
+Needs Linux, Docker Engine (not Docker Desktop), /dev/kvm and Kata Containers installed. Where that \
+is missing, the booth falls back to the plain privileged sidecar with a large warning, and asks \
+first (or refuses without a terminal; --dind-allowed goes on).
+
+Sizes the sidecar's VM: `dind+kata:<memory>,<cpus>`, default 4g and 2 CPUs (Kata's own default, \
+2 GB and 1 CPU, is too small for kind). See docs/BOOTH_SECURITY.md#dind-isolation."""
+tags = ["docker", "dind", "kata", "vm", "isolation", "security", "experimental"]
+
+dind-isolation = "kata"
+dind-vm-memory = "${DIND_VM_MEMORY}"
+dind-vm-cpus = "${DIND_VM_CPUS}"
+
+[params.DIND_VM_MEMORY]
+default = "4g"
+suggests = ["2g", "4g", "8g", "16g"]
+runtime = true
+
+[params.DIND_VM_CPUS]
+default = "2"
+suggests = ["1", "2", "4", "8"]
+runtime = true
