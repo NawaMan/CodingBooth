@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
+# -----------------------------------------------------------------------------
+# booth--dind-forward <sidecar> [port ...]
+#
+# Keeps `localhost:<port>` reaching the DinD sidecar under --dind-isolation kata
+# (experimental).
+#
+# With a plain --dind the booth shares the sidecar's network namespace, so a
+# container the sidecar runs with `-p 8080:80` answers on the booth's
+# localhost:8080. A Kata sidecar is its own VM with its own network, so the booth
+# joins the sidecar's network instead and that port answers only at
+# <sidecar>:8080. This forwards it back onto the booth's loopback:
+#
+#   - each port given on the command line (the run-args publishes) at once, and
+#   - every port a container in the sidecar publishes on all interfaces, as it
+#     appears (it asks the sidecar's daemon every BOOTH_DIND_FORWARD_INTERVAL
+#     seconds, default 2).
+#
+# A port the booth already listens on itself keeps its own listener: socat fails
+# to bind and is not retried. A port published only on the sidecar's loopback
+# (127.0.0.1:...) cannot be reached from outside the VM and is skipped.
+#
+# /usr/share/startup.d/56-cb-dind-forward--startup.sh starts it in the background,
+# as root (sudo); it ends with the booth.
+# -----------------------------------------------------------------------------
+
+set -uo pipefail
+
+SIDECAR="${1:?usage: booth--dind-forward <sidecar> [port ...]}"
+shift
+INTERVAL="${BOOTH_DIND_FORWARD_INTERVAL:-2}"
+
+declare -A forwarded=()
+
+forward() {
+  local port="$1"
+  [[ -n "${forwarded[$port]:-}" ]] && return
+  forwarded[$port]=1
+  socat "TCP-LISTEN:${port},bind=127.0.0.1,fork,reuseaddr" "TCP:${SIDECAR}:${port}" </dev/null >/dev/null 2>&1 &
+}
+
+# published_ports reads `docker ps --format '{{.Ports}}'` lines such as
+# "0.0.0.0:8080->80/tcp, [::]:8080->80/tcp" and prints each host port bound on
+# all interfaces, once. Docker folds consecutive publishes into a range
+# ("0.0.0.0:30080-30084->30080-30084/tcp", as kind's NodePorts appear); a range is
+# expanded, up to MAX_RANGE ports so a wide one cannot start thousands of socats.
+MAX_RANGE=1000
+published_ports() {
+  local spec low high
+  grep -oE '(0\.0\.0\.0|\[::\]|::):[0-9]+(-[0-9]+)?->[0-9]+(-[0-9]+)?/tcp' \
+    | sed -E 's/^.*:([0-9]+(-[0-9]+)?)->.*$/\1/' \
+    | while read -r spec; do
+        low="${spec%-*}"
+        high="${spec#*-}"
+        if (( high - low >= 0 && high - low < MAX_RANGE )); then
+          seq "$low" "$high"
+        fi
+      done \
+    | sort -un
+}
+
+for port in "$@"; do
+  forward "$port"
+done
+
+# Without a docker CLI there is nothing to ask; the fixed ports above stay.
+command -v docker >/dev/null 2>&1 || exit 0
+
+while sleep "$INTERVAL"; do
+  ports="$(docker -H "tcp://${SIDECAR}:2375" ps --format '{{.Ports}}' 2>/dev/null)" || continue
+  for port in $(published_ports <<<"$ports"); do
+    forward "$port"
+  done
+done

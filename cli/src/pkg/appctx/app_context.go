@@ -132,8 +132,19 @@ func (ctx AppContext) Browser() bool {
 	return ctx.values.Config.Browser && !ctx.values.Config.Quiet
 }
 
-func (ctx AppContext) Pull() bool         { return ctx.values.Config.Pull }
-func (ctx AppContext) Dind() bool         { return ctx.values.Config.Dind }
+func (ctx AppContext) Pull() bool { return ctx.values.Config.Pull }
+func (ctx AppContext) Dind() bool { return ctx.values.Config.Dind }
+
+// DindIsolation is the --dind sidecar's isolation mode: "" (none, a privileged
+// docker:dind) or "kata" (its own Kata VM). DindKata reports the latter.
+func (ctx AppContext) DindIsolation() string { return ctx.values.Config.DindIsolation }
+func (ctx AppContext) DindKata() bool        { return ctx.Dind() && ctx.DindIsolation() == "kata" }
+func (ctx AppContext) DindVmMemory() string  { return ctx.values.Config.DindVmMemory }
+func (ctx AppContext) DindVmCpus() string    { return ctx.values.Config.DindVmCpus }
+func (ctx AppContext) DindIsolationUnavailable() string {
+	return ctx.values.Config.DindIsolationUnavailable
+}
+
 func (ctx AppContext) Rootless() bool     { return ctx.values.Config.Rootless }
 func (ctx AppContext) Sudo() bool         { return ctx.values.Config.Sudo }
 func (ctx AppContext) Egress() bool       { return ctx.values.Config.Egress }
@@ -278,6 +289,9 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    VmShmSize:        %s\n", ctx.VmShmSize())
 	fmt.Fprintf(&str, "    Pull:             %t\n", ctx.Pull())
 	fmt.Fprintf(&str, "    Dind:             %t\n", ctx.Dind())
+	fmt.Fprintf(&str, "    DindIsolation:    %q\n", ctx.DindIsolation())
+	fmt.Fprintf(&str, "    DindVmMemory:     %s\n", ctx.DindVmMemory())
+	fmt.Fprintf(&str, "    DindVmCpus:       %s\n", ctx.DindVmCpus())
 	fmt.Fprintf(&str, "    Rootless:         %t\n", ctx.Rootless())
 	fmt.Fprintf(&str, "    Sudo:             %t\n", ctx.Sudo())
 	fmt.Fprintf(&str, "    Egress:          %t\n", ctx.Egress())
