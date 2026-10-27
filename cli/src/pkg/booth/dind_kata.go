@@ -149,8 +149,11 @@ func upstreamNameservers(readFile func(string) ([]byte, error)) []string {
 
 // kataPreflight checks that this host can start a Kata sidecar, and says how to
 // get there when it cannot.
-func kataPreflight(goos string, exists func(string) bool, lookPath func(string) (string, error), dockerDesktop func() bool) error {
+func kataPreflight(engine, goos string, exists func(string) bool, lookPath func(string) (string, error), dockerDesktop func() bool) error {
 	const setup = "See docs/BOOTH_SECURITY.md#dind-isolation for the setup."
+	if engine != "docker" {
+		return fmt.Errorf("--dind-isolation kata needs engine docker (Docker Engine on Linux); this is engine %s. %s", engine, setup)
+	}
 	if goos != "linux" {
 		return fmt.Errorf("--dind-isolation kata needs Linux (Docker Engine with KVM); this is %s. %s", goos, setup)
 	}
@@ -186,15 +189,55 @@ func ensureKataDindImage(ctx appctx.AppContext) error {
 	return docker.Docker(flags, "build", ilist.NewList(ilist.NewList("-q", "-t", kataDindImage, dir)))
 }
 
-// prepareKataDind runs the preflight and makes sure the image is there.
+// prepareKataDind makes sure the sidecar image is there. Whether Kata can run
+// here was settled by ResolveDindIsolation at the start of the run.
 func prepareKataDind(ctx appctx.AppContext) error {
-	if !ctx.Dryrun() {
-		exists := func(path string) bool { _, err := os.Stat(path); return err == nil }
-		if err := kataPreflight(runtime.GOOS, exists, exec.LookPath, engineIsDockerDesktop); err != nil {
-			return err
-		}
-	}
 	return ensureKataDindImage(ctx)
+}
+
+// ResolveDindIsolation settles, before anything is asked, built or started,
+// whether a requested --dind-isolation kata can run on this machine. When it
+// cannot (macOS, Windows, Docker Desktop, no /dev/kvm, Kata not installed), the
+// booth falls back to the plain privileged sidecar — never silently: a banner
+// says so, and the run then goes through the usual --dind consent (asks on a
+// terminal, refuses without one unless --dind-allowed), so a project that asks
+// for Kata in its config.toml still opens on such a machine, but only with the
+// user's say-so. --dryrun checks too: it shows what this machine would run.
+func ResolveDindIsolation(ctx appctx.AppContext) appctx.AppContext {
+	exists := func(path string) bool { _, err := os.Stat(path); return err == nil }
+	check := func() error {
+		return kataPreflight(ctx.Engine(), runtime.GOOS, exists, exec.LookPath, engineIsDockerDesktop)
+	}
+	ctx, banner := resolveDindIsolation(ctx, check)
+	if banner != "" {
+		fmt.Fprint(os.Stderr, banner)
+	}
+	return ctx
+}
+
+func resolveDindIsolation(ctx appctx.AppContext, check func() error) (appctx.AppContext, string) {
+	if !ctx.DindKata() {
+		return ctx, ""
+	}
+	err := check()
+	if err == nil {
+		return ctx, ""
+	}
+	builder := ctx.ToBuilder()
+	builder.Config.DindIsolation = ""
+	builder.Config.DindIsolationUnavailable = err.Error()
+	ctx = builder.Build()
+	return ctx, kataFallbackBanner(ctx.DindIsolationUnavailable())
+}
+
+// kataFallbackBanner is the loud part of the fallback; the --dind consent that
+// follows it does the asking.
+func kataFallbackBanner(reason string) string {
+	return "\n" +
+		"⚠️ ⚠️ ⚠️  DIND ISOLATION (KATA) WAS ASKED FOR, BUT IS NOT AVAILABLE ON THIS MACHINE  ⚠️ ⚠️ ⚠️\n" +
+		"    " + reason + "\n" +
+		"    Going on runs the PLAIN, PRIVILEGED DinD sidecar instead — not a Kata VM.\n" +
+		"    Booth asks before it does; --dind-allowed goes on without asking.\n"
 }
 
 // kataForwardPorts lists the container ports of the run-args publishes: the

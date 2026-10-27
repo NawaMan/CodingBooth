@@ -141,6 +141,9 @@ func (ctx AppContext) DindIsolation() string { return ctx.values.Config.DindIsol
 func (ctx AppContext) DindKata() bool        { return ctx.Dind() && ctx.DindIsolation() == "kata" }
 func (ctx AppContext) DindVmMemory() string  { return ctx.values.Config.DindVmMemory }
 func (ctx AppContext) DindVmCpus() string    { return ctx.values.Config.DindVmCpus }
+func (ctx AppContext) DindIsolationUnavailable() string {
+	return ctx.values.Config.DindIsolationUnavailable
+}
 
 func (ctx AppContext) Rootless() bool     { return ctx.values.Config.Rootless }
 func (ctx AppContext) Sudo() bool         { return ctx.values.Config.Sudo }

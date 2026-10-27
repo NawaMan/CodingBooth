@@ -207,7 +207,9 @@ CONTAINER MODE:
   --dind-isolation[=kata]
                          EXPERIMENTAL. Run the --dind sidecar in its own Kata VM
                          instead of privileged on this machine (implies --dind; no
-                         prompt). Needs Linux, Docker Engine, /dev/kvm and Kata.
+                         prompt). Needs Linux, Docker Engine, /dev/kvm and Kata;
+                         elsewhere it falls back to the privileged sidecar with a
+                         big warning and asks (or needs --dind-allowed).
                          Also: dind-isolation = "kata", CB_DIND_ISOLATION=kata.
   --dind-vm-memory <size> / --dind-vm-cpus <n>
                          EXPERIMENTAL. Size that VM (Kata's default: 2g, 1 CPU).

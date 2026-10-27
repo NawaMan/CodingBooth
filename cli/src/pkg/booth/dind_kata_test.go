@@ -118,11 +118,13 @@ func TestKataPreflight(t *testing.T) {
 		err     error
 		wantErr string
 	}{
-		{"ready", kataPreflight("linux", yes, found, engine), ""},
-		{"macos", kataPreflight("darwin", yes, found, engine), "needs Linux"},
-		{"desktop", kataPreflight("linux", yes, found, desktop), "Docker Desktop"},
-		{"no kvm", kataPreflight("linux", no, found, engine), "/dev/kvm is missing"},
-		{"no shim", kataPreflight("linux", yes, missing, engine), kataShim + " is not on PATH"},
+		{"ready", kataPreflight("docker", "linux", yes, found, engine), ""},
+		{"podman", kataPreflight("podman", "linux", yes, found, engine), "needs engine docker"},
+		{"macos", kataPreflight("docker", "darwin", yes, found, engine), "needs Linux"},
+		{"windows", kataPreflight("docker", "windows", yes, found, engine), "needs Linux"},
+		{"desktop", kataPreflight("docker", "linux", yes, found, desktop), "Docker Desktop"},
+		{"no kvm", kataPreflight("docker", "linux", no, found, engine), "/dev/kvm is missing"},
+		{"no shim", kataPreflight("docker", "linux", yes, missing, engine), kataShim + " is not on PATH"},
 	}
 	for _, c := range cases {
 		switch {
@@ -131,6 +133,60 @@ func TestKataPreflight(t *testing.T) {
 		case c.wantErr != "" && (c.err == nil || !strings.Contains(c.err.Error(), c.wantErr)):
 			t.Errorf("%s: err = %v, want %q", c.name, c.err, c.wantErr)
 		}
+	}
+}
+
+func TestResolveDindIsolation_Available(t *testing.T) {
+	ctx, banner := resolveDindIsolation(kataCtx(true, "kata", false), func() error { return nil })
+	if !ctx.DindKata() || banner != "" || ctx.DindIsolationUnavailable() != "" {
+		t.Errorf("Kata available: want kata kept, no banner; got kata=%t banner=%q", ctx.DindKata(), banner)
+	}
+}
+
+func TestResolveDindIsolation_FallsBack(t *testing.T) {
+	ctx, banner := resolveDindIsolation(kataCtx(true, "kata", false), func() error {
+		return errors.New("--dind-isolation kata needs Linux; this is darwin.")
+	})
+	if ctx.DindKata() || !ctx.Dind() {
+		t.Errorf("want plain --dind after the fallback; got kata=%t dind=%t", ctx.DindKata(), ctx.Dind())
+	}
+	if !strings.Contains(ctx.DindIsolationUnavailable(), "needs Linux") {
+		t.Errorf("the reason should be kept; got %q", ctx.DindIsolationUnavailable())
+	}
+	for _, want := range []string{"NOT AVAILABLE ON THIS MACHINE", "needs Linux", "PLAIN, PRIVILEGED DinD sidecar", "--dind-allowed"} {
+		if !strings.Contains(banner, want) {
+			t.Errorf("banner missing %q:\n%s", want, banner)
+		}
+	}
+}
+
+func TestResolveDindIsolation_NotAskedFor(t *testing.T) {
+	called := false
+	_, banner := resolveDindIsolation(kataCtx(true, "", false), func() error { called = true; return nil })
+	if called || banner != "" {
+		t.Errorf("plain --dind must not run the Kata check; called=%t banner=%q", called, banner)
+	}
+}
+
+// After a fallback the booth is a plain privileged --dind, so the usual consent applies:
+// refused with no terminal, allowed by --dind-allowed.
+func TestConsent_KataFallback_AsksLikePlainDind(t *testing.T) {
+	resetApprovals(t)
+	ctx, _ := resolveDindIsolation(kataCtx(true, "kata", false), func() error { return errors.New("no kata here") })
+	env, warnings, _ := testConsentEnv("", true)
+	if err := ensureHostEscapeConsent(ctx, env); err == nil || !strings.Contains(err.Error(), "--dind-allowed") {
+		t.Fatalf("no terminal, no --dind-allowed: want a refusal naming --dind-allowed, got %v", err)
+	}
+	if !strings.Contains(warnings.String(), "--dind (privileged Docker-in-Docker sidecar)") {
+		t.Errorf("want the --dind warning, got %q", warnings.String())
+	}
+
+	resetApprovals(t)
+	builder := ctx.ToBuilder()
+	builder.Config.DindAllowed = true
+	env, _, opened := testConsentEnv("", true)
+	if err := ensureHostEscapeConsent(builder.Build(), env); err != nil || *opened != 0 {
+		t.Errorf("--dind-allowed: want it to go on without asking; err=%v opened=%d", err, *opened)
 	}
 }
 

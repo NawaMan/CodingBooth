@@ -950,7 +950,9 @@ Or `dind-isolation = "kata"` (and `dind-vm-memory` / `dind-vm-cpus`) in `.booth/
 `CB_DIND_ISOLATION` / `CB_DIND_VM_MEMORY` / `CB_DIND_VM_CPUS`, or the **DinD Isolation** fields in
 `booth config`. No consent prompt. The booth then joins the DinD network instead of sharing the
 sidecar's namespace (`DOCKER_HOST=tcp://<sidecar>:2375`), and forwards `localhost:<port>` to the
-sidecar's published ports. Setup, what changes, how to verify it, and the known limits:
+sidecar's published ports. Where Kata cannot run, it falls back to the plain privileged sidecar behind a
+large banner and the usual consent (asks, or refuses without a terminal; `--dind-allowed` goes on).
+Setup, what changes, how to verify it, and the known limits:
 **[Security → Contain it](BOOTH_SECURITY.md#dind-isolation)**.
 
 ---

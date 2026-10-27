@@ -160,6 +160,10 @@ type AppConfig struct {
 	DindIsolation string `toml:"dind-isolation,omitempty" envconfig:"CB_DIND_ISOLATION"`
 	DindVmMemory  string `toml:"dind-vm-memory,omitempty" envconfig:"CB_DIND_VM_MEMORY"`
 	DindVmCpus    string `toml:"dind-vm-cpus,omitempty"   envconfig:"CB_DIND_VM_CPUS"`
+	// DindIsolationUnavailable is why a requested --dind-isolation could not be
+	// had on this machine (set by booth.ResolveDindIsolation, which then falls
+	// back to the plain privileged sidecar). Never read from config or env.
+	DindIsolationUnavailable string `toml:"-" ignored:"true"`
 
 	// DindAllowed and PrivilegedAllowed pre-approve a booth that can reach the host (the --dind
 	// sidecar; --privileged-like run-args). They come only from the command line: no config.toml
