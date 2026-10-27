@@ -42,5 +42,39 @@ if [[ -z "$found" ]]; then
     exit 1
 fi
 xwininfo -root -tree | grep -i 'zed' | head -3
-pkill -f zed-editor || true
+
+echo "=== ~/code is trusted on the next launch (no Restricted Mode) ==="
+# The first run creates Zed's database; quit, and the launcher adds the trust
+# row before the next start.
+ZED_DB="$HOME/.local/share/zed/db/0-stable/db.sqlite"
+ZED_LOG="$HOME/.local/share/zed/logs/Zed.log"
+for _ in $(seq 1 30); do [[ -f "$ZED_DB" ]] && break; sleep 1; done
+pkill -x zed-editor || true
+for _ in $(seq 1 30); do pgrep -x zed-editor >/dev/null || break; sleep 1; done
+
+log_mark=$(wc -l < "$ZED_LOG")
+zed /home/coder/code/src >/tmp/zed-launch.log 2>&1 || true
+
+python3 - "$ZED_DB" <<'PY' || { echo "/home/coder/code is not in trusted_worktrees"; exit 1; }
+import sqlite3, sys
+rows = sqlite3.connect(sys.argv[1]).execute(
+    "SELECT 1 FROM trusted_worktrees WHERE absolute_path = '/home/coder/code' AND host_name IS NULL").fetchall()
+sys.exit(0 if rows else 1)
+PY
+
+# Zed logs every worktree it restricts; a subfolder of ~/code must not be one.
+for _ in $(seq 1 60); do
+    xwininfo -root -tree 2>/dev/null | grep -qiE '"src.*dev\.zed\.Zed' && break
+    sleep 1
+done
+sleep 5   # the trust check runs once the worktree has loaded, after the window maps
+if tail -n +"$((log_mark + 1))" "$ZED_LOG" | grep -q 'is not trusted'; then
+    echo "Zed still restricted a folder under ~/code:"
+    tail -n +"$((log_mark + 1))" "$ZED_LOG" | grep 'is not trusted'
+    exit 1
+fi
+xwininfo -root -tree 2>/dev/null | grep -qiE '"src.*dev\.zed\.Zed' \
+    || { echo "Zed did not reopen on ~/code/src"; exit 1; }
+
+pkill -x zed-editor || true
 echo "ok"
