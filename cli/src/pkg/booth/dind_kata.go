@@ -242,7 +242,7 @@ func kataFallbackBanner(reason string) string {
 
 // kataForwardPorts lists the container ports of the run-args publishes: the
 // booth forwards localhost:<port> to the sidecar for each, so `curl localhost:8080`
-// still reaches a container the sidecar runs (booth-entry, BOOTH_DIND_FORWARD).
+// still reaches a container the sidecar runs (56-cb-dind-forward--startup.sh, BOOTH_DIND_FORWARD).
 func kataForwardPorts(extraPorts []string) []string {
 	seen := map[string]bool{}
 	var ports []string

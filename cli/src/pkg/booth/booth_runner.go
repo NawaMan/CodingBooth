@@ -249,7 +249,7 @@ func SetupDind(ctx appctx.AppContext) appctx.AppContext {
 	// --dind-isolation kata: the sidecar is a VM with its own network stack, so
 	// sharing its namespace would leave the booth with no daemon on localhost and
 	// no DNS. The booth joins the DinD network instead, reaches the daemon by
-	// name, and booth-entry forwards localhost:<port> to the sidecar for each
+	// name, and a startup hook forwards localhost:<port> to the sidecar for each
 	// run-args publish (BOOTH_DIND_FORWARD), so `curl localhost:8080` still
 	// reaches a container the sidecar runs. The booth publishes its own front
 	// door (booth.go, sharesSidecarNetns).

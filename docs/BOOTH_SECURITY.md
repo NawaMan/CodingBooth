@@ -404,10 +404,10 @@ A VM has its own network, so the booth can no longer share the sidecar's network
 | Booth's own port | published by the sidecar | published by the booth |
 | `run-args` `-p` | published by the sidecar | still published by the sidecar |
 
-`booth--dind-forward` (started by `booth-entry`) puts each port back on the booth's loopback: the
-`run-args` publishes at once, and every port a container in the sidecar publishes on all interfaces,
-as it appears (checked every 2 s). So `docker run -p 8080:80 nginx` then `curl localhost:8080` works
-as with plain `--dind`. It needs an image with the current `booth-entry`; on an older one, use
+`booth--dind-forward` (started by the startup hook `56-cb-dind-forward--startup.sh`) puts each port
+back on the booth's loopback: the `run-args` publishes at once, and every port a container in the
+sidecar publishes on all interfaces, as it appears (checked every 2 s). So `docker run -p 8080:80 nginx` then `curl localhost:8080` works
+as with plain `--dind`. It needs a base image built with that hook; on an older one, use
 `$BOOTH_DIND_HOST:<port>`.
 
 Inside the sidecar's VM, four things are done differently from `docker:dind`, each because Kata
