@@ -754,7 +754,7 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	}
 
 	// Skip port mapping when using shared network namespace sidecars.
-	if !ctx.Dind() && !ctx.Egress() {
+	if !sharesSidecarNetns(ctx) {
 		containerPort := 10000
 		if ctx.Public() {
 			containerPort = 10443
@@ -768,7 +768,7 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	// alias has to be asked for. Docker rejects --add-host when the network
 	// namespace belongs to another container, so under --dind/--egress the same
 	// flag is set on the sidecar that owns the namespace instead.
-	if !ctx.Dind() && !ctx.Egress() {
+	if !sharesSidecarNetns(ctx) {
 		builder.CommonArgs.Append(ilist.NewList[string]("--add-host", hostGatewayMapping))
 	}
 
@@ -1585,6 +1585,14 @@ func protectedPathMountsError(kind string, protected []string) error {
 // protectedCacheMountsError is retained for tests and callers that still name "cache".
 func protectedCacheMountsError(protected []string) error {
 	return protectedPathMountsError("cache", protected)
+}
+
+// sharesSidecarNetns reports whether the booth runs in a sidecar's network
+// namespace (--network container:<sidecar>), so that the sidecar publishes the
+// booth's ports and carries its --add-host. A --dind-isolation kata sidecar is a
+// VM with a network of its own, so that booth stands on its own network footing.
+func sharesSidecarNetns(ctx appctx.AppContext) bool {
+	return (ctx.Dind() && !ctx.DindKata()) || ctx.Egress()
 }
 
 // formatPortMapping returns a Docker port mapping string.

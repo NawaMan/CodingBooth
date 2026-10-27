@@ -56,6 +56,25 @@ This file contains a list of changes for each released version.
   along the bottom of every Console UI pane. Set in `/etc/tmux.conf`, so a `~/.tmux.conf` still
   overrides it.
 
+- **`--dind-isolation kata` (experimental): the Docker-in-Docker sidecar can run in its own Kata
+  Containers VM.** A plain `--dind` sidecar is `--privileged` on your machine, so code in the booth
+  can reach host root through it. With `--dind-isolation` (bare means `kata`, and it implies
+  `--dind`), the sidecar runs in a Kata VM instead and a way out of its daemon lands in that VM. A
+  nested `--privileged` container sees only the VM's devices, not the host's disks. The booth itself
+  is unchanged. It needs Linux, Docker Engine, `/dev/kvm` and Kata (unpack the release and link one
+  shim, with no Docker restart); booth checks all of these first. Because the VM has its own network,
+  the booth joins the DinD network rather than sharing the sidecar's: `DOCKER_HOST` names the
+  sidecar, and the new `booth--dind-forward` puts the sidecar's published ports back on the booth's
+  `localhost`. Size the VM with `--dind-vm-memory` / `--dind-vm-cpus` (Kata's default is 2 GB and 1
+  CPU). Every setting also has a `config.toml` key, an environment variable and a `booth config`
+  field, and the `dind+kata` template extension selects it with a 4 GB, 2-CPU VM
+  (`--select 'dind+kata:8g,4'` to size it). A Kata booth gets no consent prompt. The `--dind` warning on Docker Engine now points at
+  this option. `dind-example` and `kind-example` work under it unchanged. Where Kata cannot run (macOS,
+  Windows, Docker Desktop, no KVM or Kata), a booth that asks for it falls back to the plain privileged
+  sidecar behind a large banner and the usual `--dind` consent: it asks on a terminal, refuses without
+  one, and `--dind-allowed` goes on. Not yet supported: `--egress` together with it. See
+  [Security → Contain it](BOOTH_SECURITY.md#dind-isolation).
+
 - **ThinkRail and Orca join the AI Tools catalog: two agent workbenches that run each task in its
   own git worktree.**
   - **ThinkRail** (`thinkrail`) is JetBrains' open-source agentic IDE: the pi coding agent with an

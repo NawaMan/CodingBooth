@@ -142,6 +142,9 @@ install go golang.org/x/tools/gopls@latest
 | `vm-memory`     | string     | Config: memory for the booth's VM — engine `apple` (macOS) only; `${PARAM}` expanded |
 | `vm-cpus`       | string     | Config: CPUs for the booth's VM — engine `apple` only; `${PARAM}` expanded |
 | `vm-shm-size`   | string     | Config: `/dev/shm` size — engine `apple` only; `${PARAM}` expanded |
+| `dind-isolation` | string    | Config: `--dind-isolation` mode (`kata`), experimental; `${PARAM}` expanded |
+| `dind-vm-memory` | string    | Config: memory for the DinD sidecar's Kata VM; `${PARAM}` expanded |
+| `dind-vm-cpus`  | string     | Config: CPUs for the DinD sidecar's Kata VM; `${PARAM}` expanded |
 | `cmds`          | []string   | Config: default commands                                 |
 | `build-args`    | []string   | Config: Docker build arguments                           |
 | `run-args`      | []string   | Config: Docker run arguments (flag-value pairs deduped). Volume source `@code` is rewritten at run time to the host project directory (the same path mounted at `/home/coder/code`) — use it to bind the project a second time into a tool jail that rejects symlink-out-of-jail. `{name}` in a volume source is replaced at run time with the booth's name, `{project}` with the project (folder) name — name a service's data volume `booth-<service>data-{name}` so each booth gets its own; the default booth name is the folder name, so that is one per project until a second booth runs (booth creates it, labelled `cb.project` and `cb.booth`). A bind mount whose host path is missing is skipped, unless its options include the booth-only `create` (`"$HOME/.cache/x:/dst:create"`), which creates the host folder first — for a host cache to share. |

@@ -137,7 +137,15 @@ func validateConfig(config *appctx.AppConfig) {
 	// Engine first: it refuses combinations (--egress on apple) that the egress
 	// defaults below would otherwise act on, writing .booth/egress/ files for a
 	// run that then fails.
+	// --dind-isolation implies --dind, which keeps Apple container out of the
+	// default engine pick, so it is settled before the engine.
+	if err := normalizeDindIsolation(config); err != nil {
+		panic(err)
+	}
 	if err := resolveEngineConfig(config); err != nil {
+		panic(err)
+	}
+	if err := checkDindIsolationEngine(config); err != nil {
 		panic(err)
 	}
 	if err := validateEgressConfig(config); err != nil {
@@ -479,6 +487,30 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			cfg.Dind = true
 			i++
 
+		case "--dind-isolation":
+			// Optional value: bare --dind-isolation means kata (the only mode so
+			// far). The next argument is taken only when it is a known mode, so
+			// `--dind-isolation -- cmd` and the like keep their meaning.
+			if i+1 < args.Length() && isDindIsolationMode(args.At(i+1)) {
+				cfg.DindIsolation = args.At(i + 1)
+				i += 2
+			} else {
+				cfg.DindIsolation = "kata"
+				i++
+			}
+
+		case "--dind-vm-memory", "--dind-vm-cpus":
+			v, err := needValue(args, i, arg)
+			if err != nil {
+				return err
+			}
+			if arg == "--dind-vm-memory" {
+				cfg.DindVmMemory = v
+			} else {
+				cfg.DindVmCpus = v
+			}
+			i += 2
+
 		case "--dind-allowed":
 			// Command line only — no config.toml key, no env var — so a repo cannot pre-approve itself.
 			cfg.DindAllowed = true
@@ -760,6 +792,12 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			i++
 
 		default:
+			// --dind-isolation=<mode>, the explicit spelling of the optional value.
+			if mode, ok := strings.CutPrefix(arg, "--dind-isolation="); ok {
+				cfg.DindIsolation = mode
+				i++
+				continue
+			}
 			// matches bash: RUN_ARGS+=("$1")
 			runArgs = append(runArgs, arg)
 			i++

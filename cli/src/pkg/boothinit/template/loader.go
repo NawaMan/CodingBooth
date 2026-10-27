@@ -49,6 +49,9 @@ type specToml struct {
 	VmMemory            string               `toml:"vm-memory"`
 	VmCpus              string               `toml:"vm-cpus"`
 	VmShmSize           string               `toml:"vm-shm-size"`
+	DindIsolation       string               `toml:"dind-isolation"`
+	DindVmMemory        string               `toml:"dind-vm-memory"`
+	DindVmCpus          string               `toml:"dind-vm-cpus"`
 	Cmds                []string             `toml:"cmds"`
 	BuildArgs           []string             `toml:"build-args"`
 	RunArgs             []string             `toml:"run-args"`
@@ -223,6 +226,9 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 		VmMemory:            spec.VmMemory,
 		VmCpus:              spec.VmCpus,
 		VmShmSize:           spec.VmShmSize,
+		DindIsolation:       spec.DindIsolation,
+		DindVmMemory:        spec.DindVmMemory,
+		DindVmCpus:          spec.DindVmCpus,
 		Cmds:                spec.Cmds,
 		BuildArgs:           spec.BuildArgs,
 		RunArgs:             spec.RunArgs,
@@ -420,6 +426,9 @@ func loadExtensionFile(filePath, name, categoryName string) (*Template, error) {
 		VmMemory:            spec.VmMemory,
 		VmCpus:              spec.VmCpus,
 		VmShmSize:           spec.VmShmSize,
+		DindIsolation:       spec.DindIsolation,
+		DindVmMemory:        spec.DindVmMemory,
+		DindVmCpus:          spec.DindVmCpus,
 		Cmds:                spec.Cmds,
 		BuildArgs:           spec.BuildArgs,
 		RunArgs:             spec.RunArgs,

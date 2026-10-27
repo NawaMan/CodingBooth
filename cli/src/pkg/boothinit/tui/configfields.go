@@ -111,6 +111,13 @@ var fieldDisplays = []fieldDisplay{
 	// --- Container ---
 	{Key: "dind", Label: "Docker-in-Docker", Group: "Container",
 		Detail: "Enable a Docker-in-Docker sidecar. Requires --privileged.\n\nWARNING: the sidecar runs privileged, so code in the\nbooth can reach its daemon and use it to step outside\nthe booth's isolation and touch the host. Only enable\nfor booths whose code you trust."},
+	{Key: "dind-isolation", Label: "DinD Isolation", Group: "Container",
+		Options: []string{"", "kata", "none"},
+		Detail:  "EXPERIMENTAL. How the Docker-in-Docker sidecar is\nisolated. Setting a mode turns DinD on.\n\n(default) / none = a privileged docker:dind container\nkata = the sidecar runs in its own Kata Containers VM,\nso a way out of the daemon lands in a throwaway VM,\nnot on this machine. Needs Linux, Docker Engine,\n/dev/kvm and Kata installed — see\ndocs/BOOTH_SECURITY.md#dind-isolation"},
+	{Key: "dind-vm-memory", Label: "DinD VM Memory", Group: "Container",
+		Detail: "EXPERIMENTAL. With DinD Isolation = kata: memory for\nthe sidecar's VM (Kata's default is 2 GB). Images and\ncontainers the sidecar runs share it.\n\nEmpty = Kata's default.\nExample: 4g, 8g, 4096m\n\nIgnored without DinD Isolation."},
+	{Key: "dind-vm-cpus", Label: "DinD VM CPUs", Group: "Container",
+		Detail: "EXPERIMENTAL. With DinD Isolation = kata: CPUs for\nthe sidecar's VM (Kata's default is 1).\n\nEmpty = Kata's default.\nExample: 4\n\nIgnored without DinD Isolation."},
 	{Key: "keep-alive", Label: "Keep Alive", Group: "Container",
 		Detail: "Preserve container after exit.\nResume later with: booth start <name>"},
 	{Key: "daemon", Label: "Daemon", Group: "Container",
@@ -268,11 +275,12 @@ var fieldDisplays = []fieldDisplay{
 // TestFieldTableCoversSchema fails on anything that is neither, so a new
 // AppConfig field cannot slip in unnoticed the way this table drifted before.
 var unrenderedKeys = map[string]string{
-	"public":   "start-time only (toml:\"-\") — and a committed `public = true` would expose every clone",
-	"okpublic": "start-time only (toml:\"-\") — a one-off --ok-public consent, never persisted (same reasoning as public)",
-	"password": "start-time only (toml:\"-\") — resolved from a gitignored file or stdin, never persisted",
-	"tlscert":  "start-time only (toml:\"-\"), paired with --public",
-	"tlskey":   "start-time only (toml:\"-\"), paired with --public",
+	"public":                   "start-time only (toml:\"-\") — and a committed `public = true` would expose every clone",
+	"okpublic":                 "start-time only (toml:\"-\") — a one-off --ok-public consent, never persisted (same reasoning as public)",
+	"password":                 "start-time only (toml:\"-\") — resolved from a gitignored file or stdin, never persisted",
+	"dindisolationunavailable": "run-time only (toml:\"-\") — why this machine fell back from --dind-isolation, worked out at the start of each run",
+	"tlscert":                  "start-time only (toml:\"-\"), paired with --public",
+	"tlskey":                   "start-time only (toml:\"-\"), paired with --public",
 	// Consent overrides (--dind-allowed / --privileged-allowed) are command-line only by design.
 	"dindallowed":       "command-line consent (--dind-allowed); a committed key would let a repo approve its own privileged sidecar",
 	"privilegedallowed": "command-line consent (--privileged-allowed); a committed key would let a repo approve its own host-escape run-args",

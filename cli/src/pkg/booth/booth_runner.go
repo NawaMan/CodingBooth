@@ -38,6 +38,10 @@ func (runner *BoothRunner) Run() error {
 	}); err != nil {
 		return err
 	}
+	// Settle whether a requested --dind-isolation can run here before the consent
+	// below: when it cannot, the booth falls back to the privileged sidecar, which
+	// that consent then covers.
+	ctx = ResolveDindIsolation(ctx)
 	// Ask before anything is built or started if this booth could reach the host as root.
 	if err := EnsureHostEscapeConsent(ctx); err != nil {
 		return err
@@ -229,6 +233,10 @@ func SetupDind(ctx appctx.AppContext) appctx.AppContext {
 			fmt.Fprintf(os.Stderr, "   Check if any port is already in use.\n")
 			fmt.Fprintf(os.Stderr, "   Use 'lsof -i :<port>' or 'ss -tlnp | grep <port>' to find the process.\n")
 		}
+		// The network was made for this sidecar; do not leave it behind.
+		if createdNet && !ctx.Dryrun() {
+			_ = docker.Docker(docker.DockerFlags{Silent: true, Engine: ctx.Engine()}, "network", ilist.NewList(ilist.NewList("rm", dindNet)))
+		}
 		os.Exit(1)
 	}
 
@@ -237,6 +245,25 @@ func SetupDind(ctx appctx.AppContext) appctx.AppContext {
 
 	// Strip network and port flags from RUN_ARGS (not allowed with container network mode)
 	builder.RunArgs = stripNetworkAndPortFlags(ctx.RunArgs())
+
+	// --dind-isolation kata: the sidecar is a VM with its own network stack, so
+	// sharing its namespace would leave the booth with no daemon on localhost and
+	// no DNS. The booth joins the DinD network instead, reaches the daemon by
+	// name, and a startup hook forwards localhost:<port> to the sidecar for each
+	// run-args publish (BOOTH_DIND_FORWARD), so `curl localhost:8080` still
+	// reaches a container the sidecar runs. The booth publishes its own front
+	// door (booth.go, sharesSidecarNetns).
+	if ctx.DindKata() {
+		builder.CommonArgs.Append(ilist.NewList[string]("--network", dindNet))
+		builder.CommonArgs.Append(ilist.NewList[string]("-e", "DOCKER_HOST=tcp://"+dindName+":2375"))
+		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_DIND_HOST="+dindName))
+		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_DIND_ISOLATION=kata"))
+		builder.CommonArgs.Append(ilist.NewList[string]("--label", "cb.dind-isolation=kata"))
+		if ports := kataForwardPorts(extraPorts); len(ports) > 0 {
+			builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_DIND_FORWARD="+strings.Join(ports, " ")))
+		}
+		return builder.Build()
+	}
 
 	// Use container network mode to share DinD's network namespace
 	// This allows localhost access to DinD's ports from the booth

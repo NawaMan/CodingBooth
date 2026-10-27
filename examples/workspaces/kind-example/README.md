@@ -13,24 +13,28 @@ cd examples/kind-example
 
 # 2. Inside the booth — create the cluster
 just --list
-just start               # ./start-cluster.sh
+just cluster             # ./start-cluster.sh
 
-# 3. Deploy the sample nginx app
-just deploy              # ./deploy-app.sh
+# 3. Deploy the sample nginx app (NodePort 30080)
+just backend             # ./deploy-app.sh
 
 # 4. Verify it works (inside the booth)
 curl http://localhost:30080
 
-# 5. Try the hello-service too
-./deploy-hello.sh
+# 5. Deploy the hello-service too (NodePort 30081)
+just hello               # ./deploy-hello.sh
 curl http://localhost:30081
 curl http://localhost:30081/health
 
-# 6. Clean up
+# 6. Check, then clean up
+just check               # ./check-cluster.sh (`just check down` after stopping)
 ./remove-hello.sh
 ./remove-app.sh
 just stop                # ./stop-cluster.sh
 ```
+
+From the host, the same recipes run in the booth for you (`just cluster` starts it if needed and
+keeps it, with its DinD sidecar, running afterwards — the cluster lives in that sidecar).
 
 See [Viewing services](#viewing-services) for how to open these as tabs right in the console UI.
 
@@ -65,6 +69,22 @@ The workspace shares DinD's network namespace (`--network container:dind`), whic
 
 NodePorts need `extraPortMappings` in kind config to be accessible.
 The `start-cluster.sh` script configures this automatically.
+
+### With the DinD sidecar in a Kata VM (`--dind-isolation`, experimental)
+
+On Linux with KVM and Kata Containers installed, the cluster can run in a DinD sidecar that is its own
+VM, so a way out of the cluster's privileged node containers lands in that VM rather than on your
+machine:
+
+```bash
+../../codingbooth --dind-isolation --dind-vm-memory 4g    # kind wants more than the VM's default 2 GB
+```
+
+Everything above works unchanged — `just cluster`, `kubectl`, `curl localhost:30081`. The VM has a
+network of its own, so the workspace no longer shares DinD's namespace: it joins the DinD network
+instead, and `booth--dind-forward` puts each port the sidecar publishes (6443, 80, 443, 30080-30084)
+back on the workspace's `localhost`. Setup and limits:
+[Security → Contain it](../../../docs/BOOTH_SECURITY.md#dind-isolation).
 
 ## Exposed ports
 

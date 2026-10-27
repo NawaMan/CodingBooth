@@ -936,6 +936,26 @@ Host
 
 > See `examples/workspaces/dind-example` for basic DinD usage and `examples/workspaces/kind-example` for KinD.
 
+**Isolating the sidecar in a VM (`--dind-isolation kata`, experimental)**
+
+On Linux with KVM and [Kata Containers](https://katacontainers.io/) installed, the sidecar can run in
+its own VM instead of `--privileged` on your machine, so a way out of its daemon lands in that VM:
+
+```bash
+./booth --dind-isolation                       # implies --dind
+./booth --dind-isolation --dind-vm-memory 8g --dind-vm-cpus 4
+```
+
+Or `dind-isolation = "kata"` (and `dind-vm-memory` / `dind-vm-cpus`) in `.booth/config.toml`,
+`CB_DIND_ISOLATION` / `CB_DIND_VM_MEMORY` / `CB_DIND_VM_CPUS`, the **DinD Isolation** fields in
+`booth config`, or the template extension: `booth config --select 'dind+kata'` (4 GB, 2 CPUs) or
+`'dind+kata:8g,4'`. No consent prompt. The booth then joins the DinD network instead of sharing the
+sidecar's namespace (`DOCKER_HOST=tcp://<sidecar>:2375`), and forwards `localhost:<port>` to the
+sidecar's published ports. Where Kata cannot run, it falls back to the plain privileged sidecar behind a
+large banner and the usual consent (asks, or refuses without a terminal; `--dind-allowed` goes on).
+Setup, what changes, how to verify it, and the known limits:
+**[Security → Contain it](BOOTH_SECURITY.md#dind-isolation)**.
+
 ---
 
 ## Public Access (`--public`)
