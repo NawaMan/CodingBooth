@@ -190,22 +190,6 @@ if [ -n "${BOOTH_HOST_GATEWAY:-}" ] && ! getent hosts host.docker.internal >/dev
   fi
 fi
 
-# --dind-isolation kata (experimental): the DinD sidecar is its own VM, so the
-# booth no longer shares its network and localhost:<port> would miss a container
-# the sidecar runs. The CLI names the sidecar in BOOTH_DIND_HOST (and lists the
-# run-args publishes in BOOTH_DIND_FORWARD); booth--dind-forward puts each port
-# the sidecar publishes back on loopback, so `curl localhost:8080` keeps working
-# as it does with a plain --dind. Unset everywhere else: a no-op.
-if [ -n "${BOOTH_DIND_HOST:-}" ]; then
-  if command -v socat >/dev/null 2>&1 && command -v booth--dind-forward >/dev/null 2>&1; then
-    # shellcheck disable=SC2086 # BOOTH_DIND_FORWARD is a space-separated port list
-    setsid booth--dind-forward "$BOOTH_DIND_HOST" ${BOOTH_DIND_FORWARD:-} </dev/null >/dev/null 2>&1 &
-    info "Forwarding localhost to the ports the DinD sidecar ${BOOTH_DIND_HOST} publishes"
-  else
-    info "No socat/booth--dind-forward: reach DinD ports at ${BOOTH_DIND_HOST}:<port> instead of localhost"
-  fi
-fi
-
 # --apple-low-ports: let coder open ports below 1024 on Apple container, which
 # (unlike Docker) leaves the kernel's limit at 1024. booth--as-coder, which
 # every coder process below is started through, reads this marker and hands

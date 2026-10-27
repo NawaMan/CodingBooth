@@ -24,7 +24,8 @@
 # to bind and is not retried. A port published only on the sidecar's loopback
 # (127.0.0.1:...) cannot be reached from outside the VM and is skipped.
 #
-# booth-entry starts it in the background, as root; it ends with the booth.
+# /usr/share/startup.d/56-cb-dind-forward--startup.sh starts it in the background,
+# as root (sudo); it ends with the booth.
 # -----------------------------------------------------------------------------
 
 set -uo pipefail
