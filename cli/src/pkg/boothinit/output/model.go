@@ -53,9 +53,13 @@ type ConfigToml struct {
 	VmMemory  string
 	VmCpus    string
 	VmShmSize string
-	Cmds      []string
-	RunArgs   []string
-	BuildArgs []string
+	// --dind-isolation and its VM size (see appctx.AppConfig.DindIsolation).
+	DindIsolation string
+	DindVmMemory  string
+	DindVmCpus    string
+	Cmds          []string
+	RunArgs       []string
+	BuildArgs     []string
 
 	// CacheFiles lists paths (relative to container root) to touch in .booth/cache/.
 	CacheFiles []string

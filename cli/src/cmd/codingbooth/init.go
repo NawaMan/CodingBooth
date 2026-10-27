@@ -21,10 +21,10 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/cache"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/compiler"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/output"
-	"github.com/nawaman/codingbooth/src/pkg/justinit"
-	"github.com/nawaman/codingbooth/src/pkg/mountoverlap"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/selection"
 	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
+	"github.com/nawaman/codingbooth/src/pkg/justinit"
+	"github.com/nawaman/codingbooth/src/pkg/mountoverlap"
 	"github.com/nawaman/codingbooth/src/pkg/pathmode"
 )
 
@@ -54,25 +54,25 @@ type initFlags struct {
 	removeMounts      []string // --remove-mount: container paths dropped from the baseline
 	sets              []string // raw --set key=value strings, one per list item
 	unsets            []string // --unset: config.toml keys dropped from the baseline
-	cacheFiles    []string // cache-files read back from existing config.toml
-	cacheDirs     []string // cache-dirs read back from existing config.toml
-	sharedFiles   []string // shared-files read back from existing config.toml
-	sharedDirs    []string // shared-dirs read back from existing config.toml
-	variant       string
-	port          string
-	templatesPath string
-	version       string
-	aptSnapshot    string // --apt-snapshot, resolved: an id, or "" for no freeze
-	aptSnapshotSet bool   // --apt-snapshot was given (aptSnapshot "" then means "none")
-	debug         bool
-	start         bool
-	full          bool
-	detail        bool
-	overwrite     bool
-	beside        bool // keep hand-written files; write generated content as <name>.new
-	noTUI         bool
-	web           bool
-	dryrun        bool
+	cacheFiles        []string // cache-files read back from existing config.toml
+	cacheDirs         []string // cache-dirs read back from existing config.toml
+	sharedFiles       []string // shared-files read back from existing config.toml
+	sharedDirs        []string // shared-dirs read back from existing config.toml
+	variant           string
+	port              string
+	templatesPath     string
+	version           string
+	aptSnapshot       string // --apt-snapshot, resolved: an id, or "" for no freeze
+	aptSnapshotSet    bool   // --apt-snapshot was given (aptSnapshot "" then means "none")
+	debug             bool
+	start             bool
+	full              bool
+	detail            bool
+	overwrite         bool
+	beside            bool // keep hand-written files; write generated content as <name>.new
+	noTUI             bool
+	web               bool
+	dryrun            bool
 }
 
 func parseInitFlags(args []string) initFlags {
@@ -1491,6 +1491,12 @@ func applySetOverrides(cfg *output.ConfigToml, overrides map[string]interface{})
 			cfg.VmCpus = fmt.Sprint(value)
 		case "vm-shm-size":
 			cfg.VmShmSize = fmt.Sprint(value)
+		case "dind-isolation":
+			cfg.DindIsolation = fmt.Sprint(value)
+		case "dind-vm-memory":
+			cfg.DindVmMemory = fmt.Sprint(value)
+		case "dind-vm-cpus":
+			cfg.DindVmCpus = fmt.Sprint(value)
 		case "cmds":
 			// Replaces, like --cmd: a start command is one command, not a pile.
 			cfg.Cmds = asStringList(value)

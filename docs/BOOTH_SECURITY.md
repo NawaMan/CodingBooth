@@ -290,8 +290,9 @@ mounts no host folder.
 ./booth --dind-isolation=kata
 ```
 
-Or `dind-isolation = "kata"` in `.booth/config.toml`, `CB_DIND_ISOLATION=kata`, or the **DinD
-Isolation** field in `booth config`. It does not ask for consent: there is nothing on this machine
+Or `dind-isolation = "kata"` in `.booth/config.toml`, `CB_DIND_ISOLATION=kata`, the **DinD
+Isolation** field in `booth config`, or the `dind+kata` template extension, which also sizes the VM
+(`booth config --select 'dind+kata'` for 4 GB and 2 CPUs, `'dind+kata:8g,4'` to choose). It does not ask for consent: there is nothing on this machine
 for it to reach. Every run prints an `experimental` warning.
 
 **What the escape test shows.** The same test as above — a nested `--privileged alpine` on the
