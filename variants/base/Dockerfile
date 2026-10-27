@@ -350,6 +350,7 @@ COPY --chmod=0755 booth--as-coder /usr/local/bin/booth--as-coder
 COPY --chmod=0755 booth--file-sync /usr/local/bin/booth--file-sync
 # Forwards localhost to a --dind-isolation kata sidecar's ports; see the script.
 COPY --chmod=0755 booth--dind-forward /usr/local/bin/booth--dind-forward
+COPY --chmod=0755 56-cb-dind-forward--startup.sh /usr/share/startup.d/56-cb-dind-forward--startup.sh
 LABEL com.codingbooth.file-sync="1"
 # Gives tilde the mouse inside tmux (Console UI panes); see the script.
 COPY --chmod=0755 tilde /usr/local/bin/tilde
