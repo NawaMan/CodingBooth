@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 # zed--setup.sh — Install the Zed editor from its official release tarball, then wrap it for containers
 set -Eeuo pipefail
@@ -103,9 +103,39 @@ ln -sfn "$ZED_HOME" "$ZED_LINK"
 # Lavapipe is the only Vulkan device a booth has; without the opt-in Zed warns
 # on every start that it is running on an emulated GPU.
 # With no arguments, open the project rather than an empty window.
+#
+# The project folder is always trusted, so Zed never opens it in Restricted
+# Mode. Zed has no setting for one trusted path (only trust-everything); it
+# keeps per-path trust in the trusted_worktrees table of its database, where a
+# path also covers everything under it. The launcher adds /home/coder/code
+# there. Zed rewrites that table from memory while it runs, so this only
+# happens when Zed is not running. The database is Zed's own and appears on
+# its first run, so that very first launch still asks once.
 cat > "$ZED_BIN" <<EOF
 #!/usr/bin/env bash
 export ZED_ALLOW_EMULATED_GPU="\${ZED_ALLOW_EMULATED_GPU:-1}"
+
+ZED_TRUSTED_DIR=/home/coder/code
+ZED_DB="\${XDG_DATA_HOME:-\$HOME/.local/share}/zed/db/0-stable/db.sqlite"
+if [[ -f "\$ZED_DB" ]] && command -v python3 >/dev/null 2>&1 \\
+        && ! pgrep -u "\$(id -u)" -x zed-editor >/dev/null 2>&1; then
+    python3 - "\$ZED_DB" "\$ZED_TRUSTED_DIR" >/dev/null 2>&1 <<'TRUST' || true
+import sqlite3, sys
+db, path = sys.argv[1], sys.argv[2]
+conn = sqlite3.connect(db, timeout=2)
+has_table = conn.execute(
+    "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'trusted_worktrees'").fetchone()
+if has_table and not conn.execute(
+        "SELECT 1 FROM trusted_worktrees WHERE absolute_path = ? AND host_name IS NULL",
+        (path,)).fetchone():
+    conn.execute(
+        "INSERT INTO trusted_worktrees(absolute_path, user_name, host_name) VALUES (?, NULL, NULL)",
+        (path,))
+    conn.commit()
+conn.close()
+TRUST
+fi
+
 exec "$ZED_LINK/bin/zed" "\${@:-/home/coder/code}"
 EOF
 chmod 0755 "$ZED_BIN"
@@ -171,5 +201,6 @@ Settings seeding — to reuse your host settings, add to .booth/config.toml:
 
 Notes:
 - Rendering uses Mesa's software Vulkan driver; there is no GPU in a booth.
+- /home/coder/code is always trusted (no Restricted Mode) from the second launch on.
 - See: https://zed.dev/docs/linux
 EON

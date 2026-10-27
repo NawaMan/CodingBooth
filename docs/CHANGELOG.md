@@ -9,7 +9,10 @@ This file contains a list of changes for each released version.
   desktop and dock. Pin a release with `zed:1.25.3` (`ZED_VERSION`, default `latest`). A booth has
   no GPU, so Zed renders through Mesa's software Vulkan driver. That works, but expect it to be
   slower than on real hardware. Zed's self-updater is turned off in a fresh `~/.config/zed/settings.json`,
-  because it cannot write the root-owned install. Seed your host settings by mounting
+  because it cannot write the root-owned install. The project folder `/home/coder/code`, and
+  everything under it, is always trusted, so Zed does not open it in Restricted Mode. The
+  launcher records that trust in Zed's database, which Zed creates on its first run, so only the
+  very first launch in a fresh home still asks. Seed your host settings by mounting
   `~/.config/zed` at `/etc/cb-home-seed/.config/zed`. On non-desktop variants the setup is
   skipped. `examples/workspaces/zed-example` opens a small project in it.
 
