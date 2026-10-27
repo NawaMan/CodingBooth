@@ -346,7 +346,7 @@ setup	xfce-theme	0.3.0	3aaece21b4d035ec5c8b7709e074ab844a91270de0096e22278658c8d
 setup	xfce-wallpaper	1.0.0	90cef9dd780257750f474fbcfa0fb2f3a4fc5fb4c24b8e7e53e5cfee8d3bfe70	variants/base/setups/xfce-wallpaper--setup.sh
 setup	xonsh	0.1.0	4538540d06db3732825700112ac588f353978f14f6f982e35dc75b0d148286a3	variants/base/setups/xonsh--setup.sh
 setup	yaml-code-extension	0.1.0	a645a17343854b3f3fc21a01e0fb6346878cc777aacf9935aa9618e852138c19	variants/base/setups/yaml-code-extension--setup.sh
-setup	zed	0.2.0	c1304c24f40bee514c1108655da1ff61ac6ceb1ca270a509e45d6cc8ecc10620	variants/base/setups/zed--setup.sh
+setup	zed	0.3.0	644c62e960f033c5e6c3f6f5e4a349e7ac6e6503e228ad76b6e70a4687897068	variants/base/setups/zed--setup.sh
 setup	zig	1.0.0	b4697e1c090e510c423ef961dd6bfcc06a480adf78bd774e3f5291ac468f459e	variants/base/setups/zig--setup.sh
 setup	zig-code-extension	1.0.0	2b398b4a16070263e1e4929a512e1cbf7c997bb6b7124688aa0d5e30812ecb5c	variants/base/setups/zig-code-extension--setup.sh
 install	apt	1.1.0	bbdff5f9b3e9b8265ed61c04d69f24714dc8c10605af2675088d08190985f42b	variants/base/setups/apt--install.sh

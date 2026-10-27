@@ -23,13 +23,13 @@ just --list
 | Editor | Zed 1.25.3 at `/opt/zed-current`, launcher `/usr/local/bin/zed` |
 | Rendering | Mesa's software Vulkan driver (lavapipe), because a booth has no GPU |
 | Settings | `~/.config/zed/settings.json` is created with `"auto_update": false` the first time |
-| Trust | `/home/coder/code` is pre-trusted (no Restricted Mode prompt after the first launch) |
+| Trust | `/home/coder/code` is pre-trusted (no Restricted Mode prompt) |
 | Sample | `src/hello.py` |
 
 ## Notes
 
 - **No GPU.** Zed renders through software Vulkan. It works, but scrolling and resizing are slower than on real hardware.
-- **Trusted project.** `/home/coder/code` and everything under it are always trusted, so Zed does not open them in Restricted Mode. Zed has no setting for one trusted folder, so the `zed` launcher adds it to Zed's own database before Zed starts. That database only exists after Zed's first run, so the very first launch in a fresh home still asks once. Folders outside `~/code` are asked about as usual.
+- **Trusted project.** `/home/coder/code` and everything under it are always trusted, so Zed does not open them in Restricted Mode, including on the first launch in a new booth. Zed has no setting for one trusted folder, so the `zed` launcher records it in Zed's own database before Zed starts. Folders outside `~/code` are asked about as usual.
 - **Your own settings.** To bring your host settings, add this to `.booth/config.toml`:
   `run-args = ["-v", "~/.config/zed:/etc/cb-home-seed/.config/zed:ro"]`
 - **Another release.** Change `ZED_VERSION` in `.booth/Boothfile` with `booth config --select zed:<version>`.
