@@ -24,7 +24,7 @@ echo
 
 # Test 1: Create cluster
 echo "Creating KinD cluster..."
-if ! start_out=$(just start 2>&1); then
+if ! start_out=$(just cluster 2>&1); then
     echo "$start_out"
     fail "Cluster failed to create"
 fi
@@ -53,7 +53,7 @@ fi
 
 # Test 3: Deploy app
 echo "Deploying nginx app..."
-just deploy > /dev/null 2>&1
+just backend > /dev/null 2>&1
 pass "App deployed"
 
 # Test 4: Verify pods are running
