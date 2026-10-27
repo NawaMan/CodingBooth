@@ -67,7 +67,8 @@ This file contains a list of changes for each released version.
   sidecar, and the new `booth--dind-forward` puts the sidecar's published ports back on the booth's
   `localhost`. Size the VM with `--dind-vm-memory` / `--dind-vm-cpus` (Kata's default is 2 GB and 1
   CPU). Every setting also has a `config.toml` key, an environment variable and a `booth config`
-  field. A Kata booth gets no consent prompt. The `--dind` warning on Docker Engine now points at
+  field, and the `dind+kata` template extension selects it with a 4 GB, 2-CPU VM
+  (`--select 'dind+kata:8g,4'` to size it). A Kata booth gets no consent prompt. The `--dind` warning on Docker Engine now points at
   this option. `dind-example` and `kind-example` work under it unchanged. Where Kata cannot run (macOS,
   Windows, Docker Desktop, no KVM or Kata), a booth that asks for it falls back to the plain privileged
   sidecar behind a large banner and the usual `--dind` consent: it asks on a terminal, refuses without

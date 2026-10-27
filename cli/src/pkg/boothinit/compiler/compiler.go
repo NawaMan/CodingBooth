@@ -79,6 +79,12 @@ type collector struct {
 	vmCpusSource   string
 	vmShm          string
 	vmShmSource    string
+	dindIso        string
+	dindIsoSource  string
+	dindMem        string
+	dindMemSource  string
+	dindCpus       string
+	dindCpusSource string
 	runtimeParams  map[string]bool // params kept out of the Boothfile's arg lines
 	cmds           []string
 	cmdsSource     string
@@ -222,6 +228,15 @@ func (c *collector) collectConfig(t *tmpl.Template, source string) error {
 	if err := c.setScalar(&c.vmShm, &c.vmShmSource, t.VmShmSize, source, "vm-shm-size"); err != nil {
 		return err
 	}
+	if err := c.setScalar(&c.dindIso, &c.dindIsoSource, t.DindIsolation, source, "dind-isolation"); err != nil {
+		return err
+	}
+	if err := c.setScalar(&c.dindMem, &c.dindMemSource, t.DindVmMemory, source, "dind-vm-memory"); err != nil {
+		return err
+	}
+	if err := c.setScalar(&c.dindCpus, &c.dindCpusSource, t.DindVmCpus, source, "dind-vm-cpus"); err != nil {
+		return err
+	}
 	for name, p := range t.Params {
 		if p.Runtime {
 			if c.runtimeParams == nil {
@@ -325,15 +340,18 @@ func (c *collector) build() (*output.BoothOutput, error) {
 
 	// Config — always produce one
 	cfg := &output.ConfigToml{
-		Variant:   c.variant,
-		Port:      c.port,
-		Timezone:  c.timezone,
-		VmMemory:  expandParam(c.vmMemory, params),
-		VmCpus:    expandParam(c.vmCpus, params),
-		VmShmSize: expandParam(c.vmShm, params),
-		Cmds:      c.cmds,
-		RunArgs:   expandParams(dedup(c.runArgs), params),
-		BuildArgs: dedup(c.buildArgs),
+		Variant:       c.variant,
+		Port:          c.port,
+		Timezone:      c.timezone,
+		VmMemory:      expandParam(c.vmMemory, params),
+		VmCpus:        expandParam(c.vmCpus, params),
+		VmShmSize:     expandParam(c.vmShm, params),
+		DindIsolation: expandParam(c.dindIso, params),
+		DindVmMemory:  expandParam(c.dindMem, params),
+		DindVmCpus:    expandParam(c.dindCpus, params),
+		Cmds:          c.cmds,
+		RunArgs:       expandParams(dedup(c.runArgs), params),
+		BuildArgs:     dedup(c.buildArgs),
 	}
 	if c.dind != nil {
 		cfg.Dind = *c.dind

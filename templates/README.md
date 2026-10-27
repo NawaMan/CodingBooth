@@ -423,7 +423,7 @@ fontconfig/GTK libraries Rust GUI crates link to), so it sits with the other sys
 | `tools/conda`              | Conda (Miniforge) |
 | `tools/croft`              | Croft |
 | `tools/dblab`              | dblab |
-| `tools/dind`               | Docker-in-Docker |
+| `tools/dind`               | Docker-in-Docker (`+kata`, experimental: the sidecar in a Kata VM) |
 | `tools/direnv`             | direnv |
 | `tools/dive`               | dive |
 | `tools/docker-buildx`      | Docker Buildx |
@@ -863,6 +863,7 @@ never becomes a Boothfile `arg` (which would rebuild the image):
 | `booth-vm/vm-cpus`      | VM CPUs         | `vm-cpus = "${VM_CPUS}"` — macOS / Apple container only |
 | `booth-vm/vm-memory`    | VM Memory       | `vm-memory = "${VM_MEMORY}"` — macOS / Apple container only |
 | `booth-vm/vm-shm-size`  | VM Shared Memory | `vm-shm-size = "${VM_SHM_SIZE}"` — macOS / Apple container only |
+| `tools/dind+kata`       | Kata VM isolation | `dind-isolation = "kata"`, `dind-vm-memory`/`dind-vm-cpus` from runtime params (experimental) |
 | `languages/fsharp`      | F#              | `requires = ["csharp"]` — F# ships in the .NET SDK; its `+vscode-ext` is at 65 |
 | `tools/git-credential`  | Git Credentials | `run-args` seeding the host `~/.gitconfig` |
 | `tools/no-sudo`         | No Sudo         | `sudo = false` |

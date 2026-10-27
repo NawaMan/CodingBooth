@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.1.0"
 display-name = "Docker-in-Docker"
 display-disc = "Docker-in-Docker support for container workflows"
 display-detail = """Enables Docker-in-Docker (DinD) mode so you can build and run Docker containers from inside \
@@ -7,7 +7,9 @@ the booth container.
 WARNING: The DinD sidecar runs privileged, which means code running in the booth can \
 reach its Docker daemon and use it to step outside the booth's isolation and touch the host. Only \
 select this for booths whose code you trust -- treat it the same caution you'd give running \
---privileged yourself, and be wary of enabling it for a booth of unknown origin. booth asks before starting a DinD booth; pass --dind-allowed to skip the question (e.g. in CI)."""
+--privileged yourself, and be wary of enabling it for a booth of unknown origin. booth asks before starting a DinD booth; pass --dind-allowed to skip the question (e.g. in CI).
+
+To contain it, add the experimental `+kata` extension (`dind+kata`): the sidecar then runs in its own Kata VM, on Linux hosts with KVM and Kata installed."""
 display-order = 62
 dind = true
 tags = [
