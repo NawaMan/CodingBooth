@@ -275,11 +275,12 @@ var fieldDisplays = []fieldDisplay{
 // TestFieldTableCoversSchema fails on anything that is neither, so a new
 // AppConfig field cannot slip in unnoticed the way this table drifted before.
 var unrenderedKeys = map[string]string{
-	"public":   "start-time only (toml:\"-\") — and a committed `public = true` would expose every clone",
-	"okpublic": "start-time only (toml:\"-\") — a one-off --ok-public consent, never persisted (same reasoning as public)",
-	"password": "start-time only (toml:\"-\") — resolved from a gitignored file or stdin, never persisted",
-	"tlscert":  "start-time only (toml:\"-\"), paired with --public",
-	"tlskey":   "start-time only (toml:\"-\"), paired with --public",
+	"public":                   "start-time only (toml:\"-\") — and a committed `public = true` would expose every clone",
+	"okpublic":                 "start-time only (toml:\"-\") — a one-off --ok-public consent, never persisted (same reasoning as public)",
+	"password":                 "start-time only (toml:\"-\") — resolved from a gitignored file or stdin, never persisted",
+	"dindisolationunavailable": "run-time only (toml:\"-\") — why this machine fell back from --dind-isolation, worked out at the start of each run",
+	"tlscert":                  "start-time only (toml:\"-\"), paired with --public",
+	"tlskey":                   "start-time only (toml:\"-\"), paired with --public",
 	// Consent overrides (--dind-allowed / --privileged-allowed) are command-line only by design.
 	"dindallowed":       "command-line consent (--dind-allowed); a committed key would let a repo approve its own privileged sidecar",
 	"privilegedallowed": "command-line consent (--privileged-allowed); a committed key would let a repo approve its own host-escape run-args",

@@ -57,8 +57,11 @@ func normalizeDindIsolation(config *appctx.AppConfig) error {
 	return nil
 }
 
-// checkDindIsolationEngine refuses a mode on an engine it does not run on, and
-// prints the experimental warning. It runs once the engine is resolved.
+// checkDindIsolationEngine refuses combinations that cannot work anywhere, and
+// prints the experimental warning. Whether this machine can run the mode at all
+// (Linux, Docker Engine, KVM, Kata) is settled at the start of the run by
+// booth.ResolveDindIsolation, which falls back to the plain sidecar — with a
+// warning and the usual consent — when it cannot.
 func checkDindIsolationEngine(config *appctx.AppConfig) error {
 	if config.DindIsolation == "" {
 		if !config.Quiet && (config.DindVmMemory != "" || config.DindVmCpus != "") {
@@ -66,12 +69,9 @@ func checkDindIsolationEngine(config *appctx.AppConfig) error {
 		}
 		return nil
 	}
-	if config.Engine != "docker" {
-		return fmt.Errorf("--dind-isolation %s needs engine docker (Docker Engine on Linux); it is not supported on engine %s. See docs/BOOTH_SECURITY.md#dind-isolation", config.DindIsolation, config.Engine)
-	}
 	if config.Egress {
 		return fmt.Errorf("--dind-isolation %s cannot be combined with --egress yet. See docs/BOOTH_SECURITY.md#dind-isolation", config.DindIsolation)
 	}
-	fmt.Fprintf(os.Stderr, "Warning: --dind-isolation %s is experimental: the DinD sidecar runs in its own Kata VM. See docs/BOOTH_SECURITY.md#dind-isolation.\n", config.DindIsolation)
+	fmt.Fprintf(os.Stderr, "Warning: --dind-isolation %s is experimental. See docs/BOOTH_SECURITY.md#dind-isolation.\n", config.DindIsolation)
 	return nil
 }

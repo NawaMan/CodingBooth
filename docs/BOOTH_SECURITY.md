@@ -345,7 +345,7 @@ single VM, which shares your home folder, is the weaker setup there — see
 
 | Need | How to check / get it |
 | --- | --- |
-| Linux, x86_64 or arm64 | Not Docker Desktop (macOS, Windows, or Docker Desktop for Linux) — its VM has no Kata. Refused on Podman and Apple container. |
+| Linux, x86_64 or arm64 | Not Docker Desktop (macOS, Windows, or Docker Desktop for Linux) — its VM has no Kata. Podman falls back to its plain sidecar (below). |
 | Hardware virtualisation | `ls -l /dev/kvm`. VT-x / AMD-V on in the BIOS; inside a cloud VM, nested virtualisation. |
 | Docker Engine, rootful | Docker 23+ runs a containerd shim by name, so **no `daemon.json` change and no Docker restart**. |
 | Kata Containers | Unpack the static release and put its shim on PATH (below). About 1 GB on disk. |
@@ -361,8 +361,34 @@ sudo ln -sf /opt/kata/runtime-rs/bin/containerd-shim-kata-v2 /usr/local/bin/cont
 docker run --rm --runtime io.containerd.kata.v2 alpine uname -r
 ```
 
-booth checks `/dev/kvm`, the shim, and Docker Desktop before it starts anything, and says which is
-missing. The first run builds a small local image, `codingbooth-dind-kata:1` (`docker:dind` plus
+booth checks the engine, Linux, Docker Desktop, `/dev/kvm` and the shim at the very start of the run,
+before it asks, builds or creates anything.
+
+#### When this machine cannot run Kata
+
+A project can ask for Kata in its committed `.booth/config.toml` (`dind-isolation = "kata"`) and still
+open for a teammate on macOS, Windows, Docker Desktop, or Linux without KVM or Kata. There the booth
+**falls back to the plain, privileged `--dind` sidecar — never silently**:
+
+```
+⚠️ ⚠️ ⚠️  DIND ISOLATION (KATA) WAS ASKED FOR, BUT IS NOT AVAILABLE ON THIS MACHINE  ⚠️ ⚠️ ⚠️
+    --dind-isolation kata needs Linux (Docker Engine with KVM); this is darwin. ...
+    Going on runs the PLAIN, PRIVILEGED DinD sidecar instead — not a Kata VM.
+    Booth asks before it does; --dind-allowed goes on without asking.
+```
+
+followed by the usual `--dind` warning and [consent](#booth-asks-before-it-starts-one-of-these):
+
+| | What happens |
+| --- | --- |
+| With a terminal | the banner and warning, then `Start this booth? [y/N]` |
+| No terminal (CI, scripts, agents) | refused, naming `--dind-allowed` — so a job that counted on Kata fails closed |
+| `--dind-allowed` on the command line | the banner and warning, then it starts the plain sidecar without asking |
+
+The same applies whether Kata was asked for by flag, `CB_DIND_ISOLATION` or `config.toml`.
+`booth print-security-warning` reports the fallback the same way, and `--dryrun` shows what this
+machine would run. (On rootless Podman the plain sidecar lands as your own account, so there, as for
+any `--dind`, booth does not ask — the banner still shows.) The first run builds a small local image, `codingbooth-dind-kata:1` (`docker:dind` plus
 `e2fsprogs`).
 
 #### What changes inside the booth
