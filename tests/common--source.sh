@@ -886,7 +886,7 @@ run_coding_booth() {
     local first_arg="${1:-}"
     local is_subcommand=false
     case "$first_arg" in
-      list|start|stop|restart|remove|prune|logs|shell|exec|cp|inspect|stats|top|diff|wait|expose|home-volume-list|home-volume-export|home-volume-import|message|example|template|config|build|express|version|help|--help|-h|print-security-warning)
+      list|start|stop|restart|remove|prune|logs|shell|exec|cp|inspect|stats|top|diff|wait|expose|worktree|home-volume-list|home-volume-export|home-volume-import|message|example|template|config|build|express|version|help|--help|-h|print-security-warning)
         is_subcommand=true ;;
     esac
 

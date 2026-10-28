@@ -104,6 +104,8 @@ USAGE:
   %s wait [name]                              (wait for the booth to stop; print its exit code)
   %s logs [--name <n>] [-f] [service ...]      (show a booth's output or service logs)
   %s expose list [--name <n>] [--json]         (list a booth's published ports)
+  %s worktree list [--json]                    (list git worktrees and their booths)
+  %s worktree remove <name> [--force]          (remove a worktree, its booths and branch)
   %s example <subcommand>                      (manage examples)
   %s template <subcommand>                     (browse and manage templates)
   %s showcase <subcommand>                     (browse and import CodingBooths.online showcases)
@@ -132,6 +134,18 @@ JSON OUTPUT FOR SCRIPTS:
 BOOTSTRAP OPTIONS (CLI or defaults; evaluated before env and config file):
   --code <path>          Host code path to mount at /home/coder/code
                          (default: current directory)
+  --worktree <name>      Use the git worktree whose branch, or else folder, is
+                         <name> as the code path, found with git worktree list.
+                         None yet: create it on branch <name> (new, or existing),
+                         and remove it when the booth exits, if nothing would be
+                         lost. Not combinable with --code. See docs/BOOTH_WORKTREE.md.
+  --worktree-root <dir>  Where a new worktree goes (default: the folder the other
+                         worktrees share, else ../<project>.worktrees)
+  --worktree-from <ref>  Start a new branch at <ref> (default: HEAD)
+  --keep-worktree        Keep the worktree this run creates
+  --push                 With --worktree: when the booth exits 0 with a clean
+                         tree, push the branch (to its upstream, else origin)
+                         before removing the worktree
   --config <file>        Path to the config file to load
                          (default: <code>/.booth/config.toml)
   --profile <a[,b]>      Overlay .booth/<name>--config.toml and .booth/.<name>--env
@@ -323,7 +337,7 @@ EXAMPLES:
 `,
 		s, version,
 		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
-		s, s, s, s,
+		s, s, s, s, s, s,
 		s,
 		s, s, s, s, s,
 	)
@@ -358,7 +372,7 @@ Launch flags override the generated file. CB_* variables still apply and lose
 to flags. --version is the image tag. --apt-snapshot requires --select;
 --templates-path without it is unused. Arguments after -- replace --cmd.
 
-Refused: --config, --profile, --booth-dir, the --add-* / --remove-* config
+Refused: --config, --profile, --booth-dir, the --worktree flags, the --add-* / --remove-* config
 edits, --overwrite, --beside, the config-only flags (--no-tui, --web, --start,
 --full, --detail, --debug), and --writable-booth, --console-spec,
 --leave-tmp-on-exit, --keep-tmp-on-start. --set of cache-files, cache-dirs,
@@ -551,6 +565,32 @@ OPTIONS:
   --json          Print a JSON array, including [] for no matches
   --engine <docker|podman|apple>  Select the engine explicitly
 `, s, s)
+}
+
+func showHelpWorktree() {
+	s := scriptName()
+	fmt.Printf(`%s worktree — the repository's git worktrees and their booths
+
+USAGE:  %s worktree list [--json]
+        %s worktree remove <name> [--force] [--yes]
+
+list    Every worktree of the repository around the current directory (git worktree list),
+        with the booths whose code path it is: name, status and port.
+remove  End worktree <name> (by branch, else folder name) for good: its stopped booths, the
+        worktree, and its branch. Safe by default: it refuses over uncommitted files or a
+        running booth, and keeps a branch whose commits no other branch, remote or tag has.
+        The remote branch is never touched.
+
+To run a booth on a worktree, use '%s --worktree <name>'. See docs/BOOTH_WORKTREE.md.
+
+OPTIONS:
+  --json          (list) Print a JSON array of worktrees, each with its booths
+  --force, -f     (remove) Discard all of it too: uncommitted files, the branch's own commits,
+                  running booths, and the booths' volumes (cb-home-<name>,
+                  booth-<service>data-<name>). Lists them and asks first.
+  --yes, -y       (remove) Do not ask
+  --engine <docker|podman|apple>  Select the engine explicitly
+`, s, s, s, s)
 }
 
 func showHelpStart() {
@@ -990,6 +1030,8 @@ func dispatchHelp(args []string, version string) {
 			showHelpExpress()
 		case "list":
 			showHelpList()
+		case "worktree":
+			showHelpWorktree()
 		case "start":
 			showHelpStart()
 		case "stop":

@@ -33,11 +33,16 @@ func runBooth(version string, args []string) {
 	// booth--shutdown/booth--restart sends kill -HUP -1 through the TTY.
 	signal.Ignore(syscall.SIGHUP)
 
+	// Before init: a --worktree that does not exist yet is created here, so init finds it.
+	worktree := prepareWorktree(args)
+
 	for {
 		context := initOrExit(version, runBoundary{
 			DefaultInitializeAppContextBoundary: boothinit.DefaultInitializeAppContextBoundary{},
 			args:                                args,
 		})
+
+		worktree.check(context)
 
 		if context.Verbose() {
 			fmt.Printf("%+v\n", context)
@@ -51,7 +56,7 @@ func runBooth(version string, args []string) {
 			if !context.KeepAlive() && !context.Daemon() {
 				removeExpressTempSpec(context.ExplicitBoothDir())
 			}
-			os.Exit(code)
+			os.Exit(worktree.finish(code))
 		}
 
 		runner := booth.NewBoothRunner(context)

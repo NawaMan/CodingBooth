@@ -60,6 +60,11 @@ var expressRefused = map[string]string{
 	"--leave-tmp-on-exit": "express does not use the project's .booth/.tmp",
 	"--keep-tmp-on-start": "express does not use the project's .booth/.tmp",
 	"--booth-dir":         "express chooses its own spec directory",
+	"--worktree":          "express takes the code path from --code",
+	"--worktree-root":     "express takes the code path from --code",
+	"--worktree-from":     "express takes the code path from --code",
+	"--keep-worktree":     "express takes the code path from --code",
+	"--push":              "express takes the code path from --code",
 }
 
 // expressSetDenied are config keys run would honor from a file, but that
