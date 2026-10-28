@@ -17,6 +17,9 @@
 # Test 6: the main clone's branch             -> error, non-zero exit
 # Test 7: --worktree with --code              -> error, non-zero exit
 # Test 8: --keep-worktree without --worktree  -> error, non-zero exit
+# Test 9: --push, new worktree                -> says it would push; creates nothing
+# Test 10: --push without --worktree          -> error, non-zero exit
+# Test 11: --push with --keep-alive           -> error, non-zero exit
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -94,5 +97,15 @@ expect_error 7 "--worktree with --code: error" "give one of them" \
     "$WORK/main" --worktree alpha --code "$WORK/main"
 expect_error 8 "--keep-worktree without --worktree: error" "need --worktree" \
     "$WORK/main" --keep-worktree
+
+ACTUAL="$(booth_in "$WORK/main" --worktree pushed --push || true)"
+ok=false
+echo "$ACTUAL" | grep -qF "Dryrun: would push branch pushed when the booth exits cleanly." &&
+    ! git -C "$WORK/main" rev-parse --verify --quiet refs/heads/pushed > /dev/null && ok=true
+pass_fail 9 "--push on a new worktree: dryrun says it would push, and creates nothing" "$ok" "$ACTUAL"
+expect_error 10 "--push without --worktree: error" "need --worktree" \
+    "$WORK/main" --push
+expect_error 11 "--push with --keep-alive: error" "push from the host" \
+    "$WORK/main" --worktree alpha --push --keep-alive
 
 exit $FAILED
