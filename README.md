@@ -441,6 +441,7 @@ User-facing guides:
 - **[booth run](docs/BOOTH_RUN.md)** — Running containers: image selection, config files, run modes, ports, DinD, TLS. [Express](docs/BOOTH_RUN.md#express) runs from arguments and leaves the project's `.booth` unread.
 - **[Security](docs/BOOTH_SECURITY.md)** — What the booth isolates, what it does not, and when booth asks before starting
 - **[Container engines](docs/BOOTH_ENGINES.md)** — Docker, Podman, and Apple container: what each supports, and where a way out of the booth lands
+- **[booth on a git worktree](docs/BOOTH_WORKTREE.md)** — `booth --worktree <name>`: run on a worktree found by branch or folder name
 - **[booth profiles](docs/BOOTH_PROFILES.md)** — Named `config.toml` / `.env` overlays (`--profile dev`): layout, selection, merge rules
 - **[booth config](docs/BOOTH_CONFIG.md)** — Template-driven project scaffolding
 - **[booth build](docs/BOOTH_BUILD.md)** — Build and publish booth images to a container registry

@@ -55,6 +55,7 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 	// First pass to read important flags and value: --dryrun, --verbose, --config and --code
 	configExplicitlySet := false
 	readVerboseDryrunConfigFileAndCode(boundary, &context, &configExplicitlySet)
+	resolveWorktreeOrExit(boundary, &context)
 
 	// Set additional values that is derived from other values
 	context.LibDir = filepath.Join(context.ScriptDir, "libs")
@@ -418,6 +419,8 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 		case "--config":
 			i += 2
 		case "--code":
+			i += 2
+		case "--worktree":
 			i += 2
 		case "--booth-dir":
 			i += 2
@@ -1014,6 +1017,14 @@ func readVerboseDryrunConfigFileAndCode(boundary InitializeAppContextBoundary, c
 			context.Config.Code = nillable.NewNillableString(value)
 			i += 2
 
+		case "--worktree":
+			value, err := needValue(args, i, arg)
+			if err != nil {
+				panic(fmt.Errorf("error parsing --worktree: %w", err))
+			}
+			context.Worktree = value
+			i += 2
+
 		case "--booth-dir":
 			value, err := needValue(args, i, arg)
 			if err != nil {
@@ -1039,6 +1050,23 @@ func readVerboseDryrunConfigFileAndCode(boundary InitializeAppContextBoundary, c
 			i++
 		}
 	}
+}
+
+// resolveWorktreeOrExit turns --worktree <name> into the code path, before anything reads --code.
+func resolveWorktreeOrExit(boundary InitializeAppContextBoundary, context *appctx.AppContextBuilder) {
+	if context.Worktree == "" {
+		return
+	}
+	if context.Config.Code.IsSet() {
+		fmt.Fprintf(os.Stderr, "Error: --worktree and --code both choose the code path; give one of them.\n")
+		os.Exit(1)
+	}
+	path, err := resolveWorktreeCode(boundary.GetCurrentPath(), context.Worktree)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+	context.Config.Code = nillable.NewNillableString(path)
 }
 
 func runPreserveCodeAndConfig(context *appctx.AppContextBuilder, fn func()) {

@@ -39,6 +39,10 @@ type AppContextBuilder struct {
 	// Empty means <code>/.booth. Express sets it so the project .booth stays unread.
 	BoothDir string
 
+	// Worktree is the --worktree name: the git worktree, found by branch or folder name, whose
+	// path becomes --code. Empty means --code (or the current directory) is used as given.
+	Worktree string
+
 	// derived from variant
 	HasNotebook bool
 	HasVscode   bool
