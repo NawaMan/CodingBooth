@@ -38,7 +38,7 @@ container (removed at exit unless `--keep-alive`):
 | At start | At exit |
 | --- | --- |
 | Worktree **created by this run** | Removed, when safe. `--keep-worktree` keeps it |
-| Worktree **already existed** (the user's, or left over from an earlier run) | Always kept. Removing it is `git worktree remove`, not booth |
+| Worktree **already existed** (the user's, or left over from an earlier run) | Always kept. Removing it is an explicit `booth worktree remove <name>` (§7) |
 
 The branch follows the same rule: booth deletes only a branch this run created. `--keep-worktree`
 is the only flag; it has meaning only when this run creates the worktree.
@@ -194,6 +194,22 @@ failure. Success uses the exit code in an interactive session too, as P2 does.
 
 `git worktree list` joined with booth status: path, branch, booth name, running/stopped, port.
 Read-only.
+
+### 7. `booth worktree remove <name>` (added 2026-10-28)
+
+Ends a dropped worktree on purpose, whoever made it: its booths, the folder, the branch. Never the
+main checkout; refused from inside the worktree. Decided: named `remove`; safe by default, keeping
+a branch whose commits nothing else has; volumes only with `--force`.
+
+- Without `--force`: refuses over a running booth, uncommitted or untracked files, or commits only
+  at a detached HEAD. Removes stopped booths (not their volumes), the worktree, and the branch
+  unless it has commits no other branch, remote or tag has (then kept, with the count).
+- `--force`: lists what it discards and asks (`--yes` skips). Also removes running booths and the
+  per-booth volumes (`cb-home-<name>`, `booth-<svc>data-<name>`), matched by name only, so shared
+  cache volumes are never hit. Deletes the branch with `-D`.
+- The remote branch is never touched; booth prints `git push <remote> --delete <branch>`.
+- Folders: empty nested-branch folders, and `../<project>.worktrees` once empty; never a root the
+  user picked.
 
 ## Phases
 
