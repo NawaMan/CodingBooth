@@ -106,6 +106,9 @@ var engineFlag = enumFlag("--engine", "docker", "podman", "apple")
 var runFlags = []Flag{
 	flag(Dir, "--code"),
 	flag(Text, "--worktree"),
+	flag(Dir, "--worktree-root"),
+	flag(Text, "--worktree-from"),
+	boolFlag("--keep-worktree"),
 	flag(File, "--config"),
 	flag(Dir, "--booth-dir"),
 	flag(Profile, "--profile"),
