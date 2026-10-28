@@ -35,6 +35,9 @@ func main() {
 		case "list":
 			listBooths(version)
 			return
+		case "worktree":
+			worktreeCommand(version)
+			return
 		case "start":
 			startBooth(version)
 			return

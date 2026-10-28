@@ -28,6 +28,7 @@ const (
 	ConfigKey             // a config.toml key
 	ConfigSet             // a config.toml key=value
 	CommandName           // the name of a top-level command
+	Worktree              // a git worktree's branch or folder name, or a branch to make one for
 )
 
 // Flag is one option. Names holds every spelling; the first is the canonical one.
@@ -105,7 +106,7 @@ var engineFlag = enumFlag("--engine", "docker", "podman", "apple")
 // A bare `booth [flags]`, `booth run` and `booth print-security-warning` share it.
 var runFlags = []Flag{
 	flag(Dir, "--code"),
-	flag(Text, "--worktree"),
+	flag(Worktree, "--worktree"),
 	flag(Dir, "--worktree-root"),
 	flag(Text, "--worktree-from"),
 	boolFlag("--keep-worktree"),
@@ -292,6 +293,11 @@ func Spec() *Command {
 			{Name: "express", Desc: "Run from arguments, ignoring .booth/", Flags: join(expressOwnFlags, runFlags)},
 			{Name: "list", Desc: "List booth containers",
 				Flags: []Flag{engineFlag, boolFlag("--running"), boolFlag("--stopped"), boolFlag("--name-only"), boolFlag("--json")}},
+			{Name: "worktree", Desc: "List git worktrees and their booths",
+				Subs: []*Command{
+					{Name: "list", Desc: "List git worktrees and their booths", Flags: []Flag{engineFlag, boolFlag("--json")}},
+					{Name: "help", Desc: "Show help"},
+				}},
 			{Name: "start", Desc: "Start a stopped keep-alive booth",
 				Flags: []Flag{engineFlag, nameFlag, codeFlag, boolFlag("--daemon", "-d")}, Args: []Kind{Booth}},
 			{Name: "stop", Desc: "Stop a running booth",

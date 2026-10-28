@@ -22,6 +22,7 @@
 #    local branch: only the pushed branch remains.
 # 9) --push with uncommitted work pushes nothing, keeps the worktree, exits 1.
 # 10) --push on a worktree that already existed pushes it, and leaves it.
+# 11) `booth worktree list` shows a daemon booth running on its worktree.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -37,7 +38,8 @@ fi
 BOOTH_BIN="$(find_local_booth_build "$PWD")"
 
 WORK="$(cd "$(mktemp -d)" && pwd -P)"
-trap 'rm -rf "$WORK"' EXIT
+DAEMON=""
+trap '[[ -n "$DAEMON" ]] && "$BOOTH_BIN" remove --name "$DAEMON" --force > /dev/null 2>&1; rm -rf "$WORK"' EXIT
 git init -q -b main "$WORK/proj"
 git -C "$WORK/proj" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init
 ROOT="$WORK/proj.worktrees"
@@ -122,3 +124,11 @@ ok=false
 on_origin dirty > /dev/null && [[ -d "$ROOT/dirty" ]] && echo "$OUT" | grep -q "^Pushed branch dirty to origin" &&
   ! echo "$OUT" | grep -q "^Removed worktree" && ok=true
 check 10 "--push on an existing worktree pushes it and leaves it in place" "$ok" "$OUT"
+
+# An existing worktree, so --daemon needs no --keep-worktree. Name it per run: never clash.
+DAEMON="wt-list-$$"
+booth_wt --worktree dirty --daemon --name "$DAEMON" > /dev/null
+OUT="$(cd "$WORK/proj" && "$BOOTH_BIN" worktree list 2>&1 || true)"
+ok=false
+echo "$OUT" | grep -qE "^dirty +$DAEMON +Running +[0-9]+ +$ROOT/dirty\$" && ok=true
+check 11 "booth worktree list shows the booth running on its worktree" "$ok" "$OUT"
