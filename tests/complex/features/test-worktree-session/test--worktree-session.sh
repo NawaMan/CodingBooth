@@ -16,6 +16,8 @@
 # 4) Running on that kept worktree again leaves it in place (it existed).
 # 5) --keep-worktree keeps a clean worktree.
 # 6) The booth is named after the branch, "/" turned into "-".
+# 7) A restart (booth--restart) is not an exit: the restarted booth runs in the
+#    same worktree, and only the real exit after it cleans up.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -77,3 +79,17 @@ OUT="$(booth_wt --worktree team/named -- 'echo "NAME=$BOOTH_CONTAINER_NAME"')"
 ok=false
 echo "$OUT" | grep -q "^NAME=team-named" && ok=true
 check 6 "The booth is named after the branch, with / turned into -" "$ok" "$OUT"
+
+# Run 1 commits a marker and restarts; run 2 sees the commit and exits. Had the
+# restart cleaned up, run 2 would have no worktree, and the branch no commit.
+RESTART_CMD='if [ "$(git log -1 --format=%s)" != restarted ]; then
+  git -c user.email=t@t -c user.name=t commit -q --allow-empty -m restarted
+  booth--restart --yes; sleep 60
+else
+  echo "RUN2 branch=$(git branch --show-current)"
+fi'
+OUT="$(booth_wt --worktree restarts -- "$RESTART_CMD")"
+ok=false
+echo "$OUT" | grep -q "^RUN2 branch=restarts" && echo "$OUT" | grep -q "^Kept branch restarts: it has 1 new commit" &&
+  [[ ! -e "$ROOT/restarts" ]] && [[ "$(echo "$OUT" | grep -c '^Removed worktree')" == 1 ]] && ok=true
+check 7 "A restart keeps the worktree; only the real exit after it cleans up" "$ok" "$OUT"
