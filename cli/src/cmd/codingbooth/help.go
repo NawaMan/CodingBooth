@@ -105,6 +105,7 @@ USAGE:
   %s logs [--name <n>] [-f] [service ...]      (show a booth's output or service logs)
   %s expose list [--name <n>] [--json]         (list a booth's published ports)
   %s worktree list [--json]                    (list git worktrees and their booths)
+  %s worktree remove <name> [--force]          (remove a worktree, its booths and branch)
   %s example <subcommand>                      (manage examples)
   %s template <subcommand>                     (browse and manage templates)
   %s showcase <subcommand>                     (browse and import CodingBooths.online showcases)
@@ -336,7 +337,7 @@ EXAMPLES:
 `,
 		s, version,
 		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
-		s, s, s, s, s,
+		s, s, s, s, s, s,
 		s,
 		s, s, s, s, s,
 	)
@@ -570,16 +571,26 @@ func showHelpWorktree() {
 	s := scriptName()
 	fmt.Printf(`%s worktree — the repository's git worktrees and their booths
 
-USAGE:  %s worktree list [options]
+USAGE:  %s worktree list [--json]
+        %s worktree remove <name> [--force] [--yes]
 
-Lists every worktree of the repository around the current directory (git worktree list),
-with the booths whose code path it is: name, status and port. To run a booth on one, use
-'%s --worktree <name>'. See docs/BOOTH_WORKTREE.md.
+list    Every worktree of the repository around the current directory (git worktree list),
+        with the booths whose code path it is: name, status and port.
+remove  End worktree <name> (by branch, else folder name) for good: its stopped booths, the
+        worktree, and its branch. Safe by default: it refuses over uncommitted files or a
+        running booth, and keeps a branch whose commits no other branch, remote or tag has.
+        The remote branch is never touched.
+
+To run a booth on a worktree, use '%s --worktree <name>'. See docs/BOOTH_WORKTREE.md.
 
 OPTIONS:
-  --json          Print a JSON array of worktrees, each with its booths
+  --json          (list) Print a JSON array of worktrees, each with its booths
+  --force, -f     (remove) Discard all of it too: uncommitted files, the branch's own commits,
+                  running booths, and the booths' volumes (cb-home-<name>,
+                  booth-<service>data-<name>). Lists them and asks first.
+  --yes, -y       (remove) Do not ask
   --engine <docker|podman|apple>  Select the engine explicitly
-`, s, s, s)
+`, s, s, s, s)
 }
 
 func showHelpStart() {

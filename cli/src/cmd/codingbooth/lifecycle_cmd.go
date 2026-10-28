@@ -25,6 +25,8 @@ func worktreeCommand(_ string) {
 	switch os.Args[2] {
 	case "list":
 		handleLifecycleErr(lifecycle.WorktreeList(os.Args[3:], os.Stdout, os.Stderr))
+	case "remove":
+		handleLifecycleErr(lifecycle.WorktreeRemove(os.Args[3:], os.Stdin, os.Stdout, os.Stderr))
 	case "help", "--help", "-h":
 		showHelpWorktree()
 	default:

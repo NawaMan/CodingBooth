@@ -23,6 +23,11 @@
 # 9) --push with uncommitted work pushes nothing, keeps the worktree, exits 1.
 # 10) --push on a worktree that already existed pushes it, and leaves it.
 # 11) `booth worktree list` shows a daemon booth running on its worktree.
+# 12) `booth worktree remove` refuses while a booth runs on the worktree.
+# 13) Once that booth is stopped: removes the booth, the worktree and the pushed
+#     branch, and leaves the remote branch alone.
+# 14) Uncommitted work and unpushed commits: refused without --force.
+# 15) --force --yes discards them, with the booth and its per-booth volume.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -39,7 +44,13 @@ BOOTH_BIN="$(find_local_booth_build "$PWD")"
 
 WORK="$(cd "$(mktemp -d)" && pwd -P)"
 DAEMON=""
-trap '[[ -n "$DAEMON" ]] && "$BOOTH_BIN" remove --name "$DAEMON" --force > /dev/null 2>&1; rm -rf "$WORK"' EXIT
+VOLUME=""
+cleanup() {
+  [[ -n "$DAEMON" ]] && "$BOOTH_BIN" remove --name "$DAEMON" --force > /dev/null 2>&1
+  [[ -n "$VOLUME" ]] && docker volume rm "$VOLUME" > /dev/null 2>&1
+  rm -rf "$WORK"
+}
+trap cleanup EXIT
 git init -q -b main "$WORK/proj"
 git -C "$WORK/proj" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init
 ROOT="$WORK/proj.worktrees"
@@ -125,10 +136,53 @@ on_origin dirty > /dev/null && [[ -d "$ROOT/dirty" ]] && echo "$OUT" | grep -q "
   ! echo "$OUT" | grep -q "^Removed worktree" && ok=true
 check 10 "--push on an existing worktree pushes it and leaves it in place" "$ok" "$OUT"
 
-# An existing worktree, so --daemon needs no --keep-worktree. Name it per run: never clash.
+# An existing worktree, so --daemon needs no --keep-worktree; --keep-alive keeps it once stopped
+# (step 13). Name it per run: never clash.
 DAEMON="wt-list-$$"
-booth_wt --worktree dirty --daemon --name "$DAEMON" > /dev/null
+booth_wt --worktree dirty --daemon --keep-alive --name "$DAEMON" > /dev/null
 OUT="$(cd "$WORK/proj" && "$BOOTH_BIN" worktree list 2>&1 || true)"
 ok=false
 echo "$OUT" | grep -qE "^dirty +$DAEMON +Running +[0-9]+ +$ROOT/dirty\$" && ok=true
 check 11 "booth worktree list shows the booth running on its worktree" "$ok" "$OUT"
+
+wt_remove() { # args...; prints the output, then "EXIT=<code>"
+  local code=0
+  (cd "$WORK/proj" && "$BOOTH_BIN" worktree remove "$@" 2>&1 < /dev/null) || code=$?
+  echo "EXIT=$code"
+}
+
+OUT="$(wt_remove dirty)"
+ok=false
+[[ -d "$ROOT/dirty" ]] && echo "$OUT" | grep -q "booth $DAEMON is running" && echo "$OUT" | grep -q "^EXIT=1" && ok=true
+check 12 "worktree remove refuses while a booth runs on it" "$ok" "$OUT"
+
+"$BOOTH_BIN" stop --name "$DAEMON" > /dev/null 2>&1
+OUT="$(wt_remove dirty)"
+ok=false
+[[ ! -e "$ROOT/dirty" ]] && ! has_branch dirty && on_origin dirty > /dev/null &&
+  ! docker container inspect "$DAEMON" > /dev/null 2>&1 &&
+  echo "$OUT" | grep -q "^Removed booth $DAEMON" && echo "$OUT" | grep -q "^The remote branch origin/dirty is untouched" &&
+  echo "$OUT" | grep -q "^EXIT=0" && ok=true
+check 13 "worktree remove: the stopped booth, the worktree and the pushed branch go; the remote stays" "$ok" "$OUT"
+DAEMON=""
+
+# "half" (step 9) has a commit only on its branch and an uncommitted file.
+DAEMON="wt-rm-$$"
+booth_wt --worktree half --daemon --keep-alive --name "$DAEMON" > /dev/null
+"$BOOTH_BIN" stop --name "$DAEMON" > /dev/null 2>&1
+VOLUME="booth-testdata-$DAEMON"
+docker volume create "$VOLUME" > /dev/null
+OUT="$(wt_remove half)"
+ok=false
+[[ -f "$ROOT/half/draft.txt" ]] && has_branch half && docker container inspect "$DAEMON" > /dev/null 2>&1 &&
+  echo "$OUT" | grep -q "1 uncommitted or untracked file" && echo "$OUT" | grep -q "^EXIT=1" && ok=true
+check 14 "worktree remove keeps uncommitted work without --force, and removes nothing" "$ok" "$OUT"
+
+OUT="$(wt_remove half --force --yes)"
+ok=false
+[[ ! -e "$ROOT/half" ]] && ! has_branch half && ! docker container inspect "$DAEMON" > /dev/null 2>&1 &&
+  ! docker volume inspect "$VOLUME" > /dev/null 2>&1 && echo "$OUT" | grep -q "1 commit(s) only on branch half" &&
+  echo "$OUT" | grep -q "^Removed volume $VOLUME" && echo "$OUT" | grep -q "^EXIT=0" && ok=true
+check 15 "worktree remove --force --yes discards the work, the booth and its volume" "$ok" "$OUT"
+DAEMON=""
+VOLUME=""

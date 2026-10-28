@@ -40,8 +40,8 @@ func (f fakeSources) Templates(ctx Context) []TemplateInfo {
 
 func (f fakeSources) Profiles(ctx Context) []string { return f.profiles }
 func (f fakeSources) ConfigKeys() []string          { return []string{"variant", "port", "verbose"} }
-func (f fakeSources) Worktrees(ctx Context) []Item {
-	return []Item{{"feature/x", "worktree /r/x"}, {"fix-1", "worktree /r/fix-1"}, {"old", "branch: makes a new worktree"}}
+func (f fakeSources) Worktrees(ctx Context) (worktrees, branches []Item) {
+	return []Item{{"feature/x", "worktree /r/x"}, {"fix-1", "worktree /r/fix-1"}}, []Item{{"old", "branch: makes a new worktree"}}
 }
 
 func complete(words ...string) Result {
@@ -174,7 +174,9 @@ func TestWorktreeNames(t *testing.T) {
 }
 
 func TestWorktreeListCommand(t *testing.T) {
-	assert.Equal(t, []string{"list", "help"}, itemValues(complete("worktree", "")))
+	assert.Equal(t, []string{"list", "remove", "help"}, itemValues(complete("worktree", "")))
+	assert.Equal(t, []string{"feature/x", "fix-1"}, itemValues(complete("worktree", "remove", "")),
+		"remove offers only worktrees that exist")
 	assert.Contains(t, itemValues(complete("worktree", "list", "--")), "--json")
 }
 
@@ -200,9 +202,9 @@ func TestLiveWorktrees(t *testing.T) {
 	gitRun(main, "worktree", "add", "-q", filepath.Join(root, "wt", "a"), "-b", "feature/a")
 	gitRun(main, "branch", "spare")
 
-	got := LiveSources{}.Worktrees(Context{Code: main})
-	assert.Equal(t, []Item{
-		{"feature/a", "worktree " + filepath.Join(root, "wt", "a")},
-		{"spare", "branch: makes a new worktree"},
-	}, got, "the main checkout's branch is left out")
+	worktrees, branches := LiveSources{}.Worktrees(Context{Code: main})
+	assert.Equal(t, []Item{{"feature/a", "worktree " + filepath.Join(root, "wt", "a")}}, worktrees,
+		"the main checkout is left out")
+	assert.Equal(t, []Item{{"spare", "branch: makes a new worktree"}}, branches,
+		"the main checkout's branch is left out")
 }

@@ -32,7 +32,9 @@ This file contains a list of changes for each released version.
   (`feature/x` → `feature-x`). `--push` pushes the branch from the host when the run succeeds (to
   its upstream, else `origin`), so after a clean, pushed run only the remote branch remains. Also
   `--worktree-root` and `--worktree-from`. `booth worktree list` shows each worktree with the
-  booths running on it, and shell completion offers worktree and branch names for `--worktree`.
+  booths running on it, and `booth worktree remove <name>` ends one you dropped: its booths, the
+  worktree and its branch, only what loses nothing unless `--force` (which asks first, and also
+  removes the booths' per-booth volumes). Shell completion offers worktree and branch names.
   See `docs/BOOTH_WORKTREE.md`.
 
 - **A fixed port that is already taken now stops the booth with a clear error.** Before, a fixed
