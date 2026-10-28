@@ -16,12 +16,6 @@ This file contains a list of changes for each released version.
   `~/.config/zed` at `/etc/cb-home-seed/.config/zed`. On non-desktop variants the setup is
   skipped. `examples/workspaces/zed-example` opens a small project in it.
 
-- **`booth --worktree <name>` runs a booth on one of the repository's git worktrees.** booth finds
-  it in `git worktree list` by branch, else by folder name, so any layout works and there is
-  nothing to configure. It works from the main checkout or from inside another worktree, and is
-  the same as `--code <its path>`. A missing, ambiguous or deleted worktree, the main checkout, or
-  `--code` given as well, is an error that says what to do. See `docs/BOOTH_WORKTREE.md`.
-
 - **`booth --worktree <name>` runs a booth on a git worktree, creating it when needed, and cleans
   up after itself.** booth finds the worktree in `git worktree list` by branch, else by folder name,
   so any layout works. When there is none, it creates one on branch `<name>` (new, or an existing
