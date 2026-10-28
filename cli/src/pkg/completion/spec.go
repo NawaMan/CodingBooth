@@ -105,6 +105,7 @@ var engineFlag = enumFlag("--engine", "docker", "podman", "apple")
 // A bare `booth [flags]`, `booth run` and `booth print-security-warning` share it.
 var runFlags = []Flag{
 	flag(Dir, "--code"),
+	flag(Text, "--worktree"),
 	flag(File, "--config"),
 	flag(Dir, "--booth-dir"),
 	flag(Profile, "--profile"),

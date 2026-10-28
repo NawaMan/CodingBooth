@@ -16,6 +16,12 @@ This file contains a list of changes for each released version.
   `~/.config/zed` at `/etc/cb-home-seed/.config/zed`. On non-desktop variants the setup is
   skipped. `examples/workspaces/zed-example` opens a small project in it.
 
+- **`booth --worktree <name>` runs a booth on one of the repository's git worktrees.** booth finds
+  it in `git worktree list` by branch, else by folder name, so any layout works and there is
+  nothing to configure. It works from the main checkout or from inside another worktree, and is
+  the same as `--code <its path>`. A missing, ambiguous or deleted worktree, the main checkout, or
+  `--code` given as well, is an error that says what to do. See `docs/BOOTH_WORKTREE.md`.
+
 - **A fixed port that is already taken now stops the booth with a clear error.** Before, a fixed
   booth port (`--port 10000`, `port = "10000"`) or a fixed published port (`-p 4566:4566`) that
   another booth held reached `docker run`, which failed with "port is already allocated" and
