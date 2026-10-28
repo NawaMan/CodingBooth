@@ -163,7 +163,26 @@ host, not in the booth.
   brings only committed files. A booth on a new worktree starts without them.
 - **Volumes** the booth used (`booth-pgdata-{name}`) are not removed with the worktree.
 
+## Listing worktrees
+
+`booth worktree list` shows every worktree of the repository, with the booths running on each, so
+you can see which worktree has which booth:
+
+```text
+$ booth worktree list
+BRANCH     BOOTH      STATUS   PORT   PATH
+main       -          -        -      /home/me/proj  (main checkout)
+feature/x  feature-x  Running  11000  /home/me/proj.worktrees/feature/x
+fix-123    -          -        -      /home/me/proj.worktrees/fix-123
+```
+
+A booth belongs to a worktree when its code path is that worktree's folder. `--json` prints the
+same as an array, each worktree with its `booths`. Shell completion offers the names `--worktree`
+takes: the worktrees, then the local branches that have no worktree yet.
+
 ## Several booths at once
 
-Each worktree gets its own booth name, and its own per-booth volumes. Two booths need two ports:
-give each its own, or use `--port NEXT`.
+Each worktree gets its own booth name, and its own per-booth volumes. Ports do not clash by
+default either: booth's default port is `NEXT`, so a second booth takes the next free one. A
+project that pins a fixed `port` in `config.toml` gets an error for the second booth, saying the
+port is in use; give that run `--port NEXT`.

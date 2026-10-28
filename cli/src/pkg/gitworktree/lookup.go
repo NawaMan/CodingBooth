@@ -170,3 +170,12 @@ func BoothName(e Entry) string {
 	}
 	return strings.Trim(notInBoothName.ReplaceAllString(name, "-"), "-.")
 }
+
+// Branches returns the local branch names of the repository holding dir.
+func Branches(dir string) ([]string, error) {
+	out, err := git(dir, "for-each-ref", "--format=%(refname:short)", "refs/heads/")
+	if err != nil || out == "" {
+		return nil, err
+	}
+	return strings.Split(out, "\n"), nil
+}
