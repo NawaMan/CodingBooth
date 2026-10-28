@@ -27,7 +27,7 @@ type worktreeRun struct {
 
 // worktreeFlags is what a run's arguments say about --worktree, before the `--` command.
 type worktreeFlags struct {
-	name, root, from         string
+	name, root, from               string
 	keep, push, dryrun, background bool // background: --daemon or --keep-alive
 }
 
