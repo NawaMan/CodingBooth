@@ -132,6 +132,9 @@ JSON OUTPUT FOR SCRIPTS:
 BOOTSTRAP OPTIONS (CLI or defaults; evaluated before env and config file):
   --code <path>          Host code path to mount at /home/coder/code
                          (default: current directory)
+  --worktree <name>      Use the git worktree whose branch, or else folder, is
+                         <name> as the code path, found with git worktree list.
+                         Not combinable with --code. See docs/BOOTH_WORKTREE.md.
   --config <file>        Path to the config file to load
                          (default: <code>/.booth/config.toml)
   --profile <a[,b]>      Overlay .booth/<name>--config.toml and .booth/.<name>--env
@@ -358,7 +361,7 @@ Launch flags override the generated file. CB_* variables still apply and lose
 to flags. --version is the image tag. --apt-snapshot requires --select;
 --templates-path without it is unused. Arguments after -- replace --cmd.
 
-Refused: --config, --profile, --booth-dir, the --add-* / --remove-* config
+Refused: --config, --profile, --booth-dir, --worktree, the --add-* / --remove-* config
 edits, --overwrite, --beside, the config-only flags (--no-tui, --web, --start,
 --full, --detail, --debug), and --writable-booth, --console-spec,
 --leave-tmp-on-exit, --keep-tmp-on-start. --set of cache-files, cache-dirs,
