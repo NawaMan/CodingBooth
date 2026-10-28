@@ -16,6 +16,21 @@ This file contains a list of changes for each released version.
   `~/.config/zed` at `/etc/cb-home-seed/.config/zed`. On non-desktop variants the setup is
   skipped. `examples/workspaces/zed-example` opens a small project in it.
 
+- **`booth --worktree <name>` runs a booth on a git worktree, creating it when needed, and cleans
+  up after itself.** booth finds the worktree in `git worktree list` by branch, else by folder name,
+  so any layout works. When there is none, it creates one on branch `<name>` (new, or an existing
+  one), beside your other worktrees or in `../<project>.worktrees/`, and removes it when the booth
+  exits: booth leaves the repository the way it found it. Removal never forces: uncommitted
+  changes, a failed run, or `--keep-worktree` keep the worktree, and new commits keep the branch.
+  A worktree that already existed is never removed. The booth is named after the branch
+  (`feature/x` → `feature-x`). `--push` pushes the branch from the host when the run succeeds (to
+  its upstream, else `origin`), so after a clean, pushed run only the remote branch remains. Also
+  `--worktree-root` and `--worktree-from`. `booth worktree list` shows each worktree with the
+  booths running on it, and `booth worktree remove <name>` ends one you dropped: its booths, the
+  worktree and its branch, only what loses nothing unless `--force` (which asks first, and also
+  removes the booths' per-booth volumes). Shell completion offers worktree and branch names.
+  See `docs/BOOTH_WORKTREE.md`.
+
 - **A fixed port that is already taken now stops the booth with a clear error.** Before, a fixed
   booth port (`--port 10000`, `port = "10000"`) or a fixed published port (`-p 4566:4566`) that
   another booth held reached `docker run`, which failed with "port is already allocated" and

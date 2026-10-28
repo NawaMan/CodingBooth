@@ -15,6 +15,27 @@ func listBooths(_ string) {
 	handleLifecycleErr(lifecycle.List(os.Args[2:], os.Stdout, os.Stderr))
 }
 
+// worktreeCommand is `booth worktree <subcommand>`. The run options (--worktree, --push, …) are
+// in worktree_run.go.
+func worktreeCommand(_ string) {
+	if len(os.Args) < 3 {
+		showHelpWorktree()
+		os.Exit(1)
+	}
+	switch os.Args[2] {
+	case "list":
+		handleLifecycleErr(lifecycle.WorktreeList(os.Args[3:], os.Stdout, os.Stderr))
+	case "remove":
+		handleLifecycleErr(lifecycle.WorktreeRemove(os.Args[3:], os.Stdin, os.Stdout, os.Stderr))
+	case "help", "--help", "-h":
+		showHelpWorktree()
+	default:
+		fmt.Fprintf(os.Stderr, "Unknown worktree subcommand: %s\n", os.Args[2])
+		showHelpWorktree()
+		os.Exit(1)
+	}
+}
+
 func startBooth(_ string) {
 	handleLifecycleErr(lifecycle.Start(os.Args[2:], os.Stderr))
 }
