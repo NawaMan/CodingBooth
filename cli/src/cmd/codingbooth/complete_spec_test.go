@@ -164,6 +164,17 @@ func TestCompletionSpecMatchesHandWrittenParsers(t *testing.T) {
 	checkGroup(t, "example.go", []string{"example list", "example try"}, argsCompareFlags(t, "example.go"), nil)
 }
 
+// Express refuses some run flags as soon as it sees them; offering them on Tab
+// would only lead to that error.
+func TestCompletionSpecExpressOffersNoRefusedFlag(t *testing.T) {
+	offered := specFlags(t, "express")
+	for flag := range expressRefused {
+		if offered[bare(flag)] {
+			t.Errorf("spec for express offers %s, which express refuses", flag)
+		}
+	}
+}
+
 func TestCompletionSpecMatchesFlagSets(t *testing.T) {
 	lifecycle := map[string]map[string]nameSet{}
 	for _, file := range []string{"lifecycle", "connect", "copy", "logs", "expose", "message", "home_volume", "observe"} {
