@@ -1,0 +1,4 @@
+# Configured by: booth config --no-tui --overwrite --variant xfce --port 50811 --select zed:1.25.3
+
+variant = "xfce"
+port = "50811"
