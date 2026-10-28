@@ -16,20 +16,20 @@ package completion
 type Kind int
 
 const (
-	None      Kind = iota // a flag that takes no value
-	Text                  // free text: nothing to offer
-	File                  // a host file path: the shell completes it
-	Dir                   // a host directory path: the shell completes it
-	Enum                  // one of Values
-	Booth                 // the name of an existing booth container
-	Select                // a template selection DSL (go+vscode-ext,python)
-	Template              // a single template name
-	Profile               // a profile name, or a comma list of them
-	ConfigKey             // a config.toml key
-	ConfigSet             // a config.toml key=value
-	CommandName           // the name of a top-level command
-	Worktree              // a git worktree's branch or folder name, or a branch to make one for
-	ExistingWorktree      // a git worktree's branch or folder name
+	None             Kind = iota // a flag that takes no value
+	Text                         // free text: nothing to offer
+	File                         // a host file path: the shell completes it
+	Dir                          // a host directory path: the shell completes it
+	Enum                         // one of Values
+	Booth                        // the name of an existing booth container
+	Select                       // a template selection DSL (go+vscode-ext,python)
+	Template                     // a single template name
+	Profile                      // a profile name, or a comma list of them
+	ConfigKey                    // a config.toml key
+	ConfigSet                    // a config.toml key=value
+	CommandName                  // the name of a top-level command
+	Worktree                     // a git worktree's branch or folder name, or a branch to make one for
+	ExistingWorktree             // a git worktree's branch or folder name
 )
 
 // Flag is one option. Names holds every spelling; the first is the canonical one.
@@ -85,7 +85,7 @@ func (c *Command) Flag(name string) *Flag {
 }
 
 func flag(kind Kind, names ...string) Flag { return Flag{Names: names, Kind: kind} }
-func boolFlag(names ...string) Flag       { return Flag{Names: names, Kind: None} }
+func boolFlag(names ...string) Flag        { return Flag{Names: names, Kind: None} }
 func enumFlag(name string, values ...string) Flag {
 	return Flag{Names: []string{name}, Kind: Enum, Values: values}
 }
