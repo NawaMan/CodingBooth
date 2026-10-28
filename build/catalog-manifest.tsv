@@ -346,6 +346,7 @@ setup	xfce-theme	0.3.0	3aaece21b4d035ec5c8b7709e074ab844a91270de0096e22278658c8d
 setup	xfce-wallpaper	1.0.0	90cef9dd780257750f474fbcfa0fb2f3a4fc5fb4c24b8e7e53e5cfee8d3bfe70	variants/base/setups/xfce-wallpaper--setup.sh
 setup	xonsh	0.1.0	4538540d06db3732825700112ac588f353978f14f6f982e35dc75b0d148286a3	variants/base/setups/xonsh--setup.sh
 setup	yaml-code-extension	0.1.0	a645a17343854b3f3fc21a01e0fb6346878cc777aacf9935aa9618e852138c19	variants/base/setups/yaml-code-extension--setup.sh
+setup	zed	0.3.0	644c62e960f033c5e6c3f6f5e4a349e7ac6e6503e228ad76b6e70a4687897068	variants/base/setups/zed--setup.sh
 setup	zig	1.0.0	b4697e1c090e510c423ef961dd6bfcc06a480adf78bd774e3f5291ac468f459e	variants/base/setups/zig--setup.sh
 setup	zig-code-extension	1.0.0	2b398b4a16070263e1e4929a512e1cbf7c997bb6b7124688aa0d5e30812ecb5c	variants/base/setups/zig-code-extension--setup.sh
 install	apt	1.1.0	bbdff5f9b3e9b8265ed61c04d69f24714dc8c10605af2675088d08190985f42b	variants/base/setups/apt--install.sh
@@ -618,6 +619,7 @@ template	wayland	1.0.0	974e2301a7067a3dba501af4422cc0756c967e899cba17bc4092d93de
 template	webstorm	1.0.0	7caa6ea1c7f30bbfd65ee756e161c2dd164972ffd77cce6585a60be1ef04adc8	templates/ides/webstorm/template.toml
 template	xfce	1.0.0	e8a1f042cf6d70bf19f5ac6222e65ac9e0d2c97666f0deed4356316c0976d335	templates/desktops/xfce/template.toml
 template	xonsh	0.1.0	5b81d563e92fdeed53e97c84f2884ac0464fd977c57877b68bde851690ab1237	templates/tools/xonsh/template.toml
+template	zed	0.1.0	bc708da2e1664ff1c9a88a31f9c0390dd7c0f6db7ec355fc02be24ca51ded8ed	templates/ides/zed/template.toml
 template	zig	1.0.0	71543afb9d1ddc460b14e73a70e2d9526a5999f4a58ddd4b75d05c99a0ba34b6	templates/languages/zig/template.toml
 template	zsh	1.0.0	3bff077c10dfc8f349493225885ee048681221ffeddec5c489afd5afd1a4ac41	templates/tools/zsh/template.toml
 extension	alacritty+default	1.0.0	fb58c274fc0f0b31accbf87ed1730789566c268b79d941808784ebc33438bd17	templates/desktops/alacritty/default--extension.toml

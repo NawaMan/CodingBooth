@@ -4,6 +4,18 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Zed is selectable as an IDE.** `--select zed` (on a desktop variant) installs the Zed editor
+  from its official GitHub release, puts a launcher at `/usr/local/bin/zed`, and adds Zed to the
+  desktop and dock. Pin a release with `zed:1.25.3` (`ZED_VERSION`, default `latest`). A booth has
+  no GPU, so Zed renders through Mesa's software Vulkan driver. That works, but expect it to be
+  slower than on real hardware. Zed's self-updater is turned off in a fresh `~/.config/zed/settings.json`,
+  because it cannot write the root-owned install. The project folder `/home/coder/code`, and
+  everything under it, is always trusted, so Zed does not open it in Restricted Mode, including
+  on its very first launch in a fresh booth. The launcher records that trust in Zed's own database
+  before Zed starts, because Zed has no setting for one trusted folder. Seed your host settings by mounting
+  `~/.config/zed` at `/etc/cb-home-seed/.config/zed`. On non-desktop variants the setup is
+  skipped. `examples/workspaces/zed-example` opens a small project in it.
+
 - **A fixed port that is already taken now stops the booth with a clear error.** Before, a fixed
   booth port (`--port 10000`, `port = "10000"`) or a fixed published port (`-p 4566:4566`) that
   another booth held reached `docker run`, which failed with "port is already allocated" and
