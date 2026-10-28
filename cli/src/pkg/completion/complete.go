@@ -58,6 +58,8 @@ type Sources interface {
 	Templates(ctx Context) []TemplateInfo
 	Profiles(ctx Context) []string
 	ConfigKeys() []string
+	// Worktrees are the existing worktrees and the local branches that have none, each described.
+	Worktrees(ctx Context) (worktrees, branches []Item)
 }
 
 // Complete answers for words: what follows the program name, the last one
@@ -233,6 +235,18 @@ func values(root *Command, kind Kind, enum []string, cur, prefix string, ctx Con
 			}
 		}
 		return Result{Items: matching(prefix+head, rest, frag), Directive: Words}
+	case Worktree, ExistingWorktree:
+		worktrees, branches := src.Worktrees(ctx)
+		if kind == Worktree {
+			worktrees = append(worktrees, branches...)
+		}
+		var items []Item
+		for _, it := range worktrees {
+			if strings.HasPrefix(it.Value, cur) {
+				items = append(items, Item{prefix + it.Value, it.Desc})
+			}
+		}
+		return Result{Items: items, Directive: Words}
 	case ConfigKey:
 		return words(sorted(src.ConfigKeys()))
 	case ConfigSet:

@@ -15,6 +15,7 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/cache"
 	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
+	"github.com/nawaman/codingbooth/src/pkg/gitworktree"
 	"github.com/nawaman/codingbooth/src/pkg/lifecycle"
 )
 
@@ -104,6 +105,35 @@ func (s LiveSources) Profiles(ctx Context) []string {
 	add("*--config.toml", "", "--config.toml")
 	add(".*--env", ".", "--env")
 	return names
+}
+
+// Worktrees are what --worktree finds: each worktree's branch (its folder name when detached),
+// then the local branches no worktree has, which --worktree would make one for. The main
+// checkout, bare entries and worktrees whose folder is gone are left out: --worktree refuses them.
+func (s LiveSources) Worktrees(ctx Context) (worktrees, branches []Item) {
+	entries, err := gitworktree.List(projectRoot(ctx))
+	if err != nil {
+		return nil, nil
+	}
+	taken := map[string]bool{}
+	for i, e := range entries {
+		taken[e.Branch] = true
+		if i == 0 || e.Bare || e.Prunable {
+			continue
+		}
+		name := e.Branch
+		if name == "" {
+			name = filepath.Base(e.Path)
+		}
+		worktrees = append(worktrees, Item{name, "worktree " + e.Path})
+	}
+	names, _ := gitworktree.Branches(projectRoot(ctx))
+	for _, b := range names {
+		if !taken[b] {
+			branches = append(branches, Item{b, "branch: makes a new worktree"})
+		}
+	}
+	return worktrees, branches
 }
 
 // ConfigKeys are the keys a config.toml is read for.

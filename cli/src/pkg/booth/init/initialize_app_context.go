@@ -20,6 +20,7 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/booth/profile"
 	"github.com/nawaman/codingbooth/src/pkg/boothfile"
 	"github.com/nawaman/codingbooth/src/pkg/defaults"
+	"github.com/nawaman/codingbooth/src/pkg/gitworktree"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 	"github.com/nawaman/codingbooth/src/pkg/nillable"
 )
@@ -55,6 +56,7 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 	// First pass to read important flags and value: --dryrun, --verbose, --config and --code
 	configExplicitlySet := false
 	readVerboseDryrunConfigFileAndCode(boundary, &context, &configExplicitlySet)
+	worktreeBoothName := resolveWorktreeOrExit(boundary, &context)
 
 	// Set additional values that is derived from other values
 	context.LibDir = filepath.Join(context.ScriptDir, "libs")
@@ -94,6 +96,9 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 
 	if context.Config.ProjectName == "" {
 		context.Config.ProjectName = getProjectName(context.Config.Code.ValueOr("."))
+	}
+	if context.Config.Name == "" {
+		context.Config.Name = worktreeBoothName
 	}
 	if context.Config.Name == "" {
 		context.Config.Name = context.Config.ProjectName
@@ -419,6 +424,10 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			i += 2
 		case "--code":
 			i += 2
+		case "--worktree", "--worktree-root", "--worktree-from":
+			i += 2
+		case "--keep-worktree", "--push":
+			i++
 		case "--booth-dir":
 			i += 2
 		case "--profile":
@@ -1014,6 +1023,14 @@ func readVerboseDryrunConfigFileAndCode(boundary InitializeAppContextBoundary, c
 			context.Config.Code = nillable.NewNillableString(value)
 			i += 2
 
+		case "--worktree":
+			value, err := needValue(args, i, arg)
+			if err != nil {
+				panic(fmt.Errorf("error parsing --worktree: %w", err))
+			}
+			context.Worktree = value
+			i += 2
+
 		case "--booth-dir":
 			value, err := needValue(args, i, arg)
 			if err != nil {
@@ -1039,6 +1056,25 @@ func readVerboseDryrunConfigFileAndCode(boundary InitializeAppContextBoundary, c
 			i++
 		}
 	}
+}
+
+// resolveWorktreeOrExit turns --worktree <name> into the code path, before anything reads --code.
+// It returns the booth name the worktree implies (see gitworktree.BoothName), empty without one.
+func resolveWorktreeOrExit(boundary InitializeAppContextBoundary, context *appctx.AppContextBuilder) string {
+	if context.Worktree == "" {
+		return ""
+	}
+	if context.Config.Code.IsSet() {
+		fmt.Fprintf(os.Stderr, "Error: --worktree and --code both choose the code path; give one of them.\n")
+		os.Exit(1)
+	}
+	entry, err := gitworktree.Resolve(boundary.GetCurrentPath(), context.Worktree)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+	context.Config.Code = nillable.NewNillableString(entry.Path)
+	return gitworktree.BoothName(entry)
 }
 
 func runPreserveCodeAndConfig(context *appctx.AppContextBuilder, fn func()) {
