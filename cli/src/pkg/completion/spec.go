@@ -16,20 +16,20 @@ package completion
 type Kind int
 
 const (
-	None      Kind = iota // a flag that takes no value
-	Text                  // free text: nothing to offer
-	File                  // a host file path: the shell completes it
-	Dir                   // a host directory path: the shell completes it
-	Enum                  // one of Values
-	Booth                 // the name of an existing booth container
-	Select                // a template selection DSL (go+vscode-ext,python)
-	Template              // a single template name
-	Profile               // a profile name, or a comma list of them
-	ConfigKey             // a config.toml key
-	ConfigSet             // a config.toml key=value
-	CommandName           // the name of a top-level command
-	Worktree              // a git worktree's branch or folder name, or a branch to make one for
-	ExistingWorktree      // a git worktree's branch or folder name
+	None             Kind = iota // a flag that takes no value
+	Text                         // free text: nothing to offer
+	File                         // a host file path: the shell completes it
+	Dir                          // a host directory path: the shell completes it
+	Enum                         // one of Values
+	Booth                        // the name of an existing booth container
+	Select                       // a template selection DSL (go+vscode-ext,python)
+	Template                     // a single template name
+	Profile                      // a profile name, or a comma list of them
+	ConfigKey                    // a config.toml key
+	ConfigSet                    // a config.toml key=value
+	CommandName                  // the name of a top-level command
+	Worktree                     // a git worktree's branch or folder name, or a branch to make one for
+	ExistingWorktree             // a git worktree's branch or folder name
 )
 
 // Flag is one option. Names holds every spelling; the first is the canonical one.
@@ -85,7 +85,7 @@ func (c *Command) Flag(name string) *Flag {
 }
 
 func flag(kind Kind, names ...string) Flag { return Flag{Names: names, Kind: kind} }
-func boolFlag(names ...string) Flag       { return Flag{Names: names, Kind: None} }
+func boolFlag(names ...string) Flag        { return Flag{Names: names, Kind: None} }
 func enumFlag(name string, values ...string) Flag {
 	return Flag{Names: []string{name}, Kind: Enum, Values: values}
 }
@@ -96,6 +96,21 @@ func join(groups ...[]Flag) []Flag {
 		all = append(all, g...)
 	}
 	return all
+}
+
+// without is flags less those named, by any spelling.
+func without(flags []Flag, names ...string) []Flag {
+	drop := map[string]bool{}
+	for _, n := range names {
+		drop[n] = true
+	}
+	var kept []Flag
+	for _, f := range flags {
+		if !drop[f.Names[0]] {
+			kept = append(kept, f)
+		}
+	}
+	return kept
 }
 
 // The names `--variant` accepts, as the help lists them.
@@ -183,6 +198,15 @@ var expressOwnFlags = []Flag{
 	flag(ConfigSet, "--set"),
 	flag(Dir, "--templates-path"),
 	enumFlag("--apt-snapshot", "today", "none"),
+}
+
+// expressRefusedRunFlags are the run flags express refuses (expressRefused in
+// cmd/codingbooth/express.go), so its completion does not offer them.
+var expressRefusedRunFlags = []string{
+	"--config", "--profile", "--booth-dir",
+	"--worktree", "--worktree-root", "--worktree-from", "--keep-worktree", "--push",
+	"--writable-booth", "--no-writable-booth", "--console-spec",
+	"--keep-tmp-on-start", "--leave-tmp-on-exit",
 }
 
 // configFlags: cmd/codingbooth/init.go, parseInitFlags.
@@ -291,7 +315,7 @@ func Spec() *Command {
 			{Name: "version", Desc: "Show version information"},
 			{Name: "help", Desc: "Show help", Args: []Kind{CommandName}},
 			{Name: "run", Desc: "Run the booth", Flags: runFlags},
-			{Name: "express", Desc: "Run from arguments, ignoring .booth/", Flags: join(expressOwnFlags, runFlags)},
+			{Name: "express", Desc: "Run from arguments, ignoring .booth/", Flags: join(expressOwnFlags, without(runFlags, expressRefusedRunFlags...))},
 			{Name: "list", Desc: "List booth containers",
 				Flags: []Flag{engineFlag, boolFlag("--running"), boolFlag("--stopped"), boolFlag("--name-only"), boolFlag("--json")}},
 			{Name: "worktree", Desc: "List and remove git worktrees",
