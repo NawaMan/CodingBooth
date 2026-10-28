@@ -98,6 +98,21 @@ func join(groups ...[]Flag) []Flag {
 	return all
 }
 
+// without is flags less those named, by any spelling.
+func without(flags []Flag, names ...string) []Flag {
+	drop := map[string]bool{}
+	for _, n := range names {
+		drop[n] = true
+	}
+	var kept []Flag
+	for _, f := range flags {
+		if !drop[f.Names[0]] {
+			kept = append(kept, f)
+		}
+	}
+	return kept
+}
+
 // The names `--variant` accepts, as the help lists them.
 var variantValues = []string{"base", "notebook", "codeserver", "xfce", "kde", "lxqt", "wayland"}
 
@@ -183,6 +198,15 @@ var expressOwnFlags = []Flag{
 	flag(ConfigSet, "--set"),
 	flag(Dir, "--templates-path"),
 	enumFlag("--apt-snapshot", "today", "none"),
+}
+
+// expressRefusedRunFlags are the run flags express refuses (expressRefused in
+// cmd/codingbooth/express.go), so its completion does not offer them.
+var expressRefusedRunFlags = []string{
+	"--config", "--profile", "--booth-dir",
+	"--worktree", "--worktree-root", "--worktree-from", "--keep-worktree", "--push",
+	"--writable-booth", "--no-writable-booth", "--console-spec",
+	"--keep-tmp-on-start", "--leave-tmp-on-exit",
 }
 
 // configFlags: cmd/codingbooth/init.go, parseInitFlags.
@@ -291,7 +315,7 @@ func Spec() *Command {
 			{Name: "version", Desc: "Show version information"},
 			{Name: "help", Desc: "Show help", Args: []Kind{CommandName}},
 			{Name: "run", Desc: "Run the booth", Flags: runFlags},
-			{Name: "express", Desc: "Run from arguments, ignoring .booth/", Flags: join(expressOwnFlags, runFlags)},
+			{Name: "express", Desc: "Run from arguments, ignoring .booth/", Flags: join(expressOwnFlags, without(runFlags, expressRefusedRunFlags...))},
 			{Name: "list", Desc: "List booth containers",
 				Flags: []Flag{engineFlag, boolFlag("--running"), boolFlag("--stopped"), boolFlag("--name-only"), boolFlag("--json")}},
 			{Name: "worktree", Desc: "List and remove git worktrees",
