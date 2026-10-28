@@ -18,6 +18,10 @@
 # 6) The booth is named after the branch, "/" turned into "-".
 # 7) A restart (booth--restart) is not an exit: the restarted booth runs in the
 #    same worktree, and only the real exit after it cleans up.
+# 8) --push pushes the new commits to origin, then removes the worktree and the
+#    local branch: only the pushed branch remains.
+# 9) --push with uncommitted work pushes nothing, keeps the worktree, exits 1.
+# 10) --push on a worktree that already existed pushes it, and leaves it.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -38,8 +42,10 @@ git init -q -b main "$WORK/proj"
 git -C "$WORK/proj" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init
 ROOT="$WORK/proj.worktrees"
 
-booth_wt() { # args... -- the booth's command; prints the run's output
-  (cd "$WORK/proj" && "$BOOTH_BIN" --variant base --port "$(pick_free_port)" "$@" 2>&1) || true
+booth_wt() { # args... -- the booth's command; prints the run's output, then "EXIT=<code>"
+  local code=0
+  (cd "$WORK/proj" && "$BOOTH_BIN" --variant base --port "$(pick_free_port)" "$@" 2>&1) || code=$?
+  echo "EXIT=$code"
 }
 has_branch() { git -C "$WORK/proj" rev-parse --verify --quiet "refs/heads/$1" > /dev/null; }
 check() { # number, description, condition result (true|false), detail
@@ -93,3 +99,26 @@ ok=false
 echo "$OUT" | grep -q "^RUN2 branch=restarts" && echo "$OUT" | grep -q "^Kept branch restarts: it has 1 new commit" &&
   [[ ! -e "$ROOT/restarts" ]] && [[ "$(echo "$OUT" | grep -c '^Removed worktree')" == 1 ]] && ok=true
 check 7 "A restart keeps the worktree; only the real exit after it cleans up" "$ok" "$OUT"
+
+git init -q --bare "$WORK/origin.git"
+git -C "$WORK/proj" remote add origin "$WORK/origin.git"
+on_origin() { git -C "$WORK/origin.git" rev-parse --verify --quiet "refs/heads/$1"; }
+COMMIT='git -c user.email=t@t -c user.name=t commit -q --allow-empty -m w'
+
+OUT="$(booth_wt --worktree feature/pushed --push -- "$COMMIT")"
+ok=false
+on_origin feature/pushed > /dev/null && [[ ! -e "$ROOT/feature" ]] && ! has_branch feature/pushed &&
+  echo "$OUT" | grep -q "^Pushed branch feature/pushed to origin" && echo "$OUT" | grep -q "^EXIT=0" && ok=true
+check 8 "--push pushes, then removes the worktree and the local branch" "$ok" "$OUT"
+
+OUT="$(booth_wt --worktree half --push -- "$COMMIT && touch draft.txt")"
+ok=false
+! on_origin half > /dev/null && [[ -f "$ROOT/half/draft.txt" ]] &&
+  echo "$OUT" | grep -q "^Did not push branch half: it has uncommitted changes" && echo "$OUT" | grep -q "^EXIT=1" && ok=true
+check 9 "--push with uncommitted work: not pushed, worktree kept, exit 1" "$ok" "$OUT"
+
+OUT="$(booth_wt --worktree dirty --push -- "$COMMIT")"
+ok=false
+on_origin dirty > /dev/null && [[ -d "$ROOT/dirty" ]] && echo "$OUT" | grep -q "^Pushed branch dirty to origin" &&
+  ! echo "$OUT" | grep -q "^Removed worktree" && ok=true
+check 10 "--push on an existing worktree pushes it and leaves it in place" "$ok" "$OUT"

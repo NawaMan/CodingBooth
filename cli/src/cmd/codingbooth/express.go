@@ -64,6 +64,7 @@ var expressRefused = map[string]string{
 	"--worktree-root":     "express takes the code path from --code",
 	"--worktree-from":     "express takes the code path from --code",
 	"--keep-worktree":     "express takes the code path from --code",
+	"--push":              "express takes the code path from --code",
 }
 
 // expressSetDenied are config keys run would honor from a file, but that

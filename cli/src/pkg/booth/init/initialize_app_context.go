@@ -426,7 +426,7 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			i += 2
 		case "--worktree", "--worktree-root", "--worktree-from":
 			i += 2
-		case "--keep-worktree":
+		case "--keep-worktree", "--push":
 			i++
 		case "--booth-dir":
 			i += 2

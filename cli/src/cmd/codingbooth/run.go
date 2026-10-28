@@ -56,8 +56,7 @@ func runBooth(version string, args []string) {
 			if !context.KeepAlive() && !context.Daemon() {
 				removeExpressTempSpec(context.ExplicitBoothDir())
 			}
-			worktree.finish(code)
-			os.Exit(code)
+			os.Exit(worktree.finish(code))
 		}
 
 		runner := booth.NewBoothRunner(context)
