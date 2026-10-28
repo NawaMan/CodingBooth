@@ -47,6 +47,9 @@ checks first. It keeps the worktree, and prints its path and the reason, when:
 | No longer on its branch (switched inside the booth) | Worktree kept |
 | `--keep-worktree` | Worktree kept |
 
+**A restart is not an exit.** The Restart button or `booth--restart` starts a fresh container on the
+same worktree; cleanup happens only when the booth really exits.
+
 A kept worktree already exists on the next run, so from then on it is left in place:
 `booth --worktree <name>` resumes it, and `git worktree remove` ends it.
 
