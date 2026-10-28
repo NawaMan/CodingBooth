@@ -372,6 +372,8 @@ fontconfig/GTK libraries Rust GUI crates link to), so it sits with the other sys
 | `ai-tools/oh-my-pi`        | Oh My Pi (omp) |
 | `ai-tools/ollama`          | Ollama |
 | `ai-tools/opencode`        | OpenCode |
+| `ai-tools/orca`            | Orca |
+| `ai-tools/thinkrail`       | ThinkRail |
 | `languages/bun`            | Bun |
 | `languages/clang`          | Clang (C/C++) |
 | `languages/crystal`        | Crystal |
@@ -386,6 +388,7 @@ fontconfig/GTK libraries Rust GUI crates link to), so it sits with the other sys
 | `languages/haskell`        | Haskell |
 | `languages/java`           | Java |
 | `languages/julia`          | Julia |
+| `languages/lean`           | Lean 4 (experimental) |
 | `languages/lua`            | Lua |
 | `languages/nim`            | Nim |
 | `languages/nodejs`         | Node.js |
@@ -527,6 +530,7 @@ never the whole context, so editing source does not invalidate its layer.
 | `desktops/inkscape`        | Inkscape |
 | `desktops/kitty`           | Kitty |
 | `desktops/libreoffice`     | LibreOffice |
+| `desktops/pinentry`        | Pinentry (GUI) |
 | `education/bluej`          | BlueJ |
 | `education/drracket`       | DrRacket |
 | `education/exercism`       | Exercism CLI |
@@ -548,10 +552,12 @@ never the whole context, so editing source does not invalidate its layer.
 | `ides/rider`               | Rider |
 | `ides/rubymine`            | RubyMine |
 | `ides/webstorm`            | WebStorm |
+| `ides/zed`                 | Zed |
 | `languages/clojure`        | Clojure |
 | `languages/elixir`         | Elixir |
 | `languages/elm`            | Elm |
 | `languages/gleam`          | Gleam |
+| `languages/goose-lang`     | Goose (language) |
 | `languages/kotlin`         | Kotlin |
 | `languages/mojo`           | Mojo |
 | `languages/rescript`       | ReScript |
