@@ -1,6 +1,7 @@
 # Booth on a Worktree: `booth --worktree <name>`
 
-**Status:** planned, nothing built (2026-10-26).
+**Status:** P1 (lookup) and P2 (create + clean up) built on branch `booth-worktree`, 2026-10-26.
+P3 (`--push`) and P4 not started. User docs: `docs/BOOTH_WORKTREE.md`.
 
 ## Problem
 
@@ -61,7 +62,10 @@ is the only flag; it has meaning only when this run creates the worktree.
 | Push target | the branch's upstream; else `origin` (and set it as upstream) |
 | Push trigger | `--push` given ⇒ push automatically on success, no prompt. No `--push` ⇒ never push |
 | Who pushes | the **host**, after the container exits. The booth never needs push credentials |
-| Location | never chosen silently (see *Where a new worktree goes*) |
+| Location | `--worktree-root`, else where the other worktrees are, else `../<project>.worktrees/`; printed, never prompted |
+| Branch with `/` | nested folder: `feature/x` → `<root>/feature/x` |
+| Booth name | the branch, `/` → `-` (`feature-x`); detached → folder name. `name` / `--name` still win |
+| Untracked local files | deferred, as one general problem (`.env` is only one case); see §3 |
 
 ## Design
 
@@ -92,18 +96,13 @@ with no configuration.
 First rule that applies:
 
 1. `--worktree-root <dir>`.
-2. `worktree-root` in the **main clone's** `.booth/config.toml` (the worktree does not exist yet,
-   so its config cannot be read). Relative values resolve against the main clone's root.
-3. **Existing habit:** the shared parent of the repo's other worktrees, if they share one.
-   Entries under `.claude/worktrees/` (Claude Code's own) do not count.
-4. **No signal:**
-   - In a terminal, ask once, suggesting `../<project>.worktrees/`, and offer to save the answer
-     with `booth config --set` so the generated files' fingerprint stays valid.
-   - Without a terminal, stop and print the `--worktree-root` flag that fixes it.
+2. **Existing habit:** the shared parent of the repo's other worktrees, if they share one (for a
+   nested `<root>/feature/x`, the folder above its branch path). Entries under
+   `.claude/worktrees/` (Claude Code's own) do not count.
+3. `../<project>.worktrees/`, beside the main clone. No prompt: the path is printed, and the
+   folder goes away again with the worktree.
 
-For a disposable session (no `--keep-worktree`) with no signal from rules 1–3, the location
-matters much less (the folder goes away), so it may default without asking. Where to is still
-open; see *Open questions*. With `--keep-worktree`, rule 4 applies as written.
+Deferred: a `worktree-root` key in `config.toml`.
 
 **Creating it**, always on the host:
 
@@ -113,22 +112,20 @@ open; see *Open questions*. With `--keep-worktree`, rule 4 applies as written.
 - The target folder exists but is not a worktree of this repo: error, never overwrite.
 - Remember, for this run only, that the worktree was created and whether the branch was too. §4
   acts on that; nothing is written to disk for it.
+- `--dryrun` prints the plan and stops; it creates nothing.
 - Print one line: `Created worktree <path> on branch <name> (from <ref>)`.
 
 **If the root is inside the repo:** add `/<root>/` to `.git/info/exclude` (local, never
-committed; booth never edits a committed `.gitignore`), and warn when `.dockerignore` does not
-exclude it, because it would inflate the main clone's build context.
+committed; booth never edits a committed `.gitignore`). (Dropped: a `.dockerignore`
+warning.)
 
-### 3. Carrying `.booth` state over
+### 3. Untracked local files (deferred)
 
-A new worktree lacks everything gitignored: `.booth/.env`, `.booth/.<profile>--env`,
-`.booth/.booth.password`, `cache/`.
-
-- **Copy** `.booth/.env*` from the main clone when the worktree is **created** (never on reuse),
-  and list what was copied.
-- **Don't copy** `cache/` or the password file: a fresh password per booth is correct, and the
-  cache rebuilds.
-- Later, maybe: a `.booth/worktree-include` file, one glob per line, for more files to copy.
+A new worktree has only committed files. Anything untracked or ignored in the main clone, such as
+`.booth/.env`, `.booth/.<profile>--env`, local config, is missing, so a booth on a new worktree can
+behave differently from one on the main clone, silently. `.env` is only one case, so the answer
+must cover untracked files in general (a copy list, a fallback to the main clone, or something
+else). Decided 2026-10-26: deal with it later, as its own design.
 
 ### 4. Ending a session
 
@@ -149,6 +146,10 @@ default removal is never silent either way.
 | Push rejected (no remote, auth, non-fast-forward) | Keep it; print git's error |
 | No commits beyond the base, clean tree | Remove it, and the branch if this run created it: nothing to lose |
 | booth killed / crashed | Nothing runs; it stays, and the next run with that name resumes it |
+
+booth's own runtime files (untracked `.booth/.tmp/`, in a project without `.booth/.gitignore`)
+do not count as work; booth deletes them just before removing. Ignored files do not block
+`git worktree remove`: git deletes them with the folder.
 
 A worktree kept by any of these rows already exists on the next run, so from then on it is always
 kept. Leftovers only happen when there was something to keep; the user ends them with
@@ -181,7 +182,8 @@ host.
 - Ports: when the configured port is taken and `--port` was not given, fall back as `NEXT` does.
   (Check today's behaviour first.)
 - Volumes: fresh per-name volumes per worktree. That is the isolation story; document it.
-  Disposable sessions remove them at the end.
+  Not removed with the worktree yet: volumes come from templates (`booth-pgdata-{name}`), and
+  removing them needs its own design.
 
 ### 6. `booth worktree list` (optional)
 
@@ -192,8 +194,8 @@ Read-only.
 
 | Phase | Scope | Tests |
 | --- | --- | --- |
-| **P1: open existing** | §1 without creation. Pre-existing worktrees are never removed, so nothing to clean up yet | Go unit tests on the matcher (porcelain parsing, branch vs folder, ambiguous, prunable, main clone). A dryrun test: `--worktree x` gives the same mounts as `--code <path>` |
-| **P2: create + clean up** | §2, §3 (`.env*` copy), §4. Ships together because removal is the default: creating without cleanup would leave folders behind | Unit tests on root choice (each rule, the `.claude/` exclusion) and on the end-state decision (each row of the table, plus created-vs-existing). A complex test on a temp repo: creates, reuses, refuses a foreign folder, writes `info/exclude`, copies `.env`; clean exit removes; dirty tree keeps; failure keeps, and the resumed run keeps it even when clean; `--keep-worktree` keeps; an existing worktree and an existing branch are never removed |
+| **P1: open existing** (done) | §1 without creation. Pre-existing worktrees are never removed, so nothing to clean up yet | Go unit tests on the matcher (porcelain parsing, branch vs folder, ambiguous, prunable, main clone). A dryrun test: `--worktree x` gives the same mounts as `--code <path>` |
+| **P2: create + clean up** (done) | §2, §4. Ships together because removal is the default: creating without cleanup would leave folders behind | Unit tests on root choice (each rule, the `.claude/` exclusion) and on the end-state decision (each row of the table, plus created-vs-existing). A complex test on a temp repo: creates, reuses, refuses a foreign folder, writes `info/exclude`, copies `.env`; clean exit removes; dirty tree keeps; failure keeps, and the resumed run keeps it even when clean; `--keep-worktree` keeps; an existing worktree and an existing branch are never removed |
 | **P3: push** | `--push` | A complex test with a local bare repo as `origin`: success pushes then removes the created branch and worktree; push on an existing worktree pushes and keeps; push rejected keeps; upstream vs `origin` fallback |
 | **P4: comfort** | `booth worktree list`, `worktree-include`, port fallback, completion of names | dryrun + wrapper completion tests |
 
@@ -201,12 +203,11 @@ Docs per phase: new `docs/BOOTH_WORKTREE.md`, link from `docs/BOOTH_RUN.md`, CHA
 Unreleased. Simplifying `AGENTS.md` / `work-start` to use the command waits until P3 has been in
 use a while.
 
-## Open questions
+## Known gaps
 
-1. **Disposable default location** when rules 1–3 give nothing: still ask, or a hidden default
-   such as `../.<project>.worktrees/` or `~/.cache/codingbooth/worktrees/<project>/`?
-2. **Branch names with `/`** (`feature/x`): folder `feature-x`? Match on either form?
-3. **`.env` copy:** always on create, with `--no-copy-env` to opt out? Or only at the prompt?
+- booth killed, or failing before the booth starts (a config error): the new worktree stays.
+- Volumes are not removed (§5).
+- Untracked local files (§3).
 
 ## Checkout
 

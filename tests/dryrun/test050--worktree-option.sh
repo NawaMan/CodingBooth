@@ -13,9 +13,10 @@
 # Test 2: same command lines as --code <path> (mounts and container name)
 # Test 3: by folder name, worktree elsewhere  -> mounts that worktree
 # Test 4: from inside another worktree        -> still found
-# Test 5: unknown name                        -> error, non-zero exit
+# Test 5: unknown name                        -> would create it; creates nothing
 # Test 6: the main clone's branch             -> error, non-zero exit
 # Test 7: --worktree with --code              -> error, non-zero exit
+# Test 8: --keep-worktree without --worktree  -> error, non-zero exit
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -80,11 +81,18 @@ expect_error() { # test-number, description, message, dir, args...
     pass_fail "$num" "$desc" "$ok" "exit=$status: $out"
 }
 
-expect_error 5 "Unknown name: error" "no worktree has the branch or folder name" \
-    "$WORK/main" --worktree nope
+# Worktrees live in two places here, so there is no shared root: the default applies.
+ACTUAL="$(booth_in "$WORK/main" --worktree team/nope || true)"
+ok=false
+echo "$ACTUAL" | grep -qF "Dryrun: would create worktree $WORK/main.worktrees/team/nope on new branch team/nope" &&
+    [[ ! -e "$WORK/main.worktrees" ]] && ! git -C "$WORK/main" rev-parse --verify --quiet refs/heads/team/nope > /dev/null &&
+    ok=true
+pass_fail 5 "Unknown name: dryrun says where it would create it, and creates nothing" "$ok" "$ACTUAL"
 expect_error 6 "The main clone's branch: error" "is the main checkout" \
     "$WORK/main" --worktree main
 expect_error 7 "--worktree with --code: error" "give one of them" \
     "$WORK/main" --worktree alpha --code "$WORK/main"
+expect_error 8 "--keep-worktree without --worktree: error" "need --worktree" \
+    "$WORK/main" --keep-worktree
 
 exit $FAILED
