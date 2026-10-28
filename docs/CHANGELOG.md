@@ -31,7 +31,9 @@ This file contains a list of changes for each released version.
   A worktree that already existed is never removed. The booth is named after the branch
   (`feature/x` → `feature-x`). `--push` pushes the branch from the host when the run succeeds (to
   its upstream, else `origin`), so after a clean, pushed run only the remote branch remains. Also
-  `--worktree-root` and `--worktree-from`. See `docs/BOOTH_WORKTREE.md`.
+  `--worktree-root` and `--worktree-from`. `booth worktree list` shows each worktree with the
+  booths running on it, and shell completion offers worktree and branch names for `--worktree`.
+  See `docs/BOOTH_WORKTREE.md`.
 
 - **A fixed port that is already taken now stops the booth with a clear error.** Before, a fixed
   booth port (`--port 10000`, `port = "10000"`) or a fixed published port (`-p 4566:4566`) that

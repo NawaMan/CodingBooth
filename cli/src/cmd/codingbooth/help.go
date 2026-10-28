@@ -104,6 +104,7 @@ USAGE:
   %s wait [name]                              (wait for the booth to stop; print its exit code)
   %s logs [--name <n>] [-f] [service ...]      (show a booth's output or service logs)
   %s expose list [--name <n>] [--json]         (list a booth's published ports)
+  %s worktree list [--json]                    (list git worktrees and their booths)
   %s example <subcommand>                      (manage examples)
   %s template <subcommand>                     (browse and manage templates)
   %s showcase <subcommand>                     (browse and import CodingBooths.online showcases)
@@ -335,7 +336,7 @@ EXAMPLES:
 `,
 		s, version,
 		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
-		s, s, s, s,
+		s, s, s, s, s,
 		s,
 		s, s, s, s, s,
 	)
@@ -563,6 +564,22 @@ OPTIONS:
   --json          Print a JSON array, including [] for no matches
   --engine <docker|podman|apple>  Select the engine explicitly
 `, s, s)
+}
+
+func showHelpWorktree() {
+	s := scriptName()
+	fmt.Printf(`%s worktree — the repository's git worktrees and their booths
+
+USAGE:  %s worktree list [options]
+
+Lists every worktree of the repository around the current directory (git worktree list),
+with the booths whose code path it is: name, status and port. To run a booth on one, use
+'%s --worktree <name>'. See docs/BOOTH_WORKTREE.md.
+
+OPTIONS:
+  --json          Print a JSON array of worktrees, each with its booths
+  --engine <docker|podman|apple>  Select the engine explicitly
+`, s, s, s)
 }
 
 func showHelpStart() {
@@ -1002,6 +1019,8 @@ func dispatchHelp(args []string, version string) {
 			showHelpExpress()
 		case "list":
 			showHelpList()
+		case "worktree":
+			showHelpWorktree()
 		case "start":
 			showHelpStart()
 		case "stop":

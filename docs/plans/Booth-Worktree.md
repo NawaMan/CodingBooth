@@ -1,7 +1,8 @@
 # Booth on a Worktree: `booth --worktree <name>`
 
-**Status:** P1 (lookup), P2 (create + clean up) and P3 (`--push`) built on branch
-`booth-worktree`, 2026-10-26. P4 not started. User docs: `docs/BOOTH_WORKTREE.md`.
+**Status:** P1 (lookup), P2 (create + clean up), P3 (`--push`) and P4 (`booth worktree list`,
+name completion) built on branch `booth-worktree`, 2026-10-26. Dropped from P4: the port fallback
+(§5). Still deferred: untracked files (§3), which `worktree-include` was for. User docs: `docs/BOOTH_WORKTREE.md`.
 
 ## Problem
 
@@ -181,8 +182,10 @@ failure. Success uses the exit code in an interactive session too, as P2 does.
 
 - Booth name = folder name, already unique per worktree. Same worktree name across two repos can
   still clash; the `{project}` name placeholders cover it.
-- Ports: when the configured port is taken and `--port` was not given, fall back as `NEXT` does.
-  (Check today's behaviour first.)
+- Ports: **no fallback needed** (checked 2026-10-26). The default port is already `NEXT`, so
+  booths on several worktrees get free ports with no flag. Only a `port` pinned in `config.toml`
+  clashes, and booth already stops with an error that names `--port NEXT`. Moving a pinned port
+  silently would break what pinning it is for (a known URL, a fixed agent port).
 - Volumes: fresh per-name volumes per worktree. That is the isolation story; document it.
   Not removed with the worktree yet: volumes come from templates (`booth-pgdata-{name}`), and
   removing them needs its own design.
@@ -199,7 +202,7 @@ Read-only.
 | **P1: open existing** (done) | §1 without creation. Pre-existing worktrees are never removed, so nothing to clean up yet | Go unit tests on the matcher (porcelain parsing, branch vs folder, ambiguous, prunable, main clone). A dryrun test: `--worktree x` gives the same mounts as `--code <path>` |
 | **P2: create + clean up** (done) | §2, §4. Ships together because removal is the default: creating without cleanup would leave folders behind | Unit tests on root choice (each rule, the `.claude/` exclusion) and on the end-state decision (each row of the table, plus created-vs-existing). A complex test on a temp repo: creates, reuses, refuses a foreign folder, writes `info/exclude`, copies `.env`; clean exit removes; dirty tree keeps; failure keeps, and the resumed run keeps it even when clean; `--keep-worktree` keeps; an existing worktree and an existing branch are never removed |
 | **P3: push** (done) | `--push` | A complex test with a local bare repo as `origin`: success pushes then removes the created branch and worktree; push on an existing worktree pushes and keeps; push rejected keeps; upstream vs `origin` fallback |
-| **P4: comfort** | `booth worktree list`, `worktree-include`, port fallback, completion of names | dryrun + wrapper completion tests |
+| **P4: comfort** (done: list + completion) | `booth worktree list`, `worktree-include`, port fallback, completion of names | dryrun + wrapper completion tests |
 
 Docs per phase: new `docs/BOOTH_WORKTREE.md`, link from `docs/BOOTH_RUN.md`, CHANGELOG
 Unreleased. Simplifying `AGENTS.md` / `work-start` to use the command waits until P3 has been in

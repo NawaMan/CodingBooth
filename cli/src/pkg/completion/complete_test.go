@@ -7,6 +7,7 @@ package completion
 import (
 	"bytes"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 
@@ -39,6 +40,9 @@ func (f fakeSources) Templates(ctx Context) []TemplateInfo {
 
 func (f fakeSources) Profiles(ctx Context) []string { return f.profiles }
 func (f fakeSources) ConfigKeys() []string          { return []string{"variant", "port", "verbose"} }
+func (f fakeSources) Worktrees(ctx Context) []Item {
+	return []Item{{"feature/x", "worktree /r/x"}, {"fix-1", "worktree /r/fix-1"}, {"old", "branch: makes a new worktree"}}
+}
 
 func complete(words ...string) Result {
 	return Complete(Spec(), words, fakeSources{booths: []string{"web", "api", "worker"}, profiles: []string{"gpu", "ci"}})
@@ -161,4 +165,44 @@ func TestLiveProfilesReadTheBoothDir(t *testing.T) {
 	}
 	got := LiveSources{}.Profiles(Context{Code: dir})
 	assert.ElementsMatch(t, []string{"gpu", "ci"}, got)
+}
+
+func TestWorktreeNames(t *testing.T) {
+	assert.Equal(t, []string{"feature/x", "fix-1", "old"}, itemValues(complete("--worktree", "")))
+	assert.Equal(t, []string{"fix-1"}, itemValues(complete("--worktree", "fi")))
+	assert.Equal(t, []string{"--worktree=old"}, itemValues(complete("--worktree=o")))
+}
+
+func TestWorktreeListCommand(t *testing.T) {
+	assert.Equal(t, []string{"list", "help"}, itemValues(complete("worktree", "")))
+	assert.Contains(t, itemValues(complete("worktree", "list", "--")), "--json")
+}
+
+func TestLiveWorktrees(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not installed")
+	}
+	root, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	main := filepath.Join(root, "proj")
+	gitRun := func(dir string, args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+	gitRun(root, "init", "-q", "-b", "main", main)
+	gitRun(main, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "--allow-empty", "-m", "init")
+	gitRun(main, "worktree", "add", "-q", filepath.Join(root, "wt", "a"), "-b", "feature/a")
+	gitRun(main, "branch", "spare")
+
+	got := LiveSources{}.Worktrees(Context{Code: main})
+	assert.Equal(t, []Item{
+		{"feature/a", "worktree " + filepath.Join(root, "wt", "a")},
+		{"spare", "branch: makes a new worktree"},
+	}, got, "the main checkout's branch is left out")
 }
