@@ -34,7 +34,7 @@ The same as booth's own container, which is removed at exit unless `--keep-alive
 | At start | At exit |
 | --- | --- |
 | The worktree was **created by this run** | Removed, when nothing would be lost. `--keep-worktree` keeps it |
-| The worktree **already existed**: yours, another tool's, or kept by an earlier run | Left in place. Remove it with `git worktree remove` |
+| The worktree **already existed**: yours, another tool's, or kept by an earlier run | Left in place. Remove it with `booth worktree remove <name>` |
 
 The branch follows the same rule: booth deletes only a branch this run created, and only when it
 has no new commits.
@@ -60,7 +60,8 @@ remote, so it is deleted too (see [Pushing the branch](#pushing-the-branch)).
 same worktree; cleanup happens only when the booth really exits.
 
 A kept worktree already exists on the next run, so from then on it is left in place:
-`booth --worktree <name>` resumes it, and `git worktree remove` ends it.
+`booth --worktree <name>` resumes it, and [`booth worktree remove <name>`](#removing-a-worktree)
+ends it.
 
 **Ignored files do not keep a worktree.** git removes them with the folder, so build output and
 `node_modules` go away with it, and so would anything written to an ignored path. Commit what you
@@ -147,6 +148,9 @@ its folder. A `name` in `config.toml`, or `--name`, still wins.
 | `--keep-worktree` | Keep the worktree this run creates |
 | `--push` | Push the branch when the run succeeds (to its upstream, else `origin`) |
 
+Commands: `booth worktree list` ([Listing worktrees](#listing-worktrees)) and `booth worktree
+remove <name>` ([Removing a worktree](#removing-a-worktree)).
+
 They are bootstrap options, read before the config file, like `--code`. `booth express` does not
 take them.
 
@@ -161,7 +165,8 @@ host, not in the booth.
 
 - **Untracked local files**, such as `.booth/.env`, are not in a new worktree: `git worktree add`
   brings only committed files. A booth on a new worktree starts without them.
-- **Volumes** the booth used (`booth-pgdata-{name}`) are not removed with the worktree.
+- **Volumes** the booth used (`booth-pgdata-{name}`) are not removed when booth removes a worktree
+  at exit; `booth worktree remove --force` removes them.
 
 ## Listing worktrees
 
@@ -179,6 +184,43 @@ fix-123    -          -        -      /home/me/proj.worktrees/fix-123
 A booth belongs to a worktree when its code path is that worktree's folder. `--json` prints the
 same as an array, each worktree with its `booths`. Shell completion offers the names `--worktree`
 takes: the worktrees, then the local branches that have no worktree yet.
+
+## Removing a worktree
+
+When you drop a line of work, `booth worktree remove <name>` ends its worktree for good: the
+booths that ran on it, the worktree folder, and its branch. It works on any worktree, whoever made
+it, but never the main checkout. Run it from another checkout.
+
+```bash
+booth worktree remove fix-123            # only what loses nothing
+booth worktree remove fix-123 --force    # discard it all; lists it and asks first
+```
+
+**Without `--force`, nothing is lost:**
+
+| Found | What happens |
+| --- | --- |
+| A booth running on it | Refused: stop it first (`booth stop --name …`) |
+| Uncommitted or untracked files | Refused; booth's own `.booth/.tmp/` files do not count |
+| A detached HEAD with commits no branch has | Refused |
+| Stopped booths on it | Removed (their volumes are kept) |
+| Commits on the branch that no other branch, remote or tag has | Worktree removed, **branch kept**, with how many |
+| Otherwise | Worktree and branch removed |
+
+**`--force`** discards all of that: it lists the uncommitted files, the commits only on the branch,
+the running booths, and the booths' per-booth volumes, then asks `Discard all of this? [y/N]`.
+`--yes` skips the question; without a terminal and without `--yes`, nothing is removed.
+
+**Volumes** go only with `--force`, and only booth's per-booth ones: `cb-home-<name>`
+(`--persist-home`) and `booth-<service>data-<name>` (templates such as PostgreSQL), for the booths
+on the worktree and the name a booth there gets by default. Shared volumes, such as caches, are
+never touched. A one-shot booth that ran under a custom `--name` is not known any more; remove its
+volumes yourself.
+
+**Folders:** the empty folders a nested branch made (`<root>/feature/` for `feature/x`) go, and so
+does booth's default root, `../<project>.worktrees/`, once it is empty. A root you chose stays.
+
+**The remote branch is never touched.** booth prints the command that deletes it.
 
 ## Several booths at once
 

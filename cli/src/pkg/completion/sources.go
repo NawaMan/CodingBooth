@@ -110,12 +110,11 @@ func (s LiveSources) Profiles(ctx Context) []string {
 // Worktrees are what --worktree finds: each worktree's branch (its folder name when detached),
 // then the local branches no worktree has, which --worktree would make one for. The main
 // checkout, bare entries and worktrees whose folder is gone are left out: --worktree refuses them.
-func (s LiveSources) Worktrees(ctx Context) []Item {
+func (s LiveSources) Worktrees(ctx Context) (worktrees, branches []Item) {
 	entries, err := gitworktree.List(projectRoot(ctx))
 	if err != nil {
-		return nil
+		return nil, nil
 	}
-	var items []Item
 	taken := map[string]bool{}
 	for i, e := range entries {
 		taken[e.Branch] = true
@@ -126,15 +125,15 @@ func (s LiveSources) Worktrees(ctx Context) []Item {
 		if name == "" {
 			name = filepath.Base(e.Path)
 		}
-		items = append(items, Item{name, "worktree " + e.Path})
+		worktrees = append(worktrees, Item{name, "worktree " + e.Path})
 	}
-	branches, _ := gitworktree.Branches(projectRoot(ctx))
-	for _, b := range branches {
+	names, _ := gitworktree.Branches(projectRoot(ctx))
+	for _, b := range names {
 		if !taken[b] {
-			items = append(items, Item{b, "branch: makes a new worktree"})
+			branches = append(branches, Item{b, "branch: makes a new worktree"})
 		}
 	}
-	return items
+	return worktrees, branches
 }
 
 // ConfigKeys are the keys a config.toml is read for.
