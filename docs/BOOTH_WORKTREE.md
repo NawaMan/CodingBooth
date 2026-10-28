@@ -21,6 +21,12 @@ booth --worktree fix-123 -- claude -p "fix issue 123"
 
 On a worktree that already exists, `booth --worktree <name>` just opens it, and leaves it in place.
 
+Add `--push` to push the branch when the run succeeds; then only the pushed branch remains:
+
+```bash
+booth --worktree fix-123 --push -- claude -p "fix issue 123, and commit the fix"
+```
+
 ## The rule: booth leaves things the way it found them
 
 The same as booth's own container, which is removed at exit unless `--keep-alive`:
@@ -47,6 +53,9 @@ checks first. It keeps the worktree, and prints its path and the reason, when:
 | No longer on its branch (switched inside the booth) | Worktree kept |
 | `--keep-worktree` | Worktree kept |
 
+With `--push`, the push happens first, and only on success: the local branch then matches the
+remote, so it is deleted too (see [Pushing the branch](#pushing-the-branch)).
+
 **A restart is not an exit.** The Restart button or `booth--restart` starts a fresh container on the
 same worktree; cleanup happens only when the booth really exits.
 
@@ -59,6 +68,28 @@ want to keep. booth's own runtime files (`.booth/.tmp/`) never count as work.
 
 **Not covered:** if booth itself is killed, or the booth fails before it starts (a config error),
 nothing runs at exit and the new worktree stays, as an existing one from then on.
+
+## Pushing the branch
+
+`--push` pushes the branch when the booth exits, **from the host**: the booth never needs your push
+credentials. There is no prompt.
+
+- **Where:** the branch's upstream, if it has one. Else `origin`, which becomes its upstream
+  (`git push --set-upstream origin <name>`). With neither, nothing is pushed.
+- **When:** only if the run succeeded: the booth exited 0, nothing is uncommitted, and the worktree
+  is still on its branch. Otherwise booth says why it did not push, and keeps the worktree.
+- **Then:** a worktree this run created is removed as usual, and its new branch is deleted (`git
+  branch -d`), since the remote has it. A new branch with no commits is not pushed at all.
+- **Existing worktree, or `--keep-worktree`:** booth pushes, and leaves the worktree in place.
+- **Exit code:** when `--push` was given and booth did not push (uncommitted work, a rejected push,
+  no remote), booth exits 1 even though the booth exited 0. A script can tell. A branch with nothing
+  new is not a failure.
+
+Any hint the remote sends back, such as GitHub's link to open a pull request, is printed. booth
+does not open the pull request itself.
+
+`--push` needs the booth to end within the command, so it does not combine with `--daemon` or
+`--keep-alive`. (`booth build --push <registry>` is a different option: it pushes an image.)
 
 ## How the name is matched
 
@@ -114,6 +145,7 @@ its folder. A `name` in `config.toml`, or `--name`, still wins.
 | `--worktree-root <dir>` | Where a new worktree goes |
 | `--worktree-from <ref>` | Where a new branch starts (default `HEAD`) |
 | `--keep-worktree` | Keep the worktree this run creates |
+| `--push` | Push the branch when the run succeeds (to its upstream, else `origin`) |
 
 They are bootstrap options, read before the config file, like `--code`. `booth express` does not
 take them.

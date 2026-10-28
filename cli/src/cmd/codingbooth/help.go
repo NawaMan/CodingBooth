@@ -141,6 +141,9 @@ BOOTSTRAP OPTIONS (CLI or defaults; evaluated before env and config file):
                          worktrees share, else ../<project>.worktrees)
   --worktree-from <ref>  Start a new branch at <ref> (default: HEAD)
   --keep-worktree        Keep the worktree this run creates
+  --push                 With --worktree: when the booth exits 0 with a clean
+                         tree, push the branch (to its upstream, else origin)
+                         before removing the worktree
   --config <file>        Path to the config file to load
                          (default: <code>/.booth/config.toml)
   --profile <a[,b]>      Overlay .booth/<name>--config.toml and .booth/.<name>--env

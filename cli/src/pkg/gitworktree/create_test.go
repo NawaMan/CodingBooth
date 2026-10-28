@@ -152,7 +152,7 @@ func TestCreateAndFinish_CleanRunRemovesEverything(t *testing.T) {
 		t.Fatalf("the new worktree is found: %+v %v", e, err)
 	}
 
-	out := Finish(main, p, 0)
+	out := Finish(main, p, FinishOptions{})
 	if !out.Removed || !out.BranchDeleted {
 		t.Fatalf("want worktree and branch removed: %+v", out)
 	}
@@ -185,7 +185,7 @@ func TestFinish_KeepsWhatWouldBeLost(t *testing.T) {
 				t.Fatal(err)
 			}
 			c.change(t, p.Path)
-			out := Finish(main, p, c.exitCode)
+			out := Finish(main, p, FinishOptions{ExitCode: c.exitCode})
 			if out.Removed || !exists(p.Path) {
 				t.Fatalf("want the worktree kept: %+v", out)
 			}
@@ -203,7 +203,7 @@ func TestFinish_CommitsKeepTheBranch(t *testing.T) {
 		t.Fatal(err)
 	}
 	commit(t, p.Path, "work")
-	out := Finish(main, p, 0)
+	out := Finish(main, p, FinishOptions{})
 	if !out.Removed || out.BranchDeleted {
 		t.Fatalf("want the worktree removed and the branch with its commit kept: %+v", out)
 	}
@@ -219,7 +219,7 @@ func TestFinish_ExistingBranchIsNeverDeleted(t *testing.T) {
 	if err := Create(main, p); err != nil {
 		t.Fatal(err)
 	}
-	out := Finish(main, p, 0)
+	out := Finish(main, p, FinishOptions{})
 	if !out.Removed || out.BranchDeleted {
 		t.Fatalf("want the worktree removed, the existing branch kept: %+v", out)
 	}
@@ -239,7 +239,7 @@ func TestFinish_IgnoredFilesDoNotBlock(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(p.Path, "build"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if out := Finish(main, p, 0); !out.Removed {
+	if out := Finish(main, p, FinishOptions{}); !out.Removed {
 		t.Fatalf("ignored files are not work in progress; git removes them: %+v", out)
 	}
 }
@@ -298,7 +298,7 @@ func TestFinish_BoothRuntimeFilesAreNotWork(t *testing.T) {
 	if err := os.WriteFile(log, []byte("x"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if out := Finish(main, p, 0); !out.Removed {
+	if out := Finish(main, p, FinishOptions{}); !out.Removed {
 		t.Fatalf("booth's own .booth/.tmp files should not keep the worktree: %+v", out)
 	}
 }
@@ -318,10 +318,160 @@ func TestFinish_RuntimeFilesBesideWorkStillKeep(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if out := Finish(main, p, 0); out.Removed {
+	if out := Finish(main, p, FinishOptions{}); out.Removed {
 		t.Fatal("notes.txt is work: the worktree should be kept")
 	}
 	if !exists(filepath.Join(p.Path, ".booth", ".tmp", "lifecycle.log")) {
 		t.Error("a kept worktree keeps booth's log too")
+	}
+}
+
+// withOrigin gives main a bare repository as its origin and returns the bare repository's path.
+func withOrigin(t *testing.T, root, main string) string {
+	t.Helper()
+	bare := filepath.Join(root, "origin.git")
+	run(t, root, "init", "-q", "--bare", bare)
+	run(t, main, "remote", "add", "origin", bare)
+	return bare
+}
+
+func onRemote(t *testing.T, bare, branch string) string {
+	t.Helper()
+	out, err := git(bare, "rev-parse", "--verify", "--quiet", "refs/heads/"+branch)
+	if err != nil {
+		return ""
+	}
+	return out
+}
+
+func TestFinish_PushThenRemoveEverything(t *testing.T) {
+	root, main := repo(t)
+	bare := withOrigin(t, root, main)
+	p := plan(t, main, CreateOptions{Name: "feature/x"})
+	if err := Create(main, p); err != nil {
+		t.Fatal(err)
+	}
+	commit(t, p.Path, "work")
+	head := run(t, p.Path, "rev-parse", "HEAD")
+
+	out := Finish(main, p, FinishOptions{Push: true})
+	if !out.Pushed || !out.Removed || !out.BranchDeleted || out.NotPushed {
+		t.Fatalf("want pushed, worktree removed, local branch deleted: %+v", out)
+	}
+	if got := onRemote(t, bare, "feature/x"); got != head {
+		t.Errorf("origin should have feature/x at %s, got %q", head, got)
+	}
+}
+
+func TestFinish_PushUsesTheUpstream(t *testing.T) {
+	root, main := repo(t)
+	bare := withOrigin(t, root, main)
+	other := filepath.Join(root, "other.git")
+	run(t, root, "init", "-q", "--bare", other)
+	run(t, main, "remote", "add", "other", other)
+	run(t, main, "branch", "w")
+	run(t, main, "push", "-q", "-u", "other", "w:upstream-name")
+	p := plan(t, main, CreateOptions{Name: "w"})
+	if err := Create(main, p); err != nil {
+		t.Fatal(err)
+	}
+	commit(t, p.Path, "work")
+	head := run(t, p.Path, "rev-parse", "HEAD")
+
+	if out := Finish(main, p, FinishOptions{Push: true}); !out.Pushed {
+		t.Fatalf("want pushed: %+v", out)
+	}
+	if got := onRemote(t, other, "upstream-name"); got != head {
+		t.Errorf("want the push on the upstream other/upstream-name at %s, got %q", head, got)
+	}
+	if onRemote(t, bare, "w") != "" {
+		t.Error("origin is only the fallback; the upstream is used")
+	}
+}
+
+func TestFinish_PushOnExistingWorktreeKeepsIt(t *testing.T) {
+	root, main := repo(t)
+	bare := withOrigin(t, root, main)
+	path := filepath.Join(root, "mine")
+	run(t, main, "worktree", "add", "-q", path, "-b", "mine")
+	commit(t, path, "work")
+
+	out := Finish(main, Plan{Path: path, Branch: "mine"}, FinishOptions{Push: true, Existing: true})
+	if !out.Pushed || out.Removed || !exists(path) {
+		t.Fatalf("want pushed and the existing worktree kept: %+v", out)
+	}
+	if onRemote(t, bare, "mine") == "" {
+		t.Error("origin should have branch mine")
+	}
+}
+
+func TestFinish_NoPushWhenTheRunDidNotSucceed(t *testing.T) {
+	root, main := repo(t)
+	bare := withOrigin(t, root, main)
+	p := plan(t, main, CreateOptions{Name: "w"})
+	if err := Create(main, p); err != nil {
+		t.Fatal(err)
+	}
+	commit(t, p.Path, "work")
+	if err := os.WriteFile(filepath.Join(p.Path, "draft.txt"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, opts := range []FinishOptions{{Push: true, ExitCode: 2}, {Push: true}} {
+		out := Finish(main, p, opts)
+		if out.Pushed || !out.NotPushed || out.Removed {
+			t.Fatalf("%+v: want not pushed, and kept: %+v", opts, out)
+		}
+		if !strings.HasPrefix(out.Messages[0], "Did not push branch w: ") {
+			t.Errorf("want the reason first, got %q", out.Messages)
+		}
+	}
+	if onRemote(t, bare, "w") != "" {
+		t.Error("nothing should reach origin")
+	}
+}
+
+func TestFinish_PushRejectedKeepsEverything(t *testing.T) {
+	_, main := repo(t) // no origin and no upstream
+	p := plan(t, main, CreateOptions{Name: "w"})
+	if err := Create(main, p); err != nil {
+		t.Fatal(err)
+	}
+	commit(t, p.Path, "work")
+	out := Finish(main, p, FinishOptions{Push: true})
+	if out.Pushed || !out.NotPushed || out.Removed || !exists(p.Path) {
+		t.Fatalf("want not pushed and the worktree kept: %+v", out)
+	}
+	if !strings.Contains(strings.Join(out.Messages, "\n"), "no remote named origin") {
+		t.Errorf("want git's reason in the messages, got %q", out.Messages)
+	}
+}
+
+func TestFinish_PushNothingNew(t *testing.T) {
+	root, main := repo(t)
+	bare := withOrigin(t, root, main)
+	p := plan(t, main, CreateOptions{Name: "w"})
+	if err := Create(main, p); err != nil {
+		t.Fatal(err)
+	}
+	out := Finish(main, p, FinishOptions{Push: true})
+	if out.Pushed || out.NotPushed || !out.Removed || !out.BranchDeleted {
+		t.Fatalf("no new commits: nothing to push, and all removed: %+v", out)
+	}
+	if onRemote(t, bare, "w") != "" {
+		t.Error("an empty new branch is not pushed")
+	}
+}
+
+func TestFinish_PushWithKeepWorktree(t *testing.T) {
+	root, main := repo(t)
+	bare := withOrigin(t, root, main)
+	p := plan(t, main, CreateOptions{Name: "w"})
+	if err := Create(main, p); err != nil {
+		t.Fatal(err)
+	}
+	commit(t, p.Path, "work")
+	out := Finish(main, p, FinishOptions{Push: true, KeepWorktree: true})
+	if !out.Pushed || out.Removed || !exists(p.Path) || onRemote(t, bare, "w") == "" {
+		t.Fatalf("want pushed and kept: %+v", out)
 	}
 }

@@ -29,8 +29,9 @@ This file contains a list of changes for each released version.
   exits: booth leaves the repository the way it found it. Removal never forces: uncommitted
   changes, a failed run, or `--keep-worktree` keep the worktree, and new commits keep the branch.
   A worktree that already existed is never removed. The booth is named after the branch
-  (`feature/x` → `feature-x`). Also `--worktree-root` and `--worktree-from`. See
-  `docs/BOOTH_WORKTREE.md`.
+  (`feature/x` → `feature-x`). `--push` pushes the branch from the host when the run succeeds (to
+  its upstream, else `origin`), so after a clean, pushed run only the remote branch remains. Also
+  `--worktree-root` and `--worktree-from`. See `docs/BOOTH_WORKTREE.md`.
 
 - **A fixed port that is already taken now stops the booth with a clear error.** Before, a fixed
   booth port (`--port 10000`, `port = "10000"`) or a fixed published port (`-p 4566:4566`) that

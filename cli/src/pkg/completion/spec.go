@@ -109,6 +109,7 @@ var runFlags = []Flag{
 	flag(Dir, "--worktree-root"),
 	flag(Text, "--worktree-from"),
 	boolFlag("--keep-worktree"),
+	boolFlag("--push"),
 	flag(File, "--config"),
 	flag(Dir, "--booth-dir"),
 	flag(Profile, "--profile"),

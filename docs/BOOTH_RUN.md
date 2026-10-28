@@ -203,11 +203,11 @@ Docker-name-safe in the literal parts of the template are replaced with `-`.
 `--worktree <name>` runs the booth on one of the repository's git worktrees, found by branch or
 folder name through `git worktree list`, wherever it lives. If there is none, booth creates it on
 branch `<name>`, and removes it again when the booth exits, unless that would lose something or
-`--keep-worktree` is given. A worktree that already existed is always left in place. It cannot be
-combined with `--code`.
+`--keep-worktree` is given. A worktree that already existed is always left in place. `--push` pushes
+the branch when the run succeeds. It cannot be combined with `--code`.
 
 ```bash
-booth --worktree fix-123 -- claude -p "fix issue 123"
+booth --worktree fix-123 --push -- claude -p "fix issue 123"
 ```
 
 See **[Booth on a Git Worktree](BOOTH_WORKTREE.md)**.

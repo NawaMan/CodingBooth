@@ -1,7 +1,7 @@
 # Booth on a Worktree: `booth --worktree <name>`
 
-**Status:** P1 (lookup) and P2 (create + clean up) built on branch `booth-worktree`, 2026-10-26.
-P3 (`--push`) and P4 not started. User docs: `docs/BOOTH_WORKTREE.md`.
+**Status:** P1 (lookup), P2 (create + clean up) and P3 (`--push`) built on branch
+`booth-worktree`, 2026-10-26. P4 not started. User docs: `docs/BOOTH_WORKTREE.md`.
 
 ## Problem
 
@@ -162,8 +162,10 @@ kept. Leftovers only happen when there was something to keep; the user ends them
   session's exit code says little.)
 
 `--push` on a success pushes automatically, no prompt, to the upstream or else `origin`
-(`git push -u origin <name>` in that case), then prints the compare URL when the remote is a known
-host.
+(`git push -u origin <name>` in that case). booth prints the hints the remote sends back (GitHub's
+"create a pull request" link) rather than building a compare URL itself. A `--push` that did not
+push turns a booth exit of 0 into 1; a new branch with no commits is not pushed, and is not a
+failure. Success uses the exit code in an interactive session too, as P2 does.
 
 **Constraints:**
 
@@ -196,7 +198,7 @@ Read-only.
 | --- | --- | --- |
 | **P1: open existing** (done) | §1 without creation. Pre-existing worktrees are never removed, so nothing to clean up yet | Go unit tests on the matcher (porcelain parsing, branch vs folder, ambiguous, prunable, main clone). A dryrun test: `--worktree x` gives the same mounts as `--code <path>` |
 | **P2: create + clean up** (done) | §2, §4. Ships together because removal is the default: creating without cleanup would leave folders behind | Unit tests on root choice (each rule, the `.claude/` exclusion) and on the end-state decision (each row of the table, plus created-vs-existing). A complex test on a temp repo: creates, reuses, refuses a foreign folder, writes `info/exclude`, copies `.env`; clean exit removes; dirty tree keeps; failure keeps, and the resumed run keeps it even when clean; `--keep-worktree` keeps; an existing worktree and an existing branch are never removed |
-| **P3: push** | `--push` | A complex test with a local bare repo as `origin`: success pushes then removes the created branch and worktree; push on an existing worktree pushes and keeps; push rejected keeps; upstream vs `origin` fallback |
+| **P3: push** (done) | `--push` | A complex test with a local bare repo as `origin`: success pushes then removes the created branch and worktree; push on an existing worktree pushes and keeps; push rejected keeps; upstream vs `origin` fallback |
 | **P4: comfort** | `booth worktree list`, `worktree-include`, port fallback, completion of names | dryrun + wrapper completion tests |
 
 Docs per phase: new `docs/BOOTH_WORKTREE.md`, link from `docs/BOOTH_RUN.md`, CHANGELOG
