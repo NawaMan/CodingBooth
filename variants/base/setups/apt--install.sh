@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.1.0
+# cb-version: 1.2.0
 
 # This script installs Debian/Ubuntu system packages via apt.
 # Usage: apt--install.sh <package>[=<version>] [package...]
@@ -19,7 +19,8 @@
 # freezing transitive dependencies too. `booth config` stamps APT_SNAPSHOT with the
 # configuration date. When APT_SNAPSHOT is empty/unset (e.g. a hand-written Boothfile),
 # no --snapshot is passed and apt resolves against the live archive, as it does by
-# default. The pin applies on amd64/i386 only — see the SNAPSHOT_ARGS block below.
+# default. The pin applies on amd64/i386 only, and to Ubuntu's archive only — see
+# the SNAPSHOT_ARGS block below.
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -71,6 +72,18 @@ export DEBIAN_FRONTEND=noninteractive
 # resolves `install` against an empty index: every not-yet-installed package fails with
 # "E: Unable to locate package". Drop the pin there and warn, so the build still works
 # against the live archive instead of breaking.
+#
+# The pin freezes Ubuntu's archive only; third-party sources stay live. apt also
+# maps Launchpad PPAs to snapshot.ppa.launchpadcontent.net, but a PPA's snapshot
+# may not have the release yet on the pinned day: the Mozilla PPA's has no
+# `resolute` before mid-October 2026, so every install after `setup firefox`
+# failed on "does not have a Release file". Every other third-party repo (Docker,
+# Google, …) has no snapshot service and is already fetched live; clearing the two
+# PPA mappings makes PPAs the same, whatever the date.
+SNAPSHOT_ARCHIVE_ONLY=(
+    -o Acquire::Snapshots::URI::Host::ppa.launchpad.net=
+    -o Acquire::Snapshots::URI::Host::ppa.launchpadcontent.net=
+)
 SNAPSHOT_ARGS=()
 PINNED=""
 if [ -n "${APT_SNAPSHOT:-}" ]; then
@@ -78,7 +91,7 @@ if [ -n "${APT_SNAPSHOT:-}" ]; then
     case "$ARCH" in
         amd64|i386)
             echo "🧊 Pinning apt to snapshot ${APT_SNAPSHOT}"
-            SNAPSHOT_ARGS=(--snapshot "${APT_SNAPSHOT}")
+            SNAPSHOT_ARGS=(--snapshot "${APT_SNAPSHOT}" "${SNAPSHOT_ARCHIVE_ONLY[@]}")
             PINNED=1
             ;;
         *)

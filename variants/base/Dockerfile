@@ -46,6 +46,13 @@ SHELL ["/bin/bash","-o","pipefail","-lc"]
 # fetch. This drop-in is inherited by all downstream setups and variants.
 RUN echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99-force-ipv4
 
+# An apt snapshot pin freezes Ubuntu's archive only: a Launchpad PPA's snapshot may
+# not carry the release yet on the pinned day, which fails the whole update. This
+# keeps a plain `apt-get --snapshot` in a booth in line with apt--install.sh, which
+# passes the same thing per command (so images built before this get it too).
+RUN printf '#clear Acquire::Snapshots::URI::Host::ppa.launchpad.net;\n#clear Acquire::Snapshots::URI::Host::ppa.launchpadcontent.net;\n' \
+      > /etc/apt/apt.conf.d/50-cb-snapshot-archive-only
+
 
 # Setup logs -- setup scripts can use this and user can bind this to host and check the logs.
 RUN touch /tmp/setup.log \
