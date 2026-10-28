@@ -161,6 +161,15 @@ This file contains a list of changes for each released version.
   out a component (dirmngr without GnuTLS, keyboxd without SQLite) rather than let it fall
   through to the 2.4 copy.
 
+- **An apt snapshot pin no longer breaks on a Launchpad PPA.** `APT_SNAPSHOT` now freezes
+  Ubuntu's archive only; a PPA a setup adds stays live, like every other third-party repo. apt
+  also maps PPAs to `snapshot.ppa.launchpadcontent.net`, and a PPA's snapshot may not carry the
+  release yet on the pinned day — with the image's pin (20261004T000000Z) the Mozilla PPA had no
+  `resolute`, so every `install apt` after `setup firefox` stopped on "does not have a Release
+  file". `install apt` clears the two PPA mappings per command, so images built before this fix
+  get it too, and the base image adds the same as an apt.conf drop-in for a plain
+  `apt-get --snapshot` in a booth. No date has to move.
+
 - **EnvFolio 0.8.0.** The base image and `tools/envfolio` install EnvFolio 0.8.0 (was 0.6.0).
   New since 0.6.0: `folio exec`/`folio shell --vars <file>` (a committable file naming which
   variables to set and where each comes from), `folio vars check`, `folio export --vars`,
