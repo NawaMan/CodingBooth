@@ -36,7 +36,7 @@ jobs:
           - bash-example
           - csharp-example
           - goose-lang-example
-          - lsp-example
+          - lsp-example          # flaky: its nvim recipe waits a fixed sleep 3 for the servers
           - ocaml-example
           - php-example
           # trying: test fixes (Boothfile path, PID-based ports)
