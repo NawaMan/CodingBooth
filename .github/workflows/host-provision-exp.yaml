@@ -175,8 +175,8 @@ jobs:
             echo '| example | provision FAIL | tests PASS | tests FAIL | first failure |'
             echo '| --- | --- | --- | --- | --- |'
             for d in reports/host-provision-report-*; do
-              ex="${d#reports/host-provision-report-}"; r="$d/report.txt"
-              if [ ! -f "$r" ]; then echo "| $ex | no report | | | |"; continue; fi
+              ex="${d#reports/host-provision-report-}"; r="$(find "$d" -name report.txt | head -n 1)"
+              if [ -z "$r" ]; then echo "| $ex | no report | | | |"; continue; fi
               pf=$(grep -cE '^FAIL +(setup|install) ' "$r" || true)
               tp=$(grep -cE '^PASS +example: ' "$r" || true)
               tf=$(grep -cE '^FAIL +example: ' "$r" || true)
