@@ -1,0 +1,54 @@
+# EXPERIMENT -- see docs/REUSE_BOOTH.md. Provisions a GitHub-hosted Ubuntu 26.04
+# runner with the base setups, the go-example's Boothfile and the CB_TARGET-guarded
+# booth-entry copy, then runs the example's own work. Runs only on this branch.
+name: host-provision experiment
+
+on:
+  push:
+    branches: [host-provision-exp]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  provision:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: What the runner already has
+        run: |
+          . /etc/os-release; echo "$PRETTY_NAME"; id
+          for t in go python3 node java gpg just; do printf '%-8s %s\n' "$t" "$(command -v $t || echo -)"; done
+
+      - name: Provision + check (CB_TARGET=gha)
+        env:
+          REPORT: ${{ runner.temp }}/report.txt
+        run: experiments/host-provision/run.sh gha examples/workspaces/go-example
+
+      # A later step is a fresh `bash --noprofile --norc`: does anything carry over?
+      - name: Later step, default shell (reads no profile)
+        continue-on-error: true
+        run: |
+          printf 'go:  %s\n' "$(command -v go || echo MISSING)"
+          printf 'just: %s\n' "$(command -v just || echo MISSING)"
+          go version
+
+      - name: Later step, login shell (bash -l)
+        shell: bash -leo pipefail {0}
+        working-directory: examples/workspaces/go-example
+        run: |
+          command -v go; go version
+          ./run-go-test.sh
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: host-provision-report
+          path: |
+            ${{ runner.temp }}/report.txt
+            /tmp/startups.log
+          if-no-files-found: warn
