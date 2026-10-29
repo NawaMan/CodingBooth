@@ -35,6 +35,7 @@ jobs:
         run: |
           . /etc/os-release; echo "$PRETTY_NAME"; id
           for t in go zig python3 node java gpg just; do printf '%-8s %s\n' "$t" "$(command -v $t || echo -)"; done
+          apt-cache madison clang-18 | head -n 3
 
       - name: Provision + check (CB_TARGET=gha)
         env:
