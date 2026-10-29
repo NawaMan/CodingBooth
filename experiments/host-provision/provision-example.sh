@@ -105,3 +105,29 @@ while IFS= read -r raw || [ -n "$raw" ]; do
       ;;
   esac
 done < "$BOOTHFILE"
+
+# .booth/config.toml holds the run-time settings: the variant (the image a
+# booth starts from), run-args (env, volumes, ports, devices), cmds, dind, ...
+# None of them is replayed. Each is recorded as DROP, so a PASS elsewhere in the
+# report is not read as "the same as the booth".
+CONFIG="$EXAMPLE/.booth/config.toml"
+if [ -f "$CONFIG" ]; then
+  while IFS= read -r item; do
+    record DROP "$item  (config.toml, not replayed)"
+  done < <(awk '
+    /^[[:space:]]*#/ || /^[[:space:]]*$/ { next }
+    in_args {
+      line = $0
+      while (match(line, /"([^"\\]|\\.)*"/)) {
+        arg = substr(line, RSTART + 1, RLENGTH - 2); line = substr(line, RSTART + RLENGTH)
+        if (flag != "") { print "run-args " flag " " arg; flag = "" }
+        else if (arg ~ /^-(e|v|p)$/ || arg ~ /^--(env|volume|mount|publish|device|cap-add|add-host)$/) flag = arg
+        else print "run-args " arg
+      }
+      if ($0 ~ /\]/) in_args = 0
+      next
+    }
+    /^run-args[[:space:]]*=/ { in_args = 1; if ($0 ~ /\]/) in_args = 0; next }
+    /^[A-Za-z0-9_-]+[[:space:]]*=/ { print $0 }
+  ' "$CONFIG")
+fi

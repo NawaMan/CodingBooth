@@ -139,7 +139,7 @@ setup	heidisql	0.1.0	b577d8e7a12a4e3264eaf5b9968f9dde580fce7f2c6874260855ab40d1c
 setup	helix	1.0.0	7a017950fe6f47fc4b2498e32e6b8bdacaa61c759a4644893ff3a5bd19b65ee6	variants/base/setups/helix--setup.sh
 setup	helm	1.0.0	7afeaf721ee89c9362432d1691902f3b61dbde5ee9f8a755da0d256a7aa701df	variants/base/setups/helm--setup.sh
 setup	herdr	1.0.0	f84266e5badb254f8faaf6e5c4ee1d09123d0ac9fe2902bc6b5c236f43e80f31	variants/base/setups/herdr--setup.sh
-setup	homebrew	1.0.0	db8d46c975532cce8ad13cdc31e4b76770621a8ae6e590c9c0d27ee21cebae84	variants/base/setups/homebrew--setup.sh
+setup	homebrew	1.1.0	9e2d074235ef94493d711f66ebc059716e26844db3f34f1f7dd0fb3e72b93ebc	variants/base/setups/homebrew--setup.sh
 setup	hoppscotch	0.1.0	08109dde5ef1e4c1043ce0376217c0b71a3461a7f9b71a25b7f34764ce1685e7	variants/base/setups/hoppscotch--setup.sh
 setup	i3	1.0.1	868dcaa511c035c720530a9fb8e445e8458c01ae14c870a9b71cf129bdc1e854	variants/base/setups/i3--setup.sh
 setup	i3-ctrl-alt	1.0.0	2b1946eff53514fefe4d0943cffbf80f988833350a36f0b537dc9473a5ae48e4	variants/base/setups/i3-ctrl-alt--setup.sh
@@ -350,7 +350,7 @@ setup	zed	0.3.0	644c62e960f033c5e6c3f6f5e4a349e7ac6e6503e228ad76b6e70a4687897068
 setup	zig	1.0.0	b4697e1c090e510c423ef961dd6bfcc06a480adf78bd774e3f5291ac468f459e	variants/base/setups/zig--setup.sh
 setup	zig-code-extension	1.0.0	2b398b4a16070263e1e4929a512e1cbf7c997bb6b7124688aa0d5e30812ecb5c	variants/base/setups/zig-code-extension--setup.sh
 install	apt	1.2.0	ca178927eb42e3f199970b247f80ae7ba4033f62a694f6927eaa7ffd1a8882c6	variants/base/setups/apt--install.sh
-install	brew	1.0.1	15b88e85a19c8afc32b759673f93b8211d310278defbacb26e35648cd5da56cd	variants/base/setups/brew--install.sh
+install	brew	1.1.0	32dad9bef6f985460b7597fa0d1595a386e18df5c16e9a576d3d19a6cc6300fa	variants/base/setups/brew--install.sh
 install	bun	1.1.0	f87fab5c1327111cdda83a31966ee46b6123e0ede051b89295cc7777817d7dda	variants/base/setups/bun--install.sh
 install	cabal	1.0.0	0960aa673e85c85a5745402a35984fa84a37f5de601ef3b0c98f176b7ce3a960	variants/base/setups/cabal--install.sh
 install	cargo	1.0.0	e1e2f5d9d52be6401b0b20196bb9dbec8165ea4961d52dae1ae828029e8a0429	variants/base/setups/cargo--install.sh
