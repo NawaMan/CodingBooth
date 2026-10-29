@@ -34,6 +34,8 @@ KERNEL_DISPLAY_NAME="${KERNEL_DISPLAY_NAME:-Go (GoNB)}"
 # The user GoNB is installed for: 'coder' in a booth; the real user when
 # provisioning a machine or a runner (see docs/REUSE_BOOTH.md).
 CB_USER_NAME="${CB_USER_NAME:-coder}"
+# The home is the account's own, not assumed to be /home/<name>.
+CB_USER_HOME="${CB_USER_HOME:-$(getent passwd "$CB_USER_NAME" 2>/dev/null | cut -d: -f6 || true)}"
 CB_USER_HOME="${CB_USER_HOME:-/home/${CB_USER_NAME}}"
 
 # ---------------- Sanity checks ----------------

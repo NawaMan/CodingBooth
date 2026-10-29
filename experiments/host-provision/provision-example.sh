@@ -17,7 +17,8 @@
 # Every line is attempted; a failing setup is recorded and the next one runs,
 # so one pass yields the whole report (written to $REPORT).
 #
-# Usage: sudo CB_TARGET=gha|host CB_USER_HOME=/home/x REPORT=file provision-example.sh <example-dir>
+# Usage: sudo CB_TARGET=gha|host CB_USER_NAME=x CB_USER_HOME=/home/x REPORT=file \
+#             provision-example.sh <example-dir>
 # -----------------------------------------------------------------------------
 
 set -uo pipefail
@@ -38,7 +39,8 @@ chmod 644 "$ENV_FILE"
 
 record() { printf '%-5s %s\n' "$1" "$2" | tee -a "$REPORT"; }
 
-# ${NAME} and $NAME from arg lines; anything else is left for the shell.
+# ${NAME} from arg lines (the form the catalog writes); a bare $NAME and anything
+# else is left for the shell.
 subst_args() {
   local s="$1" k
   for k in "${!ARGS[@]}"; do

@@ -121,7 +121,7 @@ setup	gleam-code-extension	0.1.0	3c69d444f944b4a29febf2da07ef1da671db38f78af0677
 setup	gnupg	0.1.0	32050a0ef9245e8123fa4450a6d7f53fb47799acb5df69ba7efc1a33da056891	variants/base/setups/gnupg--setup.sh
 setup	go	1.2.0	d54cbc8dceeba615fc1e7813d5b225d6710c68383d7f3f49028439b514f71c8b	variants/base/setups/go--setup.sh
 setup	go-code-extension	1.0.0	14b5c05adef0b6e5f5eb1593ef84feca1320bdf1ad6150cf845e96b39c822371	variants/base/setups/go-code-extension--setup.sh
-setup	go-nb-kernel	1.1.0	4a4c533410f4a7d62afd78d444ff60d4467b6468003a69e848ea26eaff95dd96	variants/base/setups/go-nb-kernel--setup.sh
+setup	go-nb-kernel	1.1.0	be638942abc1e8770d85c081b7153f7d0aa6593a5386511f6fa4b173f0f64d42	variants/base/setups/go-nb-kernel--setup.sh
 setup	google-chrome	1.1.0	4747c061f49b7eea76796abc4425f0e563611222452911f064464f8531b1a21b	variants/base/setups/google-chrome--setup.sh
 setup	goose	1.0.0	138c554d9ab722ea3b71731ecad135583e355b03a5072c0e20ad3cfdf3ff0971	variants/base/setups/goose--setup.sh
 setup	goose-lang	0.1.0	f6dd97391ab0ed3ba9f7b2d0ee0227235c00b394a829e648a1306981fc5ec1b4	variants/base/setups/goose-lang--setup.sh

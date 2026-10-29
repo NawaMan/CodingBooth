@@ -10,7 +10,7 @@
 #   1. base-provision.sh      the base Dockerfile, as a script
 #   2. provision-example.sh   the example's Boothfile, as a script
 #   3. booth-entry            the CB_TARGET-guarded copy, as root, which ends by
-#                             running check-go-example.sh as this user
+#                             running the example's checks as this user
 #
 # Usage: run.sh gha|host [example-dir]   (default: examples/workspaces/go-example)
 # Report: $REPORT (default /tmp/host-provision-report.txt)
@@ -27,6 +27,10 @@ EXAMPLE="$(cd "${2:-$REPO/examples/workspaces/go-example}" && pwd)"
 REPORT="${REPORT:-$HOME/host-provision-report.txt}"
 [ "$(id -u)" -ne 0 ] || { echo "❌ Run as the real user, not root" >&2; exit 1; }
 
+# An example's own check-<example>.sh if there is one, else the generic one.
+CHECK="$HERE/check-$(basename "$EXAMPLE").sh"
+[ -f "$CHECK" ] || CHECK="$HERE/check-example.sh"
+
 ME="$(id -un)"
 : > "$REPORT"
 echo "host-provision experiment: target=$TARGET user=$ME $(. /etc/os-release; echo "$PRETTY_NAME")" | tee -a "$REPORT"
@@ -39,7 +43,7 @@ time sudo env CB_TARGET="$TARGET" CB_USER_NAME="$ME" CB_USER_HOME="$HOME" REPORT
 time sudo env \
   CB_TARGET="$TARGET" CB_USER_NAME="$ME" CB_USER_HOME="$HOME" CB_CODE_DIR="$EXAMPLE" \
   HOST_UID="$(id -u)" HOST_GID="$(id -g)" BOOTH_VERBOSE=true REPORT="$REPORT" \
-  /usr/local/bin/booth-entry "$HERE/check-go-example.sh"
+  /usr/local/bin/booth-entry "$CHECK"
 
 echo
 echo "================ REPORT ================"
