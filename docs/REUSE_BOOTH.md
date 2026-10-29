@@ -331,6 +331,23 @@ What passed:
 - **The `booth-entry` copy's user steps:** the rc profile block, the five startup hooks (tls, go,
   superfile, notebook, 99z), and `GOPATH` under the real home.
 
+**Second example: zig-example** (GHA run 40280112491, a matrix with go-example, and locally as
+`host`). It passed on the first try with no catalog change:
+
+| | GHA runner | Local `host` |
+| --- | --- | --- |
+| Boothfile lines | 1 pass, 1 skip | 1 pass, 1 skip |
+| Checks | 8 of 8 pass | 8 of 8 pass |
+
+- The skip is `zig-code-extension`. It skipped itself correctly, because no editor is installed.
+- From here on the checks are generic. `check-example.sh` runs the base checks, then every one of
+  the example's own `.cb-tests/inBooth-test*.sh`. `BOOTH_CONTAINER_NAME` is set, so the
+  example's Justfile runs recipes in place. 90 of the 96 examples ship these tests.
+- go-example's own four in-booth tests also passed on GHA, in a later `bash -l` step: go, gopls,
+  dlv and gomodifytags.
+- In a later plain step, `zig` resolved to the setup's `/usr/local/bin/zig`, confirming finding 3.
+  The runner has no zig of its own.
+
 ### Findings
 
 1. **The `booth-entry` exception is needed, and enough for this example.** The `if` guards
@@ -361,5 +378,5 @@ What passed:
 - A real host with systemd. For example, apt's `nginx` package may start nginx on port 80 there.
 - The `host`-only guards (11b, 13, the root chown). go-example has no `.booth/home` and no
   `/etc/cb-home`, so these did not change the result.
-- Other examples.
+- Examples beyond go and zig.
 
