@@ -191,6 +191,16 @@ lines map directly onto `$GITHUB_ENV` and `$GITHUB_PATH`.
     - "It works on a host" has to say which part was replayed. The harness now records every
       `config.toml` setting as `DROP` in the report.
 
+11. **`APT_SNAPSHOT` assumes the machine is not newer than the pin.** `booth config` stamps the
+    Boothfile with `env APT_SNAPSHOT=<date>`, and `apt--install.sh` resolves every package against
+    that snapshot. In an image this holds: base is built from a snapshot, and the project's pin is
+    the same or later. A live machine has been upgraded past it. On the GHA runner `libcurl4t64`
+    was already 8.18.0-1ubuntu2.8, the 2026-10-04 snapshot offers `libcurl4-openssl-dev` only at
+    ubuntu2.7, and apt will not pair them or downgrade (systemlib-example). An upgraded host fails
+    the same way. To decide, for path B: ignore the pin off-booth (reproducibility then comes
+    from the machine, which is the weaker tier the reproducibility stance already describes), or
+    pin only packages not yet installed.
+
 Counts in items 8 and 9 come from a grep and are estimates. The Stage 1a test lane replaces them
 with real results, and should also run every setup twice.
 
@@ -373,7 +383,8 @@ What passed:
 - The skip is `zig-code-extension`. It skipped itself correctly, because no editor is installed.
 - From here on the checks are generic. `check-example.sh` runs the base checks, then every one of
   the example's own `.cb-tests/inBooth-test*.sh`. `BOOTH_CONTAINER_NAME` is set, so the
-  example's Justfile runs recipes in place. All 96 examples ship these tests.
+  example's Justfile runs recipes in place. **38 of the 96 examples** have in-booth tests (the
+  other 58 have only `--on-host` tests, or none); an example without them is reported `UNTESTED`.
 - go-example's own four in-booth tests also passed on GHA, in a later `bash -l` step: go, gopls,
   dlv and gomodifytags.
 - In a later plain step, `zig` resolved to the setup's `/usr/local/bin/zig`, confirming finding 3.
@@ -401,6 +412,31 @@ no editor installed.
   `/home/coder/code`, and the xonsh test looks up `$(id -un)` instead of `coder`. Inside a booth
   both are the same path and user as before. The 16 other `/home/coder/code` mentions are in
   `--on-host` tests, which run their command inside a booth, so they stay.
+
+**Ten more examples** (GHA runs 40364462980 and 40366742712, and locally as `host`), with the
+earlier eight in the same matrix. The report now also lists every `config.toml` setting as `DROP`.
+
+| Example | Result, GHA and local `host` | Needed |
+| --- | --- | --- |
+| csharp-example | pass | nothing |
+| goose-lang-example | pass | nothing |
+| ocaml-example | pass | nothing |
+| php-example | pass | nothing |
+| lsp-example | pass, once **flaky** | the `nvim` recipe waits a fixed `sleep 3`; on one cold runner marksman had not attached yet. Not specific to the host |
+| apt-example | pass | its snapshot test read `/home/coder/code/.booth/Boothfile`; now the Boothfile beside the test |
+| homebrew-example | pass | `homebrew--setup.sh` and `brew--install.sh` take `CB_USER_NAME` (1.1.0); the redis and nginx tests used `base + $$` as a port, past 65535 with a runner's or host's PIDs |
+| spring-boot-example | **untested** | provisions cleanly, but has no in-booth tests |
+| helix-example | **known not working** | its config comes from `config.toml` `shared-dirs` (Where it breaks, item 10) |
+| systemlib-example | **known not working** | its `APT_SNAPSHOT` is older than the machine's installed `libcurl4t64` (item 11) |
+
+**Where the examples stand** (the workflow matrix carries the known-working list):
+
+- **Known working, 15:** go, zig, bun, deno, npm, pip, clang, bash, csharp, goose-lang, lsp,
+  ocaml, php, apt, homebrew. That means the Boothfile part: go, bun, npm and pip also have
+  `config.toml` settings that were dropped (caches, `cmds`, and go-example's `xfce` variant).
+- **Known not working, 3:** xonsh (the login shell) and helix (shared config) because of item 10;
+  systemlib because of item 11.
+- **Untested, 1:** spring-boot.
 
 ### Findings
 
@@ -450,7 +486,13 @@ no editor installed.
    the user steps (1–5b). The harness does not replay `config.toml`, and the guarded copy skips
    those steps on `gha` and `host`. That is deliberate: changing a real user's login shell is the
    clobbering that "Where it breaks" item 8 is about. xonsh itself works (`xonsh hello.xsh` passed).
-   To decide: whether the feature offers a login-shell change, opt-in, on `host`.
+   To decide: whether the feature offers a login-shell change, opt-in, on `host`. This turned out
+   to be one case of a whole category: see [Where it breaks](#where-it-breaks), item 10.
+10. **Example tests carry booth assumptions of their own.** Five in-booth tests failed for reasons
+    in the test, not in the setup: a hard-coded `/home/coder/code` (bash, npm, xonsh, apt), the
+    user `coder` (xonsh), and a port computed from the PID (homebrew). Each fix keeps the same value
+    inside a booth. A test lane that runs examples off-booth will keep finding these, so it is
+    worth a lint: no `/home/coder` or `coder` in `inBooth-*` tests.
 
 ### Not covered yet
 
@@ -459,7 +501,7 @@ no editor installed.
 - A real host with systemd. For example, apt's `nginx` package may start nginx on port 80 there.
 - The `host`-only guards (11b, 13, the root chown). go-example has no `.booth/home` and no
   `/etc/cb-home`, so these did not change the result.
-- Examples beyond these nine, in particular ones with `copy` lines (rust-example), desktops or
-  services.
-- `config.toml` run-args: none are replayed (finding 9).
+- The other 77 examples, in particular ones with `copy` lines (rust-example), a `variant`,
+  desktops or services.
+- `config.toml` settings: none are replayed (Where it breaks, item 10).
 
