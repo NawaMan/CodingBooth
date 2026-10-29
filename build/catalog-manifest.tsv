@@ -121,7 +121,7 @@ setup	gleam-code-extension	0.1.0	3c69d444f944b4a29febf2da07ef1da671db38f78af0677
 setup	gnupg	0.1.0	32050a0ef9245e8123fa4450a6d7f53fb47799acb5df69ba7efc1a33da056891	variants/base/setups/gnupg--setup.sh
 setup	go	1.2.0	d54cbc8dceeba615fc1e7813d5b225d6710c68383d7f3f49028439b514f71c8b	variants/base/setups/go--setup.sh
 setup	go-code-extension	1.0.0	14b5c05adef0b6e5f5eb1593ef84feca1320bdf1ad6150cf845e96b39c822371	variants/base/setups/go-code-extension--setup.sh
-setup	go-nb-kernel	1.0.0	641f7383ccc93feedc8e7c68f474e713806f756c22ed215f5d6305ede6e5d2ba	variants/base/setups/go-nb-kernel--setup.sh
+setup	go-nb-kernel	1.1.0	4a4c533410f4a7d62afd78d444ff60d4467b6468003a69e848ea26eaff95dd96	variants/base/setups/go-nb-kernel--setup.sh
 setup	google-chrome	1.1.0	4747c061f49b7eea76796abc4425f0e563611222452911f064464f8531b1a21b	variants/base/setups/google-chrome--setup.sh
 setup	goose	1.0.0	138c554d9ab722ea3b71731ecad135583e355b03a5072c0e20ad3cfdf3ff0971	variants/base/setups/goose--setup.sh
 setup	goose-lang	0.1.0	f6dd97391ab0ed3ba9f7b2d0ee0227235c00b394a829e648a1306981fc5ec1b4	variants/base/setups/goose-lang--setup.sh
@@ -361,7 +361,7 @@ install	deno	1.0.0	eb3193b7343d081031f30ffb265f5d4caa63a3eb91c5a25ae20e9e445a9a2
 install	deno-pkg	1.0.0	d5cb9089847b4c020c941a14200228adbb0013b70b4c1c494504bbcb2d1245c5	variants/base/setups/deno-pkg--install.sh
 install	dotnet	1.0.0	cac8bd0c1df6b46c94d31bca0dbca27e87b61163247b9d3587302054a9bb3b1b	variants/base/setups/dotnet--install.sh
 install	gem	1.0.0	30283143a735660a27f127ddcbbe98347cc053fc0a3cb686f3aee9ff4a99c623	variants/base/setups/gem--install.sh
-install	go	1.0.0	ed62acb57ffe3face3251e179fe55647e466b4ec8d10e4ce09b3e74351de7930	variants/base/setups/go--install.sh
+install	go	1.1.0	9ae629367cf88f4104842edbe073413c3e5a1fba50f30e6c4ff3c38e04889c1d	variants/base/setups/go--install.sh
 install	hex	1.0.0	5a5be06dabc640025bc5462f5c635c7f3a6c9db38eb06d4094791d2c24db088f	variants/base/setups/hex--install.sh
 install	jetbrains-plugin	0.1.0	f3a0db39c95e8e5da538e772999657b98246abf6e30582825335433d1c90e3fb	variants/base/setups/jetbrains-plugin--install.sh
 install	lsp	0.2.0	e99814e1fe99ab11818b8d2091fa9f4f34b8f91dc8417ecc7276945828605799	variants/base/setups/lsp--install.sh
