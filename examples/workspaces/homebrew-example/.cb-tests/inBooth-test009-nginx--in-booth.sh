@@ -7,7 +7,7 @@ NGINXDIR="/tmp/test-nginx-$$"
 mkdir -p "$NGINXDIR"
 
 # Use a random port to avoid conflicts
-PORT=$((8080 + $$))
+PORT=$((8080 + $$ % 1000))   # PIDs can be large outside a booth; stay below 65536
 
 cleanup() {
     nginx -c "$NGINXDIR/nginx.conf" -s stop 2>/dev/null || true

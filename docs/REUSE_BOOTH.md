@@ -80,7 +80,7 @@ and starts with a small host-safe set (language runtimes, CLIs), not the whole c
 | **Setup scripts** | mostly | Plain root bash on Ubuntu, with pinned downloads into `/usr/local/…` |
 | **Install scripts** | yes | Thin wrappers over `apt`, `pip`, `npm`, `cargo`, … |
 | **Templates** | through B only | Their only output is a Boothfile, which compiles to a Dockerfile only |
-| **Variants**, `config.toml` | no | run-args, ports, mounts, cache/shared folders make sense only for a container |
+| **Variants**, `config.toml` | partly | Each setting needs its own answer; see [Where it breaks](#where-it-breaks), item 10 |
 
 Each setup writes three files. How each one behaves outside a booth:
 
@@ -159,6 +159,37 @@ lines map directly onto `$GITHUB_ENV` and `$GITHUB_PATH`.
    host gets re-provisioned. For example, a second run of `go--setup.sh` with the same version
    moves the new tree *inside* the existing `/usr/local/go-<version>` directory instead of
    replacing it.
+
+10. **Run-time settings live outside the Boothfile, and dropping them fails silently.** A booth is
+    the Boothfile *plus* `.booth/config.toml`, which `booth run` turns into `docker run` arguments
+    and which `booth-entry` reads at start. Replaying the Boothfile alone gives a machine that
+    passes its checks and is still not the booth. The experiment found this through xonsh-example
+    (its login shell), then found go-example had been "passing" on base while its `config.toml`
+    asks for the `xfce` variant. Counts over the 96 examples:
+
+    | Kind | Examples | In a booth | On a host | On GHA |
+    | --- | --- | --- | --- | --- |
+    | `variant` | 27 (13 xfce, 6 notebook, 5 codeserver, kde, desktop-xfce, terminal) | the image the booth starts from, with that variant's own setups baked in | the variant's setups, replayed like base's; desktops are container-only (item 6) | same as host, without desktops |
+    | `-e` env | about 40 lines | env of every process | `profile.d`, except the ones `booth-entry` acts on (below) | `$GITHUB_ENV` |
+    | `-v` volumes, `cache-dirs`, `shared-dirs`, `~/…` seeds | 62 / 28 / 2 | persistence, and host config copied in (`~/.npmrc` → `/etc/cb-home-seed/`) | mostly nothing to do: the home persists and the real `~/.npmrc` is already there | `actions/cache` for the caches; the seeds do not apply |
+    | `-p`, `port`, `expose` | 26 / 8 | publish container ports to the host | nothing: services listen on the machine itself | nothing |
+    | `cmds` | 10 | what the booth runs | the user's own command | the step's `run:` |
+    | `dind`, `--device`, `egress`, `engine`, `--platform` | 7 / 2 / 2 / 1 / 1 | container-runtime features | no equivalent; the egress allowlist is a security property that is simply lost | same |
+
+    **What `booth-entry` acts on at run time.** Some `-e` values are not plain environment: they
+    change what `booth-entry` does. Today's list is `USER_SHELL` (the login shell, set by
+    `+default` shell extensions such as `xonsh+default`), `TZ`, `BOOTH_HOME_SEED*`,
+    `BOOTH_HOME_OVERRIDE`, `BOOTH_STARTUP*`, `BOOTH_IDLE_*`, `BOOTH_SUDO`, `BOOTH_LOW_PORTS` and
+    `HOST_UID`/`HOST_GID`. On a host each one is a question of whether provisioning may change the
+    real account or machine (the login shell, the timezone, sudo), which is item 8's question again.
+
+    **Two consequences:**
+    - The emitter (path B) must read `config.toml` too, and classify each setting the way item 6
+      classifies setups: replay it, map it (`$GITHUB_ENV`, `actions/cache`), skip it as
+      meaningless, or **refuse loudly** (dind, egress). A silent drop is the one option that is not
+      allowed.
+    - "It works on a host" has to say which part was replayed. The harness now records every
+      `config.toml` setting as `DROP` in the report.
 
 Counts in items 8 and 9 come from a grep and are estimates. The Stage 1a test lane replaces them
 with real results, and should also run every setup twice.
@@ -342,7 +373,7 @@ What passed:
 - The skip is `zig-code-extension`. It skipped itself correctly, because no editor is installed.
 - From here on the checks are generic. `check-example.sh` runs the base checks, then every one of
   the example's own `.cb-tests/inBooth-test*.sh`. `BOOTH_CONTAINER_NAME` is set, so the
-  example's Justfile runs recipes in place. 90 of the 96 examples ship these tests.
+  example's Justfile runs recipes in place. All 96 examples ship these tests.
 - go-example's own four in-booth tests also passed on GHA, in a later `bash -l` step: go, gopls,
   dlv and gomodifytags.
 - In a later plain step, `zig` resolved to the setup's `/usr/local/bin/zig`, confirming finding 3.

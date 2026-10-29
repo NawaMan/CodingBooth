@@ -11,7 +11,7 @@
 set -euo pipefail
 
 echo "=== Testing APT_SNAPSHOT freeze ==="
-BOOTHFILE="/home/coder/code/.booth/Boothfile"
+BOOTHFILE="$(dirname "$0")/../.booth/Boothfile"   # /home/coder/code/.booth/Boothfile in a booth
 EXPECTED="$(sed -n 's/^env APT_SNAPSHOT=//p' "$BOOTHFILE" | head -1)"
 ACTUAL="$(printenv APT_SNAPSHOT || true)"
 echo "Boothfile: APT_SNAPSHOT=${EXPECTED}"
