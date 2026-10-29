@@ -5,7 +5,7 @@
 
 set -euo pipefail
 
-cd /home/coder/code
+cd "$(dirname "$0")/.."   # the project folder: /home/coder/code in a booth
 
 echo "=== Xonsh version, script, login shell ==="
 ver="$(xonsh --version 2>&1 || true)"
@@ -16,7 +16,7 @@ echo "$out"
 echo "$out" | grep -q "hello from xonsh" || { echo "script did not greet"; exit 1; }
 echo "$out" | grep -q "answer=42" || { echo "script did not print answer=42"; exit 1; }
 
-shell="$(getent passwd coder | cut -d: -f7)"
+shell="$(getent passwd "$(id -un)" | cut -d: -f7)"   # coder in a booth
 echo "login shell: $shell"
 [[ "$shell" == "/usr/local/bin/xonsh" ]] || { echo "expected USER_SHELL xonsh, got: $shell"; exit 1; }
 echo "ok"

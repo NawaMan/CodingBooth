@@ -8,7 +8,7 @@ set -euo pipefail
 
 echo "=== Testing ts-node ==="
 ts-node --version
-cd /home/coder/code
+cd "$(dirname "$0")/.."   # the project folder: /home/coder/code in a booth
 output="$(ts-node hello.ts tester)"
 echo "$output"
 grep -q "Hello, tester!" <<< "$output"

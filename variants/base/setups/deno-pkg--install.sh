@@ -2,9 +2,9 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
-# This script installs Deno packages for the 'coder' user.
+# This script installs Deno packages for the booth user ('coder' unless CB_USER_NAME says otherwise).
 # Packages are passed as a comma-separated list.
 # It requires deno--setup.sh to have been run first.
 # Usage: deno-pkg--install.sh <pkg1,pkg2,...>
@@ -29,6 +29,12 @@ if [ "$EUID" -ne 0 ]; then
     echo "❌ This script must be run as root (use sudo)" >&2
     exit 1
 fi
+
+# The user the packages are installed for. 'coder' in a booth; the real user
+# when provisioning a machine or a runner (see docs/REUSE_BOOTH.md).
+CB_USER_NAME="${CB_USER_NAME:-coder}"
+CB_USER_HOME="${CB_USER_HOME:-$(getent passwd "$CB_USER_NAME" 2>/dev/null | cut -d: -f6 || true)}"
+CB_USER_HOME="${CB_USER_HOME:-/home/${CB_USER_NAME}}"
 
 case "${1:-}" in
     -h|--help)
@@ -65,5 +71,5 @@ fi
 
 for pkg in "${PKGS[@]}"; do
     echo "📦 Installing: deno add $pkg"
-    cb_retry sudo -u coder bash -lc "cd /home/coder && deno add $pkg"
+    cb_retry sudo -u "$CB_USER_NAME" bash -lc "cd '${CB_USER_HOME}' && deno add $pkg"
 done
