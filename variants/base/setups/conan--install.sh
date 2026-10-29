@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 # This script installs Conan (C/C++ package manager) and optionally packages.
 # Usage: conan--install.sh [package[@version] ...]
@@ -45,16 +45,17 @@ set -- $(echo "$@" | tr ',' ' ')
 
 # If packages are specified, download them to cache
 if [ $# -gt 0 ]; then
-    # Download as coder, not root: the Conan cache lives in $HOME/.conan2, and a
+    # Download as the booth user (CB_USER_NAME, default coder), not root: the Conan cache lives in $HOME/.conan2, and a
     # root-owned /root/.conan2 is invisible to the coder user the booth runs as —
     # the packages would be "installed" into a cache nobody ever reads.
     CONAN_BIN="$(command -v conan)"
+    CB_USER_NAME="${CB_USER_NAME:-coder}"
     echo "📦 Downloading Conan packages to cache..."
     for pkg in "$@"; do
         echo "  Downloading $pkg..."
         # No `|| true` — a package that fails to download must fail the build rather
         # than leave an empty cache behind a green image.
-        cb_retry sudo -u coder -H "$CONAN_BIN" download "$pkg" -r conancenter
+        cb_retry sudo -u "$CB_USER_NAME" -H "$CONAN_BIN" download "$pkg" -r conancenter
     done
 fi
 
