@@ -42,6 +42,7 @@ Back to [README](../README.md)
 - [Why /opt/codingbooth stays fixed](#why-optcodingbooth-stays-fixed)
 - [Stages](#stages)
 - [Open decisions](#open-decisions)
+- [Experiment results](#experiment-results)
 
 ---
 
@@ -97,6 +98,9 @@ lines map directly onto `$GITHUB_ENV` and `$GITHUB_PATH`.
 
 1. **The `coder` user is hard-coded.**
    - 12 setups write to `/home/coder`, and 11 run commands as `coder` (about 20 unique).
+   - **12 of the 24 install scripts** run `sudo -u coder` (go, cargo, gem, bun, deno, deno-pkg,
+     conda, dotnet, brew, cabal, conan, code-extension). The experiment found this; the earlier
+     count looked only at setup scripts.
      Examples: claude-code, codeserver, flutter, homebrew, wails, mongodb, redis.
    - 28 templates (47 lines) use `/home/coder`, mostly in `env` lines.
 2. **Ubuntu release.** Base is 26.04, and some setups were adjusted for it (PHP, Erlang). 27
@@ -172,7 +176,7 @@ Checked, and **no** change is needed:
 | --- | --- | --- | --- |
 | 1 | **Fresh-host test lane**: run setups in a plain `ubuntu:26.04` container with no `booth-entry`, as a user that is not `coder`; check that each starter runs | **None** | Only adds tests. It is also the tool that shows which setups really break on a host. |
 | 1b | **`CB_TARGET` helper** in `setups/libs/`: reads, validates, defaults to `booth`. Nothing branches on it yet. | **None** | New file only. No setup calls it until a later stage needs it. |
-| 2 | **`CB_USER_HOME` in setup bodies**, `$HOME` in the profile/startup scripts they generate (see [below](#parameterizing-the-user-home)) | **Low–Medium** | The default stays `/home/coder`, so booths behave the same. The risk is typos in about 20 scripts, each also needing a `cb-version` bump. Use #1 to check them. |
+| 2 | **`CB_USER_HOME` in setup and install bodies** (about 20 setups + 12 installs), `$HOME` in the profile/startup scripts they generate (see [below](#parameterizing-the-user-home)) | **Low–Medium** | The default stays `/home/coder`, so booths behave the same. The risk is typos in about 20 scripts, each also needing a `cb-version` bump. Use #1 to check them. |
 | 3 | **`CB_USER_HOME` in template `env` lines** | **Low** to booths, **High churn** | Every generated Boothfile changes. All examples need `booth config` regenerated (new `.generated`), and every user's booth rebuilds on its next reconfigure. |
 | 4 | **Host-compat classification**: host-safe, user-coupled, clobbers host state, not re-runnable, or container-only, kept in a separate data file | **None** | A header in each script would count as an edit to all 332, forcing a version bump and manifest regen on every one. |
 | 5 | **GHA smoke run**: one workflow that builds and execs an example booth on a hosted runner | **None** | Shows what path A trips on: no TTY, build caching, the DinD consent flags. |
@@ -246,7 +250,7 @@ Each stage gets its own proposal and worktree, lands, then soaks before the next
 
 | Stage | Work | Gate before moving on |
 | --- | --- | --- |
-| **1a** | #1 test lane + #1b `CB_TARGET` helper + #2 `CB_USER_HOME` in setups | Lane passes with `CB_USER_HOME` pointing at another user's home; booths unchanged; soak |
+| **1a** | #1 test lane + #1b `CB_TARGET` helper + #2 `CB_USER_HOME` in setups **and the 12 install scripts** | Lane passes with `CB_USER_HOME` pointing at another user's home; booths unchanged; soak |
 | **1b** | #3 template `env` lines + regenerate examples | Round trip of `booth config` is clean; examples build; soak |
 | **2** | #4 classification + #5 GHA smoke run | Evidence of what really breaks; may shrink later stages |
 | **3** | #6 compiler IR split | Byte-identical `emit-dockerfile` output for every example and fixture; soak |
@@ -270,3 +274,73 @@ Each stage gets its own proposal and worktree, lands, then soaks before the next
 - [ ] Classification as a separate data file (proposed) or as a per-script header.
 - [x] Path B targets Ubuntu 26.04: same release as base, and GHA pins `runs-on: ubuntu-26.04`.
   #8 is postponed indefinitely.
+
+## Experiment results
+
+**2026-10-26**, branch `host-provision-exp`, files in `experiments/host-provision/`. Nothing under
+`variants/`, `templates/` or the CLI was changed.
+
+### What was run
+
+- `base-provision.sh`: `variants/base/Dockerfile` replayed as a root script.
+- `provision-example.sh`: the `go-example` Boothfile replayed. `env` lines went to `profile.d`,
+  with `/home/coder` rewritten to the real home.
+- A copy of `booth-entry` with only `CB_TARGET` `if` guards, plus the `CB_USER_NAME` /
+  `CB_USER_HOME` / `CB_CODE_DIR` exception. It then ran the example's checks as the real user.
+
+It ran on two kinds of machine:
+
+- **GHA:** a real `ubuntu-26.04` runner (run 40273828543), as user `runner` (uid 1001).
+- **Locally:** a plain `ubuntu:26.04` container, once as `CB_TARGET=gha` (user `runner`) and
+  once as `CB_TARGET=host` (user `owner`, uid 1000).
+
+### Results
+
+| | GHA runner | Local `host` |
+| --- | --- | --- |
+| Boothfile lines | 6 of 9 pass | 6 of 9 pass |
+| Checks | 18 of 20 pass | 18 of 20 pass |
+| Failures | `install go gopls`, `install go dlv`, `setup go-nb-kernel` | same |
+| Cause | `sudo: user 'coder' not found` in `go--install.sh` and `go-nb-kernel--setup.sh` | same |
+
+**Every failure came from the hard-coded `coder` user. Nothing else broke.**
+
+What passed:
+
+- **Tools:** Go 1.25.7 (in login, interactive and zsh shells), Python 3.13.12, code-server,
+  Jupyter, the code extensions (installed into code-server's shared extension directory), and the
+  base tools (just, lazygit, gpg 2.5.24).
+- **The example's own work:** `go test ./...` and `./build.sh`.
+- **The `booth-entry` copy's user steps:** the rc profile block, the five startup hooks (tls, go,
+  superfile, notebook, 99z), and `GOPATH` under the real home.
+
+### Findings
+
+1. **The `booth-entry` exception is needed, and enough for this example.** The `if` guards
+   skipped the container-only blocks cleanly. With only `USER_NAME`, `HOME_DIR` and `CODE_DIR`
+   overridable, steps 7, 8, 12, 14 and 15 did their job for a real user.
+2. **Install scripts are the bigger `coder` problem.** Stage 1a has to cover the 12 install
+   scripts as well as the ~20 setups. Without them, every `*-pkg` extension fails off-booth.
+3. **Starters beat the runner's preinstalled tools, even without a profile.** The runner ships
+   `/usr/bin/go`, `python3`, `node` and `java`. In a later plain step (`bash --noprofile`),
+   `go` still resolved to the setup's `/usr/local/bin/go` starter: `/usr/local/bin` comes first
+   on the default PATH. Env such as `GOPATH` did not carry over. A step with `shell: bash -l {0}`
+   got everything. No conflict with the preinstalled tools was observed.
+4. **Base changes a host machine-wide.** `gnupg--setup.sh` puts gpg 2.5 in `/usr/local/bin`,
+   shadowing the system's 2.4 for every user. On a runner that is fine; on someone's own machine
+   it should be opt-in.
+5. **Timing on GHA:** base 2m31s (mostly building gnupg from source), the example 1m07s,
+   `booth-entry` plus checks 11s. The whole job took 4m03s.
+6. **A harness lesson for the test lane.** With `fs.protected_regular` (the Ubuntu default),
+   root cannot write a user-owned file in a sticky directory such as `/tmp`. Reports and logs
+   that root and the user both write go under the user's home or the runner's temp directory.
+
+### Not covered yet
+
+- Services actually starting (code-server, notebook) from their startup hooks.
+- Running the provisioning a second time.
+- A real host with systemd. For example, apt's `nginx` package may start nginx on port 80 there.
+- The `host`-only guards (11b, 13, the root chown). go-example has no `.booth/home` and no
+  `/etc/cb-home`, so these did not change the result.
+- Other examples.
+
