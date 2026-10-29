@@ -23,6 +23,9 @@ jobs:
       #     xonsh-example      login shell is a config.toml run-arg (Where it breaks, item 10)
       #     helix-example      its config is a config.toml shared-dir (item 10)
       #     systemlib-example  APT_SNAPSHOT is older than the machine's packages (item 11)
+      #   skipped, they need a non-base variant (a GHA run is a base booth):
+      #     i3-desktop-example, tiling-example, empty-example   i3 runs inside XFCE
+      #     conda-example                                       jupyter comes from the notebook variant
       matrix:
         example:
           - go-example
@@ -52,7 +55,6 @@ jobs:
           - claude-token-example
           - codex-example
           - codex-token-example
-          - conda-example
           - data-example
           - desktop-terminals-example
           - dind-example
@@ -60,7 +62,6 @@ jobs:
           - egress-allowlist-extra-example
           - egress-envoy-example
           - elixir-example
-          - empty-example
           - fastapi-example
           - firebase-example
           - flask-example
@@ -72,7 +73,6 @@ jobs:
           - grok-example
           - haskell-example
           - herdr-example
-          - i3-desktop-example
           - java-example
           - jetbrain-exmple
           - js-example
@@ -112,7 +112,6 @@ jobs:
           - rust-example
           - server-example
           - server-example-2
-          - tiling-example
           - turtle-example
           - vaadin-example
           - wails-android-example

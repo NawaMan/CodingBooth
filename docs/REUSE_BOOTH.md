@@ -505,6 +505,11 @@ A: startup hooks use `$HOME`. B: 6 install scripts and `mongodb-start` take `CB_
 
 lsp passed this time (it is still flaky). wails-example now passes.
 
+**Decided: an example that clearly needs a non-base variant is skipped on GHA.** i3-desktop, tiling
+and empty (i3 runs inside XFCE) and conda (the notebook variant's `jupyter`) are out of the matrix.
+lean stays: only its code-server extension test needs the variant, and that test now skips itself
+when there is no code-server, as on a base booth.
+
 ### Findings
 
 1. **The `booth-entry` exception is needed, and enough for this example.** The `if` guards
