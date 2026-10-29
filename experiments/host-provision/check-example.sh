@@ -19,12 +19,14 @@
 set -uo pipefail
 
 REPORT="${REPORT:-$HOME/host-provision-report.txt}"
+TESTLOG="${REPORT%.txt}-tests.log"
 export BOOTH_CONTAINER_NAME="${BOOTH_CONTAINER_NAME:-host-provision}"
 FAILS=0
 
 check() {   # check <label> <command>   (login shell)
   local label="$1" cmd="$2" out rc
   out="$(bash -lc "$cmd" 2>&1 < /dev/null)"; rc=$?
+  printf '\n===== %s (rc=%s)\n%s\n' "$label" "$rc" "$out" >> "$TESTLOG"   # full output, beside the report
   out="$(printf '%s' "$out" | grep -v '^\s*$' | tail -n 1 | cut -c1-110)"
   if [ "$rc" -eq 0 ]; then
     printf 'PASS  %-46s %s\n' "$label" "$out" | tee -a "$REPORT"
