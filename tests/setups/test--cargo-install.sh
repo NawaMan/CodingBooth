@@ -103,6 +103,14 @@ assert_emits 4 "--locked passes through without a version" \
 assert_absent 5 "no --locked unless the user asks for it" \
     "--locked" ripgrep@14.1.0
 
+# 6. Installs as coder by default (a booth).
+assert_emits 6 "installs as coder by default" \
+    "STUB_SUDO -u coder bash -lc" ripgrep
+
+# 7. CB_USER_NAME names another user (a machine that is not a booth; docs/REUSE_BOOTH.md).
+CB_USER_NAME=runner assert_emits 7 "CB_USER_NAME picks the install user" \
+    "STUB_SUDO -u runner bash -lc" ripgrep
+
 if [[ "$ALL_PASSED" != "true" ]]; then
     exit 1
 fi

@@ -1,11 +1,10 @@
 # EXPERIMENT -- see docs/REUSE_BOOTH.md. Provisions a GitHub-hosted Ubuntu 26.04
 # runner with the base setups, an example's Boothfile and the CB_TARGET-guarded
-# booth-entry copy, then runs the example's own checks. Runs only on this branch.
+# booth-entry copy, then runs the example's own checks. 89 jobs, so it runs only
+# when started by hand (Actions -> host-provision experiment -> Run workflow).
 name: host-provision experiment
 
 on:
-  push:
-    branches: [host-provision-exp]
   workflow_dispatch: {}
 
 permissions:
@@ -26,6 +25,7 @@ jobs:
       #   skipped, they need a non-base variant (a GHA run is a base booth):
       #     i3-desktop-example, tiling-example, empty-example   i3 runs inside XFCE
       #     conda-example                                       jupyter comes from the notebook variant
+      #     zed-example                                         a GUI editor on the xfce variant
       matrix:
         example:
           - go-example
