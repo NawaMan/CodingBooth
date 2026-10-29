@@ -485,6 +485,26 @@ Notes on what this means:
   path for two files. So every row said "no report", and the table above was made locally from
   the downloaded artifacts.
 
+#### After fixing A, B and C (GHA run 40746874561)
+
+A: startup hooks use `$HOME`. B: 6 install scripts and `mongodb-start` take `CB_USER_NAME` /
+`CB_USER_HOME`. C: the harness replays `run` and `copy` lines and puts the project's
+`.booth/setups/` on PATH. Every default is today's value, so a booth sees the same strings.
+
+**83 passed, 10 failed** (was 52 / 41). Every job wrote a report.
+
+| Example | Cause |
+| --- | --- |
+| i3-desktop, tiling, empty | D: i3 needs XFCE; a base booth by decision |
+| conda (3 tests) | D: `jupyter` comes from the notebook variant |
+| lean (test004) | D: the code-server extension test needs code-server |
+| n8n | E: a `config.toml` run-args env |
+| playwright-polyglot | F: the example pins Playwright 1.58.0, which does not support Ubuntu 26.04 |
+| data (test002), rlang | G: the new test is probably wrong (not yet run in a booth) |
+| wails-android (test002) | **not diagnosed yet**: the APK builds but "'Booth counter' is missing from the APK". It got this far only now, because the wails setup used to fail first |
+
+lsp passed this time (it is still flaky). wails-example now passes.
+
 ### Findings
 
 1. **The `booth-entry` exception is needed, and enough for this example.** The `if` guards
