@@ -2,9 +2,9 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.1
+# cb-version: 1.1.0
 
-# This script installs Homebrew packages for the 'coder' user.
+# This script installs Homebrew packages for the booth user ('coder' unless CB_USER_NAME says otherwise).
 # It will install Homebrew if it is not already installed (276MB).
 # Usage: brew--install.sh <package> [package...]
 
@@ -25,6 +25,10 @@ if [ "$EUID" -ne 0 ]; then
     echo "❌ This script must be run as root (use sudo)" >&2
     exit 1
 fi
+
+# The user the packages are installed for. 'coder' in a booth; the real user
+# when provisioning a machine or a runner (see docs/REUSE_BOOTH.md).
+CB_USER_NAME="${CB_USER_NAME:-coder}"
 
 case "${1:-}" in
     -h|--help)
@@ -60,10 +64,10 @@ fi
 # "provides a service which can only be used on macOS or systemd" or
 # because a binary is shadowed by /usr/sbin (nginx). That is a warning,
 # not a missing package — treating it as fatal failed homebrew-example.
-if ! cb_retry sudo -u coder "$BREW_BIN" install "$@"; then
+if ! cb_retry sudo -u "$CB_USER_NAME" "$BREW_BIN" install "$@"; then
     missing=()
     for pkg in "$@"; do
-        if ! sudo -u coder "$BREW_BIN" list --formula "$pkg" >/dev/null 2>&1; then
+        if ! sudo -u "$CB_USER_NAME" "$BREW_BIN" list --formula "$pkg" >/dev/null 2>&1; then
             missing+=("$pkg")
         fi
     done
