@@ -161,6 +161,11 @@ This file contains a list of changes for each released version.
   out a component (dirmngr without GnuTLS, keyboxd without SQLite) rather than let it fall
   through to the 2.4 copy.
 
+- **`setup duckdb` installs DuckDB 2.x.** DuckDB 2.0.0 renamed its CLI download
+  (`duckdb-cli-linux-<arch>.tar.gz`, was `duckdb_cli-linux-<arch>.zip`) and dropped the old name,
+  so `latest` (the default) failed with a 404 and stopped the image build. The setup now picks
+  the asset by major version; a pinned 1.x still installs.
+
 - **An apt snapshot pin no longer breaks on a Launchpad PPA.** `APT_SNAPSHOT` now freezes
   Ubuntu's archive only; a PPA a setup adds stays live, like every other third-party repo. apt
   also maps PPAs to `snapshot.ppa.launchpadcontent.net`, and a PPA's snapshot may not carry the
