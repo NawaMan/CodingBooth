@@ -109,11 +109,19 @@ done < "$BOOTHFILE"
 # .booth/config.toml holds the run-time settings: the variant (the image a
 # booth starts from), run-args (env, volumes, ports, devices), cmds, dind, ...
 # None of them is replayed. Each is recorded as DROP, so a PASS elsewhere in the
-# report is not read as "the same as the booth".
+# report is not read as "the same as the booth". On gha the variant is BASE instead:
+# a gha run is defined as a base booth (--variant base), so it is overridden, not lost.
 CONFIG="$EXAMPLE/.booth/config.toml"
 if [ -f "$CONFIG" ]; then
   while IFS= read -r item; do
-    record DROP "$item  (config.toml, not replayed)"
+    case "$item" in
+      variant*) if [ "${CB_TARGET:-}" = gha ]; then
+                  record BASE "$item  (config.toml; a gha run is a base booth, like --variant base)"
+                else
+                  record DROP "$item  (config.toml, not replayed; host: undecided)"
+                fi ;;
+      *)        record DROP "$item  (config.toml, not replayed)" ;;
+    esac
   done < <(awk '
     /^[[:space:]]*#/ || /^[[:space:]]*$/ { next }
     in_args {

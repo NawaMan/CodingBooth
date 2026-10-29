@@ -169,7 +169,7 @@ lines map directly onto `$GITHUB_ENV` and `$GITHUB_PATH`.
 
     | Kind | Examples | In a booth | On a host | On GHA |
     | --- | --- | --- | --- | --- |
-    | `variant` | 27 (13 xfce, 6 notebook, 5 codeserver, kde, desktop-xfce, terminal) | the image the booth starts from, with that variant's own setups baked in | the variant's setups, replayed like base's; desktops are container-only (item 6) | same as host, without desktops |
+    | `variant` | 27 (13 xfce, 6 notebook, 5 codeserver, kde, desktop-xfce, terminal) | the image the booth starts from, with that variant's own setups baked in | the variant's setups, replayed like base's; desktops are container-only (item 6) | **always base** (decided): the run is the booth started with `--variant base`; any other variant is reported, not replayed |
     | `-e` env | about 40 lines | env of every process | `profile.d`, except the ones `booth-entry` acts on (below) | `$GITHUB_ENV` |
     | `-v` volumes, `cache-dirs`, `shared-dirs`, `~/…` seeds | 62 / 28 / 2 | persistence, and host config copied in (`~/.npmrc` → `/etc/cb-home-seed/`) | mostly nothing to do: the home persists and the real `~/.npmrc` is already there | `actions/cache` for the caches; the seeds do not apply |
     | `-p`, `port`, `expose` | 26 / 8 | publish container ports to the host | nothing: services listen on the machine itself | nothing |
@@ -190,6 +190,14 @@ lines map directly onto `$GITHUB_ENV` and `$GITHUB_PATH`.
       allowed.
     - "It works on a host" has to say which part was replayed. The harness now records every
       `config.toml` setting as `DROP` in the report.
+
+    **Decided: GHA is a base booth.** A GHA run is the same as the booth started with
+    `--variant base`, never as the variant in `config.toml`. So on GHA the `variant` setting is
+    not a silent drop: it is overridden by definition, and the report says so (`BASE` line). The
+    reference to compare a GHA run against is `booth --variant base`, not the example's own booth.
+    An example whose setups need its variant (a code-server extension, a notebook kernel, a
+    desktop app) is then judged by what that setup does on a base booth: skip, or fail. The host
+    target is still open.
 
 11. **`APT_SNAPSHOT` assumes the machine is not newer than the pin.** `booth config` stamps the
     Boothfile with `env APT_SNAPSHOT=<date>`, and `apt--install.sh` resolves every package against
@@ -433,7 +441,8 @@ earlier eight in the same matrix. The report now also lists every `config.toml` 
 
 - **Known working, 15:** go, zig, bun, deno, npm, pip, clang, bash, csharp, goose-lang, lsp,
   ocaml, php, apt, homebrew. That means the Boothfile part: go, bun, npm and pip also have
-  `config.toml` settings that were dropped (caches, `cmds`, and go-example's `xfce` variant).
+  `config.toml` settings that were dropped (caches, `cmds`). go-example's `xfce` variant is
+  not a drop on GHA: GHA is a base booth by decision (item 10).
 - **Known not working, 3:** xonsh (the login shell) and helix (shared config) because of item 10;
   systemlib because of item 11.
 - **Untested, 1:** spring-boot.
