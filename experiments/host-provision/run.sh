@@ -33,7 +33,7 @@ echo "host-provision experiment: target=$TARGET user=$ME $(. /etc/os-release; ec
 
 time sudo env CB_TARGET="$TARGET" "$HERE/base-provision.sh" "$REPO"
 
-time sudo env CB_TARGET="$TARGET" CB_USER_HOME="$HOME" REPORT="$REPORT" \
+time sudo env CB_TARGET="$TARGET" CB_USER_NAME="$ME" CB_USER_HOME="$HOME" REPORT="$REPORT" \
   "$HERE/provision-example.sh" "$EXAMPLE"
 
 time sudo env \

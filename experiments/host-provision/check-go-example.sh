@@ -51,6 +51,7 @@ check "startup log written"         login 'grep -c "Running startup script" /tmp
 check "rc profile block present"    login 'grep -q "CodingBooth profile" "$HOME/.bashrc" && echo ok'
 check "codeserver installed"        login 'command -v code-server'
 check "jupyter installed"           login 'command -v jupyter'
+check "go kernel registered"        login 'jupyter kernelspec list | grep -wE "^ *go"'
 check "example: go test"            login './run-go-test.sh > /tmp/go-test.log 2>&1 && tail -n 1 /tmp/go-test.log || { tail -n 1 /tmp/go-test.log; false; }'
 check "example: build"              login './build.sh > /tmp/go-build.log 2>&1 && ls bin | head -n 1 || { grep -v "^\\s*$" /tmp/go-build.log | tail -n 1; false; }'
 

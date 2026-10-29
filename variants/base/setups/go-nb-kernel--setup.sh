@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 # go-nb-kernel--setup.sh
 # NOTE: This script has not been tested -- no time (sorry). Please report success or failure. :-p
@@ -31,6 +31,10 @@ fi
 JUPYTER_KERNEL_PREFIX="${JUPYTER_KERNEL_PREFIX:-/usr/local}"
 KERNEL_NAME="${KERNEL_NAME:-go}"
 KERNEL_DISPLAY_NAME="${KERNEL_DISPLAY_NAME:-Go (GoNB)}"
+# The user GoNB is installed for: 'coder' in a booth; the real user when
+# provisioning a machine or a runner (see docs/REUSE_BOOTH.md).
+CB_USER_NAME="${CB_USER_NAME:-coder}"
+CB_USER_HOME="${CB_USER_HOME:-/home/${CB_USER_NAME}}"
 
 # ---------------- Sanity checks ----------------
 if ! command -v python >/dev/null 2>&1; then
@@ -55,10 +59,10 @@ fi
 
 # ---------------- Install GoNB ----------------
 echo "📦 Installing GoNB kernel binary..."
-sudo -u coder bash -lc "go install github.com/janpfeifer/gonb@latest"
-sudo -u coder bash -lc "go install golang.org/x/tools/cmd/goimports@latest"
+sudo -u "$CB_USER_NAME" bash -lc "go install github.com/janpfeifer/gonb@latest"
+sudo -u "$CB_USER_NAME" bash -lc "go install golang.org/x/tools/cmd/goimports@latest"
 
-GONB_BIN="/home/coder/go/bin/gonb"
+GONB_BIN="${CB_USER_HOME}/go/bin/gonb"
 if [ ! -x "${GONB_BIN}" ]; then
   echo "❌ gonb binary not found at ${GONB_BIN}" >&2
   exit 1
