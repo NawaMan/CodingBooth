@@ -50,6 +50,7 @@ docker run --rm --name "$NAME" \
     runuser -u $USER_NAME -- env HOME=/home/$USER_NAME REPORT=/home/$USER_NAME/report.txt \
       '$WORK/experiments/host-provision/run.sh' $TARGET '$WORK/$EXAMPLE_REL' || echo 'run.sh exited non-zero'
     cp /home/$USER_NAME/report.txt /out/report-$TARGET.txt
+    cp /home/$USER_NAME/report-tests.log /out/report-$TARGET-tests.log 2>/dev/null || true
     cp /tmp/go-test.log /tmp/go-build.log /out/ 2>/dev/null || true
     chown -R $(id -u):$(id -g) /out
     cp /tmp/startups.log /out/startups-$TARGET.log 2>/dev/null || true

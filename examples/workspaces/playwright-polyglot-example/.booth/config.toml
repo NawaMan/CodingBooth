@@ -1,4 +1,4 @@
-# Configured by: booth config --no-tui --overwrite --select nodejs/python/java+maven/dotnet/go/playwright:chromium,1.58.0+python+java+dotnet
+# Configured by: booth config --no-tui --overwrite --select nodejs/python/java+maven/dotnet/go/playwright:chromium,1.63.0+python+java+dotnet
 
 
 run-args = [
