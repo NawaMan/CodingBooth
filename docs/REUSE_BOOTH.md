@@ -10,7 +10,20 @@ about building or testing (a desktop, a notebook UI, an editor extension, a long
 Meeting that bar is what lets us claim, credibly, that a booth configuration can be used for
 build/test on GHA.
 
-**Status:** planned, nothing built (2026-10-25). The preparation is done in stages, and each stage
+**Status (2026-10-28):** an experiment, landed on main to soak. What landed:
+
+- the install and setup scripts take the user and home from `CB_USER_NAME` / `CB_USER_HOME`, and
+  the startup hooks use `$HOME`. Unset, every value is what it was, so a booth sees the same
+  strings;
+- an in-booth test for every example (`.cb-tests/inBooth-*.sh`);
+- the harness under `experiments/host-provision/`, including a `CB_TARGET`-guarded **copy** of
+  `booth-entry`. The real `variants/base/booth-entry` is unchanged;
+- a hand-started workflow, `.github/workflows/host-provision-exp.yaml`, that runs the harness on
+  89 examples. Last result: 88 pass, 1 fails for a reason that is not about build or test
+  ([Third pass](#third-pass-gha-run-40779191508)).
+
+No feature is shipped: no CLI command, no action, and the [open decisions](#open-decisions) are
+still open. The preparation is done in stages, and each stage
 soaks before the next one starts. That way, when we cross the line into actual host and GitHub
 Actions (GHA) support, any breakage is in the new code, not in old code that changed at the same
 time.
@@ -330,10 +343,19 @@ Each stage gets its own proposal and worktree, lands, then soaks before the next
 - [ ] Classification as a separate data file (proposed) or as a per-script header.
 - [x] Path B targets Ubuntu 26.04: same release as base, and GHA pins `runs-on: ubuntu-26.04`.
   #8 is postponed indefinitely.
+- [x] A GHA run is a base booth (like `--variant base`). An example that clearly needs another
+  variant is skipped there (i3-desktop, tiling, empty, conda, zed).
+- [ ] `APT_SNAPSHOT` off-booth: a snapshot older than the machine's packages fails (systemlib,
+  item 11). Ignore it, honour it, or warn.
+- [ ] `config.toml` run-time settings: map `env` run-args to `$GITHUB_ENV` on GHA (n8n needs this),
+  and decide what `host` does with the rest, including the variant.
+- [ ] The project folder: `/home/coder/code` is still hard-coded in antigravity, cursor, thonny,
+  viewmd-desktop-icon, cb-booth-favicon and zed. A third variable (`CB_CODE_DIR`) would cover it.
 
 ## Experiment results
 
-**2026-10-26**, branch `host-provision-exp`, files in `experiments/host-provision/`. Nothing under
+**2026-10-26 to 2026-10-28**, branch `host-provision-exp` (since landed on main), files in
+`experiments/host-provision/`. Nothing under
 `variants/`, `templates/` or the CLI was changed, except the install-script fixes listed below.
 
 ### What was run
@@ -595,7 +617,8 @@ test003 serves a page over HTTP through Playwright's `webServer`, clicks it, and
 - A real host with systemd. For example, apt's `nginx` package may start nginx on port 80 there.
 - The `host`-only guards (11b, 13, the root chown). go-example has no `.booth/home` and no
   `/etc/cb-home`, so these did not change the result.
-- The other 77 examples, in particular ones with `copy` lines (rust-example), a `variant`,
-  desktops or services.
+- The examples left out of the workflow matrix: xonsh, helix, systemlib (known not working) and
+  the ones that need a non-base variant.
+- The `host` target beyond local runs of single examples (`experiments/host-provision/local-test.sh`).
 - `config.toml` settings: none are replayed (Where it breaks, item 10).
 

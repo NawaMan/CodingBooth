@@ -4,6 +4,14 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Setups can run outside a booth (experiment, toward GitHub Actions and a plain Ubuntu machine).**
+  The install scripts that ran as `coder` (brew, bun, cargo, conan, deno, deno-pkg, dotnet, gem,
+  go, go-nb-kernel, homebrew, wails) take the user from `CB_USER_NAME` and its home from
+  `CB_USER_HOME`, and the claude-code, mongodb and redis startup hooks use `$HOME`. Unset, every
+  value is what it was, so a booth is unchanged. Every example now has in-booth tests
+  (`.cb-tests/inBooth-*.sh`), and a hand-started workflow runs them on a GitHub-hosted runner:
+  88 of 89 examples pass there. No user-facing feature yet. See `docs/REUSE_BOOTH.md`.
+
 - **Zed is selectable as an IDE.** `--select zed` (on a desktop variant) installs the Zed editor
   from its official GitHub release, puts a launcher at `/usr/local/bin/zed`, and adds Zed to the
   desktop and dock. Pin a release with `zed:1.25.3` (`ZED_VERSION`, default `latest`). A booth has
