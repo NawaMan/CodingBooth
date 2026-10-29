@@ -3,6 +3,13 @@
 > Plan: use CodingBooth's setups to provision a **fresh Ubuntu machine** and a **GitHub Actions
 > runner**, not only a booth image.
 
+**What GHA is for.** People will not develop on GHA. They use it to **build and test** the
+project their booth is configured for. So not every example, and not every in-booth test, has to
+work there. The bar is: whatever does not work on GHA has a clear reason, and the reason is not
+about building or testing (a desktop, a notebook UI, an editor extension, a long-running service).
+Meeting that bar is what lets us claim, credibly, that a booth configuration can be used for
+build/test on GHA.
+
 **Status:** planned, nothing built (2026-10-25). The preparation is done in stages, and each stage
 soaks before the next one starts. That way, when we cross the line into actual host and GitHub
 Actions (GHA) support, any breakage is in the new code, not in old code that changed at the same
