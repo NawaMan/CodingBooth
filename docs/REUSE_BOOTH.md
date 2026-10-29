@@ -517,6 +517,21 @@ and empty (i3 runs inside XFCE) and conda (the notebook variant's `jupyter`) are
 lean stays: only its code-server extension test needs the variant, and that test now skips itself
 when there is no code-server, as on a base booth.
 
+#### Third pass (GHA run 40779191508)
+
+The G items were test bugs, confirmed by failing in a real booth first: rlang expected the wrong
+`Rscript --version` text, and data piped `jupyter --version` into `grep -q`. playwright-polyglot
+now pins Playwright 1.63.0. wails-android's frontend *was* packaged: the string sits in
+`lib/x86_64/libwails.so`, which is stored deflated in the APK, so the test now looks inside the
+`.so` as well. All four of those failures, and an intermediate wails-android one, share a trap:
+`cmd | grep -q` under `pipefail` fails when `grep` exits early and `cmd` dies of SIGPIPE (rc 141).
+
+**88 passed, 1 failed** over 89 examples. The one failure is n8n (E): a `config.toml` run-args env,
+not a build or test step. lsp passed again.
+
+Headless browser testing works on GHA: playwright-example runs its spec in headless chromium, and
+test003 serves a page over HTTP through Playwright's `webServer`, clicks it, and asserts the result.
+
 ### Findings
 
 1. **The `booth-entry` exception is needed, and enough for this example.** The `if` guards
