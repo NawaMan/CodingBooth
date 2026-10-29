@@ -351,14 +351,14 @@ setup	zig	1.0.0	b4697e1c090e510c423ef961dd6bfcc06a480adf78bd774e3f5291ac468f459e
 setup	zig-code-extension	1.0.0	2b398b4a16070263e1e4929a512e1cbf7c997bb6b7124688aa0d5e30812ecb5c	variants/base/setups/zig-code-extension--setup.sh
 install	apt	1.2.0	ca178927eb42e3f199970b247f80ae7ba4033f62a694f6927eaa7ffd1a8882c6	variants/base/setups/apt--install.sh
 install	brew	1.0.1	15b88e85a19c8afc32b759673f93b8211d310278defbacb26e35648cd5da56cd	variants/base/setups/brew--install.sh
-install	bun	1.0.0	2bd28d270b69000f5346408c3cd308a7e57ec77ee7705e6566ec19da9c9c58ad	variants/base/setups/bun--install.sh
+install	bun	1.1.0	f87fab5c1327111cdda83a31966ee46b6123e0ede051b89295cc7777817d7dda	variants/base/setups/bun--install.sh
 install	cabal	1.0.0	0960aa673e85c85a5745402a35984fa84a37f5de601ef3b0c98f176b7ce3a960	variants/base/setups/cabal--install.sh
 install	cargo	1.0.0	e1e2f5d9d52be6401b0b20196bb9dbec8165ea4961d52dae1ae828029e8a0429	variants/base/setups/cargo--install.sh
 install	code-extension	1.0.0	c7a1cc933d5182c313e9094dcbd541b7eaca0e34e1fb2e3abca7b5532e02243d	variants/base/setups/code-extension--install.sh
 install	conan	1.0.0	e0d811d1971fac535c10004128440dc09acb541ca3dda3e7d2d48dee0eca0c1d	variants/base/setups/conan--install.sh
 install	conda	1.0.0	e12b02d5e3509bf2a6ae99daedb981ff2370c4b1f860a93971140905a9e60ad5	variants/base/setups/conda--install.sh
-install	deno	1.0.0	eb3193b7343d081031f30ffb265f5d4caa63a3eb91c5a25ae20e9e445a9a2927	variants/base/setups/deno--install.sh
-install	deno-pkg	1.0.0	d5cb9089847b4c020c941a14200228adbb0013b70b4c1c494504bbcb2d1245c5	variants/base/setups/deno-pkg--install.sh
+install	deno	1.1.0	2905be7c89ba5e4373b977e9e4808110b9962e1390c84e94887a19b75ad24428	variants/base/setups/deno--install.sh
+install	deno-pkg	1.1.0	f5d1c561bfa7bce83383f46107fb364ee0c35c167255dbaa1f79dd5338771d6d	variants/base/setups/deno-pkg--install.sh
 install	dotnet	1.0.0	cac8bd0c1df6b46c94d31bca0dbca27e87b61163247b9d3587302054a9bb3b1b	variants/base/setups/dotnet--install.sh
 install	gem	1.0.0	30283143a735660a27f127ddcbbe98347cc053fc0a3cb686f3aee9ff4a99c623	variants/base/setups/gem--install.sh
 install	go	1.1.0	9ae629367cf88f4104842edbe073413c3e5a1fba50f30e6c4ff3c38e04889c1d	variants/base/setups/go--install.sh
