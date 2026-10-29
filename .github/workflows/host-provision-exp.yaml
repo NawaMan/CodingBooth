@@ -17,6 +17,9 @@ jobs:
     timeout-minutes: 60
     strategy:
       fail-fast: false
+      # Known working (Boothfile part; config.toml settings are listed as DROP in
+      # the report), then the batch being tried. Known not working, left out:
+      #   xonsh-example  its login shell is a config.toml run-arg (REUSE_BOOTH.md finding 9)
       matrix:
         example:
           - go-example
@@ -27,7 +30,17 @@ jobs:
           - pip-example
           - clang-example
           - bash-example
-          - xonsh-example
+          # trying
+          - apt-example
+          - csharp-example
+          - goose-lang-example
+          - helix-example
+          - homebrew-example
+          - ocaml-example
+          - php-example
+          - systemlib-example
+          - spring-boot-example
+          - lsp-example
     steps:
       - uses: actions/checkout@v4
 
