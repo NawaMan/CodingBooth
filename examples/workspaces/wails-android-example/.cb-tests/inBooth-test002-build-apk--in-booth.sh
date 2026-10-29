@@ -51,7 +51,9 @@ echo "=== the app's own UI string reached the APK ==="
 # look inside the .so as well.
 in_native_lib() {
     if command -v unzip >/dev/null 2>&1; then
-        unzip -p "$APK" 'lib/*/libwails.so' 2>/dev/null | grep -a -q "Booth counter"
+        # grep -c, not -q: -q stops at the first match, unzip then dies of SIGPIPE,
+        # and pipefail turns that into a failure.
+        unzip -p "$APK" 'lib/*/libwails.so' 2>/dev/null | grep -a -c "Booth counter" >/dev/null
     elif command -v python3 >/dev/null 2>&1; then
         python3 - "$APK" <<'PY'
 import sys, zipfile
