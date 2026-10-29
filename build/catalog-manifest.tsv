@@ -79,7 +79,7 @@ setup	docker-compose	1.0.0	125dae9b2cefa5e20e80fbc439e88bb544af7781d6fa6fdb978b3
 setup	dotnet	1.0.0	85d124d8c90108205b8d199514c15454e6fa3912374e41bb276bade337bf976e	variants/base/setups/dotnet--setup.sh
 setup	dotnet-code-extension	1.0.0	18a0047da55a995e188f945305421d057340762c068182b37c1c112639132d55	variants/base/setups/dotnet-code-extension--setup.sh
 setup	drracket	1.0.0	d64d27a76a26a74d32b945646f4c46346dcf7698720d789b432514882fc70069	variants/base/setups/drracket--setup.sh
-setup	duckdb	1.0.0	3dc719b8d99fa8c586dea1beea1d86c581240ae442d96f7a9d4cf75837415657	variants/base/setups/duckdb--setup.sh
+setup	duckdb	1.1.0	20b50f5278f4e43a937eb23ad8a976b93c17fbd517f9e89a869d492043405819	variants/base/setups/duckdb--setup.sh
 setup	eclipse	1.0.0	020a03da5277008810f94dfb85369d7732e202d6964c6c27977d81c5a23fda0d	variants/base/setups/eclipse--setup.sh
 setup	eclipse-import-project	0.1.0	7b759479929795d9667b62f795451e66b27eeced84e4e75a81611835bbbe6792	variants/base/setups/eclipse-import-project--setup.sh
 setup	elixir	1.0.0	74a623fabf1f5ecdaedcc789adb20913add82fda12198a616619b34e0155f64a	variants/base/setups/elixir--setup.sh

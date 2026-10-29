@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 set -Eeuo pipefail
 
@@ -53,8 +53,17 @@ fi
 
 echo "⬇️  Installing duckdb v${VERSION} (${ARCH}) ..."
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
-curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "https://github.com/duckdb/duckdb/releases/download/v${VERSION}/duckdb_cli-linux-${ARCH}.zip" -o "$TMP/duckdb.zip"
-unzip -q "$TMP/duckdb.zip" -d "$TMP"
+BASE_URL="https://github.com/duckdb/duckdb/releases/download/v${VERSION}"
+# 2.0.0 renamed the CLI asset and dropped the old one: duckdb-cli-linux-<arch>.tar.gz
+# from 2.x, duckdb_cli-linux-<arch>.zip up to 1.x. Pick by major version rather than
+# trying one and falling back, so a pinned 1.x still installs without a retried 404.
+if [[ "${VERSION%%.*}" -ge 2 ]]; then
+  curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "${BASE_URL}/duckdb-cli-linux-${ARCH}.tar.gz" -o "$TMP/duckdb.tar.gz"
+  tar -xzf "$TMP/duckdb.tar.gz" -C "$TMP"
+else
+  curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "${BASE_URL}/duckdb_cli-linux-${ARCH}.zip" -o "$TMP/duckdb.zip"
+  unzip -q "$TMP/duckdb.zip" -d "$TMP"
+fi
 install -m 755 "$TMP/duckdb" /usr/local/bin/duckdb
 
 echo "✅ duckdb installed."
