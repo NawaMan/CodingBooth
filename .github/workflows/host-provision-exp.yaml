@@ -154,6 +154,7 @@ jobs:
           name: host-provision-report-${{ matrix.example }}
           path: |
             ${{ runner.temp }}/report.txt
+            ${{ runner.temp }}/report-tests.log
             /tmp/startups.log
           if-no-files-found: warn
 

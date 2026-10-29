@@ -4,5 +4,7 @@ set -euo pipefail
 echo "=== Testing notebook ==="
 cd "$(dirname "$0")/.."   # the project folder: /home/coder/code in a booth
 command -v jupyter
-jupyter --version | grep -q .
+# Capture first: `jupyter --version | grep -q` under pipefail breaks jupyter's pipe.
+versions="$(jupyter --version)"; echo "$versions"
+[ -n "$versions" ]
 test -f Sales-Explorer.ipynb
