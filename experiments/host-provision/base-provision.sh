@@ -50,6 +50,20 @@ else
   echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99-force-ipv4
 fi
 
+step "apt sources"
+# A GitHub runner reads the archive through mirror+file:/etc/apt/apt-mirrors.txt
+# (azure.archive.ubuntu.com). The setups expect the image's plain archive.ubuntu.com:
+# apt --snapshot redirects only hosts it knows, and clang--setup.sh tells Ubuntu's
+# own clang-N from apt.llvm.org's by the archive URL in `apt-cache madison`.
+if [ "$CB_TARGET" = "gha" ] && grep -rqs 'mirror+file:' /etc/apt/sources.list /etc/apt/sources.list.d/; then
+  echo "[base-provision] before: $(apt-cache madison bash 2>/dev/null | head -n 1)"
+  sed -i 's|mirror+file:/etc/apt/apt-mirrors.txt|http://archive.ubuntu.com/ubuntu/|' \
+    /etc/apt/sources.list.d/*.sources /etc/apt/sources.list 2>/dev/null || true
+  grep -rhs '^URIs:\|^deb ' /etc/apt/sources.list /etc/apt/sources.list.d/ | sort -u
+else
+  skip "sources left as they are"
+fi
+
 step "Shared logs"
 touch /tmp/setup.log    ; chmod 777 /tmp/setup.log
 touch /tmp/startups.log ; chmod 777 /tmp/startups.log
