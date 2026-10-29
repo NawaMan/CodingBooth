@@ -296,6 +296,8 @@ It ran on two kinds of machine:
 
 ### Results
 
+**First run** (GHA run 40273828543, and locally):
+
 | | GHA runner | Local `host` |
 | --- | --- | --- |
 | Boothfile lines | 6 of 9 pass | 6 of 9 pass |
@@ -303,13 +305,28 @@ It ran on two kinds of machine:
 | Failures | `install go gopls`, `install go dlv`, `setup go-nb-kernel` | same |
 | Cause | `sudo: user 'coder' not found` in `go--install.sh` and `go-nb-kernel--setup.sh` | same |
 
-**Every failure came from the hard-coded `coder` user. Nothing else broke.**
+Every failure came from the hard-coded `coder` user. Nothing else broke.
+
+**After the fix** (commit `ab10f88a`, GHA run 40275899532, and locally):
+
+| | GHA runner | Local `host` |
+| --- | --- | --- |
+| Boothfile lines | **9 of 9 pass** | **9 of 9 pass** |
+| Checks | **20 of 20 pass** | **20 of 20 pass** |
+
+The fix: both scripts read `CB_USER_NAME="${CB_USER_NAME:-coder}"`, and go-nb-kernel also reads
+`CB_USER_HOME="${CB_USER_HOME:-/home/${CB_USER_NAME}}"`. Each got a minor `cb-version` bump
+(1.0.0 → 1.1.0), and the catalog manifest was regenerated. `provision-example.sh` now passes
+`CB_USER_NAME`. One check in the real base image: with the variable unset, `go--install.sh` still
+installs into `/home/coder/go/bin`, owned by `coder`. The full container test pass is deferred to
+the Stage 1a work.
 
 What passed:
 
-- **Tools:** Go 1.25.7 (in login, interactive and zsh shells), Python 3.13.12, code-server,
-  Jupyter, the code extensions (installed into code-server's shared extension directory), and the
-  base tools (just, lazygit, gpg 2.5.24).
+- **Tools:** Go 1.25.7 (in login, interactive and zsh shells), `gopls` and `dlv` in the real
+  user's `GOBIN`, Python 3.13.12, code-server, Jupyter with the Go (GoNB) kernel registered, the
+  code extensions (installed into code-server's shared extension directory), and the base tools
+  (just, lazygit, gpg 2.5.24).
 - **The example's own work:** `go test ./...` and `./build.sh`.
 - **The `booth-entry` copy's user steps:** the rc profile block, the five startup hooks (tls, go,
   superfile, notebook, 99z), and `GOPATH` under the real home.
@@ -321,6 +338,8 @@ What passed:
    overridable, steps 7, 8, 12, 14 and 15 did their job for a real user.
 2. **Install scripts are the bigger `coder` problem.** Stage 1a has to cover the 12 install
    scripts as well as the ~20 setups. Without them, every `*-pkg` extension fails off-booth.
+   Two of these (`go--install.sh`, `go-nb-kernel--setup.sh`) are already fixed on this branch.
+   The pattern is a `CB_USER_NAME` / `CB_USER_HOME` default, with no other change.
 3. **Starters beat the runner's preinstalled tools, even without a profile.** The runner ships
    `/usr/bin/go`, `python3`, `node` and `java`. In a later plain step (`bash --noprofile`),
    `go` still resolved to the setup's `/usr/local/bin/go` starter: `/usr/local/bin` comes first
