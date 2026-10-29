@@ -278,7 +278,7 @@ Each stage gets its own proposal and worktree, lands, then soaks before the next
 ## Experiment results
 
 **2026-10-26**, branch `host-provision-exp`, files in `experiments/host-provision/`. Nothing under
-`variants/`, `templates/` or the CLI was changed.
+`variants/`, `templates/` or the CLI was changed, except the install-script fixes listed below.
 
 ### What was run
 
@@ -348,6 +348,29 @@ What passed:
 - In a later plain step, `zig` resolved to the setup's `/usr/local/bin/zig`, confirming finding 3.
   The runner has no zig of its own.
 
+**Seven more examples** (GHA run 40344941831, a nine-example matrix, and locally as `host`):
+
+| Example | GHA runner | Local `host` | Needed |
+| --- | --- | --- | --- |
+| bun-example | 13 pass, 1 skip | pass | `bun--install.sh` takes `CB_USER_NAME` |
+| deno-example | 10 pass, 1 skip | pass | `deno-pkg--install.sh` takes `CB_USER_NAME` / `CB_USER_HOME` |
+| npm-example | 14 pass, 1 skip | pass | one in-booth test did `cd /home/coder/code` |
+| pip-example | 16 pass, 1 skip | pass | nothing |
+| clang-example | 14 pass, 2 skip | pass | on GHA, the runner's apt sources (finding 8) |
+| bash-example | 8 pass | pass | one in-booth test did `cd /home/coder/code` |
+| xonsh-example | 8 pass, 1 skip, **1 fail** | **1 fail** | the login shell: open, see finding 9 |
+
+go-example and zig-example passed again in the same run. Every skip is a `*-code-extension` with
+no editor installed.
+
+- `bun--install.sh`, `deno--install.sh` and `deno-pkg--install.sh` got the same fix as
+  `go--install.sh` (`cb-version` 1.1.0, manifest regenerated). `deno--install.sh` is not used by
+  any of these examples.
+- Three in-booth tests (bash, npm, xonsh) now `cd "$(dirname "$0")/.."` instead of
+  `/home/coder/code`, and the xonsh test looks up `$(id -un)` instead of `coder`. Inside a booth
+  both are the same path and user as before. The 16 other `/home/coder/code` mentions are in
+  `--on-host` tests, which run their command inside a booth, so they stay.
+
 ### Findings
 
 1. **The `booth-entry` exception is needed, and enough for this example.** The `if` guards
@@ -370,6 +393,33 @@ What passed:
 6. **A harness lesson for the test lane.** With `fs.protected_regular` (the Ubuntu default),
    root cannot write a user-owned file in a sticky directory such as `/tmp`. Reports and logs
    that root and the user both write go under the user's home or the runner's temp directory.
+7. **Some example tests cannot see a failed install.** bun-example's and deno-example's tests use
+   `bun x cowsay` and `deno run npm:cowsay`, which fetch the package on demand. Both passed while
+   `install bun` and `install deno-pkg` had failed. The workflow's plain step now lists the
+   installed commands; on GHA `cowsay`, `figlet`, `prettier` and `tsc` are in `/usr/local/bin`
+   after `install bun`. `deno-pkg` installs no commands by design (`deno add` writes a
+   `deno.json`), in a booth as well.
+8. **A GHA runner reads apt through a mirror list.** Its sources are
+   `mirror+file:/etc/apt/apt-mirrors.txt` (`azure.archive.ubuntu.com`), and two setups assume the
+   image's plain `archive.ubuntu.com`:
+   - `apt--install.sh` with `APT_SNAPSHOT`: `--snapshot` redirects only hosts apt knows, so the
+     pinned install found no index ("Unable to locate package nlohmann-json3-dev").
+   - `clang--setup.sh` recognises Ubuntu's own `clang-N` by `archive.ubuntu.com` in
+     `apt-cache madison`. The runner prints `mirror+file:…`, so the script added apt.llvm.org,
+     which has no `resolute-18` repo. The broken `.list` it left then failed `apt-get update` in
+     cmake and make too.
+
+   `base-provision.sh` now, on `gha` only, rewrites the runner's sources to
+   `http://archive.ubuntu.com/ubuntu/`, as in the image. After that, `apt` pinned to
+   `snapshot.ubuntu.com` and clang used Ubuntu's repo. On `host` the sources are left alone, so a
+   machine with a local mirror has the same problem; the setups' archive checks are the place to
+   fix it for good.
+9. **A login shell is a run-time setting, so nothing applies it off-booth.** xonsh-example gets
+   `USER_SHELL=/usr/local/bin/xonsh` from `config.toml` run-args, and `booth-entry` applies it in
+   the user steps (1–5b). The harness does not replay `config.toml`, and the guarded copy skips
+   those steps on `gha` and `host`. That is deliberate: changing a real user's login shell is the
+   clobbering that "Where it breaks" item 8 is about. xonsh itself works (`xonsh hello.xsh` passed).
+   To decide: whether the feature offers a login-shell change, opt-in, on `host`.
 
 ### Not covered yet
 
@@ -378,5 +428,7 @@ What passed:
 - A real host with systemd. For example, apt's `nginx` package may start nginx on port 80 there.
 - The `host`-only guards (11b, 13, the root chown). go-example has no `.booth/home` and no
   `/etc/cb-home`, so these did not change the result.
-- Examples beyond go and zig.
+- Examples beyond these nine, in particular ones with `copy` lines (rust-example), desktops or
+  services.
+- `config.toml` run-args: none are replayed (finding 9).
 
