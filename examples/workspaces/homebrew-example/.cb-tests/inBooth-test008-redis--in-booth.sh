@@ -4,7 +4,7 @@
 echo "=== Testing Redis ==="
 
 # Use a random port to avoid conflicts
-PORT=$((6380 + $$))
+PORT=$((6380 + $$ % 1000))   # PIDs can be large outside a booth; stay below 65536
 
 cleanup() {
     redis-cli -p "$PORT" shutdown nosave 2>/dev/null || true

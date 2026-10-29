@@ -18,8 +18,12 @@ jobs:
     strategy:
       fail-fast: false
       # Known working (Boothfile part; config.toml settings are listed as DROP in
-      # the report), then the batch being tried. Known not working, left out:
-      #   xonsh-example  its login shell is a config.toml run-arg (REUSE_BOOTH.md finding 9)
+      # the report), then the batch being tried. Left out (docs/REUSE_BOOTH.md):
+      #   known not working:
+      #     xonsh-example      login shell is a config.toml run-arg (Where it breaks, item 10)
+      #     helix-example      its config is a config.toml shared-dir (item 10)
+      #     systemlib-example  APT_SNAPSHOT is older than the machine's packages (item 11)
+      #   untested: spring-boot-example (provisions; it has no in-booth tests)
       matrix:
         example:
           - go-example
@@ -30,17 +34,14 @@ jobs:
           - pip-example
           - clang-example
           - bash-example
-          # trying
-          - apt-example
           - csharp-example
           - goose-lang-example
-          - helix-example
-          - homebrew-example
+          - lsp-example
           - ocaml-example
           - php-example
-          - systemlib-example
-          - spring-boot-example
-          - lsp-example
+          # trying: test fixes (Boothfile path, PID-based ports)
+          - apt-example
+          - homebrew-example
     steps:
       - uses: actions/checkout@v4
 
