@@ -23,7 +23,6 @@ jobs:
       #     xonsh-example      login shell is a config.toml run-arg (Where it breaks, item 10)
       #     helix-example      its config is a config.toml shared-dir (item 10)
       #     systemlib-example  APT_SNAPSHOT is older than the machine's packages (item 11)
-      #   untested: spring-boot-example (provisions; it has no in-booth tests)
       matrix:
         example:
           - go-example
@@ -39,9 +38,87 @@ jobs:
           - lsp-example          # flaky: its nvim recipe waits a fixed sleep 3 for the servers
           - ocaml-example
           - php-example
-          # trying: test fixes (Boothfile path, PID-based ports)
           - apt-example
           - homebrew-example
+          # first run: the rest of the examples, most with newly added in-booth tests
+          - spring-boot-example
+          - android-example
+          - angular-example
+          - appwrite-example
+          - aws-example
+          - browser-shared-example
+          - cache-example
+          - claude-example
+          - claude-token-example
+          - codex-example
+          - codex-token-example
+          - conda-example
+          - data-example
+          - desktop-terminals-example
+          - dind-example
+          - django-example
+          - egress-allowlist-extra-example
+          - egress-envoy-example
+          - elixir-example
+          - empty-example
+          - fastapi-example
+          - firebase-example
+          - flask-example
+          - floci-example
+          - flutter-example
+          - fsharp-example
+          - gcloud-example
+          - gleam-example
+          - grok-example
+          - haskell-example
+          - herdr-example
+          - i3-desktop-example
+          - java-example
+          - jetbrain-exmple
+          - js-example
+          - kind-app-example
+          - kind-example
+          - kotlin-example
+          - lamp-example
+          - latex-example
+          - lazarus-example
+          - lean-example
+          - lean-mathlib-example
+          - lemp-example
+          - mean-example
+          - mern-example
+          - mojo-example
+          - mvn-deps-example
+          - n8n-example
+          - neovim-example
+          - nextjs-example
+          - nodejs-example
+          - npm-deps-example
+          - octave-example
+          - omp-example
+          - omp-token-example
+          - pern-example
+          - pip-deps-example
+          - playground3
+          - playwright-example
+          - playwright-polyglot-example
+          - pocketbase-example
+          - postgrest-example
+          - python-example
+          - rails-example
+          - react-example
+          - rlang-example
+          - ruby-example
+          - rust-example
+          - server-example
+          - server-example-2
+          - tiling-example
+          - turtle-example
+          - vaadin-example
+          - wails-android-example
+          - wails-example
+          - wordpress-example
+          - zig-snake-example
     steps:
       - uses: actions/checkout@v4
 
@@ -80,3 +157,35 @@ jobs:
             ${{ runner.temp }}/report.txt
             /tmp/startups.log
           if-no-files-found: warn
+
+  # One table over every example's report: provisioning lines that failed, and the
+  # example's own in-booth tests.
+  summary:
+    needs: provision
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: host-provision-report-*
+          path: reports
+      - name: Summary
+        run: |
+          {
+            echo '| example | provision FAIL | tests PASS | tests FAIL | first failure |'
+            echo '| --- | --- | --- | --- | --- |'
+            for d in reports/host-provision-report-*; do
+              ex="${d#reports/host-provision-report-}"; r="$d/report.txt"
+              if [ ! -f "$r" ]; then echo "| $ex | no report | | | |"; continue; fi
+              pf=$(grep -cE '^FAIL +(setup|install) ' "$r" || true)
+              tp=$(grep -cE '^PASS +example: ' "$r" || true)
+              tf=$(grep -cE '^FAIL +example: ' "$r" || true)
+              first=$(grep -m1 -E '^FAIL ' "$r" | cut -c1-140 | tr '|' '/' || true)
+              grep -q '^UNTESTED' "$r" && first="UNTESTED ${first}"
+              echo "| $ex | $pf | $tp | $tf | ${first} |"
+            done
+          } | tee summary.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: host-provision-summary
+          path: summary.md
