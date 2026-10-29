@@ -5,7 +5,7 @@
 
 set -euo pipefail
 
-cd /home/coder/code
+cd "$(dirname "$0")/.."   # the project folder: /home/coder/code in a booth
 
 echo "=== bash-3.2 version, use-bash, count-args, empty-array rejection ==="
 ver="$(bash-3.2 --version | head -1)"

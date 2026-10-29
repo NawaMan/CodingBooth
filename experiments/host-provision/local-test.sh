@@ -12,7 +12,7 @@
 # where GitHub checks it out. Nothing from the booth image is used.
 #
 # Usage: local-test.sh gha|host [example-dir-relative-to-repo]
-# Report: experiments/host-provision/.out/report-<target>.txt
+# Report: experiments/host-provision/.out/<example>/report-<target>.txt
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -21,7 +21,8 @@ TARGET="${1:?usage: local-test.sh gha|host [example]}"
 EXAMPLE_REL="${2:-examples/workspaces/go-example}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$HERE/../.." && pwd)"
-OUT="$HERE/.out"
+EX_NAME="$(basename "$EXAMPLE_REL")"
+OUT="$HERE/.out/$EX_NAME"            # one folder per example, so runs can go in parallel
 mkdir -p "$OUT"
 rm -f "$OUT"/*-"$TARGET".* 2>/dev/null || true
 
@@ -31,7 +32,7 @@ case "$TARGET" in
   *) echo "❌ target must be gha or host" >&2; exit 1 ;;
 esac
 WORK="/home/$USER_NAME/work/CodingBooth/CodingBooth"
-NAME="cb-host-provision-exp-$TARGET"
+NAME="cb-host-provision-exp-$TARGET-$EX_NAME"
 
 docker rm -f "$NAME" >/dev/null 2>&1 || true
 docker run --rm --name "$NAME" \
