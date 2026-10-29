@@ -447,6 +447,44 @@ earlier eight in the same matrix. The report now also lists every `config.toml` 
   systemlib because of item 11.
 - **Untested, 1:** spring-boot.
 
+#### All examples (GHA run 40645215815)
+
+Every example now has in-booth tests: 58 got new ones in this round. The new tests have not been
+run in a booth yet, so a failure in one of them can be a test bug; those are marked below. The run
+covered 93 examples: all but xonsh, helix and systemlib, which are already known not to work.
+
+| Outcome | Jobs |
+| --- | --- |
+| Passed | **52** (3 of them with a failed setup line: lamp, lemp, wordpress; see C) |
+| Failed | **41** |
+
+Why the 41 failed, grouped by cause (an example can show up under more than one):
+
+| Cause | Examples | Count |
+| --- | --- | --- |
+| **A. A startup hook hard-codes `/home/coder`.** `claude-code`'s hook makes `/home/coder/.local/bin`, `mongodb`'s makes `/home/coder/.mongodb`. The hook fails with `mkdir: Permission denied`, and `booth-entry` step 14 stops the whole start, so no test ran. In a booth `$HOME` is `/home/coder`, so changing the path to `$HOME` changes nothing there | claude-code: aws, claude, claude-token, dind, egress-envoy, elixir, firebase, gcloud, haskell, herdr, jetbrain, js, kind-app, kind, kotlin, neovim, nodejs, python, rust, server, server-2, zig-snake. mongodb: mean, mern | 24 |
+| **B. An install script hard-codes the `coder` user** (`sudo: user 'coder' not found`). The same kind of fix as bun/deno/homebrew. 17 scripts still do this, among them `gem--install.sh`, `cargo--install.sh`, `wails--setup.sh`, `dotnet--install.sh`, `conan--install.sh`, `neovim--setup.sh`, `redis--setup.sh` and `gcloud--setup.sh` | ruby, rails, wails, wails-android (rust as well, after A) | 4 |
+| **C. Harness gaps** (the experiment's scripts, not the catalog): the project's own `.booth/setups/` is not on PATH; `run` lines are not replayed (here, a `pip`/`npm` install of the project's dependencies); an example with no Boothfile stops the harness | npm-deps, pip-deps, cache (no Boothfile); lamp, lemp, wordpress and data (local setups) | 3 failed + 4 partial |
+| **D. A base booth by decision.** The example needs its variant, as item 10 says. i3 skips without XFCE; `jupyter` comes from the notebook variant; the code-server extension test needs code-server | i3-desktop, tiling, empty (i3); conda (jupyter); lean (test004 vscode-ext) | 5 |
+| **E. A `config.toml` run-time setting** (item 10) | n8n (`N8N_INSTANCE_AI_SANDBOX_ENABLED` is a run-args env) | 1 |
+| **F. The example itself is stale.** It pins Playwright 1.58.0, which "does not support chromium on ubuntu26.04-x64"; playwright-example pins 1.63.0 and passes. This should fail in a booth as well (not checked) | playwright-polyglot | 1 |
+| **G. A new test is probably wrong** (not yet run in a booth) | data (test002 pipes `jupyter --version` into a closed pipe: `BrokenPipeError`), rlang (expects "R scripting front-end" in `Rscript --version`) | 2 |
+| **H. Flaky** | lsp (neovim test, the fixed `sleep 3` again) | 1 |
+
+Notes on what this means:
+- **A is the largest group, and it is a new kind of problem.** Install scripts were checked for the
+  user name; startup hooks were not. Hooks are written by the setups but run at start time as the
+  user, so they belong in the same audit. A related point: because one failing hook stops the whole
+  start, a single hard-coded path cost 24 examples their whole run.
+- A and B are the same fix pattern that is already on the branch (`CB_USER_NAME`, `$HOME`).
+  Fixing them would get to the tests of 28 more examples.
+- C belongs to the harness and must be fixed there. Project setups must be on PATH, as they are in a
+  booth. `run` lines are a real question for path B: it has to replay them, or the project's
+  dependencies are missing.
+- The summary job in the workflow read the wrong artifact path: upload-artifact keeps the full
+  path for two files. So every row said "no report", and the table above was made locally from
+  the downloaded artifacts.
+
 ### Findings
 
 1. **The `booth-entry` exception is needed, and enough for this example.** The `if` guards
