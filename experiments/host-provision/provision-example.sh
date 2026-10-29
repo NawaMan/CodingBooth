@@ -13,7 +13,13 @@
 #                         with /home/coder rewritten to the real user's home
 #   setup X a...       -> X--setup.sh a...      (root, login shell)
 #   install M p...     -> M--install.sh p...    (root, login shell)
-#   run/copy/workdir/expose/label -> skipped, logged
+#   run [--mount=type=bind,target=T] cmd
+#                      -> cmd                   (root, login shell; T is a symlink to
+#                                                the example folder, the build context)
+#   copy src... dest   -> cp -a                 (src globs relative to the example folder)
+#   workdir/expose/label -> skipped, logged
+# The example's own .booth/setups/ comes first on PATH, as in a booth, so a project
+# setup (lamp-init, sales-explorer-icon) is found and shadows a built-in one.
 # Every line is attempted; a failing setup is recorded and the next one runs,
 # so one pass yields the whole report (written to $REPORT).
 #
@@ -29,9 +35,9 @@ CB_USER_HOME="${CB_USER_HOME:?CB_USER_HOME is required}"
 REPORT="${REPORT:-$HOME/host-provision-report.txt}"
 ENV_FILE=/etc/profile.d/05-cb-example-env.sh
 [ "$EUID" -eq 0 ] || { echo "❌ Run as root (use sudo)" >&2; exit 1; }
-[ -f "$BOOTHFILE" ] || { echo "❌ No Boothfile at $BOOTHFILE" >&2; exit 1; }
 
 export PATH="/opt/codingbooth/setups:$PATH"
+[ -d "$EXAMPLE/.booth/setups" ] && export PATH="$(cd "$EXAMPLE/.booth/setups" && pwd):$PATH"
 declare -A ARGS=()
 : > "$ENV_FILE"
 echo "# Profile: env lines of $BOOTHFILE (host-provision experiment)" >> "$ENV_FILE"
@@ -66,6 +72,7 @@ run_line() {
 }
 
 echo "== $(basename "$EXAMPLE") (CB_TARGET=${CB_TARGET:-?}, home=$CB_USER_HOME)" | tee -a "$REPORT"
+[ -f "$BOOTHFILE" ] || record SKIP "no .booth/Boothfile (config.toml only)"
 
 while IFS= read -r raw || [ -n "$raw" ]; do
   line="${raw%%#*}"                                         # drop comments
@@ -97,14 +104,30 @@ while IFS= read -r raw || [ -n "$raw" ]; do
       args="${expanded#"$mgr"}"
       run_line "install $expanded" "$mgr--install.sh$args"
       ;;
-    run|copy|workdir|expose|label)
+    run)
+      expanded="$(subst_args "$rest")"
+      ctx=""
+      if [[ "$expanded" =~ ^--mount=type=bind,target=([^[:space:]]+)[[:space:]]+(.*)$ ]]; then
+        ctx="${BASH_REMATCH[1]}"; expanded="${BASH_REMATCH[2]}"
+        rm -rf "$ctx"; ln -s "$(cd "$EXAMPLE" && pwd)" "$ctx"
+      fi
+      run_line "run ${expanded:0:100}" "cd / && $expanded"
+      [ -z "$ctx" ] || rm -f "$ctx"
+      ;;
+    copy)
+      expanded="$(subst_args "$rest")"
+      read -ra parts <<< "$expanded"
+      dest="${parts[-1]}"; unset 'parts[-1]'
+      run_line "copy $expanded" "mkdir -p '$dest' && cd '$(cd "$EXAMPLE" && pwd)' && shopt -s nullglob && for f in ${parts[*]}; do cp -a \"\$f\" '$dest'; done"
+      ;;
+    workdir|expose|label)
       record SKIP "$cmd $rest  (not replayed outside a container)"
       ;;
     *)
       record SKIP "$line  (unknown directive)"
       ;;
   esac
-done < "$BOOTHFILE"
+done < <([ -f "$BOOTHFILE" ] && cat "$BOOTHFILE")
 
 # .booth/config.toml holds the run-time settings: the variant (the image a
 # booth starts from), run-args (env, volumes, ports, devices), cmds, dind, ...
