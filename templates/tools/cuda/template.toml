@@ -10,7 +10,13 @@ with a driver installed, and (2) the NVIDIA Container Toolkit configured for Doc
 \"docker run --gpus all\" fails outright -- the booth will not start at all, not just run without \
 GPU support. Only select this for a project you know will run on a GPU-configured host; a \
 teammate without one will not be able to launch this booth. Pin CUDA_VERSION (e.g. "13-4") for a \
-reproducible build, or leave it "latest"."""
+reproducible build, or leave it "latest".
+
+If the host driver is older than the toolkit (`nvidia-smi` shows the newest CUDA the driver \
+supports), compile with `nvcc -arch=native`: a default build targets an older GPU generation, so \
+a newer GPU JIT-compiles its PTX through the driver, which an older driver cannot do; it fails at \
+run time with "the provided PTX was compiled with an unsupported \
+toolchain"."""
 display-order = 42
 auto-select = false
 tags = [
@@ -34,5 +40,6 @@ suggests = [
 
 [segments]
 "Boothfile--55" = """
+env PATH=/usr/local/cuda/bin:$PATH
 setup cuda ${CUDA_VERSION}
 """
