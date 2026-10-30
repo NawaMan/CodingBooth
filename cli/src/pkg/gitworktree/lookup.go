@@ -98,7 +98,8 @@ func parseList(data string) []Entry {
 		}
 		key, value, _ := strings.Cut(line, " ")
 		if key == "worktree" {
-			entries = append(entries, Entry{Path: value})
+			// git prints C:/... on Windows; callers compare against filepath.Join paths.
+			entries = append(entries, Entry{Path: filepath.FromSlash(value)})
 			current = &entries[len(entries)-1]
 			continue
 		}

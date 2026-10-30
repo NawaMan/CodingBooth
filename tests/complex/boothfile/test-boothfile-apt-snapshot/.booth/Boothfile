@@ -1,12 +1,10 @@
 # syntax=codingbooth/boothfile:1
 
 # Test: `install apt` frozen to an Ubuntu archive snapshot via APT_SNAPSHOT.
-# `booth config` normally stamps this line with the configuration date; here it is
-# set explicitly to a fixed past snapshot so the test is deterministic.
-# 20250601 predates this base's Ubuntu 26.04 (resolute) entirely -- snapshot.ubuntu.com
-# 404s resolute at that date (resolute's archive didn't exist yet); verified 20260901
-# resolves for resolute/resolute-updates/resolute-security.
-env APT_SNAPSHOT=20260901T000000Z
+# `booth config` normally stamps this line with the configuration date. The test
+# rewrites it, in a copy, to the repo's apt-snapshot.txt: a pin older than the image's
+# own snapshot is refused (apt cannot downgrade), so no fixed date outlives a release.
+env APT_SNAPSHOT=20261023T000000Z
 
 # ripgrep is deliberately a package the base image does *not* already carry: jq alone
 # would install trivially from dpkg's existing state even if the snapshot pin resolved
