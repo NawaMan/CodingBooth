@@ -111,6 +111,20 @@ func TestRewriteHome(t *testing.T) {
 	}
 }
 
+func TestConfigProfile(t *testing.T) {
+	got := ConfigProfile("gha", []EnvVar{{"GOMODCACHE", "/home/runner/go/pkg/mod"}, {"Q", "it's"}})
+	want := "# Profile: booth prepare's target and the -e run-args of .booth/config.toml.\n" +
+		"export CB_TARGET='gha'\n" +
+		"export GOMODCACHE='/home/runner/go/pkg/mod'\n" +
+		"export Q='it'\\''s'\n"
+	if got != want {
+		t.Errorf("ConfigProfile =\n%s\nwant\n%s", got, want)
+	}
+	if got := ConfigProfile("host", nil); !strings.Contains(got, "export CB_TARGET='host'\n") {
+		t.Errorf("no env: %q", got)
+	}
+}
+
 func TestLoadConfig(t *testing.T) {
 	dir := t.TempDir()
 	if c, err := LoadConfig(filepath.Join(dir, "missing.toml")); err != nil || c.Variant != "" {

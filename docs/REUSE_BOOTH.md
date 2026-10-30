@@ -114,6 +114,15 @@ the docs markdown and `experiments/host-provision/` into `cli/src/pkg/prepare/ki
 its own version, `--rc` builds included. `--source <checkout>` uses a checkout instead. A binary
 built with a plain `go build` has no kit and needs `--source`.
 
+**Later shells know.** `/etc/profile.d/06-cb-config-env.sh` starts with `CB_TARGET=gha` or
+`host`, and on `gha` it reaches later steps through `GITHUB_ENV`. A test that checks something a
+booth has by design and a machine does not (apt-example's snapshot test) skips on it.
+
+**`setup dind` keeps the machine's Docker.** With `CB_TARGET` gha or host and `docker` already on
+the machine, it installs `socat` only. Ubuntu's `docker.io` would replace `docker-ce` and
+`containerd.io`, and on a GitHub runner that took the daemon down (n8n's sandbox then had no
+Docker).
+
 **`APT_SNAPSHOT` is not applied.** The machine's apt is live and already newer than the
 Boothfile's pin, so the pin is reported as DROP and apt uses the live archive
 ([item 11](#where-it-breaks)).
