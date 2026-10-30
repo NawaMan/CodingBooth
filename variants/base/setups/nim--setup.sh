@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 
 set -Eeuo pipefail
 
@@ -18,7 +18,8 @@ Examples:
 Notes:
 - Installs Nim to /opt/nim-<ver> and links /opt/nim-stable
 - Exposes nim/nimble/nimsuggest/nimgrep via /usr/local/bin
-- Upstream tarballs from nim-lang.org: nim-<ver>-linux_<x64|arm64>.tar.xz
+- Upstream tarballs from nim-lang.org: nim-<ver>-linux_x64.tar.xz
+- nim-lang.org publishes no linux/arm64 build; on arm64 this script explains and skips
 - See: https://nim-lang.org
 USAGE
 }
@@ -37,8 +38,12 @@ done
 dpkgArch="$(dpkg --print-architecture)"
 case "$dpkgArch" in
   amd64) N_ARCH="x64" ;;
-  arm64) N_ARCH="arm64" ;;
-  *) echo "❌ Unsupported arch: $dpkgArch (need amd64 or arm64)"; exit 1 ;;
+  arm64)
+    echo "⚠️  nim-lang.org publishes no linux/arm64 build (only linux x64 and x32)," >&2
+    echo "   so Nim is not installed in this booth. Building from source:" >&2
+    echo "   https://nim-lang.org/install_unix.html" >&2
+    exit 0 ;;
+  *) echo "❌ Unsupported arch: $dpkgArch (need amd64)"; exit 1 ;;
 esac
 
 export DEBIAN_FRONTEND=noninteractive

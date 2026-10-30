@@ -10,6 +10,10 @@
 # in-process (bundled TinyCC + libc6-dev) and builds a native executable (gcc),
 # and that it does not take the `goose` command from the Goose AI agent.
 # Both setups download from GitHub releases, so this needs network.
+#
+# amd64 only: Goose publishes linux x64 builds and nothing for linux/arm64, so
+# goose-lang--setup.sh skips the install there (template: unsupported-arch).
+# On an arm64 docker (Apple Silicon, Ubuntu on ARM) this test skips.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -18,6 +22,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 source ../../../common--source.sh
+
+SERVER_ARCH="$(docker_server_arch)"
+if [[ "$SERVER_ARCH" != "amd64" ]]; then
+    echo "SKIP: Goose publishes no linux/${SERVER_ARCH} build (linux x64 only); docker builds for '${SERVER_ARCH}' here." >&2
+    exit 0
+fi
 
 echo "=== Test: Boothfile Goose (language) Installation ==="
 

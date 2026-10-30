@@ -4,6 +4,9 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Nim skips on arm64 instead of failing the build.** nim-lang.org publishes Linux tarballs for
+  x64 only, so `--select nim` on Apple Silicon or Ubuntu on ARM failed with a 404 and no image.
+  The setup now warns and skips there, as goose-lang does, and the template marks arm64 unsupported.
 - **CUDA installs from NVIDIA's Ubuntu 26.04 repo.** `--select cuda` still read NVIDIA's
   `ubuntu2404` apt repo after the base image moved to Ubuntu 26.04, so the toolkit came from a repo
   built for another release. It now reads `ubuntu2604`, which carries CUDA 13.3 and later; the
