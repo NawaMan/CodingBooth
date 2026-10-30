@@ -30,7 +30,13 @@ running Docker (not in this container):
   2. The NVIDIA Container Toolkit (nvidia-ctk / nvidia-container-toolkit)
      configured for Docker
 Without both, \`docker run --gpus all\` fails outright -- the booth
-will not start, not just "run without GPU support". Only select this
+will not start, not just "run without GPU support".
+
+If the host driver is older than this toolkit (nvidia-smi shows the
+newest CUDA the driver supports), compile with \`nvcc -arch=native\`:
+a default build targets an older GPU generation, so a newer GPU runs
+its PTX through the driver's JIT, which an older driver cannot do
+("the provided PTX was compiled with an unsupported toolchain"). Only select this
 template for a project you know will run on a GPU-configured host.
 See: https://docs.nvidia.com/cuda/cuda-installation-guide-linux/
      https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
@@ -38,6 +44,8 @@ USAGE
 }
 
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
+
+PROFILE_FILE="/etc/profile.d/62-cb-cuda--profile.sh"
 
 case "${1:-}" in
   -h|--help) usage; exit 0 ;;
@@ -82,12 +90,27 @@ apt-get update
 apt-get install -y --no-install-recommends "$PKG"
 rm -rf /var/lib/apt/lists/*
 
+# ---- profile script ----
+# NVIDIA's packages install under /usr/local/cuda and put nothing on PATH.
+cat >"${PROFILE_FILE}" <<'EOF'
+# ---- CUDA environment (safe to source multiple times) ----
+case ":$PATH:" in
+  *":/usr/local/cuda/bin:"*) : ;;
+  *) export PATH="/usr/local/cuda/bin:$PATH" ;;
+esac
+# ---- end CUDA defaults ----
+EOF
+chmod 0644 "${PROFILE_FILE}"
+
 echo "✅ ${PKG} installed."
-echo -n "   nvcc → "; nvcc --version 2>/dev/null | tail -1 || true
+echo -n "   nvcc → "; /usr/local/cuda/bin/nvcc --version 2>/dev/null | tail -1 || true
+echo "   Profile: ${PROFILE_FILE}"
 
 cat <<'EON'
 ℹ️ Ready to use (once the HOST has a GPU + NVIDIA Container Toolkit):
-- Compile:  nvcc my_kernel.cu -o my_kernel
+- Compile:  nvcc -arch=native my_kernel.cu -o my_kernel
+  (-arch=native builds for this GPU; without it, a host driver older
+  than this toolkit fails at run time with "unsupported toolchain")
 - Check the GPU is visible inside the booth: nvidia-smi
 - No driver is installed here on purpose -- it comes from the host via
   `docker run --gpus all`, which this template's run-args already add.
