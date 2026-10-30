@@ -86,7 +86,7 @@ setup	elixir	1.1.0	babd375fad790de916e90d4b579af09636776c061b51d4bd290e066fc1db9
 setup	elixir-code-extension	1.0.0	1743fe565bbebf15186049e8fc3dee0bfedf050c56c3e26cdf7fa2e2c03b1cc4	variants/base/setups/elixir-code-extension--setup.sh
 setup	elm	1.1.0	3ba8d47e7c213c1d2e59ea82eb3f19f5d5cf86ff07c019002900f8895cbba6d7	variants/base/setups/elm--setup.sh
 setup	elm-code-extension	1.0.0	6e0caa93413bd80117a033e9a2f94c537a9867e775427f778347a4f8e312aedc	variants/base/setups/elm-code-extension--setup.sh
-setup	envfolio	2.3.0	5ad786df180202c408de600c51614dcf10ba8b63f976a4bd2dac26a0529b84d5	variants/base/setups/envfolio--setup.sh
+setup	envfolio	2.4.0	479705a44947b6c2b3b9cb654ef4cba0f80dab400383556ed6d53790dc0fb44d	variants/base/setups/envfolio--setup.sh
 setup	erlang	1.0.0	24ad8e50ad69aef9725262acd39b14885d8007f85bacd31e360b75a39d6175ab	variants/base/setups/erlang--setup.sh
 setup	erlang-code-extension	1.0.0	6e5b09d75439bec5b67b899d850b0a99cb07c3fe72052e8061458843f60aff70	variants/base/setups/erlang-code-extension--setup.sh
 setup	excalidraw	1.1.0	02f04628f0678822959537b54d80a34743aae9c1d30c77b41fb45aaa06f34f87	variants/base/setups/excalidraw--setup.sh
@@ -468,7 +468,7 @@ template	duckdb	1.0.0	fed11260e9befae504889bdf6eb46719752d7a318931c926cc54ed22ea
 template	eclipse	1.0.0	8fde02948d8baddf95cf3e8e6c7bf46afa31300df5e1a66673ea3005adb73d9a	templates/ides/eclipse/template.toml
 template	elixir	1.1.0	4620b96144502e051ac7d20e655760838214d253665708fea38532447ae29192	templates/languages/elixir/template.toml
 template	elm	1.1.0	00bc2a422212bf56d128c20595eb2c1efaa298027a66f4de8ccb8362aede8e77	templates/languages/elm/template.toml
-template	envfolio	2.3.0	ffbc1421be3b59fab0aea297a07f29f880ae17afeaac4577dcb52f87171c53c8	templates/tools/envfolio/template.toml
+template	envfolio	2.4.0	1d47d2466b2093140b98ecbbb1f2d51eb5b7541b4a4620f25c7f452c9dd7634a	templates/tools/envfolio/template.toml
 template	erlang	1.0.0	7188a3322e8e5ab310d245c8db947f7228245d39d6c36b606676066ac8732ef4	templates/languages/erlang/template.toml
 template	excalidraw	1.0.0	86c9ad6816d3aba78628bce02322d8e9e91836adf368ec68b0c5d2567fd73459	templates/tools/excalidraw/template.toml
 template	exercism	1.1.0	c2a46ddfe0b8159df0154f403df8d1ebbbe916a53eed1f49af4584ef9a3ac03a	templates/education/exercism/template.toml

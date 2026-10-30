@@ -220,8 +220,14 @@ This file contains a list of changes for each released version.
   get it too, and the base image adds the same as an apt.conf drop-in for a plain
   `apt-get --snapshot` in a booth. No date has to move.
 
-- **EnvFolio 0.8.0.** The base image and `tools/envfolio` install EnvFolio 0.8.0 (was 0.6.0).
-  New since 0.6.0: `folio exec`/`folio shell --vars <file>` (a committable file naming which
+- **EnvFolio 1.0.1.** The base image and `tools/envfolio` install EnvFolio 1.0.1 (was 0.6.0).
+  1.0.0 makes commands, options and file formats stable. It puts the action first
+  (`folio show secret …`, `folio insert text …`; the kind-first order still works), makes a
+  post-quantum key with `folio init` on the base image's gpg 2.5, and adds `--use <@namespace>`
+  (experimental), `exec`/`shell --debug`/`--confirm`, `FOLIO_STORE_PASSPHRASE_FILE` and
+  `--fresh-passphrase`. **Changed (1.0.0):** in `exec`/`shell`, entries and `--all` apply in the
+  order typed (the last one wins), and with `--vars` the command gets only what the vars file
+  sets. Also new since 0.6.0: `folio exec`/`folio shell --vars <file>` (a committable file naming which
   variables to set and where each comes from), `folio vars check`, `folio export --vars`,
   `folio completion bash|zsh`, and `--store-passphrase-fd` / `--file-passphrase-fd`. **Breaking
   (0.7.0):** `--passphrase-stdin` / `--passphrase-fd` are renamed `--store-passphrase-…` for
