@@ -8,8 +8,14 @@
 #
 # Runs run.sh inside a throwaway plain ubuntu:26.04 container, standing in for
 # a fresh machine or a runner: a sudo-capable user named like the target's
-# (runner, uid 1001, for gha; owner, uid 1000, for host) and the repo mounted
+# (runner, uid 1001, for gha; owner, uid 1000, for host) and a copy of the repo
 # where GitHub checks it out. Nothing from the booth image is used.
+#
+# The repo is copied in, not mounted: what the example builds (a CMake build/
+# folder, say) stays in the throwaway container instead of landing in the
+# checkout, where a cache made at this path breaks the next booth build. The
+# copy is the files git tracks or would add (no ignored build output), limited
+# to what the run reads: variants/, experiments/, docs/*.md, the example.
 #
 # Usage: local-test.sh gha|host [example-dir-relative-to-repo]
 # Report: experiments/host-provision/.out/<example>/report-<target>.txt
@@ -35,17 +41,20 @@ WORK="/home/$USER_NAME/work/CodingBooth/CodingBooth"
 NAME="cb-host-provision-exp-$TARGET-$EX_NAME"
 
 docker rm -f "$NAME" >/dev/null 2>&1 || true
-docker run --rm --name "$NAME" \
-  -v "$REPO:$WORK" -v "$OUT:/out" \
+(cd "$REPO" && git ls-files -co --exclude-standard -z -- variants experiments 'docs/*.md' docs/favicon.png \
+    README.md LICENSE version.txt "$EXAMPLE_REL" | tar --null -T - -cf -) |
+docker run -i --rm --name "$NAME" \
+  -v "$OUT:/out" \
   ubuntu:26.04 bash -c "
     set -euo pipefail
+    mkdir -p '$WORK' && tar -xf - -C '$WORK'
     apt-get update -qq && apt-get install -y -qq sudo ca-certificates >/dev/null
     userdel -r ubuntu 2>/dev/null || true
     useradd -m -u $UID_NUM -s /bin/bash $USER_NAME
     echo '$USER_NAME ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/$USER_NAME
-    # The repo mount made the home before useradd did: give it the owner and skeleton a real one has.
+    # The copy made the home before useradd did: give it the owner and skeleton a real one has.
     cp -rn /etc/skel/. /home/$USER_NAME/
-    chown $USER_NAME:$USER_NAME /home/$USER_NAME /home/$USER_NAME/.[!.]* /home/$USER_NAME/work /home/$USER_NAME/work/CodingBooth
+    chown -R $USER_NAME:$USER_NAME /home/$USER_NAME
     cd '$WORK'
     runuser -u $USER_NAME -- env HOME=/home/$USER_NAME REPORT=/home/$USER_NAME/report.txt \
       '$WORK/experiments/host-provision/run.sh' $TARGET '$WORK/$EXAMPLE_REL' || echo 'run.sh exited non-zero'
