@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.1.0
+# cb-version: 1.2.0
 
 # -----------------------------------------------------------------------------
 # python--setup.sh
@@ -33,7 +33,7 @@ HOME=/root
 PROFILE_FILE="/etc/profile.d/53-cb-python--profile.sh"  # profile to be run when login
 
 # Wanted python version
-PY_VERSION=${1:-3.14.9}
+PY_VERSION=${1:-3.14.10}
 
 # ---- validate python version format ----
 # accepts X.Y or X.Y.Z (exact patch recommended)

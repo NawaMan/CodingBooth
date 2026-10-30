@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 # mojo--setup.sh — Install the Mojo compiler into the booth Python venv.
 # Mojo 1.0 ships as a pip package (compiler, stdlib, LSP, LLDB). It needs
@@ -16,7 +16,7 @@ Usage:
   $0 [--version <X.Y.Z>|latest]
 
 Examples:
-  $0                      # install Mojo 1.1.0 (current stable)
+  $0                      # install Mojo 1.2.0 (current stable)
   $0 --version 1.0.0      # pin a release
   $0 --version latest     # newest PyPI release
 
@@ -41,7 +41,7 @@ source "${SETUP_LIBS_DIR}/retry-source.sh"
 CB_PYTHON_HOME="${CB_PYTHON_HOME:-/opt/python}"
 CB_MOJO_BIN_DIR="${CB_MOJO_BIN_DIR:-/usr/local/bin}"
 
-MOJO_DEFAULT_VER="1.1.0"
+MOJO_DEFAULT_VER="1.2.0"
 REQ_VER=""
 
 while [[ $# -gt 0 ]]; do

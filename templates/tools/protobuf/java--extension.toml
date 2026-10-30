@@ -1,4 +1,4 @@
-cb-version = "0.2.0"
+cb-version = "0.3.0"
 display-name = "Java protoc plugin"
 display-disc = "protoc-gen-grpc-java for Java gRPC service codegen"
 display-detail = """Installs protoc-gen-grpc-java as a standalone protoc plugin on PATH, downloaded as a \
@@ -20,10 +20,10 @@ tags = [
 requires = ["java"]
 
 [params.PROTOC_GEN_GRPC_JAVA_VERSION]
-default = "1.84.1"
+default = "1.85.1"
 suggests = [
+    "1.85.1",
     "1.84.1",
-    "1.84.0",
 ]
 
 [segments]

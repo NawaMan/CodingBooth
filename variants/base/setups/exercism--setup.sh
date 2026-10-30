@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 set -Eeuo pipefail
 
@@ -13,7 +13,7 @@ Usage:
 
 Examples:
   $0                         # install default version
-  $0 --version 3.5.8         # pin specific version
+  $0 --version 3.5.9         # pin specific version
   $0 --version latest        # install latest GitHub release
 
 Notes:
@@ -29,7 +29,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
 # ---- defaults / args ----
-EXERCISM_DEFAULT_VER="3.5.8"   # fallback when 'latest' cannot be resolved
+EXERCISM_DEFAULT_VER="3.5.9"   # fallback when 'latest' cannot be resolved
 REQ_VER="latest"               # no version given means "the current release"
 while [[ $# -gt 0 ]]; do
   case "$1" in

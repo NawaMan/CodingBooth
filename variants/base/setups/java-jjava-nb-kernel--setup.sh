@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 #
 # Install the JJava (Java) Jupyter kernel so BOTH:
 #   1) a standalone Jupyter, and
@@ -57,7 +57,7 @@ fi
 source /etc/profile.d/60-cb-jdk--profile.sh
 
 # ---------------- Defaults / Tunables ----------------
-JJAVA_VERSION="${JJAVA_VERSION:-1.0-a6}"                        # default JJava tag (GitHub Release tag)
+JJAVA_VERSION="${JJAVA_VERSION:-1.0-a8}"                        # default JJava tag (GitHub Release tag)
 JUPYTER_KERNEL_PREFIX="${JUPYTER_KERNEL_PREFIX:-/usr/local}"    # system-wide install
 KERNEL_NAME="${KERNEL_NAME:-java}"                              # kernelspec name (initial install name)
 KERNEL_DISPLAY_NAME="${KERNEL_DISPLAY_NAME:-Java (${CB_JDK_VERSION})}"

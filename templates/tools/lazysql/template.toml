@@ -1,4 +1,4 @@
-cb-version = "0.1.0"
+cb-version = "0.2.0"
 display-name = "lazysql"
 display-disc = "Terminal UI database management tool"
 display-detail = "Installs lazysql, a cross-platform terminal UI for MySQL, PostgreSQL, SQLite3, and MSSQL. Takes a connection URL directly on the command line, or start it with none to pick a saved connection."
@@ -12,7 +12,7 @@ tags = [
 
 [params.LAZYSQL_VERSION]
 default = "latest"
-suggests = ["latest", "0.5.9"]
+suggests = ["latest", "0.7.0"]
 
 [segments]
 Boothfile = """

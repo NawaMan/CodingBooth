@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 # lsp--jdtls--setup.sh — Install jdtls, the Eclipse JDT language server for Java.
 set -Eeuo pipefail
@@ -15,7 +15,7 @@ Usage:
 
 Examples:
   $0                       # latest jdtls milestone
-  $0 --version 1.61.0      # pin a milestone
+  $0 --version 1.63.0      # pin a milestone
 
 Notes:
 - Installs the milestone build from download.eclipse.org under /opt/jdtls
@@ -28,7 +28,7 @@ USAGE
 
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
-JDTLS_FALLBACK_VER="1.61.0"
+JDTLS_FALLBACK_VER="1.63.0"
 REQ_VER="latest"
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -51,7 +51,7 @@ else
   VERSION="${REQ_VER#v}"
 fi
 if ! [[ "$VERSION" =~ $VERSION_RE ]]; then
-  echo "❌ Not a jdtls version: '${VERSION}' (expected X.Y.Z, for example 1.61.0)" >&2
+  echo "❌ Not a jdtls version: '${VERSION}' (expected X.Y.Z, for example 1.63.0)" >&2
   exit 2
 fi
 

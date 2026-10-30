@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.2.0
+# cb-version: 0.3.0
 
 # wails--setup.sh — Install the Wails v3 CLI and the Linux GTK4/WebKitGTK
 # toolchain it compiles against.
@@ -78,7 +78,7 @@ fi
 
 # ---- resolve the Go module version ----
 MODULE="github.com/wailsapp/wails/v3/cmd/wails3"
-FALLBACK_VERSION="v3.0.0-beta.27"
+FALLBACK_VERSION="v3.0.0"
 
 if [[ "$REQ_VER" == "latest" ]]; then
   SPEC="${MODULE}@latest"

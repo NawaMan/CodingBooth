@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 set -Eeuo pipefail
 
@@ -51,7 +51,7 @@ if ! command -v curl >/dev/null 2>&1 || ! command -v tar >/dev/null 2>&1 || ! co
 fi
 
 # Known-good pin for when the GitHub API is rate-limited or returns minified JSON.
-FALLBACK_VERSION="16.4"
+FALLBACK_VERSION="16.5"
 
 if [[ "$REQ_VER" == "latest" ]]; then
   VERSION=$(curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL \

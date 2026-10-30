@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 # appwrite-cli--setup.sh — Install the Appwrite CLI from GitHub releases
 set -Eeuo pipefail
@@ -15,7 +15,7 @@ Usage:
 
 Examples:
   $0                           # install latest Appwrite CLI
-  $0 --version 28.1.0          # pin a specific CLI version
+  $0 --version 28.10.1          # pin a specific CLI version
 
 Notes:
 - Installs the official Appwrite CLI (appwrite) from appwrite/sdk-for-cli
@@ -51,7 +51,7 @@ if ! command -v curl >/dev/null 2>&1; then
 fi
 
 # Known-good pin when the GitHub API is rate-limited.
-FALLBACK_VERSION="28.1.0"
+FALLBACK_VERSION="28.10.1"
 
 if [[ "$REQ_VER" == "latest" ]]; then
   VERSION=$(curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors \

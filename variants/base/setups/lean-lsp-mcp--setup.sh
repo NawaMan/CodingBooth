@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 # lean-lsp-mcp--setup.sh — Install lean-lsp-mcp, an MCP server that gives AI agents
 # (Claude Code, Codex, …) Lean's goals, errors and search, through the Lean language server.
@@ -17,7 +17,7 @@ Usage:
 
 Examples:
   $0                     # the pinned lean-lsp-mcp release
-  $0 --version 0.31.0    # a specific release
+  $0 --version 0.32.0    # a specific release
 
 Notes:
 - Installs into its own virtualenv (/opt/lean-lsp-mcp) on the system Python, so it does
@@ -36,7 +36,7 @@ USAGE
 # This script will always be installed by root.
 HOME=/root
 
-VERSION="0.31.0"
+VERSION="0.32.0"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --version) shift; VERSION="${1:?--version needs a value}"; shift ;;

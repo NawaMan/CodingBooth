@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 # Conda (Miniforge) setup script
 
@@ -29,11 +29,11 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "Run as root (use sudo)"; exit 1; }
 
 # ---- defaults / args ----
-PY_VERSION="${1:-3.13}"
+PY_VERSION="${1:-3.14}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --python-version) shift; PY_VERSION="${1:-3.13}"; shift ;;
+    --python-version) shift; PY_VERSION="${1:-3.14}"; shift ;;
     -h|--help) usage; exit 0 ;;
     *) shift ;;  # positional arg for python version
   esac

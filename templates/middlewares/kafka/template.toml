@@ -1,4 +1,4 @@
-cb-version = "2.0.0"
+cb-version = "2.1.0"
 display-name = "Kafka"
 display-disc = "Apache Kafka single-node KRaft broker"
 display-detail = "Installs Apache Kafka in single-node KRaft mode (broker + controller). Includes openjdk-17-jre. Data dir: /opt/kafkadata; install: /opt/kafka. Kept in a Docker volume per booth (booth-kafkadata-<booth name>)."
@@ -16,8 +16,8 @@ run-args = [
 ]
 
 [params.KAFKA_VERSION]
-default = "4.3.1"
-suggests = ["4.3.1", "4.2.1", "3.7.0"]
+default = "4.3.2"
+suggests = ["4.3.2", "4.2.1", "3.7.0"]
 
 # kafka--setup.sh accepts --port, so this genuinely moves the broker's listener
 # (not just a host mapping). The controller port (9093) stays internal.

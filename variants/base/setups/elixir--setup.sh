@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 set -Eeuo pipefail
 
@@ -31,7 +31,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
 # --- defaults / args ---
-ELIXIR_DEFAULT="1.20.4"     # fallback when 'latest' cannot be resolved
+ELIXIR_DEFAULT="1.20.5"     # fallback when 'latest' cannot be resolved
 REQ_VER="latest"            # no version given means "the current release"
 WITH_PHOENIX=0
 MIX_HOME_DEFAULT="/opt/mix"
