@@ -200,10 +200,8 @@ func Run(o Options) int {
 	}
 	configEnv = RewriteHome(configEnv, target.HomeDir)
 	phase("Boothfile", []string{"CB_PREPARE_VARIANT=" + variant}, filepath.Join(scripts, "provision-example.sh"), project)
-	if len(configEnv) > 0 {
-		if err := r.writeConfigEnv(configEnv); err != nil {
-			failed = append(failed, "config.toml env: "+err.Error())
-		}
+	if err := r.writeConfigEnv(o.Target.CBTarget(), configEnv); err != nil {
+		failed = append(failed, "config.toml env: "+err.Error())
 	}
 	entryEnv := []string{"CB_CODE_DIR=" + project, "HOST_UID=" + target.Uid, "HOST_GID=" + target.Gid}
 	for _, e := range configEnv {
@@ -266,27 +264,19 @@ func (r runner) root(env []string, argv ...string) error {
 	return cmd.Run()
 }
 
-// writeConfigEnv puts config.toml's -e KEY=VALUE run-args in a profile script, so
-// every later login shell has them, as every process in a booth does.
-func (r runner) writeConfigEnv(env []EnvVar) error {
-	var b strings.Builder
-	b.WriteString("# Profile: the -e run-args of .booth/config.toml (booth prepare).\n")
-	for _, e := range env {
-		fmt.Fprintf(&b, "export %s=%s\n", e.Key, shellQuote(e.Value))
-	}
+// writeConfigEnv puts CB_TARGET and config.toml's -e KEY=VALUE run-args in a
+// profile script, so every later login shell has them, as every process in a
+// booth does (ConfigProfile).
+func (r runner) writeConfigEnv(cbTarget string, env []EnvVar) error {
 	tmp, err := os.CreateTemp("", "cb-config-env-")
 	if err != nil {
 		return err
 	}
 	defer os.Remove(tmp.Name())
-	tmp.WriteString(b.String())
+	tmp.WriteString(ConfigProfile(cbTarget, env))
 	tmp.Close()
 	os.Chmod(tmp.Name(), 0644)
 	return r.root(nil, "install", "-m", "0644", tmp.Name(), "/etc/profile.d/06-cb-config-env.sh")
-}
-
-func shellQuote(s string) string {
-	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }
 
 // ensureSudo checks the user may use sudo: without a password, or after one prompt

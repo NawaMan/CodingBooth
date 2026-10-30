@@ -117,6 +117,7 @@ gha)
   check "GITHUB_ENV and GITHUB_PATH were written"        test -s /tmp/gh/env -a -s /tmp/gh/path
   check "config.toml -e values point at /home/runner"    no_home_coder
   check "APT_SNAPSHOT is not applied (DROP)"             bash -c "! grep -q \"^APT_SNAPSHOT<<\" /tmp/gh/env"
+  check "CB_TARGET=gha reaches later steps"              bash -c "grep -A1 \"^CB_TARGET<<\" /tmp/gh/env | grep -qx gha"
   # A later step: plain bash, nothing from a profile, only what GitHub would carry over.
   check "a later plain-bash step passes the in-booth tests" run_tests "$P" \
     runuser -u runner -- env -i HOME=/home/runner USER=runner PATH=/usr/bin:/bin \
@@ -131,6 +132,7 @@ ubuntu)
   check "dev exists and is in sudo"                      bash -c "id -nG dev | grep -qw sudo"
   check "a non-base config.toml variant is APPLY"        has_variant_apply /tmp/report.txt
   check "config.toml -e values point at /home/dev"       no_home_coder
+  check "CB_TARGET=host in login shells"                 bash -c "runuser -l dev -c \"printenv CB_TARGET\" | grep -qx host"
   check "the in-booth tests pass in dev login shell"     run_tests "$P" runuser -l dev -c
   ;;
 esac

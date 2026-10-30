@@ -69,7 +69,7 @@ setup	deno	1.0.0	b5cb7026bd75202319f66faa56b51cf4bc47c2004050115d750b01d0c1a0919
 setup	deno-code-extension	1.0.0	65526a1bc8f4c471226a070ef2b3833331588c22dac536055e9619a96822b93c	variants/base/setups/deno-code-extension--setup.sh
 setup	deno-nb-kernel	1.0.0	6a466544a75e1fa234a194ef3140c686c8e69615f9aaddbdcfdcd5eb553cda25	variants/base/setups/deno-nb-kernel--setup.sh
 setup	differ	0.1.0	01c76ae91b8cde35f94ee19a0691fa8d7817f6fb077730088ef2ec31bc6db4a4	variants/base/setups/differ--setup.sh
-setup	dind	1.0.0	d85ab9cfab4957178be3483ccb5c5eb2bf3308c565096472c2f3340d1d3c9b56	variants/base/setups/dind--setup.sh
+setup	dind	1.1.0	94d53230664095729fe826e92367cae021ee749abb5e24aef5f5712ae3e773ed	variants/base/setups/dind--setup.sh
 setup	direnv	1.0.0	84be601ab8b9f198683270ccb3b71e291ac65f11056519f3d5fa8db9ca87e384	variants/base/setups/direnv--setup.sh
 setup	dive	1.0.0	1d7f52b7e366674f3af13dc6b3bd72034b438893754aa004efeb209e6b0cc6ea	variants/base/setups/dive--setup.sh
 setup	django-code-extension	0.1.0	282dd6e5d98341b2393802afc5f75d5e4648224530ef949ec8195feed0f5ad3f	variants/base/setups/django-code-extension--setup.sh

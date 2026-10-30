@@ -21,7 +21,10 @@ This file contains a list of changes for each released version.
   `--yes`. On GHA, later steps get the environment through `GITHUB_ENV` / `GITHUB_PATH`. The
   scripts are embedded in the binary (about 2.4 MB); `--source <checkout>` uses a checkout instead.
   The Boothfile's `APT_SNAPSHOT` is not applied off-booth: apt uses the machine's live archive,
-  which is already newer than the pin.
+  which is already newer than the pin. Later shells (and later GHA steps) see `CB_TARGET=gha` or
+  `host`, so a script can tell it is not in a booth. Off a booth, `setup dind` keeps a machine's
+  own Docker instead of replacing it with Ubuntu's `docker.io` (which took a GitHub runner's
+  daemon down); in a booth it installs as before.
 
 - **Zed is selectable as an IDE.** `--select zed` (on a desktop variant) installs the Zed editor
   from its official GitHub release, puts a launcher at `/usr/local/bin/zed`, and adds Zed to the
