@@ -38,7 +38,6 @@ jobs:
       #   known not working:
       #     xonsh-example      login shell is a config.toml run-arg (Where it breaks, item 10)
       #     helix-example      its config is a config.toml shared-dir (item 10)
-      #     systemlib-example  APT_SNAPSHOT is older than the machine's packages (item 11)
       #   skipped, they need a non-base variant (a GHA run is a base booth):
       #     i3-desktop-example, tiling-example, empty-example   i3 runs inside XFCE
       #     conda-example                                       jupyter comes from the notebook variant
@@ -52,6 +51,7 @@ jobs:
           - npm-example
           - pip-example
           - clang-example
+          - systemlib-example    # APT_SNAPSHOT is not applied off-booth (item 11)
           - bash-example
           - csharp-example
           - goose-lang-example
