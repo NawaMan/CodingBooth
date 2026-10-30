@@ -63,8 +63,7 @@ func countOnly(at, rev string, ownBranch ...string) (int, error) {
 }
 
 // Remove removes worktree e (--force: even with changes), then the empty folders its branch
-// path made (<root>/feature/ for feature/x), and booth's default root, ../<project>.worktrees,
-// once it is empty. Other roots are the user's and stay.
+// path made (<root>/feature/ for feature/x). The root stays, even empty (see belowRoot).
 func Remove(dir string, e Entry, force bool) error {
 	if !force {
 		// booth's own runtime files: not work, and `git worktree remove` would refuse over them.
@@ -78,15 +77,11 @@ func Remove(dir string, e Entry, force bool) error {
 	if _, err := git(dir, append(args, e.Path)...); err != nil {
 		return err
 	}
-	root := filepath.Dir(e.Path)
 	if branch := filepath.FromSlash(e.Branch); strings.Contains(e.Branch, "/") &&
 		strings.HasSuffix(e.Path, string(filepath.Separator)+branch) {
-		root = strings.TrimSuffix(e.Path, string(filepath.Separator)+branch)
+		root := strings.TrimSuffix(e.Path, string(filepath.Separator)+branch)
 		first := strings.SplitN(e.Branch, "/", 2)[0]
 		removeEmptyUpTo(filepath.Dir(e.Path), filepath.Join(root, first))
-	}
-	if strings.HasSuffix(filepath.Base(root), ".worktrees") {
-		_ = os.Remove(root) // only if empty
 	}
 	return nil
 }
