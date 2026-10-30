@@ -240,6 +240,11 @@ var configFlags = []Flag{
 	flag(ConfigKey, "--unset"),
 }
 
+// prepareFlags: cmd/codingbooth/prepare.go, parsePrepareArgs (ubuntu adds --variant).
+var prepareFlags = []Flag{
+	flag(Text, "--add-user"), flag(Dir, "--code"), flag(Dir, "--source"), flag(File, "--report"), boolFlag("--yes", "-y"),
+}
+
 // templateFlags: the template subcommands share parseInitFlags.
 var templateFlags = []Flag{
 	flag(Dir, "--templates-path"),
@@ -406,6 +411,12 @@ func Spec() *Command {
 			{Name: "config", Desc: "Configure this project's booth", Flags: configFlags, Args: []Kind{Dir}},
 			{Name: "just-init", Desc: "Write a starter Justfile",
 				Flags: []Flag{boolFlag("--yes", "-y"), flag(Dir, "--code")}, Args: []Kind{Dir}},
+			{Name: "prepare", Desc: "[Experimental] Run booth code on this machine",
+				Subs: []*Command{
+					{Name: "gha", Desc: "Prepare a GitHub Actions runner (base booth)", Flags: prepareFlags},
+					{Name: "ubuntu", Desc: "Prepare this Ubuntu 26.04 machine",
+						Flags: append([]Flag{{Names: []string{"--variant"}, Kind: Enum, Values: variantValues}}, prepareFlags...)},
+				}},
 			{Name: "tools-cache", Desc: "Manage the tools cache",
 				Subs: []*Command{
 					{Name: "list", Desc: "List cached tools"},

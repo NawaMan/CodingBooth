@@ -13,6 +13,8 @@
 #   - every one of the example's own .cb-tests/inBooth-test*.sh, each in a
 #     login shell. BOOTH_CONTAINER_NAME is set so the example's Justfile runs
 #     its recipes here instead of starting a booth.
+# CHECK_SHELL (default 'bash -lc') runs each check; 'bash -c' runs them in a
+# shell that reads no profile, as a later GHA step after `booth prepare gha` does.
 # Appends to $REPORT.
 # -----------------------------------------------------------------------------
 
@@ -21,11 +23,12 @@ set -uo pipefail
 REPORT="${REPORT:-$HOME/host-provision-report.txt}"
 TESTLOG="${REPORT%.txt}-tests.log"
 export BOOTH_CONTAINER_NAME="${BOOTH_CONTAINER_NAME:-host-provision}"
+read -ra CHECK_SHELL <<< "${CHECK_SHELL:-bash -lc}"
 FAILS=0
 
-check() {   # check <label> <command>   (login shell)
+check() {   # check <label> <command>   (CHECK_SHELL: a login shell by default)
   local label="$1" cmd="$2" out rc
-  out="$(bash -lc "$cmd" 2>&1 < /dev/null)"; rc=$?
+  out="$("${CHECK_SHELL[@]}" "$cmd" 2>&1 < /dev/null)"; rc=$?
   printf '\n===== %s (rc=%s)\n%s\n' "$label" "$rc" "$out" >> "$TESTLOG"   # full output, beside the report
   out="$(printf '%s' "$out" | grep -v '^\s*$' | tail -n 1 | cut -c1-110)"
   if [ "$rc" -eq 0 ]; then
@@ -47,7 +50,6 @@ check "rc profile block present"    'grep -q "CodingBooth profile" "$HOME/.bashr
 
 shopt -s nullglob
 tests=(.cb-tests/inBooth-test[0-9][0-9][0-9]-*.sh)
-# 38 of the 96 examples have in-booth tests; the rest are provisioned but unverified.
 [ "${#tests[@]}" -gt 0 ] || echo "UNTESTED  no .cb-tests/inBooth-test*.sh in $PWD" | tee -a "$REPORT"
 for t in "${tests[@]}"; do
   check "example: $(basename "$t" .sh)" "bash '$t'"

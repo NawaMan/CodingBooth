@@ -10,7 +10,16 @@ This file contains a list of changes for each released version.
   `CB_USER_HOME`, and the claude-code, mongodb and redis startup hooks use `$HOME`. Unset, every
   value is what it was, so a booth is unchanged. Every example now has in-booth tests
   (`.cb-tests/inBooth-*.sh`), and a hand-started workflow runs them on a GitHub-hosted runner:
-  88 of 89 examples pass there. No user-facing feature yet. See `docs/REUSE_BOOTH.md`.
+  88 of 89 examples pass there. See `docs/REUSE_BOOTH.md`.
+
+- **`booth prepare gha` / `booth prepare ubuntu` (experimental) run a project's booth code on the
+  machine itself, without a container.** From the project folder, it replays the base image, the
+  variant (`ubuntu --variant`, else `config.toml`'s; `gha` is always base), the Boothfile, and
+  booth-entry's user steps, then lists every failing line and exits 1 if there was one. It checks
+  the machine first (Ubuntu 26.04; a GitHub Actions runner for `gha`), runs as a user that can
+  sudo (as root it asks for `--add-user <name>`), and asks before changing an Ubuntu machine unless
+  `--yes`. On GHA, later steps get the environment through `GITHUB_ENV` / `GITHUB_PATH`. The
+  scripts are embedded in the binary (about 2.4 MB); `--source <checkout>` uses a checkout instead.
 
 - **Zed is selectable as an IDE.** `--select zed` (on a desktop variant) installs the Zed editor
   from its official GitHub release, puts a launcher at `/usr/local/bin/zed`, and adds Zed to the
