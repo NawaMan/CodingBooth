@@ -1,0 +1,920 @@
+#!/usr/bin/env bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
+# -----------------------------------------------------------------------------
+# booth-entry
+#
+# Purpose:
+#   This is the core component that enable smooth host-container access to shared files.
+#   It is a container entry script that aligns the in-container "coder" user/group with
+#   the host's UID/GID, ensures passwordless sudo, prepares $HOME and code path,
+#   and finally execs the given command as "coder".
+#
+#   This allows files created in the container to be owned by the host user
+#   when a bind mount is used (e.g., -v $PWD:/home/coder/code).
+#
+# Here is what this script does:
+# - Ensure user/group alignment
+# - Setup user profile/environment
+# - Prepare the user's home directory
+# - Give coder the controlling pty, when this process has one
+# - Run one-time CodingBooth startup hooks
+# - Execute the requested command
+#
+# Approach for ensuring the user/group alignment:
+#   1) Ensure '$USER_NAME' group exists (with any GID for now). Prefer HOST_GID if free ...
+#   2) If some other group owns HOST_GID, move it to a free gid (keep its name) ...
+#   3) Set 'coder' group's gid to HOST_GID (if not already) ...
+#   4) Ensuring user '$USER_NAME' exists and matches HOST_UID...
+#   5) Change the owner after the UID/GID adjustment.
+#
+# Notes:
+#   * This script prefers to minimally mutate the system: it only moves aside
+#     conflicting UID/GID holders when necessary.
+#   * Designed to be re-run safely (idempotent).
+#   * No-op if host UID/GID matches current "coder" UID/GID and ownership is OK.
+# -----------------------------------------------------------------------------
+
+set -euo pipefail
+
+# Verbose logging (default: false)
+BOOTH_VERBOSE="${BOOTH_VERBOSE:-false}"
+info() {
+  if [ "$BOOTH_VERBOSE" = "true" ]; then
+    printf '[cb-setup] %s\n' "$*"
+  fi
+}
+
+
+section() {
+  if [ "$BOOTH_VERBOSE" = "true" ]; then
+    printf '\n'
+    printf '[cb-setup] ====================================================================\n'
+    printf '[cb-setup] %s\n' "$*"
+    printf '[cb-setup] --------------------------------------------------------------------\n'
+  fi
+}
+
+# Read .booth/owner-permission.yaml and apply each entry to its mount point.
+# The file is a short list written by booth config:
+#
+#   - path: "/opt/pip-cache"
+#     user: "coder"
+#     group: "coder"
+#     mode: "1777"
+#
+# A directory entry sets the mode on that directory and every directory under
+# it, and the owner on every entry in the tree, files included, without
+# crossing onto another filesystem. Files keep the mode they already have.
+apply_owner_permissions() {
+  local file="${CODE_DIR}/.booth/owner-permission.yaml"
+  [ -f "$file" ] || return 0
+  local path="" user="" group="" mode="" line key value
+  while IFS= read -r line || [ -n "$line" ]; do
+    line="${line%%#*}"
+    line="${line#"${line%%[![:space:]]*}"}"
+    line="${line%"${line##*[![:space:]]}"}"
+    [ -n "$line" ] || continue
+    if [[ "$line" == -* ]]; then
+      apply_one_owner_permission "$path" "$user" "$group" "$mode"
+      path="" user="" group="" mode=""
+      line="${line#-}"
+      line="${line#"${line%%[![:space:]]*}"}"
+    fi
+    key="${line%%:*}"
+    value="${line#*:}"
+    value="${value#"${value%%[![:space:]]*}"}"
+    value="${value%"${value##*[![:space:]]}"}"
+    value="${value#\"}"
+    value="${value%\"}"
+    value="${value#\'}"
+    value="${value%\'}"
+    case "$key" in
+      path)  path="$value" ;;
+      user)  user="$value" ;;
+      group) group="$value" ;;
+      mode)  mode="$value" ;;
+    esac
+  done < "$file"
+  apply_one_owner_permission "$path" "$user" "$group" "$mode"
+}
+
+apply_one_owner_permission() {
+  local path="$1" user="$2" group="$3" mode="$4" own="" uid="" gid=""
+  [ -n "$path" ] || return 0
+  case "$path" in
+    /*) ;;
+    *) printf '[cb-setup] owner-permission: skip %s (not absolute)\n' "$path" >&2; return 0 ;;
+  esac
+  case "$path" in
+    *..*) printf '[cb-setup] owner-permission: skip %s (refuses ..)\n' "$path" >&2; return 0 ;;
+  esac
+  if [ -n "$mode" ] && ! [[ "$mode" =~ ^[0-7]{3,4}$ ]]; then
+    printf '[cb-setup] owner-permission: skip %s (mode %s is not octal)\n' "$path" "$mode" >&2
+    return 0
+  fi
+  if ! awk -v p="$path" '$5 == p { found=1 } END { exit found ? 0 : 1 }' /proc/self/mountinfo; then
+    printf '[cb-setup] owner-permission: skip %s (not a mount point)\n' "$path" >&2
+    return 0
+  fi
+  if [ -n "$user" ] && [ -n "$group" ]; then
+    own="$user:$group"
+  elif [ -n "$user" ]; then
+    own="$user"
+  elif [ -n "$group" ]; then
+    own=":$group"
+  fi
+  if [ -d "$path" ]; then
+    # The mode is for directories only, on purpose: Go makes the files in a
+    # module cache read-only (0444) so a build cannot quietly mutate a
+    # dependency it has already verified, and 1777 on them would undo that.
+    if [ -n "$mode" ]; then
+      find "$path" -xdev -type d -exec chmod "$mode" {} + || true
+    fi
+    # Ownership, in contrast, has to reach the files. Docker seeds a fresh
+    # volume from whatever the image holds at that path, so a cache written by
+    # a build-time `go install` arrives owned by the build-time uid (1000) —
+    # and on a host whose uid is not 1000 coder cannot write those files even
+    # though step 4 aligned it to HOST_UID. A 1777 directory does not save it:
+    # `go` opens $GOCACHE/trim.txt for writing on every build, an open on the
+    # existing file, which failed with "permission denied" on every Mac (uid
+    # 501) and on any Linux account off 1000.
+    #
+    # Filtered on the current owner, like the home sweep in step 5, so a
+    # 26k-entry module cache costs one traversal — not 26k chowns — per start.
+    # -h and find's own no-follow default keep a symlink in the tree from
+    # redirecting the chown at something outside it.
+    if [ -n "$user" ]; then
+      uid="$user"
+      case "$user" in *[!0-9]*) uid="$(id -u "$user" 2>/dev/null || true)" ;; esac
+      if [ -n "$uid" ]; then
+        find "$path" -xdev ! -user "$uid" -exec chown -h "$uid" {} + 2>/dev/null || true
+      else
+        find "$path" -xdev -exec chown -h "$user" {} + 2>/dev/null || true
+      fi
+    fi
+    if [ -n "$group" ]; then
+      gid="$group"
+      case "$group" in *[!0-9]*) gid="$(getent group "$group" 2>/dev/null | cut -d: -f3)" ;; esac
+      if [ -n "$gid" ]; then
+        find "$path" -xdev ! -group "$gid" -exec chgrp -h "$gid" {} + 2>/dev/null || true
+      else
+        find "$path" -xdev -exec chgrp -h "$group" {} + 2>/dev/null || true
+      fi
+    fi
+    info "owner-permission: $path user=${user:-} group=${group:-} mode=${mode:-}"
+  elif [ -e "$path" ]; then
+    if [ -n "$mode" ]; then
+      chmod "$mode" "$path" || true
+    fi
+    if [ -n "$own" ]; then
+      chown "$own" "$path" || true
+    fi
+    info "owner-permission: $path user=${user:-} group=${group:-} mode=${mode:-}"
+  else
+    printf '[cb-setup] owner-permission: skip %s (missing)\n' "$path" >&2
+  fi
+}
+
+# Make host.docker.internal resolve on engines that cannot be asked to. Docker
+# and Podman map it themselves (--add-host ...:host-gateway); Apple container
+# has no such flag, so the CLI passes the network gateway as BOOTH_HOST_GATEWAY
+# and the mapping is written here. Unset everywhere else: a no-op.
+if [ "${CB_TARGET:-booth}" = "booth" ]; then   # CB_TARGET: container only
+if [ -n "${BOOTH_HOST_GATEWAY:-}" ] && ! getent hosts host.docker.internal >/dev/null 2>&1; then
+  if printf '%s\thost.docker.internal\n' "$BOOTH_HOST_GATEWAY" >> /etc/hosts 2>/dev/null; then
+    info "Mapped host.docker.internal to $BOOTH_HOST_GATEWAY"
+  else
+    info "Could not map host.docker.internal to $BOOTH_HOST_GATEWAY (/etc/hosts not writable)"
+  fi
+fi
+
+# --apple-low-ports: let coder open ports below 1024 on Apple container, which
+# (unlike Docker) leaves the kernel's limit at 1024. booth--as-coder, which
+# every coder process below is started through, reads this marker and hands
+# coder NET_BIND_SERVICE. Root-owned, so nothing inside can switch it on; and
+# cleared otherwise, since a restarted booth keeps its filesystem.
+if [ "${BOOTH_LOW_PORTS:-false}" = "true" ]; then
+  : > /run/booth-low-ports
+  info "Low ports allowed for coder (--apple-low-ports)"
+else
+  rm -f /run/booth-low-ports
+fi
+fi                                              # CB_TARGET: container only
+
+section "Ensure user/group alignment ..."
+
+# CB_TARGET exception: the user and paths, unchanged when the variables are unset.
+USER_NAME="${CB_USER_NAME:-coder}"
+HOME_DIR="${CB_USER_HOME:-/home/${USER_NAME}}"
+CODE_NAME="${CODE_NAME:-code}"
+CODE_DIR="${CB_CODE_DIR:-/home/${USER_NAME}/${CODE_NAME}}"
+USER_SHELL="${USER_SHELL:-/bin/bash}"
+# setup bash replaces /usr/bin/bash with a script that dispatches on CB_BASH
+# (see use-bash). A login shell is told by argv[0] "-bash", which a script
+# loses, so log in with the real binary it dispatches to.
+if [[ "$USER_SHELL" == /bin/bash || "$USER_SHELL" == /usr/bin/bash ]] && [[ -x /usr/bin/bash.distro ]]; then
+  USER_SHELL=/usr/bin/bash.distro
+fi
+HOST_UID="${HOST_UID:-1000}"
+HOST_GID="${HOST_GID:-1000}"
+
+info "USER_NAME=$USER_NAME HOME_DIR=$HOME_DIR CODE_DIR=$CODE_DIR"
+info "HOST_UID=$HOST_UID HOST_GID=$HOST_GID"
+
+# Capture original UID/GID before any modifications (for ownership fixup later)
+ORIG_UID=""
+ORIG_GID=""
+if id -u "$USER_NAME" >/dev/null 2>&1; then
+  ORIG_UID="$(id -u "$USER_NAME")"
+fi
+if getent group "$USER_NAME" >/dev/null 2>&1; then
+  ORIG_GID="$(getent group "$USER_NAME" | cut -d: -f3)"
+fi
+info "ORIG_UID=$ORIG_UID ORIG_GID=$ORIG_GID"
+
+# Find a free numeric uid/gid starting from 2000 to relocate conflicts safely
+find_free_uid() { local uid=2000; while getent passwd "$uid" >/dev/null 2>&1; do uid=$((uid+1)); done; echo "$uid"; }
+find_free_gid() { local gid=2000; while getent group  "$gid" >/dev/null 2>&1; do gid=$((gid+1)); done; echo "$gid"; }
+
+# Wrappers around usermod/groupmod that (a) hide benign "no changes" noise and
+# (b) survive lock contention. Both tools take a global lock on /etc/passwd and
+# /etc/group; the several back-to-back calls this script makes can transiently
+# collide and fail with "cannot lock ...; try again later." Under 'set -e' such
+# a failure would abort the entrypoint mid-alignment — and if it hit the home
+# restore below, leave coder's home pointed at a throwaway temp dir. Retry on
+# lock errors only; real failures still surface with their original exit code.
+_mod_retry() {
+  local out rc tries=0
+  while :; do
+    out="$("$@" 2>&1)"; rc=$?
+    [ "$rc" -eq 0 ] && break
+    printf '%s\n' "$out" | grep -qiE 'cannot lock|try again later' || break
+    [ "$tries" -ge 25 ] && break
+    tries=$((tries + 1)); sleep 0.2
+  done
+  printf '%s' "$out" | grep -v -F "no changes" >&2 || true
+  return "$rc"
+}
+UserMod()  { _mod_retry usermod  "$@"; }
+GroupMod() { _mod_retry groupmod "$@"; }
+
+if [ "${CB_TARGET:-booth}" = "booth" ]; then   # CB_TARGET: container only
+info "1) Ensure '$USER_NAME' group exists (with any GID for now). Prefer HOST_GID if free ..."
+if ! getent group "$USER_NAME" >/dev/null 2>&1; then
+  if getent group "$HOST_GID"  >/dev/null 2>&1; then
+    groupadd "$USER_NAME"
+  else
+    groupadd -g "$HOST_GID" "$USER_NAME"
+  fi
+fi
+
+info "2) If some other group owns HOST_GID, move it to a free gid (keep its name) ..."
+owner_of_host_gid="$(getent group "$HOST_GID" | cut -d: -f1 || true)"
+if [ -n "$owner_of_host_gid" ] && [ "$owner_of_host_gid" != "$USER_NAME" ]; then
+  tmp_gid="$(find_free_gid)"
+  GroupMod -g "$tmp_gid" "$owner_of_host_gid"
+fi
+
+info "3) Set 'coder' group's gid to HOST_GID (if not already) ..."
+current_gid="$(getent group "$USER_NAME" | cut -d: -f3)"
+if [ "$current_gid" != "$HOST_GID" ]; then
+  GroupMod -g "$HOST_GID" "$USER_NAME"
+fi
+
+info "4) Ensuring user '$USER_NAME' exists and matches HOST_UID..."
+existing_uid_user="$(getent passwd "$HOST_UID" | cut -d: -f1 || true)"
+if id -u "$USER_NAME" >/dev/null 2>&1; then
+  current_uid="$(id -u "$USER_NAME" 2>/dev/null || true)"
+  # minimal additions: detect current primary group name and shell.
+  # These MUST stay non-fatal: if a prior start was interrupted mid-alignment
+  # (e.g. an early 'docker stop' after a --daemon run), coder's primary gid can
+  # be left pointing at a group id that no longer has a name entry. 'id -gn'
+  # then fails ("cannot find name for group ID N"), and as a bare assignment
+  # under 'set -e' that would kill the entrypoint on every subsequent start —
+  # an unrecoverable booth. An empty value here is fine: the branches below
+  # treat it as a mismatch and re-assert coder's uid/gid/shell, converging the
+  # account from whatever partial state the interrupted run left behind.
+  current_gid_name="$(id -gn "$USER_NAME" 2>/dev/null || true)"
+  current_shell="$(getent passwd "$USER_NAME" | cut -d: -f7 || true)"
+
+  if [ "$current_uid" != "$HOST_UID" ]; then
+    # Clear the lock
+    sudo rm -f         \
+      /etc/.pwd.lock   \
+      /etc/passwd.lock \
+      /etc/shadow.lock \
+      /etc/group.lock
+
+    # If another user has HOST_UID, move them out of the way
+    if [ -n "$existing_uid_user" ] && [ "$existing_uid_user" != "$USER_NAME" ]; then
+      temp_uid="$(find_free_uid)"; UserMod -u "$temp_uid" "$existing_uid_user"
+    fi
+
+    # Change coder's uid to the host's. usermod's -u triggers an implicit
+    # recursive chown of the home directory tree.
+    #
+    # On non-Linux hosts (Docker Desktop for Mac, and Windows bind mounts) that
+    # chown hits the host-mounted code dir under $HOME and fails (EPERM), making
+    # usermod exit 12 (E_HOMEDIR). To dodge it we briefly repoint coder's home at
+    # a throwaway dir for the -u, then restore it.
+    #
+    # On Linux we DON'T do that repoint, because it is the source of a nasty
+    # race: if an early 'docker stop' interrupts this block between the repoint
+    # and the restore, /etc/passwd is left with coder's home pointing at a
+    # now-deleted temp dir, and every later start drops the user into that dead
+    # $HOME — login shells and git fail ("Permission denied"), killing the
+    # container under 'set -e'. On Linux the implicit chown is harmless (the bind
+    # mount's files are host-owned, not old-uid-owned, so usermod skips them), so
+    # we change the uid in place with no temp-home and no window to be caught in.
+    # Step 5 below reconciles home ownership regardless of platform.
+    if [ "${HOST_OS:-}" = "LIN" ]; then
+      UserMod -u "$HOST_UID" -g "$USER_NAME" -s "$USER_SHELL" "$USER_NAME"
+    else
+      _tmp_home="$(mktemp -d)"
+      UserMod -d "$_tmp_home" "$USER_NAME" || true
+      UserMod -u "$HOST_UID" -g "$USER_NAME" -s "$USER_SHELL" "$USER_NAME"
+      UserMod -d "$HOME_DIR" "$USER_NAME"
+      rmdir "$_tmp_home" 2>/dev/null || true
+    fi
+  else
+    # Only call usermod if group or shell actually differ (avoid "no changes" noise)
+    if [ "$current_gid_name" != "$USER_NAME" ] || [ "$current_shell" != "$USER_SHELL" ]; then
+      UserMod -g "$USER_NAME" -s "$USER_SHELL" "$USER_NAME"
+    fi
+  fi
+else
+  # 'coder' doesn't exist yet; if HOST_UID is already taken, move that user aside
+  if [ -n "$existing_uid_user" ] && [ "$existing_uid_user" != "$USER_NAME" ]; then
+    temp_uid="$(find_free_uid)"; UserMod -u "$temp_uid" "$existing_uid_user"
+  fi
+  # Create coder. Reuse existing HOME_DIR if present; otherwise create it (-m).
+  if [ -d "$HOME_DIR" ]; then
+    useradd    -u "$HOST_UID" -g "$USER_NAME" -s "$USER_SHELL" "$USER_NAME"
+  else
+    useradd -m -u "$HOST_UID" -g "$USER_NAME" -s "$USER_SHELL" "$USER_NAME"
+  fi
+fi
+
+# Self-heal coder's recorded home directory. The uid-alignment block above
+# temporarily points coder's home at a throwaway dir so 'usermod -u' does not
+# recursively chown into bind mounts, then restores it. If an earlier start was
+# interrupted (or lost a usermod lock race) after the uid change but before the
+# restore, /etc/passwd can keep that now-deleted, root-owned temp dir as coder's
+# home. Because the block only runs when the uid differs, the stale home would
+# then survive every stop/start, and runuser/login shells/git would fail with
+# "$HOME" pointing at an inaccessible directory — taking the container down.
+# Reconcile it unconditionally on every start.
+recorded_home="$(getent passwd "$USER_NAME" | cut -d: -f6)"
+if [ "$recorded_home" != "$HOME_DIR" ]; then
+  info "Repairing $USER_NAME home in /etc/passwd: '$recorded_home' -> '$HOME_DIR'"
+  UserMod -d "$HOME_DIR" "$USER_NAME"
+fi
+
+info "4b) Copying staged Cache/Shared files into place (booth--file-sync init)..."
+# A single .booth/cache or .booth/shared file arrives under the staging root, not
+# at its path: a file mount there would make every rename-based save fail with
+# EBUSY. Put a plain copy at the path before anything reads it — the dotfile and
+# home-seed steps below treat it as already present, as they did the mount. The
+# parent folders this creates in the home are handed to coder by step 5.
+booth--file-sync init
+
+info "5) Reconciling ownership of $HOME_DIR to $HOST_UID:$HOST_GID (skipping $CODE_DIR)..."
+# Reconcile UNCONDITIONALLY (not just when ORIG_UID/GID differ). Step 4 above
+# changes coder's uid/gid in /etc/passwd atomically, but this chown of the home
+# tree is a separate, slower step. If a previous start aligned the uid but was
+# interrupted before this chown finished — e.g. an early 'docker stop' right
+# after a --daemon run returns — a later start would read the already-aligned
+# uid as ORIG_UID, conclude "no change needed", skip the chown, and leave
+# $HOME_DIR owned by the stale build-time uid. coder then cannot write its own
+# home, so startup hooks (git config, etc.) fail with "Permission denied" under
+# 'set -e' and the container exits. Targeting only files whose owner/group
+# already differs keeps this cheap and idempotent on every start.
+find "$HOME_DIR" -xdev -path "$CODE_DIR" -prune -o ! -user  "$HOST_UID" -exec chown "$HOST_UID" {} + 2>/dev/null || true
+find "$HOME_DIR" -xdev -path "$CODE_DIR" -prune -o ! -group "$HOST_GID" -exec chgrp "$HOST_GID" {} + 2>/dev/null || true
+
+# .booth/owner-permission.yaml names mount points (a shared pip cache, for
+# example) whose directories should be writable by coder. The home sweep above
+# does not walk them: they are outside $HOME, and -xdev stops at the volume.
+# Apply after coder's uid exists, so a user name in the file resolves to the
+# host uid. A path that is not a mount point is left alone.
+apply_owner_permissions
+
+info "5b) Telling git the code folder is trustworthy (git safe.directory)..."
+# Step 5 skips $CODE_DIR because it cannot chown a bind mount -- and on an
+# engine that shares the host folder through a VM (Docker Desktop, Colima,
+# Podman machine) the mount ROOT arrives owned by 0:0 no matter who owns it on
+# the host, while everything *under* it maps to HOST_UID correctly. git checks
+# the owner of the repository directory before every command, so a booth whose
+# code folder is a git repo answered every git call with "detected dubious
+# ownership": git unusable in the project, on every Mac.
+#
+# safe.directory is the only lever left. The ownership cannot be fixed (a chown
+# on the mount root is silently ignored), and git reads this key only from
+# protected configuration -- the system file, never coder's own, so a repo
+# cannot grant it to itself. The code folder alone needs naming: a repo in a
+# subfolder is owned by HOST_UID like any other file there.
+#
+# What it gives up: git will work in the code folder even when it is genuinely
+# owned by someone else, not only when the engine made it look that way. In a
+# booth that folder is the user's own project, mounted by their own command, so
+# that trust is already given. On Linux the ownership matches and git never
+# consults the entry; it is set unconditionally rather than per engine so there
+# is one behaviour to reason about. See docs/BOOTH_ENGINES.md.
+#
+# Never fatal (this script runs under `set -e`): the system config is a file
+# like any other, and a booth started with a read-only root filesystem cannot
+# be written to. git not working in the project is worth a line in the log; a
+# booth that refuses to start over it is not.
+if command -v git >/dev/null 2>&1; then
+  if ! git config --system --get-all safe.directory 2>/dev/null | grep -qxF "$CODE_DIR"; then
+    git config --system --add safe.directory "$CODE_DIR" \
+      || printf '[cb-setup] could not record %s as a git safe.directory; git may refuse to run there\n' \
+         "$CODE_DIR" >&2
+  fi
+fi
+fi                                              # CB_TARGET: container only
+
+info "6) For Windows, find all mount point from the host and in each mount point, find all file/folder that is root:root and change them to coder:coder"
+if [ "${HOST_OS:-}" = "WIN" ]; then
+  info "Detected Windows host - fixing ownership recursively for root:root files in mount points..."
+
+  # Get all mount points (excluding system/special filesystems)
+  # Focus on user-accessible mounts, particularly /home and bind mounts
+  mount_points=$(mount | grep -E '^(/dev/|[a-zA-Z]:)' | grep -v -E '(proc|sys|dev/pts|run|tmp|shm|mqueue|cgroup|overlay)' | awk '{print $3}' | sort -u)
+
+  # Always include CODE_DIR if it exists and is a mount
+  if [ -d "$CODE_DIR" ]; then
+    mount_points="$mount_points $CODE_DIR"
+  fi
+
+  # Remove duplicates and sort
+  mount_points=$(echo "$mount_points" | tr ' ' '\n' | sort -u | tr '\n' ' ')
+
+  for mount_point in $mount_points; do
+    # Skip if mount point doesn't exist or isn't accessible
+    [ -d "$mount_point" ] || continue
+
+    info "  Recursively checking mount point: $mount_point"
+
+    # Find and fix root:root owned files/folders RECURSIVELY in this mount point
+    # This is recursive by default - find traverses all subdirectories
+    # -xdev: don't cross filesystem boundaries
+    # ( -user 0 -o -group 0 ): owned by root (either user OR group)
+    # -exec: change ownership to coder
+    find "$mount_point" -xdev \( -user 0 -o -group 0 \) -exec chown "$HOST_UID:$HOST_GID" {} + 2>/dev/null || true
+  done
+
+  # .booth/ and the booth wrapper are bind-mounted read-only, so the loop above
+  # cannot reach them: -xdev will not cross into them, and a chown would fail
+  # EROFS anyway. They get stamped host-side at init/config time instead -- see
+  # StampBoothOwnership. The one exception is .booth/.tmp, which is mounted
+  # READ-WRITE and is created by the CLI at run time, i.e. after that stamp ran,
+  # so it can and must be reconciled here.
+  booth_tmp="$CODE_DIR/.booth/.tmp"
+  if [ -d "$booth_tmp" ]; then
+    find "$booth_tmp" \( -user 0 -o -group 0 \) -exec chown "$HOST_UID:$HOST_GID" {} + 2>/dev/null || true
+  fi
+
+  info "Windows ownership fix completed (recursive)."
+fi
+
+
+section "Set up environment for coder and switch to code"
+export HOME="$HOME_DIR"
+export PATH="$HOME/.local/bin:$PATH"
+cd "$CODE_DIR"
+
+# Configure timezone from TZ env var (set by CLI from host detection)
+if [ -n "${TZ:-}" ] && [ -f "/usr/share/zoneinfo/$TZ" ]; then
+  ln -sf "/usr/share/zoneinfo/$TZ" /etc/localtime
+  echo "$TZ" > /etc/timezone
+  info "Timezone set to $TZ"
+fi
+
+section "Setup user profile/environment"
+
+info "7) Ensuring default dotfiles exist in $HOME_DIR..."
+
+# ---- .bashrc ----
+if [ ! -f "$HOME_DIR/.bashrc" ]; then
+  if [ -f /etc/skel/.bashrc ]; then
+    cp /etc/skel/.bashrc "$HOME_DIR/.bashrc"
+  else
+    touch "$HOME_DIR/.bashrc"
+  fi
+  echo 'export PS1="\[\e[1;32m\]${BOOTH_CONTAINER_NAME}\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ "' >> "$HOME_DIR/.bashrc"
+fi
+
+# ---- .zshrc ----
+if [ ! -f "$HOME_DIR/.zshrc" ]; then
+  if [ -f /etc/skel/.zshrc ]; then
+    cp /etc/skel/.zshrc "$HOME_DIR/.zshrc"
+  else
+    touch "$HOME_DIR/.zshrc"
+  fi
+  {
+    printf '\n# ---- custom prompt (added at build) ----\n'
+    printf 'setopt PROMPT_SUBST\n'
+    printf 'PROMPT="%%B%%F{green}${BOOTH_CONTAINER_NAME}%%b%%f:%%B%%F{blue}%%~%%b%%f> "\n'
+    printf '# ---- end custom prompt ----\n'
+  } >> "$HOME_DIR/.zshrc"
+fi
+
+info "8) Ensuring default profile exists in $HOME_DIR..."
+
+# Ensure .profile exists first (login shells) - prefer skeleton if available
+if [ ! -f "$HOME_DIR/.profile" ]; then
+  if [ -f /etc/skel/.profile ]; then
+    cp /etc/skel/.profile "$HOME_DIR/.profile"
+  fi
+fi
+
+# Only add minimal profile hook if .profile still doesn't exist (no skeleton was available)
+# This is a fallback - the skeleton .profile already handles sourcing .bashrc properly
+if [ ! -f "$HOME_DIR/.profile" ]; then
+  cat >"$HOME_DIR/.profile" <<'RC'
+# Minimal profile for login shells
+[ -f /etc/profile ] && . /etc/profile
+RC
+fi
+
+# Add CodingBooth interactive hook to shell rc files (idempotent + verbose)
+ensure_cb_profile_block() {
+  local rc="$1"
+  local marker="# ---- CodingBooth profile ----"
+
+  [ -f "$rc" ] || return 0
+  grep -Fq "$marker" "$rc" && return 0
+
+  cat >>"$rc" <<'RC'
+
+# ---- CodingBooth profile ----
+for f in /etc/profile.d/*-cb-*.sh; do
+  [ -r "$f" ] || continue
+  if [ "${BOOTH_VERBOSE:-}" = "true" ] || [ "${BOOTH_VERBOSE:-}" = "1" ] || [ "${BOOTH_VERBOSE:-}" = "yes" ]; then
+    echo "[cb-profile] running: $f" >&2
+  fi
+  . "$f"
+done
+RC
+}
+
+ensure_cb_profile_block "$HOME_DIR/.bashrc"
+ensure_cb_profile_block "$HOME_DIR/.zshrc"
+
+info "10) Setting permissions for dotfiles..."
+chown "$HOST_UID:$HOST_GID" \
+  "$HOME_DIR/.bashrc"  \
+  "$HOME_DIR/.zshrc"   \
+  "$HOME_DIR/.profile" \
+  2>/dev/null || true
+
+
+section "Prepare the user's home directory"
+
+# smart_copy: Fine-grained copy with .mount-this support.
+# Usage: smart_copy <source_dir> <dest_dir> <mode>
+#   mode: "seed" (no-clobber) or "override" (always overwrite)
+#
+# If a source directory contains a .mount-this marker, the entire directory
+# is copied as a unit. Otherwise, only individual files are copied and
+# subdirectories are recursed into. This allows precise control over which
+# files get seeded/overridden (matching the .booth/cache/ mount logic).
+smart_copy() {
+  local src="$1" dest="$2" mode="$3"
+
+  [ -d "$src" ] || return 0
+
+  # If .mount-this marker exists, copy entire directory contents
+  if [ -f "$src/.mount-this" ]; then
+    if [ "$mode" = "seed" ]; then
+      cp -rn "$src/." "$dest/" 2>/dev/null || true
+    else
+      cp -r "$src/." "$dest/" 2>/dev/null || true
+    fi
+    return
+  fi
+
+  # No marker anywhere below this point, so nothing down there can ask for
+  # different treatment and the walk would only be an expensive way to reproduce
+  # what a single recursive cp already does. Take the whole subtree at once: a
+  # seeded home runs to tens of thousands of entries and the walk forks twice per
+  # entry, which is enough to turn a large seed into a multi-minute startup.
+  #
+  # -L keeps the walk's semantics. The walk tested entries with [ -f ] / [ -d ],
+  # both of which follow symlinks, so it copied link targets as real files and
+  # never the links themselves — which is what a seed wants, since a link's target
+  # generally does not exist inside the container.
+  if [ -z "$(find "$src" -name .mount-this -print -quit 2>/dev/null)" ]; then
+    if [ "$mode" = "seed" ]; then
+      cp -rnL "$src/." "$dest/" 2>/dev/null || true
+    else
+      cp -rL "$src/." "$dest/" 2>/dev/null || true
+    fi
+    return
+  fi
+
+  # A marker lives somewhere below: walk entry by entry so it can be honoured.
+  for entry in "$src"/* "$src"/.*; do
+    [ -e "$entry" ] || continue
+    local name="${entry##*/}"
+    case "$name" in .|..|.mount-this) continue ;; esac
+
+    if [ -d "$entry" ]; then
+      mkdir -p "$dest/$name"
+      smart_copy "$entry" "$dest/$name" "$mode"
+    elif [ -f "$entry" ]; then
+      if [ "$mode" = "seed" ]; then
+        cp -n "$entry" "$dest/$name" 2>/dev/null || true
+      else
+        cp "$entry" "$dest/$name" 2>/dev/null || true
+      fi
+    fi
+  done
+}
+
+# chown_copied: hand the user everything a seed/override layer just placed in $HOME_DIR.
+# Usage: chown_copied <source_dir> <dest_dir>
+#
+# smart_copy runs as root, so every file it creates is born root-owned. The blanket
+# `find "$HOME_DIR" -xdev ... -user root` after the copies cannot reach all of them:
+# cache and shared mounts (.booth/cache/home/coder/.claude, say) are separate
+# filesystems and -xdev stops at their boundary. A credential seeded into one —
+# ~/.claude/.credentials.json, mode 600 — stayed root:root, so the tool that reads
+# it as coder got "Permission denied" and the mount looked present but unusable.
+#
+# Walk the SOURCE, not the destination: the cost then tracks the size of the seed
+# rather than the size of whatever the cache has accumulated (a cached ~/.m2 is
+# orders of magnitude bigger than the layer being copied over it). -L matches the
+# `cp -L` in smart_copy, which materializes link targets as real files.
+chown_copied() {
+  local src="$1" dest="$2"
+
+  [ -d "$src" ] || return 0
+  [ -d "$dest" ] || return 0
+
+  ( cd "$src" && find -L . -mindepth 1 -printf '%P\0' 2>/dev/null ) \
+    | ( cd "$dest" && xargs -0 -r chown -h "$HOST_UID:$HOST_GID" -- 2>/dev/null ) \
+    || true
+}
+
+# When --persist-home is active (BOOTH_HOME_PERSISTED=true) and the home volume
+# has already been seeded, skip seed (no-clobber) layers to preserve user
+# customizations. Override layers always run to enforce team/image policies.
+SEED_MARKER="$HOME_DIR/.cb-home-seeded"
+HOME_PERSISTED="${BOOTH_HOME_PERSISTED:-false}"
+RUN_SEEDS=true
+if [ "$HOME_PERSISTED" = "true" ] && [ -f "$SEED_MARKER" ]; then
+  RUN_SEEDS=false
+  info "Home volume already seeded (marker exists), skipping seed layers."
+fi
+
+if [ "$RUN_SEEDS" = "true" ]; then
+  info "11) Copying project's home-seed folder (team defaults, no-clobber)..."
+  BOOTH_HOME_SEED_DIR=""
+  if [ -d "$CODE_DIR/.booth/home-seed" ]; then
+    BOOTH_HOME_SEED_DIR="$CODE_DIR/.booth/home-seed"
+  fi
+  if [ -n "$BOOTH_HOME_SEED_DIR" ]; then
+    info "Copying project home-seed files from $BOOTH_HOME_SEED_DIR to $HOME_DIR (no-clobber)..."
+    smart_copy "$BOOTH_HOME_SEED_DIR" "$HOME_DIR" seed
+    chown_copied "$BOOTH_HOME_SEED_DIR" "$HOME_DIR"
+  fi
+else
+  info "11) Skipping project's home-seed folder (home already seeded)."
+fi
+
+if [ "${CB_TARGET:-booth}" != "host" ]; then    # CB_TARGET: never overwrite a host's home
+info "11b) Copying project's home folder (team-shared overrides)..."
+BOOTH_HOME_DIR=""
+if [ -d "$CODE_DIR/.booth/home" ]; then
+  BOOTH_HOME_DIR="$CODE_DIR/.booth/home"
+fi
+if [ -n "$BOOTH_HOME_DIR" ]; then
+  info "Copying project home files from $BOOTH_HOME_DIR to $HOME_DIR (override)..."
+  smart_copy "$BOOTH_HOME_DIR" "$HOME_DIR" override
+  chown_copied "$BOOTH_HOME_DIR" "$HOME_DIR"
+fi
+fi                                              # CB_TARGET: never overwrite a host's home
+
+if [ "$RUN_SEEDS" = "true" ]; then
+  info "12) Copying seed files from /etc/cb-home-seed/ to /home/coder (no-clobber)..."
+  BOOTH_HOME_SEED="/etc/cb-home-seed"
+  if [ -d "$BOOTH_HOME_SEED" ]; then
+    info "Copying seed files from $BOOTH_HOME_SEED to $HOME_DIR..."
+    smart_copy "$BOOTH_HOME_SEED" "$HOME_DIR" seed
+    chown_copied "$BOOTH_HOME_SEED" "$HOME_DIR"
+  fi
+else
+  info "12) Skipping /etc/cb-home-seed/ (home already seeded)."
+fi
+
+if [ "$RUN_SEEDS" = "true" ]; then
+  info "12b) Seeding desktop launchers from /etc/skel/Desktop (no-clobber)..."
+  # App setups install desktop icons into /etc/skel/Desktop, but the skeleton
+  # never reaches the home through useradd: the project mount pre-creates
+  # $HOME_DIR before useradd runs, so the -m (copy skeleton) branch is never
+  # taken. Seed the launchers explicitly, like the dotfiles above.
+  if [ -d /etc/skel/Desktop ] && [ -n "$(ls -A /etc/skel/Desktop 2>/dev/null)" ]; then
+    mkdir -p "$HOME_DIR/Desktop"
+    smart_copy /etc/skel/Desktop "$HOME_DIR/Desktop" seed
+    chown_copied /etc/skel/Desktop "$HOME_DIR/Desktop"
+  fi
+else
+  info "12b) Skipping /etc/skel/Desktop (home already seeded)."
+fi
+
+if [ "${CB_TARGET:-booth}" != "host" ]; then    # CB_TARGET: never overwrite a host's home
+info "13) Copying override files from /etc/cb-home/ to /home/coder (with override)..."
+BOOTH_HOME_OVERRIDE="/etc/cb-home"
+if [ -d "$BOOTH_HOME_OVERRIDE" ]; then
+  info "Copying override files from $BOOTH_HOME_OVERRIDE to $HOME_DIR..."
+  smart_copy "$BOOTH_HOME_OVERRIDE" "$HOME_DIR" override
+  chown_copied "$BOOTH_HOME_OVERRIDE" "$HOME_DIR"
+fi
+fi                                              # CB_TARGET: never overwrite a host's home
+
+# Mark home as seeded for persist-home volumes (skip seeds on subsequent starts)
+if [ "$HOME_PERSISTED" = "true" ] && [ ! -f "$SEED_MARKER" ]; then
+  touch "$SEED_MARKER"
+  chown "$HOST_UID:$HOST_GID" "$SEED_MARKER"
+fi
+
+# Fix ownership for root-owned files/dirs that were copied in from seed or override
+if [ "${CB_TARGET:-booth}" != "host" ]; then    # CB_TARGET: a host's home is its owner's business
+find "$HOME_DIR" -xdev -user root -exec chown "$HOST_UID:$HOST_GID" {} + 2>/dev/null || true
+fi                                              # CB_TARGET: a host's home is its owner's business
+
+
+info "13b) Starting the Cache/Shared file sync (booth--file-sync watch)..."
+# After the copies, so an override layer's write to a staged file reaches the
+# host, as it did through the mount. Same process group as tini's child, so the
+# TERM of a stop reaches it and it copies once more before exiting.
+FILE_SYNC_PID=""
+if [ -n "$(find /var/lib/codingbooth/file-sync -type f -print -quit 2>/dev/null)" ]; then
+  booth--as-coder -- booth--file-sync watch &
+  FILE_SYNC_PID=$!
+fi
+
+
+section "Pty ownership"
+
+# `docker run -t` allocates this pty while we are still root. The drop to coder
+# keeps the slave, so it stays root:tty mode 0620 and gpg pinentry cannot open
+# $GPG_TTY by name. Hand that one device to coder before any user process.
+# A daemon start or a pipe has no tty: skip. A failed chown must not fail the
+# boot. Leave the mode alone, and never touch anything but a /dev/pts slave
+# (a shared host /dev would make /dev/console a host device).
+info "13c) Giving $USER_NAME ownership of the controlling pty, when there is one..."
+_cb_tty=$(tty 2>/dev/null) || _cb_tty=""
+case $_cb_tty in
+  /dev/pts/*)
+    chown "$USER_NAME" "$_cb_tty" 2>/dev/null || true
+    ;;
+esac
+unset _cb_tty
+
+
+section "Run one-time CodingBooth startup hooks"
+
+info "14) Running one-time CodingBooth startup hooks in /usr/share/startup.d..."
+RUN_ONCE_FLAG="/var/run/cb-startup.once"
+if [ -d "/usr/share/startup.d" ] && [ ! -f "$RUN_ONCE_FLAG" ]; then
+  booth--as-coder -- bash -lc '
+    # Run the startup.
+    set -euo pipefail
+    shopt -s nullglob
+    echo "Scan for CodingBooth startup hooks in /usr/share/startup.d..."           >> /tmp/startups.log
+    for f in /usr/share/startup.d/*-cb-*.sh; do
+      echo "Found startup script: $f ---"                                          >> /tmp/startups.log
+    done
+    echo "Scan completed: $(ls /usr/share/startup.d/*-cb-*.sh | wc -l) found."     >> /tmp/startups.log
+    echo ""                                                                        >> /tmp/startups.log
+    echo "Running startup scripts..."                                              >> /tmp/startups.log
+    for f in /usr/share/startup.d/*-cb-*.sh; do
+      echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" >> /tmp/startups.log
+      echo "Running startup script: $f ---"                                        >> /tmp/startups.log
+      [ -r "$f" ] && "$f"                                                          >> /tmp/startups.log
+      echo "---------------------------------------------------------------------" >> /tmp/startups.log
+    done
+  '
+  touch "$RUN_ONCE_FLAG"
+fi
+
+info "15) Running user startup scripts (.booth/startups/ and .booth/startup.sh)"
+STARTUPS_DIR="$CODE_DIR/.booth/startups"
+STARTUP_SH="$CODE_DIR/.booth/startup.sh"
+BOOTH_STARTUP_OVERRIDE="${BOOTH_STARTUP:-}"
+
+# If BOOTH_STARTUP is explicitly set, run only that (override mode)
+if [ -n "$BOOTH_STARTUP_OVERRIDE" ] && [ -f "$BOOTH_STARTUP_OVERRIDE" ] && [ -r "$BOOTH_STARTUP_OVERRIDE" ]; then
+  info "Running override startup script: $BOOTH_STARTUP_OVERRIDE"
+  booth--as-coder -- bash -lc "
+    set -euo pipefail
+    source '$BOOTH_STARTUP_OVERRIDE'
+  "
+else
+  # Run startups/ directory scripts in sorted order.
+  # Files without a NN- prefix are treated as order 50.
+  if [ -d "$STARTUPS_DIR" ]; then
+    booth--as-coder -- bash -lc "
+      set -euo pipefail
+      shopt -s nullglob
+      declare -a _sorted=()
+      for f in '$STARTUPS_DIR'/*--startup.sh; do
+        _base=\$(basename \"\$f\")
+        if [[ \"\$_base\" =~ ^[0-9]{2}- ]]; then
+          _sorted+=(\"\${_base%%--*}|\$f\")
+        else
+          _sorted+=(\"50-\${_base%%--*}|\$f\")
+        fi
+      done
+      IFS=$'\n' _sorted=(\$(sort <<< \"\${_sorted[*]}\")); unset IFS
+      for _entry in \"\${_sorted[@]}\"; do
+        _f=\"\${_entry#*|}\"
+        [ -r \"\$_f\" ] && source \"\$_f\"
+      done
+    "
+  fi
+  # Run startup.sh if it exists (backward compat)
+  if [ -f "$STARTUP_SH" ] && [ -r "$STARTUP_SH" ]; then
+    info "Running legacy startup script: $STARTUP_SH"
+    booth--as-coder -- bash -lc "
+      set -euo pipefail
+      source '$STARTUP_SH'
+    "
+  fi
+fi
+
+
+section "Sudo access control"
+
+# Revoke sudo access when BOOTH_SUDO=false.
+# This runs AFTER all setup and startup scripts so they can still use sudo during init.
+if [ "${BOOTH_SUDO:-true}" = "false" ]; then
+  info "BOOTH_SUDO=false — revoking passwordless sudo for coder"
+  rm -f /etc/sudoers.d/coder
+  rm -f /etc/sudoers.d/50-cb-base-secure-path
+  rm -f /etc/sudoers.d/tinyproxy-whitelist
+  info "Sudo access revoked for coder user"
+fi
+
+
+section "Idle monitor"
+
+if [ "${BOOTH_IDLE_TIME:-0}" -gt 0 ] 2>/dev/null; then
+  info "Starting idle monitor (idle=${BOOTH_IDLE_TIME}s, shutdown=${BOOTH_IDLE_SHUTDOWN_TIME:-60}s)"
+  booth--as-coder -- booth--idle-monitor &
+fi
+
+
+section "Lifecycle log"
+
+# As coder: the log sits in the host-mounted .booth/.tmp, and a root-owned file
+# there would shut out both coder's later lines and the host CLI's.
+if [ "${CB_TARGET:-booth}" = "booth" ]; then   # CB_TARGET: container only
+booth--as-coder -- booth--lifecycle-log started \
+  "version=${BOOTH_VERSION:-?}" "variant=${BOOTH_VARIANT_TAG:-?}" \
+  "mode=${BOOTH_RUNMODE:-?}" "port=${BOOTH_HOST_PORT:-?}" || true
+fi                                              # CB_TARGET: container only
+
+
+section "Execute the requested command"
+
+info "16) Executing the requested command as coder (default to login shell if none provided)"
+cd "$CODE_DIR"
+
+# With staged files, stay as the command's parent instead of exec-ing it. When the
+# command ends, tini (PID 1) exits and the container goes with it, killing the
+# watcher before it copies back what was written last — a shell's history is
+# written on exit. So wait for the command, then stop the watcher, which copies
+# once more, and leave with the command's status. A stop's TERM reaches the
+# command through tini -g; the trap only keeps this script alive to do the copy.
+if [ -n "$FILE_SYNC_PID" ]; then
+  set +e
+  trap ':' TERM INT HUP
+  if [ "$#" -eq 0 ]; then
+    info "No command provided; starting login shell for $USER_NAME..."
+    booth--as-coder --login
+  else
+    info "Executing as $USER_NAME: $*"
+    booth--as-coder -- "$@"
+  fi
+  status=$?
+  # Signal the watcher, not runuser above it: runuser answers a TERM with a
+  # "Session terminated" line, and exits on its own once the watcher has.
+  pkill -TERM -P "$FILE_SYNC_PID" 2>/dev/null || kill -TERM "$FILE_SYNC_PID" 2>/dev/null
+  wait "$FILE_SYNC_PID" 2>/dev/null
+  exit "$status"
+fi
+
+if [ "$#" -eq 0 ]; then
+  info "No command provided; starting login shell for $USER_NAME..."
+  exec booth--as-coder --login
+else
+  info "Executing as $USER_NAME: $*"
+  exec booth--as-coder -- "$@"
+fi

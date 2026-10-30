@@ -2,9 +2,9 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
-# This script installs Deno scripts/tools for the 'coder' user.
+# This script installs Deno scripts/tools for the booth user ('coder' unless CB_USER_NAME says otherwise).
 # It requires deno--setup.sh to have been run first.
 # Usage: deno--install.sh [deno install args...]
 # Examples:
@@ -29,6 +29,10 @@ if [ "$EUID" -ne 0 ]; then
     echo "❌ This script must be run as root (use sudo)" >&2
     exit 1
 fi
+
+# The user the packages are installed for. 'coder' in a booth; the real user
+# when provisioning a machine or a runner (see docs/REUSE_BOOTH.md).
+CB_USER_NAME="${CB_USER_NAME:-coder}"
 
 case "${1:-}" in
     -h|--help)
@@ -71,6 +75,6 @@ for arg in "$@"; do
 done
 [ "$has_global" -eq 0 ] && set -- --global "$@"
 
-# Install as coder user so scripts go to ~/.deno/bin
+# Install as the booth user so scripts go to that user's ~/.deno/bin
 echo "📦 Installing: deno install $*"
-cb_retry sudo -u coder bash -lc "deno install $*"
+cb_retry sudo -u "$CB_USER_NAME" bash -lc "deno install $*"

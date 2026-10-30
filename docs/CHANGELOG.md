@@ -4,6 +4,28 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Setups can run outside a booth (experiment, toward GitHub Actions and a plain Ubuntu machine).**
+  The install scripts that ran as `coder` (brew, bun, cargo, conan, deno, deno-pkg, dotnet, gem,
+  go, go-nb-kernel, homebrew, wails) take the user from `CB_USER_NAME` and its home from
+  `CB_USER_HOME`, and the claude-code, mongodb and redis startup hooks use `$HOME`. Unset, every
+  value is what it was, so a booth is unchanged. Every example now has in-booth tests
+  (`.cb-tests/inBooth-*.sh`), and a hand-started workflow runs them on a GitHub-hosted runner:
+  88 of 89 examples pass there. See `docs/REUSE_BOOTH.md`.
+
+- **`booth prepare gha` / `booth prepare ubuntu` (experimental) run a project's booth code on the
+  machine itself, without a container.** From the project folder, it replays the base image, the
+  variant (`ubuntu --variant`, else `config.toml`'s; `gha` is always base), the Boothfile, and
+  booth-entry's user steps, then lists every failing line and exits 1 if there was one. It checks
+  the machine first (Ubuntu 26.04; a GitHub Actions runner for `gha`), runs as a user that can
+  sudo (as root it asks for `--add-user <name>`), and asks before changing an Ubuntu machine unless
+  `--yes`. On GHA, later steps get the environment through `GITHUB_ENV` / `GITHUB_PATH`. The
+  scripts are embedded in the binary (about 2.4 MB); `--source <checkout>` uses a checkout instead.
+  The Boothfile's `APT_SNAPSHOT` is not applied off-booth: apt uses the machine's live archive,
+  which is already newer than the pin. Later shells (and later GHA steps) see `CB_TARGET=gha` or
+  `host`, so a script can tell it is not in a booth. Off a booth, `setup dind` keeps a machine's
+  own Docker instead of replacing it with Ubuntu's `docker.io` (which took a GitHub runner's
+  daemon down); in a booth it installs as before.
+
 - **Zed is selectable as an IDE.** `--select zed` (on a desktop variant) installs the Zed editor
   from its official GitHub release, puts a launcher at `/usr/local/bin/zed`, and adds Zed to the
   desktop and dock. Pin a release with `zed:1.25.3` (`ZED_VERSION`, default `latest`). A booth has

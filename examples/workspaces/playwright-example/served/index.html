@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Playwright counter</title></head>
+<body>
+  <h1>Counter</h1>
+  <p>Count: <output id="count">0</output></p>
+  <button id="add">Add one</button>
+  <script>
+    const count = document.getElementById('count');
+    document.getElementById('add').addEventListener('click', () => {
+      count.textContent = String(Number(count.textContent) + 1);
+    });
+  </script>
+</body>
+</html>

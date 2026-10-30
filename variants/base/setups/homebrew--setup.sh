@@ -1,5 +1,5 @@
 #!/bin/bash
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 
@@ -7,6 +7,10 @@ if [ "$EUID" -ne 0 ]; then
     echo "❌ This script must be run as root (use sudo)" >&2
     exit 1
 fi
+
+# The user Homebrew is installed for. 'coder' in a booth; the real user
+# when provisioning a machine or a runner (see docs/REUSE_BOOTH.md).
+CB_USER_NAME="${CB_USER_NAME:-coder}"
 
 apt-get update
 apt-get install -y build-essential
@@ -28,11 +32,11 @@ function install-homebrew() {
     /bin/bash "$installer"
     rm -f "$installer"
 }
-sudo -u coder bash -c "$(declare -f install-homebrew); install-homebrew"
+sudo -u "$CB_USER_NAME" bash -c "$(declare -f install-homebrew); install-homebrew"
 
 # Set up group permissions
 groupadd linuxbrew
-usermod -aG linuxbrew coder
+usermod -aG linuxbrew "$CB_USER_NAME"
 chown -R root:linuxbrew /home/linuxbrew
 chmod -R g+w /home/linuxbrew
 find /home/linuxbrew -type d -exec chmod g+s {} \;

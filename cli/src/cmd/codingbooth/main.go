@@ -98,6 +98,9 @@ func main() {
 		case "just-init":
 			runJustInit()
 			return
+		case "prepare":
+			runPrepare()
+			return
 		case "tools-cache":
 			runToolsCache()
 			return
