@@ -58,15 +58,15 @@ func TestAssess_DetachedHead(t *testing.T) {
 	}
 }
 
-func TestRemove_TidiesBranchFoldersAndDefaultRoot(t *testing.T) {
+func TestRemove_TidiesBranchFoldersAndKeepsRoot(t *testing.T) {
 	root, main := repo(t)
 	wtRoot := filepath.Join(root, "proj.worktrees")
 	e := worktree(t, main, filepath.Join(wtRoot, "feature", "x"), "feature/x")
 	if err := Remove(main, e, false); err != nil {
 		t.Fatal(err)
 	}
-	if exists(wtRoot) {
-		t.Error("the empty feature/ folder and booth's default root go too")
+	if exists(filepath.Join(wtRoot, "feature")) || !exists(wtRoot) {
+		t.Error("want the empty feature/ folder removed, and booth's default root kept")
 	}
 
 	userRoot := filepath.Join(root, "mine")

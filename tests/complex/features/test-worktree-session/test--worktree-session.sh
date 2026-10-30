@@ -10,7 +10,8 @@
 # would lose something; a worktree that already existed is never touched.
 # Each step is a real one-shot booth on a scratch repository:
 #
-# 1) A clean run removes the worktree, its folders, and the new branch.
+# 1) A clean run removes the worktree, its folders, and the new branch; the root stays
+#    (Docker Desktop cannot mount under a just-recreated folder).
 # 2) A run that commits removes the worktree but keeps the branch.
 # 3) A run that leaves an uncommitted file keeps the worktree.
 # 4) Running on that kept worktree again leaves it in place (it existed).
@@ -71,8 +72,8 @@ check() { # number, description, condition result (true|false), detail
 
 OUT="$(booth_wt --worktree feature/clean -- 'echo ran')"
 ok=false
-[[ ! -e "$ROOT" ]] && ! has_branch feature/clean && echo "$OUT" | grep -q "^Removed worktree" && ok=true
-check 1 "A clean run removes the worktree, its folders and its new branch" "$ok" "$OUT"
+[[ -d "$ROOT" && ! -e "$ROOT/feature" ]] && ! has_branch feature/clean && echo "$OUT" | grep -q "^Removed worktree" && ok=true
+check 1 "A clean run removes the worktree, its folders and its new branch; the root stays" "$ok" "$OUT"
 
 OUT="$(booth_wt --worktree committed -- 'git -c user.email=t@t -c user.name=t commit -q --allow-empty -m w')"
 ok=false

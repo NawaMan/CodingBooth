@@ -156,8 +156,8 @@ func TestCreateAndFinish_CleanRunRemovesEverything(t *testing.T) {
 	if !out.Removed || !out.BranchDeleted {
 		t.Fatalf("want worktree and branch removed: %+v", out)
 	}
-	if exists(filepath.Join(root, "proj.worktrees")) {
-		t.Error("the folders creation made are removed too")
+	if exists(filepath.Join(root, "proj.worktrees", "feature")) || !exists(filepath.Join(root, "proj.worktrees")) {
+		t.Error("want the folders creation made below the root removed, and the root kept")
 	}
 	if _, err := git(main, "rev-parse", "--verify", "--quiet", "refs/heads/feature/x"); err == nil {
 		t.Error("the branch this run created is deleted")
@@ -261,6 +261,20 @@ func TestCreate_InsideRepoWritesExcludeOnce(t *testing.T) {
 	}
 	if status := run(t, main, "status", "--porcelain"); status != "" {
 		t.Errorf("the worktree root should not show in git status, got %q", status)
+	}
+}
+
+func TestBelowRoot_KeepsTheRoot(t *testing.T) {
+	root := filepath.Join("/r", "proj.worktrees")
+	for _, c := range []struct{ top, branch, want string }{
+		{root, "feature/x", filepath.Join(root, "feature")},
+		{root, "w", filepath.Join(root, "w")},
+		{filepath.Join(root, "feature"), "feature/x", filepath.Join(root, "feature")},
+		{"", "w", ""},
+	} {
+		if got := belowRoot(c.top, root, c.branch); got != c.want {
+			t.Errorf("belowRoot(%q, %q): want %q, got %q", c.top, c.branch, c.want, got)
+		}
 	}
 }
 
