@@ -18,6 +18,7 @@
 #                                                the example folder, the build context)
 #   copy src... dest   -> cp -a                 (src globs relative to the example folder)
 #   workdir/expose/label -> skipped, logged
+#   env APT_SNAPSHOT=... -> DROP: apt off-booth uses the machine's live archive
 # The example's own .booth/setups/ comes first on PATH, as in a booth, so a project
 # setup (lamp-init, sales-explorer-icon) is found and shadows a built-in one.
 # Every line is attempted; a failing setup is recorded and the next one runs,
@@ -88,6 +89,13 @@ while IFS= read -r raw || [ -n "$raw" ]; do
     env)
       key="${rest%%=*}"
       val="$(subst_args "${rest#*=}")"
+      # Off-booth the machine's apt is live and newer than the pin; resolving against
+      # the older snapshot makes apt refuse (docs/REUSE_BOOTH.md, item 11). So the
+      # pin is not applied: not exported now, not kept in the profile.
+      if [ "$key" = APT_SNAPSHOT ]; then
+        record DROP "env $key=$val  (off-booth apt uses the machine's live archive)"
+        continue
+      fi
       val="${val//\/home\/coder/$CB_USER_HOME}"
       printf 'export %s="%s"\n' "$key" "$val" >> "$ENV_FILE"
       eval "export $key=\"$val\""                            # like Dockerfile ENV: visible to later lines
