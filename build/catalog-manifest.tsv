@@ -241,7 +241,7 @@ setup	neovim	1.0.0	bf81805049e5766eff3c6e6a2f2dde4658fa127d2257d1d0d383892fe74cc
 setup	neovim-lsp	0.2.0	7a81035420493328b06185789b781cb9a5489bd1d004480a62a5cbe1a21ec1ea	variants/base/setups/neovim-lsp--setup.sh
 setup	network-whitelist	1.0.0	3d02b83cba6adfce82951ef427f109d42eed6c3979f577c210f7c02ae32a1742	variants/base/setups/network-whitelist--setup.sh
 setup	nginx	1.0.0	dbc90a29a20ddbd8ceea620903e7d8edeadc59bb114c9417c7cdc61dd956ea84	variants/base/setups/nginx--setup.sh
-setup	nim	1.0.0	be41e2610510734bc9f8f41f747112b51bb15024aa6dd4f43bb207cf052ffc6c	variants/base/setups/nim--setup.sh
+setup	nim	1.0.1	a1428cab9264eedaa13ad98da664338af566e9dd84b39c392ef0d37ac56616a2	variants/base/setups/nim--setup.sh
 setup	nim-code-extension	1.0.0	59b4208b38f50b3d58ea827e9b367f11c88190ac9f76c46771bf52146688320f	variants/base/setups/nim-code-extension--setup.sh
 setup	nodejs	1.0.0	fe8db1b693f5f5972bc442c0ea7e81c7bf7490bd3fd0150c8c64a9688b10681d	variants/base/setups/nodejs--setup.sh
 setup	nodejs-code-extension	1.0.0	06e2a52486f776bb9685b286f98e817579723eb5aa0bbda0284c83cdab81af8d	variants/base/setups/nodejs-code-extension--setup.sh
@@ -549,7 +549,7 @@ template	n8n	0.3.0	b40dbbf1ef166ab18e66b020b7d5d1df70eba06f78b313a03c565d7cb99dd
 template	nbgrader	1.0.0	2e0765a2aa72972a73952ce75ac6a8333a943dae1c5110dc1ca7c863ceba1b8d	templates/education/nbgrader/template.toml
 template	neovim	1.1.0	3e4610278f62279baeb0d74c7ff481298c011c8058b1b0a78c94ca6226c8ee1d	templates/tools/neovim/template.toml
 template	nginx	1.0.0	ae357de64d5f1752798f6f237e6e273653040803c065118d2f365f3c62f70329	templates/tools/nginx/template.toml
-template	nim	1.0.0	cbb97d5f30bc9436555c3c5381d7cd45e1e036a121515979a8157f78422deff5	templates/languages/nim/template.toml
+template	nim	1.0.1	4c8a1132a3617082397d94ec1a4819708dc4a4cd51fe092f878b0e0413fc43f0	templates/languages/nim/template.toml
 template	no-sudo	1.0.0	2a2a45035e22409fbc5b73e3de5870ca9f5a41a5b9470b8df34176f0fb7a99b6	templates/tools/no-sudo/template.toml
 template	nodejs	1.0.0	1bd0eb933c905b9f431c86507df4190cdc0f315d12f98ad2a4a043c13b24bddd	templates/languages/nodejs/template.toml
 template	notebook	1.0.0	c97294c479fe442836fe9563b75e741f3b2cbae62a6bcfdef6edf7606cb38bfb	templates/tools/notebook/template.toml
