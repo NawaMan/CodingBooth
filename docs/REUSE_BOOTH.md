@@ -3,7 +3,29 @@
 > Plan: use CodingBooth's setups to provision a **fresh Ubuntu machine** and a **GitHub Actions
 > runner**, not only a booth image.
 
-**Status:** planned, nothing built (2026-10-25). The preparation is done in stages, and each stage
+**What GHA is for.** People will not develop on GHA. They use it to **build and test** the
+project their booth is configured for. So not every example, and not every in-booth test, has to
+work there. The bar is: whatever does not work on GHA has a clear reason, and the reason is not
+about building or testing (a desktop, a notebook UI, an editor extension, a long-running service).
+Meeting that bar is what lets us claim, credibly, that a booth configuration can be used for
+build/test on GHA.
+
+**Status (2026-10-28):** an experiment, landed on main to soak. What landed:
+
+- the install and setup scripts take the user and home from `CB_USER_NAME` / `CB_USER_HOME`, and
+  the startup hooks use `$HOME`. Unset, every value is what it was, so a booth sees the same
+  strings;
+- an in-booth test for every example (`.cb-tests/inBooth-*.sh`);
+- the harness under `experiments/host-provision/`, including a `CB_TARGET`-guarded **copy** of
+  `booth-entry`. The real `variants/base/booth-entry` is unchanged;
+- a hand-started workflow, `.github/workflows/host-provision-exp.yaml`, that builds the binary and
+  runs `booth prepare gha` on 91 examples. Last result (run 40983598109, 2026-10-30): all 92 jobs
+  pass ([Third pass](#third-pass-gha-run-40779191508) was the last run of the plain harness);
+- **`booth prepare gha` and `booth prepare ubuntu`**, an experimental command that runs the harness
+  from the `booth` binary ([below](#booth-prepare-experimental)).
+
+No action is shipped. The [open decisions](#open-decisions) are decided, except where a decision
+is to defer. The preparation is done in stages, and each stage
 soaks before the next one starts. That way, when we cross the line into actual host and GitHub
 Actions (GHA) support, any breakage is in the new code, not in old code that changed at the same
 time.
@@ -33,6 +55,7 @@ Back to [README](../README.md)
 
 ## Table of Contents
 
+- [booth prepare (experimental)](#booth-prepare-experimental)
 - [The two targets](#the-two-targets)
 - [What carries over, and what does not](#what-carries-over-and-what-does-not)
 - [Where it breaks](#where-it-breaks)
@@ -42,6 +65,75 @@ Back to [README](../README.md)
 - [Why /opt/codingbooth stays fixed](#why-optcodingbooth-stays-fixed)
 - [Stages](#stages)
 - [Open decisions](#open-decisions)
+- [Experiment results](#experiment-results)
+
+---
+
+## booth prepare (experimental)
+
+```bash
+booth prepare gha                      # a workflow step on runs-on: ubuntu-26.04
+booth prepare ubuntu [--variant xfce]  # an Ubuntu 26.04 machine; asks first unless --yes
+```
+
+Run from the project folder (or `--code <dir>`). It replays, on the machine itself, what building
+and starting the booth does in a container, in four phases:
+
+1. **The base image:** `base-provision.sh`, the base Dockerfile as a script. A failure here stops
+   the run.
+2. **The variant** (ubuntu only, when not base): `provision-variant.sh` replays
+   `variants/<variant>/Dockerfile`. `cleanup-after--setup.sh` is skipped (it wipes `/tmp`), and
+   the variant's start command (`CMD`) is not started.
+3. **The Boothfile:** `provision-example.sh`. Each line is PASS, SKIP or FAIL in the report, and a
+   failing line does not stop the next one. `config.toml` settings are listed as DROP, except two
+   that prepare carries out itself, listed as APPLY: the variant (step 2; on `gha` it is BASE), and
+   the `-e KEY=VALUE` run-args, which go into `/etc/profile.d/06-cb-config-env.sh` and into
+   booth-entry's environment, as `docker run -e` puts them into a booth's. In their values
+   `/home/coder` becomes the user's home, as for the Boothfile's `env` lines.
+4. **booth-entry's user steps:** the `CB_TARGET`-guarded copy, ending with `true` instead of a
+   shell. Startup hooks start their services here, and those keep running afterwards.
+
+The run ends with the report's FAIL and DROP lines, and exits 1 if anything failed.
+
+| | `gha` | `ubuntu` |
+| --- | --- | --- |
+| The machine | `GITHUB_ACTIONS=true` and Ubuntu 26.04 | Ubuntu 26.04 |
+| Variant | always base; a `config.toml` variant is only noted | `--variant`, else `config.toml`'s, else base |
+| Confirmation | none | asks first; `--yes` skips, and no terminal requires it |
+| Later shells | the login shell's new variables and PATH entries go to `GITHUB_ENV` / `GITHUB_PATH`, so a plain `run:` step needs no `bash -l` | login shells read `/etc/profile.d` |
+
+**Who runs it.** An ordinary user that can sudo: the machine is set up for that user, and the
+project folder is the current one, not `/home/coder/code`. Without passwordless sudo, it asks for
+the password once on a terminal and keeps sudo fresh for the whole run; with no terminal it stops.
+As root it stops and asks for `--add-user <name>`: that user is created if missing (reused if
+present), added to the `sudo` group, and prepared for.
+
+**Where the scripts come from.** The binary embeds them: `build/cli-build.sh` packs `variants/`,
+the docs markdown and `experiments/host-provision/` into `cli/src/pkg/prepare/kit/kit.tar.gz`
+(`cli/src/cmd/prepare-kit`, about 2.4 MB, deterministic). So a binary always carries the scripts of
+its own version, `--rc` builds included. `--source <checkout>` uses a checkout instead. A binary
+built with a plain `go build` has no kit and needs `--source`.
+
+**Later shells know.** `/etc/profile.d/06-cb-config-env.sh` starts with `CB_TARGET=gha` or
+`host`, and on `gha` it reaches later steps through `GITHUB_ENV`. A test that checks something a
+booth has by design and a machine does not (apt-example's snapshot test) skips on it.
+
+**`setup dind` keeps the machine's Docker.** With `CB_TARGET` gha or host and `docker` already on
+the machine, it installs `socat` only. Ubuntu's `docker.io` would replace `docker-ce` and
+`containerd.io`, and on a GitHub runner that took the daemon down (n8n's sandbox then had no
+Docker).
+
+**`APT_SNAPSHOT` is not applied.** The machine's apt is live and already newer than the
+Boothfile's pin, so the pin is reported as DROP and apt uses the live archive
+([item 11](#where-it-breaks)).
+
+**Testing it.** `experiments/host-provision/prepare-test.sh <mode> [example]` runs the binary
+from `./build/cli-build.sh` in a throwaway `ubuntu:26.04` container, with the example copied in
+(never mounted). `refusals` checks the three refusals (root without `--add-user`, no sudo, `gha`
+off a runner) in seconds. `gha` simulates a runner, with `--report` in sticky `/tmp`, then runs
+the example's in-booth tests in a later plain-bash step that gets its environment only from
+`GITHUB_ENV` / `GITHUB_PATH`. `ubuntu` runs as root with `--add-user dev` and checks the user, the
+variant's APPLY line, the rewritten `-e` values, and the in-booth tests in dev's login shell.
 
 ---
 
@@ -79,7 +171,7 @@ and starts with a small host-safe set (language runtimes, CLIs), not the whole c
 | **Setup scripts** | mostly | Plain root bash on Ubuntu, with pinned downloads into `/usr/local/…` |
 | **Install scripts** | yes | Thin wrappers over `apt`, `pip`, `npm`, `cargo`, … |
 | **Templates** | through B only | Their only output is a Boothfile, which compiles to a Dockerfile only |
-| **Variants**, `config.toml` | no | run-args, ports, mounts, cache/shared folders make sense only for a container |
+| **Variants**, `config.toml` | partly | Each setting needs its own answer; see [Where it breaks](#where-it-breaks), item 10 |
 
 Each setup writes three files. How each one behaves outside a booth:
 
@@ -97,6 +189,9 @@ lines map directly onto `$GITHUB_ENV` and `$GITHUB_PATH`.
 
 1. **The `coder` user is hard-coded.**
    - 12 setups write to `/home/coder`, and 11 run commands as `coder` (about 20 unique).
+   - **12 of the 24 install scripts** run `sudo -u coder` (go, cargo, gem, bun, deno, deno-pkg,
+     conda, dotnet, brew, cabal, conan, code-extension). The experiment found this; the earlier
+     count looked only at setup scripts.
      Examples: claude-code, codeserver, flutter, homebrew, wails, mongodb, redis.
    - 28 templates (47 lines) use `/home/coder`, mostly in `env` lines.
 2. **Ubuntu release.** Base is 26.04, and some setups were adjusted for it (PHP, Erlang). 27
@@ -156,6 +251,61 @@ lines map directly onto `$GITHUB_ENV` and `$GITHUB_PATH`.
    moves the new tree *inside* the existing `/usr/local/go-<version>` directory instead of
    replacing it.
 
+10. **Run-time settings live outside the Boothfile, and dropping them fails silently.** A booth is
+    the Boothfile *plus* `.booth/config.toml`, which `booth run` turns into `docker run` arguments
+    and which `booth-entry` reads at start. Replaying the Boothfile alone gives a machine that
+    passes its checks and is still not the booth. The experiment found this through xonsh-example
+    (its login shell), then found go-example had been "passing" on base while its `config.toml`
+    asks for the `xfce` variant. Counts over the 96 examples:
+
+    | Kind | Examples | In a booth | On a host | On GHA |
+    | --- | --- | --- | --- | --- |
+    | `variant` | 27 (13 xfce, 6 notebook, 5 codeserver, kde, desktop-xfce, terminal) | the image the booth starts from, with that variant's own setups baked in | the variant's setups, replayed like base's; desktops are container-only (item 6) | **always base** (decided): the run is the booth started with `--variant base`; any other variant is reported, not replayed |
+    | `-e` env | about 40 lines | env of every process | `profile.d`, except the ones `booth-entry` acts on (below) | `$GITHUB_ENV` |
+    | `-v` volumes, `cache-dirs`, `shared-dirs`, `~/…` seeds | 62 / 28 / 2 | persistence, and host config copied in (`~/.npmrc` → `/etc/cb-home-seed/`) | mostly nothing to do: the home persists and the real `~/.npmrc` is already there | `actions/cache` for the caches; the seeds do not apply |
+    | `-p`, `port`, `expose` | 26 / 8 | publish container ports to the host | nothing: services listen on the machine itself | nothing |
+    | `cmds` | 10 | what the booth runs | the user's own command | the step's `run:` |
+    | `dind`, `--device`, `egress`, `engine`, `--platform` | 7 / 2 / 2 / 1 / 1 | container-runtime features | no equivalent; the egress allowlist is a security property that is simply lost | same |
+
+    **What `booth-entry` acts on at run time.** Some `-e` values are not plain environment: they
+    change what `booth-entry` does. Today's list is `USER_SHELL` (the login shell, set by
+    `+default` shell extensions such as `xonsh+default`), `TZ`, `BOOTH_HOME_SEED*`,
+    `BOOTH_HOME_OVERRIDE`, `BOOTH_STARTUP*`, `BOOTH_IDLE_*`, `BOOTH_SUDO`, `BOOTH_LOW_PORTS` and
+    `HOST_UID`/`HOST_GID`. On a host each one is a question of whether provisioning may change the
+    real account or machine (the login shell, the timezone, sudo), which is item 8's question again.
+
+    **Two consequences:**
+    - The emitter (path B) must read `config.toml` too, and classify each setting the way item 6
+      classifies setups: replay it, map it (`$GITHUB_ENV`, `actions/cache`), skip it as
+      meaningless, or **refuse loudly** (dind, egress). A silent drop is the one option that is not
+      allowed.
+    - "It works on a host" has to say which part was replayed. The harness now records every
+      `config.toml` setting as `DROP` in the report.
+
+    **Decided: GHA is a base booth.** A GHA run is the same as the booth started with
+    `--variant base`, never as the variant in `config.toml`. So on GHA the `variant` setting is
+    not a silent drop: it is overridden by definition, and the report says so (`BASE` line). The
+    reference to compare a GHA run against is `booth --variant base`, not the example's own booth.
+    An example whose setups need its variant (a code-server extension, a notebook kernel, a
+    desktop app) is then judged by what that setup does on a base booth: skip, or fail. The host
+    target is still open.
+
+11. **`APT_SNAPSHOT` assumes the machine is not newer than the pin.** `booth config` stamps the
+    Boothfile with `env APT_SNAPSHOT=<date>`, and `apt--install.sh` resolves every package against
+    that snapshot. In an image this holds: base is built from a snapshot, and the project's pin is
+    the same or later. A live machine has been upgraded past it. On the GHA runner `libcurl4t64`
+    was already 8.18.0-1ubuntu2.8, the 2026-10-04 snapshot offers `libcurl4-openssl-dev` only at
+    ubuntu2.7, and apt will not pair them or downgrade (systemlib-example). An upgraded host fails
+    the same way, and so does a second `booth prepare` on one machine: the first run installs from
+    the live archive and leaves the Boothfile's `APT_SNAPSHOT` in `/etc/profile.d`, so the second
+    run's `gnupg--setup.sh` resolves its build dependencies against the older snapshot and apt
+    refuses (`zlib1g-dev` against an installed newer `zlib1g`).
+    **Decided: the pin is ignored off-booth.** `provision-example.sh` records
+    `env APT_SNAPSHOT=…` as DROP and neither exports it nor keeps it in the profile, so apt uses
+    the machine's live archive. Reproducibility then comes from the machine, which is the weaker
+    tier the reproducibility stance already describes. systemlib-example is back in the workflow
+    matrix.
+
 Counts in items 8 and 9 come from a grep and are estimates. The Stage 1a test lane replaces them
 with real results, and should also run every setup twice.
 
@@ -172,7 +322,7 @@ Checked, and **no** change is needed:
 | --- | --- | --- | --- |
 | 1 | **Fresh-host test lane**: run setups in a plain `ubuntu:26.04` container with no `booth-entry`, as a user that is not `coder`; check that each starter runs | **None** | Only adds tests. It is also the tool that shows which setups really break on a host. |
 | 1b | **`CB_TARGET` helper** in `setups/libs/`: reads, validates, defaults to `booth`. Nothing branches on it yet. | **None** | New file only. No setup calls it until a later stage needs it. |
-| 2 | **`CB_USER_HOME` in setup bodies**, `$HOME` in the profile/startup scripts they generate (see [below](#parameterizing-the-user-home)) | **Low–Medium** | The default stays `/home/coder`, so booths behave the same. The risk is typos in about 20 scripts, each also needing a `cb-version` bump. Use #1 to check them. |
+| 2 | **`CB_USER_HOME` in setup and install bodies** (about 20 setups + 12 installs), `$HOME` in the profile/startup scripts they generate (see [below](#parameterizing-the-user-home)) | **Low–Medium** | The default stays `/home/coder`, so booths behave the same. The risk is typos in about 20 scripts, each also needing a `cb-version` bump. Use #1 to check them. |
 | 3 | **`CB_USER_HOME` in template `env` lines** | **Low** to booths, **High churn** | Every generated Boothfile changes. All examples need `booth config` regenerated (new `.generated`), and every user's booth rebuilds on its next reconfigure. |
 | 4 | **Host-compat classification**: host-safe, user-coupled, clobbers host state, not re-runnable, or container-only, kept in a separate data file | **None** | A header in each script would count as an edit to all 332, forcing a version bump and manifest regen on every one. |
 | 5 | **GHA smoke run**: one workflow that builds and execs an example booth on a hosted runner | **None** | Shows what path A trips on: no TTY, build caching, the DinD consent flags. |
@@ -246,7 +396,7 @@ Each stage gets its own proposal and worktree, lands, then soaks before the next
 
 | Stage | Work | Gate before moving on |
 | --- | --- | --- |
-| **1a** | #1 test lane + #1b `CB_TARGET` helper + #2 `CB_USER_HOME` in setups | Lane passes with `CB_USER_HOME` pointing at another user's home; booths unchanged; soak |
+| **1a** | #1 test lane + #1b `CB_TARGET` helper + #2 `CB_USER_HOME` in setups **and the 12 install scripts** | Lane passes with `CB_USER_HOME` pointing at another user's home; booths unchanged; soak |
 | **1b** | #3 template `env` lines + regenerate examples | Round trip of `booth config` is clean; examples build; soak |
 | **2** | #4 classification + #5 GHA smoke run | Evidence of what really breaks; may shrink later stages |
 | **3** | #6 compiler IR split | Byte-identical `emit-dockerfile` output for every example and fixture; soak |
@@ -255,18 +405,303 @@ Each stage gets its own proposal and worktree, lands, then soaks before the next
 
 ## Open decisions
 
-- [ ] `CB_USER_HOME` as the variable name (proposed).
-- [ ] `CB_TARGET` with values `booth` / `gha` / `host` (proposed; `host` rather than `ubuntu`).
-- [ ] **Rare exception in `booth-entry`:** host and GHA need steps 8, 12, 14 and 15 to run for the
-  real user (`runner`, or the machine's owner) and the real project folder, not for `coder`.
-  - Smallest proposed change: `USER_NAME="${CB_USER_NAME:-coder}"` at line 207, plus the same in
-    `booth--as-coder`. `HOME_DIR` then follows from it, and `CODE_DIR` gets the same
-    `${…:-…}` form.
-  - With the variables unset, every value is what it is today.
-  - No other part of `booth-entry` changes.
-  - The alternative is to skip steps 8, 12, 14 and 15 on non-booth targets, and accept that the
-    setups lose profile loading, seeds and startup hooks there.
-- [ ] `/opt/codingbooth` stays fixed for now (proposed).
-- [ ] Classification as a separate data file (proposed) or as a per-script header.
+Decided on 2026-10-29, before landing:
+
+- [x] `CB_USER_HOME` is the variable name.
+- [x] `CB_TARGET` takes `booth` / `gha` / `host`. The `booth prepare` command word is `ubuntu`,
+  and it sets `CB_TARGET=host`.
+- [x] **The rare exception in `booth-entry` waits.** The real `variants/base/booth-entry` stays
+  untouched. `booth prepare` uses the `CB_TARGET`-guarded copy in `experiments/host-provision/`
+  until the command stops being experimental; promoting the guards into the real file is its own
+  stage (Stage 4), under the caution above. The change it would need:
+  - `USER_NAME="${CB_USER_NAME:-coder}"` at line 207, plus the same in `booth--as-coder`.
+    `HOME_DIR` then follows from it, and `CODE_DIR` gets the same `${…:-…}` form.
+  - With the variables unset, every value is what it is today. No other part changes.
+- [x] `/opt/codingbooth` stays fixed.
+- [x] Setup classification goes in a separate data file, not a per-script header.
 - [x] Path B targets Ubuntu 26.04: same release as base, and GHA pins `runs-on: ubuntu-26.04`.
   #8 is postponed indefinitely.
+- [x] A GHA run is a base booth (like `--variant base`). An example that clearly needs another
+  variant is skipped there (i3-desktop, tiling, empty, conda, zed).
+- [x] `APT_SNAPSHOT` is ignored off-booth (item 11).
+- [x] `config.toml` run-time settings: `booth prepare` applies the variant (`ubuntu`; `gha` is
+  base) and the `-e KEY=VALUE` run-args (profile, booth-entry, and `$GITHUB_ENV` on `gha`). The
+  rest is DROP in the report.
+- [x] **Deferred:** the project folder. `/home/coder/code` is still hard-coded in antigravity,
+  cursor, thonny, viewmd-desktop-icon, cb-booth-favicon and zed. All are GUI or desktop pieces,
+  outside the GHA build/test bar, so they stay a known limitation; a third variable
+  (`CB_CODE_DIR`) would cover them later.
+
+## Experiment results
+
+**2026-10-26 to 2026-10-28**, branch `host-provision-exp` (since landed on main), files in
+`experiments/host-provision/`. Nothing under
+`variants/`, `templates/` or the CLI was changed, except the install-script fixes listed below.
+
+### What was run
+
+- `base-provision.sh`: `variants/base/Dockerfile` replayed as a root script.
+- `provision-example.sh`: the `go-example` Boothfile replayed. `env` lines went to `profile.d`,
+  with `/home/coder` rewritten to the real home.
+- A copy of `booth-entry` with only `CB_TARGET` `if` guards, plus the `CB_USER_NAME` /
+  `CB_USER_HOME` / `CB_CODE_DIR` exception. It then ran the example's checks as the real user.
+
+It ran on two kinds of machine:
+
+- **GHA:** a real `ubuntu-26.04` runner (run 40273828543), as user `runner` (uid 1001).
+- **Locally:** a plain `ubuntu:26.04` container, once as `CB_TARGET=gha` (user `runner`) and
+  once as `CB_TARGET=host` (user `owner`, uid 1000).
+
+### Results
+
+**First run** (GHA run 40273828543, and locally):
+
+| | GHA runner | Local `host` |
+| --- | --- | --- |
+| Boothfile lines | 6 of 9 pass | 6 of 9 pass |
+| Checks | 18 of 20 pass | 18 of 20 pass |
+| Failures | `install go gopls`, `install go dlv`, `setup go-nb-kernel` | same |
+| Cause | `sudo: user 'coder' not found` in `go--install.sh` and `go-nb-kernel--setup.sh` | same |
+
+Every failure came from the hard-coded `coder` user. Nothing else broke.
+
+**After the fix** (commit `ab10f88a`, GHA run 40275899532, and locally):
+
+| | GHA runner | Local `host` |
+| --- | --- | --- |
+| Boothfile lines | **9 of 9 pass** | **9 of 9 pass** |
+| Checks | **20 of 20 pass** | **20 of 20 pass** |
+
+The fix: both scripts read `CB_USER_NAME="${CB_USER_NAME:-coder}"`, and go-nb-kernel also reads
+`CB_USER_HOME="${CB_USER_HOME:-/home/${CB_USER_NAME}}"`. Each got a minor `cb-version` bump
+(1.0.0 → 1.1.0), and the catalog manifest was regenerated. `provision-example.sh` now passes
+`CB_USER_NAME`. One check in the real base image: with the variable unset, `go--install.sh` still
+installs into `/home/coder/go/bin`, owned by `coder`. The full container test pass is deferred to
+the Stage 1a work.
+
+What passed:
+
+- **Tools:** Go 1.25.7 (in login, interactive and zsh shells), `gopls` and `dlv` in the real
+  user's `GOBIN`, Python 3.13.12, code-server, Jupyter with the Go (GoNB) kernel registered, the
+  code extensions (installed into code-server's shared extension directory), and the base tools
+  (just, lazygit, gpg 2.5.24).
+- **The example's own work:** `go test ./...` and `./build.sh`.
+- **The `booth-entry` copy's user steps:** the rc profile block, the five startup hooks (tls, go,
+  superfile, notebook, 99z), and `GOPATH` under the real home.
+
+**Second example: zig-example** (GHA run 40280112491, a matrix with go-example, and locally as
+`host`). It passed on the first try with no catalog change:
+
+| | GHA runner | Local `host` |
+| --- | --- | --- |
+| Boothfile lines | 1 pass, 1 skip | 1 pass, 1 skip |
+| Checks | 8 of 8 pass | 8 of 8 pass |
+
+- The skip is `zig-code-extension`. It skipped itself correctly, because no editor is installed.
+- From here on the checks are generic. `check-example.sh` runs the base checks, then every one of
+  the example's own `.cb-tests/inBooth-test*.sh`. `BOOTH_CONTAINER_NAME` is set, so the
+  example's Justfile runs recipes in place. **38 of the 96 examples** have in-booth tests (the
+  other 58 have only `--on-host` tests, or none); an example without them is reported `UNTESTED`.
+- go-example's own four in-booth tests also passed on GHA, in a later `bash -l` step: go, gopls,
+  dlv and gomodifytags.
+- In a later plain step, `zig` resolved to the setup's `/usr/local/bin/zig`, confirming finding 3.
+  The runner has no zig of its own.
+
+**Seven more examples** (GHA run 40344941831, a nine-example matrix, and locally as `host`):
+
+| Example | GHA runner | Local `host` | Needed |
+| --- | --- | --- | --- |
+| bun-example | 13 pass, 1 skip | pass | `bun--install.sh` takes `CB_USER_NAME` |
+| deno-example | 10 pass, 1 skip | pass | `deno-pkg--install.sh` takes `CB_USER_NAME` / `CB_USER_HOME` |
+| npm-example | 14 pass, 1 skip | pass | one in-booth test did `cd /home/coder/code` |
+| pip-example | 16 pass, 1 skip | pass | nothing |
+| clang-example | 14 pass, 2 skip | pass | on GHA, the runner's apt sources (finding 8) |
+| bash-example | 8 pass | pass | one in-booth test did `cd /home/coder/code` |
+| xonsh-example | 8 pass, 1 skip, **1 fail** | **1 fail** | the login shell: open, see finding 9 |
+
+go-example and zig-example passed again in the same run. Every skip is a `*-code-extension` with
+no editor installed.
+
+- `bun--install.sh`, `deno--install.sh` and `deno-pkg--install.sh` got the same fix as
+  `go--install.sh` (`cb-version` 1.1.0, manifest regenerated). `deno--install.sh` is not used by
+  any of these examples.
+- Three in-booth tests (bash, npm, xonsh) now `cd "$(dirname "$0")/.."` instead of
+  `/home/coder/code`, and the xonsh test looks up `$(id -un)` instead of `coder`. Inside a booth
+  both are the same path and user as before. The 16 other `/home/coder/code` mentions are in
+  `--on-host` tests, which run their command inside a booth, so they stay.
+
+**Ten more examples** (GHA runs 40364462980 and 40366742712, and locally as `host`), with the
+earlier eight in the same matrix. The report now also lists every `config.toml` setting as `DROP`.
+
+| Example | Result, GHA and local `host` | Needed |
+| --- | --- | --- |
+| csharp-example | pass | nothing |
+| goose-lang-example | pass | nothing |
+| ocaml-example | pass | nothing |
+| php-example | pass | nothing |
+| lsp-example | pass, once **flaky** | the `nvim` recipe waits a fixed `sleep 3`; on one cold runner marksman had not attached yet. Not specific to the host |
+| apt-example | pass | its snapshot test read `/home/coder/code/.booth/Boothfile`; now the Boothfile beside the test |
+| homebrew-example | pass | `homebrew--setup.sh` and `brew--install.sh` take `CB_USER_NAME` (1.1.0); the redis and nginx tests used `base + $$` as a port, past 65535 with a runner's or host's PIDs |
+| spring-boot-example | **untested** | provisions cleanly, but has no in-booth tests |
+| helix-example | **known not working** | its config comes from `config.toml` `shared-dirs` (Where it breaks, item 10) |
+| systemlib-example | **known not working** | its `APT_SNAPSHOT` is older than the machine's installed `libcurl4t64` (item 11) |
+
+**Where the examples stand** (the workflow matrix carries the known-working list):
+
+- **Known working, 15:** go, zig, bun, deno, npm, pip, clang, bash, csharp, goose-lang, lsp,
+  ocaml, php, apt, homebrew. That means the Boothfile part: go, bun, npm and pip also have
+  `config.toml` settings that were dropped (caches, `cmds`). go-example's `xfce` variant is
+  not a drop on GHA: GHA is a base booth by decision (item 10).
+- **Known not working, 3:** xonsh (the login shell) and helix (shared config) because of item 10;
+  systemlib because of item 11.
+- **Untested, 1:** spring-boot.
+
+#### All examples (GHA run 40645215815)
+
+Every example now has in-booth tests: 58 got new ones in this round. The new tests have not been
+run in a booth yet, so a failure in one of them can be a test bug; those are marked below. The run
+covered 93 examples: all but xonsh, helix and systemlib, which are already known not to work.
+
+| Outcome | Jobs |
+| --- | --- |
+| Passed | **52** (3 of them with a failed setup line: lamp, lemp, wordpress; see C) |
+| Failed | **41** |
+
+Why the 41 failed, grouped by cause (an example can show up under more than one):
+
+| Cause | Examples | Count |
+| --- | --- | --- |
+| **A. A startup hook hard-codes `/home/coder`.** `claude-code`'s hook makes `/home/coder/.local/bin`, `mongodb`'s makes `/home/coder/.mongodb`. The hook fails with `mkdir: Permission denied`, and `booth-entry` step 14 stops the whole start, so no test ran. In a booth `$HOME` is `/home/coder`, so changing the path to `$HOME` changes nothing there | claude-code: aws, claude, claude-token, dind, egress-envoy, elixir, firebase, gcloud, haskell, herdr, jetbrain, js, kind-app, kind, kotlin, neovim, nodejs, python, rust, server, server-2, zig-snake. mongodb: mean, mern | 24 |
+| **B. An install script hard-codes the `coder` user** (`sudo: user 'coder' not found`). The same kind of fix as bun/deno/homebrew. 17 scripts still do this, among them `gem--install.sh`, `cargo--install.sh`, `wails--setup.sh`, `dotnet--install.sh`, `conan--install.sh`, `neovim--setup.sh`, `redis--setup.sh` and `gcloud--setup.sh` | ruby, rails, wails, wails-android (rust as well, after A) | 4 |
+| **C. Harness gaps** (the experiment's scripts, not the catalog): the project's own `.booth/setups/` is not on PATH; `run` lines are not replayed (here, a `pip`/`npm` install of the project's dependencies); an example with no Boothfile stops the harness | npm-deps, pip-deps, cache (no Boothfile); lamp, lemp, wordpress and data (local setups) | 3 failed + 4 partial |
+| **D. A base booth by decision.** The example needs its variant, as item 10 says. i3 skips without XFCE; `jupyter` comes from the notebook variant; the code-server extension test needs code-server | i3-desktop, tiling, empty (i3); conda (jupyter); lean (test004 vscode-ext) | 5 |
+| **E. A `config.toml` run-time setting** (item 10) | n8n (`N8N_INSTANCE_AI_SANDBOX_ENABLED` is a run-args env) | 1 |
+| **F. The example itself is stale.** It pins Playwright 1.58.0, which "does not support chromium on ubuntu26.04-x64"; playwright-example pins 1.63.0 and passes. This should fail in a booth as well (not checked) | playwright-polyglot | 1 |
+| **G. A new test is probably wrong** (not yet run in a booth) | data (test002 pipes `jupyter --version` into a closed pipe: `BrokenPipeError`), rlang (expects "R scripting front-end" in `Rscript --version`) | 2 |
+| **H. Flaky** | lsp (neovim test, the fixed `sleep 3` again) | 1 |
+
+Notes on what this means:
+- **A is the largest group, and it is a new kind of problem.** Install scripts were checked for the
+  user name; startup hooks were not. Hooks are written by the setups but run at start time as the
+  user, so they belong in the same audit. A related point: because one failing hook stops the whole
+  start, a single hard-coded path cost 24 examples their whole run.
+- A and B are the same fix pattern that is already on the branch (`CB_USER_NAME`, `$HOME`).
+  Fixing them would get to the tests of 28 more examples.
+- C belongs to the harness and must be fixed there. Project setups must be on PATH, as they are in a
+  booth. `run` lines are a real question for path B: it has to replay them, or the project's
+  dependencies are missing.
+- The summary job in the workflow read the wrong artifact path: upload-artifact keeps the full
+  path for two files. So every row said "no report", and the table above was made locally from
+  the downloaded artifacts.
+
+#### After fixing A, B and C (GHA run 40746874561)
+
+A: startup hooks use `$HOME`. B: 6 install scripts and `mongodb-start` take `CB_USER_NAME` /
+`CB_USER_HOME`. C: the harness replays `run` and `copy` lines and puts the project's
+`.booth/setups/` on PATH. Every default is today's value, so a booth sees the same strings.
+
+**83 passed, 10 failed** (was 52 / 41). Every job wrote a report.
+
+| Example | Cause |
+| --- | --- |
+| i3-desktop, tiling, empty | D: i3 needs XFCE; a base booth by decision |
+| conda (3 tests) | D: `jupyter` comes from the notebook variant |
+| lean (test004) | D: the code-server extension test needs code-server |
+| n8n | E: a `config.toml` run-args env |
+| playwright-polyglot | F: the example pins Playwright 1.58.0, which does not support Ubuntu 26.04 |
+| data (test002), rlang | G: the new test is probably wrong (not yet run in a booth) |
+| wails-android (test002) | **not diagnosed yet**: the APK builds but "'Booth counter' is missing from the APK". It got this far only now, because the wails setup used to fail first |
+
+lsp passed this time (it is still flaky). wails-example now passes.
+
+**Decided: an example that clearly needs a non-base variant is skipped on GHA.** i3-desktop, tiling
+and empty (i3 runs inside XFCE) and conda (the notebook variant's `jupyter`) are out of the matrix.
+lean stays: only its code-server extension test needs the variant, and that test now skips itself
+when there is no code-server, as on a base booth.
+
+#### Third pass (GHA run 40779191508)
+
+The G items were test bugs, confirmed by failing in a real booth first: rlang expected the wrong
+`Rscript --version` text, and data piped `jupyter --version` into `grep -q`. playwright-polyglot
+now pins Playwright 1.63.0. wails-android's frontend *was* packaged: the string sits in
+`lib/x86_64/libwails.so`, which is stored deflated in the APK, so the test now looks inside the
+`.so` as well. All four of those failures, and an intermediate wails-android one, share a trap:
+`cmd | grep -q` under `pipefail` fails when `grep` exits early and `cmd` dies of SIGPIPE (rc 141).
+
+**88 passed, 1 failed** over 89 examples. The one failure is n8n (E): a `config.toml` run-args env,
+not a build or test step. lsp passed again.
+
+Headless browser testing works on GHA: playwright-example runs its spec in headless chromium, and
+test003 serves a page over HTTP through Playwright's `webServer`, clicks it, and asserts the result.
+
+### Findings
+
+1. **The `booth-entry` exception is needed, and enough for this example.** The `if` guards
+   skipped the container-only blocks cleanly. With only `USER_NAME`, `HOME_DIR` and `CODE_DIR`
+   overridable, steps 7, 8, 12, 14 and 15 did their job for a real user.
+2. **Install scripts are the bigger `coder` problem.** Stage 1a has to cover the 12 install
+   scripts as well as the ~20 setups. Without them, every `*-pkg` extension fails off-booth.
+   Two of these (`go--install.sh`, `go-nb-kernel--setup.sh`) are already fixed on this branch.
+   The pattern is a `CB_USER_NAME` / `CB_USER_HOME` default, with no other change.
+3. **Starters beat the runner's preinstalled tools, even without a profile.** The runner ships
+   `/usr/bin/go`, `python3`, `node` and `java`. In a later plain step (`bash --noprofile`),
+   `go` still resolved to the setup's `/usr/local/bin/go` starter: `/usr/local/bin` comes first
+   on the default PATH. Env such as `GOPATH` did not carry over. A step with `shell: bash -l {0}`
+   got everything. No conflict with the preinstalled tools was observed.
+4. **Base changes a host machine-wide.** `gnupg--setup.sh` puts gpg 2.5 in `/usr/local/bin`,
+   shadowing the system's 2.4 for every user. On a runner that is fine; on someone's own machine
+   it should be opt-in.
+5. **Timing on GHA:** base 2m31s (mostly building gnupg from source), the example 1m07s,
+   `booth-entry` plus checks 11s. The whole job took 4m03s.
+6. **A harness lesson for the test lane.** With `fs.protected_regular` (the Ubuntu default),
+   root cannot write a user-owned file in a sticky directory such as `/tmp`. Reports and logs
+   that root and the user both write go under the user's home or the runner's temp directory.
+7. **Some example tests cannot see a failed install.** bun-example's and deno-example's tests use
+   `bun x cowsay` and `deno run npm:cowsay`, which fetch the package on demand. Both passed while
+   `install bun` and `install deno-pkg` had failed. The workflow's plain step now lists the
+   installed commands; on GHA `cowsay`, `figlet`, `prettier` and `tsc` are in `/usr/local/bin`
+   after `install bun`. `deno-pkg` installs no commands by design (`deno add` writes a
+   `deno.json`), in a booth as well.
+8. **A GHA runner reads apt through a mirror list.** Its sources are
+   `mirror+file:/etc/apt/apt-mirrors.txt` (`azure.archive.ubuntu.com`), and two setups assume the
+   image's plain `archive.ubuntu.com`:
+   - `apt--install.sh` with `APT_SNAPSHOT`: `--snapshot` redirects only hosts apt knows, so the
+     pinned install found no index ("Unable to locate package nlohmann-json3-dev").
+   - `clang--setup.sh` recognises Ubuntu's own `clang-N` by `archive.ubuntu.com` in
+     `apt-cache madison`. The runner prints `mirror+file:…`, so the script added apt.llvm.org,
+     which has no `resolute-18` repo. The broken `.list` it left then failed `apt-get update` in
+     cmake and make too.
+
+   `base-provision.sh` now, on `gha` only, rewrites the runner's sources to
+   `http://archive.ubuntu.com/ubuntu/`, as in the image. After that, `apt` pinned to
+   `snapshot.ubuntu.com` and clang used Ubuntu's repo. On `host` the sources are left alone, so a
+   machine with a local mirror has the same problem; the setups' archive checks are the place to
+   fix it for good.
+9. **A login shell is a run-time setting, so nothing applies it off-booth.** xonsh-example gets
+   `USER_SHELL=/usr/local/bin/xonsh` from `config.toml` run-args, and `booth-entry` applies it in
+   the user steps (1–5b). The harness does not replay `config.toml`, and the guarded copy skips
+   those steps on `gha` and `host`. That is deliberate: changing a real user's login shell is the
+   clobbering that "Where it breaks" item 8 is about. xonsh itself works (`xonsh hello.xsh` passed).
+   To decide: whether the feature offers a login-shell change, opt-in, on `host`. This turned out
+   to be one case of a whole category: see [Where it breaks](#where-it-breaks), item 10.
+10. **Example tests carry booth assumptions of their own.** Five in-booth tests failed for reasons
+    in the test, not in the setup: a hard-coded `/home/coder/code` (bash, npm, xonsh, apt), the
+    user `coder` (xonsh), and a port computed from the PID (homebrew). Each fix keeps the same value
+    inside a booth. A test lane that runs examples off-booth will keep finding these, so it is
+    worth a lint: no `/home/coder` or `coder` in `inBooth-*` tests.
+
+### Not covered yet
+
+- Services actually starting (code-server, notebook) from their startup hooks.
+- Running the provisioning a second time. Before the APT_SNAPSHOT decision it failed in apt
+  (item 11); since then it has not been run.
+- A real host with systemd. For example, apt's `nginx` package may start nginx on port 80 there.
+- The `host`-only guards (11b, 13, the root chown). go-example has no `.booth/home` and no
+  `/etc/cb-home`, so these did not change the result.
+- The examples left out of the workflow matrix: xonsh and helix (known not working) and
+  the ones that need a non-base variant.
+- The `host` target beyond local runs of single examples (`experiments/host-provision/local-test.sh`,
+  `prepare-test.sh ubuntu`).
+- `config.toml` settings beyond the variant and `-e` run-args: not replayed (Where it breaks,
+  item 10).
+

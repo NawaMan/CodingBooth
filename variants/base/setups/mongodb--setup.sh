@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 set -Eeuo pipefail
 
@@ -79,7 +79,7 @@ cat >"$STARTUP_FILE" <<'STARTUP'
 #!/usr/bin/env bash
 set -euo pipefail
 
-MONGO_DATA="/home/coder/.mongodb"
+MONGO_DATA="$HOME/.mongodb"   # the booth user's home: /home/coder in a booth
 
 # Create data and log directories
 mkdir -p "$MONGO_DATA/data" "$MONGO_DATA/log"

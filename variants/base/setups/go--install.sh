@@ -2,9 +2,9 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
-# This script installs Go packages for the 'coder' user.
+# This script installs Go packages for the booth user ('coder' unless CB_USER_NAME says otherwise).
 # It requires go--setup.sh to have been run first.
 # Usage: go--install.sh <package@version> [package@version...]
 # Example: go--install.sh golang.org/x/tools/gopls@latest
@@ -17,10 +17,14 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
+# The user the packages are installed for. 'coder' in a booth; the real user
+# when provisioning a machine or a runner (see docs/REUSE_BOOTH.md).
+CB_USER_NAME="${CB_USER_NAME:-coder}"
+
 case "${1:-}" in
     -h|--help)
         echo "Usage: $0 [package@version...]"
-        echo "Installs Go packages for the 'coder' user. No packages is a no-op."
+        echo "Installs Go packages for the booth user (\$CB_USER_NAME, default 'coder'). No packages is a no-op."
         exit 0
         ;;
 esac
@@ -52,7 +56,7 @@ for go_profile in /etc/profile.d/*-cb-go--profile.sh; do
 done
 unset go_profile
 
-# Install packages as coder user so they go to coder's GOPATH.
+# Install packages as the booth user so they go to that user's GOPATH.
 #
 # `go install` fetches through proxy.golang.org, which resets connections often enough
 # to fail a build outright — and go has no retry of its own, so a single reset takes the
@@ -60,7 +64,7 @@ unset go_profile
 # just three attempts later; a blip no longer costs a rebuild.
 for pkg in "$@"; do
     attempt=1
-    until sudo -u coder bash -lc "go install '$pkg'"; do
+    until sudo -u "$CB_USER_NAME" bash -lc "go install '$pkg'"; do
         if [ "$attempt" -ge 3 ]; then
             echo "❌ go install '$pkg' failed after ${attempt} attempts." >&2
             exit 1

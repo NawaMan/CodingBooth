@@ -2,9 +2,9 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
-# This script installs Rust crates for the 'coder' user.
+# This script installs Rust crates for the booth user ('coder' unless CB_USER_NAME says otherwise).
 # It requires rust--setup.sh to have been run first.
 # Usage: cargo--install.sh [cargo-flags...] <crate[@version]> [crate[@version]...]
 # Example: cargo--install.sh ripgrep fd-find bat
@@ -73,7 +73,7 @@ if [ ! -x "$CARGO_BIN" ]; then
     exit 1
 fi
 
-# Install crates as coder user so they go to coder's ~/.cargo/bin
+# Install crates as the booth user (coder unless CB_USER_NAME says otherwise) so they go to its ~/.cargo/bin
 # Explicitly unset CARGO_HOME to use default ~/.cargo
 # A trailing @version pins the crate (translated to cargo's --version flag).
 #
@@ -82,14 +82,15 @@ fi
 # — counts that as an unbound variable and aborts. Booths run bash 5, where it
 # expands to nothing; the difference only shows when a test runs this script on
 # a Mac host.
+CB_USER_NAME="${CB_USER_NAME:-coder}"
 for spec in "${SPECS[@]}"; do
     crate="${spec%@*}"
     if [ "$crate" = "$spec" ]; then
         echo "📦 Installing $crate..."
-        cb_retry sudo -u coder bash -lc "unset CARGO_HOME; cargo install '$crate' ${FLAGS[*]-}"
+        cb_retry sudo -u "$CB_USER_NAME" bash -lc "unset CARGO_HOME; cargo install '$crate' ${FLAGS[*]-}"
     else
         version="${spec##*@}"
         echo "📦 Installing $crate (version $version)..."
-        cb_retry sudo -u coder bash -lc "unset CARGO_HOME; cargo install '$crate' --version '$version' ${FLAGS[*]-}"
+        cb_retry sudo -u "$CB_USER_NAME" bash -lc "unset CARGO_HOME; cargo install '$crate' --version '$version' ${FLAGS[*]-}"
     fi
 done

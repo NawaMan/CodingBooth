@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 # Startup hook that forks mongod on container boot. Pairs with mongodb--setup.sh,
 # which only prepares ~/.mongodb — it does not start the server.
@@ -42,10 +42,10 @@ install -d "$(dirname "$STARTUP_FILE")"
 cat >"$STARTUP_FILE" <<'STARTUP'
 #!/usr/bin/env bash
 set -euo pipefail
-# 62-cb-mongodb--startup.sh has already prepared /home/coder/.mongodb.
-CONF="/home/coder/.mongodb/mongod.conf"
+# 62-cb-mongodb--startup.sh has already prepared ~/.mongodb (/home/coder/.mongodb in a booth).
+CONF="$HOME/.mongodb/mongod.conf"
 if [[ -f "$CONF" ]]; then
-  sudo -u coder mongod --config "$CONF" --fork 2>/dev/null || true
+  sudo -u "$(id -un)" mongod --config "$CONF" --fork 2>/dev/null || true
 fi
 STARTUP
 chmod 755 "$STARTUP_FILE"

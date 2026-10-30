@@ -11,7 +11,13 @@
 set -euo pipefail
 
 echo "=== Testing APT_SNAPSHOT freeze ==="
-BOOTHFILE="/home/coder/code/.booth/Boothfile"
+# Off a booth (`booth prepare`, CB_TARGET gha or host) the pin is not applied by
+# design: the machine's apt is live and already newer (docs/REUSE_BOOTH.md, item 11).
+if [[ "${CB_TARGET:-booth}" != "booth" ]]; then
+    echo "SKIP: CB_TARGET=${CB_TARGET}: APT_SNAPSHOT is not applied off a booth"
+    exit 0
+fi
+BOOTHFILE="$(dirname "$0")/../.booth/Boothfile"   # /home/coder/code/.booth/Boothfile in a booth
 EXPECTED="$(sed -n 's/^env APT_SNAPSHOT=//p' "$BOOTHFILE" | head -1)"
 ACTUAL="$(printenv APT_SNAPSHOT || true)"
 echo "Boothfile: APT_SNAPSHOT=${EXPECTED}"

@@ -21,8 +21,10 @@ env VIRTUAL_ENV=/opt/python
 env PATH=/usr/local/uv/bin:/usr/local/uv:/opt/pyenv/bin:/opt/python/bin:$PATH
 setup python ${PYTHON_VERSION}
 install lsp ${LSP_SERVERS}
+setup lsp--marksman
 setup lsp--taplo
 setup notebook ${NOTEBOOK_PORT}
+setup markdown-code-extension
 setup toml-code-extension
 setup python-code-extension
 setup bash-nb-kernel
