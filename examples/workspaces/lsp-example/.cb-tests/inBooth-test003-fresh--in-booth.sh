@@ -1,5 +1,5 @@
 #!/bin/bash
-# The base image links Fresh's booth-lsp plugin at container start.
+# The fresh setup links Fresh's booth-lsp plugin at container start.
 set -euo pipefail
 link="$HOME/.config/fresh/plugins/booth-lsp.ts"
 target="$(readlink "$link" || true)"

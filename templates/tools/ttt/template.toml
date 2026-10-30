@@ -1,8 +1,8 @@
-cb-version = "0.1.1"
+cb-version = "0.2.0"
 display-name = "TTT"
 primary = true
 display-disc = "Terminal IDE with LSP, git, and an embedded terminal"
-display-detail = """Installs the TTT Editor from the official GitHub release: a single Linux binary under /opt/ttt, with ttt on PATH. Workspace search needs rg, so the setup installs ripgrep when it is missing. Config is ~/.config/ttt/settings.json. ttt+theme (zenith, rounded borders) and ttt+lsp (the booth's language servers) are selected with it; deselect either with ttt~theme or ttt~lsp. Select +config-shared to keep that directory in git. Pin a release with ttt:1.8.0; the default is latest, falling back to 1.8.0."""
+display-detail = """TTT 1.9.0 is already in the base image as the default editor ($EDITOR, editor), pointed at the booth's language servers; select this template to pick another release or a theme. Installs the TTT Editor from the official GitHub release, checked against its checksums.txt: a single Linux binary under /opt/ttt, with ttt on PATH. Workspace search needs rg, so the setup installs ripgrep when it is missing. Config is ~/.config/ttt/settings.json. ttt+theme (zenith, rounded borders) and ttt+lsp (the booth's language servers) are selected with it; deselect either with ttt~theme or ttt~lsp. Select +config-shared to keep that directory in git. Pin a release with ttt:1.8.0; the default is latest, falling back to 1.8.0."""
 display-order = 18
 tags = [
     "ttt",
