@@ -21,6 +21,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 source ../common--source.sh
+# On Windows common--source.sh exports a docker() function; the setup's
+# `command -v docker` would see it in the no-docker case and keep "this machine's Docker".
+unset -f docker 2>/dev/null || true
 
 SCRIPT="$(cd "$SCRIPT_DIR/../.." && pwd)/variants/base/setups/dind--setup.sh"
 
@@ -44,9 +47,13 @@ chmod +x "$STUB/sudo" "$STUB/with-docker/docker"
 cp "$STUB/sudo" "$STUB/no-docker/sudo"; cp "$STUB/sudo" "$STUB/with-docker/sudo"
 # Only the tools the script needs, so a real docker on this host stays out of sight.
 mkdir -p "$STUB/tools"
+# Wrappers, not symlinks: Git Bash's `ln -s` copies the binary, and a bash.exe copied
+# away from its msys-2.0.dll dies silently, so every case saw an empty log.
+REAL_BASH=$(command -v bash)
 for tool in bash cat chmod mkdir env id; do
     real=$(command -v "$tool") || { echo "FAIL: '$tool' not found on PATH" >&2; exit 1; }
-    ln -s "$real" "$STUB/tools/$tool"
+    printf '#!%s\nexec "%s" "$@"\n' "$REAL_BASH" "$real" > "$STUB/tools/$tool"
+    chmod +x "$STUB/tools/$tool"
 done
 
 # run_setup <docker-dir> <CB_TARGET or "">: log of the sudo calls

@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -222,7 +223,8 @@ func TestExtractKeepsModesAndRejectsEscapes(t *testing.T) {
 		t.Fatal(err)
 	}
 	info, err := os.Stat(filepath.Join(dir, "experiments/host-provision/base-provision.sh"))
-	if err != nil || info.Mode().Perm()&0100 == 0 {
+	// NTFS has no exec bit to keep; the kit's scripts only run inside the Linux target.
+	if err != nil || runtime.GOOS != "windows" && info.Mode().Perm()&0100 == 0 {
 		t.Errorf("script mode: %v %v", info, err)
 	}
 	if err := CheckSource(dir); err != nil {
