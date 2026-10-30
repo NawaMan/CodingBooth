@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 # wails--setup.sh — Install the Wails v3 CLI and the Linux GTK4/WebKitGTK
 # toolchain it compiles against.
@@ -89,14 +89,17 @@ fi
 
 echo "📦 Installing wails3 (${SPEC}) ..."
 
-# Install as coder so the module cache lives in the booth user's GOPATH, then
+# Install as the booth user (coder unless CB_USER_NAME says otherwise) so the module cache lives in the booth user's GOPATH, then
 # copy the binary to /usr/local/bin. go install talks to proxy.golang.org,
 # which resets often enough to fail a build; retry with backoff like go--install.sh.
-install -d -o coder -g coder /home/coder/go/bin /home/coder/go/pkg /home/coder/go/src
+CB_USER_NAME="${CB_USER_NAME:-coder}"
+CB_USER_HOME="${CB_USER_HOME:-$(getent passwd "$CB_USER_NAME" 2>/dev/null | cut -d: -f6 || true)}"
+CB_USER_HOME="${CB_USER_HOME:-/home/${CB_USER_NAME}}"
+install -d -o "$CB_USER_NAME" -g "$(id -gn "$CB_USER_NAME")" "$CB_USER_HOME/go/bin" "$CB_USER_HOME/go/pkg" "$CB_USER_HOME/go/src"
 
 install_cli() {
   local spec="$1"
-  sudo -u coder bash -lc "go install '${spec}'"
+  sudo -u "$CB_USER_NAME" bash -lc "go install '${spec}'"
 }
 
 attempt=1
@@ -115,7 +118,7 @@ until install_cli "$SPEC"; do
 done
 
 WAILS_SRC=""
-for candidate in /home/coder/go/bin/wails3 /root/go/bin/wails3; do
+for candidate in "$CB_USER_HOME/go/bin/wails3" /root/go/bin/wails3; do
   if [[ -x "$candidate" ]]; then
     WAILS_SRC="$candidate"
     break

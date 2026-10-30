@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 set -Eeuo pipefail
 trap 'echo "Error on line $LINENO"; exit 1' ERR
@@ -137,9 +137,9 @@ set -euo pipefail
 CLAUDE_DIR="$HOME/.claude"
 mkdir -p "$CLAUDE_DIR"
 
-mkdir -p "/home/coder/.local/bin"
-if [[ ! -e "/home/coder/.local/bin/claude" ]]; then
-    ln -s /usr/local/bin/claude "/home/coder/.local/bin/claude"
+mkdir -p "$HOME/.local/bin"
+if [[ ! -e "$HOME/.local/bin/claude" ]]; then
+    ln -s /usr/local/bin/claude "$HOME/.local/bin/claude"
 fi
 EOF
 chmod 755 "${STARTUP_FILE}"

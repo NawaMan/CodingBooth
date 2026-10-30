@@ -2,9 +2,9 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
-# This script installs Ruby gems for the 'coder' user.
+# This script installs Ruby gems for the booth user ('coder' unless CB_USER_NAME says otherwise).
 # It requires ruby--setup.sh to have been run first.
 # Usage: gem--install.sh <gem> [gem...]
 # Example: gem--install.sh rails bundler pry
@@ -51,8 +51,9 @@ if [ ! -x /opt/rbenv/shims/gem ]; then
     exit 1
 fi
 
-# Install gems as coder user so they go to coder's ~/.gem
+# Install gems as the booth user (coder unless CB_USER_NAME says otherwise) so they go to its ~/.gem
+CB_USER_NAME="${CB_USER_NAME:-coder}"
 for gem_name in "$@"; do
     echo "💎 Installing $gem_name..."
-    cb_retry sudo -u coder bash -lc "gem install '$gem_name' --no-document"
+    cb_retry sudo -u "$CB_USER_NAME" bash -lc "gem install '$gem_name' --no-document"
 done
