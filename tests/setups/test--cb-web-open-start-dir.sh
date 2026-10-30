@@ -45,7 +45,7 @@ check() {
     fi
 }
 
-if ! command -v python3 >/dev/null 2>&1; then
+if ! have_python3; then
     echo "SKIP: python3 is needed for the stub service"
     exit 0
 fi
