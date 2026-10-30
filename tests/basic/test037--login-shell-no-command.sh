@@ -47,10 +47,14 @@ fi
 
 PROBE='echo "WHO=$(whoami)"; echo "LOGIN=$(shopt -q login_shell && echo yes || echo no)"; echo "HOME=$HOME"; exit'
 
+# timeout_run execs the docker binary, not common--source.sh's docker function,
+# so Git Bash would rewrite /usr/local/bin/booth-entry into a Windows path
+# ("C:/Program Files/Git/usr/local/...") and tini could not exec it. Turn the
+# rewriting off here, and hand the -v source over in the host's own form.
 RC=0
-printf '%s\n' "$PROBE" | timeout_run 120 docker run --rm -i --name "$NAME" \
+printf '%s\n' "$PROBE" | MSYS_NO_PATHCONV=1 timeout_run 120 docker run --rm -i --name "$NAME" \
   -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
-  -v "$AS_CODER:/usr/local/bin/booth--as-coder:ro" \
+  -v "$(host_path "$WORK")/booth--as-coder:/usr/local/bin/booth--as-coder:ro" \
   --entrypoint tini "$IMAGE" -g -- /usr/local/bin/booth-entry \
   > "$LOG" 2>&1 || RC=$?
 OUT="$(tr -d '\r' < "$LOG")"
