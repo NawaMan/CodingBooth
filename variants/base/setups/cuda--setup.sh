@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.1.1
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -19,7 +19,7 @@ Arguments:
 
 Examples:
   $0            # install the newest cuda-toolkit
-  $0 13-4       # pin CUDA Toolkit 13.4.x
+  $0 13-4       # pin CUDA Toolkit 13.4.x (the ubuntu2604 repo has 13-3 and up)
 
 ⚠️  READ BEFORE SELECTING THIS: this installs the CUDA *compiler and
 libraries* (nvcc, headers, runtime libs) into the image -- it does
@@ -57,7 +57,9 @@ case "$dpkgArch" in
   *) echo "❌ Unsupported arch: $dpkgArch (need amd64 or arm64)"; exit 1 ;;
 esac
 
-REPO="ubuntu2404"
+# NVIDIA publishes one repo per Ubuntu release; it must match the base image
+# (26.04), or apt mixes another release's libraries into this one.
+REPO="ubuntu2604"
 KEYRING_URL="https://developer.download.nvidia.com/compute/cuda/repos/${REPO}/${REPO_ARCH}/cuda-keyring_1.1-1_all.deb"
 
 export DEBIAN_FRONTEND=noninteractive
