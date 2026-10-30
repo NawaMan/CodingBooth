@@ -68,6 +68,7 @@ OTHER COMMANDS:
   SHOWCASE  | Import a CodingBooths.online showcase  | showcase                                                                | docs/BOOTH_SHOWCASE.md
   PROJECT   | Scaffold project files                 | just-init, template                                                     | docs/BOOTH_EXAMPLE.md
   EXPRESS   | Run from arguments, ignoring .booth/   | express                                                                 | docs/BOOTH_RUN.md
+  PREPARE   | Run booth code on this machine         | prepare gha, prepare ubuntu [Experimental]                              | docs/REUSE_BOOTH.md
 
 Run '%s --help <command>'   for command-specific help.
 Run '%s --help --detail'    for the full reference.
@@ -1052,6 +1053,8 @@ func dispatchHelp(args []string, version string) {
 			showShowcaseHelp(version)
 		case "just-init":
 			showHelpJustInit()
+		case "prepare":
+			showHelpPrepare()
 		case "build":
 			showHelpBuild()
 		case "shell":

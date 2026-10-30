@@ -134,14 +134,24 @@ done < <([ -f "$BOOTHFILE" ] && cat "$BOOTHFILE")
 # None of them is replayed. Each is recorded as DROP, so a PASS elsewhere in the
 # report is not read as "the same as the booth". On gha the variant is BASE instead:
 # a gha run is defined as a base booth (--variant base), so it is overridden, not lost.
+# Under `booth prepare` (CB_PREPARE_VARIANT set) the variant and the -e KEY=VALUE
+# run-args are carried out by prepare itself, so they are APPLY, not DROP.
 CONFIG="$EXAMPLE/.booth/config.toml"
 if [ -f "$CONFIG" ]; then
   while IFS= read -r item; do
     case "$item" in
       variant*) if [ "${CB_TARGET:-}" = gha ]; then
                   record BASE "$item  (config.toml; a gha run is a base booth, like --variant base)"
+                elif [ -n "${CB_PREPARE_VARIANT:-}" ]; then
+                  record APPLY "$item  (config.toml; booth prepare replayed variant $CB_PREPARE_VARIANT)"
                 else
                   record DROP "$item  (config.toml, not replayed; host: undecided)"
+                fi ;;
+      "run-args -e "?*=*|"run-args --env "?*=*|"run-args --env="?*=*|"run-args -e"[!\ ]*=*)
+                if [ -n "${CB_PREPARE_VARIANT:-}" ]; then
+                  record APPLY "$item  (config.toml; booth prepare exports it, /home/coder -> $CB_USER_HOME)"
+                else
+                  record DROP "$item  (config.toml, not replayed)"
                 fi ;;
       *)        record DROP "$item  (config.toml, not replayed)" ;;
     esac

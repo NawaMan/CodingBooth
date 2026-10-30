@@ -67,6 +67,9 @@ echo ""
 echo "📥 Downloading dependencies..."
 go mod download
 echo ""
+echo "🧳 Packing the kit booth prepare embeds (variants, docs, experiments/host-provision)..."
+go run ./src/cmd/prepare-kit --root .. --out src/pkg/prepare/kit/kit.tar.gz
+echo ""
 
 # The binary trusts what its Go toolchain's crypto/x509 trusts, so an older Go
 # ships a CLI that still accepts the compromised eMudhra CA keys. go.mod's

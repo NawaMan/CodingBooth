@@ -19,7 +19,7 @@ fi
 
 # Just check the USAGE section - the full help is ~98 lines
 ACTUAL=$(run_coding_booth help)
-ACTUAL=$(printf '%s\n' "$ACTUAL" | head -47)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -48)
 
 HERE="$PWD"
 VERSION="$(get_booth_version)"
@@ -71,6 +71,7 @@ OTHER COMMANDS:
   SHOWCASE  | Import a CodingBooths.online showcase  | showcase                                                                | docs/BOOTH_SHOWCASE.md
   PROJECT   | Scaffold project files                 | just-init, template                                                     | docs/BOOTH_EXAMPLE.md
   EXPRESS   | Run from arguments, ignoring .booth/   | express                                                                 | docs/BOOTH_RUN.md
+  PREPARE   | Run booth code on this machine         | prepare gha, prepare ubuntu [Experimental]                              | docs/REUSE_BOOTH.md
 
 Run '${SCRIPT_NAME} --help <command>'   for command-specific help."
 

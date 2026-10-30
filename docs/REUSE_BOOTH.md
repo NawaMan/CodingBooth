@@ -20,10 +20,11 @@ build/test on GHA.
   `booth-entry`. The real `variants/base/booth-entry` is unchanged;
 - a hand-started workflow, `.github/workflows/host-provision-exp.yaml`, that runs the harness on
   89 examples. Last result: 88 pass, 1 fails for a reason that is not about build or test
-  ([Third pass](#third-pass-gha-run-40779191508)).
+  ([Third pass](#third-pass-gha-run-40779191508));
+- **`booth prepare gha` and `booth prepare ubuntu`**, an experimental command that runs the harness
+  from the `booth` binary ([below](#booth-prepare-experimental)).
 
-No feature is shipped: no CLI command, no action, and the [open decisions](#open-decisions) are
-still open. The preparation is done in stages, and each stage
+No action is shipped, and the [open decisions](#open-decisions) are still open. The preparation is done in stages, and each stage
 soaks before the next one starts. That way, when we cross the line into actual host and GitHub
 Actions (GHA) support, any breakage is in the new code, not in old code that changed at the same
 time.
@@ -53,6 +54,7 @@ Back to [README](../README.md)
 
 ## Table of Contents
 
+- [booth prepare (experimental)](#booth-prepare-experimental)
 - [The two targets](#the-two-targets)
 - [What carries over, and what does not](#what-carries-over-and-what-does-not)
 - [Where it breaks](#where-it-breaks)
@@ -63,6 +65,53 @@ Back to [README](../README.md)
 - [Stages](#stages)
 - [Open decisions](#open-decisions)
 - [Experiment results](#experiment-results)
+
+---
+
+## booth prepare (experimental)
+
+```bash
+booth prepare gha                      # a workflow step on runs-on: ubuntu-26.04
+booth prepare ubuntu [--variant xfce]  # an Ubuntu 26.04 machine; asks first unless --yes
+```
+
+Run from the project folder (or `--code <dir>`). It replays, on the machine itself, what building
+and starting the booth does in a container, in four phases:
+
+1. **The base image:** `base-provision.sh`, the base Dockerfile as a script. A failure here stops
+   the run.
+2. **The variant** (ubuntu only, when not base): `provision-variant.sh` replays
+   `variants/<variant>/Dockerfile`. `cleanup-after--setup.sh` is skipped (it wipes `/tmp`), and
+   the variant's start command (`CMD`) is not started.
+3. **The Boothfile:** `provision-example.sh`. Each line is PASS, SKIP or FAIL in the report, and a
+   failing line does not stop the next one. `config.toml` settings are listed as DROP, except two
+   that prepare carries out itself, listed as APPLY: the variant (step 2; on `gha` it is BASE), and
+   the `-e KEY=VALUE` run-args, which go into `/etc/profile.d/06-cb-config-env.sh` and into
+   booth-entry's environment, as `docker run -e` puts them into a booth's. In their values
+   `/home/coder` becomes the user's home, as for the Boothfile's `env` lines.
+4. **booth-entry's user steps:** the `CB_TARGET`-guarded copy, ending with `true` instead of a
+   shell. Startup hooks start their services here, and those keep running afterwards.
+
+The run ends with the report's FAIL and DROP lines, and exits 1 if anything failed.
+
+| | `gha` | `ubuntu` |
+| --- | --- | --- |
+| The machine | `GITHUB_ACTIONS=true` and Ubuntu 26.04 | Ubuntu 26.04 |
+| Variant | always base; a `config.toml` variant is only noted | `--variant`, else `config.toml`'s, else base |
+| Confirmation | none | asks first; `--yes` skips, and no terminal requires it |
+| Later shells | the login shell's new variables and PATH entries go to `GITHUB_ENV` / `GITHUB_PATH`, so a plain `run:` step needs no `bash -l` | login shells read `/etc/profile.d` |
+
+**Who runs it.** An ordinary user that can sudo: the machine is set up for that user, and the
+project folder is the current one, not `/home/coder/code`. Without passwordless sudo, it asks for
+the password once on a terminal and keeps sudo fresh for the whole run; with no terminal it stops.
+As root it stops and asks for `--add-user <name>`: that user is created if missing (reused if
+present), added to the `sudo` group, and prepared for.
+
+**Where the scripts come from.** The binary embeds them: `build/cli-build.sh` packs `variants/`,
+the docs markdown and `experiments/host-provision/` into `cli/src/pkg/prepare/kit/kit.tar.gz`
+(`cli/src/cmd/prepare-kit`, about 2.4 MB, deterministic). So a binary always carries the scripts of
+its own version, `--rc` builds included. `--source <checkout>` uses a checkout instead. A binary
+built with a plain `go build` has no kit and needs `--source`.
 
 ---
 
@@ -225,7 +274,10 @@ lines map directly onto `$GITHUB_ENV` and `$GITHUB_PATH`.
     the same or later. A live machine has been upgraded past it. On the GHA runner `libcurl4t64`
     was already 8.18.0-1ubuntu2.8, the 2026-10-04 snapshot offers `libcurl4-openssl-dev` only at
     ubuntu2.7, and apt will not pair them or downgrade (systemlib-example). An upgraded host fails
-    the same way. To decide, for path B: ignore the pin off-booth (reproducibility then comes
+    the same way, and so does a second `booth prepare` on one machine: the first run installs from
+    the live archive and leaves the Boothfile's `APT_SNAPSHOT` in `/etc/profile.d`, so the second
+    run's `gnupg--setup.sh` resolves its build dependencies against the older snapshot and apt
+    refuses (`zlib1g-dev` against an installed newer `zlib1g`). To decide, for path B: ignore the pin off-booth (reproducibility then comes
     from the machine, which is the weaker tier the reproducibility stance already describes), or
     pin only packages not yet installed.
 
