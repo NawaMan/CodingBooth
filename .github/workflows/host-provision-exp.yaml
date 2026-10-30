@@ -1,7 +1,8 @@
-# EXPERIMENT -- see docs/REUSE_BOOTH.md. Provisions a GitHub-hosted Ubuntu 26.04
-# runner with the base setups, an example's Boothfile and the CB_TARGET-guarded
-# booth-entry copy, then runs the example's own checks. 89 jobs, so it runs only
-# when started by hand (Actions -> host-provision experiment -> Run workflow).
+# EXPERIMENT -- see docs/REUSE_BOOTH.md. `booth prepare gha` provisions a
+# GitHub-hosted Ubuntu 26.04 runner with the base setups, an example's Boothfile
+# and the CB_TARGET-guarded booth-entry copy; a later step, in a shell that reads
+# no profile, then runs the example's own checks. 89 jobs, so it runs only when
+# started by hand (Actions -> host-provision experiment -> Run workflow).
 name: host-provision experiment
 
 on:
@@ -11,7 +12,23 @@ permissions:
   contents: read
 
 jobs:
+  # The booth binary, with the prepare kit embedded, built once for every job.
+  cli:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: cli/go.mod
+          cache-dependency-path: cli/go.sum
+      - run: ./build/cli-build.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: booth-linux-amd64
+          path: bin/codingbooth-linux-amd64
+
   provision:
+    needs: cli
     runs-on: ubuntu-26.04
     timeout-minutes: 60
     strategy:
@@ -127,25 +144,36 @@ jobs:
           for t in go zig python3 node java gpg just; do printf '%-8s %s\n' "$t" "$(command -v $t || echo -)"; done
           apt-cache madison clang-18 | head -n 3
 
-      - name: Provision + check (CB_TARGET=gha)
-        env:
-          REPORT: ${{ runner.temp }}/report.txt
-        run: experiments/host-provision/run.sh gha examples/workspaces/${{ matrix.example }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: booth-linux-amd64
+          path: ${{ runner.temp }}/cli
 
-      # A later step is a fresh `bash --noprofile --norc`: does anything carry over?
-      # The package commands are listed because some examples' own tests fetch on
-      # demand (`bun x cowsay`, `deno run npm:cowsay`) and pass without the install.
+      - name: booth prepare gha
+        working-directory: examples/workspaces/${{ matrix.example }}
+        run: |
+          install -m 0755 "$RUNNER_TEMP/cli/codingbooth-linux-amd64" "$RUNNER_TEMP/booth"
+          "$RUNNER_TEMP/booth" prepare gha --report "$RUNNER_TEMP/report.txt"
+
+      # A later step is a fresh `bash --noprofile --norc`: what booth prepare wrote
+      # to GITHUB_ENV / GITHUB_PATH must be enough. The package commands are listed
+      # because some examples' own tests fetch on demand (`bun x cowsay`).
       - name: Later step, default shell (reads no profile)
+        if: always()
         continue-on-error: true
         run: |
           for t in go zig bun deno node clang xonsh just cowsay figlet prettier tsc; do printf '%-5s %s\n' "$t" "$(command -v $t || echo MISSING)"; done
 
-      - name: Later step, login shell (bash -l) runs the example's own tests
-        shell: bash -leo pipefail {0}
+      - name: Later step, default shell runs the example's own checks
+        if: always()
         working-directory: examples/workspaces/${{ matrix.example }}
         env:
+          REPORT: ${{ runner.temp }}/report.txt
+          CHECK_SHELL: bash -c
           BOOTH_CONTAINER_NAME: host-provision
-        run: bash .cb-tests/inBooth--run-all-tests.sh
+        run: |
+          "$GITHUB_WORKSPACE/experiments/host-provision/check-example.sh"
+          ! grep -q '^FAIL ' "$REPORT"
 
       - name: Upload report
         if: always()
