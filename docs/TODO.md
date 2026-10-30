@@ -323,10 +323,6 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
       than the "same path on both sides" trick the Unix case gets away with.
 - [ ] **Open risks from the 0.79.0 catalog sweep (2026-10-03, n−1 rule applied).** Each is a
       guess until the full suite runs on the 26.04 images; drop the line once a run settles it.
-      - **cuda reads NVIDIA's `ubuntu2404` repo on the 26.04 base** (`variants/base/setups/cuda--setup.sh`,
-        `REPO="ubuntu2404"`). NVIDIA now publishes `ubuntu2604` (cuda-toolkit 13-3, 13-4). Mixing a
-        24.04 repo into 26.04 may pull mismatched libs; switch to `ubuntu2604` once it can be checked
-        on a GPU host (`0.80.0--rc` has the same line).
       - **Held at the previous major on purpose:** mermaid 11.17.2 (12.1.0 is out), appwrite-server
         1.9.6 (2.3.0 is out; its compose/migration needs a look), ruby 3.4 (4.0.7), erlang OTP 28 (29),
         lua 5.4 (5.5), clang/LLVM 22 (23), go 1.26.8 (1.27.1 only added to suggests), zig 0.16.0

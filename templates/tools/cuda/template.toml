@@ -1,4 +1,4 @@
-cb-version = "0.1.0"
+cb-version = "0.1.1"
 display-name = "CUDA Toolkit"
 display-disc = "NVIDIA CUDA compiler and libraries (nvcc)"
 display-detail = """Installs the CUDA Toolkit (nvcc, headers, runtime libraries) via NVIDIA's own apt repo. \
@@ -29,7 +29,7 @@ default = "latest"
 suggests = [
     "latest",
     "13-4",
-    "12-6",
+    "13-3",
 ]
 
 [segments]

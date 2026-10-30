@@ -4,6 +4,11 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **CUDA installs from NVIDIA's Ubuntu 26.04 repo.** `--select cuda` still read NVIDIA's
+  `ubuntu2404` apt repo after the base image moved to Ubuntu 26.04, so the toolkit came from a repo
+  built for another release. It now reads `ubuntu2604`, which carries CUDA 13.3 and later; the
+  template suggests `13-4` and `13-3` instead of `12-6`, which that repo does not have.
+
 - **Setups can run outside a booth (experiment, toward GitHub Actions and a plain Ubuntu machine).**
   The install scripts that ran as `coder` (brew, bun, cargo, conan, deno, deno-pkg, dotnet, gem,
   go, go-nb-kernel, homebrew, wails) take the user from `CB_USER_NAME` and its home from
