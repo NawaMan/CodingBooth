@@ -11,6 +11,11 @@
 # server to a sample file and asks it to hover over `greet`; the answer has to be
 # the function's type, which only a server that compiled the file can give.
 # hover.lua is the client; the samples are Main.hs and main.zig.
+#
+# HLS on arm64: ghcup's HLS for aarch64 Linux is an unofficial build, and 2.14.0.0
+# was made against a different GHC 9.10.3 than the official one, so it exits with
+# "GHC ABIs don't match" (lsp--hls--setup.sh warns at build time). On an arm64
+# docker, step 3 skips while HLS says that, and runs again once it does not.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -45,6 +50,17 @@ else
     print_test_result "false" "$0" "2" "zls should answer hover with greet's type"
     echo "  Actual output: $ACTUAL"
     FAILED=$((FAILED + 1))
+fi
+
+SERVER_ARCH="$(docker_server_arch)"
+PROBE=""
+if [[ "$SERVER_ARCH" != "amd64" ]]; then
+    # `; true`: typecheck exits 1 on the mismatch, and capture_codingbooth drops a failed run's output.
+    PROBE=$(capture_codingbooth "cat" --silence-build -- 'haskell-language-server-wrapper typecheck Main.hs 2>&1; true')
+fi
+if [[ "$PROBE" == *"GHC ABIs don't match"* ]]; then
+    echo "SKIP: Test 3: HLS for linux/${SERVER_ARCH} was built against another GHC build (GHC ABIs don't match)." >&2
+    exit $FAILED
 fi
 
 ACTUAL=$(hover Main.hs 6 18)
