@@ -18,9 +18,9 @@ build/test on GHA.
 - an in-booth test for every example (`.cb-tests/inBooth-*.sh`);
 - the harness under `experiments/host-provision/`, including a `CB_TARGET`-guarded **copy** of
   `booth-entry`. The real `variants/base/booth-entry` is unchanged;
-- a hand-started workflow, `.github/workflows/host-provision-exp.yaml`, that runs the harness on
-  89 examples. Last result: 88 pass, 1 fails for a reason that is not about build or test
-  ([Third pass](#third-pass-gha-run-40779191508));
+- a hand-started workflow, `.github/workflows/host-provision-exp.yaml`, that builds the binary and
+  runs `booth prepare gha` on 91 examples. Last result (run 40983598109, 2026-10-30): all 92 jobs
+  pass ([Third pass](#third-pass-gha-run-40779191508) was the last run of the plain harness);
 - **`booth prepare gha` and `booth prepare ubuntu`**, an experimental command that runs the harness
   from the `booth` binary ([below](#booth-prepare-experimental)).
 
