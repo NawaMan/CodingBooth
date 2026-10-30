@@ -4,6 +4,11 @@
 #       shell, and shell-config installs and removes the scripts with its block.
 source "$(dirname "$0")/_lib.sh"
 
+[[ -s "$REPO_ROOT/codingbooth" \
+   || -s "$REPO_ROOT/bin/codingbooth-linux-amd64" \
+   || -s "$REPO_ROOT/bin/codingbooth-linux-arm64" ]] \
+    || { echo "Build the CLI first: ./build/cli-build.sh" >&2; exit 2; }
+
 LAST_OUTPUT=$(run_in_container <<'BASH'
 set -euo pipefail
 
@@ -27,12 +32,25 @@ echo "=== SCRIPTS ==="
 ./booth completion tcsh >/dev/null 2>&1 && echo "tcsh accepted" || echo "tcsh rejected"
 
 # The local build, installed the way `install` lays it out, so the wrapper
-# verifies and runs it without a download.
+# verifies and runs it without a download. Which file is this checkout's Linux
+# binary depends on who built it: see 097.
+case "$(uname -m)" in
+    aarch64|arm64) arch=arm64 ;;
+    *)             arch=amd64 ;;
+esac
+if [[ -s "/booth/bin/codingbooth-linux-$arch" ]]; then
+    checkout_binary="/booth/bin/codingbooth-linux-$arch"
+elif [[ -s /booth/codingbooth ]] && [[ "$(head -c 4 /booth/codingbooth)" == $'\x7fELF' ]]; then
+    checkout_binary=/booth/codingbooth
+else
+    echo "ERROR: no Linux build of this checkout; run ./build/cli-build.sh"
+    exit 98
+fi
 version=$(tr -d ' \t\r\n' < /booth/version.txt)
 cache="$HOME/.cache/codingbooth/versions/$version"
 mkdir -p "$cache" .booth/tools
-cp /booth/bin/codingbooth-linux-* "$cache/"
-(cd "$cache" && sha256sum codingbooth-linux-* > codingbooth.sha256)
+cp "$checkout_binary" "$cache/codingbooth-linux-$arch"
+(cd "$cache" && sha256sum "codingbooth-linux-$arch" > codingbooth.sha256)
 printf 'version=%s\ncache=shared\n' "$version" > .booth/tools/codingbooth.lock
 touch .booth/gpu--config.toml
 
