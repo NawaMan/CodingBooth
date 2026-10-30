@@ -11,3 +11,4 @@ env EDITOR=nvim
 env VISUAL=nvim
 setup neovim ${NEOVIM_VERSION}
 setup antigravity
+setup neovim-lsp
