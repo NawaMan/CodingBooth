@@ -1,7 +1,7 @@
 # syntax=codingbooth/boothfile:1
 # Configured by: booth config --no-tui --overwrite --variant notebook --select octave+vscode-ext+kernel/python/notebook
 
-env APT_SNAPSHOT=20261004T000000Z
+env APT_SNAPSHOT=20261023T000000Z
 
 arg NOTEBOOK_PORT=18888
 arg PYTHON_VERSION=3.13.12
