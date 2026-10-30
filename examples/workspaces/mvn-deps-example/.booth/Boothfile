@@ -1,7 +1,7 @@
 # syntax=codingbooth/boothfile:1
 # Configured by: booth config --no-tui --overwrite --select java:21+maven+mvn-install
 
-env APT_SNAPSHOT=20261004T000000Z
+env APT_SNAPSHOT=20261023T000000Z
 
 arg JDK_VENDOR=temurin
 arg JDK_VERSION=21
