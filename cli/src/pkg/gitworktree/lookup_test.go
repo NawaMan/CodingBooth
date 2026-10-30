@@ -41,6 +41,7 @@ func TestParseWorktreeList(t *testing.T) {
 		{Path: "/gone", Branch: "gone", Prunable: true},
 	}
 	for i, w := range want {
+		w.Path = filepath.FromSlash(w.Path) // git's / becomes \ on Windows
 		if entries[i] != w {
 			t.Errorf("entry %d: want %+v, got %+v", i, w, entries[i])
 		}
