@@ -1,4 +1,4 @@
-cb-version = "0.2.0"
+cb-version = "0.3.0"
 display-name = "Wails [experimental]"
 display-disc = "Experimental — Wails v3, Go desktop apps with a web frontend"
 display-detail = """EXPERIMENTAL — new, not yet battle-tested; expect rough edges. \
@@ -44,7 +44,7 @@ run-args = [
 
 [params.WAILS_VERSION]
 default = "latest"
-suggests = ["latest", "v3.0.0-beta.27"]
+suggests = ["latest", "v3.0.0"]
 
 # Image environment, not a shell profile. `booth exec` runs the command with no
 # shell, so /etc/profile.d never runs: these mirror what the setup's profile sets.

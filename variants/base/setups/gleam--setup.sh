@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 # gleam--setup.sh — Install the Gleam compiler from GitHub releases
 set -Eeuo pipefail
@@ -15,7 +15,7 @@ Usage:
 
 Examples:
   $0                           # install the latest stable Gleam
-  $0 --version 1.18.1          # pin a specific version
+  $0 --version 1.19.2          # pin a specific version
   $0 --version 1.19.0-rc2      # a release candidate, only when asked for by name
 
 Notes:
@@ -59,7 +59,7 @@ apt-get install -y --no-install-recommends curl ca-certificates tar
 rm -rf /var/lib/apt/lists/*
 
 # Known-good pin when the GitHub API is rate-limited.
-FALLBACK_VERSION="1.18.1"
+FALLBACK_VERSION="1.19.2"
 VERSION_RE='^[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$'
 
 if [[ "$REQ_VER" == "latest" ]]; then

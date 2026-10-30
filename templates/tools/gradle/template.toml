@@ -1,4 +1,4 @@
-cb-version = "1.1.0"
+cb-version = "1.2.0"
 display-name = "Gradle"
 primary = true
 display-disc = "Gradle build tool for JVM projects"
@@ -9,8 +9,8 @@ tags = ["gradle", "build", "java", "jvm"]
 requires = ["java"]
 
 [params.GRADLE_VERSION]
-default = "9.8.0"
-suggests = ["9.8.0", "9.7.1", "9.6.1"]
+default = "9.8.2"
+suggests = ["9.8.2", "9.7.1", "9.6.1"]
 
 # Image environment, not a shell profile. `booth exec` runs the command with no
 # shell, so /etc/profile.d never runs: these mirror what the setup's profile sets.

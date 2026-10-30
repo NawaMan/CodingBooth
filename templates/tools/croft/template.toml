@@ -1,10 +1,10 @@
-cb-version = "0.1.1"
+cb-version = "0.2.0"
 display-name = "Croft"
 primary = true
 display-disc = "WARNING: no way to quit Croft on the base Console"
 display-detail = """WARNING: On the base variant (Console UI) there is no way to quit Croft. The browser takes Ctrl+Q and closes the tab, and Croft has no other quit command, so you can get stuck in it. Be careful selecting Croft for a base booth. Prefer a desktop variant, or run croft from a host terminal such as Ghostty, kitty, or WezTerm.
 
-Installs Croft from the official GitHub release: the static musl build under /opt/croft, with croft on PATH. The archive is checked against the release SHA256SUMS. Config is ~/.config/croft/config.json. Select +config-shared to keep that directory in git. Pin a release with croft:0.2.32; the default is latest, falling back to 0.2.32."""
+Installs Croft from the official GitHub release: the static musl build under /opt/croft, with croft on PATH. The archive is checked against the release SHA256SUMS. Config is ~/.config/croft/config.json. Select +config-shared to keep that directory in git. Pin a release with croft:0.2.82; the default is latest, falling back to 0.2.82."""
 display-order = 19
 tags = [
     "croft",
@@ -15,7 +15,7 @@ tags = [
 
 [params.CROFT_VERSION]
 default = "latest"
-suggests = ["latest", "0.2.32"]
+suggests = ["latest", "0.2.82"]
 
 [segments]
 Boothfile = """

@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.2.0
+# cb-version: 0.3.0
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -13,8 +13,8 @@ Usage:
   $0 [--version <X.Y.Z>|latest] [--port <port>]
 
 Examples:
-  $0                                  # n8n 2.42.5 on port 21200
-  $0 --version 2.42.5 --port 5678     # pin both
+  $0                                  # n8n 2.45.6 on port 21200
+  $0 --version 2.45.6 --port 5678     # pin both
 
 Notes:
 - Installs n8n with npm into the catalog Node.js (engines: >= 24)
@@ -37,7 +37,7 @@ USAGE
 HOME=/root
 
 # ---- defaults / args ----
-N8N_FALLBACK_VER="2.42.5"
+N8N_FALLBACK_VER="2.45.6"
 N8N_PORT="21200"
 REQ_VER="$N8N_FALLBACK_VER"
 while [[ $# -gt 0 ]]; do

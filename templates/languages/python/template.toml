@@ -1,4 +1,4 @@
-cb-version = "1.2.0"
+cb-version = "1.3.0"
 display-name = "Python"
 primary = true
 display-disc = "Python with pip package manager and venv support"
@@ -16,13 +16,13 @@ run-args = [
 ]
 
 [params.PYTHON_VERSION]
-default = "3.14.9"
+default = "3.14.10"
 suggests = [
-    "3.14.9",  "3.14",
-    "3.13.17", "3.13",
-    "3.12.14", "3.12",
-    "3.11.14", "3.11",
-    "3.10.19", "3.10",
+    "3.14.10", "3.14",
+    "3.13.18", "3.13",
+    "3.12.16", "3.12",
+    "3.11.18", "3.11",
+    "3.10.22", "3.10",
 ]
 
 # Image environment, not a shell profile. `booth exec` runs the command with no

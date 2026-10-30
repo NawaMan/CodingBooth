@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 # lsp--terraform-ls--setup.sh — Install terraform-ls, HashiCorp's Terraform language server.
 set -Eeuo pipefail
@@ -15,7 +15,7 @@ Usage:
 
 Examples:
   $0                       # latest terraform-ls
-  $0 --version 0.39.0      # pin a release
+  $0 --version 0.39.1      # pin a release
 
 Notes:
 - Installs to /usr/local/bin/terraform-ls from releases.hashicorp.com
@@ -27,7 +27,7 @@ USAGE
 
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
-TFLS_FALLBACK_VER="0.39.0"
+TFLS_FALLBACK_VER="0.39.1"
 REQ_VER="latest"
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -62,7 +62,7 @@ else
   VERSION="${REQ_VER#v}"
 fi
 if ! [[ "$VERSION" =~ $VERSION_RE ]]; then
-  echo "❌ Not a terraform-ls version: '${VERSION}' (expected X.Y.Z, for example 0.39.0)" >&2
+  echo "❌ Not a terraform-ls version: '${VERSION}' (expected X.Y.Z, for example 0.39.1)" >&2
   exit 2
 fi
 

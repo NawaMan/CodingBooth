@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.1.0"
 display-name = "Posting"
 primary = true
 display-disc = "HTTP client for your terminal"
@@ -12,8 +12,8 @@ tags = [
 ]
 
 [params.POSTING_VERSION]
-default = "2.11.0"
-suggests = ["2.11.0", "latest"]
+default = "2.11.1"
+suggests = ["2.11.1", "latest"]
 
 [segments]
 Boothfile = """

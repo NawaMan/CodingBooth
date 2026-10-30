@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.1.0"
 display-name = "Swift"
 primary = true
 display-disc = "Swift programming language toolchain"
@@ -11,8 +11,8 @@ tags = [
 ]
 
 [params.SWIFT_VERSION]
-default = "6.4.0"
-suggests = ["6.4.0"]
+default = "6.4.2"
+suggests = ["6.4.2", "6.4.0"]
 
 [segments]
 Boothfile = """

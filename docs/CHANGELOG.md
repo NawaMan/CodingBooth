@@ -194,6 +194,18 @@ This file contains a list of changes for each released version.
   out a component (dirmngr without GnuTLS, keyboxd without SQLite) rather than let it fall
   through to the 2.4 copy.
 
+- **Catalog versions refreshed for 0.81.0.** New defaults: Python 3.14.10, Julia 1.13.3, Swift
+  6.4.2, Elm 0.19.3 (now from the official GitHub binaries, like 0.19.2), Mojo 1.2.0, sccache
+  0.19.0, Gradle 9.8.2, Kafka 4.3.2, lean-lsp-mcp 0.32.0, posting 2.11.1, BlueJ 6.0.1, PlantUML
+  1.2026.9 (Jetty 11.0.26), protoc-gen-grpc-java 1.85.1, Appwrite server 1.9.10, CloudBeaver
+  26.2.3, kitty 0.49.2 (GPG-verified checksums), Caddy 2.11.7 (`setup tls`), n8n 2.45.6, JJava
+  1.0-a8, Mermaid 11.17.1 (the newest release both mermaid and mermaid-cli publish), Obsidian 1.14.5 and setuptools 84.2.1 in the notebook images. conda's
+  Python default is now 3.14 in the setup too, matching its template. Wails v3 is stable, so its
+  fallback is `v3.0.0`. Fallbacks and suggestions for `latest` defaults move to the current
+  releases (Zed, HeidiSQL, Orca, Exercism, just, lazygit, lazysql, dblab, buf, floci, PostgREST,
+  Croft, Fresh, Gleam, Kotlin, Elixir, xonsh, appwrite-cli, jdtls, terraform-ls, Rust, Flutter, gh,
+  Playwright, harlequin, DBeaver, npm, Maven 4 rc).
+
 - **`setup duckdb` installs DuckDB 2.x.** DuckDB 2.0.0 renamed its CLI download
   (`duckdb-cli-linux-<arch>.tar.gz`, was `duckdb_cli-linux-<arch>.zip`) and dropped the old name,
   so `latest` (the default) failed with a 404 and stopped the image build. The setup now picks

@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.1.0
+# cb-version: 1.2.0
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -13,11 +13,11 @@ Usage:
   $0 [VERSION]
 
 Arguments:
-  VERSION  BlueJ version (default: 6.0.0)
+  VERSION  BlueJ version (default: 6.0.1)
 
 Examples:
   $0             # install with default version
-  $0 6.0.0       # specific version
+  $0 6.0.1       # specific version
 
 Notes:
 - Downloads BlueJ .deb from bluej.org
@@ -43,7 +43,7 @@ if ! "$SCRIPT_DIR/cb-has-desktop.sh"; then
 fi
 
 # ---- defaults / args ----
-BLUEJ_VERSION="${1:-6.0.0}"
+BLUEJ_VERSION="${1:-6.0.1}"
 BLUEJ_DEB_TAG="${BLUEJ_VERSION//./}"
 
 export DEBIAN_FRONTEND=noninteractive

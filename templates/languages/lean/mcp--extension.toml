@@ -1,4 +1,4 @@
-cb-version = "0.1.0"
+cb-version = "0.2.0"
 display-name = "Lean MCP Server (for AI agents)"
 display-disc = "lean-lsp-mcp: let Claude Code and other agents see Lean's goals and errors"
 display-detail = """Installs lean-lsp-mcp, an MCP server that connects an AI agent to Lean's language \
@@ -13,8 +13,8 @@ auto-select = false
 tags = ["lean", "mcp", "ai", "agent", "claude"]
 
 [params.LEAN_LSP_MCP_VERSION]
-default = "0.31.0"
-suggests = ["0.31.0"]
+default = "0.32.0"
+suggests = ["0.32.0", "0.31.0"]
 
 [segments]
 "Boothfile--70" = """

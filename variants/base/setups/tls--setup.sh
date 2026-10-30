@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -29,7 +29,7 @@ TLS_BACKEND_PORT=10000
 # ==== Install Caddy ====
 
 echo "📦 Installing Caddy..."
-CADDY_VERSION=2.11.2
+CADDY_VERSION=2.11.7
 ARCH=$(dpkg --print-architecture)
 case "$ARCH" in
   amd64) CADDY_ARCH="amd64" ;;

@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.1
+# cb-version: 1.1.0
 
 set -Eeuo pipefail
 trap 'echo "Error on line $LINENO"; exit 1' ERR
@@ -30,7 +30,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "Run as root (use sudo)"; exit 1; }
 
 # ---- defaults / args ----
-KOTLIN_DEFAULT_VER="2.4.20"   # fallback when 'latest' cannot be resolved
+KOTLIN_DEFAULT_VER="2.4.21"   # fallback when 'latest' cannot be resolved
 REQ_VER="latest"              # no version given means "the current release"
 WITH_NATIVE=0
 KONAN_DIR_DEFAULT="/opt/konan"

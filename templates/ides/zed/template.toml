@@ -1,4 +1,4 @@
-cb-version = "0.1.0"
+cb-version = "0.2.0"
 display-name = "Zed"
 display-disc = "Zed high-performance code editor"
 display-detail = "Installs Zed, a fast GPU-rendered code editor written in Rust, from its official release tarball. Requires a desktop variant; skipped elsewhere. A booth has no GPU, so Zed renders through Mesa's software Vulkan driver — usable, but slower than on real hardware. Settings can be seeded from the host's ~/.config/zed via /etc/cb-home-seed."
@@ -12,7 +12,7 @@ tags = [
 
 [params.ZED_VERSION]
 default = "latest"
-suggests = ["latest", "1.25.3"]
+suggests = ["latest", "1.26.2"]
 
 [segments]
 "Boothfile--60" = """

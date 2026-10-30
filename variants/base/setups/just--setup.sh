@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 set -Eeuo pipefail
 
@@ -13,11 +13,11 @@ Usage:
 
 Examples:
   $0                           # install latest just
-  $0 --version 1.58.0          # pin specific version
+  $0 --version 1.59.0          # pin specific version
 
 Notes:
 - Installs just to /usr/local/bin/just (single static binary)
-- Upstream tags do not include a leading 'v' (e.g. 1.58.0)
+- Upstream tags do not include a leading 'v' (e.g. 1.59.0)
 - Part of the base image: every variant already has it
 - See: https://just.systems
 USAGE
@@ -25,7 +25,7 @@ USAGE
 
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
-JUST_DEFAULT_VER="1.58.0"   # fallback when 'latest' cannot be resolved
+JUST_DEFAULT_VER="1.59.0"   # fallback when 'latest' cannot be resolved
 REQ_VER="latest"
 while [[ $# -gt 0 ]]; do
   case "$1" in

@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.2.0
+# cb-version: 0.3.0
 
 # appwrite-server--setup.sh — Install start/stop wrappers for self-hosted Appwrite.
 # Appwrite has no native install: it is a Docker Compose stack. This script does
@@ -17,8 +17,8 @@ Usage:
   $0 [--version <X.Y.Z>] [--http-port <port>] [--https-port <port>] [--data clean|seed|persist]
 
 Examples:
-  $0                                      # Appwrite 1.9.7 on 8080 / 8443, clean data
-  $0 --version 1.9.7 --http-port 8080     # pin version and HTTP port
+  $0                                      # Appwrite 1.9.10 on 8080 / 8443, clean data
+  $0 --version 1.9.10 --http-port 8080     # pin version and HTTP port
   $0 --data persist                       # dump/restore via ~/.appwrite-server (needs +persist)
 
 Notes:
@@ -37,14 +37,14 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 HOME=/root
 
-VERSION="1.9.7"
+VERSION="1.9.10"
 HTTP_PORT="8080"
 HTTPS_PORT="8443"
 DATA_MODE="clean"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --version)    shift; VERSION="${1:-1.9.7}"; shift ;;
+    --version)    shift; VERSION="${1:-1.9.10}"; shift ;;
     --http-port)  shift; HTTP_PORT="${1:-8080}"; shift ;;
     --https-port) shift; HTTPS_PORT="${1:-8443}"; shift ;;
     --data)       shift; DATA_MODE="${1:-clean}"; shift ;;
@@ -53,7 +53,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 VERSION="${VERSION#v}"
-[[ "$VERSION" == "latest" ]] && VERSION="1.9.7"
+[[ "$VERSION" == "latest" ]] && VERSION="1.9.10"
 DATA_MODE="$(echo "$DATA_MODE" | tr '[:upper:]' '[:lower:]')"
 case "$DATA_MODE" in
   clean|seed|persist) ;;

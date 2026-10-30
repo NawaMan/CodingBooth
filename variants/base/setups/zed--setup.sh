@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.3.0
+# cb-version: 0.4.0
 
 # zed--setup.sh — Install the Zed editor from its official release tarball, then wrap it for containers
 set -Eeuo pipefail
@@ -15,7 +15,7 @@ Usage:
 
 Examples:
   $0                         # latest stable Zed
-  $0 --version 1.25.3        # pin a specific release
+  $0 --version 1.26.2        # pin a specific release
 
 Notes:
 - Installs to /opt/zed-<version>, linked as /opt/zed-current; launcher at /usr/local/bin/zed.
@@ -33,7 +33,7 @@ USAGE
 # This script will always be installed by root.
 HOME=/root
 
-ZED_DEFAULT_VER="1.25.3"   # fallback when 'latest' cannot be resolved
+ZED_DEFAULT_VER="1.26.2"   # fallback when 'latest' cannot be resolved
 REQ_VER="latest"
 
 while [[ $# -gt 0 ]]; do

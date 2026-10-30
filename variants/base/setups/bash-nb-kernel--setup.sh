@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.1.0
+# cb-version: 1.2.0
 
 # bash-nb-kernel--setup.sh
 # 
@@ -42,7 +42,7 @@ KERNEL_DISPLAY_NAME="${KERNEL_DISPLAY_NAME:-Bash}"
 # and 26.2.2 is the first to drop the compromised eMudhra roots (Oct 2026).
 # Never pin below it; python--setup.sh holds the same floor.
 PIP_PIN_VERSION="26.2.2"
-SETUPTOOLS_PIN_VERSION="84.0.0"
+SETUPTOOLS_PIN_VERSION="84.2.1"
 WHEEL_PIN_VERSION="0.48.0"
 JUPYTER_CLIENT_VERSION="8.10.0"
 BASH_KERNEL_VERSION="0.10.0"
