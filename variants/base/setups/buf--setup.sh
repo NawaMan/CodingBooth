@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 # buf--setup.sh — Install the Buf CLI from GitHub releases
 set -Eeuo pipefail
@@ -54,7 +54,7 @@ rm -rf /var/lib/apt/lists/*
 
 # Known-good pin when the GitHub API is rate-limited or returns minified JSON
 # that older parsers mis-read (see mkcert--setup.sh for the "eyes" failure mode).
-FALLBACK_VERSION="1.73.0"
+FALLBACK_VERSION="1.75.0"
 
 if [[ "$REQ_VER" == "latest" ]]; then
   # Match the tag_name *key* only — never sed the whole JSON line (minified

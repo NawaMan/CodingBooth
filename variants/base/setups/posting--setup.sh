@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -15,7 +15,7 @@ Usage:
 Examples:
   $0                         # install Posting ${POSTING_DEFAULT_VER}
   $0 --version latest        # install the latest release from PyPI
-  $0 --version 2.11.0        # pin specific version
+  $0 --version 2.11.1        # pin specific version
 
 Notes:
 - Installs Posting into an isolated venv at /opt/posting (what pipx/uv tool do)
@@ -34,7 +34,7 @@ fi
 source "${SETUP_LIBS_DIR}/retry-source.sh"
 
 # ---- defaults / args ----
-POSTING_DEFAULT_VER="2.11.0"
+POSTING_DEFAULT_VER="2.11.1"
 REQ_VER="${POSTING_DEFAULT_VER}"
 while [[ $# -gt 0 ]]; do
   case "$1" in

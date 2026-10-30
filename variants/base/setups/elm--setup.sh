@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -13,14 +13,14 @@ Usage:
   $0 [--version <X.Y.Z>|latest] [--with-format] [--with-test]
 
 Examples:
-  $0                              # install Elm 0.19.2 (default)
+  $0                              # install Elm 0.19.3 (default)
   $0 --version 0.19.2             # pin specific Elm version
   $0 --with-format --with-test    # also install elm-format and elm-test
 
 Notes:
-- 0.19.2 installs the official GitHub linux binaries (x64 and arm).
+- 0.19.2 and later install the official GitHub linux binaries (x64 and arm).
 - 0.19.1 still uses npm, with a community aarch64 binary on arm64.
-- Pin to a known Elm release; elm 0.19.2 is the current stable.
+- Pin to a known Elm release; elm 0.19.3 is the current stable.
 USAGE
 }
 
@@ -29,7 +29,7 @@ USAGE
 
 HOME=/root
 
-ELM_DEFAULT_VER="0.19.2"
+ELM_DEFAULT_VER="0.19.3"
 REQ_VER="$ELM_DEFAULT_VER"
 WITH_FORMAT=0
 WITH_TEST=0
@@ -53,17 +53,17 @@ ELM_PKG_VER="$REQ_VER"
 [[ "$ELM_PKG_VER" == "latest" ]] && ELM_PKG_VER="$ELM_DEFAULT_VER"
 
 ARCH="$(dpkg --print-architecture 2>/dev/null || uname -m)"
-if [[ "$ELM_PKG_VER" == "0.19.2" ]]; then
-  # Official 0.19.2 GitHub binaries exist for linux x64 and arm (aarch64).
+if [[ "$ELM_PKG_VER" == "0.19.2" || "$ELM_PKG_VER" == "0.19.3" ]]; then
+  # Official GitHub binaries exist for linux x64 and arm (aarch64) since 0.19.2.
   case "$ARCH" in
-    amd64|x86_64) ELM_ASSET="elm-0.19.2-linux-x64.gz" ;;
-    arm64|aarch64) ELM_ASSET="elm-0.19.2-linux-arm.gz" ;;
-    *) echo "❌ Unsupported arch for Elm 0.19.2: $ARCH"; exit 2 ;;
+    amd64|x86_64) ELM_ASSET="elm-${ELM_PKG_VER}-linux-x64.gz" ;;
+    arm64|aarch64) ELM_ASSET="elm-${ELM_PKG_VER}-linux-arm.gz" ;;
+    *) echo "❌ Unsupported arch for Elm ${ELM_PKG_VER}: $ARCH"; exit 2 ;;
   esac
-  echo "📦 Installing Elm 0.19.2 from GitHub ($ELM_ASSET) ..."
+  echo "📦 Installing Elm ${ELM_PKG_VER} from GitHub ($ELM_ASSET) ..."
   TMP="$(mktemp -d)"
   curl --retry 5 --retry-delay 3 --retry-all-errors -fL \
-    "https://github.com/elm/compiler/releases/download/0.19.2/${ELM_ASSET}" \
+    "https://github.com/elm/compiler/releases/download/${ELM_PKG_VER}/${ELM_ASSET}" \
     -o "$TMP/elm.gz"
   gunzip -f "$TMP/elm.gz"
   install -m 0755 "$TMP/elm" /usr/local/bin/elm
@@ -119,6 +119,6 @@ cat <<'EON'
 - Build: elm make src/Main.elm
 
 Notes:
-- Elm 0.19.2 is the current stable; 0.19.1 remains pin-able.
+- Elm 0.19.3 is the current stable; 0.19.2 and 0.19.1 remain pin-able.
 - Add elm-format/elm-test with --with-format / --with-test.
 EON

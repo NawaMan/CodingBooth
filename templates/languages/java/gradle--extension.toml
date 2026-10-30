@@ -1,4 +1,4 @@
-cb-version = "1.1.0"
+cb-version = "1.2.0"
 display-name = "Gradle"
 display-disc = "Gradle build tool for Java and JVM projects"
 display-detail = """Installs Gradle itself, since the Java template ships no default build tool -- pick this or Maven. \
@@ -11,9 +11,9 @@ tags = [
 ]
 
 [params.GRADLE_VERSION]
-default = "9.8.0"
+default = "9.8.2"
 suggests = [
-    "9.8.0", "9.7.1",
+    "9.8.2", "9.7.1",
     "8.14.4",
 ]
 

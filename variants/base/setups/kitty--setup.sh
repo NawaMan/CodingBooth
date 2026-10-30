@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 # kitty--setup.sh — installs the Kitty terminal emulator from a pinned,
 # checksum-verified upstream release.
@@ -38,7 +38,7 @@ Usage:
 
 Examples:
   $0                                         # install the pinned Kitty release
-  $0 --version 0.49.2 --sha256 <sha-of-txz>  # a different release, for this arch
+  $0 --version 0.49.1 --sha256 <sha-of-txz>  # a different release, for this arch
 
 Notes:
 - Installs Kitty to /opt/kitty, with kitty and kitten on /usr/local/bin
@@ -56,9 +56,9 @@ fi
 HOME=/root
 
 # ---- pinned release ----
-KITTY_VERSION="0.49.1"
-KITTY_SHA256_X86_64="8cfd68ed484d9a32e4e389abffe1a0ec6e0fbd7be5c9ea1c4fa41b9ead4af791"
-KITTY_SHA256_ARM64="828fcfe3e165c84d830f82545b6d568655b2620d77b7d5a4360e082bd9ba744b"
+KITTY_VERSION="0.49.2"
+KITTY_SHA256_X86_64="d573618b911e9c461bd421b96c13c74c7f1cb2f1ac9c327818d4ff84366cf5c6"
+KITTY_SHA256_ARM64="0c81a995614426cccf0fecaf7d104d47cd63bbccf173d14976e9f92e3d60fce6"
 
 REQ_VER=""
 REQ_SHA=""

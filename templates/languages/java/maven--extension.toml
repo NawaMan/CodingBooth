@@ -1,4 +1,4 @@
-cb-version = "1.1.0"
+cb-version = "1.2.0"
 display-name = "Maven"
 display-disc = "Apache Maven build tool for Java projects"
 display-detail = """Installs Maven itself, since the Java template ships no default build tool -- pick this or Gradle. \
@@ -15,7 +15,7 @@ tags = [
 default = "3.9.16"
 suggests = [
     "3.9.16", "3.9",
-    "4.0.0-rc-5",
+    "4.0.0-rc-7",
 ]
 
 # Image environment, not a shell profile. `booth exec` runs the command with no

@@ -1,4 +1,4 @@
-cb-version = "1.1.0"
+cb-version = "1.2.0"
 display-name = "BlueJ"
 display-disc = "BlueJ Java teaching IDE (requires desktop variant)"
 display-detail = """Installs BlueJ, a Java IDE designed for teaching object-oriented programming. \
@@ -18,9 +18,9 @@ tags = [
 ]
 
 [params.BLUEJ_VERSION]
-default = "6.0.0"
+default = "6.0.1"
 suggests = [
-    "6.0.0",
+    "6.0.1",
     "5.3.0",
 ]
 

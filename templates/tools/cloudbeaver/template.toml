@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.1.0"
 display-name = "CloudBeaver"
 display-disc = "Web-based SQL database management GUI"
 display-detail = "Installs CloudBeaver Community Edition, a browser-based database management tool by the DBeaver team. Supports PostgreSQL, MySQL, SQLite, MariaDB, Oracle, SQL Server, ClickHouse, DuckDB, and more. Extracted from the official Docker image — includes its own bundled Java runtime."
@@ -12,9 +12,9 @@ tags = [
 ]
 
 [params.CLOUDBEAVER_VERSION]
-default = "26.2.1"
+default = "26.2.3"
 suggests = [
-    "26.2.1",
+    "26.2.3",
     "25.3.5",
     "latest",
 ]

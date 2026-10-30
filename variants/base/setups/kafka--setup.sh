@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 set -Eeuo pipefail
 
@@ -12,7 +12,7 @@ Usage:
   $0 [--version <VER>] [--port <PORT>] [--advertised-host <HOST>] [--data <DIR>]
 
 Environment overrides:
-  KAFKA_VERSION          (default: 4.3.1)         # Apache Kafka version
+  KAFKA_VERSION          (default: 4.3.2)         # Apache Kafka version
   KAFKA_PORT             (default: 9092)
   KAFKA_ADVERTISED_HOST  (default: 127.0.0.1)
   KAFKA_DATA             (default: /opt/kafkadata)
@@ -36,7 +36,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (use sudo)"; exit 1; }
 
 # --- defaults ---
-KAFKA_VERSION="${KAFKA_VERSION:-4.3.1}"
+KAFKA_VERSION="${KAFKA_VERSION:-4.3.2}"
 KAFKA_PORT="${KAFKA_PORT:-9092}"
 KAFKA_ADVERTISED_HOST="${KAFKA_ADVERTISED_HOST:-127.0.0.1}"
 KAFKA_DATA="${KAFKA_DATA:-/opt/kafkadata}"

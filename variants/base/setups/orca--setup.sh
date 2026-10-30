@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -18,7 +18,7 @@ Options:
 
 Examples:
   $0                          # latest release
-  $0 --version 1.4.238        # pin a release
+  $0 --version 1.4.244        # pin a release
   $0 --port 6800              # headless server on another port
 
 Notes:
@@ -41,7 +41,7 @@ USAGE
 HOME=/root
 
 # ---- defaults / args ----
-ORCA_DEFAULT_VER="1.4.238"   # fallback when 'latest' cannot be resolved
+ORCA_DEFAULT_VER="1.4.244"   # fallback when 'latest' cannot be resolved
 REQ_VER="latest"
 ORCA_PORT="6768"
 while [[ $# -gt 0 ]]; do

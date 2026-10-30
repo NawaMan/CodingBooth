@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.1.0
+# cb-version: 1.2.0
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -13,12 +13,12 @@ Usage:
   $0 [VERSION] [PORT]
 
 Arguments:
-  VERSION  Mermaid CLI version (default: 11.17.0)
+  VERSION  Mermaid CLI version (default: 11.17.1)
   PORT     Port for the Mermaid live editor (default: 20700)
 
 Examples:
   $0                    # install with defaults
-  $0 11.17.0 20700       # specific version and port
+  $0 11.17.1 20700       # specific version and port
 
 Notes:
 - Installs Node.js (if not present), Mermaid CLI (mmdc), and Mermaid Live Editor
@@ -42,7 +42,7 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
 fi
 
 # ---- defaults / args ----
-MERMAID_VERSION="${1:-11.17.0}"
+MERMAID_VERSION="${1:-11.17.1}"
 MERMAID_PORT="${2:-20700}"
 MERMAID_DIR="/opt/mermaid"
 

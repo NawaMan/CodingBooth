@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -14,7 +14,7 @@ Usage:
 
 Examples:
   $0                    # install latest HeidiSQL
-  $0 --version 12.21    # pin specific version
+  $0 --version 12.22    # pin specific version
 
 Notes:
 - Requires a desktop variant (desktop-xfce, desktop-kde)
@@ -38,7 +38,7 @@ if ! "$SCRIPT_DIR/cb-has-desktop.sh"; then
 fi
 
 # ---- defaults / args ----
-HEIDISQL_DEFAULT_VER="12.21"   # fallback when 'latest' cannot be resolved
+HEIDISQL_DEFAULT_VER="12.22"   # fallback when 'latest' cannot be resolved
 REQ_VER="latest"
 while [[ $# -gt 0 ]]; do
   case "$1" in

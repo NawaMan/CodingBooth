@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.2.0
+# cb-version: 0.3.0
 
 set -Eeuo pipefail
 
@@ -12,7 +12,7 @@ Usage:
   $0 [VERSION]
 
 Arguments:
-  VERSION  protoc-gen-grpc-java version to install (default: 1.84.1)
+  VERSION  protoc-gen-grpc-java version to install (default: 1.85.1)
 
 Examples:
   $0            # install the default pinned version
@@ -34,7 +34,7 @@ case "${1:-}" in
   -h|--help) usage; exit 0 ;;
 esac
 
-VERSION="${1:-1.84.1}"
+VERSION="${1:-1.85.1}"
 
 dpkgArch="$(dpkg --print-architecture)"
 case "$dpkgArch" in
