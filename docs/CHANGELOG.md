@@ -8,6 +8,12 @@ This file contains a list of changes for each released version.
   `ubuntu2404` apt repo after the base image moved to Ubuntu 26.04, so the toolkit came from a repo
   built for another release. It now reads `ubuntu2604`, which carries CUDA 13.3 and later; the
   template suggests `13-4` and `13-3` instead of `12-6`, which that repo does not have.
+- **`nvcc` is on `PATH` after `--select cuda`.** NVIDIA's packages install under `/usr/local/cuda`
+  and add nothing to `PATH`, so `nvcc` was "command not found" in every CUDA booth. The setup now
+  writes a profile script for terminals, and the template sets `PATH` on the image so
+  `booth exec` and `booth -- <cmd>` find it too. The setup and template text also say what to do
+  when the host driver is older than the toolkit: a plain `nvcc` build then fails at run time with
+  "the provided PTX was compiled with an unsupported toolchain", and `nvcc -arch=native` fixes it.
 
 - **Setups can run outside a booth (experiment, toward GitHub Actions and a plain Ubuntu machine).**
   The install scripts that ran as `coder` (brew, bun, cargo, conan, deno, deno-pkg, dotnet, gem,

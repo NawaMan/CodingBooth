@@ -59,7 +59,7 @@ setup	cpp-nb-kernel	0.1.0	ca55497f946f98c9c381a35d26928eda13adc0febd1228f469a021
 setup	croft	0.1.1	a9b590b7440dbf57e43b89712dcb12e894a37ed256a016a355958e3fc01d66f2	variants/base/setups/croft--setup.sh
 setup	crystal	1.0.0	61384d7bce11d836a007a7815f4cf24888e028dc442db554b382562a8d48a84f	variants/base/setups/crystal--setup.sh
 setup	crystal-code-extension	1.0.0	14c2ce6f0561eec9ff041e616cd1b93c789c101ab5fdb2ba3a03b3255b82e03f	variants/base/setups/crystal-code-extension--setup.sh
-setup	cuda	0.1.1	9594ce863b09ea15f6ebf2f09fd363d476b4df66ef815cb55edcc9b99a62b845	variants/base/setups/cuda--setup.sh
+setup	cuda	0.1.1	a26ca96634a5c13e62518198fd192d5976f66cf97853280a570be2d1c1812eca	variants/base/setups/cuda--setup.sh
 setup	cursor	1.0.0	b157012b2d424a25501f4088de21e8e4bd4eb32b6082434ca53ace404187543e	variants/base/setups/cursor--setup.sh
 setup	cypress	1.0.0	3758a04ba55ea39dce40d7c535060116bd28f3de2af01b213cb022dce3375917	variants/base/setups/cypress--setup.sh
 setup	dbeaver	1.0.1	bc3bf9541f4e5d58eb0fe58e3b8207beff5e7cc54f198c2e9a812623fe33450c	variants/base/setups/dbeaver--setup.sh
@@ -448,7 +448,7 @@ template	conda	1.1.0	2d4488f43dfbde1d94972aafb0f6f4300b1f94335d59699bde4a58ad318
 template	croft	0.1.1	583f5c4bcf8af0db7fda4e6b94b8db381bdaa20d7a0b703056491c3cd8e02108	templates/tools/croft/template.toml
 template	crystal	1.0.0	a39b3b18bfeb2e280bab82c8fe68d8dc8736e1ff0dae91f676598ef6e6a46fe5	templates/languages/crystal/template.toml
 template	csharp	1.1.0	b6e52c52efd79c2c3bd7136cfb10cd01a81c0b1cb03b7d6177edeff4d4e313ec	templates/languages/csharp/template.toml
-template	cuda	0.1.1	7090adc41690b4ce5519693e9dd989a25a0cae326cc548d4986c164ce0d7de09	templates/tools/cuda/template.toml
+template	cuda	0.1.1	cab429e200ce0088b6758f24f44cf27c4df765966762c84d167354b5a382552d	templates/tools/cuda/template.toml
 template	cursor	1.0.0	21e1f62fcf42b9ea42d83afcf9dce53b6a07234a6dbd9f8d057b62d43d2131b0	templates/ai-tools/cursor/template.toml
 template	cypress	1.1.0	3548c907df1542edd2ae8640dfee68e92aafa79d61da5ed7dca239df536dbd6e	templates/tools/cypress/template.toml
 template	datagrip	1.0.0	41dcf00b2fdb288079ae12d0c7d2b7e9b13413e3f3e5334dec4ed754b5e1ace3	templates/ides/datagrip/template.toml
