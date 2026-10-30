@@ -196,6 +196,23 @@ func RewriteHome(env []EnvVar, home string) []EnvVar {
 	return out
 }
 
+// ConfigProfile is /etc/profile.d/06-cb-config-env.sh: CB_TARGET first, so a later
+// shell or script can tell it is not in a booth (on gha it reaches later steps
+// through GITHUB_ENV), then config.toml's -e KEY=VALUE run-args.
+func ConfigProfile(cbTarget string, env []EnvVar) string {
+	var b strings.Builder
+	b.WriteString("# Profile: booth prepare's target and the -e run-args of .booth/config.toml.\n")
+	fmt.Fprintf(&b, "export CB_TARGET=%s\n", shellQuote(cbTarget))
+	for _, e := range env {
+		fmt.Fprintf(&b, "export %s=%s\n", e.Key, shellQuote(e.Value))
+	}
+	return b.String()
+}
+
+func shellQuote(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
+}
+
 // UserDecision is who prepare sets the machine up for.
 type UserDecision struct {
 	Name    string // the user the setups and booth-entry user steps are for
