@@ -545,6 +545,17 @@ absent from `main` is `variants/base/setups/libs/git-on-token.sh`, deleted on pu
 
 ---
 
+## Data modes (after 0.81.0)
+
+One extension per data item (`+config`, `+history`, `+bookmarks`, `+pkg-cache`, `+data`, …), with
+where it lives — bind / seed / cache / shared / volume — chosen as its value (`neovim+config:shared`).
+
+Plan, inventory and phases: **[TODO-data.md](TODO-data.md)**.
+
+- [ ] Implement (planned after the 0.81.0 release)
+
+---
+
 ## Binary companions (libraries that need a separate tool binary)
 
 Libraries whose package install alone is not enough — they also need a companion
