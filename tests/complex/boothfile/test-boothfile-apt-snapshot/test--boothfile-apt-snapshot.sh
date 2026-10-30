@@ -31,11 +31,20 @@ cd "$SCRIPT_DIR"
 
 source ../../../common--source.sh
 
-SNAPSHOT="20260901T000000Z"
+# The release's own pin, not a fixed date: a pin older than the image's snapshot is
+# refused by design (apt cannot downgrade), so a fixed date breaks at the next release.
+# The committed Boothfile's date is a placeholder; the test runs a copy stamped with it.
+SNAPSHOT="$(tr -d ' \t\r\n' < ../../../../apt-snapshot.txt)"
 
 echo "=== Test: Boothfile install apt (APT_SNAPSHOT=${SNAPSHOT}) ==="
 
 FAILED=0
+
+WS="$(mktemp -d)/apt-snapshot"
+trap 'rm -rf "$(dirname "$WS")"' EXIT
+mkdir -p "$WS"
+cp -R .booth "$WS/"
+sed_inplace "s/^env APT_SNAPSHOT=.*/env APT_SNAPSHOT=${SNAPSHOT}/" "$WS/.booth/Boothfile"
 
 # Locate the codingbooth binary for the docker-free emit-dockerfile checks.
 BOOTH_PATH="$(find_local_booth_build "$SCRIPT_DIR")" || {
@@ -43,7 +52,7 @@ BOOTH_PATH="$(find_local_booth_build "$SCRIPT_DIR")" || {
     exit 1
 }
 
-DOCKERFILE=$("$BOOTH_PATH" emit-dockerfile --code "$SCRIPT_DIR" 2>&1) || true
+DOCKERFILE=$("$BOOTH_PATH" emit-dockerfile --code "$WS" 2>&1) || true
 
 # Test 1: ENV APT_SNAPSHOT is emitted before RUN apt--install.sh so the install
 # script sees it at build time.
@@ -65,7 +74,7 @@ use_local_base_image || exit $FAILED
 
 # Test 2: the package installs from the frozen snapshot (build runs
 # `apt-get install --snapshot <id>` and must succeed).
-ACTUAL=$(run_coding_booth --silence-build -- jq --version 2>/dev/null) || ACTUAL=""
+ACTUAL=$(run_coding_booth --silence-build --code "$WS" -- jq --version 2>/dev/null) || ACTUAL=""
 ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 if echo "$ACTUAL" | grep -qE "^jq-"; then
     print_test_result "true" "$0" "2" "install apt jq makes jq available under snapshot pin"
@@ -76,7 +85,7 @@ else
 fi
 
 # Test 3: apt registered the package (dpkg status confirms a real apt install).
-ACTUAL=$(run_coding_booth --silence-build -- 'dpkg -s jq 2>/dev/null | grep -c "install ok installed"' 2>/dev/null | tail -1) || ACTUAL=""
+ACTUAL=$(run_coding_booth --silence-build --code "$WS" -- 'dpkg -s jq 2>/dev/null | grep -c "install ok installed"' 2>/dev/null | tail -1) || ACTUAL=""
 if [[ "$ACTUAL" == "1" ]]; then
     print_test_result "true" "$0" "3" "jq is registered as installed by apt"
 else
@@ -89,7 +98,7 @@ fi
 # are preinstalled, so they resolve from dpkg's state even when the archive index is
 # empty; ripgrep can only come from the archive, so this is what actually proves the
 # snapshot (or its documented fallback) resolves against a real index.
-ACTUAL=$(run_coding_booth --silence-build -- rg --version 2>/dev/null | head -1) || ACTUAL=""
+ACTUAL=$(run_coding_booth --silence-build --code "$WS" -- rg --version 2>/dev/null | head -1) || ACTUAL=""
 if echo "$ACTUAL" | grep -qE "^ripgrep "; then
     print_test_result "true" "$0" "4" "install apt ripgrep resolves a package not already in the image"
 else

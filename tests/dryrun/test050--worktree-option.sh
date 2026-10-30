@@ -58,8 +58,13 @@ pass_fail() { # test-number, description, ok (true|false), detail
 
 code_lines() { grep -E -- 'home/coder/code|BOOTH_CONTAINER_NAME' | normalize_output; }
 
+# booth prints host paths in the host's own form (C:\... on Windows), so compare both
+# sides normalized, with the expectation spelled from HOST_WORK rather than $WORK.
+HOST_WORK="$(host_path "$WORK")"
+has() { echo "$ACTUAL" | normalize_output | grep -qF -- "$(echo "$1" | normalize_output)"; }
+
 ACTUAL="$(booth_in "$WORK/main" --worktree alpha || true)"
-ok=false; echo "$ACTUAL" | grep -qF -- "-v $WORK/main/worktree/alpha:/home/coder/code" && ok=true
+ok=false; has "-v $HOST_WORK/main/worktree/alpha:/home/coder/code" && ok=true
 pass_fail 1 "By branch, from the main clone: mounts the worktree as code" "$ok" "$ACTUAL"
 
 EXPECT="$(booth_in "$WORK/main" --code "$WORK/main/worktree/alpha" || true)"
@@ -68,11 +73,11 @@ pass_fail 2 "Same mounts and container name as --code <path>" "$ok" \
     "$(diff -u <(echo "$EXPECT" | code_lines) <(echo "$ACTUAL" | code_lines) || true)"
 
 ACTUAL="$(booth_in "$WORK/main" --worktree beta || true)"
-ok=false; echo "$ACTUAL" | grep -qF -- "-v $WORK/elsewhere/beta:/home/coder/code" && ok=true
+ok=false; has "-v $HOST_WORK/elsewhere/beta:/home/coder/code" && ok=true
 pass_fail 3 "By folder name, worktree outside the repo: found" "$ok" "$ACTUAL"
 
 ACTUAL="$(booth_in "$WORK/elsewhere/beta" --worktree alpha || true)"
-ok=false; echo "$ACTUAL" | grep -qF -- "-v $WORK/main/worktree/alpha:/home/coder/code" && ok=true
+ok=false; has "-v $HOST_WORK/main/worktree/alpha:/home/coder/code" && ok=true
 pass_fail 4 "From inside another worktree: found" "$ok" "$ACTUAL"
 
 expect_error() { # test-number, description, message, dir, args...
@@ -87,7 +92,7 @@ expect_error() { # test-number, description, message, dir, args...
 # Worktrees live in two places here, so there is no shared root: the default applies.
 ACTUAL="$(booth_in "$WORK/main" --worktree team/nope || true)"
 ok=false
-echo "$ACTUAL" | grep -qF "Dryrun: would create worktree $WORK/main.worktrees/team/nope on new branch team/nope" &&
+has "Dryrun: would create worktree $HOST_WORK/main.worktrees/team/nope on new branch team/nope" &&
     [[ ! -e "$WORK/main.worktrees" ]] && ! git -C "$WORK/main" rev-parse --verify --quiet refs/heads/team/nope > /dev/null &&
     ok=true
 pass_fail 5 "Unknown name: dryrun says where it would create it, and creates nothing" "$ok" "$ACTUAL"
