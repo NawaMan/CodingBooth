@@ -24,7 +24,8 @@ build/test on GHA.
 - **`booth prepare gha` and `booth prepare ubuntu`**, an experimental command that runs the harness
   from the `booth` binary ([below](#booth-prepare-experimental)).
 
-No action is shipped, and the [open decisions](#open-decisions) are still open. The preparation is done in stages, and each stage
+No action is shipped. The [open decisions](#open-decisions) are decided, except where a decision
+is to defer. The preparation is done in stages, and each stage
 soaks before the next one starts. That way, when we cross the line into actual host and GitHub
 Actions (GHA) support, any breakage is in the new code, not in old code that changed at the same
 time.
@@ -112,6 +113,18 @@ the docs markdown and `experiments/host-provision/` into `cli/src/pkg/prepare/ki
 (`cli/src/cmd/prepare-kit`, about 2.4 MB, deterministic). So a binary always carries the scripts of
 its own version, `--rc` builds included. `--source <checkout>` uses a checkout instead. A binary
 built with a plain `go build` has no kit and needs `--source`.
+
+**`APT_SNAPSHOT` is not applied.** The machine's apt is live and already newer than the
+Boothfile's pin, so the pin is reported as DROP and apt uses the live archive
+([item 11](#where-it-breaks)).
+
+**Testing it.** `experiments/host-provision/prepare-test.sh <mode> [example]` runs the binary
+from `./build/cli-build.sh` in a throwaway `ubuntu:26.04` container, with the example copied in
+(never mounted). `refusals` checks the three refusals (root without `--add-user`, no sudo, `gha`
+off a runner) in seconds. `gha` simulates a runner, with `--report` in sticky `/tmp`, then runs
+the example's in-booth tests in a later plain-bash step that gets its environment only from
+`GITHUB_ENV` / `GITHUB_PATH`. `ubuntu` runs as root with `--add-user dev` and checks the user, the
+variant's APPLY line, the rewritten `-e` values, and the in-booth tests in dev's login shell.
 
 ---
 
@@ -277,9 +290,12 @@ lines map directly onto `$GITHUB_ENV` and `$GITHUB_PATH`.
     the same way, and so does a second `booth prepare` on one machine: the first run installs from
     the live archive and leaves the Boothfile's `APT_SNAPSHOT` in `/etc/profile.d`, so the second
     run's `gnupg--setup.sh` resolves its build dependencies against the older snapshot and apt
-    refuses (`zlib1g-dev` against an installed newer `zlib1g`). To decide, for path B: ignore the pin off-booth (reproducibility then comes
-    from the machine, which is the weaker tier the reproducibility stance already describes), or
-    pin only packages not yet installed.
+    refuses (`zlib1g-dev` against an installed newer `zlib1g`).
+    **Decided: the pin is ignored off-booth.** `provision-example.sh` records
+    `env APT_SNAPSHOT=…` as DROP and neither exports it nor keeps it in the profile, so apt uses
+    the machine's live archive. Reproducibility then comes from the machine, which is the weaker
+    tier the reproducibility stance already describes. systemlib-example is back in the workflow
+    matrix.
 
 Counts in items 8 and 9 come from a grep and are estimates. The Stage 1a test lane replaces them
 with real results, and should also run every setup twice.
@@ -380,29 +396,32 @@ Each stage gets its own proposal and worktree, lands, then soaks before the next
 
 ## Open decisions
 
-- [ ] `CB_USER_HOME` as the variable name (proposed).
-- [ ] `CB_TARGET` with values `booth` / `gha` / `host` (proposed; `host` rather than `ubuntu`).
-- [ ] **Rare exception in `booth-entry`:** host and GHA need steps 8, 12, 14 and 15 to run for the
-  real user (`runner`, or the machine's owner) and the real project folder, not for `coder`.
-  - Smallest proposed change: `USER_NAME="${CB_USER_NAME:-coder}"` at line 207, plus the same in
-    `booth--as-coder`. `HOME_DIR` then follows from it, and `CODE_DIR` gets the same
-    `${…:-…}` form.
-  - With the variables unset, every value is what it is today.
-  - No other part of `booth-entry` changes.
-  - The alternative is to skip steps 8, 12, 14 and 15 on non-booth targets, and accept that the
-    setups lose profile loading, seeds and startup hooks there.
-- [ ] `/opt/codingbooth` stays fixed for now (proposed).
-- [ ] Classification as a separate data file (proposed) or as a per-script header.
+Decided on 2026-10-29, before landing:
+
+- [x] `CB_USER_HOME` is the variable name.
+- [x] `CB_TARGET` takes `booth` / `gha` / `host`. The `booth prepare` command word is `ubuntu`,
+  and it sets `CB_TARGET=host`.
+- [x] **The rare exception in `booth-entry` waits.** The real `variants/base/booth-entry` stays
+  untouched. `booth prepare` uses the `CB_TARGET`-guarded copy in `experiments/host-provision/`
+  until the command stops being experimental; promoting the guards into the real file is its own
+  stage (Stage 4), under the caution above. The change it would need:
+  - `USER_NAME="${CB_USER_NAME:-coder}"` at line 207, plus the same in `booth--as-coder`.
+    `HOME_DIR` then follows from it, and `CODE_DIR` gets the same `${…:-…}` form.
+  - With the variables unset, every value is what it is today. No other part changes.
+- [x] `/opt/codingbooth` stays fixed.
+- [x] Setup classification goes in a separate data file, not a per-script header.
 - [x] Path B targets Ubuntu 26.04: same release as base, and GHA pins `runs-on: ubuntu-26.04`.
   #8 is postponed indefinitely.
 - [x] A GHA run is a base booth (like `--variant base`). An example that clearly needs another
   variant is skipped there (i3-desktop, tiling, empty, conda, zed).
-- [ ] `APT_SNAPSHOT` off-booth: a snapshot older than the machine's packages fails (systemlib,
-  item 11). Ignore it, honour it, or warn.
-- [ ] `config.toml` run-time settings: map `env` run-args to `$GITHUB_ENV` on GHA (n8n needs this),
-  and decide what `host` does with the rest, including the variant.
-- [ ] The project folder: `/home/coder/code` is still hard-coded in antigravity, cursor, thonny,
-  viewmd-desktop-icon, cb-booth-favicon and zed. A third variable (`CB_CODE_DIR`) would cover it.
+- [x] `APT_SNAPSHOT` is ignored off-booth (item 11).
+- [x] `config.toml` run-time settings: `booth prepare` applies the variant (`ubuntu`; `gha` is
+  base) and the `-e KEY=VALUE` run-args (profile, booth-entry, and `$GITHUB_ENV` on `gha`). The
+  rest is DROP in the report.
+- [x] **Deferred:** the project folder. `/home/coder/code` is still hard-coded in antigravity,
+  cursor, thonny, viewmd-desktop-icon, cb-booth-favicon and zed. All are GUI or desktop pieces,
+  outside the GHA build/test bar, so they stay a known limitation; a third variable
+  (`CB_CODE_DIR`) would cover them later.
 
 ## Experiment results
 
@@ -665,12 +684,15 @@ test003 serves a page over HTTP through Playwright's `webServer`, clicks it, and
 ### Not covered yet
 
 - Services actually starting (code-server, notebook) from their startup hooks.
-- Running the provisioning a second time.
+- Running the provisioning a second time. Before the APT_SNAPSHOT decision it failed in apt
+  (item 11); since then it has not been run.
 - A real host with systemd. For example, apt's `nginx` package may start nginx on port 80 there.
 - The `host`-only guards (11b, 13, the root chown). go-example has no `.booth/home` and no
   `/etc/cb-home`, so these did not change the result.
-- The examples left out of the workflow matrix: xonsh, helix, systemlib (known not working) and
+- The examples left out of the workflow matrix: xonsh and helix (known not working) and
   the ones that need a non-base variant.
-- The `host` target beyond local runs of single examples (`experiments/host-provision/local-test.sh`).
-- `config.toml` settings: none are replayed (Where it breaks, item 10).
+- The `host` target beyond local runs of single examples (`experiments/host-provision/local-test.sh`,
+  `prepare-test.sh ubuntu`).
+- `config.toml` settings beyond the variant and `-e` run-args: not replayed (Where it breaks,
+  item 10).
 
