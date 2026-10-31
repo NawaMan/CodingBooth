@@ -104,7 +104,7 @@ setup	fpc	1.0.0	f39f2f6bd2fc69558d9157730c73c62f8bbe221c93c4d12e2a7df276092f1b9e
 setup	fpc-code-extension	1.0.0	340a97f4bd0ce3161f84575fc557c79a99363867ef7aa75abb95170138291426	variants/base/setups/fpc-code-extension--setup.sh
 setup	freelens	0.1.0	674f129bbdbd411f6a996f8cd88f655e1136b3d0726e4d36c1f22d2a506f6358	variants/base/setups/freelens--setup.sh
 setup	freeplane	1.0.0	c99321c85fb689aa14c230aed89e2ed0f368a843697ea47076cf2e7b4af9a13f	variants/base/setups/freeplane--setup.sh
-setup	fresh	0.2.0	8c16accb13fb5760d508950afe20ee90bd233e6debd9635a9dbff8756f9b80e5	variants/base/setups/fresh--setup.sh
+setup	fresh	0.3.0	37901a0e48e810b033f3243f34a4b0c460d4de0a3095b639f7ebbf945314c4ed	variants/base/setups/fresh--setup.sh
 setup	fsharp-code-extension	1.0.0	2b2d956e31cf59c0240a4e457fc9bf6995b38555de0bac07e4cf49718a998388	variants/base/setups/fsharp-code-extension--setup.sh
 setup	fzf	1.0.0	146bce9168c8db7639bce92862d7c91e455279187ae80ad69a14d5c39626233f	variants/base/setups/fzf--setup.sh
 setup	gcc	1.1.0	0c3ab4db99ac29698633aded554f44850fcb955d87b0e0180d9609f62f8c0787	variants/base/setups/gcc--setup.sh
@@ -328,8 +328,8 @@ setup	thinkrail	0.1.0	b867328f48541b3e15e21bd7692be49cbf41de033702b70b3f89896cad
 setup	thonny	1.0.0	a14c0b5793457d929adfcb899ee169b3dd57ea2efa6eb3a6a400ff7a9f7168d7	variants/base/setups/thonny--setup.sh
 setup	tls	1.1.0	8b4c1ffcd41f8ad069da2c235d247862a50df2eb10e82bf5ade6815962e2d5cb	variants/base/setups/tls--setup.sh
 setup	toml-code-extension	0.1.0	b32c730a20ee3d570253cfffa23d2b9eeeee4ce8c3993b4c66aa4acf10b1f3ed	variants/base/setups/toml-code-extension--setup.sh
-setup	ttt	0.1.0	c34b255977add620696f2114b610d3506c4be22d5d2c0745db53204d642651fa	variants/base/setups/ttt--setup.sh
-setup	ttt-lsp	0.1.0	e319216168a39309195043f7e514a614a0cd0e105733bfa853aa1940fe86a509	variants/base/setups/ttt-lsp--setup.sh
+setup	ttt	0.2.0	681e0f28b8ba59412bcca7f5023e11a07df71b1826c839894d68559d99be28ce	variants/base/setups/ttt--setup.sh
+setup	ttt-lsp	0.1.1	0ab046f6184a0b802c7235f544e5b689d56fcd5f1b2ef5efd88c3967cd630eb9	variants/base/setups/ttt-lsp--setup.sh
 setup	ttyd-nerd-font-index	0.2.0	7695b34cf707159cbeb1f5e6f3ebaf836b0f808efe824bcdbeb565f6ca6ec6e9	variants/base/setups/ttyd-nerd-font-index--setup.sh
 setup	vhs	1.0.0	a5ed3a8d5ae5e152d8907f9f6bb2c398e40d52c3e2b3b4eda5a8b9429416b9dd	variants/base/setups/vhs--setup.sh
 setup	viewmd	1.0.0	d86fb47a1ec9db20bf39a717ee94ea9e03c4418894db2da8fcd7abfd77cb5dfd	variants/base/setups/viewmd--setup.sh
@@ -480,7 +480,7 @@ template	flutter	0.3.0	4ebbf6fe53ddd30dd25a9177d3e5d1801b95c4894dfeeb03a55033c6a
 template	fpc	1.0.0	833b92d6fb18707c1d678ee941562af8ccbe880c68abbe61bb4f0ec3f8604a62	templates/languages/fpc/template.toml
 template	freelens	0.1.0	8120af7df1f43318882fbe66b5f86b01da2cebe33cd66c431a1beacc07d8c41a	templates/tools/freelens/template.toml
 template	freeplane	1.0.0	68b6c0db16c41749e533797b2593263871ef318be6e049338b1b8091e3ba8a14	templates/tools/freeplane/template.toml
-template	fresh	0.2.0	47a6b7b38d108c8cadb3c785a234595520c16a1f0aba9db087651a9c62716ddf	templates/tools/fresh/template.toml
+template	fresh	0.3.0	ddd1b1109aeee62ad5a102a4ed607a573dc280db910b4a73cfda1eb8be303de8	templates/tools/fresh/template.toml
 template	fsharp	1.0.0	d6fb2e63c932dfa9610f0fba9c0e509847995529426c12727912ce59fd62700b	templates/languages/fsharp/template.toml
 template	fzf	1.0.0	05eb2cff0d7a101ba7c56b3f9afc385e307b59d03119ae54a097ede57864991f	templates/tools/fzf/template.toml
 template	gcc	1.1.0	23d421cf4f83970ad83ca73302257f994f00a1d2281c09e9589eb2869b296c8b	templates/languages/gcc/template.toml
@@ -606,7 +606,7 @@ template	tela-icons	0.1.0	bc9fb120c9a2a35da5e4078832bc039a940fdefacc925f99eb66e6
 template	terraform	1.0.0	151cdf8d4ddba87cd10e5b51a11c17d61e35a29be195131aec1ff425781da76c	templates/tools/terraform/template.toml
 template	thinkrail	0.1.0	5607ae0565dea0de475a063935904dd67545ed1beee013330a4fa2fcba16a06f	templates/ai-tools/thinkrail/template.toml
 template	thonny	1.0.0	64571e52b43139716e35c9bd72304a5642bd69c155b599bfdeba438e67388d0e	templates/education/thonny/template.toml
-template	ttt	0.1.1	0e4d8de81492cebe86e4abf7fc855fc51dbb1413eacf11352df62e4ba10dab68	templates/tools/ttt/template.toml
+template	ttt	0.2.0	ba69d3745a63953e372731189063f0116fa0b0c719e14886d5669acc57cc9bb5	templates/tools/ttt/template.toml
 template	vhs	1.0.0	f2f8d6aca4c461eea09eb9922032616049a00be4f6994ab510538cda9cf29a07	templates/tools/vhs/template.toml
 template	vm-cpus	1.0.0	c843ec808161827deac4fc590e588a5e89bf63e0b6c3c70daf7519b14c990412	templates/booth-vm/vm-cpus/template.toml
 template	vm-memory	1.0.0	adc63eaf0d364e048e73443de713f63bc0f60d6d1cce6118aa8952081c5f97ee	templates/booth-vm/vm-memory/template.toml
@@ -963,7 +963,7 @@ extension	terraform+vscode-ext	0.1.0	8694236fe71c28f470b9de9c0d1004a5de0e6484f9d
 extension	thinkrail+autostart	0.1.0	376d0a609d59f086b8166c31c193601a28e3a2f32d03ef8881287915b27feb6c	templates/ai-tools/thinkrail/autostart--extension.toml
 extension	thinkrail+expose	0.1.0	b4732e458430d2ffd4228edac3593fc4ce5c584dba0744bc2a8936a6186b8bd6	templates/ai-tools/thinkrail/expose--extension.toml
 extension	ttt+config-shared	0.1.0	680b160a87365913a6bac4f1a50942431acca19e393fb673674869a5fb463488	templates/tools/ttt/config-shared--extension.toml
-extension	ttt+lsp	0.1.0	62951a0a3b59390facd7bcb5422252ae5843d82d99551644ecfa8b3e3c1f1777	templates/tools/ttt/lsp--extension.toml
+extension	ttt+lsp	0.1.1	beacea618740673dd8a23a67fec33ce4f33efa77c3ac470e6ac97c843d6f458b	templates/tools/ttt/lsp--extension.toml
 extension	ttt+theme	0.1.0	dffb469bd276a449032ab9ab11be4ff10b3da1cf47d408221f23f834b9a803bd	templates/tools/ttt/theme--extension.toml
 extension	wails+android	0.1.0	9969ceb831f5dc53121d16794e2c3811fb630db50e2654ff1f3dec9a389bffcc	templates/languages/wails/android--extension.toml
 extension	wails+cross	0.1.0	25aa26c799d144a1ceadba10207544d514f145ec49f853e4b25d6c1893c0dbc4	templates/languages/wails/cross--extension.toml

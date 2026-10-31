@@ -606,7 +606,7 @@ Every CodingBooth image comes with a curated baseline:
 - **Shells & process management:** `bash`, `zsh`, `tini`
 - **Networking & transfers:** `curl`, `wget`, `httpie`, `socat`
 - **Source control:** `git`, `gh`, `tig`
-- **Editors & file browsers:** `fresh`, `nano`, `ranger`, `less`
+- **Editors & file browsers:** `ttt`, `nano`, `ranger`, `less`
 - **Data processing:** `jq`, `yq`, `tree`
 - **Compression:** `unzip`, `zip`, `xz-utils`
 - **System utilities:** `ca-certificates`, `locales`, `sudo`

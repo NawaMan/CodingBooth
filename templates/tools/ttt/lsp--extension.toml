@@ -1,4 +1,4 @@
-cb-version = "0.1.0"
+cb-version = "0.1.1"
 display-name = "LSP"
 display-disc = "Point TTT at the booth's language servers"
 display-detail = """TTT starts only the language servers listed under lsp.servers in \
@@ -6,7 +6,7 @@ display-detail = """TTT starts only the language servers listed under lsp.server
 that is on PATH: the lsp template's (lsp+markdown, lsp+java, lsp:taplo,yaml, ...) plus gopls, \
 rust-analyzer, and HLS from the go, rust, and haskell templates. Each entry is added once and \
 entries you wrote are never changed, so deleting one turns that server off for good. With no \
-servers installed it writes nothing. Selected with ttt; deselect it with ttt~lsp."""
+servers installed it writes nothing. The base image already does this; selected with ttt, it only reinstalls the same wiring."""
 display-order = 20
 auto-select = true
 tags = ["ttt", "lsp", "language-server"]

@@ -103,7 +103,7 @@ cat > /etc/profile.d/00-cb-base-env.sh <<'EOF'
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 export DONT_PROMPT_WSL_INSTALL=1
-export EDITOR=fresh
+export EDITOR=ttt
 export EXPLORER=mc
 export GITVIEW=tig
 case ":$PATH:" in *":/opt/codingbooth/setups:"*) ;; *) export PATH="/opt/codingbooth/setups:$PATH" ;; esac
@@ -143,7 +143,7 @@ run_setup just--setup.sh
 run_setup lazygit--setup.sh
 run_setup superfile--setup.sh --version 1.6.0
 run_setup differ--setup.sh --version 1.8.1
-run_setup "fresh--setup.sh --version 0.5.2 && ln -sf /usr/local/bin/fresh /usr/local/bin/editor"
+run_setup "ttt--setup.sh --version 1.9.0 && ttt-lsp--setup.sh && ln -sf /usr/local/bin/ttt /usr/local/bin/editor"
 run_setup fira-code-nerd-font--setup.sh
 run_setup ttyd-nerd-font-index--setup.sh
 skip "cleanup-after--setup.sh: wipes /tmp, /var/tmp and /root/.cache -- an image-size step, harmful on a live machine"
