@@ -2,12 +2,12 @@
 
 A small project in five file types: Markdown, TOML, YAML, Bash, and TypeScript. Its booth
 installs a language server for each, with the `lsp` template. Language servers are
-editor-independent, so the same installed servers drive all three terminal editors here:
-**Fresh** (the booth's default editor), **Helix**, and **Neovim**. In VS Code, the same
+editor-independent, so the same installed servers drive all four terminal editors here:
+**TTT** (the booth's default editor), **Fresh**, **Helix**, and **Neovim**. In VS Code, the same
 `lsp+…` picks add the matching extensions instead.
 
 **Stack:** marksman, taplo, yaml-language-server, bash-language-server,
-typescript-language-server (on Node.js), Helix, Neovim + `neovim+lsp`
+typescript-language-server (on Node.js), Fresh, Helix, Neovim + `neovim+lsp`
 
 ## Quick start
 
@@ -19,6 +19,7 @@ booth
 # 2. Inside the booth
 just --list
 just check                    # every server answers LSP initialize
+ttt docs/guide.md             # TTT: the status bar shows Markdown ◉
 fresh docs/guide.md           # Fresh: the status bar shows LSP (on)
 hx settings.toml              # Helix: space k for hover
 nvim src/greet.ts             # Neovim: K for hover, :checkhealth vim.lsp
@@ -44,7 +45,7 @@ lasts until the booth is rebuilt; add the `lsp+<language>` selection to keep it:
 
 ```bash
 booth config --no-tui --select 'lsp+markdown+toml+yaml+bash+typescript+sql' \
-             --select 'neovim+lsp~config' --select helix
+             --select 'neovim+lsp~config' --select helix --select fresh
 ```
 
 or type server names directly: `lsp:sqls,pylsp`.
@@ -55,10 +56,11 @@ or type server names directly: `lsp:sqls,pylsp`.
 
 ```bash
 booth config --no-tui --select 'lsp+markdown+toml+yaml+bash+typescript' \
-             --select 'neovim+lsp~config' --select helix
+             --select 'neovim+lsp~config' --select helix --select fresh
 ```
 
 `neovim+lsp~config` keeps Neovim's LSP wiring and leaves out the mount of your host
 `~/.config/nvim`. Wiring and mount work together; the mount is only left out here so the
 example behaves the same for everyone. The Neovim template also sets `$EDITOR` to `nvim`.
-`fresh` stays installed either way.
+`ttt` is in the base image and starts the same servers on its own; `fresh` comes from the
+`fresh` template, which also links its booth-lsp plugin.

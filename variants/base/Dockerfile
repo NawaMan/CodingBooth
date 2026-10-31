@@ -258,7 +258,7 @@ RUN set -euo pipefail \
 ENV DONT_PROMPT_WSL_INSTALL=1
 
 # Set common tools aliases
-ENV EDITOR=fresh
+ENV EDITOR=ttt
 ENV EXPLORER=mc
 ENV GITVIEW=tig
 RUN set -euo pipefail                             \
@@ -328,9 +328,11 @@ RUN superfile--setup.sh --version 1.6.0
 # it line comments in its tmux pane. The differ template picks another release.
 RUN differ--setup.sh --version 1.8.1
 
-# Default text editor (Fresh) - pinned; the fresh template picks another release
-RUN fresh--setup.sh --version 0.5.2 \
-  && ln -sf /usr/local/bin/fresh /usr/local/bin/editor
+# Default text editor (TTT) - pinned; the ttt template picks another release.
+# ttt-lsp points it at whichever language servers a booth installs.
+RUN ttt--setup.sh --version 1.9.0 \
+  && ttt-lsp--setup.sh \
+  && ln -sf /usr/local/bin/ttt /usr/local/bin/editor
 
 # Fira Code Nerd Font - lets the built-in web terminal (ttyd) render icon
 # glyphs. ttyd's terminal renders client-side in the visitor's own browser, so

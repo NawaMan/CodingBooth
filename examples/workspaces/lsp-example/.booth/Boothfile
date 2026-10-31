@@ -1,13 +1,16 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --select lsp+markdown+toml+yaml+bash+typescript/neovim+lsp~config/helix
+# Configured by: booth config --no-tui --overwrite --select lsp+markdown+toml+yaml+bash+typescript/neovim+lsp~config/helix/fresh
 
 env APT_SNAPSHOT=20261023T000000Z
 
+arg FRESH_THEME=dark
+arg FRESH_VERSION=latest
 arg HELIX_VERSION=latest
 arg LSP_SERVERS=
 arg NEOVIM_VERSION=stable
 arg NODE_VERSION=24
 
+setup fresh --version ${FRESH_VERSION}
 env HELIX_RUNTIME=/opt/helix/runtime
 setup helix --version ${HELIX_VERSION}
 env EDITOR=nvim
