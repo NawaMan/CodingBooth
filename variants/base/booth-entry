@@ -398,6 +398,31 @@ find "$HOME_DIR" -xdev -path "$CODE_DIR" -prune -o ! -group "$HOST_GID" -exec ch
 # host uid. A path that is not a mount point is left alone.
 apply_owner_permissions
 
+info "5a) Refreshing the path to a worktree's git folder..."
+# In a worktree, $CODE_DIR/.git names a folder under the main clone's
+# .git/worktrees/, which booth mounts. git deletes .git/worktrees/ along with
+# the last worktree, and Docker Desktop on macOS (VirtioFS) keeps serving the
+# deleted folder for about a minute: a worktree created in that minute is "not
+# a git repository" in the booth. Listing each folder on the way down makes the
+# share look again. A no-op anywhere the cache is not stale; never fatal.
+if [ -f "$CODE_DIR/.git" ]; then
+  gitdir="$(sed -n 's/^gitdir:[[:space:]]*//p' "$CODE_DIR/.git" 2>/dev/null | head -1)" || gitdir=""
+  case "$gitdir" in
+    "") ;;
+    /*) ;;
+    *)  gitdir="$CODE_DIR/$gitdir" ;;
+  esac
+  walk=""
+  while [ -n "$gitdir" ] && [ "$gitdir" != "/" ] && [ "$gitdir" != "." ]; do
+    walk="$gitdir${walk:+
+$walk}"
+    gitdir="$(dirname "$gitdir")"
+  done
+  while IFS= read -r d; do
+    [ -n "$d" ] && ls -a "$d" >/dev/null 2>&1 || true
+  done <<< "$walk"
+fi
+
 info "5b) Telling git the code folder is trustworthy (git safe.directory)..."
 # Step 5 skips $CODE_DIR because it cannot chown a bind mount -- and on an
 # engine that shares the host folder through a VM (Docker Desktop, Colima,
