@@ -1,18 +1,13 @@
-cb-version = "1.0.1"
+cb-version = "1.0.2"
 display-name = "Nim"
 display-disc = "Statically-typed compiled systems language"
-display-detail = "Installs the Nim compiler (nim, nimble, nimsuggest) under /opt/nim-stable. Tarball release from nim-lang.org."
+display-detail = "Installs the Nim compiler (nim, nimble, nimsuggest) under /opt/nim-stable. x86_64 from nim-lang.org's release tarball; arm64, which nim-lang.org does not publish, from CodingBoothPrebuilt."
 display-order = 85
 tags = [
     "nim",
     "compiled",
     "systems",
 ]
-unsupported-arch = ["arm64"]
-unsupported-arch-note = """\
-nim-lang.org publishes no linux/arm64 build, so Nim cannot be installed in a booth built on Apple \
-Silicon or Ubuntu on ARM. The booth still builds — the setup warns and skips — but nim will not be in it.\
-"""
 
 [params.NIM_VERSION]
 default = "latest"
