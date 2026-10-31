@@ -118,7 +118,7 @@ func Finish(dir string, plan Plan, opts FinishOptions) Outcome {
 		return out
 	}
 	out.Removed = true
-	removeEmptyUpTo(filepath.Dir(plan.Path), plan.Top)
+	removeEmptyUpTo(filepath.Dir(plan.Path), belowRoot(plan.Top, plan.Root, plan.Branch))
 	say("Removed worktree %s.", plan.Path)
 
 	switch {
@@ -199,6 +199,17 @@ func splitBoothRuntime(status string) (work, boothOwn bool) {
 		work = true
 	}
 	return work, boothOwn
+}
+
+// belowRoot is top, moved down to the root's child on the branch path when top is the root
+// itself. The root stays even once empty: Docker Desktop on macOS (VirtioFS) cannot bind-mount
+// a folder whose parent was deleted and recreated within about a minute, so removing the root
+// would break the next `booth --worktree` started soon after.
+func belowRoot(top, root, branch string) string {
+	if top == "" || filepath.Clean(top) != filepath.Clean(root) {
+		return top
+	}
+	return filepath.Join(root, filepath.FromSlash(strings.SplitN(branch, "/", 2)[0]))
 }
 
 // removeEmptyUpTo removes dir and its parents while they are empty, stopping after top: the
