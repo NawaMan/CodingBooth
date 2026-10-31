@@ -1,7 +1,7 @@
-cb-version = "1.0.2"
+cb-version = "1.0.3"
 display-name = "Nim"
 display-disc = "Statically-typed compiled systems language"
-display-detail = "Installs the Nim compiler (nim, nimble, nimsuggest) under /opt/nim-stable. x86_64 from nim-lang.org's release tarball; arm64, which nim-lang.org does not publish, from CodingBoothPrebuilt."
+display-detail = "Installs the Nim compiler (nim, nimble, nimsuggest) under /opt/nim-stable. Comes prebuilt (sha256-checked) from CodingBoothPrebuilt on x86_64 and arm64 alike; a version not prebuilt is built from nim-lang.org's source tarball."
 display-order = 85
 tags = [
     "nim",
