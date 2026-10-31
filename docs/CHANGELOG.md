@@ -290,8 +290,9 @@ This file contains a list of changes for each released version.
   TinyCC, samples, docs, VS Code `.vsix`) under `/usr/local/goose-lang-<version>`, checks its
   sha256 against GitHub's asset digest, and adds `libc6-dev` (in-process runs fail with
   `stdint.h not found` without it) and gcc (for `goose-lang build`; `--no-cc` skips it). Pin with
-  `--select goose-lang:2026.2`. Goose ships no linux/arm64 build, so on Apple Silicon the setup
-  warns and skips, and the template says so. The example runs a primes sieve both in-process
+  `--select goose-lang:2026.2`. Goose ships no linux/arm64 build, so on arm64 (Apple Silicon,
+  Ubuntu on ARM) the setup takes a sha256-checked build from CodingBoothPrebuilt, laid out like
+  upstream's x64 archive; a version not prebuilt yet is built from source. The example runs a primes sieve both in-process
   (`just run 20`) and as a native build (`just build`).
 
 - **`ocaml-example`: an OCaml workspace on the experimental prebuilt toolchain.** A Dune
