@@ -117,6 +117,9 @@ func collectSetups(root string) ([]Item, error) {
 		rel := filepath.ToSlash(filepath.Join(SetupsDir, name))
 		full := filepath.Join(dir, name)
 		switch {
+		case strings.HasPrefix(name, "."):
+			// Tool droppings (.claude/, .DS_Store, ...) — never catalog items.
+			continue
 		case name == "future":
 			// Parked, abandoned setups — not part of the catalog.
 			continue
@@ -202,7 +205,7 @@ func collectTemplates(root string) ([]Item, error) {
 	}
 	var items []Item
 	for _, cat := range cats {
-		if !cat.IsDir() {
+		if !cat.IsDir() || isDotDir(cat) {
 			continue
 		}
 		tmpls, err := os.ReadDir(filepath.Join(troot, cat.Name()))
@@ -210,7 +213,7 @@ func collectTemplates(root string) ([]Item, error) {
 			return nil, err
 		}
 		for _, t := range tmpls {
-			if !t.IsDir() {
+			if !t.IsDir() || isDotDir(t) {
 				continue
 			}
 			got, err := collectTemplateDir(root, cat.Name(), t.Name())
@@ -238,10 +241,14 @@ func collectTemplateDir(root, cat, name string) ([]Item, error) {
 		return nil, err
 	}
 	var items []Item
-	// Paths (relative to dir) that belong to an extension, not to the template.
+	// Paths (relative to dir) left out of the template's hash: an extension's, or a tool's dot folder.
 	extOwned := map[string]bool{}
 	for _, e := range entries {
 		en := e.Name()
+		if isDotDir(e) {
+			extOwned[en] = true // not the template's either: left out of its hash
+			continue
+		}
 		rel := filepath.ToSlash(filepath.Join(TemplatesDir, cat, name, en))
 		if ext, ok := strings.CutSuffix(en, "--extension.toml"); ok && !e.IsDir() {
 			extOwned[en] = true
@@ -330,6 +337,13 @@ func TOMLParams(data []byte) ([]string, error) {
 func hashBytes(data []byte) string {
 	sum := sha256.Sum256(data)
 	return hex.EncodeToString(sum[:])
+}
+
+// isDotDir reports a folder named with a leading dot, such as the .claude/ an agent CLI leaves
+// in whatever folder it ran in. Where the scan looks for items, such a folder is never one.
+// Inside an item it is content (a home-seed/.config/), and is hashed like any other.
+func isDotDir(e fs.DirEntry) bool {
+	return e.IsDir() && strings.HasPrefix(e.Name(), ".")
 }
 
 // treeHash hashes a directory: when it holds exactly one file, that file's own
