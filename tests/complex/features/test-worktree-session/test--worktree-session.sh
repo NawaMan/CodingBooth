@@ -55,10 +55,13 @@ trap cleanup EXIT
 git init -q -b main "$WORK/proj"
 git -C "$WORK/proj" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init
 ROOT="$WORK/proj.worktrees"
+# ROOT as the booth prints it, once to_slash turns a Windows host's C:\... into C:/...
+HOST_ROOT="$(host_path "$WORK")/proj.worktrees"
+to_slash() { sed 's|\\|/|g'; }
 
 booth_wt() { # args... -- the booth's command; prints the run's output, then "EXIT=<code>"
   local code=0
-  (cd "$WORK/proj" && "$BOOTH_BIN" --variant base --port "$(pick_free_port)" "$@" 2>&1) || code=$?
+  (cd "$WORK/proj" && "$BOOTH_BIN" --variant base --port "$(pick_free_port)" "$@" 2>&1) | to_slash || code=$?
   echo "EXIT=$code"
 }
 has_branch() { git -C "$WORK/proj" rev-parse --verify --quiet "refs/heads/$1" > /dev/null; }
@@ -69,20 +72,29 @@ check() { # number, description, condition result (true|false), detail
     exit 1
   fi
 }
+# A Windows host mirrors no .git into a worktree booth, so git cannot run in it there:
+# docs/TODO.md, "A linked git worktree gets no `.git` mount on a Windows host".
+git_in_booth() { # number, description [, number, description...]; false (after skip lines) on Windows
+  [[ "$HOST_OS" != "WIN" ]] && return 0
+  while (($# >= 2)); do print_test_result "true" "$0" "$1" "Skipped on Windows (needs git inside the booth): $2"; shift 2; done
+  return 1
+}
 
 OUT="$(booth_wt --worktree feature/clean -- 'echo ran')"
 ok=false
 [[ -d "$ROOT" && ! -e "$ROOT/feature" ]] && ! has_branch feature/clean && echo "$OUT" | grep -q "^Removed worktree" && ok=true
 check 1 "A clean run removes the worktree, its folders and its new branch; the root stays" "$ok" "$OUT"
 
+if git_in_booth 2 "A run that commits removes the worktree and keeps the branch"; then
 OUT="$(booth_wt --worktree committed -- 'git -c user.email=t@t -c user.name=t commit -q --allow-empty -m w')"
 ok=false
 [[ ! -e "$ROOT/committed" ]] && has_branch committed && echo "$OUT" | grep -q "^Kept branch committed" && ok=true
 check 2 "A run that commits removes the worktree and keeps the branch" "$ok" "$OUT"
+fi
 
 OUT="$(booth_wt --worktree dirty -- 'touch notes.txt')"
 ok=false
-[[ -f "$ROOT/dirty/notes.txt" ]] && echo "$OUT" | grep -q "^Kept worktree $ROOT/dirty: it has uncommitted changes" && ok=true
+[[ -f "$ROOT/dirty/notes.txt" ]] && echo "$OUT" | grep -q "^Kept worktree $HOST_ROOT/dirty: it has uncommitted changes" && ok=true
 check 3 "A run with an uncommitted file keeps the worktree, and says why" "$ok" "$OUT"
 
 OUT="$(booth_wt --worktree dirty -- 'rm notes.txt')"
@@ -92,7 +104,7 @@ check 4 "A worktree that already existed is left in place, even when clean" "$ok
 
 OUT="$(booth_wt --worktree kept --keep-worktree -- 'echo ran')"
 ok=false
-[[ -d "$ROOT/kept" ]] && echo "$OUT" | grep -q "^Kept worktree $ROOT/kept (--keep-worktree)" && ok=true
+[[ -d "$ROOT/kept" ]] && echo "$OUT" | grep -q "^Kept worktree $HOST_ROOT/kept (--keep-worktree)" && ok=true
 check 5 "--keep-worktree keeps a clean worktree" "$ok" "$OUT"
 
 OUT="$(booth_wt --worktree team/named -- 'echo "NAME=$BOOTH_CONTAINER_NAME"')"
@@ -108,17 +120,23 @@ RESTART_CMD='if [ "$(git log -1 --format=%s)" != restarted ]; then
 else
   echo "RUN2 branch=$(git branch --show-current)"
 fi'
+if git_in_booth 7 "A restart keeps the worktree; only the real exit after it cleans up"; then
 OUT="$(booth_wt --worktree restarts -- "$RESTART_CMD")"
 ok=false
 echo "$OUT" | grep -q "^RUN2 branch=restarts" && echo "$OUT" | grep -q "^Kept branch restarts: it has 1 new commit" &&
   [[ ! -e "$ROOT/restarts" ]] && [[ "$(echo "$OUT" | grep -c '^Removed worktree')" == 1 ]] && ok=true
 check 7 "A restart keeps the worktree; only the real exit after it cleans up" "$ok" "$OUT"
+fi
 
 git init -q --bare "$WORK/origin.git"
 git -C "$WORK/proj" remote add origin "$WORK/origin.git"
 on_origin() { git -C "$WORK/origin.git" rev-parse --verify --quiet "refs/heads/$1"; }
 COMMIT='git -c user.email=t@t -c user.name=t commit -q --allow-empty -m w'
 
+# 8-10 commit inside the booth; 13 needs 10's push, and 14-15 the branch "half" 9 commits to.
+if git_in_booth 8 "--push pushes, then removes the worktree and the local branch" \
+                9 "--push with uncommitted work: not pushed, worktree kept, exit 1" \
+                10 "--push on an existing worktree pushes it and leaves it in place"; then
 OUT="$(booth_wt --worktree feature/pushed --push -- "$COMMIT")"
 ok=false
 on_origin feature/pushed > /dev/null && [[ ! -e "$ROOT/feature" ]] && ! has_branch feature/pushed &&
@@ -136,14 +154,15 @@ ok=false
 on_origin dirty > /dev/null && [[ -d "$ROOT/dirty" ]] && echo "$OUT" | grep -q "^Pushed branch dirty to origin" &&
   ! echo "$OUT" | grep -q "^Removed worktree" && ok=true
 check 10 "--push on an existing worktree pushes it and leaves it in place" "$ok" "$OUT"
+fi
 
 # An existing worktree, so --daemon needs no --keep-worktree; --keep-alive keeps it once stopped
 # (step 13). Name it per run: never clash.
 DAEMON="wt-list-$$"
 booth_wt --worktree dirty --daemon --keep-alive --name "$DAEMON" > /dev/null
-OUT="$(cd "$WORK/proj" && "$BOOTH_BIN" worktree list 2>&1 || true)"
+OUT="$(cd "$WORK/proj" && "$BOOTH_BIN" worktree list 2>&1 | to_slash || true)"
 ok=false
-echo "$OUT" | grep -qE "^dirty +$DAEMON +Running +[0-9]+ +$ROOT/dirty\$" && ok=true
+echo "$OUT" | grep -qE "^dirty +$DAEMON +Running +[0-9]+ +$HOST_ROOT/dirty\$" && ok=true
 check 11 "booth worktree list shows the booth running on its worktree" "$ok" "$OUT"
 
 wt_remove() { # args...; prints the output, then "EXIT=<code>"
@@ -157,6 +176,9 @@ ok=false
 [[ -d "$ROOT/dirty" ]] && echo "$OUT" | grep -q "booth $DAEMON is running" && echo "$OUT" | grep -q "^EXIT=1" && ok=true
 check 12 "worktree remove refuses while a booth runs on it" "$ok" "$OUT"
 
+if git_in_booth 13 "worktree remove: the stopped booth, the worktree and the pushed branch go; the remote stays" \
+                14 "worktree remove keeps uncommitted work without --force, and removes nothing" \
+                15 "worktree remove --force --yes discards the work, the booth and its volume"; then
 "$BOOTH_BIN" stop --name "$DAEMON" > /dev/null 2>&1
 OUT="$(wt_remove dirty)"
 ok=false
@@ -187,3 +209,4 @@ ok=false
 check 15 "worktree remove --force --yes discards the work, the booth and its volume" "$ok" "$OUT"
 DAEMON=""
 VOLUME=""
+fi
