@@ -30,8 +30,8 @@ source ../common--source.sh
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 SCRIPT="$REPO_ROOT/variants/base/setups/gruppled-cursors--setup.sh"
 
-if ! command -v python3 >/dev/null 2>&1; then
-    echo "SKIP: python3 not on PATH (the setup's resize step needs it)"
+if ! have_python3; then
+    echo "SKIP: no working python3 (the setup's resize step needs it)"
     exit 0
 fi
 

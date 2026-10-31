@@ -82,7 +82,7 @@ fi
 # A PATH holding only docker (and the system dirs) hides containerd-shim-kata-v2,
 # which normally lives in /usr/local/bin. On a host without Kata nothing changes.
 mkdir -p "$TMP_DIR/bin"
-ln -s "$(command -v docker)" "$TMP_DIR/bin/docker"
+ln -s "$(type -P docker)" "$TMP_DIR/bin/docker"
 FALLBACK=$(PATH="$TMP_DIR/bin:/usr/bin:/bin" run_coding_booth --config test--config.toml --dryrun --dind-isolation 2>&1 | strip_ansi)
 LAST_OUTPUT="$FALLBACK"
 check 16 "No Kata here: the banner says so"           has "$FALLBACK" "NOT AVAILABLE ON THIS MACHINE"
