@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.1.1
 
 # lsp--hls--setup.sh — Make the Haskell Language Server reachable for editors.
 set -Eeuo pipefail
@@ -70,6 +70,20 @@ if [[ -n "$GHC_VER" && ! -x "${GHCUP_BIN}/haskell-language-server-${GHC_VER}" ]]
   echo "⚠️  HLS ${HLS_VER:-?} has no server for GHC ${GHC_VER}, so editors will report an error." >&2
   echo "   It supports: ${SUPPORTED:-none}. Pick one of those with haskell:<ghc>, or pin an HLS" >&2
   echo "   that supports ${GHC_VER} with lsp:hls@<version>." >&2
+elif [[ -n "$GHC_VER" ]]; then
+  # A server for this GHC can still be built against another build of it: ghcup's unofficial
+  # aarch64 HLS bindists are, and exit on every file with "GHC ABIs don't match". Type-check one
+  # file now, so that shows here rather than as a silent editor.
+  PROBE="$(mktemp -d)"
+  echo 'main = pure ()' > "${PROBE}/Main.hs"
+  PROBE_OUT="$(cd "$PROBE" && HOME="$PROBE" timeout 300 haskell-language-server-wrapper typecheck Main.hs 2>&1 || true)"
+  if [[ "$PROBE_OUT" == *"GHC ABIs don't match"* ]]; then
+    echo "⚠️  HLS ${HLS_VER:-?} was built against a different GHC ${GHC_VER} than the one installed" >&2
+    echo "   (\"GHC ABIs don't match\"), so editors will get no Haskell server. ghcup's unofficial" >&2
+    echo "   $(uname -m) builds of HLS do this. Try another GHC with haskell:<ghc>, or another HLS" >&2
+    echo "   with lsp:hls@<version>." >&2
+  fi
+  rm -rf "$PROBE"
 fi
 
 cat <<'EON'
