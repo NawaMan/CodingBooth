@@ -97,7 +97,7 @@ fi
 # Test 8: Kata out of reach (its shim hidden from PATH, as on a Linux host without Kata):
 #         the fallback banner and the --dind warning, so a real run would ask first.
 TMP_BIN=$(mktemp -d)
-ln -s "$(command -v docker)" "$TMP_BIN/docker"
+ln -s "$(type -P docker)" "$TMP_BIN/docker"
 EXIT=0; OUT=$(PATH="$TMP_BIN:/usr/bin:/bin" run_coding_booth print-security-warning --variant base --dind-isolation 2>/dev/null) || EXIT=$?
 rm -rf "$TMP_BIN"
 check 8 "--dind-isolation with no Kata here warns of the privileged fallback" 1 "$EXIT" "$OUT" \
