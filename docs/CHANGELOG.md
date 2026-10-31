@@ -8,7 +8,9 @@ This file contains a list of changes for each released version.
   worktree remove`) removed the last worktree, it also deleted `../<project>.worktrees/`. On macOS,
   Docker Desktop then refused to mount the next worktree created under it within about a minute
   (`error while creating mount source path … no such file or directory`). The empty root now stays;
-  folders a nested branch made (`feature/`) are still removed.
+  folders a nested branch made (`feature/`) are still removed. git also deletes `.git/worktrees/`
+  with the last worktree, which gave the next one `fatal: not a git repository` in the booth; the
+  booth now refreshes the path to the worktree's git folder as it starts.
 - **`lsp+haskell` warns on arm64 when HLS cannot load the installed GHC.** ghcup's HLS 2.14.0.0 for
   aarch64 Linux is an unofficial build made against a different GHC 9.10.3 than the official one, so
   it exits with "GHC ABIs don't match" and editors get no Haskell server. The setup now type-checks
