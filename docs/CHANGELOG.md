@@ -17,9 +17,9 @@ This file contains a list of changes for each released version.
   a one-line file at build time and says so, instead of leaving the editor silent.
 - **Nim installs on arm64.** nim-lang.org publishes Linux tarballs for x64 only (its arm64
   nightlies are branch snapshots, not releases), so `--select nim` on Apple Silicon or Ubuntu on
-  ARM failed with a 404 and no image. arm64 now takes a sha256-checked build from
-  CodingBoothPrebuilt, laid out like upstream's x64 tarball; a version not prebuilt yet is built
-  from nim-lang.org's source tarball (a few minutes). x86_64 still uses upstream's tarball.
+  ARM failed with a 404 and no image. Nim now comes as a sha256-checked build from
+  CodingBoothPrebuilt on x86_64 and arm64 alike, laid out like upstream's x64 tarball; a version
+  not prebuilt yet is built from nim-lang.org's source tarball (a few minutes).
 - **TTT is the default editor; Fresh left the base image.** `$EDITOR` and `editor` are now TTT
   1.9.0, and a plain booth points it at whichever language servers it installs (what `ttt+lsp` did;
   delete an entry from `lsp.servers` in `~/.config/ttt/settings.json` to turn one off). Fresh is
@@ -290,10 +290,11 @@ This file contains a list of changes for each released version.
   TinyCC, samples, docs, VS Code `.vsix`) under `/usr/local/goose-lang-<version>`, checks its
   sha256 against GitHub's asset digest, and adds `libc6-dev` (in-process runs fail with
   `stdint.h not found` without it) and gcc (for `goose-lang build`; `--no-cc` skips it). Pin with
-  `--select goose-lang:2026.2`. Goose ships no linux/arm64 build, so on arm64 (Apple Silicon,
-  Ubuntu on ARM) the setup takes a sha256-checked build from CodingBoothPrebuilt, laid out like
-  upstream's x64 archive; a version not prebuilt yet is built from source. The example runs a primes sieve both in-process
-  (`just run 20`) and as a native build (`just build`).
+  `--select goose-lang:2026.2`. Goose ships no linux/arm64 build, so the compiler comes as a
+  sha256-checked build from CodingBoothPrebuilt on x86_64 and arm64 alike (Apple Silicon and
+  Ubuntu on ARM included), laid out like upstream's x64 archive; a version not prebuilt yet is
+  built from source. The example runs a primes sieve both in-process (`just run 20`) and as a
+  native build (`just build`).
 
 - **`ocaml-example`: an OCaml workspace on the experimental prebuilt toolchain.** A Dune
   project with a `calc` CLI that parses an integer expression, prints it fully parenthesized
@@ -709,8 +710,8 @@ This file contains a list of changes for each released version.
 
 - **New Haskell extension: Haskell Tools** (`haskell+tools`) installs `hlint`, `ormolu`,
   `fourmolu` or `pandoc` as ready-made binaries, in seconds instead of 5-15 minutes of cabal
-  each. The default is `fourmolu,hlint`; pin with `@`, as in `hlint@3.10`. On arm64, where
-  upstream ships no hlint or ormolu, they come from CodingBoothPrebuilt.
+  each. The default is `fourmolu,hlint`; pin with `@`, as in `hlint@3.10`. hlint and ormolu, which
+  upstream ships for x86_64 only, come from CodingBoothPrebuilt on both CPUs.
 
 - **Fixed: arm64 and download breakages found in a platform audit.**
   - `dbeaver` installs on arm64 (the aarch64 .deb), and pinned versions download again: they now
