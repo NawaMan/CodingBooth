@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 # ttt--setup.sh — Install the TTT terminal editor from GitHub releases.
 set -Eeuo pipefail
@@ -22,7 +22,8 @@ Notes:
 - Symlinks /usr/local/bin/ttt at that binary
 - Installs ripgrep when rg is not already on PATH (workspace search)
 - Supports amd64 and arm64
-- The release publishes no checksum file, so the bytes are the GitHub asset
+- Checks the asset against the release's checksums.txt (published since 1.8.0);
+  an older release without one installs with a warning
 USAGE
 }
 
@@ -97,6 +98,22 @@ ELF="$(od -An -t x1 -N 4 "$TMP/$ASSET" | tr -d '[:space:]')"
 if [[ "$ELF" != "7f454c46" ]]; then
   echo "❌ Download is not a Linux binary: ${URL}" >&2
   exit 1
+fi
+
+# The release's checksums.txt is "<hash>  <asset>" per line. A mismatch is fatal;
+# a release from before the file existed installs with a warning.
+if curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL \
+     "https://github.com/eugenioenko/ttt/releases/download/v${VERSION}/checksums.txt" \
+     -o "$TMP/checksums.txt" 2>/dev/null; then
+  EXPECTED="$(awk -v a="$ASSET" '$2 == a || $2 == "*"a { print $1; exit }' "$TMP/checksums.txt")"
+  ACTUAL="$(sha256sum "$TMP/$ASSET" | awk '{ print $1 }')"
+  if [[ -z "$EXPECTED" || "$EXPECTED" != "$ACTUAL" ]]; then
+    echo "❌ SHA256 mismatch for ${ASSET} (expected '${EXPECTED}', got '${ACTUAL}')" >&2
+    exit 1
+  fi
+  echo "🔒 Checksum verified."
+else
+  echo "⚠️  No checksums.txt published for v${VERSION}; skipping checksum verification."
 fi
 
 rm -rf /opt/ttt

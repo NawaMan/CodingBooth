@@ -111,8 +111,8 @@ The advantages, in CodingBooth's own vocabulary:
   AVD. The SDK + NDK stay out of the desktop example on purpose.
 
 - **lsp-example** — five language servers (marksman, taplo, yaml, bash, TypeScript) installed
-  once and used by three terminal editors at the same time: Fresh, Helix, and Neovim, with no editor
-  config. A server that is missing installs from Fresh's own LSP popup.
+  once and used by four terminal editors at the same time: TTT, Fresh, Helix, and Neovim, with no
+  editor config. A server that is missing installs from Fresh's own LSP popup.
 
 ## 🧹 Host stays clean — no global/system-wide installs
 

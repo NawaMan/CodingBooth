@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.2.0
+# cb-version: 0.3.0
 
 # fresh--setup.sh — Install the Fresh terminal editor from GitHub releases.
 set -Eeuo pipefail
@@ -21,6 +21,9 @@ Notes:
 - Installs the static musl build under /opt/fresh-editor
 - Symlinks /usr/local/bin/fresh at that binary
 - Checks the .sha256 published beside the release asset
+- Writes /usr/share/startup.d/74-cb-fresh--startup.sh, which at each container start
+  links the booth-lsp plugin and turns off upgrade checks and telemetry where the
+  config does not decide
 - Supports amd64 and arm64
 USAGE
 }
@@ -115,6 +118,46 @@ chmod 755 /opt/fresh-editor/fresh
 chmod -R a+rX /opt/fresh-editor
 ln -sfn /opt/fresh-editor/fresh /usr/local/bin/fresh
 
+# At each container start, as the user: link the booth-lsp plugin, which starts
+# the language servers on PATH and adds an "Install <server>" row to Fresh's LSP
+# popup for a missing one. Fresh loads plugins only from the user's plugins
+# directory. Anything already at that name, a link or a file of the user's own,
+# is left alone; an empty file there turns the plugin off.
+# Fresh also checks for upgrades and sends anonymous telemetry unless told not
+# to: turn both off, and start on "dark", where the config does not decide. A
+# user's own "check_for_updates": true, or a theme from fresh+theme, stays.
+STARTUP_FILE=/usr/share/startup.d/74-cb-fresh--startup.sh
+install -d "$(dirname "$STARTUP_FILE")"
+cat > "$STARTUP_FILE" <<'STARTUP'
+#!/usr/bin/env bash
+# Written by fresh--setup.sh (CodingBooth); see fresh--setup.sh --help.
+set -uo pipefail
+
+plugin="$HOME/.config/fresh/plugins/booth-lsp.ts"
+if [[ ! -e "$plugin" && ! -L "$plugin" \
+      && -r /opt/codingbooth/setups/fresh-plugins/booth-lsp.ts ]]; then
+  { mkdir -p "${plugin%/*}" \
+      && ln -s /opt/codingbooth/setups/fresh-plugins/booth-lsp.ts "$plugin"; } 2>/dev/null || true
+fi
+
+conf="$HOME/.config/fresh/config.json"
+if [[ ! -s "$conf" ]]; then
+  mkdir -p "${conf%/*}" 2>/dev/null \
+    && printf '{"version":1,"check_for_updates":false,"theme":"dark"}\n' > "$conf" 2>/dev/null
+elif ! jq -e 'has("check_for_updates") and has("theme")' "$conf" >/dev/null 2>&1; then
+  tmp="$(mktemp)"
+  if jq 'if has("check_for_updates") then . else .check_for_updates = false end
+         | if has("theme") then . else .theme = "dark" end' \
+        "$conf" > "$tmp" 2>/dev/null; then
+    mv "$tmp" "$conf"
+  else
+    rm -f "$tmp"
+  fi
+fi
+exit 0
+STARTUP
+chmod 755 "$STARTUP_FILE"
+
 echo "✅ Fresh installed."
 echo -n "   fresh → "; fresh --version 2>/dev/null || true
 
@@ -127,9 +170,9 @@ cat <<'EON'
 
 Notes:
 - A bare `fresh` starts Orchestrator mode, a background session for the last workspace.
-- Upgrade checks and anonymous telemetry (version, OS, architecture, TERM) are on.
-  Turn both off with `fresh --no-upgrade-check`, or `"check_for_updates": false`
-  in ~/.config/fresh/config.json.
+- Upgrade checks and anonymous telemetry (version, OS, architecture, TERM) are off:
+  the startup hook writes `"check_for_updates": false` unless the config already
+  has the key. Set it to true to turn them on.
 - Change the version by selecting fresh:X.Y.Z and rebuilding the booth.
   `fresh --cmd update` replaces /opt/fresh-editor in place, and that directory is root-owned.
 - Select fresh+config-shared to keep ~/.config/fresh in git (.booth/shared).
