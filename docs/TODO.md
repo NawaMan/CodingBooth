@@ -89,8 +89,8 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
       in query names to an authoritative server it controls (or via any public resolver), past an
       allowlist that otherwise holds.
       Why extend it: `--egress` is what we tell people to use before letting an AI agent or an
-      untrusted dependency loose, and that use reads as "nothing leaves but the allowlist". (Not
-      needed for the interview case — see *Lockdown mode* below.)
+      untrusted dependency loose, and that use reads as "nothing leaves but the allowlist". For the
+      interview case it backs *Lockdown mode* below, so DNS does not stay open beside it.
       Simplest approach: under egress no booth process needs DNS — clients send `CONNECT host:443`
       and Envoy (UID 101) resolves. So allow 53 *and* Docker's embedded `127.0.0.11` (on `lo`, so
       today's `-o lo` ACCEPT lets it through) only for UID 101, reject for everyone else. Also: there
@@ -104,6 +104,73 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
       how wildcard allowlist entries (`*.example.com`) map to DNS rules; what Envoy's own upstream
       resolution uses once 53 is closed; whether `egress-policy-file` (raw Envoy RBAC) users get
       the DNS pin too or must list names twice.
+- [ ] **Session replay — watch afterwards how a booth session was worked.** Record a session so it
+      can be played back as one timeline: the code as it changed, the terminals, the screen, and the
+      AI agent's conversation. Use case: AI-allowed interviews on CodingBoothSaas (how the candidate
+      steered Claude, checked its work, fixed things by hand matters more than the final diff);
+      also teaching (review a student's path, not just the result).
+      Layers, cheapest first — each useful alone:
+      - **Code snapshots.** A daemon commits the workspace every ~10s and on change into a hidden
+        repo *outside* it (`git --git-dir=/var/cb-replay --work-tree=~/code`), so the user's own git
+        history is untouched. Replay = slider over commits with the diff at each step.
+      - **Terminals.** Record each Console UI tmux pane (`tmux pipe-pane`) or wrap the shell in
+        `asciinema rec`; asciinema-player plays it in a browser.
+      - **Screen (desktop variants).** On XFCE the whole session is one X display, so
+        `ffmpeg -f x11grab` at a low frame rate is a full video of editor + terminal + browser. The
+        TigerVNC server is also the clipboard boundary (`SendCutText`/`AcceptCutText`,
+        `variants/base/setups/xfce--setup.sh`): log what crosses it — paste-in from outside is an
+        interview signal, copy-out is the leak.
+      - **Agent transcript.** Claude Code already writes every session to
+        `~/.claude/projects/<path>/<session>.jsonl` (prompts, replies, tool calls + results,
+        timestamps). Raise `cleanupPeriodDays` (default 30) so it survives. Candidate-proof copy:
+        OpenTelemetry (`CLAUDE_CODE_ENABLE_TELEMETRY=1`, `OTEL_LOG_USER_PROMPTS=1`) forced through
+        the root-owned managed settings, exported to a collector outside the container — verify how
+        much tool detail the OTel events carry before relying on it.
+      - **Keystroke-level editor** (later, hardest): a code-server extension logging
+        `onDidChangeTextDocument` + cursor events.
+      Approach: booth side is a setup + startup hook (`variants/base/setups/`, a template under
+      `templates/` to turn it on), recorders running as **root** from the startup hook and writing to
+      a root-only dir — the user is `coder` without sudo and must not delete or edit the record
+      (every web/VNC process runs as `coder`, so a recorder that does too is one `pkill` away).
+      Collected on stop alongside the save-back. The review page (one timeline: snapshots +
+      terminals/screen + transcript lined up by time) and storage are CodingBoothSaas work.
+      Open questions: privacy/consent notice to the user being recorded; storage size (low-fps
+      x11grab ≈ some hundred MB/hour — measure); whether snapshots should skip `node_modules`,
+      `target/` etc. via the workspace `.gitignore`; one combined format or per-layer files the
+      review page aligns.
+- [ ] **Lockdown mode — make leaking a booth's code harder (not impossible). Deferred 2026-10-30.**
+      One switch for a "use it, don't take it" booth — the CodingBoothSaas interview case, on the
+      **XFCE** variant. Goal is *harder*, not *impossible*: screenshots and retyping always remain,
+      and the candidate is expected to be watched (or replayed — see *Session replay*).
+      Why it has value on XFCE (and little on a web IDE): with a web IDE (code-server, Console UI)
+      file contents themselves reach the user's browser — devtools, `base64` in a pane, a `/dump`
+      route in their own app behind the port proxy — so no flag closes it. On XFCE the editor,
+      terminal and the browser that tests the web app all run *inside* the desktop; the user's
+      browser only receives pixels and the clipboard. So the port proxy is not needed for a web-app
+      exercise there, and closing the remaining file routes leaves just screen + clipboard.
+      Pieces:
+      - `--no-port-proxy` (one flag): drop the nginx `/proxy/<port>/` locations
+        (`variants/base/web-ttyd-split/nginx.conf.template`,
+        `variants/base/setups/booth-web-preview/nginx*.conf.template`) and pass code-server
+        `--disable-proxy` — the codeserver variant's nginx forwards `/proxy/` to code-server's own
+        proxy, and `/absproxy/` reaches it directly, so both places. Not `--no-proxy`: that reads as
+        "bypass the egress proxy" (`NO_PROXY`).
+      - Clipboard at the VNC boundary (`variants/base/setups/xfce--setup.sh`): TigerVNC
+        `SendCutText=0` blocks copy-out while paste-in still works; or keep it on and log what
+        crosses (paste-in is an interview signal, copy-out is the leak).
+      - `--lockdown` sets those and checks the rest: requires `--egress` (ideally with the DNS
+        extension above), forces `--no-sudo`, refuses `--dind`, the host-escape consent set
+        (`cli/src/pkg/booth/host_escape_consent.go`), home-folder credential mounts in `run-args`,
+        extra `--expose`/`--port`, and a `coder` UID of 101 (Envoy's — it would bypass the
+        firewall). Refuse variants whose browser channel can't be narrowed (notebook; base/codeserver
+        get only the port-proxy part).
+      Limits to write into `docs/BOOTH_SECURITY.md`: every web/VNC process runs as `coder`, so the
+      user can restart VNC or nginx with other options — fine while watched (it drops the
+      interviewer's view), not tamper-proof unattended; text copied out of what is on screen and
+      `api.anthropic.com` with the user's own key (Files API) both stay open.
+      Open questions: what else the desktop variant's nginx serves besides noVNC; whether
+      `CB_LOCKDOWN` is read at start or baked at build (it must not be user-settable inside);
+      a `tests/basic/` case that tries each route and expects it closed.
 - [x] Add TESTS, add TESTS, add TESTS, add TESTS!!!
 - [-] Remove CVEs for docker images -- give up (most found in core pages like python, nodejs, etc)
 - [x] Try to not have "user-land" setup print anthing (unless error) -- nodejs-example
@@ -326,20 +393,6 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
       size silently. `booth config` could say so when a desktop template is picked on `base`.
 
 ## Problems
-- [ ] **Lockdown mode — decided against (2026-10-30); kept so it is not re-proposed.** The idea was
-      one switch for a "use it, don't take it" booth (the CodingBoothSaas interview case): require
-      `--egress`, force `--no-sudo`, drop the `/proxy/<port>/` route (console nginx and
-      code-server's own, which the codeserver variant's nginx forwards to), start code-server with
-      `--disable-file-downloads`.
-      Why not: the browser channel cannot be closed. Whatever the editor shows or the terminal
-      prints reaches the user's browser (devtools, `base64` in a pane), and a web-app exercise needs
-      the port proxy anyway — and with it the candidate's own app can serve the repo. Every web
-      process also runs as `coder`, so a flag the candidate dislikes is one `pkill` away. Lockdown
-      would only look safe.
-      Instead: what a user can see, they can take — use code that may leak, or watch them work;
-      keep credentials out of the booth (push from outside, budget-capped agent keys).
-      Leftover small idea, only if someone wants it for its own sake: `--no-port-proxy` (one flag,
-      both places). Not `--no-proxy` — that reads as "bypass the egress proxy" (`NO_PROXY`).
 - [ ] **The host-escape warning judges only POSIX mount sources, so a Windows host gets none of it.**
       `dangerousMount` (`cli/src/pkg/booth/host_escape_consent.go`) returns "not a host path" for
       anything that does not start with `/`, which on Windows is every real mount a user writes:
