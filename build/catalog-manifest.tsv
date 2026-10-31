@@ -124,7 +124,7 @@ setup	go-code-extension	1.0.0	14b5c05adef0b6e5f5eb1593ef84feca1320bdf1ad6150cf84
 setup	go-nb-kernel	1.1.0	be638942abc1e8770d85c081b7153f7d0aa6593a5386511f6fa4b173f0f64d42	variants/base/setups/go-nb-kernel--setup.sh
 setup	google-chrome	1.1.0	4747c061f49b7eea76796abc4425f0e563611222452911f064464f8531b1a21b	variants/base/setups/google-chrome--setup.sh
 setup	goose	1.0.0	138c554d9ab722ea3b71731ecad135583e355b03a5072c0e20ad3cfdf3ff0971	variants/base/setups/goose--setup.sh
-setup	goose-lang	0.1.0	8955914f42375c7ca9edc69abab63e996db6a2570b9c1739baf8515f77e23449	variants/base/setups/goose-lang--setup.sh
+setup	goose-lang	0.1.0	02acaec2d0e8cb01ba1666fea9628e0eeac3f39c61628143a01c94f8b4ae5db1	variants/base/setups/goose-lang--setup.sh
 setup	gradle	1.1.0	9ba3417bc491e1a05f3af2e586e0933e97b5a45a0a3c9a38eb15e3b5eff6a9f2	variants/base/setups/gradle--setup.sh
 setup	graphviz-code-extension	0.1.0	a24c26b65c1078dac9728a7c7659999b2f6d615aa12c55deefbb784268f2d7f4	variants/base/setups/graphviz-code-extension--setup.sh
 setup	greenfoot	1.0.0	4dc357d5d473883f22cc9fc7af4dd079efd17710652feee778aa9294ca78455e	variants/base/setups/greenfoot--setup.sh
@@ -134,7 +134,7 @@ setup	harlequin	0.1.0	7d16f4a9d8afdbbf7beba8c5a83a72bdc3c790ce370e81474da53e8f13
 setup	haskell	1.1.0	6d9dd5528a64e540945a4d57915a322038a96c700838bb55878ab822b933f472	variants/base/setups/haskell--setup.sh
 setup	haskell-code-extension	1.0.0	da1b29d952efef7fc21ce36533c0d0689bcb2e8e80965ac45cd1376e86ebd485	variants/base/setups/haskell-code-extension--setup.sh
 setup	haskell-nb-kernel	1.3.0	28894e3a13c54d1852b945d7bcc6c9db520808368f0206770a2a7ff59a1ff7bc	variants/base/setups/haskell-nb-kernel--setup.sh
-setup	haskell-tools	1.0.0	8953f1481b20fde900c2ce26bc45fb743f747151957140b4e95ea727093a47ad	variants/base/setups/haskell-tools--setup.sh
+setup	haskell-tools	1.1.0	9d5fe3101ac9b80f330c47debe9d2d472a086495ad6551bfcf1871c677e0791b	variants/base/setups/haskell-tools--setup.sh
 setup	heidisql	0.2.0	b6655b470fdf5eac1861a3cf44695452cae463d673a826dacd5094305a384395	variants/base/setups/heidisql--setup.sh
 setup	helix	1.0.0	7a017950fe6f47fc4b2498e32e6b8bdacaa61c759a4644893ff3a5bd19b65ee6	variants/base/setups/helix--setup.sh
 setup	helm	1.0.0	7afeaf721ee89c9362432d1691902f3b61dbde5ee9f8a755da0d256a7aa701df	variants/base/setups/helm--setup.sh
@@ -241,7 +241,7 @@ setup	neovim	1.0.0	bf81805049e5766eff3c6e6a2f2dde4658fa127d2257d1d0d383892fe74cc
 setup	neovim-lsp	0.2.0	7a81035420493328b06185789b781cb9a5489bd1d004480a62a5cbe1a21ec1ea	variants/base/setups/neovim-lsp--setup.sh
 setup	network-whitelist	1.0.0	3d02b83cba6adfce82951ef427f109d42eed6c3979f577c210f7c02ae32a1742	variants/base/setups/network-whitelist--setup.sh
 setup	nginx	1.0.0	dbc90a29a20ddbd8ceea620903e7d8edeadc59bb114c9417c7cdc61dd956ea84	variants/base/setups/nginx--setup.sh
-setup	nim	1.1.0	f78428d800a70c63689f07622c35e5e55902c267133c0d38a602330304b78b48	variants/base/setups/nim--setup.sh
+setup	nim	1.1.0	7a5fb8487cec1d0ea3e6437d9ee5fef1dd61489710a2b588235e7b260af6158e	variants/base/setups/nim--setup.sh
 setup	nim-code-extension	1.0.0	59b4208b38f50b3d58ea827e9b367f11c88190ac9f76c46771bf52146688320f	variants/base/setups/nim-code-extension--setup.sh
 setup	nodejs	1.0.0	fe8db1b693f5f5972bc442c0ea7e81c7bf7490bd3fd0150c8c64a9688b10681d	variants/base/setups/nodejs--setup.sh
 setup	nodejs-code-extension	1.0.0	06e2a52486f776bb9685b286f98e817579723eb5aa0bbda0284c83cdab81af8d	variants/base/setups/nodejs-code-extension--setup.sh
@@ -752,7 +752,7 @@ extension	grok+settings-cache	1.0.0	2583191eb2cbe317b1e3c5e96aa5f7aee78ebb0f03c2
 extension	grok+token-credential	0.1.0	d31721bc9bbc0ee48af7533f4b98471b67fb2f7d641247491ce69bc75d31c183	templates/ai-tools/grok/token-credential--extension.toml
 extension	haskell+cabal-pkg	1.0.0	63e52f989b5cfcd43bb0f4ae4f9005a1fe0b7dade3f4cd30242ff72f4b85254f	templates/languages/haskell/cabal-pkg--extension.toml
 extension	haskell+kernel	1.0.1	49cd4dd531a1f9321dc0383a3dfb04d58d8a773b9d9c141bd1bb08e424c231c5	templates/languages/haskell/kernel--extension.toml
-extension	haskell+tools	1.0.0	8a72399d81d0152e1b73f0fdf87a23c460cb536b8053a3f850ffb59eeace09dc	templates/languages/haskell/tools--extension.toml
+extension	haskell+tools	1.0.1	e177e1ec1883d4d0933583cffd33c2824e2d6bdda9cbcaddc9dae8355a73a746	templates/languages/haskell/tools--extension.toml
 extension	haskell+vscode-ext	1.0.0	d2665dcab2cc5f5a8f358d40f4879cb954ff967a8c765acc94fa80fbb0f81aaa	templates/languages/haskell/vscode-ext--extension.toml
 extension	helix+config-shared	1.0.0	9ad544f907b107c753b78473533b226b84719ae43c68ec8166c55b4176d6cf5c	templates/tools/helix/config-shared--extension.toml
 extension	helm+vscode-ext	0.1.0	234b37f513a542241199e495b1bddfa925ef0f79e9234323b065a57330a95fef	templates/tools/helm/vscode-ext--extension.toml
