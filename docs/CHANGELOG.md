@@ -4,6 +4,15 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The worktree root stays after the last worktree goes.** When `booth --worktree` (or `booth
+  worktree remove`) removed the last worktree, it also deleted `../<project>.worktrees/`. On macOS,
+  Docker Desktop then refused to mount the next worktree created under it within about a minute
+  (`error while creating mount source path … no such file or directory`). The empty root now stays;
+  folders a nested branch made (`feature/`) are still removed.
+- **`lsp+haskell` warns on arm64 when HLS cannot load the installed GHC.** ghcup's HLS 2.14.0.0 for
+  aarch64 Linux is an unofficial build made against a different GHC 9.10.3 than the official one, so
+  it exits with "GHC ABIs don't match" and editors get no Haskell server. The setup now type-checks
+  a one-line file at build time and says so, instead of leaving the editor silent.
 - **Nim skips on arm64 instead of failing the build.** nim-lang.org publishes Linux tarballs for
   x64 only, so `--select nim` on Apple Silicon or Ubuntu on ARM failed with a 404 and no image.
   The setup now warns and skips there, as goose-lang does, and the template marks arm64 unsupported.

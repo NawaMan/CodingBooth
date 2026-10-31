@@ -217,8 +217,10 @@ on the worktree and the name a booth there gets by default. Shared volumes, such
 never touched. A one-shot booth that ran under a custom `--name` is not known any more; remove its
 volumes yourself.
 
-**Folders:** the empty folders a nested branch made (`<root>/feature/` for `feature/x`) go, and so
-does booth's default root, `../<project>.worktrees/`, once it is empty. A root you chose stays.
+**Folders:** the empty folders a nested branch made (`<root>/feature/` for `feature/x`) go. The
+root itself, such as `../<project>.worktrees/`, stays even when empty: Docker Desktop on macOS
+cannot mount a folder under one that was deleted and recreated a moment before, so removing it
+would break the next `booth --worktree` started right after.
 
 **The remote branch is never touched.** booth prints the command that deletes it.
 
