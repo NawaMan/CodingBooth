@@ -496,7 +496,7 @@ template	go	1.2.0	8f16643ccefe5622b7ccdd7ba28650bc41fdd98ec09ebf6491bcb81fe389be
 template	goland	1.0.0	e657667702b91cc74de699fc1a4fd329c253579685824186871c7f9d9aadc111	templates/ides/goland/template.toml
 template	google-chrome	1.0.0	135a1bce24ab8dd6420199954a5ba74a5ccb6170a62a4a0a981b185830c68e83	templates/desktops/google-chrome/template.toml
 template	goose	1.0.0	d38a963864204dcc5282c8e1eebdf3c7c8b8f383a15929b5a9ca4f6f64982295	templates/ai-tools/goose/template.toml
-template	goose-lang	0.1.0	e6b695584d6e2976d63e73837970ddb1ec30dec3b799457c93aa2a8e918e8dde	templates/languages/goose-lang/template.toml
+template	goose-lang	0.1.1	f1723e61538017f2e2fc3c615f4a1141c24f30289d5a85068c78231ebd59f15a	templates/languages/goose-lang/template.toml
 template	gradle	1.2.0	92998d729c683916467208dcd9f8572c7a2a4e2c2c3b66c7e3dd36126b44a52a	templates/tools/gradle/template.toml
 template	graphviz	1.0.0	bbbbd39090cc84b3369e09a8b3d18d325456afc3aee99fc49cecb9b0d00c1ead	templates/tools/graphviz/template.toml
 template	greenfoot	1.0.0	0a2aca068f20647d5c7be614c31c19b4fc5eebe2b3e0d047970e89584521b904	templates/education/greenfoot/template.toml
@@ -549,7 +549,7 @@ template	n8n	0.3.0	b40dbbf1ef166ab18e66b020b7d5d1df70eba06f78b313a03c565d7cb99dd
 template	nbgrader	1.0.0	2e0765a2aa72972a73952ce75ac6a8333a943dae1c5110dc1ca7c863ceba1b8d	templates/education/nbgrader/template.toml
 template	neovim	1.1.0	3e4610278f62279baeb0d74c7ff481298c011c8058b1b0a78c94ca6226c8ee1d	templates/tools/neovim/template.toml
 template	nginx	1.0.0	ae357de64d5f1752798f6f237e6e273653040803c065118d2f365f3c62f70329	templates/tools/nginx/template.toml
-template	nim	1.0.2	4498183df2e83c94ea2adef939974655ffdba194a0358db84fee38109ad8562f	templates/languages/nim/template.toml
+template	nim	1.0.3	ca403257092caa594ce9085ec44b6043363cd6c3902572a684f21e70cd545778	templates/languages/nim/template.toml
 template	no-sudo	1.0.0	2a2a45035e22409fbc5b73e3de5870ca9f5a41a5b9470b8df34176f0fb7a99b6	templates/tools/no-sudo/template.toml
 template	nodejs	1.0.0	1bd0eb933c905b9f431c86507df4190cdc0f315d12f98ad2a4a043c13b24bddd	templates/languages/nodejs/template.toml
 template	notebook	1.0.0	c97294c479fe442836fe9563b75e741f3b2cbae62a6bcfdef6edf7606cb38bfb	templates/tools/notebook/template.toml
