@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 # haskell-tools--setup.sh
 #
@@ -11,16 +11,15 @@
 #
 # Usage: haskell-tools--setup.sh <tool>[@<version>] [...]     (space or comma separated)
 #
-#   hlint      linter        upstream binary on x86_64; arm64 from CodingBoothPrebuilt
-#   ormolu     formatter     upstream binary on x86_64; arm64 from CodingBoothPrebuilt
+#   hlint      linter        from CodingBoothPrebuilt (x86_64 and arm64)
+#   ormolu     formatter     from CodingBoothPrebuilt (x86_64 and arm64)
 #   fourmolu   formatter     upstream binary on x86_64 and arm64
 #   pandoc     doc converter upstream binary on x86_64 and arm64
 #
 # Unversioned means upstream's latest release. Each tool lands in
 # /opt/haskell-tools/<tool>-<version>, linked into /usr/local/bin. CodingBoothPrebuilt
 # assets are sha256-checked; upstream publishes no checksums for these. An hlint or ormolu
-# version not prebuilt for arm64 (yet) is built from source with cabal, which needs the
-# haskell setup.
+# version not prebuilt (yet) is built from source with cabal, which needs the haskell setup.
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -77,10 +76,11 @@ latest_release() {
     | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"[^"]+"' | head -1 | sed -E 's/.*"v?([^"]+)"$/\1/'
 }
 
-# hlint and ormolu have no upstream linux arm64 build. CodingBoothPrebuilt has one per
-# upstream release (built weekly); a version it lacks is built here with cabal, laid out
-# the same way: the executable, plus hlint's data/ beside it, where hlint looks for it.
-install_arm64_build() {
+# hlint and ormolu come from CodingBoothPrebuilt on both CPUs (upstream builds x86_64 only),
+# built weekly for the versions Stackage ships and upstream's latest; a version it lacks is
+# built here with cabal, laid out the same way: the executable, plus hlint's data/ beside it,
+# where hlint looks for it.
+install_prebuilt_or_build() {
   local tool="$1" version="$2" dest="$3"
   if cb_prebuilt_install "$tool" "$version" native "$dest"; then
     return
@@ -119,18 +119,8 @@ install_tool() {
   mkdir -p "$dest"
 
   case "$tool:$ARCH" in
-    hlint:x86_64)
-      echo "⬇️  hlint ${version}: upstream x86_64 build"
-      fetch "${base}/v${version}/hlint-${version}-x86_64-linux.tar.gz" "$TMP/hlint.tar.gz"
-      tar -xzf "$TMP/hlint.tar.gz" -C "$dest" --strip-components=1
-      ;;
-    ormolu:x86_64)
-      echo "⬇️  ormolu ${version}: upstream x86_64 build"
-      fetch "${base}/${version}/ormolu-x86_64-linux.zip" "$TMP/ormolu.zip"
-      unzip -oq "$TMP/ormolu.zip" -d "$dest"
-      ;;
-    hlint:arm64|ormolu:arm64)
-      install_arm64_build "$tool" "$version" "$dest"
+    hlint:*|ormolu:*)
+      install_prebuilt_or_build "$tool" "$version" "$dest"
       ;;
     fourmolu:*)
       echo "⬇️  fourmolu ${version}: upstream ${ARCH} build"
