@@ -25,11 +25,11 @@ Notes:
   extension) to /usr/local/goose-lang-<version>, linked at /usr/local/goose-lang-current.
   The compiler finds its stdlib beside its real path, so /usr/local/bin/goose-lang is a symlink.
 - Installs libc6-dev, which in-process runs need, and gcc, which 'goose-lang build' needs.
-- x86_64: upstream's goose-v<version>-linux-x64.tar.gz, checked against GitHub's asset digest.
-- arm64: Goose publishes no linux arm64 build, so it comes prebuilt (sha256-checked) from
-  https://github.com/NawaMan/CodingBoothPrebuilt, laid out like upstream's x64 one. A version
-  not prebuilt (yet) is built from source the way upstream builds its release (CMake, a C++20
-  compiler and SDL3's build libraries, which stay installed; several minutes).
+- Comes prebuilt (sha256-checked) from https://github.com/NawaMan/CodingBoothPrebuilt on
+  x86_64 and arm64 alike (Goose publishes no linux arm64 build), laid out like upstream's
+  linux-x64 archive. A version not prebuilt (yet) is built from source the way upstream builds
+  its release (CMake, a C++20 compiler and SDL3's build libraries, which stay installed;
+  several minutes).
 - See: https://aardappel.github.io/goose/
 USAGE
 }
@@ -91,37 +91,11 @@ LINK_DIR="/usr/local/goose-lang-current"
 
 echo "⬇️  Installing Goose v${VERSION} (linux-${ASSET_ARCH}) ..."
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
-# x86_64: upstream's release archive.
-install_upstream() {
-  local ASSET="goose-v${VERSION}-linux-x64.tar.gz"
-  local URL="https://github.com/aardappel/goose/releases/download/v${VERSION}/${ASSET}"
-  curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$URL" -o "$TMP/$ASSET"
-
-  # Goose publishes no checksum file; GitHub records a sha256 digest per release asset.
-  # Each asset's "name" precedes its "digest" in the API payload. When the API is
-  # unreachable (rate limit) the download is kept, with a warning.
-  local EXPECTED ACTUAL
-  EXPECTED=$(curl -fsSL --retry 3 --retry-delay 3 --retry-all-errors \
-               "https://api.github.com/repos/aardappel/goose/releases/tags/v${VERSION}" 2>/dev/null \
-             | grep -oE '"(name|digest)"[[:space:]]*:[[:space:]]*"[^"]*"' \
-             | sed -E 's/^"([a-z]+)"[[:space:]]*:[[:space:]]*"([^"]*)"$/\1 \2/' \
-             | awk -v asset="$ASSET" '$1=="name"{hit=($2==asset); next} hit && $1=="digest"{sub(/^sha256:/,"",$2); print $2; exit}' || true)
-  ACTUAL="$(sha256sum "$TMP/$ASSET" | awk '{print $1}')"
-  if [[ -z "$EXPECTED" ]]; then
-    echo "⚠️  No sha256 digest available for ${ASSET} from the GitHub API; not verified." >&2
-  elif [[ "$EXPECTED" != "$ACTUAL" ]]; then
-    echo "❌ SHA256 mismatch for ${ASSET} (expected '${EXPECTED}', got '${ACTUAL}')" >&2
-    exit 1
-  fi
-  mkdir -p "$TARGET_DIR"
-  tar -xzf "$TMP/$ASSET" -C "$TARGET_DIR" --strip-components=1
-}
-
-# arm64 without a prebuilt: build the release tag the way upstream's release workflow does,
+# Not prebuilt: build the release tag the way upstream's release workflow does,
 # with the blessed packages compiled in (its packaging requires them) and the libraries
 # SDL3, which the gfx package builds, needs (upstream's list).
 build_from_source() {
-  echo "ℹ️  Goose v${VERSION}: no prebuilt arm64 build; building from source..."
+  echo "ℹ️  Goose v${VERSION}: not prebuilt for this image; building from source..."
   apt-get update
   apt-get install -y --no-install-recommends build-essential cmake git python3 \
     libasound2-dev libpulse-dev libaudio-dev libfribidi-dev libjack-dev libsndio-dev \
@@ -139,17 +113,14 @@ build_from_source() {
   )
 }
 
-rm -rf "$TARGET_DIR"
-if [[ "$ASSET_ARCH" == x64 ]]; then
-  install_upstream
-else
-  SETUP_LIBS_DIR="${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}"
-  if [ ! -r "${SETUP_LIBS_DIR}/prebuilt-source.sh" ]; then
-    SETUP_LIBS_DIR="$(dirname "$0")/libs"
-  fi
-  source "${SETUP_LIBS_DIR}/prebuilt-source.sh"
-  cb_prebuilt_install goose-lang "$VERSION" native "$TARGET_DIR" || build_from_source
+SETUP_LIBS_DIR="${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}"
+if [ ! -r "${SETUP_LIBS_DIR}/prebuilt-source.sh" ]; then
+  SETUP_LIBS_DIR="$(dirname "$0")/libs"
 fi
+source "${SETUP_LIBS_DIR}/prebuilt-source.sh"
+
+rm -rf "$TARGET_DIR"
+cb_prebuilt_install goose-lang "$VERSION" native "$TARGET_DIR" || build_from_source
 chmod -R a+rX "$TARGET_DIR"
 ln -sfn "$TARGET_DIR" "$LINK_DIR"
 ln -sfn "$LINK_DIR/goose" /usr/local/bin/goose-lang

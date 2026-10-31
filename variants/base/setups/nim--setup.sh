@@ -18,10 +18,10 @@ Examples:
 Notes:
 - Installs Nim to /opt/nim-<ver> and links /opt/nim-stable
 - Exposes nim/nimble/nimsuggest/nimgrep via /usr/local/bin
-- x86_64: upstream's nim-<ver>-linux_x64.tar.xz from nim-lang.org
-- arm64: nim-lang.org ships no linux_arm64 release, so it comes prebuilt (sha256-checked)
-  from https://github.com/NawaMan/CodingBoothPrebuilt, laid out like upstream's x64 one;
-  a version not prebuilt (yet) is built from nim-lang.org's source tarball (a few minutes)
+- Comes prebuilt (sha256-checked) from https://github.com/NawaMan/CodingBoothPrebuilt on
+  x86_64 and arm64 alike (nim-lang.org ships no linux_arm64 release), laid out like
+  nim-lang.org's linux_x64 tarball; a version not prebuilt (yet) is built from
+  nim-lang.org's source tarball (a few minutes)
 - See: https://nim-lang.org
 USAGE
 }
@@ -83,7 +83,7 @@ install_upstream_tree() {
 # Build from the release source tarball the way nim-lang builds its x64 release (minus
 # the HTML docs), into TARGET_DIR. git: koch tools clones atlas.
 build_from_source() {
-  echo "ℹ️  Nim ${VERSION}: no prebuilt arm64 build; building from source..."
+  echo "ℹ️  Nim ${VERSION}: not prebuilt for this image; building from source..."
   apt-get update
   apt-get install -y --no-install-recommends build-essential git
   rm -rf /var/lib/apt/lists/*
@@ -100,17 +100,14 @@ build_from_source() {
   )
 }
 
-rm -rf "$TARGET_DIR"
-if [[ "$N_ARCH" == x64 ]]; then
-  install_upstream_tree "nim-${VERSION}-linux_x64.tar.xz"
-else
-  SETUP_LIBS_DIR="${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}"
-  if [ ! -r "${SETUP_LIBS_DIR}/prebuilt-source.sh" ]; then
-    SETUP_LIBS_DIR="$(dirname "$0")/libs"
-  fi
-  source "${SETUP_LIBS_DIR}/prebuilt-source.sh"
-  cb_prebuilt_install nim "$VERSION" native "$TARGET_DIR" || build_from_source
+SETUP_LIBS_DIR="${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}"
+if [ ! -r "${SETUP_LIBS_DIR}/prebuilt-source.sh" ]; then
+  SETUP_LIBS_DIR="$(dirname "$0")/libs"
 fi
+source "${SETUP_LIBS_DIR}/prebuilt-source.sh"
+
+rm -rf "$TARGET_DIR"
+cb_prebuilt_install nim "$VERSION" native "$TARGET_DIR" || build_from_source
 ln -sfn "$TARGET_DIR" "$LINK_DIR"
 
 cat >/etc/profile.d/99-nim--profile.sh <<'EOF'
