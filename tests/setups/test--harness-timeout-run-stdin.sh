@@ -28,6 +28,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 source ../common--source.sh
 
+# Git Bash's timeout is MSYS coreutils, whose emulated signals do not deliver
+# TERM-then-CONT to a self-stopped process (the grace kill ends it, 137), and it
+# has no `script` for the terminal cases. This is Unix job control; nothing here
+# can hold on a Windows host.
+if [[ "$HOST_OS" == "WIN" ]]; then
+    echo "SKIP: POSIX job-control signals are not reproduced by MSYS on Windows"
+    exit 0
+fi
+
 # Inner mode: runs on script's terminal.
 if [[ "${1:-}" == "--inner" ]]; then
     [[ -t 0 ]] && echo "inner-stdin=tty" || echo "inner-stdin=other"
