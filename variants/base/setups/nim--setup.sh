@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.1
+# cb-version: 1.1.0
 
 set -Eeuo pipefail
 
@@ -18,8 +18,10 @@ Examples:
 Notes:
 - Installs Nim to /opt/nim-<ver> and links /opt/nim-stable
 - Exposes nim/nimble/nimsuggest/nimgrep via /usr/local/bin
-- Upstream tarballs from nim-lang.org: nim-<ver>-linux_x64.tar.xz
-- nim-lang.org publishes no linux/arm64 build; on arm64 this script explains and skips
+- x86_64: upstream's nim-<ver>-linux_x64.tar.xz from nim-lang.org
+- arm64: nim-lang.org ships no linux_arm64 release, so it comes prebuilt (sha256-checked)
+  from https://github.com/NawaMan/CodingBoothPrebuilt, laid out like upstream's x64 one;
+  a version not prebuilt (yet) is built from nim-lang.org's source tarball (a few minutes)
 - See: https://nim-lang.org
 USAGE
 }
@@ -38,12 +40,8 @@ done
 dpkgArch="$(dpkg --print-architecture)"
 case "$dpkgArch" in
   amd64) N_ARCH="x64" ;;
-  arm64)
-    echo "⚠️  nim-lang.org publishes no linux/arm64 build (only linux x64 and x32)," >&2
-    echo "   so Nim is not installed in this booth. Building from source:" >&2
-    echo "   https://nim-lang.org/install_unix.html" >&2
-    exit 0 ;;
-  *) echo "❌ Unsupported arch: $dpkgArch (need amd64)"; exit 1 ;;
+  arm64) N_ARCH="arm64" ;;
+  *) echo "❌ Unsupported arch: $dpkgArch (need amd64 or arm64)"; exit 1 ;;
 esac
 
 export DEBIAN_FRONTEND=noninteractive
@@ -68,15 +66,51 @@ BIN_DIR=/usr/local/bin
 
 echo "⬇️  Installing Nim ${VERSION} (${N_ARCH}) ..."
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
-TARBALL="nim-${VERSION}-linux_${N_ARCH}.tar.xz"
-curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "https://nim-lang.org/download/${TARBALL}" -o "$TMP/$TARBALL"
-tar -xJf "$TMP/$TARBALL" -C "$TMP"
 
-SRC_DIR="$(find "$TMP" -maxdepth 1 -type d -name "nim-${VERSION}" -print -quit)"
-[[ -d "$SRC_DIR" ]] || { echo "❌ Extracted Nim dir not found"; exit 1; }
+fetch() {
+  curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$1" -o "$2"
+}
+
+# Unpack nim-lang.org's <tarball> (holding nim-<ver>/) and move that folder to TARGET_DIR.
+install_upstream_tree() {
+  fetch "https://nim-lang.org/download/$1" "$TMP/$1"
+  tar -xJf "$TMP/$1" -C "$TMP"
+  local src="$TMP/nim-${VERSION}"
+  [[ -d "$src" ]] || { echo "❌ Extracted Nim dir not found"; exit 1; }
+  mv "$src" "$TARGET_DIR"
+}
+
+# Build from the release source tarball the way nim-lang builds its x64 release (minus
+# the HTML docs), into TARGET_DIR. git: koch tools clones atlas.
+build_from_source() {
+  echo "ℹ️  Nim ${VERSION}: no prebuilt arm64 build; building from source..."
+  apt-get update
+  apt-get install -y --no-install-recommends build-essential git
+  rm -rf /var/lib/apt/lists/*
+  install_upstream_tree "nim-${VERSION}.tar.xz"
+  (
+    cd "$TARGET_DIR"
+    export PATH="$TARGET_DIR/bin:$PATH" XDG_CONFIG_HOME="$TMP/config" XDG_CACHE_HOME="$TMP/nimcache"
+    make "-j$(nproc)" CC=gcc
+    nim c koch
+    ./koch boot -d:release
+    ./koch tools -d:release
+    rm -rf c_code build nimcache dist/atlas/.nimcache build.sh build*.bat makefile compiler/nim compiler/nim?
+    find . -name '*.o' -delete
+  )
+}
 
 rm -rf "$TARGET_DIR"
-mv "$SRC_DIR" "$TARGET_DIR"
+if [[ "$N_ARCH" == x64 ]]; then
+  install_upstream_tree "nim-${VERSION}-linux_x64.tar.xz"
+else
+  SETUP_LIBS_DIR="${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}"
+  if [ ! -r "${SETUP_LIBS_DIR}/prebuilt-source.sh" ]; then
+    SETUP_LIBS_DIR="$(dirname "$0")/libs"
+  fi
+  source "${SETUP_LIBS_DIR}/prebuilt-source.sh"
+  cb_prebuilt_install nim "$VERSION" native "$TARGET_DIR" || build_from_source
+fi
 ln -sfn "$TARGET_DIR" "$LINK_DIR"
 
 cat >/etc/profile.d/99-nim--profile.sh <<'EOF'
