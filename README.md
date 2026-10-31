@@ -60,6 +60,9 @@ Ready to try it? Browse the demos at [codingbooth.io](https://codingbooth.io/) o
 - x86 64bit
 - ARM 64bit
 
+A few setups and features do not work on every one of these — Android and Flutter on arm64, Kata
+isolation off Linux, and others. See **[Compatibility](docs/COMPATIBLE.md)** for the full list.
+
 ### Requirements
 
 To **install** (`curl … | bash`): Bash and curl.
@@ -441,6 +444,7 @@ User-facing guides:
 - **[booth run](docs/BOOTH_RUN.md)** — Running containers: image selection, config files, run modes, ports, DinD, TLS. [Express](docs/BOOTH_RUN.md#express) runs from arguments and leaves the project's `.booth` unread.
 - **[Security](docs/BOOTH_SECURITY.md)** — What the booth isolates, what it does not, and when booth asks before starting
 - **[Container engines](docs/BOOTH_ENGINES.md)** — Docker, Podman, and Apple container: what each supports, and where a way out of the booth lands
+- **[Compatibility](docs/COMPATIBLE.md)** — Setups, templates and features that do not work, or only partly work, on arm64, Windows, macOS, or some engines
 - **[booth on a git worktree](docs/BOOTH_WORKTREE.md)** — `booth --worktree <name>`: run on a worktree, created and removed again when needed
 - **[booth profiles](docs/BOOTH_PROFILES.md)** — Named `config.toml` / `.env` overlays (`--profile dev`): layout, selection, merge rules
 - **[booth config](docs/BOOTH_CONFIG.md)** — Template-driven project scaffolding
