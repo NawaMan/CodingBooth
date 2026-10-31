@@ -15,9 +15,11 @@ This file contains a list of changes for each released version.
   aarch64 Linux is an unofficial build made against a different GHC 9.10.3 than the official one, so
   it exits with "GHC ABIs don't match" and editors get no Haskell server. The setup now type-checks
   a one-line file at build time and says so, instead of leaving the editor silent.
-- **Nim skips on arm64 instead of failing the build.** nim-lang.org publishes Linux tarballs for
-  x64 only, so `--select nim` on Apple Silicon or Ubuntu on ARM failed with a 404 and no image.
-  The setup now warns and skips there, as goose-lang does, and the template marks arm64 unsupported.
+- **Nim installs on arm64.** nim-lang.org publishes Linux tarballs for x64 only (its arm64
+  nightlies are branch snapshots, not releases), so `--select nim` on Apple Silicon or Ubuntu on
+  ARM failed with a 404 and no image. arm64 now takes a sha256-checked build from
+  CodingBoothPrebuilt, laid out like upstream's x64 tarball; a version not prebuilt yet is built
+  from nim-lang.org's source tarball (a few minutes). x86_64 still uses upstream's tarball.
 - **TTT is the default editor; Fresh left the base image.** `$EDITOR` and `editor` are now TTT
   1.9.0, and a plain booth points it at whichever language servers it installs (what `ttt+lsp` did;
   delete an entry from `lsp.servers` in `~/.config/ttt/settings.json` to turn one off). Fresh is
