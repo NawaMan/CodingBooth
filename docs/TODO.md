@@ -82,6 +82,28 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
 - [ ] ...
 
 ## Features
+- [ ] **Extend `--egress` to DNS: today it filters HTTP(S) only, so data can still leave in DNS
+      queries.** Not a bug — DNS is let out on purpose (`cli/src/pkg/booth/egress_setup.go:455-456`,
+      documented in `docs/implementations/EGRESS.md`), and egress was built as an HTTP(S) host
+      allowlist, not a no-exfiltration boundary. The consequence: code in the booth can tunnel data
+      in query names to an authoritative server it controls (or via any public resolver), past an
+      allowlist that otherwise holds.
+      Why extend it: `--egress` is what we tell people to use before letting an AI agent or an
+      untrusted dependency loose, and that use reads as "nothing leaves but the allowlist". (Not
+      needed for the interview case — see *Lockdown mode* below.)
+      Simplest approach: under egress no booth process needs DNS — clients send `CONNECT host:443`
+      and Envoy (UID 101) resolves. So allow 53 *and* Docker's embedded `127.0.0.11` (on `lo`, so
+      today's `-o lo` ACCEPT lets it through) only for UID 101, reject for everyone else. Also: there
+      are no `ip6tables` rules at all — check whether the egress net can get IPv6, and deny-all it.
+      Fuller approach, if names must resolve in the booth: pin DNS to a resolver we run in the egress sidecar (beside Envoy, its own UID) that
+      only answers names on the allowlist and refuses the rest; point the booth's `resolv.conf` at
+      it; replace the two `--dport 53` ACCEPTs with an accept to that resolver only, plus an
+      owner-match for the resolver's upstream lookups. A booth that names its own `--dns` keeps it
+      only through the same resolver.
+      Open questions: which resolver (dnsmasq vs Envoy's DNS filter vs CoreDNS) given image size;
+      how wildcard allowlist entries (`*.example.com`) map to DNS rules; what Envoy's own upstream
+      resolution uses once 53 is closed; whether `egress-policy-file` (raw Envoy RBAC) users get
+      the DNS pin too or must list names twice.
 - [x] Add TESTS, add TESTS, add TESTS, add TESTS!!!
 - [-] Remove CVEs for docker images -- give up (most found in core pages like python, nodejs, etc)
 - [x] Try to not have "user-land" setup print anthing (unless error) -- nodejs-example
@@ -304,6 +326,20 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
       size silently. `booth config` could say so when a desktop template is picked on `base`.
 
 ## Problems
+- [ ] **Lockdown mode — decided against (2026-10-30); kept so it is not re-proposed.** The idea was
+      one switch for a "use it, don't take it" booth (the CodingBoothSaas interview case): require
+      `--egress`, force `--no-sudo`, drop the `/proxy/<port>/` route (console nginx and
+      code-server's own, which the codeserver variant's nginx forwards to), start code-server with
+      `--disable-file-downloads`.
+      Why not: the browser channel cannot be closed. Whatever the editor shows or the terminal
+      prints reaches the user's browser (devtools, `base64` in a pane), and a web-app exercise needs
+      the port proxy anyway — and with it the candidate's own app can serve the repo. Every web
+      process also runs as `coder`, so a flag the candidate dislikes is one `pkill` away. Lockdown
+      would only look safe.
+      Instead: what a user can see, they can take — use code that may leak, or watch them work;
+      keep credentials out of the booth (push from outside, budget-capped agent keys).
+      Leftover small idea, only if someone wants it for its own sake: `--no-port-proxy` (one flag,
+      both places). Not `--no-proxy` — that reads as "bypass the egress proxy" (`NO_PROXY`).
 - [ ] **The host-escape warning judges only POSIX mount sources, so a Windows host gets none of it.**
       `dangerousMount` (`cli/src/pkg/booth/host_escape_consent.go`) returns "not a host path" for
       anything that does not start with `/`, which on Windows is every real mount a user writes:
