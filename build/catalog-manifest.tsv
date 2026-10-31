@@ -203,7 +203,7 @@ setup	lsp--bash	0.1.0	2f31b813fb9f79ddfe35646ca7efbc0eb38706b2fd84ff9fc108836d11
 setup	lsp--clangd	0.1.0	fe947ad8950f987b2c6410600c4a06155f4b85635c507316465a7d29e4b9c12a	variants/base/setups/lsp--clangd--setup.sh
 setup	lsp--docker-compose	0.1.0	47ed95f628254ba6a362df96893244cfa3a7294ba7fc33399df10c3f63e14c4a	variants/base/setups/lsp--docker-compose--setup.sh
 setup	lsp--dockerfile	0.1.0	0eccd24649203a3d96e282fe2828bdb4ef2d4539951449306e85009f960bdd92	variants/base/setups/lsp--dockerfile--setup.sh
-setup	lsp--hls	0.1.0	45c07978d4fbb06002d54b5db116a841400e7cc9c6ed93846d1a4a3a5b6715ad	variants/base/setups/lsp--hls--setup.sh
+setup	lsp--hls	0.1.1	fc4da6272294b7e33aebdefb648459594b37026415a7c47ba021fd2a28ce6ca0	variants/base/setups/lsp--hls--setup.sh
 setup	lsp--jdtls	0.2.0	da5bac36522cd54e28bcafc2a8242dfe4497bedf99d248699295d1acfe6836fe	variants/base/setups/lsp--jdtls--setup.sh
 setup	lsp--marksman	0.1.0	573cc8533de8c6861e49d390841df6354b718708a604d317c8052ef9daedd7b7	variants/base/setups/lsp--marksman--setup.sh
 setup	lsp--pylsp	0.1.0	ec6a850f7e1291a20548ddae53c95318868596dda57ac8d25e2d77ae518ac446	variants/base/setups/lsp--pylsp--setup.sh
