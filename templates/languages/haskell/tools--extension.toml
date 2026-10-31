@@ -1,10 +1,10 @@
-cb-version = "1.0.0"
+cb-version = "1.0.1"
 display-name = "Haskell Tools"
 display-disc = "hlint, ormolu, fourmolu or pandoc as ready-made binaries"
 display-detail = """Installs Haskell developer tools as ready-made binaries rather than building them with \
 cabal, which takes 5-15 minutes each: `hlint`, `ormolu`, `fourmolu` and `pandoc`. They come from each \
-project's own releases, and on arm64 hlint and ormolu come from the CodingBoothPrebuilt builds \
-(sha256-checked). Unversioned takes the newest release; pin with `@`: `hlint@3.10`. Anything else \
+project's own releases, except hlint and ormolu, which come from the CodingBoothPrebuilt builds \
+(sha256-checked) on both CPUs. Unversioned takes the newest release; pin with `@`: `hlint@3.10`. Anything else \
 from Hackage goes through the cabal Packages extension."""
 display-order = 9
 auto-select = false
