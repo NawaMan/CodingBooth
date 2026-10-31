@@ -238,4 +238,37 @@ func TestCollect(t *testing.T) {
 	if items[5].SHA256 == tmplHash {
 		t.Error("a home-seed file did not change the template's hash")
 	}
+	tmplHash = items[5].SHA256
+	// So is a dot folder inside it.
+	write(t, root, TemplatesDir+"/languages/go/home-seed/.config/go/env", "x")
+	items, _ = Collect(root)
+	if items[5].SHA256 == tmplHash {
+		t.Error("a home-seed dot folder did not change the template's hash")
+	}
+	tmplHash = items[5].SHA256
+
+	// A dot folder an agent CLI leaves where the scan looks for items is neither an item nor
+	// part of one.
+	for _, rel := range []string{
+		SetupsDir + "/.claude/.cc-writes/x",
+		TemplatesDir + "/.claude/x/template.toml",
+		TemplatesDir + "/languages/.claude/template.toml",
+		TemplatesDir + "/languages/go/.claude/x",
+	} {
+		write(t, root, rel, "x")
+	}
+	items, err = Collect(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got = got[:0]
+	for _, it := range items {
+		got = append(got, it.Kind+":"+it.Name+"@"+it.Version)
+	}
+	if strings.Join(got, " ") != strings.Replace(want, "go+linter@0.1.0", "go+linter@0.1.1", 1) {
+		t.Errorf("dot folders became items:\n got  %s", strings.Join(got, " "))
+	}
+	if items[5].SHA256 != tmplHash {
+		t.Error("a dot folder in the template directory changed the template's hash")
+	}
 }
