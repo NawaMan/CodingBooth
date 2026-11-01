@@ -4,6 +4,7 @@
 env APT_SNAPSHOT=20261023T000000Z
 
 arg CODESERVER_PORT=19999
+arg GONB_VERSION=0.11.5
 arg GO_VERSION=1.25.7
 arg NOTEBOOK_PORT=18888
 arg PYTHON_VERSION=3.13.12
@@ -27,4 +28,4 @@ setup codeserver ${CODESERVER_PORT}
 setup notebook ${NOTEBOOK_PORT}
 setup go-code-extension
 setup python-code-extension
-setup go-nb-kernel
+setup go-nb-kernel --version ${GONB_VERSION}
