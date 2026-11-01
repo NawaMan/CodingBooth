@@ -12,7 +12,8 @@ commit — they ride the same push.
 ```
 0.  git preflight (must be main, clean, --rc)
 0b. catalog version sweep — offer bumps; commit accepted ones (not the version commit)
-0c. catalog item versions — build/check-catalog-versions.sh must pass; bump cb-version where it fails
+0c. catalog item versions — build/check-catalog-versions.sh must pass; bump cb-version where it fails;
+    build/check-setup-shadowing.sh must pass; delete any .booth/setups/ copy of a built-in
 0d. apt snapshot — pin apt-snapshot.txt a week back, move the examples to it → commit (not the version commit)
 1.  version.txt/README.md: X.Y.Z--rcN → X.Y.Z    → commit "X.Y.Z"
 2.                                                → git push origin main
@@ -167,6 +168,18 @@ of HEAD means main was never rebased onto that release — stop and find out why
 Commit the bumps plus the regenerated manifest as one commit (`Bump catalog item versions for
 X.Y.Z`), separate from the version commit, then re-run the check until it reports `0 fail`. CI runs
 the same check on release and refuses to publish when it fails.
+
+Then the shadowing check, also blocking:
+
+```bash
+build/check-setup-shadowing.sh         # no test fixture or example copies a built-in setup
+```
+
+A file in a test's or example's `.booth/setups/` named like a built-in (`variants/base/setups/<path>`)
+runs instead of it, so that test checks a copy rather than what the image ships. For each file it
+names: make sure any fix in the copy is already in `variants/base/setups/`, delete the copy, and
+commit that (`tests: drop built-in setup copies …`), separate from the version commit. Never sync
+the copy instead. CI runs the same check on release and refuses to publish when it fails.
 
 ## 0d. Apt snapshot — pin it, move the examples to it
 
