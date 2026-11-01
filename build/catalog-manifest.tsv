@@ -84,7 +84,7 @@ setup	eclipse	1.0.0	020a03da5277008810f94dfb85369d7732e202d6964c6c27977d81c5a23f
 setup	eclipse-import-project	0.1.0	7b759479929795d9667b62f795451e66b27eeced84e4e75a81611835bbbe6792	variants/base/setups/eclipse-import-project--setup.sh
 setup	elixir	1.1.0	babd375fad790de916e90d4b579af09636776c061b51d4bd290e066fc1db97d9	variants/base/setups/elixir--setup.sh
 setup	elixir-code-extension	1.0.0	1743fe565bbebf15186049e8fc3dee0bfedf050c56c3e26cdf7fa2e2c03b1cc4	variants/base/setups/elixir-code-extension--setup.sh
-setup	elm	1.1.0	3ba8d47e7c213c1d2e59ea82eb3f19f5d5cf86ff07c019002900f8895cbba6d7	variants/base/setups/elm--setup.sh
+setup	elm	1.2.0	cde7019ecf2f9789bf0f9c4ad5bbf3690f001c69df6b9bf83836fc42994a20a2	variants/base/setups/elm--setup.sh
 setup	elm-code-extension	1.0.0	6e0caa93413bd80117a033e9a2f94c537a9867e775427f778347a4f8e312aedc	variants/base/setups/elm-code-extension--setup.sh
 setup	envfolio	2.4.0	479705a44947b6c2b3b9cb654ef4cba0f80dab400383556ed6d53790dc0fb44d	variants/base/setups/envfolio--setup.sh
 setup	erlang	1.0.0	24ad8e50ad69aef9725262acd39b14885d8007f85bacd31e360b75a39d6175ab	variants/base/setups/erlang--setup.sh
