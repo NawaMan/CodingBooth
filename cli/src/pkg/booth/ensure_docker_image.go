@@ -269,7 +269,7 @@ func buildLocalImage(ctx appctx.AppContext) {
 	// `docker run --platform ...` then refuses to start it: the local image
 	// has no manifest for the platform it was asked to run under. Apply the
 	// same platform to the build so the image it produces actually matches.
-	if platform, ok := extractPlatformFlag(ctx.CommonArgs(), ctx.RunArgs()); ok {
+	if platform, ok := buildPlatformFlag(ctx.CommonArgs(), ctx.RunArgs(), ctx.BuildArgs()); ok {
 		args = args.ExtendByLists(ilist.NewList(ilist.NewList(
 			"--platform", platform,
 		)))
@@ -376,6 +376,18 @@ func imageFingerprint(ctx appctx.AppContext, image string) string {
 		return ""
 	}
 	return strings.TrimSpace(out)
+}
+
+// buildPlatformFlag returns the --platform to add to `docker build`: the one
+// from common-args/run-args, unless build-args already carry their own. Two
+// --platform flags make buildx see a multi-platform build, which the default
+// docker driver refuses outright (the wails+android extension used to put the
+// flag in both run-args and build-args).
+func buildPlatformFlag(commonArgs, runArgs, buildArgs ilist.List[ilist.List[string]]) (string, bool) {
+	if _, ok := extractPlatformFlag(buildArgs); ok {
+		return "", false
+	}
+	return extractPlatformFlag(commonArgs, runArgs)
 }
 
 // extractPlatformFlag scans the given argument groups (in order) for a

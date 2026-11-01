@@ -1,4 +1,4 @@
-cb-version = "0.1.0"
+cb-version = "0.1.1"
 display-name = "Wails Android Target"
 display-disc = "Wires Wails to the Android SDK so `wails3 task android:build` produces an APK"
 display-detail = """Installs the NDK and Android API Wails v3's Gradle file compiles against, turning a \
@@ -33,11 +33,10 @@ unsupported-arch = ["arm64"]
 unsupported-arch-note = "Google ships the Android SDK platform and NDK for linux x86_64 only."
 
 # Same workaround as android-example: tools are x86_64-only. ExpandParams leaves
-# unknown ${CB_ANDROID_PLATFORM:-…} intact for docker to expand at start.
+# unknown ${CB_ANDROID_PLATFORM:-…} intact for docker to expand at start. The
+# build takes the same --platform from run-args by itself; a second copy in
+# build-args made buildx see a multi-platform build and fail.
 run-args = [
-    "--platform", "${CB_ANDROID_PLATFORM:-linux/amd64}",
-]
-build-args = [
     "--platform", "${CB_ANDROID_PLATFORM:-linux/amd64}",
 ]
 

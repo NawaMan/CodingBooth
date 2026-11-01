@@ -2,8 +2,6 @@
 
 variant = "xfce"
 
-build-args = ["--platform", "${CB_ANDROID_PLATFORM:-linux/amd64}"]
-
 run-args = [
     "-e", "WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1",
     "-e", "WEBKIT_DISABLE_DMABUF_RENDERER=1",

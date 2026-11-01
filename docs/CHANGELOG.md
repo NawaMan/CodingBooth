@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A `wails+android` booth builds again.** The extension put `--platform` in both `run-args` and
+  `build-args`, and the CLI also copies a `run-args` `--platform` into the build. With the flag
+  twice, buildx saw a multi-platform build, and Docker's default driver refused it ("Multi-platform
+  build is not supported for the docker driver"). The extension no longer writes `build-args`, and
+  the CLI adds no `--platform` to the build when `build-args` already has one, so a config
+  generated before this fix also builds.
 - **A Flutter project's second booth no longer fails to build.** `~/.pub-cache` died with each
   booth, while the project's `.dart_tool/` lives in the mounted folder and kept pointing into it.
   Flutter only re-resolves when `pubspec.lock` is newer, so in every booth after the first,
