@@ -45,6 +45,13 @@ just test             # flutter test
 just build            # flutter build web --release
 ```
 
+Each recipe runs `flutter pub get` first. `booth_counter/.dart_tool/` is in the mounted project and
+outlives the booth, but the packages it points at are in `~/.pub-cache`, which a new booth starts
+without — and flutter, seeing that `.dart_tool` is newer than `pubspec.lock`, does not resolve
+again on its own. Run `flutter` by hand in a fresh booth and you want the same `pub get` first.
+`pubspec.lock` itself is not committed: the booth installs Flutter `latest`, whose SDK pins the
+transitive packages, so any committed lock went stale at the next Flutter release.
+
 To see it in a browser, serve it from inside the booth and open it through the web pane:
 
 ```bash
@@ -92,6 +99,7 @@ Starts the booth and runs the in-booth suite:
 | `inBooth-test001-flutter-sdk` | `flutter`/`dart` resolve in a **non-login** shell, `flutter --version` runs, `dart` compiles and runs a program, and the SDK cache is writable by the booth user |
 | `inBooth-test002-build-web` | `flutter build web` produces `main.dart.js`, and this app's own UI string is in it |
 | `inBooth-test003-widget-test` | `flutter test` drives the framework — a headless render, a tap, a rebuild |
+| `inBooth-test004-fresh-pub-cache` | `just test` still passes with `~/.pub-cache` emptied under the left-over `.dart_tool` — every run after the first |
 
 Two of those are guarding specific traps rather than being thorough for its own sake. The non-login
 shell is the one `booth -- ./script.sh` actually gets, and it never reads `/etc/profile.d`, so a
