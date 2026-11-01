@@ -46,14 +46,19 @@ export CB_NO_TEST_PROGRESS=1
 
 # ── Suite definitions ────────────────────────────────────────────────
 
-SUITES=(unit basic dryrun boothfile setups config config-tui complex)
-SUITE_LABELS=("UNIT" "BASIC" "DRYRUN" "BOOTHFILE" "SETUPS" "CONFIG" "CONFIG-TUI" "COMPLEX")
+SUITES=(unit basic dryrun boothfile setups config template config-tui complex)
+SUITE_LABELS=("UNIT" "BASIC" "DRYRUN" "BOOTHFILE" "SETUPS" "CONFIG" "TEMPLATE" "CONFIG-TUI" "COMPLEX")
+# The folder each suite's runner lives in, under tests/. Mostly the suite's own
+# name; `template` is config/template/, a suite of its own that config's runner
+# deliberately does not sweep in.
+SUITE_DIRS=(unit basic dryrun boothfile setups config config/template config-tui complex)
 SUITE_RUNNERS=(
     "./run-all-go-tests.sh"
     "./run-basic-tests.sh"
     "./run-dryrun-tests.sh"
     "./run-boothfile-tests.sh"
     "./run-setups-tests.sh"
+    "./run-all-tests.sh"
     "./run-all-tests.sh"
     "./run-all-tests.sh"
     "./run-complex-tests.sh"
@@ -87,7 +92,7 @@ Options:
   --rerun-failed      Re-run only suites that failed in the last run
   -h, --help          Show this help
 
-Available suites: unit, basic, dryrun, boothfile, setups, complex, config, config-tui
+Available suites: unit, basic, dryrun, boothfile, setups, complex, config, template, config-tui
 
 Examples:
   ./run-automate-tests.sh --only dryrun
@@ -539,11 +544,11 @@ trap handle_sigint INT
 echo -e "${C_BOLD}CodingBooth Tests${C_RESET}"
 echo ""
 
-# BASIC and COMPLEX build real containers across any of the 7 variants,
+# BASIC, COMPLEX and TEMPLATE build real containers across any of the 7 variants,
 # scattered over hundreds of individual test files -- cheaper and more robust
 # to refresh all 7 up front (a no-op in ~1-2s each when nothing changed, see
 # ensure-fresh-image--source.sh) than to grep every file for its --variant.
-if declare -f ensure_fresh_image >/dev/null && { should_run_suite basic || should_run_suite complex; }; then
+if declare -f ensure_fresh_image >/dev/null && { should_run_suite basic || should_run_suite complex || should_run_suite template; }; then
     if ! ensure_fresh_image base notebook codeserver desktop-xfce desktop-kde desktop-lxqt desktop-wayland; then
         echo "Aborting: could not bring a needed image up to date." >&2
         exit 1
@@ -556,7 +561,7 @@ RETRY_SUITES=()
 
 for i in "${!SUITES[@]}"; do
     suite="${SUITES[$i]}"
-    dir="${SUITES[$i]}"
+    dir="${SUITE_DIRS[$i]}"
     runner="${SUITE_RUNNERS[$i]}"
 
     if [[ "$STOP_REQUESTED" == true ]]; then
@@ -613,7 +618,7 @@ if [[ ${#RETRY_SUITES[@]} -gt 0 && "$STOP_REQUESTED" != true ]]; then
 
     for i in "${RETRY_SUITES[@]}"; do
         suite="${SUITES[$i]}"
-        dir="${SUITES[$i]}"
+        dir="${SUITE_DIRS[$i]}"
         runner="${SUITE_RUNNERS[$i]}"
 
         if [[ "$STOP_REQUESTED" == true ]]; then
