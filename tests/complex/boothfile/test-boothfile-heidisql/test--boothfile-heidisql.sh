@@ -24,9 +24,11 @@ echo "=== Test: Boothfile HeidiSQL Installation ==="
 FAILED=0
 
 # Test 1: HeidiSQL is genuinely installed, with every library it links found
-# (libQt6Pas comes inside the prebuilt, Qt6 from apt).
+# (libQt6Pas comes inside the prebuilt, Qt6 from apt). grep -c prints 0 but exits 1
+# when nothing is missing -- the passing case -- so `|| true` keeps that exit from
+# failing the booth and, under set -e, silently ending this script.
 ACTUAL=$(run_coding_booth --silence-build -- \
-  'f=$(readlink -f "$(command -v heidisql)"); echo "$f"; ldd "$f" | grep -c "not found"' 2>/dev/null)
+  'f=$(readlink -f "$(command -v heidisql)"); echo "$f"; ldd "$f" | grep -c "not found" || true' 2>/dev/null)
 if [[ "$(printf '%s\n' "$ACTUAL" | tail -2 | head -1)" == /opt/heidisql/heidisql-*/heidisql \
       && "$(printf '%s\n' "$ACTUAL" | tail -1)" == 0 ]]; then
     print_test_result "true" "$0" "1" "HeidiSQL is installed via Boothfile, with its libraries"
