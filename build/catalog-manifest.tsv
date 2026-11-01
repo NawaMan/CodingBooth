@@ -118,10 +118,10 @@ setup	ghostty-fancy	1.0.0	bc14a3b49c2cdae66514cdd66d3b874f0988728d8b3a831ce6490b
 setup	gimp	1.0.0	4b4effac44795f1c333af66c5f520921b98066c9dba84e8d5a3f096fd451b92a	variants/base/setups/gimp--setup.sh
 setup	gleam	0.2.0	956d29f3571a07bc410dc1e03a027362800dc087961241a111f22378c71a6e49	variants/base/setups/gleam--setup.sh
 setup	gleam-code-extension	0.1.0	3c69d444f944b4a29febf2da07ef1da671db38f78af0677b41e544aa26b7e0ec	variants/base/setups/gleam-code-extension--setup.sh
-setup	gnupg	0.1.0	32050a0ef9245e8123fa4450a6d7f53fb47799acb5df69ba7efc1a33da056891	variants/base/setups/gnupg--setup.sh
+setup	gnupg	0.2.0	4e9b631cbd9a6c468f1b02ad5ca7740080fc5bac38b16eecf93648d72c17241e	variants/base/setups/gnupg--setup.sh
 setup	go	1.2.0	d54cbc8dceeba615fc1e7813d5b225d6710c68383d7f3f49028439b514f71c8b	variants/base/setups/go--setup.sh
 setup	go-code-extension	1.0.0	14b5c05adef0b6e5f5eb1593ef84feca1320bdf1ad6150cf845e96b39c822371	variants/base/setups/go-code-extension--setup.sh
-setup	go-nb-kernel	1.1.0	be638942abc1e8770d85c081b7153f7d0aa6593a5386511f6fa4b173f0f64d42	variants/base/setups/go-nb-kernel--setup.sh
+setup	go-nb-kernel	1.2.0	ab962f1468ed6933d31d98078003d71e37ad780dcd2aa4350e95f10d0c6ff2b4	variants/base/setups/go-nb-kernel--setup.sh
 setup	google-chrome	1.1.0	4747c061f49b7eea76796abc4425f0e563611222452911f064464f8531b1a21b	variants/base/setups/google-chrome--setup.sh
 setup	goose	1.0.0	138c554d9ab722ea3b71731ecad135583e355b03a5072c0e20ad3cfdf3ff0971	variants/base/setups/goose--setup.sh
 setup	goose-lang	0.1.0	02acaec2d0e8cb01ba1666fea9628e0eeac3f39c61628143a01c94f8b4ae5db1	variants/base/setups/goose-lang--setup.sh
@@ -273,6 +273,8 @@ setup	posting	1.1.0	f29364ae1fcff439658ee077e033bb34f70e01925425226014a8aae30998
 setup	protobuf-code-extension	0.1.0	1d6fa2c8084c0f4f1033469dd521ad95c6ab33f1ff5313d9df498d263f890e6d	variants/base/setups/protobuf-code-extension--setup.sh
 setup	protoc-gen-grpc-java	0.3.0	23de6040ea3a9d0f90fb6fa76cf992dd973c0eaa265f238d3cc5940805e806b3	variants/base/setups/protoc-gen-grpc-java--setup.sh
 setup	protoc-gen-grpc-web	0.1.0	8bfbd439133b6c5475c83a25119409c654982384fb69482cfe5345d32a98ba4c	variants/base/setups/protoc-gen-grpc-web--setup.sh
+setup	protoc-gen-prost	0.1.0	3dba9a06dd367df36ab9ec6a7aadd0702dbed4e9d43db2ba3b46366ca0b154da	variants/base/setups/protoc-gen-prost--setup.sh
+setup	protoc-gen-tonic	0.1.0	b8ed752f32a7720057f74ac4c89cf3a1435d03aedff70255d47af2e7ba143e8a	variants/base/setups/protoc-gen-tonic--setup.sh
 setup	pulumi	1.0.0	bf6cf9071ea8fb0616f90e1ad611d8fdde40c30b14d02cedd842bc4c89daa1da	variants/base/setups/pulumi--setup.sh
 setup	puppeteer	1.0.0	517308d69698cc61a8ff6e95c59ec38cada967eee952534e4ab7b004a51eef4d	variants/base/setups/puppeteer--setup.sh
 setup	pycharm	1.0.0	7cc4dfbd461c763c7e56eea63ce60053d7277628c0a6b4c379b2d7ab59a69704	variants/base/setups/pycharm--setup.sh
@@ -730,7 +732,7 @@ extension	ghostty+fancy	1.0.0	37f51efa6635527d3d359422f1cbba38c8f6e72daad9f9164b
 extension	gleam+vscode-ext	0.1.0	b74fa1fc7fed3a2882a520227a1a09f1502e7fcddf9a35d506a1b2fcbe474ffb	templates/languages/gleam/vscode-ext--extension.toml
 extension	go+go-mod	1.0.0	d0ce534aaa86760a1384b2241206a294bec0fe086d52eadafd8390e1c97b54b5	templates/languages/go/go-mod--extension.toml
 extension	go+go-pkg	1.0.0	9b7c75ede3885e70b0f33727564ff950e586a76adf8094fbc9c0c9a95da80053	templates/languages/go/go-pkg--extension.toml
-extension	go+kernel	1.0.0	d0578c4528c27c25379f3cc1e3dfc0c36affbea736633be93ddaefb1226513f2	templates/languages/go/kernel--extension.toml
+extension	go+kernel	1.1.0	63b0d7755dcff916e5197b0721231e56a175c75efb25987cce7ac47dab49f015	templates/languages/go/kernel--extension.toml
 extension	go+linter	1.0.0	7c64fa4a74e3fa9d723f909f97c67aec172fd518e4742e8148d4f5cf642d284e	templates/languages/go/linter--extension.toml
 extension	go+mod-cache	0.2.0	17439e016b3514927a23702608e06c5822f3c988fe366fbfd5573c25f7fed9e3	templates/languages/go/mod-cache--extension.toml
 extension	go+vscode-ext	1.0.0	19f0f4aebb35aa43293d3f6dacc9e1bd50471df2dba7f1ab0cb366792657543a	templates/languages/go/vscode-ext--extension.toml
@@ -904,7 +906,7 @@ extension	protobuf+java	0.3.0	ac254132680f54386e22d8dda1bfd3679d4553a1c245cc51e8
 extension	protobuf+nodejs	0.1.0	142c4a818883486156a699823299e41a6442bb239f0e918c3c513f366d742b41	templates/tools/protobuf/nodejs--extension.toml
 extension	protobuf+python	0.1.0	57a947c3a9657ec28e79dc6f1593c11be18abdf31a69ac6368faa45b05d7a522	templates/tools/protobuf/python--extension.toml
 extension	protobuf+ruby	0.1.0	07cd5717d4803ecb9953af5ca8c25b45397a611643d0052b4248579edfdaa280	templates/tools/protobuf/ruby--extension.toml
-extension	protobuf+rust	0.1.0	6efab9adb18de6d172dfbbccd96e5c846d3ff9f8cfdd4474297c2fcaa581bbfb	templates/tools/protobuf/rust--extension.toml
+extension	protobuf+rust	0.2.0	189dc99eb81c3bfac065219a93e966275a8093bcf9cf0ed17a702255a81e3e5d	templates/tools/protobuf/rust--extension.toml
 extension	protobuf+vscode-ext	0.1.0	1308518a569b16ceb6e6c91017fdb11e598a236fa2be176c388b347aca1c1dce	templates/tools/protobuf/vscode-ext--extension.toml
 extension	pycharm+import-project	0.1.0	2c5a62a9c99701e1567643c9ee34c1ec11af48ef7d9260b4864cb58d4c6fb86a	templates/ides/pycharm/import-project--extension.toml
 extension	pycharm+skip-first-run	0.1.0	9a3b803b7bcc3725d8bf1c2533e40f88e8a27b53cdf4fb945fa622e208f5f7d9	templates/ides/pycharm/skip-first-run--extension.toml

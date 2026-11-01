@@ -6,8 +6,8 @@ setups, templates and features that do not work, or only partly work, on some pl
 
 Anything not listed here works on amd64 and arm64, and on every host. That includes the tools that
 come prebuilt from [CodingBoothPrebuilt](https://github.com/NawaMan/CodingBoothPrebuilt) (GHC,
-HLS, IHaskell, OCaml, Nim, Goose, hlint, ormolu, sqls, HeidiSQL, Elm 0.19.1, evcxr, Scratch,
-Excalidraw), which publishes both CPUs.
+HLS, IHaskell, OCaml, Nim, Goose, hlint, ormolu, sqls, HeidiSQL, Elm 0.19.1, evcxr, GoNB, GnuPG,
+protoc-gen-prost, protoc-gen-tonic, Scratch, Excalidraw), which publishes both CPUs.
 
 On Apple Silicon, Docker builds arm64 images, so everything in the arm64 table applies there too.
 
