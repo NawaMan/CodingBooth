@@ -3,35 +3,59 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 
+# Start the booth as a daemon and run the in-booth suite with docker exec.
+# `booth -- <cmd>` runs the command without starting the desktop, and test004
+# launches the app's window on DISPLAY=:1, so the booth has to be a full one.
+
 set -euo pipefail
 
-RED='\033[0;31m'
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
+source "$REPO_ROOT/tests/booth-bin--source.sh"
+BOOTH="$(resolve_booth_bin)" || { echo "no booth found under $REPO_ROOT" >&2; exit 1; }
+
+cd "$(dirname "$0")/.."
+
+export CB_BROWSER=false
+
 GREEN='\033[0;32m'
+RED='\033[0;31m'
 NC='\033[0m'
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$SCRIPT_DIR/../../../.."
-source "$REPO_ROOT/tests/booth-bin--source.sh"
-BOOTH="$(resolve_booth_bin)"
+pass() { echo -e "${GREEN}✓${NC} $1"; }
+fail() { echo -e "${RED}✗${NC} $1"; exit 1; }
 
-# No --variant here on purpose: the booth uses whatever .booth/config.toml
-# declares (xfce), so the tests exercise the environment the example actually ships.
-IN_BOOTH_CMD="./.cb-tests/inBooth--run-all-tests.sh"
+CONTAINER_NAME="wails-example"
+BOOTH_PORT="${CB_PORT:-50422}"
+
+# booth stop/remove also take down the DinD sidecar that dind = true brings.
+cleanup() {
+    echo
+    echo "Cleaning up..."
+    "$BOOTH" stop --name "$CONTAINER_NAME" --force >/dev/null 2>&1 || true
+    "$BOOTH" remove --name "$CONTAINER_NAME" >/dev/null 2>&1 || true
+    docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+    docker network rm "${CONTAINER_NAME}-${BOOTH_PORT}-net" >/dev/null 2>&1 || true
+}
+trap cleanup EXIT
+
+echo "=== Testing wails-example ==="
+cleanup
 
 # --dind-allowed: this example's dind = true would otherwise stop for a [y/N]
 # consent prompt on /dev/tty (see docs/BOOTH_SECURITY.md) — silent in a script.
-"$BOOTH" --dind-allowed --port "${CB_PORT:-50422}" -- "$IN_BOOTH_CMD" 2>&1 | tee "$0.out"
-BOOTH_STATUS=${PIPESTATUS[0]}
+"$BOOTH" --dind-allowed --no-browser --port "$BOOTH_PORT" --daemon --name "$CONTAINER_NAME" || true
+sleep 2
+grep -q "^${CONTAINER_NAME}$" <<< "$(docker ps --format '{{.Names}}')" || fail "Failed to start booth"
+pass "Booth started"
 
-if ! grep -q "TEST SUMMARY" "$0.out"; then
-    echo -e "${RED}The in-booth test suite produced no summary — it did not run.${NC}"
-    echo "See $0.out"
-    exit 1
+echo
+echo "Running in-booth tests..."
+if ! docker exec -u coder "$CONTAINER_NAME" bash -lc "cd /home/coder/code && ./.cb-tests/inBooth--run-all-tests.sh" 2>&1 | tee "$0.out"; then
+    fail "In-booth tests failed"
 fi
+# A run that produced no summary did not run the suite, whatever it exited with.
+grep -q "TEST SUMMARY" "$0.out" || fail "The in-booth test suite produced no summary — it did not run (see $0.out)"
+pass "In-booth tests passed"
 
-if [ "$BOOTH_STATUS" -eq 0 ]; then
-    echo -e "${GREEN}All tests passed!${NC}"
-else
-    echo -e "${RED}Some tests failed!${NC}"
-    exit 1
-fi
+echo
+echo -e "${GREEN}All tests passed!${NC}"

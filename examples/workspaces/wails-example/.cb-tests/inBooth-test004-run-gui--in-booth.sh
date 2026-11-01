@@ -23,9 +23,16 @@ else
     FAILED=1
 fi
 
-if [[ -z "${DISPLAY:-}" ]]; then
-    echo "  ⚠️  DISPLAY is unset — skipping the GUI launch (this booth has no desktop)"
-    exit $FAILED
+# The booth is XFCE (config.toml), so its desktop is :1; it may still be coming
+# up when the suite starts.
+export DISPLAY="${DISPLAY:-:1}"
+for _ in $(seq 1 30); do
+    xwininfo -root >/dev/null 2>&1 && break
+    sleep 1
+done
+if ! xwininfo -root >/dev/null 2>&1; then
+    echo "  ❌ no X server on DISPLAY=${DISPLAY} after 30s — was the booth started without its desktop?"
+    exit 1
 fi
 
 if [[ ! -x bin/booth-counter ]]; then
