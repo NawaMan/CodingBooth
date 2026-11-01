@@ -306,6 +306,16 @@ breaks on the bump without having tested anything:
 
 A version bump is then the template plus the setup script, and nothing under `tests/`.
 
+## A fixture never copies a built-in setup
+
+A fixture's (or example's) `.booth/setups/` goes first on `PATH` in the booth, so a file there named
+like a built-in — `variants/base/setups/<path>` — runs **instead of** the setup the image ships. The
+test then checks its own copy, which drifts: until 2026-11-01, 28 complex tests ran older copies of
+kitty, n8n, mojo, the xfce/vscode/codeserver setups and more. Fix the setup in `variants/base/setups/`
+and rebuild the image; never copy it into the fixture to try a change. `.booth/setups/` is for a
+script the project adds under its own name (`lamp-init--setup.sh`). `tests/setups/test--no-setup-shadowing.sh`
+fails while any copy exists, and the release refuses to publish (`build/check-setup-shadowing.sh`).
+
 ## Gating an expensive test
 
 A test too slow to run every time is gated **opt-out, not opt-in**: it runs wherever the environment
