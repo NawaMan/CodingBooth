@@ -3,8 +3,9 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 
-# Argument and root-guard branches of gnupg--setup.sh. The happy path builds
-# GnuPG from source into /usr/local; the base image build is what covers it.
+# Argument and root-guard branches of gnupg--setup.sh. The happy path installs
+# CodingBoothPrebuilt's asset (or builds from source) into /usr/local; the base
+# image build is what covers it.
 
 set -euo pipefail
 
