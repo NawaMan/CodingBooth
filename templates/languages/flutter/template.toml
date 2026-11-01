@@ -1,4 +1,4 @@
-cb-version = "0.3.0"
+cb-version = "0.3.1"
 display-name = "Flutter"
 display-disc = "Flutter SDK for building apps from one Dart codebase — brings Dart with it"
 display-detail = """Installs the Flutter SDK under /usr/local/flutter-<version>, with the Dart SDK it bundles, \
@@ -22,14 +22,9 @@ tags = [
     "ui",
 ]
 
-# Google publishes the Flutter SDK for linux x86_64 only — checked against their
-# own release manifest, in which every stable release carries dart_sdk_arch
-# "x64" and no arm64 stable build has ever appeared. The setup warns and skips
-# on arm64 rather than failing the build, so the image still comes up.
-unsupported-arch = ["arm64"]
-unsupported-arch-note = """\
-Google ships the Flutter SDK for linux x86_64 only. On arm64 the booth still builds, but Flutter \
-is skipped and no Flutter app can be built in it."""
+# Google's Linux SDK archive is x64 only (every stable release in its manifest
+# carries dart_sdk_arch "x64"), but it also publishes the linux-arm64 Dart SDK and
+# engine artifacts, so on arm64 the setup checks the release out from its tag.
 
 [params.FLUTTER_VERSION]
 default = "latest"
