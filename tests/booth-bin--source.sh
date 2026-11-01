@@ -42,6 +42,9 @@
 #                            that must have the real CLI, not a wrapper around a
 #                            release: reading `version`, or a subcommand a given
 #                            release may not have.
+#   wait_booth_ready       — block until a --daemon booth has finished starting
+#                            (owners remapped, startup hooks run), before a test
+#                            `docker exec`s into it.
 #
 # The walk stops at the checkout root — the directory holding `.git` — and never
 # climbs past it. A linked worktree lives *under* the main clone
@@ -119,5 +122,30 @@ resolve_booth_bin() {
     # Loud, because most callers assign this under `set -e`: without a message
     # the script would simply stop, with no line saying what was looked for.
     echo "ERROR: no codingbooth build and no booth wrapper found above $start" >&2
+    return 1
+}
+
+# wait_booth_ready <container> [timeout-seconds] — return once the booth's
+# entrypoint has finished starting it, or 1 after the timeout (default 180).
+#
+# `--daemon` returns as soon as the container exists, and booth-entry is still
+# working: on any host whose uid is not 1000 — every Mac — it remaps coder to
+# the host uid and re-owns the home tree, image-built Go and npm caches
+# included. A test that `docker exec`s in during that window runs as the new
+# uid against files still owned by 1000 (wails-example's build: "mkdir
+# ~/go/pkg/mod/cache/download/...: permission denied"); a fixed `sleep 2` was
+# what the tests had, and it lost on a desktop booth. booth-entry writes
+# /var/run/cb-startup.once after the re-own and the startup hooks, so that file
+# is "ready".
+wait_booth_ready() {
+    local name="$1" timeout="${2:-180}" waited=0
+    while (( waited < timeout )); do
+        if docker exec "$name" test -f /var/run/cb-startup.once >/dev/null 2>&1; then
+            return 0
+        fi
+        sleep 1
+        waited=$((waited + 1))
+    done
+    echo "ERROR: booth '$name' did not finish starting within ${timeout}s (no /var/run/cb-startup.once)" >&2
     return 1
 }

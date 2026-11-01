@@ -48,6 +48,10 @@ cleanup
 sleep 2
 grep -q "^${CONTAINER_NAME}$" <<< "$(docker ps --format '{{.Names}}')" || fail "Failed to start booth"
 pass "Booth started"
+# --daemon returns while booth-entry is still re-owning the home for this host's
+# uid; exec in before it finishes and the suite meets files it cannot write.
+wait_booth_ready "$CONTAINER_NAME" || fail "Booth did not finish starting"
+pass "Booth ready"
 
 echo
 echo "Running in-booth tests..."
