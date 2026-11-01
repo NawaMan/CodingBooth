@@ -90,6 +90,13 @@ want examples && run "example wrappers" "$REPO" ./examples/update-booth.sh
 if want images; then
     source "$REPO/tests/ensure-fresh-image--source.sh"
     run "images: ${VARIANTS[*]}" "$REPO" ensure_fresh_image "${VARIANTS[@]}"
+    # The complex tests build on cb-local/codingbooth:base-<version>
+    # (use_local_base_image), which ensure_fresh_image does not touch. Left
+    # stale, they test the old image's setups — flutter's arm64 skip, here. Point
+    # it at the base just checked, as build/build-all.sh does after a build.
+    version="$(tr -d ' \t\n\r' < "$REPO/version.txt")"
+    run "tag cb-local base" "$REPO" \
+        docker tag "nawaman/codingbooth:base-${version}" "cb-local/codingbooth:base-${version}"
 fi
 
 if want unit; then
