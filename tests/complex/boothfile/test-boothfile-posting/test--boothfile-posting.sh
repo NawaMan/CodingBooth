@@ -25,15 +25,17 @@ echo "=== Test: Boothfile Posting Installation ==="
 
 FAILED=0
 
-# Test 1: posting is installed at the pinned default version
+# Test 1: posting is installed at the pinned default version -- read from the
+# setup the image ships, so a catalog bump does not break this test.
 # posting has no --version flag, so ask the venv's pip.
+EXPECTED=$(sed -n 's/^POSTING_DEFAULT_VER="\(.*\)".*/\1/p' ../../../../variants/base/setups/posting--setup.sh)
 ACTUAL=$(run_coding_booth --silence-build -- /opt/posting/bin/pip show posting 2>/dev/null)
 ACTUAL=$(printf '%s\n' "$ACTUAL" | grep '^Version:' || true)
 
-if echo "$ACTUAL" | grep -qE "^Version: 2\.11\.0$"; then
-    print_test_result "true" "$0" "1" "Posting 2.11.0 is installed via Boothfile"
+if [[ -n "$EXPECTED" && "$ACTUAL" == "Version: $EXPECTED" ]]; then
+    print_test_result "true" "$0" "1" "Posting $EXPECTED (the setup's default) is installed via Boothfile"
 else
-    print_test_result "false" "$0" "1" "Posting 2.11.0 should be installed"
+    print_test_result "false" "$0" "1" "Posting ${EXPECTED:-<no POSTING_DEFAULT_VER in posting--setup.sh>} should be installed"
     echo "  Actual output: $ACTUAL"
     FAILED=$((FAILED + 1))
 fi
