@@ -968,7 +968,7 @@ extension	thinkrail+expose	0.1.0	b4732e458430d2ffd4228edac3593fc4ce5c584dba0744b
 extension	ttt+config-shared	0.1.0	680b160a87365913a6bac4f1a50942431acca19e393fb673674869a5fb463488	templates/tools/ttt/config-shared--extension.toml
 extension	ttt+lsp	0.1.1	beacea618740673dd8a23a67fec33ce4f33efa77c3ac470e6ac97c843d6f458b	templates/tools/ttt/lsp--extension.toml
 extension	ttt+theme	0.1.0	dffb469bd276a449032ab9ab11be4ff10b3da1cf47d408221f23f834b9a803bd	templates/tools/ttt/theme--extension.toml
-extension	wails+android	0.1.0	9969ceb831f5dc53121d16794e2c3811fb630db50e2654ff1f3dec9a389bffcc	templates/languages/wails/android--extension.toml
+extension	wails+android	0.1.1	20a3c00d23a18fbd58f072bfec96dbb918cbdfbff6e30084b08d60f3b26f2d4e	templates/languages/wails/android--extension.toml
 extension	wails+cross	0.1.0	25aa26c799d144a1ceadba10207544d514f145ec49f853e4b25d6c1893c0dbc4	templates/languages/wails/cross--extension.toml
 extension	warp+credential	1.0.0	dc35501a634880687f8a723760af347f22a6b9ba5e8855ae377774ff6302bed5	templates/ai-tools/warp/credential--extension.toml
 extension	webstorm+import-project	0.1.0	baf76f8b0dda53d610ddfc3e1adb32014bc0b1582a4d19d27bbe08f7a9e1ea58	templates/ides/webstorm/import-project--extension.toml
