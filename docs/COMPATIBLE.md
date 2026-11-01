@@ -6,7 +6,7 @@ setups, templates and features that do not work, or only partly work, on some pl
 
 Anything not listed here works on amd64 and arm64, and on every host. That includes the tools that
 come prebuilt from [CodingBoothPrebuilt](https://github.com/NawaMan/CodingBoothPrebuilt) (GHC,
-IHaskell, OCaml, Nim, Goose, hlint, ormolu, sqls, evcxr, Scratch, Excalidraw), which publishes both CPUs.
+IHaskell, OCaml, Nim, Goose, hlint, ormolu, sqls, HeidiSQL, evcxr, Scratch, Excalidraw), which publishes both CPUs.
 
 On Apple Silicon, Docker builds arm64 images, so everything in the arm64 table applies there too.
 
@@ -20,7 +20,6 @@ Apple Silicon Macs, AWS Graviton, Raspberry Pi 5, and other 64-bit Arm machines.
 | `flutter+android` | Skipped (`flutter` and `flutter+linux-desktop` work) | It needs the Android SDK, above |
 | `wails+android` | Skipped (`wails` itself works) | The Android NDK is published for linux x86_64 only |
 | `google-chrome` | Not installed; a stub command explains why | Google ships no linux/arm64 Chrome. Use `chromium`. |
-| `heidisql` | Skipped | HeidiSQL publishes a `.deb` for amd64 only |
 | `kotlin` with Kotlin/Native | Fails | JetBrains ships Kotlin/Native for linux-x86_64 only. Kotlin/JVM works. |
 | `puppeteer` | Partly: drives the system Chromium | Chrome for Testing has no linux-arm64 build |
 | `selenium` | Partly: Debian's Chromium, and a browser version pin is ignored | Same reason |

@@ -28,6 +28,11 @@ This file contains a list of changes for each released version.
 - **sqls installs on arm64.** sqls publishes a linux amd64 build only, so `lsp+sql` skipped it on
   arm64. It now comes as a sha256-checked build from CodingBoothPrebuilt on x86_64 and arm64
   alike; a version not prebuilt yet is built from its release tag with a temporary Go toolchain.
+- **HeidiSQL installs on arm64.** Upstream packages its Linux build as an amd64 `.deb` only, and
+  that needs a `libqt6pas6` Ubuntu does not ship, so `heidisql` was skipped on arm64. It now comes
+  from CodingBoothPrebuilt on both CPUs: upstream's Qt6 build, made with the same Lazarus release
+  and patches, with its `libQt6Pas` inside, in `/opt/heidisql/heidisql-<version>`. A version not
+  prebuilt yet uses upstream's `.deb` on amd64 and is skipped with a warning on arm64.
 - **Older DBeaver releases install on arm64.** Releases before 25.3.1 have no arm64 `.deb`, so a
   pinned one failed there. Those releases do ship an aarch64 tarball without a JRE; the setup now
   installs it where the `.deb` would, with OpenJDK 21 from apt.
