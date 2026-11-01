@@ -4,140 +4,64 @@
 # you may not use this file except in compliance with the License.
 
 # -----------------------------------------------------------------------------
-# test-delta.sh — run every test that covers what changed since f497872b
+# test-delta.sh — run every test that covers what changed since 42b28a7a
 #
-#   arm64 gaps (flutter, sqls, dbeaver, heidisql, elm 0.19.1, HLS), prebuilt
-#   GnuPG / protoc-gen-prost / protoc-gen-tonic / GoNB, EnvFolio 1.1.0, the
-#   complex fixtures and turtle-example now running the built-in setups, and
-#   the examples that had tests but no runner (so never ran) now having one.
+#   empty-example back to empty (config.toml only), wails-example's suite run in
+#   a booth that has its desktop, wails+android building with one --platform
+#   (extension 0.1.1 and the CLI's buildPlatformFlag), and the Android build
+#   outputs the wails examples now gitignore.
 #
 # Stages, cheapest first; a failure is recorded and the run goes on:
 #
-#   images    rebuild base, notebook, desktop-xfce from this tree (a no-op when
-#             fresh): the changed setups only reach complex tests and examples
-#             through the image
-#   unit      the setup-shadowing guard, Go unit tests, the setups suite, the
-#             config tests
-#   basic     basic/test034 (EnvFolio 1.1.0 on the base image's GnuPG 2.5)
-#   complex   elm, heidisql, flutter, lsp-hls-zls
-#   cleanup   the setup-shadowing guard, then the 53 complex tests whose
-#             .booth/setups/ copies of built-ins were deleted: they now run the
-#             image's setups (also refreshes the desktop-kde, desktop-lxqt,
-#             desktop-wayland, codeserver images)
-#   examples  go (GoNB kernel), haskell (HLS, IHaskell), flutter (native on
-#             arm64; test004: a second run after ~/.pub-cache is gone), data (dbeaver),
-#             turtle (Logo from the built-in files), and the examples whose
-#             runner is new: empty, herdr, jetbrain-exmple, playground3,
-#             playwright-polyglot, tiling, wails, wails-android
+#   unit      Go unit tests of the booth package (buildPlatformFlag), the
+#             catalog version check (android--extension.toml was bumped), the
+#             wails config test, and a dry run of each --platform example:
+#             `docker build` gets the flag exactly once, also from the
+#             wails-android config.toml as generated before the fix
+#   examples  empty, wails (test004: the GUI on the booth's desktop),
+#             wails-android (APK + emulator boot, when /dev/kvm is usable) and
+#             android (the other example that sets --platform, in common-args),
+#             then: none of them left untracked or changed files behind
 #
 # Usage:
 #   tests/test-delta.sh                    all stages
-#   tests/test-delta.sh unit complex       only these stages
+#   tests/test-delta.sh unit               only these stages
 #   tests/test-delta.sh --list             print what each stage runs
 #   tests/test-delta.sh --no-build unit    skip the CLI build (./codingbooth is fresh)
 #
-# Every check writes its own log, and complex checks also a trace of each booth
-# call with its stderr (CB_DIAG_LOG). All of it lands in
+# Every check writes its own log, and a check that calls booth also a trace of
+# each booth call with its stderr (CB_DIAG_LOG). All of it lands in
 # tests/logs/test-delta/<timestamp>/, with REPORT.txt: one line per check, then
 # the failure lines and the tail of each failed check's log — plain text, made
 # to be pasted whole into a review.
 #
-# Not covered by any test (check by hand if it matters): lsp+sql (sqls),
-# protobuf+rust in a real booth, and arm64 — run this on an arm64 host for that.
+# Not covered: arm64, where wails-android and android are unsupported (Google's
+# SDK is x86_64 only) and CB_ANDROID_PLATFORM decides what happens.
 # -----------------------------------------------------------------------------
 
 set -uo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ALL_STAGES=(images unit basic complex cleanup examples)
+ALL_STAGES=(unit examples)
 
-VARIANTS=(base notebook desktop-xfce)
-CLEANUP_VARIANTS=(base desktop-xfce desktop-kde desktop-lxqt desktop-wayland codeserver)
 CONFIG_TESTS=(
-    init/test114-select-new-protoplugins-ant-cuda.sh
-    catalog/test92-arch-unsupported-is-declared.sh
-    init/test94-init-flutter.sh
-    init/test140-init-lsp.sh
+    init/test100-init-wails.sh
 )
-COMPLEX_TESTS=(
-    boothfile/test-boothfile-elm
-    boothfile/test-boothfile-heidisql
-    boothfile/test-boothfile-flutter
-    boothfile/test-boothfile-lsp-hls-zls
-)
-CLEANUP_TESTS=(
-    boothfile/test-boothfile-aider
-    boothfile/test-boothfile-alacritty
-    boothfile/test-boothfile-ansible
-    boothfile/test-boothfile-aws-cdk
-    boothfile/test-boothfile-aws-sam-cli
-    boothfile/test-boothfile-azure-cli
-    boothfile/test-boothfile-binary-companions
-    boothfile/test-boothfile-cmake
-    boothfile/test-boothfile-codeserver-terminal-font
-    boothfile/test-boothfile-cypress
-    boothfile/test-boothfile-dblab
-    boothfile/test-boothfile-default-terminal-kde
-    boothfile/test-boothfile-default-terminal-lxqt
-    boothfile/test-boothfile-default-terminal-wayland
-    boothfile/test-boothfile-default-terminal-xfce
-    boothfile/test-boothfile-dotnet
-    boothfile/test-boothfile-floci
-    boothfile/test-boothfile-gh-copilot
-    boothfile/test-boothfile-ghostty
-    boothfile/test-boothfile-gleam
-    boothfile/test-boothfile-gradle
-    boothfile/test-boothfile-harlequin
-    boothfile/test-boothfile-helix
-    boothfile/test-boothfile-helm
-    boothfile/test-boothfile-jenv
-    boothfile/test-boothfile-kde-terminal-font
-    boothfile/test-boothfile-kitty
-    boothfile/test-boothfile-kubectl
-    boothfile/test-boothfile-latex
-    boothfile/test-boothfile-lazydocker
-    boothfile/test-boothfile-lazygit
-    boothfile/test-boothfile-lazysql
-    boothfile/test-boothfile-lxqt-terminal-font
-    boothfile/test-boothfile-mojo
-    boothfile/test-boothfile-mojo-nb-kernel
-    boothfile/test-boothfile-mongodb
-    boothfile/test-boothfile-n8n
-    boothfile/test-boothfile-ollama
-    boothfile/test-boothfile-posting
-    boothfile/test-boothfile-pulumi
-    boothfile/test-boothfile-puppeteer
-    boothfile/test-boothfile-redis
-    boothfile/test-boothfile-sbt
-    boothfile/test-boothfile-selenium
-    boothfile/test-boothfile-sql-studio
-    boothfile/test-boothfile-sqluv
-    boothfile/test-boothfile-terraform
-    boothfile/test-boothfile-texstudio
-    boothfile/test-boothfile-vscode-terminal-font
-    boothfile/test-boothfile-wayland-terminal-font
-    boothfile/test-boothfile-xfce-terminal-font
-    boothfile/test-boothfile-xonsh
-    boothfile/test-install-dotnet
-)
-EXAMPLES=(
-    go haskell flutter data turtle
-    # first automated run: they had tests but no run-automatic-on-host-test.sh
-    empty herdr jetbrain-exmple playground3 playwright-polyglot tiling wails wails-android
-)
+# Examples whose config.toml sets --platform: the build must get it once.
+PLATFORM_EXAMPLES=(wails-android-example android-example)
+# The fix's own baseline: wails-android's config.toml from before it, which put
+# --platform in build-args as well as run-args.
+PLATFORM_BEFORE=42b28a7a
+EXAMPLES=(empty wails wails-android android)
 
 if [[ "${1:-}" == "--list" ]]; then
-    echo "images:   ensure_fresh_image ${VARIANTS[*]}"
-    echo "unit:     build/check-setup-shadowing.sh"
-    echo "          (cd cli && go test ./src/pkg/boothfile/ ./src/pkg/booth/)"
-    echo "          tests/setups/run-setups-tests.sh"
+    echo "unit:     (cd cli && go test ./src/pkg/booth/)"
+    echo "          build/check-catalog-versions.sh"
     printf '          tests/config/%s\n' "${CONFIG_TESTS[@]}"
-    echo "basic:    tests/basic/test034--envfolio.sh"
-    printf 'complex:  tests/complex/%s\n' "${COMPLEX_TESTS[@]}"
-    echo "cleanup:  build/check-setup-shadowing.sh"
-    echo "          ensure_fresh_image ${CLEANUP_VARIANTS[*]}"
-    printf '          tests/complex/%s\n' "${CLEANUP_TESTS[@]}"
+    printf '          codingbooth --dryrun --code examples/workspaces/%s: one --platform in docker build\n' "${PLATFORM_EXAMPLES[@]}"
+    echo "          the same for wails-android-example with its ${PLATFORM_BEFORE} config.toml"
     printf 'examples: examples/workspaces/run-example-tests.sh --example %s\n' "${EXAMPLES[@]}"
+    echo "          git status of those examples is clean"
     exit 0
 fi
 
@@ -161,8 +85,8 @@ RESULTS=()   # "<PASS|FAIL> <seconds> <log> <label>", in run order
 N=0
 
 # run <label> <dir> <command...>: one check, in its own folder, recorded either
-# way. Output goes to the terminal and to its own log; a complex check also gets
-# a booth-call trace (CB_DIAG_LOG) beside it.
+# way. Output goes to the terminal and to its own log, with a booth-call trace
+# (CB_DIAG_LOG) beside it.
 run() {
     local label="$1" dir="$2"; shift 2
     N=$((N + 1))
@@ -180,63 +104,56 @@ run() {
     RESULTS+=("$status $(( $(date +%s) - start )) $log $label")
 }
 
-# run_complex <stage> <dir under tests/complex>
-run_complex() {
-    local stage="$1" d="$2" t
-    t=$(cd "$REPO/tests/complex/$d" && ls test--*.sh 2>/dev/null | head -1)
-    if [[ -z "$t" ]]; then
-        N=$((N + 1))
-        RESULTS+=("FAIL 0 - $stage/${d#*/} (no test--*.sh in tests/complex/$d)")
-        return
-    fi
-    run "$stage/${d#*/}" "$REPO/tests/complex/$d" bash "$t"
+# one_build_platform <code dir>: the `docker build` a dry run prints carries
+# --platform exactly once. Twice is what buildx reads as a multi-platform
+# build, and the default docker driver refuses it.
+one_build_platform() {
+    local out n
+    out="$("$REPO/codingbooth" --dryrun --port 50999 --code "$1" -- true 2>&1)" || { echo "$out"; return 1; }
+    sed -n '/^ *build \\$/,/^ *-f /p' <<< "$out"
+    n=$(sed -n '/^ *build \\$/,/^ *-f /p' <<< "$out" | grep -c -- '--platform')
+    echo "docker build gets --platform $n time(s), want 1"
+    [[ $n -eq 1 ]]
+}
+
+# one_build_platform_before: the same, for wails-android-example's .booth/ with
+# the config.toml it had before the fix (build-args and run-args both).
+one_build_platform_before() {
+    local ws="$RUN_DIR/wails-android-before"
+    rm -rf "$ws" && mkdir -p "$ws"
+    cp -r "$REPO/examples/workspaces/wails-android-example/.booth" "$ws/"
+    git -C "$REPO" show "$PLATFORM_BEFORE:examples/workspaces/wails-android-example/.booth/config.toml" \
+        > "$ws/.booth/config.toml" || return 1
+    grep -q '^build-args = \["--platform"' "$ws/.booth/config.toml" \
+        || { echo "the $PLATFORM_BEFORE config.toml has no build-args --platform; nothing to prove"; return 1; }
+    one_build_platform "$ws"
+}
+
+# tree_clean <path...>: nothing changed or untracked under these paths. Run
+# after the examples, it catches build outputs that are not gitignored (and,
+# on a dirty tree, your own edits there too).
+tree_clean() {
+    local dirty
+    dirty="$(git -C "$REPO" status --porcelain -- "$@")"
+    [[ -z "$dirty" ]] && { echo "clean"; return 0; }
+    echo "$dirty"
+    return 1
 }
 
 # The booth binary every stage runs, and the example wrappers + shared cache.
 $BUILD && run "cli build" "$REPO" ./build/cli-build.sh
 want examples && run "example wrappers" "$REPO" ./examples/update-booth.sh
 
-if want images || want cleanup; then
-    source "$REPO/tests/ensure-fresh-image--source.sh"
-fi
-# The complex tests that call use_local_base_image build on
-# cb-local/codingbooth:base-<version>, which ensure_fresh_image does not touch.
-# Left stale, they test the old image's setups (flutter's arm64 skip, puppeteer,
-# selenium). Point it at the base just checked, as build/build-all.sh does.
-tag_cb_local_base() {
-    local version
-    version="$(tr -d ' \t\n\r' < "$REPO/version.txt")"
-    run "tag cb-local base" "$REPO" \
-        docker tag "nawaman/codingbooth:base-${version}" "cb-local/codingbooth:base-${version}"
-}
-
-if want images; then
-    run "images: ${VARIANTS[*]}" "$REPO" ensure_fresh_image "${VARIANTS[@]}"
-    tag_cb_local_base
-fi
-
 if want unit; then
-    run "setup-shadowing guard"   "$REPO" ./build/check-setup-shadowing.sh
-    run "go test boothfile+booth" "$REPO/cli" go test ./src/pkg/boothfile/ ./src/pkg/booth/ -count=1
-    run "setups suite"            "$REPO/tests/setups" ./run-setups-tests.sh
+    run "go test booth"           "$REPO/cli" go test ./src/pkg/booth/ -count=1
+    run "catalog versions"        "$REPO" ./build/check-catalog-versions.sh
     for t in "${CONFIG_TESTS[@]}"; do
         run "config/${t%.sh}" "$REPO/tests/config" bash "$t"
     done
-fi
-
-if want basic; then
-    run "basic/test034--envfolio" "$REPO/tests/basic" bash test034--envfolio.sh
-fi
-
-if want complex; then
-    for d in "${COMPLEX_TESTS[@]}"; do run_complex complex "$d"; done
-fi
-
-if want cleanup; then
-    want unit || run "setup-shadowing guard" "$REPO" ./build/check-setup-shadowing.sh
-    run "images: ${CLEANUP_VARIANTS[*]}" "$REPO" ensure_fresh_image "${CLEANUP_VARIANTS[@]}"
-    want images || tag_cb_local_base
-    for d in "${CLEANUP_TESTS[@]}"; do run_complex cleanup "$d"; done
+    for e in "${PLATFORM_EXAMPLES[@]}"; do
+        run "dryrun/$e: one build --platform" "$REPO" one_build_platform "$REPO/examples/workspaces/$e"
+    done
+    run "dryrun/wails-android-example ($PLATFORM_BEFORE config): one build --platform" "$REPO" one_build_platform_before
 fi
 
 if want examples; then
@@ -245,6 +162,9 @@ if want examples; then
     for e in "${EXAMPLES[@]}"; do
         run "example/$e" "$REPO/examples/workspaces" ./run-example-tests.sh --example "$e"
     done
+    paths=()
+    for e in "${EXAMPLES[@]}"; do paths+=("examples/workspaces/$e-example"); done
+    run "examples left the tree clean" "$REPO" tree_clean "${paths[@]}"
 fi
 
 # ---------------- Report ----------------
