@@ -6,7 +6,8 @@ setups, templates and features that do not work, or only partly work, on some pl
 
 Anything not listed here works on amd64 and arm64, and on every host. That includes the tools that
 come prebuilt from [CodingBoothPrebuilt](https://github.com/NawaMan/CodingBoothPrebuilt) (GHC,
-IHaskell, OCaml, Nim, Goose, hlint, ormolu, sqls, HeidiSQL, evcxr, Scratch, Excalidraw), which publishes both CPUs.
+IHaskell, OCaml, Nim, Goose, hlint, ormolu, sqls, HeidiSQL, Elm 0.19.1, evcxr, Scratch,
+Excalidraw), which publishes both CPUs.
 
 On Apple Silicon, Docker builds arm64 images, so everything in the arm64 table applies there too.
 
@@ -23,7 +24,6 @@ Apple Silicon Macs, AWS Graviton, Raspberry Pi 5, and other 64-bit Arm machines.
 | `kotlin` with Kotlin/Native | Fails | JetBrains ships Kotlin/Native for linux-x86_64 only. Kotlin/JVM works. |
 | `puppeteer` | Partly: drives the system Chromium | Chrome for Testing has no linux-arm64 build |
 | `selenium` | Partly: Debian's Chromium, and a browser version pin is ignored | Same reason |
-| `elm` 0.19.1 | Works, from a community aarch64 build | Upstream has no arm64 binary for 0.19.1; 0.19.2 and later are official |
 | `cuda` | Server-class Arm64 (SBSA) only, not Jetson | NVIDIA's repository layout |
 | `lsp+haskell` (HLS) | May reject the installed GHC ("GHC ABIs don't match") | The arm64 HLS binary can be built against a different GHC build |
 | `--apt-snapshot` / `APT_SNAPSHOT` | The pin is ignored | arm64 packages come from ports.ubuntu.com, which has no snapshots |
