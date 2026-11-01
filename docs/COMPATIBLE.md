@@ -6,7 +6,7 @@ setups, templates and features that do not work, or only partly work, on some pl
 
 Anything not listed here works on amd64 and arm64, and on every host. That includes the tools that
 come prebuilt from [CodingBoothPrebuilt](https://github.com/NawaMan/CodingBoothPrebuilt) (GHC,
-IHaskell, OCaml, Nim, Goose, hlint, ormolu, evcxr, Scratch, Excalidraw), which publishes both CPUs.
+IHaskell, OCaml, Nim, Goose, hlint, ormolu, sqls, evcxr, Scratch, Excalidraw), which publishes both CPUs.
 
 On Apple Silicon, Docker builds arm64 images, so everything in the arm64 table applies there too.
 
@@ -17,16 +17,14 @@ Apple Silicon Macs, AWS Graviton, Raspberry Pi 5, and other 64-bit Arm machines.
 | Setup / template | On arm64 | Why |
 | --- | --- | --- |
 | `android-sdk` (+`emulator`, +`kvm`) | Skipped with a warning; the booth still builds | Google publishes the SDK tools and the emulator for linux x86_64 only |
-| `flutter` (+`android`, +`linux-desktop`) | Skipped with a warning | No linux-arm64 Flutter SDK has been published |
+| `flutter+android` | Skipped (`flutter` and `flutter+linux-desktop` work) | It needs the Android SDK, above |
 | `wails+android` | Skipped (`wails` itself works) | The Android NDK is published for linux x86_64 only |
 | `google-chrome` | Not installed; a stub command explains why | Google ships no linux/arm64 Chrome. Use `chromium`. |
 | `heidisql` | Skipped | HeidiSQL publishes a `.deb` for amd64 only |
-| `lsp+sql` (sqls) | Skipped | sqls has no linux-arm64 build. With `go`: `go install github.com/sqls-server/sqls@latest` |
 | `kotlin` with Kotlin/Native | Fails | JetBrains ships Kotlin/Native for linux-x86_64 only. Kotlin/JVM works. |
 | `puppeteer` | Partly: drives the system Chromium | Chrome for Testing has no linux-arm64 build |
 | `selenium` | Partly: Debian's Chromium, and a browser version pin is ignored | Same reason |
 | `elm` 0.19.1 | Works, from a community aarch64 build | Upstream has no arm64 binary for 0.19.1; 0.19.2 and later are official |
-| `dbeaver` | Only the latest release, or 25.3.1 and later | Older releases have no arm64 `.deb` |
 | `cuda` | Server-class Arm64 (SBSA) only, not Jetson | NVIDIA's repository layout |
 | `lsp+haskell` (HLS) | May reject the installed GHC ("GHC ABIs don't match") | The arm64 HLS binary can be built against a different GHC build |
 | `--apt-snapshot` / `APT_SNAPSHOT` | The pin is ignored | arm64 packages come from ports.ubuntu.com, which has no snapshots |

@@ -62,7 +62,7 @@ setup	crystal-code-extension	1.0.0	14c2ce6f0561eec9ff041e616cd1b93c789c101ab5fdb
 setup	cuda	0.1.1	a26ca96634a5c13e62518198fd192d5976f66cf97853280a570be2d1c1812eca	variants/base/setups/cuda--setup.sh
 setup	cursor	1.0.0	b157012b2d424a25501f4088de21e8e4bd4eb32b6082434ca53ace404187543e	variants/base/setups/cursor--setup.sh
 setup	cypress	1.0.0	3758a04ba55ea39dce40d7c535060116bd28f3de2af01b213cb022dce3375917	variants/base/setups/cypress--setup.sh
-setup	dbeaver	1.0.1	bc3bf9541f4e5d58eb0fe58e3b8207beff5e7cc54f198c2e9a812623fe33450c	variants/base/setups/dbeaver--setup.sh
+setup	dbeaver	1.1.0	2ea3ee79d1b5171492aa2b763c496a2fc72948721cce2db213352d1e498148f6	variants/base/setups/dbeaver--setup.sh
 setup	dblab	0.2.0	79b74274ce74fafa5afe5e725f4afc059e6c796cf5d6f2da4231444f91d30ea1	variants/base/setups/dblab--setup.sh
 setup	default-terminal	1.0.0	b5ba2b0dcc90ea2355fb529902f0daccd3c53ab8046a832bea26dab69640adcd	variants/base/setups/default-terminal--setup.sh
 setup	deno	1.0.0	b5cb7026bd75202319f66faa56b51cf4bc47c2004050115d750b01d0c1a09197	variants/base/setups/deno--setup.sh
@@ -96,8 +96,8 @@ setup	firebase	1.0.0	cb173cd4ef650d421702b797c175e1104e2974be965d684f6ecee5fe00a
 setup	firefox	1.0.0	e5ddd08461944d477d87ca40779b2d1bb632a0b77fedc15b0122bb83f2ba76e6	variants/base/setups/firefox--setup.sh
 setup	firefox-managed-policies	1.0.0	56725f8b7e2225e097ca92cd31a387847995e8a37b1b01654ec022780c30f37d	variants/base/setups/firefox-managed-policies--setup.sh
 setup	floci	0.2.0	392788647897f472ea3712107cb3111842c39d47618349323ca1c74a88bac57c	variants/base/setups/floci--setup.sh
-setup	flutter	0.1.0	766e402d8b66ae36cd9ced26fd7d10d7aedebf75a8e4b5d0c33f0f0644277650	variants/base/setups/flutter--setup.sh
-setup	flutter-android	0.1.0	29b85d12fef3c78cc892953b4d79f636b413e430fe6148684676fd5aed33bab1	variants/base/setups/flutter-android--setup.sh
+setup	flutter	0.2.0	498c5e201d6d47defc821a97b24e824eccca65f4c420cd93b2f421ef5bc4c3c9	variants/base/setups/flutter--setup.sh
+setup	flutter-android	0.1.1	70509a18385e6b0ffc0c1d7850db0d05592e24e6113a005b4731022583e57ebe	variants/base/setups/flutter-android--setup.sh
 setup	flutter-code-extension	0.1.0	3b1c741f03af53c3d4871e3632e1918818234d0cdf23955853db0f7d11c52d38	variants/base/setups/flutter-code-extension--setup.sh
 setup	flutter-linux-desktop	0.1.0	93a35066e84353c24de3ab432f0d6a9dd36839f56fbe71c7c8e2bf1f9709fc1e	variants/base/setups/flutter-linux-desktop--setup.sh
 setup	fpc	1.0.0	f39f2f6bd2fc69558d9157730c73c62f8bbe221c93c4d12e2a7df276092f1b9e	variants/base/setups/fpc--setup.sh
@@ -207,7 +207,7 @@ setup	lsp--hls	0.1.1	fc4da6272294b7e33aebdefb648459594b37026415a7c47ba021fd2a28c
 setup	lsp--jdtls	0.2.0	da5bac36522cd54e28bcafc2a8242dfe4497bedf99d248699295d1acfe6836fe	variants/base/setups/lsp--jdtls--setup.sh
 setup	lsp--marksman	0.1.0	573cc8533de8c6861e49d390841df6354b718708a604d317c8052ef9daedd7b7	variants/base/setups/lsp--marksman--setup.sh
 setup	lsp--pylsp	0.1.0	ec6a850f7e1291a20548ddae53c95318868596dda57ac8d25e2d77ae518ac446	variants/base/setups/lsp--pylsp--setup.sh
-setup	lsp--sqls	0.1.0	9faa23f34e2dc7e56425489fe21e26cc90e96b0257ec56b237cb8d411ea6a305	variants/base/setups/lsp--sqls--setup.sh
+setup	lsp--sqls	0.2.0	421aef96bea8a3fdc5520f825df2323de3d09e8f3ce49b46add0466572cfd313	variants/base/setups/lsp--sqls--setup.sh
 setup	lsp--svelte	0.1.0	271c933002bdbaa210524d6f46bb63469b2f275d2128377266f17156ac64d12b	variants/base/setups/lsp--svelte--setup.sh
 setup	lsp--tailwindcss	0.1.0	8be46bd06cf1214516c9acfeb7d36491109522eddfe03eba7211e6842056f268	variants/base/setups/lsp--tailwindcss--setup.sh
 setup	lsp--taplo	0.1.0	0f4406cfb49ffbeaf2f324b17bb34f12468f923b1914388030fb9372827a7b65	variants/base/setups/lsp--taplo--setup.sh
@@ -476,7 +476,7 @@ template	ffmpeg	1.0.0	c2df74ca40d15edbbbc161d19794ba58d7ad47b22e69b19e0009717792
 template	firebase	1.0.0	dc0e54f22dee9bc7241799bace704d20794388f1b7433d139edb2e5db3c8a07a	templates/tools/firebase/template.toml
 template	firefox	1.0.0	f66cae6754afb97560e80091f722fb74be336a468fa56769423ba963d0300557	templates/desktops/firefox/template.toml
 template	floci	0.4.0	14b5a5a5751977bf9d1112227ac70defd74d6a9900efff434c7553dcca21be27	templates/tools/floci/template.toml
-template	flutter	0.3.0	4ebbf6fe53ddd30dd25a9177d3e5d1801b95c4894dfeeb03a55033c6ae563a1c	templates/languages/flutter/template.toml
+template	flutter	0.3.1	7809a3a7d96b2a45d145154bc1036a4dda51a9ddfd7be01b3c63ee799722b4e2	templates/languages/flutter/template.toml
 template	fpc	1.0.0	833b92d6fb18707c1d678ee941562af8ccbe880c68abbe61bb4f0ec3f8604a62	templates/languages/fpc/template.toml
 template	freelens	0.1.0	8120af7df1f43318882fbe66b5f86b01da2cebe33cd66c431a1beacc07d8c41a	templates/tools/freelens/template.toml
 template	freeplane	1.0.0	68b6c0db16c41749e533797b2593263871ef318be6e049338b1b8091e3ba8a14	templates/tools/freeplane/template.toml
@@ -711,8 +711,8 @@ extension	firefox+profile-cache	1.0.0	51f5a7164d29514fc48ecaa61ab3994a2716d46908
 extension	firefox+settings-shared	1.0.0	3fcd4ecc4672bf3139be1c00ca868147668910e800f3ccd91de078a46d9be9ed	templates/desktops/firefox/settings-shared--extension.toml
 extension	floci+autostart	0.1.0	95491ff7e6cafc1cfe35f5da406ba2a2bca5aa0b6a5d50246f6dad476f3e3200	templates/tools/floci/autostart--extension.toml
 extension	floci+expose	0.1.0	cde99db7aeb6fc0e1eff3ab9dd655b7b3cddeffd724d2d2bac601eed70dbc6db	templates/tools/floci/expose--extension.toml
-extension	flutter+android	0.1.0	0ad91891122e331d9dcad56bfab13da7976adb53e3dec36ea3540bd34ed5e686	templates/languages/flutter/android--extension.toml
-extension	flutter+linux-desktop	0.1.0	a0d21868c9153250264974efe24bd185cc68eb0b5135888caed3ab8933989162	templates/languages/flutter/linux-desktop--extension.toml
+extension	flutter+android	0.1.1	d8ddf74e4bcd225730f05af2476086fc6694d008e4a1c16cf7026336bc060c7f	templates/languages/flutter/android--extension.toml
+extension	flutter+linux-desktop	0.1.1	d9d5c9fc246800b9f735203c24465563d83a7852d00ee6aaacf0f7389082ac94	templates/languages/flutter/linux-desktop--extension.toml
 extension	flutter+vscode-ext	0.1.0	960dbb4948451317c93bf4702e9d4a6b9f75d693923e9b82f01a42779b159b06	templates/languages/flutter/vscode-ext--extension.toml
 extension	fpc+lazarus	0.1.0	f0d4166798a779dcb7d0cba4773a0f4e5ded3050fc3391045488e9d62cbc3cce	templates/languages/fpc/lazarus--extension.toml
 extension	fpc+vscode-ext	1.0.0	3eff946a4e4eaa30869f8ae31814cb5a78541a0d46cbd1adb416761174244ae1	templates/languages/fpc/vscode-ext--extension.toml
@@ -811,7 +811,7 @@ extension	lsp+json	0.1.0	bd429158394dc218aa8900c4878c2d4ff3e8e24b1d5c424df20e64e
 extension	lsp+markdown	0.2.0	95079087ea565c2f1c9496f5c3e2d95c67cce3bf667ed269bdf57e7231193617	templates/tools/lsp/markdown--extension.toml
 extension	lsp+python	0.1.0	5fb832798e86e132191ced724186fe80224bcfb14b16d5bd284cf84639c57dc7	templates/tools/lsp/python--extension.toml
 extension	lsp+react	0.1.0	bca42f79100c14022d2f9a94108a71d7a30147df03434f24a4f0440050b0a8ce	templates/tools/lsp/react--extension.toml
-extension	lsp+sql	0.1.0	29787139acbd44c0117afdb508bf6950f5e02fe3eee84a255072d58a6343b31e	templates/tools/lsp/sql--extension.toml
+extension	lsp+sql	0.1.1	4421b8633bd5cfbf9ec2af3abcac096434015e5d71b298a7d6b59ff13496711a	templates/tools/lsp/sql--extension.toml
 extension	lsp+svelte	0.1.0	f5d2618761b0c8766a71c98c1b644bb588fd21ed8c2bff7e1f5fd3760eb8dc1d	templates/tools/lsp/svelte--extension.toml
 extension	lsp+tailwind	0.1.0	61204fa83ee778a01988c299262e987ad2ab7b3996c28588b4415994da82aba3	templates/tools/lsp/tailwind--extension.toml
 extension	lsp+terraform	0.1.0	0d6e9804d2b6f463766cfb7be335e70672a5824ebbffca3e21e1ee2fd79ec648	templates/tools/lsp/terraform--extension.toml
