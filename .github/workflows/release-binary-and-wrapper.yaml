@@ -151,6 +151,12 @@ jobs:
       - name: Check catalog item versions
         run: ./build/check-catalog-versions.sh
 
+      # No test fixture or example may carry a copy of a built-in setup in its
+      # .booth/setups/: the copy runs instead of what the image ships, so the
+      # test stops testing the catalog. Refuse to publish otherwise.
+      - name: Check no .booth/setups/ shadows a built-in
+        run: ./build/check-setup-shadowing.sh
+
       - name: Package templates
         run: |
           zip -r dist/templates.zip templates/

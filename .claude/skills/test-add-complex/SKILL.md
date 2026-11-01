@@ -33,7 +33,10 @@ Pick the category by what the test is actually checking, not by habit:
 - **`security/`** — network or credential isolation (`--egress`, a credential mount's ownership).
 - **`desktop/`** — needs a real GUI/VNC/browser to assert on (a window manager, a real browser).
 
-The directory is also where fixtures live (a `.booth/`, a Boothfile, seed files).
+The directory is also where fixtures live (a `.booth/`, a Boothfile, seed files). Never put a copy of
+a built-in setup in the fixture's `.booth/setups/`: it runs instead of the image's, so the test stops
+testing the catalog (`tests/README.md` → *A fixture never copies a built-in setup*). A guard fails
+the suite if one exists.
 
 ## 2. The skeleton
 
