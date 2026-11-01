@@ -1,7 +1,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 # ---- GHC into a ghcup tree, prebuilt when possible ----
 #
@@ -53,4 +53,38 @@ cb_ghc_install() {
       | awk -v t="$want" '{ n = split($3, tags, ","); for (i = 1; i <= n; i++) if (tags[i] == t) { print $2; exit } }')"
   fi
   CB_GHC_VERSION="$version"
+}
+
+# cb_hls_install <ghcup> <version|recommended|latest> <ghc-version>
+#   Installs that HLS, with its server for <ghc-version>, into the ghcup tree <ghcup> lives
+#   in, from CodingBoothPrebuilt when a build is published for that pair, else with
+#   `ghcup install hls`; then makes it ghcup's default HLS. The prebuilt is built against
+#   ghcup's binary distribution of that GHC (what cb_ghc_install installs either way);
+#   ghcup's own aarch64 HLS builds are not, and exit with "GHC ABIs don't match". Each GHC
+#   is its own asset, unpacked into the same .ghcup/hls/<version>. Sets CB_HLS_VERSION.
+cb_hls_install() {
+  local ghcup="$1" want="$2" ghc="$3" version dest bin
+  version="$want"
+  if ! [[ "$want" =~ ^[0-9]+(\.[0-9]+)+$ ]]; then
+    version="$("$ghcup" list -t hls -c available -r 2>/dev/null \
+      | awk -v t="$want" '{ n = split($3, tags, ","); for (i = 1; i <= n; i++) if (tags[i] == t) { print $2; exit } }')"
+  fi
+
+  bin="$(dirname "$ghcup")"
+  dest="$(dirname "$bin")/hls/${version}"
+  if [ -n "$version" ] && [ -x "${dest}/bin/haskell-language-server-${ghc}" ]; then
+    :
+  elif [ -n "$version" ] && cb_prebuilt_install hls "${version}-ghc${ghc}" native "$dest"; then
+    rm -f "${dest}/BUILD-INFO.txt"
+    # The versioned links `ghcup install hls` adds, which `ghcup set hls` looks for.
+    ln -sfn "../hls/${version}/bin/haskell-language-server-${ghc}" "${bin}/haskell-language-server-${ghc}~${version}"
+    ln -sfn "../hls/${version}/bin/haskell-language-server-wrapper" "${bin}/haskell-language-server-wrapper-${version}"
+  else
+    echo "📦 Installing HLS ${want} with ghcup..."
+    "$ghcup" install hls "$want"
+    [ -n "$version" ] || version="$("$ghcup" list -t hls -c installed -r 2>/dev/null \
+      | awk -v t="$want" '{ n = split($3, tags, ","); for (i = 1; i <= n; i++) if (tags[i] == t) { print $2; exit } }')"
+  fi
+  "$ghcup" set hls "${version:-$want}"
+  CB_HLS_VERSION="$version"
 }
