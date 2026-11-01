@@ -11,15 +11,38 @@ This file contains a list of changes for each released version.
   folders a nested branch made (`feature/`) are still removed. git also deletes `.git/worktrees/`
   with the last worktree, which gave the next one `fatal: not a git repository` in the booth; the
   booth now refreshes the path to the worktree's git folder as it starts.
-- **`lsp+haskell` warns on arm64 when HLS cannot load the installed GHC.** ghcup's HLS 2.14.0.0 for
-  aarch64 Linux is an unofficial build made against a different GHC 9.10.3 than the official one, so
-  it exits with "GHC ABIs don't match" and editors get no Haskell server. The setup now type-checks
-  a one-line file at build time and says so, instead of leaving the editor silent.
+- **HLS works on arm64.** ghcup's HLS for aarch64 Linux is an unofficial build made against other
+  builds of each GHC than the official ones, so it exited with "GHC ABIs don't match" and editors
+  got no Haskell server. The `haskell` setup (which installs HLS by default) and `lsp+haskell` now
+  install HLS from CodingBoothPrebuilt, built against the very GHC the booth gets, on x86_64 and
+  arm64 alike, for ghcup's recommended and latest HLS on GHC 9.6 and later; other pairs still come
+  from ghcup. `lsp+haskell` also type-checks a one-line file at build time and warns if the server
+  still cannot load the GHC, instead of leaving the editor silent.
 - **Nim installs on arm64.** nim-lang.org publishes Linux tarballs for x64 only (its arm64
   nightlies are branch snapshots, not releases), so `--select nim` on Apple Silicon or Ubuntu on
   ARM failed with a 404 and no image. Nim now comes as a sha256-checked build from
   CodingBoothPrebuilt on x86_64 and arm64 alike, laid out like upstream's x64 tarball; a version
   not prebuilt yet is built from nim-lang.org's source tarball (a few minutes).
+- **Flutter installs on arm64.** Google's Linux SDK archive bundles an x64 Dart SDK, so
+  `--select flutter` skipped Flutter on Apple Silicon and Ubuntu on ARM. Google does publish the
+  linux-arm64 Dart SDK and engine artifacts, though, so on arm64 the setup now checks the release
+  out from its git tag and the flutter tool fetches those. Web and Linux desktop builds work there;
+  `flutter+android` still needs the Android SDK, which is x86_64 only.
+- **sqls installs on arm64.** sqls publishes a linux amd64 build only, so `lsp+sql` skipped it on
+  arm64. It now comes as a sha256-checked build from CodingBoothPrebuilt on x86_64 and arm64
+  alike; a version not prebuilt yet is built from its release tag with a temporary Go toolchain.
+- **HeidiSQL installs on arm64.** Upstream packages its Linux build as an amd64 `.deb` only, and
+  that needs a `libqt6pas6` Ubuntu does not ship, so `heidisql` was skipped on arm64. It now comes
+  from CodingBoothPrebuilt on both CPUs: upstream's Qt6 build, made with the same Lazarus release
+  and patches, with its `libQt6Pas` inside, in `/opt/heidisql/heidisql-<version>`. A version not
+  prebuilt yet uses upstream's `.deb` on amd64 and is skipped with a warning on arm64.
+- **Elm 0.19.1 comes from CodingBoothPrebuilt on both CPUs.** Upstream's 0.19.1 binary is x64
+  only, so arm64 used an unchecked community build that also needed Ubuntu 20.04's `libffi7`.
+  0.19.1 is now built from its tag, sha256-checked, on x86_64 and arm64 alike; npm is the fallback
+  on x86_64. 0.19.2 and later still use upstream's binaries.
+- **Older DBeaver releases install on arm64.** Releases before 25.3.1 have no arm64 `.deb`, so a
+  pinned one failed there. Those releases do ship an aarch64 tarball without a JRE; the setup now
+  installs it where the `.deb` would, with OpenJDK 21 from apt.
 - **TTT is the default editor; Fresh left the base image.** `$EDITOR` and `editor` are now TTT
   1.9.0, and a plain booth points it at whichever language servers it installs (what `ttt+lsp` did;
   delete an entry from `lsp.servers` in `~/.config/ttt/settings.json` to turn one off). Fresh is

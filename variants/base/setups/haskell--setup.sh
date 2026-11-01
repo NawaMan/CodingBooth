@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.1.0
+# cb-version: 1.2.0
 
 set -Eeuo pipefail
 
@@ -141,7 +141,7 @@ fi
 
 if [ "$WITH_HLS" -eq 1 ]; then
   echo "📦 Installing HLS..."
-  "$GHCUP" install hls
+  cb_hls_install "$GHCUP" recommended "${CB_GHC_VERSION:-${GHC_VERSION}}"
 fi
 
 # --- verify GHC and Cabal are present ---
