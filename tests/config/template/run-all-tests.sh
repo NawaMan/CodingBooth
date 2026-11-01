@@ -51,6 +51,13 @@ SKIP_COUNT=0
 FAIL_TESTS=()
 SKIP_TESTS=()
 
+# Retry a failed test once, immediately. Every test here builds a real image, so
+# an archive 503 or a registry blip fails it for reasons a second attempt does
+# not have — and without this, run-automate-tests.sh's only answer is to rerun
+# the whole suite. A pass that needed the retry is still listed at the end. 2 is
+# `skip` (test-helpers--source.sh), which no retry changes.
+RETRIED_TESTS=()
+
 OVERALL_START=$(date +%s)
 
 for test_file in "${test_files[@]}"; do
@@ -62,6 +69,13 @@ for test_file in "${test_files[@]}"; do
     set +e
     (cd "$SCRIPT_DIR" && run_test_script bash "$test_file" $VERBOSE)
     rc=$?
+    if [[ $rc -ne 0 && $rc -ne 2 ]]; then
+        echo "⚠️  FAILED: ${name} — retrying once"
+        RETRIED_TESTS+=("$name")
+        (cd "$SCRIPT_DIR" && run_test_script bash "$test_file" $VERBOSE)
+        rc=$?
+        [[ $rc -eq 0 ]] && echo "✅ PASSED after retry: ${name}"
+    fi
     set -e
 
     if [[ $rc -eq 0 ]]; then
@@ -85,11 +99,22 @@ echo "  Total: ${TEST_COUNT}   Passed: ${PASS_COUNT}   Skipped: ${SKIP_COUNT}   
 echo "  Duration: ${OVERALL_DURATION}s"
 echo "========================================"
 
+# "  - <name>", as every suite runner prints its lists: run-automate-tests.sh
+# reads failures and flakes from exactly that shape. (Not `echo -e "\u274c"`:
+# macOS's bash 3.2 echo prints that literally, and the line stopped counting.)
 if [[ ${SKIP_COUNT} -gt 0 ]]; then
     echo ""
     echo "Skipped tests:"
     for T in "${SKIP_TESTS[@]}"; do
-        echo -e "  \u23ed  ${T}"
+        echo "  - ${T}"
+    done
+fi
+
+if [[ ${#RETRIED_TESTS[@]} -gt 0 ]]; then
+    echo ""
+    echo "⚠️  Retried after a first-attempt failure: ${#RETRIED_TESTS[@]}"
+    for T in "${RETRIED_TESTS[@]}"; do
+        echo "  - ${T}"
     done
 fi
 
@@ -97,7 +122,7 @@ if [[ ${FAIL_COUNT} -gt 0 ]]; then
     echo ""
     echo "Failed tests:"
     for T in "${FAIL_TESTS[@]}"; do
-        echo -e "  \u274c ${T}"
+        echo "  - ${T}"
     done
     echo ""
     exit 1
