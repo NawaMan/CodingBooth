@@ -34,9 +34,11 @@ echo "=== SCRIPTS ==="
 # The local build, installed the way `install` lays it out, so the wrapper
 # verifies and runs it without a download. Which file is this checkout's Linux
 # binary depends on who built it: see 097.
+# (pattern) with the leading paren: macOS bash 3.2 parses this heredoc while
+# looking for the $( )'s close, and a bare `pattern)` ends it early.
 case "$(uname -m)" in
-    aarch64|arm64) arch=arm64 ;;
-    *)             arch=amd64 ;;
+    (aarch64|arm64) arch=arm64 ;;
+    (*)             arch=amd64 ;;
 esac
 if [[ -s "/booth/bin/codingbooth-linux-$arch" ]]; then
     checkout_binary="/booth/bin/codingbooth-linux-$arch"

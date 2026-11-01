@@ -13,14 +13,16 @@ mkdir -p shim
 cat > shim/docker <<'SH'
 #!/usr/bin/env bash
 echo "STUB-DOCKER: $*" >> /tmp/docker-calls.log
+# (pattern) with the leading paren: macOS bash 3.2 parses this heredoc while
+# looking for the outer $( )'s close, and a bare `pattern)` ends it early.
 case "$1" in
-  info)
+  (info)
     cat /tmp/docker-info-json
     ;;
-  version)
+  (version)
     echo '29.0.0'
     ;;
-  *)
+  (*)
     echo "unexpected docker $*" >&2
     exit 1
     ;;
