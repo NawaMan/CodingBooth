@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.1.1
 
 # flutter-android--setup.sh
 # Points Flutter at the Android SDK and precaches the Android engine artifacts,
@@ -54,7 +54,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # ---- guards ----
-# Both prerequisites bail out on arm64 by design, so this one has to as well --
+# The Android SDK bails out on arm64 by design, so this one has to as well --
 # and it must skip rather than fail, or every arm64 build breaks here.
 if ! command -v flutter >/dev/null 2>&1; then
   skip_setup "$SCRIPT_NAME" "Flutter not installed (run flutter--setup.sh first)"

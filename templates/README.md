@@ -618,7 +618,7 @@ never the whole context, so editing source does not invalidate its layer.
 | `lsp/python--extension`            | Python (pylsp) *(requires python)* |
 | `lsp/c--extension`                 | C / C++ (clangd; clangd in VS Code) |
 | `lsp/java--extension`              | Java (jdtls) *(requires java)* |
-| `lsp/sql--extension`               | SQL (sqls, amd64 only; SQLTools in VS Code) |
+| `lsp/sql--extension`               | SQL (sqls; SQLTools in VS Code) |
 | `lsp/tailwind--extension`          | Tailwind CSS *(requires nodejs)* |
 | `lsp/terraform--extension`         | Terraform (terraform-ls; HashiCorp Terraform in VS Code) |
 | `lsp/dockerfile--extension`        | Dockerfile (Docker in VS Code) *(requires nodejs)* |

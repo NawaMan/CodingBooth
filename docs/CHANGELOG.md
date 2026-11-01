@@ -20,6 +20,17 @@ This file contains a list of changes for each released version.
   ARM failed with a 404 and no image. Nim now comes as a sha256-checked build from
   CodingBoothPrebuilt on x86_64 and arm64 alike, laid out like upstream's x64 tarball; a version
   not prebuilt yet is built from nim-lang.org's source tarball (a few minutes).
+- **Flutter installs on arm64.** Google's Linux SDK archive bundles an x64 Dart SDK, so
+  `--select flutter` skipped Flutter on Apple Silicon and Ubuntu on ARM. Google does publish the
+  linux-arm64 Dart SDK and engine artifacts, though, so on arm64 the setup now checks the release
+  out from its git tag and the flutter tool fetches those. Web and Linux desktop builds work there;
+  `flutter+android` still needs the Android SDK, which is x86_64 only.
+- **sqls installs on arm64.** sqls publishes a linux amd64 build only, so `lsp+sql` skipped it on
+  arm64. It now comes as a sha256-checked build from CodingBoothPrebuilt on x86_64 and arm64
+  alike; a version not prebuilt yet is built from its release tag with a temporary Go toolchain.
+- **Older DBeaver releases install on arm64.** Releases before 25.3.1 have no arm64 `.deb`, so a
+  pinned one failed there. Those releases do ship an aarch64 tarball without a JRE; the setup now
+  installs it where the `.deb` would, with OpenJDK 21 from apt.
 - **TTT is the default editor; Fresh left the base image.** `$EDITOR` and `editor` are now TTT
   1.9.0, and a plain booth points it at whichever language servers it installs (what `ttt+lsp` did;
   delete an entry from `lsp.servers` in `~/.config/ttt/settings.json` to turn one off). Fresh is
