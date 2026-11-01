@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 # lsp--sqls--setup.sh — Install sqls, a SQL language server.
 set -Eeuo pipefail
@@ -19,8 +19,9 @@ Examples:
 
 Notes:
 - Installs the binary to /usr/local/bin/sqls
-- sqls publishes a linux build for amd64 only; on arm64 this script explains and skips
-- sqls publishes no checksums; the download is over HTTPS from GitHub releases
+- Comes prebuilt (sha256-checked) from https://github.com/NawaMan/CodingBoothPrebuilt on
+  both CPUs (upstream publishes linux amd64 only); a version not prebuilt (yet) is
+  built from its release tag with a temporary Go toolchain
 - Connections go in ~/.config/sqls/config.yml (see the sqls README)
 USAGE
 }
@@ -38,20 +39,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 case "$(uname -m)" in
-  x86_64|amd64) ;;
-  aarch64|arm64)
-    echo "⚠️  sqls publishes no linux arm64 build; skipping."
-    echo "    With the go template selected, 'install go github.com/sqls-server/sqls@latest' builds it."
-    exit 0 ;;
-  *) echo "❌ Unsupported arch: $(uname -m) (need x86_64)" >&2; exit 1 ;;
+  x86_64|amd64|aarch64|arm64) ;;
+  *) echo "❌ Unsupported arch: $(uname -m) (need x86_64 or arm64)" >&2; exit 1 ;;
 esac
-
-if ! command -v unzip >/dev/null 2>&1; then
-  export DEBIAN_FRONTEND=noninteractive
-  apt-get update
-  apt-get install -y --no-install-recommends unzip
-  rm -rf /var/lib/apt/lists/*
-fi
 
 VERSION_RE='^[0-9]+\.[0-9]+\.[0-9]+$'
 if [[ "$REQ_VER" == "latest" ]]; then
@@ -69,17 +59,41 @@ if ! [[ "$VERSION" =~ $VERSION_RE ]]; then
   exit 2
 fi
 
-ZIP="sqls-linux-${VERSION}.zip"
-URL="https://github.com/sqls-server/sqls/releases/download/v${VERSION}/${ZIP}"
 echo "⬇️  Installing sqls ${VERSION} ..."
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
-if ! curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$URL" -o "$TMP/$ZIP"; then
-  echo "❌ Download failed: ${URL}" >&2
-  exit 1
+
+# Built as upstream's .goreleaser.yml builds the linux binary: cgo on (the SQLite
+# driver is C), -s -w, and the commit in main.revision.
+build_from_source() {
+  echo "ℹ️  sqls ${VERSION}: not prebuilt for this image; building from source..."
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update
+  apt-get install -y --no-install-recommends build-essential git
+  rm -rf /var/lib/apt/lists/*
+  local go_arch go_version
+  case "$(uname -m)" in x86_64|amd64) go_arch=amd64 ;; *) go_arch=arm64 ;; esac
+  go_version=$(curl -fsSL --retry 3 'https://go.dev/dl/?mode=json' | jq -er '.[0].version')
+  curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL \
+    "https://go.dev/dl/${go_version}.linux-${go_arch}.tar.gz" -o "$TMP/go.tar.gz"
+  tar -xzf "$TMP/go.tar.gz" -C "$TMP"
+  git -c advice.detachedHead=false clone -q --depth 1 --branch "v${VERSION}" \
+    https://github.com/sqls-server/sqls "$TMP/src"
+  (
+    cd "$TMP/src"
+    export PATH="$TMP/go/bin:$PATH" GOPATH="$TMP/gopath" GOCACHE="$TMP/gocache" CGO_ENABLED=1
+    go build -ldflags "-s -w -X main.revision=$(git rev-parse --short HEAD)" -o "$TMP/sqls/sqls" .
+  )
+}
+
+SETUP_LIBS_DIR="${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}"
+if [ ! -r "${SETUP_LIBS_DIR}/prebuilt-source.sh" ]; then
+  SETUP_LIBS_DIR="$(dirname "$0")/libs"
 fi
-unzip -q -o "$TMP/$ZIP" sqls -d "$TMP"
-install -m 755 "$TMP/sqls" /usr/local/bin/sqls
+source "${SETUP_LIBS_DIR}/prebuilt-source.sh"
+
+cb_prebuilt_install sqls "$VERSION" native "$TMP/sqls" || build_from_source
+install -m 755 "$TMP/sqls/sqls" /usr/local/bin/sqls
 
 echo "✅ sqls installed."
 echo -n "   sqls → "; sqls --version 2>/dev/null || true
