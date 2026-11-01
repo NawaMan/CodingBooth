@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -23,8 +23,9 @@ Notes:
   also install a standalone Dart SDK — two Darts on PATH is a version-skew trap.
 - Web is ready out of the box. Android and Linux-desktop targets need extra
   pieces: see flutter-android--setup.sh and flutter-linux-desktop--setup.sh.
-- Google publishes the Linux SDK for x86_64 only, so on arm64 this warns and
-  skips rather than failing the build.
+- Google publishes the Linux SDK archive for x86_64 only. On arm64 the same
+  release comes from a git checkout of its tag, and the flutter tool fetches
+  the linux-arm64 Dart SDK and engine artifacts Google does publish.
 USAGE
 }
 
@@ -52,17 +53,17 @@ BIN_DIR=/usr/local/bin
 RELEASES_URL="https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json"
 BASE_URL="https://storage.googleapis.com/flutter_infra_release/releases"
 
-# ---- arch gate ----
-# Checked against Google's own manifest: every stable release carries
-# dart_sdk_arch "x64" and there has never been a linux-arm64 stable build. Warn
-# and skip rather than fail, so the image still comes up -- same contract as
-# unsupported-arch in the template.
+# ---- arch ----
+# Every stable release in Google's manifest is an x64 archive (dart_sdk_arch
+# "x64"): the archive bundles an x64 Dart SDK. The SDK itself is a git checkout,
+# and for each engine Google also publishes the linux-arm64 Dart SDK and engine
+# artifacts, which the flutter tool downloads on first run. So on arm64 the
+# release is checked out from its tag instead of unpacked.
 dpkgArch="$(dpkg --print-architecture)"
-if [[ "$dpkgArch" != "amd64" ]]; then
-  echo "⚠️  The Flutter SDK for Linux is published for x86_64 only."
-  echo "    Host architecture is '${dpkgArch}' — skipping the Flutter install."
-  exit 0
-fi
+case "$dpkgArch" in
+  amd64|arm64) ;;
+  *) echo "❌ Unsupported architecture: ${dpkgArch} (Flutter runs on amd64 and arm64)" >&2; exit 1 ;;
+esac
 
 # ---- base deps ----
 # git is not optional: the SDK ships as a git checkout and the flutter tool
@@ -104,16 +105,28 @@ fi
 INSTALL_DIR="/usr/local/flutter-${VERSION}"
 
 # ---- download + install ----
-echo "Downloading Flutter ${VERSION} ..."
-curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "${BASE_URL}/${ARCHIVE}" -o "$TMP/flutter.tar.xz"
-
-echo "Installing Flutter to ${INSTALL_DIR} ..."
-# The tarball unpacks to a plain 'flutter/', so extract to a scratch dir and
-# move it into place under its version.
 rm -rf "$INSTALL_DIR" "$TMP/unpack"
-mkdir -p "$TMP/unpack"
-tar -C "$TMP/unpack" -xJf "$TMP/flutter.tar.xz"
-mv "$TMP/unpack/flutter" "$INSTALL_DIR"
+if [[ "$dpkgArch" == "amd64" ]]; then
+  echo "Downloading Flutter ${VERSION} ..."
+  curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "${BASE_URL}/${ARCHIVE}" -o "$TMP/flutter.tar.xz"
+
+  echo "Installing Flutter to ${INSTALL_DIR} ..."
+  # The tarball unpacks to a plain 'flutter/', so extract to a scratch dir and
+  # move it into place under its version.
+  mkdir -p "$TMP/unpack"
+  tar -C "$TMP/unpack" -xJf "$TMP/flutter.tar.xz"
+  mv "$TMP/unpack/flutter" "$INSTALL_DIR"
+else
+  echo "Checking out Flutter ${VERSION} to ${INSTALL_DIR} ..."
+  git -c advice.detachedHead=false clone -q --depth 1 --branch "$VERSION" \
+    https://github.com/flutter/flutter.git "$INSTALL_DIR"
+  # The release archive is a checkout of the stable branch tracking origin, which
+  # is how the flutter tool tells its channel; make this one look the same.
+  git -C "$INSTALL_DIR" checkout -q -b stable
+  git -C "$INSTALL_DIR" config remote.origin.fetch '+refs/heads/stable:refs/remotes/origin/stable'
+  git -C "$INSTALL_DIR" update-ref refs/remotes/origin/stable HEAD
+  git -C "$INSTALL_DIR" branch -q --set-upstream-to=origin/stable stable
+fi
 ln -sfn "$INSTALL_DIR" /usr/local/flutter-current
 
 # ---- git ownership ----

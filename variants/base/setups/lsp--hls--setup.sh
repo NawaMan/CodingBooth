@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.1
+# cb-version: 0.2.0
 
 # lsp--hls--setup.sh — Make the Haskell Language Server reachable for editors.
 set -Eeuo pipefail
@@ -22,6 +22,8 @@ Notes:
 - Links haskell-language-server-wrapper (what editors start) and haskell-language-server
   onto PATH through hswrap, so they work in non-login shells too
 - HLS ships one binary per GHC it supports; the setup warns when the installed GHC is not one
+- Comes prebuilt (sha256-checked) from https://github.com/NawaMan/CodingBoothPrebuilt, built
+  against the booth's GHC, when published for that HLS and GHC; else ghcup installs it
 USAGE
 }
 
@@ -49,9 +51,13 @@ export GHCUP_INSTALL_BASE_PREFIX="$(readlink -f "$HASKELL_HOME")"
 export PATH="${GHCUP_BIN}:${HASKELL_HOME}/.cabal/bin:${PATH}"
 
 if [[ -n "$REQ_VER" || ! -x "${GHCUP_BIN}/haskell-language-server-wrapper" ]]; then
-  echo "📦 Installing HLS ${REQ_VER:-recommended} with ghcup ..."
-  ghcup install hls "${REQ_VER:-recommended}"
-  ghcup set hls "${REQ_VER:-recommended}"
+  SETUP_LIBS_DIR="${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}"
+  if [ ! -r "${SETUP_LIBS_DIR}/ghc-source.sh" ]; then
+    SETUP_LIBS_DIR="$(dirname "$0")/libs"
+  fi
+  source "${SETUP_LIBS_DIR}/ghc-source.sh"
+  echo "📦 Installing HLS ${REQ_VER:-recommended} ..."
+  cb_hls_install "${GHCUP_BIN}/ghcup" "${REQ_VER:-recommended}" "$(ghc --numeric-version)"
 fi
 
 # Editors start the wrapper, which picks the per-GHC server for the project.
