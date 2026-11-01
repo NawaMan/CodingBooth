@@ -45,10 +45,14 @@ just test             # flutter test
 just build            # flutter build web --release
 ```
 
-Each recipe runs `flutter pub get` first. `booth_counter/.dart_tool/` is in the mounted project and
-outlives the booth, but the packages it points at are in `~/.pub-cache`, which a new booth starts
-without — and flutter, seeing that `.dart_tool` is newer than `pubspec.lock`, does not resolve
-again on its own. Run `flutter` by hand in a fresh booth and you want the same `pub get` first.
+`booth_counter/.dart_tool/` is in the mounted project and outlives the booth, and it points at the
+packages in `~/.pub-cache`. `flutter+pub-cache` (auto-selected with `flutter`, `cache-dirs` in
+`.booth/config.toml`) keeps that cache in `.booth/cache/`, so the next booth still has them — and
+does not download them again. Without it, a new booth starts with an empty cache, and flutter,
+seeing `.dart_tool` newer than `pubspec.lock`, does not resolve again on its own: the build fails
+reading packages that are gone. The recipes still run `flutter pub get` first, which covers a
+cleared `.booth/cache/`.
+
 `pubspec.lock` itself is not committed: the booth installs Flutter `latest`, whose SDK pins the
 transitive packages, so any committed lock went stale at the next Flutter release.
 
@@ -90,9 +94,13 @@ that looks like on its own.
 
 ```bash
 ./.cb-tests/test001-flutter--on-host.sh
+./.cb-tests/test002-pub-cache-across-booths--on-host.sh
 ```
 
-Starts the booth and runs the in-booth suite:
+`test002` runs two booths: the first resolves with `flutter pub get`, the second runs `flutter test`
+**without** it, so it passes only if the packages outlived the first container.
+
+`test001` starts the booth and runs the in-booth suite:
 
 | Test | Asserts |
 | --- | --- |

@@ -4,6 +4,14 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A Flutter project's second booth no longer fails to build.** `~/.pub-cache` died with each
+  booth, while the project's `.dart_tool/` lives in the mounted folder and kept pointing into it.
+  Flutter only re-resolves when `pubspec.lock` is newer, so in every booth after the first,
+  `flutter build` and `flutter test` failed reading packages that were gone, until someone ran
+  `flutter pub get`. The new `flutter+pub-cache` extension, auto-selected with `flutter`, keeps
+  `~/.pub-cache` in `.booth/cache/` (gitignored, this machine only), so packages also are not
+  downloaded again. Existing booths pick it up on the next `booth config`; `flutter~pub-cache`
+  drops it.
 - **The worktree root stays after the last worktree goes.** When `booth --worktree` (or `booth
   worktree remove`) removed the last worktree, it also deleted `../<project>.worktrees/`. On macOS,
   Docker Desktop then refused to mount the next worktree created under it within about a minute

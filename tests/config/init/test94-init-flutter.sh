@@ -21,6 +21,18 @@ if grep -qE '^setup (jdk|android-sdk)' "$boothfile"; then
     exit 1
 fi
 
+# pub-cache is auto-select too: ~/.pub-cache must outlive the booth, or the
+# project's .dart_tool points at packages the next booth does not have.
+configtoml="$prj/.booth/config.toml"
+assert-line "$configtoml" 'cache-dirs = ' '["home/coder/.pub-cache"]' "pub cache persisted (auto-selected)"
+
+# --- 1b. ...and can be dropped ---------------------------------------------
+run booth config $prj --no-tui --overwrite --select "flutter~pub-cache"
+if grep -q '\.pub-cache' "$configtoml"; then
+    echo "  ❌ flutter~pub-cache still persists ~/.pub-cache"
+    exit 1
+fi
+
 # --- 2. The version pin lands ----------------------------------------------
 run booth config $prj --no-tui --overwrite --select "flutter:3.41.9"
 assert-line "$boothfile" "arg FLUTTER_VERSION=" "3.41.9" "FLUTTER_VERSION pin"
