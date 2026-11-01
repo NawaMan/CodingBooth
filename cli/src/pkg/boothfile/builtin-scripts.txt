@@ -274,6 +274,8 @@ setup posting
 setup protobuf-code-extension
 setup protoc-gen-grpc-java
 setup protoc-gen-grpc-web
+setup protoc-gen-prost
+setup protoc-gen-tonic
 setup pulumi
 setup puppeteer
 setup pycharm

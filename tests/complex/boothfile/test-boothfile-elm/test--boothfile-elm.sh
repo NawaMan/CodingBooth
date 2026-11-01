@@ -17,8 +17,8 @@ cd "$SCRIPT_DIR"
 
 source ../../../common--source.sh
 
-# On arm64, Elm 0.19.1's npm wrapper resolves to a non-existent linux binary;
-# elm--setup.sh has an arm64 fallback that the Hub image doesn't carry yet.
+# Elm 0.19.1 comes from CodingBoothPrebuilt on both CPUs, which the Hub image
+# may not carry yet.
 use_local_base_image || exit 0
 
 echo "=== Test: Boothfile Elm Installation ==="

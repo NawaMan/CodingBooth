@@ -1,4 +1,4 @@
-cb-version = "0.1.0"
+cb-version = "0.1.1"
 display-name = "Flutter Android Target"
 display-disc = "Wires Flutter to the Android SDK so `flutter build apk` works"
 display-detail = """Points Flutter at the Android SDK and precaches the Android engine artifacts, turning a \
@@ -30,7 +30,7 @@ tags = [
 requires = ["android-sdk"]
 
 unsupported-arch = ["arm64"]
-unsupported-arch-note = "Both the Flutter SDK and the Android SDK are published for linux x86_64 only."
+unsupported-arch-note = "The Android SDK tools are published for linux x86_64 only."
 
 # Order 67: after Flutter itself (the base band at 50), the Android SDK (60) and
 # the emulator (62), all of which this reads.

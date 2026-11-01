@@ -2,10 +2,10 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
-# gnupg--setup.sh — Build GnuPG 2.5 from the upstream release into /usr/local,
-# so it shadows Ubuntu's gpg on PATH.
+# gnupg--setup.sh — Install GnuPG 2.5 into /usr/local, so it shadows Ubuntu's
+# gpg on PATH: prebuilt when CodingBoothPrebuilt has it, else from the release.
 #
 # Ubuntu 26.04 ships GnuPG 2.4, a series that has reached its upstream end of
 # life; 2.5 is the stable line and adds post-quantum (Kyber / ML-KEM) keys.
@@ -26,9 +26,11 @@ Examples:
 
 Notes:
 - Installs gpg, gpg-agent, gpgconf, dirmngr, ... to /usr/local/bin
-- Checks the release signature against the GnuPG release keys, and the
-  default version's tarball against its pinned SHA256
-- Build tools and -dev packages are removed again after the build
+- Comes prebuilt (sha256-checked) from https://github.com/NawaMan/CodingBoothPrebuilt,
+  built there from the release tarball after the same signature check
+- A version not prebuilt (yet) is built from source: the release signature is checked
+  against the GnuPG release keys, the default version's tarball against its pinned
+  SHA256, and build tools and -dev packages are removed again after the build
 USAGE
 }
 
@@ -62,94 +64,132 @@ RELEASE_KEYS=(
 SETUPS_DIR="$(dirname "$0")"
 [ -x "${SETUPS_DIR}/apt--install.sh" ] || SETUPS_DIR=/opt/codingbooth/setups
 
-BUILD_DEPS=(
-  bzip2 ca-certificates curl gcc make pkgconf
-  libgpg-error-dev libgcrypt20-dev libassuan-dev libksba-dev libnpth0-dev
-  libgnutls28-dev libsqlite3-dev libbz2-dev zlib1g-dev libreadline-dev libldap-dev
-)
-
-# Everything installed only for the build is removed after it: list what is
-# already there, so only the packages this run adds are candidates.
-BEFORE=$(dpkg-query -W -f '${db:Status-Abbrev} ${Package}\n' | awk '$1 == "ii" { print $2 }' | LC_ALL=C sort -u)
-
-echo "⬇️  Installing GnuPG ${VERSION} build dependencies ..."
-"${SETUPS_DIR}/apt--install.sh" "${BUILD_DEPS[@]}"
-
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
-URL="https://gnupg.org/ftp/gcrypt/gnupg/gnupg-${VERSION}.tar.bz2"
-echo "⬇️  Downloading ${URL} ..."
-for f in "gnupg-${VERSION}.tar.bz2" "gnupg-${VERSION}.tar.bz2.sig"; do
-  if ! curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "${URL%/*}/${f}" -o "$TMP/$f"; then
-    echo "❌ Download failed: ${URL%/*}/${f}" >&2
-    exit 1
+# The prebuilt asset is the installed /usr/local tree, built with this script's
+# configure flags after the same signature check (CodingBoothPrebuilt's
+# tools/gnupg/build.sh), plus RUNTIME-DEPS.txt: the Ubuntu packages holding the
+# libraries it links.
+install_prebuilt() {
+  local src="$TMP/prebuilt" deps=() pkg
+  # Ubuntu's own gnupg already pulls in most of them; install only what is missing.
+  while read -r pkg; do
+    [[ -n "$pkg" ]] && ! dpkg -s "$pkg" >/dev/null 2>&1 && deps+=("$pkg")
+  done < "$src/RUNTIME-DEPS.txt"
+  if [[ ${#deps[@]} -gt 0 ]]; then
+    echo "⬇️  Installing GnuPG ${VERSION} runtime libraries ..."
+    "${SETUPS_DIR}/apt--install.sh" "${deps[@]}"
   fi
-done
-
-if [[ "$VERSION" == "$GNUPG_DEFAULT_VER" ]]; then
-  ACTUAL="$(sha256sum "$TMP/gnupg-${VERSION}.tar.bz2" | awk '{ print $1 }')"
-  if [[ "$ACTUAL" != "$GNUPG_DEFAULT_SHA256" ]]; then
-    echo "❌ SHA256 mismatch for gnupg-${VERSION}.tar.bz2 (expected '${GNUPG_DEFAULT_SHA256}', got '${ACTUAL}')" >&2
-    exit 1
-  fi
-fi
-
-# Verify with the gpg already in the image (Ubuntu's 2.4) in a throwaway home.
-# The key file comes from the server, so a signature only counts when its
-# primary key is one of RELEASE_KEYS.
-curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL https://gnupg.org/signature_key.asc -o "$TMP/keys.asc"
-mkdir -m 700 "$TMP/gnupghome"
-gpg --batch --quiet --homedir "$TMP/gnupghome" --import "$TMP/keys.asc" 2>/dev/null || true
-STATUS=$(gpg --batch --homedir "$TMP/gnupghome" --status-fd 1 \
-           --verify "$TMP/gnupg-${VERSION}.tar.bz2.sig" "$TMP/gnupg-${VERSION}.tar.bz2" 2>/dev/null || true)
-SIGNED_BY=$(awk '$2 == "VALIDSIG" { print $NF }' <<< "$STATUS")
-TRUSTED=""
-for fpr in $SIGNED_BY; do
-  for key in "${RELEASE_KEYS[@]}"; do
-    [[ "$fpr" == "$key" ]] && TRUSTED="$fpr"
+  local d
+  for d in bin sbin libexec share; do
+    [[ -d "$src/$d" ]] && cp -a "$src/$d" /usr/local/
   done
-done
-if [[ -z "$TRUSTED" ]]; then
-  echo "❌ gnupg-${VERSION}.tar.bz2 has no valid signature from a GnuPG release key; refusing to build it." >&2
-  exit 1
-fi
-echo "🔏 Signature good (${TRUSTED})"
+  mkdir -p /usr/local/share/doc/gnupg
+  cp "$src/BUILD-INFO.txt" "$src/COPYING" /usr/local/share/doc/gnupg/
+  ldconfig
+}
 
-echo "🔨 Building GnuPG ${VERSION} ..."
-tar -xjf "$TMP/gnupg-${VERSION}.tar.bz2" -C "$TMP"
-# --with-pinentry-pgm keeps gpg-agent on /usr/bin/pinentry, the alternative
-# that pinentry--setup.sh repoints at a desktop flavour; the default would be
-# /usr/local/bin/pinentry, which nothing provides.
-# The compiler's warnings go to a log, shown only when the build fails.
-if ! ( cd "$TMP/gnupg-${VERSION}" \
-       && ./configure --prefix=/usr/local --sysconfdir=/etc --localstatedir=/var \
-            --with-pinentry-pgm=/usr/bin/pinentry --disable-doc --disable-tests \
-       && make -j"$(nproc)" \
-       && make install ) > "$TMP/build.log" 2>&1; then
-  tail -40 "$TMP/build.log" >&2
-  echo "❌ GnuPG ${VERSION} build failed" >&2
-  exit 1
-fi
-ldconfig
+build_from_source() {
+  echo "ℹ️  GnuPG ${VERSION}: not prebuilt for this image; building from source..."
+  BUILD_DEPS=(
+    bzip2 ca-certificates curl gcc make pkgconf
+    libgpg-error-dev libgcrypt20-dev libassuan-dev libksba-dev libnpth0-dev
+    libgnutls28-dev libsqlite3-dev libbz2-dev zlib1g-dev libreadline-dev libldap-dev
+  )
 
-# Keep the runtime libraries the new binaries link against, then drop the rest
-# of what this run added (compilers, headers).
-LIBS=$(for b in /usr/local/bin/* /usr/local/libexec/*; do
-         ldd "$b" 2>/dev/null || true
-       done | awk '$3 ~ /^\// { print $3 }' | LC_ALL=C sort -u)
-NEEDED=$(for lib in $LIBS; do
-           dpkg -S "$(readlink -f "$lib")" 2>/dev/null || dpkg -S "$lib" 2>/dev/null || true
-         done | cut -d: -f1 | LC_ALL=C sort -u)
-AFTER=$(dpkg-query -W -f '${db:Status-Abbrev} ${Package}\n' | awk '$1 == "ii" { print $2 }' | LC_ALL=C sort -u)
-ADDED=$(LC_ALL=C comm -13 <(echo "$BEFORE") <(echo "$AFTER"))
-if [[ -n "$ADDED" ]]; then
-  # shellcheck disable=SC2086
-  apt-mark auto $ADDED >/dev/null
-  [[ -n "$NEEDED" ]] && apt-mark manual $NEEDED >/dev/null
-  apt-get autoremove -y --purge >/dev/null
+  # Everything installed only for the build is removed after it: list what is
+  # already there, so only the packages this run adds are candidates.
+  BEFORE=$(dpkg-query -W -f '${db:Status-Abbrev} ${Package}\n' | awk '$1 == "ii" { print $2 }' | LC_ALL=C sort -u)
+
+  echo "⬇️  Installing GnuPG ${VERSION} build dependencies ..."
+  "${SETUPS_DIR}/apt--install.sh" "${BUILD_DEPS[@]}"
+
+  URL="https://gnupg.org/ftp/gcrypt/gnupg/gnupg-${VERSION}.tar.bz2"
+  echo "⬇️  Downloading ${URL} ..."
+  for f in "gnupg-${VERSION}.tar.bz2" "gnupg-${VERSION}.tar.bz2.sig"; do
+    if ! curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "${URL%/*}/${f}" -o "$TMP/$f"; then
+      echo "❌ Download failed: ${URL%/*}/${f}" >&2
+      exit 1
+    fi
+  done
+
+  if [[ "$VERSION" == "$GNUPG_DEFAULT_VER" ]]; then
+    ACTUAL="$(sha256sum "$TMP/gnupg-${VERSION}.tar.bz2" | awk '{ print $1 }')"
+    if [[ "$ACTUAL" != "$GNUPG_DEFAULT_SHA256" ]]; then
+      echo "❌ SHA256 mismatch for gnupg-${VERSION}.tar.bz2 (expected '${GNUPG_DEFAULT_SHA256}', got '${ACTUAL}')" >&2
+      exit 1
+    fi
+  fi
+
+  # Verify with the gpg already in the image (Ubuntu's 2.4) in a throwaway home.
+  # The key file comes from the server, so a signature only counts when its
+  # primary key is one of RELEASE_KEYS.
+  curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL https://gnupg.org/signature_key.asc -o "$TMP/keys.asc"
+  mkdir -m 700 "$TMP/gnupghome"
+  gpg --batch --quiet --homedir "$TMP/gnupghome" --import "$TMP/keys.asc" 2>/dev/null || true
+  STATUS=$(gpg --batch --homedir "$TMP/gnupghome" --status-fd 1 \
+             --verify "$TMP/gnupg-${VERSION}.tar.bz2.sig" "$TMP/gnupg-${VERSION}.tar.bz2" 2>/dev/null || true)
+  SIGNED_BY=$(awk '$2 == "VALIDSIG" { print $NF }' <<< "$STATUS")
+  TRUSTED=""
+  for fpr in $SIGNED_BY; do
+    for key in "${RELEASE_KEYS[@]}"; do
+      [[ "$fpr" == "$key" ]] && TRUSTED="$fpr"
+    done
+  done
+  if [[ -z "$TRUSTED" ]]; then
+    echo "❌ gnupg-${VERSION}.tar.bz2 has no valid signature from a GnuPG release key; refusing to build it." >&2
+    exit 1
+  fi
+  echo "🔏 Signature good (${TRUSTED})"
+
+  echo "🔨 Building GnuPG ${VERSION} ..."
+  tar -xjf "$TMP/gnupg-${VERSION}.tar.bz2" -C "$TMP"
+  # --with-pinentry-pgm keeps gpg-agent on /usr/bin/pinentry, the alternative
+  # that pinentry--setup.sh repoints at a desktop flavour; the default would be
+  # /usr/local/bin/pinentry, which nothing provides.
+  # The compiler's warnings go to a log, shown only when the build fails.
+  if ! ( cd "$TMP/gnupg-${VERSION}" \
+         && ./configure --prefix=/usr/local --sysconfdir=/etc --localstatedir=/var \
+              --with-pinentry-pgm=/usr/bin/pinentry --disable-doc --disable-tests \
+         && make -j"$(nproc)" \
+         && make install ) > "$TMP/build.log" 2>&1; then
+    tail -40 "$TMP/build.log" >&2
+    echo "❌ GnuPG ${VERSION} build failed" >&2
+    exit 1
+  fi
+  ldconfig
+
+  # Keep the runtime libraries the new binaries link against, then drop the rest
+  # of what this run added (compilers, headers).
+  LIBS=$(for b in /usr/local/bin/* /usr/local/libexec/*; do
+           ldd "$b" 2>/dev/null || true
+         done | awk '$3 ~ /^\// { print $3 }' | LC_ALL=C sort -u)
+  NEEDED=$(for lib in $LIBS; do
+             dpkg -S "$(readlink -f "$lib")" 2>/dev/null || dpkg -S "$lib" 2>/dev/null || true
+           done | cut -d: -f1 | LC_ALL=C sort -u)
+  AFTER=$(dpkg-query -W -f '${db:Status-Abbrev} ${Package}\n' | awk '$1 == "ii" { print $2 }' | LC_ALL=C sort -u)
+  ADDED=$(LC_ALL=C comm -13 <(echo "$BEFORE") <(echo "$AFTER"))
+  if [[ -n "$ADDED" ]]; then
+    # shellcheck disable=SC2086
+    apt-mark auto $ADDED >/dev/null
+    [[ -n "$NEEDED" ]] && apt-mark manual $NEEDED >/dev/null
+    apt-get autoremove -y --purge >/dev/null
+  fi
+  rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*.deb
+}
+
+SETUP_LIBS_DIR="${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}"
+if [ ! -r "${SETUP_LIBS_DIR}/prebuilt-source.sh" ]; then
+  SETUP_LIBS_DIR="$(dirname "$0")/libs"
 fi
-rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*.deb
+source "${SETUP_LIBS_DIR}/prebuilt-source.sh"
+
+if cb_prebuilt_install gnupg "$VERSION" native "$TMP/prebuilt"; then
+  install_prebuilt
+else
+  build_from_source
+fi
 
 # configure leaves out a component whose dependency it cannot find (dirmngr
 # without GnuTLS, keyboxd without SQLite) and still succeeds. A missing one

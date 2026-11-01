@@ -11,15 +11,52 @@ This file contains a list of changes for each released version.
   folders a nested branch made (`feature/`) are still removed. git also deletes `.git/worktrees/`
   with the last worktree, which gave the next one `fatal: not a git repository` in the booth; the
   booth now refreshes the path to the worktree's git folder as it starts.
-- **`lsp+haskell` warns on arm64 when HLS cannot load the installed GHC.** ghcup's HLS 2.14.0.0 for
-  aarch64 Linux is an unofficial build made against a different GHC 9.10.3 than the official one, so
-  it exits with "GHC ABIs don't match" and editors get no Haskell server. The setup now type-checks
-  a one-line file at build time and says so, instead of leaving the editor silent.
+- **GnuPG 2.5 no longer compiles in every base image build.** The base image's GnuPG 2.5.24 now
+  comes from CodingBoothPrebuilt as an installed `/usr/local` tree, built there from the release
+  tarball after the same check against the GnuPG release keys (recorded in
+  `/usr/local/share/doc/gnupg/BUILD-INFO.txt`), and sha256-checked on download. That takes seconds
+  instead of about three minutes. A version not prebuilt yet is still built from source as before.
+- **`protobuf+rust` installs its plugins prebuilt, at pinned versions.** `protoc-gen-prost` and
+  `protoc-gen-tonic` were `cargo install`ed at whatever crates.io had that day, compiled in every
+  image. They now have their own setups and come from CodingBoothPrebuilt on x86_64 and arm64,
+  pinned by `PROTOC_GEN_PROST_VERSION` / `PROTOC_GEN_TONIC_VERSION` (default 0.5.0); a version
+  not prebuilt yet is built with `cargo install --locked`.
+- **`go+kernel` installs GoNB prebuilt, at a pinned version.** The GoNB kernel was `go install`ed
+  at `@latest`. It now comes from CodingBoothPrebuilt on both CPUs, pinned by `GONB_VERSION`
+  (default 0.11.5) or `go-nb-kernel--setup.sh --version`; a version not prebuilt yet is built with
+  `go install` at that tag. The setup is now tested end to end: a cell runs through the kernel.
+- **HLS works on arm64.** ghcup's HLS for aarch64 Linux is an unofficial build made against other
+  builds of each GHC than the official ones, so it exited with "GHC ABIs don't match" and editors
+  got no Haskell server. The `haskell` setup (which installs HLS by default) and `lsp+haskell` now
+  install HLS from CodingBoothPrebuilt, built against the very GHC the booth gets, on x86_64 and
+  arm64 alike, for ghcup's recommended and latest HLS on GHC 9.6 and later; other pairs still come
+  from ghcup. `lsp+haskell` also type-checks a one-line file at build time and warns if the server
+  still cannot load the GHC, instead of leaving the editor silent.
 - **Nim installs on arm64.** nim-lang.org publishes Linux tarballs for x64 only (its arm64
   nightlies are branch snapshots, not releases), so `--select nim` on Apple Silicon or Ubuntu on
   ARM failed with a 404 and no image. Nim now comes as a sha256-checked build from
   CodingBoothPrebuilt on x86_64 and arm64 alike, laid out like upstream's x64 tarball; a version
   not prebuilt yet is built from nim-lang.org's source tarball (a few minutes).
+- **Flutter installs on arm64.** Google's Linux SDK archive bundles an x64 Dart SDK, so
+  `--select flutter` skipped Flutter on Apple Silicon and Ubuntu on ARM. Google does publish the
+  linux-arm64 Dart SDK and engine artifacts, though, so on arm64 the setup now checks the release
+  out from its git tag and the flutter tool fetches those. Web and Linux desktop builds work there;
+  `flutter+android` still needs the Android SDK, which is x86_64 only.
+- **sqls installs on arm64.** sqls publishes a linux amd64 build only, so `lsp+sql` skipped it on
+  arm64. It now comes as a sha256-checked build from CodingBoothPrebuilt on x86_64 and arm64
+  alike; a version not prebuilt yet is built from its release tag with a temporary Go toolchain.
+- **HeidiSQL installs on arm64.** Upstream packages its Linux build as an amd64 `.deb` only, and
+  that needs a `libqt6pas6` Ubuntu does not ship, so `heidisql` was skipped on arm64. It now comes
+  from CodingBoothPrebuilt on both CPUs: upstream's Qt6 build, made with the same Lazarus release
+  and patches, with its `libQt6Pas` inside, in `/opt/heidisql/heidisql-<version>`. A version not
+  prebuilt yet uses upstream's `.deb` on amd64 and is skipped with a warning on arm64.
+- **Elm 0.19.1 comes from CodingBoothPrebuilt on both CPUs.** Upstream's 0.19.1 binary is x64
+  only, so arm64 used an unchecked community build that also needed Ubuntu 20.04's `libffi7`.
+  0.19.1 is now built from its tag, sha256-checked, on x86_64 and arm64 alike; npm is the fallback
+  on x86_64. 0.19.2 and later still use upstream's binaries.
+- **Older DBeaver releases install on arm64.** Releases before 25.3.1 have no arm64 `.deb`, so a
+  pinned one failed there. Those releases do ship an aarch64 tarball without a JRE; the setup now
+  installs it where the `.deb` would, with OpenJDK 21 from apt.
 - **TTT is the default editor; Fresh left the base image.** `$EDITOR` and `editor` are now TTT
   1.9.0, and a plain booth points it at whichever language servers it installs (what `ttt+lsp` did;
   delete an entry from `lsp.servers` in `~/.config/ttt/settings.json` to turn one off). Fresh is
@@ -244,8 +281,11 @@ This file contains a list of changes for each released version.
   get it too, and the base image adds the same as an apt.conf drop-in for a plain
   `apt-get --snapshot` in a booth. No date has to move.
 
-- **EnvFolio 1.0.1.** The base image and `tools/envfolio` install EnvFolio 1.0.1 (was 0.6.0).
-  1.0.0 makes commands, options and file formats stable. It puts the action first
+- **EnvFolio 1.1.0.** The base image and `tools/envfolio` install EnvFolio 1.1.0 (was 0.6.0).
+  1.1.0 makes `folio import` and `exec`/`shell --from` work with Ubuntu's gpg 2.4.8 (and gpg
+  2.5.23/2.5.24), which could not use the cv25519 key of an export: new exports use an ed25519 key
+  with an RSA encryption subkey, and an older export says to export it again. It also adds an
+  install script for installing without Homebrew. 1.0.0 makes commands, options and file formats stable. It puts the action first
   (`folio show secret …`, `folio insert text …`; the kind-first order still works), makes a
   post-quantum key with `folio init` on the base image's gpg 2.5, and adds `--use <@namespace>`
   (experimental), `exec`/`shell --debug`/`--confirm`, `FOLIO_STORE_PASSPHRASE_FILE` and

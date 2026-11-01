@@ -43,8 +43,7 @@ begin
 # The shape we look for: a top-level `if` that tests the machine's architecture
 # for arm64/aarch64 and then stops the script early. Branches that stop early
 # are the bail-outs; branches that fall through are workarounds that go on to
-# install something (elm fetches a community aarch64 build that way), and those
-# are none of this test's business.
+# install something, and those are none of this test's business.
 #
 # sed -E throughout: BSD sed (macOS) has no \| alternation in a basic regex, so
 # a BRE here would match nothing and pass vacuously.
