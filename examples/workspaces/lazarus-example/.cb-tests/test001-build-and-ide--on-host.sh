@@ -33,7 +33,8 @@ cleanup() {
 }
 trap cleanup EXIT
 
-in_booth() { docker exec -u coder -e DISPLAY=:1 -w /home/coder/code "$CONTAINER_NAME" bash -lc "$1"; }
+# MSYS_NO_PATHCONV: Git Bash on Windows would rewrite -w /home/coder/code into a host path.
+in_booth() { MSYS_NO_PATHCONV=1 docker exec -u coder -e DISPLAY=:1 -w /home/coder/code "$CONTAINER_NAME" bash -lc "$1"; }
 
 echo "=== Testing lazarus-example ==="
 echo
