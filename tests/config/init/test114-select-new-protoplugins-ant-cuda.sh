@@ -14,8 +14,8 @@ configtoml="$prj/.booth/config.toml"
 
 # --- protobuf language plugins -------------------------------------------
 run booth config $prj --no-tui --select 'protobuf+rust'
-assert-line "$boothfile" "install cargo protoc-gen-prost" ""    "protobuf+rust installs protoc-gen-prost via cargo"
-assert-line "$boothfile" "install cargo protoc-gen-tonic" ""    "protobuf+rust installs protoc-gen-tonic via cargo"
+assert-line "$boothfile" "setup protoc-gen-prost" ' ${PROTOC_GEN_PROST_VERSION}' "protobuf+rust installs protoc-gen-prost via its own setup script"
+assert-line "$boothfile" "setup protoc-gen-tonic" ' ${PROTOC_GEN_TONIC_VERSION}' "protobuf+rust installs protoc-gen-tonic via its own setup script"
 
 run booth config $prj --no-tui --overwrite --select 'protobuf+java'
 assert-line "$boothfile" "setup protoc-gen-grpc-java" ' ${PROTOC_GEN_GRPC_JAVA_VERSION}' "protobuf+java installs via its own setup script"
