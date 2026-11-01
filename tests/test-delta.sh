@@ -24,7 +24,8 @@
 #             .booth/setups/ copies of built-ins were deleted: they now run the
 #             image's setups (also refreshes the desktop-kde, desktop-lxqt,
 #             desktop-wayland, codeserver images)
-#   examples  go (GoNB kernel), haskell (HLS, IHaskell), flutter, data (dbeaver),
+#   examples  go (GoNB kernel), haskell (HLS, IHaskell), flutter (native on
+#             arm64; test004: a second run after ~/.pub-cache is gone), data (dbeaver),
 #             turtle (Logo from the built-in files), and the examples whose
 #             runner is new: empty, herdr, jetbrain-exmple, playground3,
 #             playwright-polyglot, tiling, wails, wails-android
