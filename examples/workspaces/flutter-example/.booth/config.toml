@@ -1,4 +1,2 @@
-# Configured by: booth config --no-tui --overwrite --set common-args=--platform --set common-args=${CB_FLUTTER_PLATFORM:-linux/amd64} --select flutter
+# Configured by: booth config --no-tui --overwrite --select flutter
 
-
-common-args = ["--platform", "${CB_FLUTTER_PLATFORM:-linux/amd64}"]
