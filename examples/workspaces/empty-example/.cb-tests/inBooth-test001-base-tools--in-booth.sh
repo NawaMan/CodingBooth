@@ -1,9 +1,11 @@
 #!/bin/bash
 set -euo pipefail
-# base tools (just, git) exist, i3 is installed, project has README
+# the base variant's own tools (just, git) exist, shell history is kept, project has README
 echo "=== Testing base tools ==="
 cd "$(dirname "$0")/.."   # the project folder: /home/coder/code in a booth
 just --version
 git --version
-command -v i3
+# config.toml's cache-files: each history file is kept in .booth/cache via a file-sync mount
+grep -q "file-sync/home/coder/.bash_history " /proc/mounts
+grep -q "file-sync/home/coder/.zsh_history " /proc/mounts
 test -f README.md
