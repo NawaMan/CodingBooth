@@ -33,6 +33,10 @@ This file contains a list of changes for each released version.
   from CodingBoothPrebuilt on both CPUs: upstream's Qt6 build, made with the same Lazarus release
   and patches, with its `libQt6Pas` inside, in `/opt/heidisql/heidisql-<version>`. A version not
   prebuilt yet uses upstream's `.deb` on amd64 and is skipped with a warning on arm64.
+- **Elm 0.19.1 comes from CodingBoothPrebuilt on both CPUs.** Upstream's 0.19.1 binary is x64
+  only, so arm64 used an unchecked community build that also needed Ubuntu 20.04's `libffi7`.
+  0.19.1 is now built from its tag, sha256-checked, on x86_64 and arm64 alike; npm is the fallback
+  on x86_64. 0.19.2 and later still use upstream's binaries.
 - **Older DBeaver releases install on arm64.** Releases before 25.3.1 have no arm64 `.deb`, so a
   pinned one failed there. Those releases do ship an aarch64 tarball without a JRE; the setup now
   installs it where the `.deb` would, with OpenJDK 21 from apt.

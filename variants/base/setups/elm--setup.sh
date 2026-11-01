@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.1.0
+# cb-version: 1.2.0
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -19,7 +19,8 @@ Examples:
 
 Notes:
 - 0.19.2 and later install the official GitHub linux binaries (x64 and arm).
-- 0.19.1 still uses npm, with a community aarch64 binary on arm64.
+- 0.19.1 comes prebuilt (sha256-checked) from https://github.com/NawaMan/CodingBoothPrebuilt
+  on both CPUs (upstream's 0.19.1 binary is x64 only); npm is the fallback on x64.
 - Pin to a known Elm release; elm 0.19.3 is the current stable.
 USAGE
 }
@@ -68,28 +69,24 @@ if [[ "$ELM_PKG_VER" == "0.19.2" || "$ELM_PKG_VER" == "0.19.3" ]]; then
   gunzip -f "$TMP/elm.gz"
   install -m 0755 "$TMP/elm" /usr/local/bin/elm
   rm -rf "$TMP"
-elif [[ "$ARCH" == "arm64" || "$ARCH" == "aarch64" ]] && [[ "$ELM_PKG_VER" == "0.19.1" ]]; then
-  echo "📦 Installing Elm 0.19.1 (aarch64) via community release ..."
-  # The community aarch64 elm binary was built against libffi.so.7 (Ubuntu
-  # 20.04). Noble (24.04) only ships libffi8 with incompatible versioned
-  # symbols (LIBFFI_CLOSURE_7.0 / LIBFFI_BASE_7.0), so we install the older
-  # libffi7 .deb directly from Ubuntu focal's pool. libatomic comes from the
-  # current release.
-  apt-get update >/dev/null
-  apt-get install -y --no-install-recommends libatomic1
+elif [[ "$ELM_PKG_VER" == "0.19.1" ]]; then
+  # Upstream's 0.19.1 binary is x64 only; CodingBoothPrebuilt builds it from the
+  # tag for both CPUs.
+  SETUP_LIBS_DIR="${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}"
+  if [ ! -r "${SETUP_LIBS_DIR}/prebuilt-source.sh" ]; then
+    SETUP_LIBS_DIR="$(dirname "$0")/libs"
+  fi
+  source "${SETUP_LIBS_DIR}/prebuilt-source.sh"
   TMP="$(mktemp -d)"
-  curl --retry 5 --retry-delay 3 --retry-all-errors -fL http://ports.ubuntu.com/ubuntu-ports/pool/main/libf/libffi/libffi7_3.3-4_arm64.deb \
-    -o "$TMP/libffi7.deb"
-  dpkg -i "$TMP/libffi7.deb"
-  # The official elm npm wrapper resolves to "binary-for-linux-undefined.gz"
-  # on arm64 and crashes mid-install. dmy/elm-raspberry-pi only ships an
-  # armhf (32-bit) build, which fails on a 64-bit aarch64 container.
-  # jbelbruno/Elm_Compiler_0.19.1_for_aarch64 provides a true ARMv8 aarch64
-  # build of the elm 0.19.1 compiler.
-  curl --retry 5 --retry-delay 3 --retry-all-errors -fL https://github.com/jbelbruno/Elm_Compiler_0.19.1_for_aarch64/releases/download/v0.19.1/elm.gz \
-    -o "$TMP/elm.gz"
-  gunzip -f "$TMP/elm.gz"
-  install -m 0755 "$TMP/elm" /usr/local/bin/elm
+  if cb_prebuilt_install elm 0.19.1 native "$TMP/elm"; then
+    install -m 0755 "$TMP/elm/elm" /usr/local/bin/elm
+  elif [[ "$ARCH" == "amd64" || "$ARCH" == "x86_64" ]]; then
+    echo "📦 Installing elm@0.19.1 via npm ..."
+    npm install -g elm@0.19.1
+  else
+    echo "❌ No Elm 0.19.1 for ${ARCH}: the CodingBoothPrebuilt download failed." >&2
+    exit 1
+  fi
   rm -rf "$TMP"
 else
   echo "📦 Installing elm${ELM_PKG_VER:+@$ELM_PKG_VER} via npm ..."
