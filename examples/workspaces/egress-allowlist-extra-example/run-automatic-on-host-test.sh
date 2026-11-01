@@ -5,6 +5,10 @@
 
 cd "$(dirname "$0")"
 
+# Each test runs through run_test_script, which fails a test that bash 3.2 let
+# exit 0 after it died on an unbound variable (see run-test-script--source.sh).
+source ../../../tests/run-test-script--source.sh
+
 failed=0
 failed_tests=()
 total_tests=0
@@ -15,7 +19,7 @@ for f in .cb-tests/test0*.sh ; do
     echo "$test_name"
     total_tests=$((total_tests + 1))
 
-    if ! ./$f; then
+    if ! run_test_script ./"$f"; then
         failed=1
         failed_tests+=("$test_name")
     fi

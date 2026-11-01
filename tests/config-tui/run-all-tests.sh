@@ -32,6 +32,10 @@ export CB_ENGINE="${CB_ENGINE:-docker}"
 # progress--source.sh) is what tells the operator which test that is and how long
 # it has been going. It draws only on a terminal and leaves nothing behind.
 source "${SCRIPT_DIR}/../progress--source.sh"
+
+# Each test runs through run_test_script, which fails a test that bash 3.2 let
+# exit 0 after it died on an unbound variable (see run-test-script--source.sh).
+source "${SCRIPT_DIR}/../run-test-script--source.sh"
 progress_init || true
 
 VERBOSE=""
@@ -135,7 +139,7 @@ run_one() {
     local out="${SCRIPT_DIR}/run--${name}.out"
     # CB_NO_BUILD_PROGRESS: this runner owns the terminal line; a child drawing
     # its own on top of it would leave both illegible.
-    if (cd "$SCRIPT_DIR" && CB_NO_BUILD_PROGRESS=1 bash "$test_file" $VERBOSE) > "$out" 2>&1; then
+    if (cd "$SCRIPT_DIR" && CB_NO_BUILD_PROGRESS=1 run_test_script bash "$test_file" $VERBOSE) > "$out" 2>&1; then
         echo 0 > "${out}.exit"
         return
     fi
@@ -154,7 +158,7 @@ run_one() {
     echo "   Its captured frame:    ${_scratch_base}/prj--${name}--attempt1/frame.clean.txt" >> "$out"
     printf '%s\n' "$name" >> "$RETRIED_LIST"
 
-    if (cd "$SCRIPT_DIR" && CB_NO_BUILD_PROGRESS=1 bash "$test_file" $VERBOSE) >> "$out" 2>&1; then
+    if (cd "$SCRIPT_DIR" && CB_NO_BUILD_PROGRESS=1 run_test_script bash "$test_file" $VERBOSE) >> "$out" 2>&1; then
         echo 0 > "${out}.exit"
     else
         echo 1 > "${out}.exit"

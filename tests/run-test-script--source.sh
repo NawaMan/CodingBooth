@@ -24,17 +24,21 @@
 # stdout is untouched. stderr goes through a pipe, so the test sees a pipe, not
 # a terminal, on fd 2; the copy is complete by the time it is checked, because
 # the pipeline waits for tee.
+#
+# `run_test_script bash <file> [args...]` (or sh) works too, for runners that
+# start tests through the interpreter: the name matched is <file>'s.
 run_test_script() {
-    local script="$1"
-    shift
     local name err rc errexit=""
-    name="$(basename "$script")"
+    name="$(basename "$1")"
+    case "$name" in
+        bash|sh) [[ $# -ge 2 ]] && name="$(basename "$2")" ;;
+    esac
     err="$(mktemp)"
 
     # The caller's errexit is put back as it was, not switched on.
     [[ $- == *e* ]] && errexit=1
     set +e
-    { "$script" "$@" 2>&1 1>&3 3>&- | tee "$err" >&2; } 3>&1
+    { "$@" 2>&1 1>&3 3>&- | tee "$err" >&2; } 3>&1
     rc=${PIPESTATUS[0]}
     [[ -n "$errexit" ]] && set -e
 
