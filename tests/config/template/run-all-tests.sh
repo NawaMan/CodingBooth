@@ -8,6 +8,10 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Each test runs through run_test_script, which fails a test that bash 3.2 let
+# exit 0 after it died on an unbound variable (see run-test-script--source.sh).
+source "${SCRIPT_DIR}/../../run-test-script--source.sh"
+
 VERBOSE=""
 HEAVY=false
 for arg in "$@"; do
@@ -56,7 +60,7 @@ for test_file in "${test_files[@]}"; do
     echo "-------------------------------------------------------------------------------"
 
     set +e
-    (cd "$SCRIPT_DIR" && bash "$test_file" $VERBOSE)
+    (cd "$SCRIPT_DIR" && run_test_script bash "$test_file" $VERBOSE)
     rc=$?
     set -e
 

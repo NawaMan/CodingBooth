@@ -58,9 +58,11 @@ swap() {
 # else the repo-root build, which is a Linux binary on a Linux host and in CI.
 # The ELF check is what keeps a macOS or Windows file from being swapped in to
 # fail unreadably a moment later.
+# (pattern) with the leading paren: macOS bash 3.2 parses this heredoc while
+# looking for the $( )'s close, and a bare `pattern)` ends it early.
 case "$(uname -m)" in
-    aarch64|arm64) arch=arm64 ;;
-    *)             arch=amd64 ;;
+    (aarch64|arm64) arch=arm64 ;;
+    (*)             arch=amd64 ;;
 esac
 if [[ -s "/booth/bin/codingbooth-linux-$arch" ]]; then
     checkout_binary="/booth/bin/codingbooth-linux-$arch"
