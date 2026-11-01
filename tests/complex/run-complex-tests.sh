@@ -51,6 +51,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# Each test runs through run_test_script, which fails a test that bash 3.2 let
+# exit 0 after it died on an unbound variable (see run-test-script--source.sh).
+source ../run-test-script--source.sh
+
 CATEGORIES=(boothfile features security desktop)
 
 # ---- args ----
@@ -185,7 +189,7 @@ DURATIONS=()
 run_one() {
   local base
   base="$(basename "$1")"
-  (cd "$1" && "./test--${base#test-}.sh") 2>&1 | tee "$2"
+  (cd "$1" && run_test_script "./test--${base#test-}.sh") 2>&1 | tee "$2"
 }
 
 for test_dir in "${TESTS[@]}"; do

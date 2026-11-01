@@ -267,6 +267,17 @@ VALUE=$(curl -s ... | grep -o '...')
 VALUE=$(curl -s ... | grep -o '...' || true)
 ```
 
+**On macOS, an unbound variable under an EXIT trap exits 0.** `/bin/bash` there is 3.2: a script
+that hits an unbound variable under `set -u` aborts, and when it has a `trap … EXIT`, the trap's
+status replaces the error's. `$?` inside the trap is already 0, so no trap can catch it. bash 4+
+exits 1, so Linux and CI never see it. `test--install-empty-args.sh` died halfway on `declare -A`
+and was counted green this way. The setups, basic, boothfile, dryrun and complex runners run each
+test through `run_test_script` (`run-test-script--source.sh`), which fails a test that exited 0
+with bash's `<file>: line N: <name>: unbound variable` on its stderr, from the test itself or a
+`*--source.sh` it sourced. Run a test by hand and you get the raw exit code, so read stderr too.
+Write for bash 3.2 regardless: no `declare -A`, `${x,,}` or `mapfile`, and expand a possibly empty
+array as `${a[@]+"${a[@]}"}`.
+
 ## Writing a new test
 
 1. **Pick the suite** from the table above. If it starts a container it is `basic/` (one booth) or

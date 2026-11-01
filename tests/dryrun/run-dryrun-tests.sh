@@ -4,6 +4,10 @@
 # you may not use this file except in compliance with the License.
 
 
+# Each test runs through run_test_script, which fails a test that bash 3.2 let
+# exit 0 after it died on an unbound variable (see run-test-script--source.sh).
+source "$(dirname "${BASH_SOURCE[0]}")/../run-test-script--source.sh"
+
 failed=0
 failed_tests=()
 total_tests=0
@@ -21,10 +25,10 @@ for f in test0*.sh ; do
     echo "$f"
     total_tests=$((total_tests + 1))
 
-    if ! ./"$f"; then
+    if ! run_test_script ./"$f"; then
         echo "⚠️  FAILED: $f — retrying once"
         retried_tests+=("$f")
-        if ./"$f"; then
+        if run_test_script ./"$f"; then
             echo "✅ PASSED after retry: $f"
         else
             failed=1
@@ -44,10 +48,10 @@ for subdir in */ ; do
                 echo "$f"
                 total_tests=$((total_tests + 1))
 
-                if ! ./"$f"; then
+                if ! run_test_script ./"$f"; then
                     echo "⚠️  FAILED: ${subdir}$f — retrying once"
                     retried_tests+=("${subdir}$f")
-                    if ./"$f"; then
+                    if run_test_script ./"$f"; then
                         echo "✅ PASSED after retry: ${subdir}$f"
                     else
                         failed=1
