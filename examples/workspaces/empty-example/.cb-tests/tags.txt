@@ -1,2 +1,2 @@
-desktop
-i3
+shell
+base

@@ -1,2 +1,7 @@
-# Configured by: booth config --no-tui --overwrite --select i3+default+ctrl-alt+gaps
+# Configured by: booth config --no-tui --overwrite --select shell-history
 
+
+cache-files = [
+    "home/coder/.bash_history",
+    "home/coder/.zsh_history"
+]
