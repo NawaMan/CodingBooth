@@ -11,6 +11,20 @@ This file contains a list of changes for each released version.
   folders a nested branch made (`feature/`) are still removed. git also deletes `.git/worktrees/`
   with the last worktree, which gave the next one `fatal: not a git repository` in the booth; the
   booth now refreshes the path to the worktree's git folder as it starts.
+- **GnuPG 2.5 no longer compiles in every base image build.** The base image's GnuPG 2.5.24 now
+  comes from CodingBoothPrebuilt as an installed `/usr/local` tree, built there from the release
+  tarball after the same check against the GnuPG release keys (recorded in
+  `/usr/local/share/doc/gnupg/BUILD-INFO.txt`), and sha256-checked on download. That takes seconds
+  instead of about three minutes. A version not prebuilt yet is still built from source as before.
+- **`protobuf+rust` installs its plugins prebuilt, at pinned versions.** `protoc-gen-prost` and
+  `protoc-gen-tonic` were `cargo install`ed at whatever crates.io had that day, compiled in every
+  image. They now have their own setups and come from CodingBoothPrebuilt on x86_64 and arm64,
+  pinned by `PROTOC_GEN_PROST_VERSION` / `PROTOC_GEN_TONIC_VERSION` (default 0.5.0); a version
+  not prebuilt yet is built with `cargo install --locked`.
+- **`go+kernel` installs GoNB prebuilt, at a pinned version.** The GoNB kernel was `go install`ed
+  at `@latest`. It now comes from CodingBoothPrebuilt on both CPUs, pinned by `GONB_VERSION`
+  (default 0.11.5) or `go-nb-kernel--setup.sh --version`; a version not prebuilt yet is built with
+  `go install` at that tag. The setup is now tested end to end: a cell runs through the kernel.
 - **HLS works on arm64.** ghcup's HLS for aarch64 Linux is an unofficial build made against other
   builds of each GHC than the official ones, so it exited with "GHC ABIs don't match" and editors
   got no Haskell server. The `haskell` setup (which installs HLS by default) and `lsp+haskell` now

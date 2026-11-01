@@ -1,11 +1,11 @@
-cb-version = "0.1.0"
+cb-version = "0.2.0"
 display-name = "Rust protoc plugins"
 display-disc = "protoc-gen-prost and protoc-gen-tonic"
 display-detail = """Installs protoc-gen-prost (message codegen for the Prost! crate) and protoc-gen-tonic \
 (gRPC service codegen for the Tonic framework) as standalone protoc plugins on PATH, so plain \
 `protoc --prost_out=... --tonic_out=...` works from any language's build. In a Rust-only project, \
 prost-build/tonic-build from a build.rs is the more common path -- this extension is for polyglot \
-repos that drive codegen from protoc directly."""
+repos that drive codegen from protoc directly. Both come prebuilt from CodingBoothPrebuilt on linux/amd64 and linux/arm64; a version not prebuilt is compiled with cargo. Pin PROTOC_GEN_PROST_VERSION / PROTOC_GEN_TONIC_VERSION for a reproducible build."""
 display-order = 20
 auto-select = false
 tags = [
@@ -18,8 +18,20 @@ tags = [
 
 requires = ["rust"]
 
+[params.PROTOC_GEN_PROST_VERSION]
+default = "0.5.0"
+suggests = [
+    "0.5.0",
+]
+
+[params.PROTOC_GEN_TONIC_VERSION]
+default = "0.5.0"
+suggests = [
+    "0.5.0",
+]
+
 [segments]
 "Boothfile--60" = """
-install cargo protoc-gen-prost
-install cargo protoc-gen-tonic
+setup protoc-gen-prost ${PROTOC_GEN_PROST_VERSION}
+setup protoc-gen-tonic ${PROTOC_GEN_TONIC_VERSION}
 """

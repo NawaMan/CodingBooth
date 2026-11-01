@@ -2,10 +2,9 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.1.0
+# cb-version: 1.2.0
 
 # go-nb-kernel--setup.sh
-# NOTE: This script has not been tested -- no time (sorry). Please report success or failure. :-p
 #
 # Installs the GoNB (Go Notebook) Jupyter kernel.
 # GoNB provides a full Go REPL experience in Jupyter.
@@ -17,6 +16,39 @@
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
+
+usage() {
+  cat <<USAGE
+Usage:
+  $0 [--version <X.Y.Z>]
+
+Examples:
+  $0                       # GoNB ${GONB_DEFAULT_VER:-0.11.5}
+  $0 --version 0.11.4      # pin a release
+
+Notes:
+- Installs gonb to /usr/local/bin and registers the "go" kernel system-wide
+- Comes prebuilt (sha256-checked) from https://github.com/NawaMan/CodingBoothPrebuilt
+  on both CPUs (upstream publishes source only); a version not prebuilt (yet) is
+  built with \`go install\` into the booth user's ~/go/bin
+- goimports, which GoNB runs on every cell, is installed with \`go install\`
+USAGE
+}
+
+GONB_DEFAULT_VER="0.11.5"
+VERSION="$GONB_DEFAULT_VER"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --version) shift; VERSION="${1:-}"; shift || true ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "❌ Unknown arg: $1" >&2; usage; exit 2 ;;
+  esac
+done
+VERSION="${VERSION#v}"
+if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "❌ Not a GoNB version: '${VERSION}' (expected X.Y.Z, for example ${GONB_DEFAULT_VER})" >&2
+  exit 2
+fi
 
 # ---------------- Root & early checks ----------------
 if [ "$EUID" -ne 0 ]; then
@@ -60,11 +92,25 @@ then
 fi
 
 # ---------------- Install GoNB ----------------
-echo "📦 Installing GoNB kernel binary..."
-sudo -u "$CB_USER_NAME" bash -lc "go install github.com/janpfeifer/gonb@latest"
+SETUP_LIBS_DIR="${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}"
+if [ ! -r "${SETUP_LIBS_DIR}/prebuilt-source.sh" ]; then
+  SETUP_LIBS_DIR="$(dirname "$0")/libs"
+fi
+source "${SETUP_LIBS_DIR}/prebuilt-source.sh"
+
+echo "📦 Installing GoNB ${VERSION} kernel binary..."
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+if cb_prebuilt_install gonb "$VERSION" native "$TMP/prebuilt"; then
+  install -m 755 "$TMP/prebuilt/bin/gonb" /usr/local/bin/gonb
+  GONB_BIN=/usr/local/bin/gonb
+else
+  echo "ℹ️  GoNB ${VERSION}: not prebuilt for this image; building with go install..."
+  sudo -u "$CB_USER_NAME" bash -lc "go install github.com/janpfeifer/gonb@v${VERSION}"
+  GONB_BIN="${CB_USER_HOME}/go/bin/gonb"
+fi
 sudo -u "$CB_USER_NAME" bash -lc "go install golang.org/x/tools/cmd/goimports@latest"
 
-GONB_BIN="${CB_USER_HOME}/go/bin/gonb"
 if [ ! -x "${GONB_BIN}" ]; then
   echo "❌ gonb binary not found at ${GONB_BIN}" >&2
   exit 1
