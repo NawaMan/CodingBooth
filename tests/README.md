@@ -279,6 +279,13 @@ with bash's `<file>: line N: <name>: unbound variable` on its stderr, from the t
 Write for bash 3.2 regardless: no `declare -A`, `${x,,}` or `mapfile`, and expand a possibly empty
 array as `${a[@]+"${a[@]}"}`.
 
+**On macOS, a `case` inside `$( … <<'X' … )` breaks the parse.** bash 3.2 reads the heredoc while
+looking for the `$( )`'s close, and a pattern's bare `)` ends it early: `unexpected token ';;'`,
+or a heredoc cut short that runs half a script. Even a quoted heredoc that only the container's
+bash will run is parsed by the host's first. Write the patterns as `(pattern)`, with the leading
+paren — POSIX, and every bash parses it. `setups/test--harness-scripts-parse.sh` runs `bash -n`
+over every host-side test script, so a Mac catches the next one.
+
 ## Writing a new test
 
 1. **Pick the suite** from the table above. If it starts a container it is `basic/` (one booth) or
