@@ -18,6 +18,7 @@ runners must be run from their own directory.
 | `boothfile/` | `run-boothfile-tests.sh` | asserts on `emit-dockerfile` output for a temp Boothfile; no container | `common--source.sh` |
 | `setups/` | `run-setups-tests.sh` | runs a setup script on the host with its tools stubbed | `common--source.sh` |
 | `config/` | `run-all-tests.sh` | `booth config` / `booth init` behaviour | `config/test-helpers--source.sh` |
+| `config/template/` | `run-all-tests.sh` | one template's selection builds a real booth with the tool in it (`--heavy` adds the desktop ones); suite `template` in `run-automate-tests.sh` | `config/test-helpers--source.sh` |
 | `config-tui/` | `run-all-tests.sh` | drives the config TUI with scripted keystrokes (needs `vhs`, `ttyd`, `ffmpeg`) | `config-tui/tui-helpers--source.sh` |
 | `wrapper/` | `run-all.sh` | the `booth` wrapper script, exercised inside a container | `wrapper/_lib.sh` |
 
