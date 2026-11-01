@@ -32,7 +32,10 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 WORKSPACES_DIR="${EXAMPLES_WORKSPACES_DIR:-$SCRIPT_DIR/workspaces}"
-CODINGBOOTH="${CODINGBOOTH:-$REPO_DIR/codingbooth}"
+# The local build: codingbooth.exe on Windows, where the extensionless
+# codingbooth beside it is the Linux cross-build and does not run on the host.
+source "$REPO_DIR/tests/booth-bin--source.sh"
+CODINGBOOTH="${CODINGBOOTH:-$(find_local_booth_build "$REPO_DIR" || echo "$REPO_DIR/codingbooth")}"
 
 # An --rc version has no release catalog to fetch, so use the repo's templates.
 export CB_TEMPLATES_PATH="${CB_TEMPLATES_PATH:-$REPO_DIR/templates}"
