@@ -137,11 +137,18 @@ fi
 
 # Scripts whose first argument is a kind, not a package: the empty-list cases run
 # after it, as the templates emit them (`install rustup target ${RUST_TARGETS}`).
-declare -A LEAD_ARGS=( [rustup]="target" )
+# A case, not `declare -A`: associative arrays are bash 4, and on macOS's bash 3.2
+# the lookup dies under set -u — with exit 0, because the EXIT trap's status wins.
+lead_arg() {
+    case "$1" in
+        rustup) echo "target" ;;
+    esac
+}
 
 for mgr in "${MANAGERS[@]}"; do
     lead=()
-    [ -n "${LEAD_ARGS[$mgr]:-}" ] && lead=("${LEAD_ARGS[$mgr]}")
+    lead_kind=$(lead_arg "$mgr")
+    [ -n "$lead_kind" ] && lead=("$lead_kind")
     assert_noop "$mgr" "no arguments is a no-op"      ${lead[@]+"${lead[@]}"}
     assert_noop "$mgr" "an empty argument is a no-op" ${lead[@]+"${lead[@]}"} ""
     assert_noop "$mgr" "a comma-only list is a no-op" ${lead[@]+"${lead[@]}"} ",,"
