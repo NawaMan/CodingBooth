@@ -11,10 +11,13 @@ This file contains a list of changes for each released version.
   folders a nested branch made (`feature/`) are still removed. git also deletes `.git/worktrees/`
   with the last worktree, which gave the next one `fatal: not a git repository` in the booth; the
   booth now refreshes the path to the worktree's git folder as it starts.
-- **`lsp+haskell` warns on arm64 when HLS cannot load the installed GHC.** ghcup's HLS 2.14.0.0 for
-  aarch64 Linux is an unofficial build made against a different GHC 9.10.3 than the official one, so
-  it exits with "GHC ABIs don't match" and editors get no Haskell server. The setup now type-checks
-  a one-line file at build time and says so, instead of leaving the editor silent.
+- **HLS works on arm64.** ghcup's HLS for aarch64 Linux is an unofficial build made against other
+  builds of each GHC than the official ones, so it exited with "GHC ABIs don't match" and editors
+  got no Haskell server. The `haskell` setup (which installs HLS by default) and `lsp+haskell` now
+  install HLS from CodingBoothPrebuilt, built against the very GHC the booth gets, on x86_64 and
+  arm64 alike, for ghcup's recommended and latest HLS on GHC 9.6 and later; other pairs still come
+  from ghcup. `lsp+haskell` also type-checks a one-line file at build time and warns if the server
+  still cannot load the GHC, instead of leaving the editor silent.
 - **Nim installs on arm64.** nim-lang.org publishes Linux tarballs for x64 only (its arm64
   nightlies are branch snapshots, not releases), so `--select nim` on Apple Silicon or Ubuntu on
   ARM failed with a 404 and no image. Nim now comes as a sha256-checked build from
