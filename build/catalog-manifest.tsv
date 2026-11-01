@@ -715,6 +715,7 @@ extension	floci+autostart	0.1.0	95491ff7e6cafc1cfe35f5da406ba2a2bca5aa0b6a5d5024
 extension	floci+expose	0.1.0	cde99db7aeb6fc0e1eff3ab9dd655b7b3cddeffd724d2d2bac601eed70dbc6db	templates/tools/floci/expose--extension.toml
 extension	flutter+android	0.1.1	d8ddf74e4bcd225730f05af2476086fc6694d008e4a1c16cf7026336bc060c7f	templates/languages/flutter/android--extension.toml
 extension	flutter+linux-desktop	0.1.1	d9d5c9fc246800b9f735203c24465563d83a7852d00ee6aaacf0f7389082ac94	templates/languages/flutter/linux-desktop--extension.toml
+extension	flutter+pub-cache	0.1.0	50c12e3d83e7a35aecfd784abcc3f2f63bb72d7c8564b0622c51629abde012a0	templates/languages/flutter/pub-cache--extension.toml
 extension	flutter+vscode-ext	0.1.0	960dbb4948451317c93bf4702e9d4a6b9f75d693923e9b82f01a42779b159b06	templates/languages/flutter/vscode-ext--extension.toml
 extension	fpc+lazarus	0.1.0	f0d4166798a779dcb7d0cba4773a0f4e5ded3050fc3391045488e9d62cbc3cce	templates/languages/fpc/lazarus--extension.toml
 extension	fpc+vscode-ext	1.0.0	3eff946a4e4eaa30869f8ae31814cb5a78541a0d46cbd1adb416761174244ae1	templates/languages/fpc/vscode-ext--extension.toml

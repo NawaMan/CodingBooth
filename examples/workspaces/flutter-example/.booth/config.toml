@@ -1,2 +1,4 @@
 # Configured by: booth config --no-tui --overwrite --select flutter
 
+
+cache-dirs = ["home/coder/.pub-cache"]

@@ -1,0 +1,25 @@
+cb-version = "0.1.0"
+display-name = "Pub Cache"
+display-disc = "Keep the project's Dart/Flutter packages (~/.pub-cache) across booths"
+display-detail = """Bind-mounts `~/.pub-cache` from `.booth/cache/` (CodingBooth cache-dirs, \
+gitignored, this machine only), so the packages `flutter pub get` downloaded are still there in \
+the next booth.
+
+Without it, every booth starts with an empty pub cache while the project's `.dart_tool/` -- \
+which lives in the mounted project folder -- still points into the old one. Flutter only \
+re-resolves when `pubspec.lock` is newer than `.dart_tool/package_config.json`, so the first \
+`flutter build` or `flutter test` of every booth after the first fails reading packages that \
+are not there. Drop it with `flutter~pub-cache` to re-download into a fresh cache each time; \
+then run `flutter pub get` first in every new booth."""
+display-order = 2
+auto-select = true
+tags = [
+    "flutter",
+    "dart",
+    "persistence",
+    "cache",
+]
+
+cache-dirs = [
+    "home/coder/.pub-cache",
+]
