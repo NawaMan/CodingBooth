@@ -9,14 +9,19 @@ run-on-host  := if env("BOOTH_CONTAINER_NAME", "") == "" { "" } else { "echo 'ju
 default:
     @just --list
 
+# Each recipe runs `flutter pub get` first. booth_counter/.dart_tool outlives the
+# booth, but ~/.pub-cache does not: in a new booth the left-over package_config
+# points at packages that are gone, and flutter, seeing it newer than
+# pubspec.lock, will not resolve again on its own.
+
 # Compile the web target
 build:
-    {{run-in-booth}} bash -c 'cd booth_counter && flutter build web --release'
+    {{run-in-booth}} bash -c 'cd booth_counter && flutter pub get && flutter build web --release'
 
 # Serve on :8080 (open /proxy/8080/ on the booth)
 run:
-    {{run-in-booth}} bash -c 'cd booth_counter && flutter run -d web-server --web-port 8080 --web-hostname 0.0.0.0'
+    {{run-in-booth}} bash -c 'cd booth_counter && flutter pub get && flutter run -d web-server --web-port 8080 --web-hostname 0.0.0.0'
 
 # Run widget tests
 test:
-    {{run-in-booth}} bash -c 'cd booth_counter && flutter test'
+    {{run-in-booth}} bash -c 'cd booth_counter && flutter pub get && flutter test'
