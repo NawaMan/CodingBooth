@@ -52,6 +52,10 @@ export CB_ENGINE="${CB_ENGINE:-docker}"
 # non-zero when there is no terminal to draw on, and the printed heartbeat below
 # stays as the signal for that case -- a CI log has nothing else.
 source "${SCRIPT_DIR}/../progress--source.sh"
+
+# Each test runs through run_test_script, which fails a test that bash 3.2 let
+# exit 0 after it died on an unbound variable (see run-test-script--source.sh).
+source "${SCRIPT_DIR}/../run-test-script--source.sh"
 progress_init || true
 
 VERBOSE=""
@@ -221,7 +225,7 @@ for test_file in "${seq_tests[@]}"; do
     # see failed_subtests above.
     seq_log="$(mktemp)"
     seq_start=$(date +%s)
-    (cd "$SCRIPT_DIR" && bash "$test_file" $VERBOSE) | tee "$seq_log"
+    (cd "$SCRIPT_DIR" && run_test_script bash "$test_file" $VERBOSE) | tee "$seq_log"
     seq_rc=${PIPESTATUS[0]}
     if (( seq_rc == 0 )); then
         PASS_COUNT=$((PASS_COUNT + 1))
@@ -233,7 +237,7 @@ for test_file in "${seq_tests[@]}"; do
         echo "⚠️  FAILED: ${name} — retrying once"
         printf '%s\n' "$name" >> "$RETRIED_LIST"
         : > "$seq_log"
-        (cd "$SCRIPT_DIR" && bash "$test_file" $VERBOSE) | tee "$seq_log"
+        (cd "$SCRIPT_DIR" && run_test_script bash "$test_file" $VERBOSE) | tee "$seq_log"
         seq_rc=${PIPESTATUS[0]}
         if (( seq_rc == 0 )); then
             echo "✅ PASSED after retry: ${name}"
@@ -279,7 +283,7 @@ run_one() {
     out=$(capture_file "$test_file")
 
     local rc=0
-    (cd "$SCRIPT_DIR" && CB_NO_BUILD_PROGRESS=1 bash "$test_file" $VERBOSE) > "$out" 2>&1 || rc=$?
+    (cd "$SCRIPT_DIR" && CB_NO_BUILD_PROGRESS=1 run_test_script bash "$test_file" $VERBOSE) > "$out" 2>&1 || rc=$?
 
     # 2 is `skip` from test-helpers--source.sh — a missing prerequisite, which a
     # second attempt cannot change. Only a real failure is worth retrying. (The
@@ -305,7 +309,7 @@ run_one() {
     local retried_name="${test_file#$TESTS_ROOT/}"; retried_name="${retried_name%.sh}"   # category-qualified
     printf '%s\n' "$retried_name" >> "$RETRIED_LIST"
 
-    if (cd "$SCRIPT_DIR" && CB_NO_BUILD_PROGRESS=1 bash "$test_file" $VERBOSE) >> "$out" 2>&1; then
+    if (cd "$SCRIPT_DIR" && CB_NO_BUILD_PROGRESS=1 run_test_script bash "$test_file" $VERBOSE) >> "$out" 2>&1; then
         echo 0 > "${out}.exit"
     else
         echo 1 > "${out}.exit"

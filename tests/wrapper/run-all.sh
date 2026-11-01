@@ -15,6 +15,10 @@
 set -uo pipefail
 
 SCRIPT_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Each test runs through run_test_script, which fails a test that bash 3.2 let
+# exit 0 after it died on an unbound variable (see run-test-script--source.sh).
+source "$SCRIPT_DIR/../run-test-script--source.sh"
 IMAGE="${BOOTH_TEST_IMAGE:-booth-wrapper-test}"
 
 skip_dind=false
@@ -81,7 +85,7 @@ for test in "${tests[@]}"; do
     # Exit-code convention: 0 = PASS, 77 = SKIP (autotools), other = FAIL.
     # PUBLIC tests use exit 77 from public_preflight when codingbooth.io or
     # GitHub Releases are unreachable, so a transient blip becomes SKIP.
-    "$test"; rc=$?
+    run_test_script "$test"; rc=$?
 
     # Retry a real failure once, immediately. 77 is SKIP and 0 is PASS, so
     # neither is retried — only an actual failure. A transient (a registry blip,
@@ -90,7 +94,7 @@ for test in "${tests[@]}"; do
     if (( rc != 0 && rc != 77 )); then
         printf "⚠️  FAILED: %s — retrying once\n" "$name"
         retried_names+=("$name")
-        "$test"; rc=$?
+        run_test_script "$test"; rc=$?
         if (( rc == 0 )); then
             printf "✅ PASSED after retry: %s\n" "$name"
         fi

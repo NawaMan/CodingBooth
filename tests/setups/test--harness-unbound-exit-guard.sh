@@ -91,6 +91,18 @@ run test--exit3.sh
     && check true "a failing test keeps its exit status (3) and its stderr" \
     || check false "a failing test should keep its exit status and stderr (rc=$RC, stderr: $ERR)"
 
+# 5b. Started through the interpreter, as the config runners do, the name
+#     matched is the script's, not "bash".
+RC=0
+OUT="$(cd "$WORK" && run_test_script bash ./test--masked.sh 2>"$WORK/err")" || RC=$?
+[[ "$RC" -ne 0 ]] && check true "\`run_test_script bash <file>\` fails the masked case too (rc=$RC)" \
+                  || check false "\`run_test_script bash <file>\` should fail the masked case (rc=$RC)"
+RC=0
+OUT="$(cd "$WORK" && run_test_script bash ./test--clean.sh 2>"$WORK/err")" || RC=$?
+[[ "$RC" -eq 0 && "$OUT" == "result line" ]] \
+    && check true "\`run_test_script bash <file>\` passes a clean test with its stdout" \
+    || check false "\`run_test_script bash <file>\` should pass a clean test (rc=$RC, out='$OUT')"
+
 # 6. The caller's errexit is left as it was: off stays off.
 write test--ok.sh 'true'
 (
