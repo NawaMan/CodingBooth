@@ -281,8 +281,11 @@ This file contains a list of changes for each released version.
   get it too, and the base image adds the same as an apt.conf drop-in for a plain
   `apt-get --snapshot` in a booth. No date has to move.
 
-- **EnvFolio 1.0.1.** The base image and `tools/envfolio` install EnvFolio 1.0.1 (was 0.6.0).
-  1.0.0 makes commands, options and file formats stable. It puts the action first
+- **EnvFolio 1.1.0.** The base image and `tools/envfolio` install EnvFolio 1.1.0 (was 0.6.0).
+  1.1.0 makes `folio import` and `exec`/`shell --from` work with Ubuntu's gpg 2.4.8 (and gpg
+  2.5.23/2.5.24), which could not use the cv25519 key of an export: new exports use an ed25519 key
+  with an RSA encryption subkey, and an older export says to export it again. It also adds an
+  install script for installing without Homebrew. 1.0.0 makes commands, options and file formats stable. It puts the action first
   (`folio show secret …`, `folio insert text …`; the kind-first order still works), makes a
   post-quantum key with `folio init` on the base image's gpg 2.5, and adds `--use <@namespace>`
   (experimental), `exec`/`shell --debug`/`--confirm`, `FOLIO_STORE_PASSPHRASE_FILE` and
