@@ -90,6 +90,7 @@ booth. Common examples:
 | `~/.claude.json` | Host directory layout, per-project usage, account identity | 🟡 Recon / privacy |
 | `~/.config/pip` | pip index URLs — may embed registry credentials | 🟡 Depends on contents |
 | `$XDG_RUNTIME_DIR/pulse/native` | The host's sound server (PulseAudio / PipeWire) — **including the microphone**; `:ro` does not limit what the socket can do | 🟡 Privacy — can record audio |
+| `$XDG_RUNTIME_DIR/pipewire-0` (`host-audio+jack`) | PipeWire itself — audio, microphones, and cameras / screen-share streams it carries | 🟡 Privacy — can record audio and possibly video |
 
 A refresh token is the worst case: it is long-lived and mints new access tokens, so a copied refresh
 token outlives the session.

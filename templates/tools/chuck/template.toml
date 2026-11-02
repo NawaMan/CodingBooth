@@ -1,0 +1,11 @@
+cb-version = "0.1.0"
+display-name = "ChucK"
+display-disc = "Strongly-timed music language — program drum patterns"
+display-detail = "Installs ChucK, a music language where time is a value you advance (250::ms => now), so a drum pattern reads like the beat it plays and several patterns run side by side as shreds. chuck drums.ck plays through ALSA's default device — select host-audio to hear it on your speakers; chuck --silent with a WvOut records to a file without one."
+display-order = 59
+tags = ["music", "audio", "drums", "live-coding", "chuck"]
+
+[segments]
+"Boothfile--45" = """
+setup chuck
+"""
