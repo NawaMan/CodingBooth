@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.4.0
+# cb-version: 1.5.0
 
 # -----------------------------------------------------------------------------
 # booth-message-api-server
@@ -27,6 +27,8 @@
 #   GET  /booth-messages/api/presence      — how many pages are viewing this booth, and how many are expected
 #   POST /booth-messages/api/presence      — a page's heartbeat {"id": ID, "visible": true|false} or {"id": ID, "release": true}
 #   POST /booth-messages/api/session-reset — end a Console UI pane's tmux session {"session": 1-6, "force": bool}
+#   GET  /booth-messages/api/audio/state   — whether this booth streams its sound (browser-audio), as JSON
+#   GET  /booth-messages/api/audio/stream  — that sound, as raw s16le PCM, for as long as the page listens
 #
 # Usage: booth-message-api-server <port>
 # -----------------------------------------------------------------------------
@@ -70,6 +72,8 @@ handle_request() {
                 /booth-messages/api/list) handle_list ;;
                 /booth-messages/api/idle/state) handle_idle_state ;;
                 /booth-messages/api/presence) handle_presence "" ;;
+                /booth-messages/api/audio/state) handle_audio_state ;;
+                /booth-messages/api/audio/stream) handle_audio_stream ;;
                 *) send_response 404 '{"error":"not found"}' ;;
             esac
             ;;
@@ -199,6 +203,25 @@ handle_session_reset() {
         booth--console-reset "$n" >/dev/null 2>&1 || true
     fi
     send_response 200 "{\"ok\":true,\"session\":$n,\"force\":${force:-false}}"
+}
+
+# browser-audio installs booth--audio-stream; without it, there is no sound to
+# stream and both answer 404, which the overlay reads as "no Sound button".
+handle_audio_state() {
+    if ! command -v booth--audio-stream >/dev/null 2>&1; then
+        send_response 404 '{"enabled":false}'
+        return
+    fi
+    send_response 200 "$(booth--audio-stream state)"
+}
+
+handle_audio_stream() {
+    if ! command -v booth--audio-stream >/dev/null 2>&1; then
+        send_response 404 '{"enabled":false}'
+        return
+    fi
+    # Writes the whole response itself, then streams until the page goes away.
+    exec booth--audio-stream http
 }
 
 handle_viewmd_start() {
