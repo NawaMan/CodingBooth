@@ -1,0 +1,4 @@
+# Configured by: booth config --no-tui --overwrite --select browser-audio
+
+
+run-args = ["-e", "PULSE_SERVER=unix:/run/booth-audio/native"]

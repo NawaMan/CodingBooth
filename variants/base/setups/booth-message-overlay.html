@@ -1,5 +1,5 @@
 <!-- Booth Message Overlay — shared across all variants -->
-<!-- cb-version: 1.2.0 -->
+<!-- cb-version: 1.3.0 -->
 <style>
   .msg-overlay {
     display: none;
@@ -3108,5 +3108,140 @@
     window.addEventListener("pageshow", function (e) {
       if (e.persisted) { gone = false; beat(); }
     });
+  })();
+
+  // Sound button (browser-audio). A booth with the browser-audio template runs
+  // its own sound server and streams it at /audio/stream as raw s16le PCM; the
+  // button plays that stream here, in whatever tab views the booth, so a booth
+  // on macOS, Windows or a remote host still has sound. A booth without it
+  // answers /audio/state with a 404, and no button shows.
+  //
+  // Playback schedules one AudioBuffer per chunk, a little ahead of the clock.
+  // An AudioWorklet would be smoother but only exists in a secure context, and
+  // a remote booth on plain http:// is the case this is for. Being on is
+  // remembered per browser; after a reload the first click or key anywhere
+  // starts it again, since browsers only allow sound after a gesture.
+  (function () {
+    if (!window.BoothPanel || !window.fetch || !window.ReadableStream) return;
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    var apiBase = window.BOOTH_MSG_API_BASE || "booth-messages/api";
+    var KEY = "booth-audio-on";
+    var LEAD = 0.12;       // seconds queued ahead of the clock
+    var MAX_AHEAD = 0.6;   // past this, drop a chunk to catch up
+    var MIN_BYTES = 3840;  // 20 ms of 48 kHz stereo s16le
+    var ctx = null, abort = null, on = false, retry = null, btn = null;
+    var rate = 48000, channels = 2, nextTime = 0;
+
+    function remembered() {
+      try { return localStorage.getItem(KEY) === "1"; } catch (e) { return false; }
+    }
+    function remember(v) {
+      try { localStorage.setItem(KEY, v ? "1" : "0"); } catch (e) { }
+    }
+    function render() {
+      if (!btn) return;
+      btn.classList.toggle("active", on);
+      btn.innerHTML = '<span class="bl-btn-icon">' + (on ? "&#x1F50A;" : "&#x1F507;") + "</span> " +
+        (on ? "Sound on" : "Sound off");
+      btn.title = on ? "Booth sound plays in this tab - click to mute"
+                     : "Play the booth's sound in this tab";
+    }
+
+    function play(bytes) {
+      var frames = Math.floor(bytes.length / (2 * channels));
+      if (!frames) return;
+      var now = ctx.currentTime;
+      if (nextTime < now) nextTime = now + LEAD;          // underrun: start again
+      if (nextTime - now > MAX_AHEAD) return;             // backlog: drop
+      var buf = ctx.createBuffer(channels, frames, rate);
+      var view = new DataView(bytes.buffer, bytes.byteOffset, frames * 2 * channels);
+      for (var c = 0; c < channels; c++) {
+        var out = buf.getChannelData(c);
+        for (var i = 0; i < frames; i++) {
+          out[i] = view.getInt16((i * channels + c) * 2, true) / 32768;
+        }
+      }
+      var src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(ctx.destination);
+      src.start(nextTime);
+      nextTime += buf.duration;
+    }
+
+    function stream() {
+      if (!on) return;
+      abort = new AbortController();
+      var pending = new Uint8Array(0);
+      fetch(apiBase + "/audio/stream", { cache: "no-store", signal: abort.signal }).then(function (r) {
+        if (!r.ok || !r.body) throw new Error("audio stream: HTTP " + r.status);
+        rate = parseInt(r.headers.get("X-Audio-Rate"), 10) || 48000;
+        channels = parseInt(r.headers.get("X-Audio-Channels"), 10) || 2;
+        nextTime = 0;
+        var reader = r.body.getReader();
+        function pump() {
+          return reader.read().then(function (res) {
+            if (res.done) throw new Error("audio stream ended");
+            var joined = new Uint8Array(pending.length + res.value.length);
+            joined.set(pending);
+            joined.set(res.value, pending.length);
+            if (joined.length < MIN_BYTES) { pending = joined; return pump(); }
+            var whole = joined.length - (joined.length % (2 * channels));
+            play(joined.subarray(0, whole));
+            pending = joined.slice(whole);
+            return pump();
+          });
+        }
+        return pump();
+      }).catch(function () {
+        // A restart or a dropped connection: ask again while still on.
+        if (on) retry = setTimeout(stream, 2000);
+      });
+    }
+
+    function start() {
+      if (on) return;
+      on = true;
+      remember(true);
+      if (!ctx) {
+        try { ctx = new AC({ sampleRate: 48000 }); } catch (e) { ctx = new AC(); }
+      }
+      if (ctx.state !== "running") ctx.resume().catch(function () { });
+      render();
+      stream();
+    }
+    function stop() {
+      on = false;
+      remember(false);
+      clearTimeout(retry);
+      if (abort) abort.abort();
+      if (ctx) ctx.suspend().catch(function () { });
+      render();
+    }
+
+    fetch(apiBase + "/audio/state", { cache: "no-store" }).then(function (r) {
+      return r.ok ? r.json() : null;
+    }).then(function (j) {
+      if (!j || !j.enabled) return;
+      btn = window.BoothPanel.register({
+        id: "booth-audio",
+        priority: 65,
+        html: '<button class="bl-btn bl-btn-capture" id="bl-audio-btn"></button>'
+      });
+      if (!btn) return;
+      render();
+      btn.addEventListener("click", function () { if (on) stop(); else start(); });
+      if (remembered()) {
+        var resume = function () {
+          ["keydown", "mousedown", "touchstart"].forEach(function (type) {
+            document.removeEventListener(type, resume, true);
+          });
+          if (!on) start();
+        };
+        ["keydown", "mousedown", "touchstart"].forEach(function (type) {
+          document.addEventListener(type, resume, true);
+        });
+      }
+    }).catch(function () { });
   })();
 </script>

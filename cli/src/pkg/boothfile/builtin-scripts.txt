@@ -34,6 +34,7 @@ setup booth-restart-code-extension
 setup booth-shutdown-code-extension
 setup booth-web-preview-code-extension
 setup booth-web-preview-notebook
+setup browser-audio
 setup buf
 setup buf-code-extension
 setup build-essential

@@ -1,0 +1,25 @@
+cb-version = "0.1.0"
+display-name = "Browser Audio"
+display-disc = "Play the booth's sound in the browser tab that views it (any host)"
+display-detail = "Runs a PulseAudio server inside the booth, with one silent output, and streams that output to the browser: click Sound on in the Booth panel and code in the booth plays in your tab — paplay, any PulseAudio client, and ALSA-only programs, since ALSA's default device is routed through PulseAudio. Works on macOS, Windows, a remote Docker host and for anyone viewing the booth, with no host mount. Uncompressed: about 1.5 Mbit/s while Sound is on. Pick this or Host Audio, not both. See docs/BOOTH_AUDIO.md."
+display-order = 58
+tags = [
+    "audio",
+    "sound",
+    "pulseaudio",
+    "browser",
+    "stream",
+    "music",
+]
+
+# The booth's own sound server: browser-audio--setup.sh starts it at each start,
+# listening here. Host Audio sets PULSE_SERVER to the host's socket instead.
+run-args = [
+    "-e", "PULSE_SERVER=unix:/run/booth-audio/native",
+]
+
+[segments]
+"Boothfile--45" = """
+setup host-audio
+setup browser-audio
+"""
