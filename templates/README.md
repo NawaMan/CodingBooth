@@ -347,15 +347,24 @@ Themes beyond the XFCE default are standalone, opt-in templates at order **60** 
 | Template                   | Display Name |
 |----------------------------|--------------|
 | `tools/apt-pkg`            | apt Packages |
+| `tools/chuck`              | ChucK |
+| `tools/csound`             | Csound |
 | `tools/ffmpeg`             | ffmpeg |
 | `tools/graphviz`           | Graphviz |
+| `tools/host-audio`         | Host Audio |
+| `host-audio/jack--extension` | JACK |
+| `tools/lilypond`           | LilyPond |
+| `lilypond/play--extension` | Play (FluidSynth) |
 | `tools/protobuf`           | Protocol Buffers |
+| `tools/supercollider`      | SuperCollider |
 | `rust/gui-deps--extension` | GUI Libraries |
 
 These run ahead of every order-50 setup, so anything installed at 50 or later can already see
 them. The `protobuf/cpp--extension` is at 45 too; its other language extensions follow their
 language. `rust/gui-deps--extension` is a fixed `install apt` list (the X11/Wayland/GL/Vulkan/
 fontconfig/GTK libraries Rust GUI crates link to), so it sits with the other system libraries.
+The music tools (`chuck`, `csound`, `lilypond`, `supercollider`) and `host-audio` are apt installs
+with no dependency on a language, so they sit here too.
 
 ### Order 50 — Base setups (languages, tools, middlewares)
 

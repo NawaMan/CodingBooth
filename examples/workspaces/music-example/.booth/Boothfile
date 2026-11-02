@@ -1,0 +1,12 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --select lilypond+play/supercollider/csound/chuck/host-audio+jack
+
+env APT_SNAPSHOT=20261023T000000Z
+
+setup chuck
+setup csound
+setup host-audio
+setup host-audio --jack
+setup lilypond
+setup fluidsynth
+setup supercollider
