@@ -461,6 +461,7 @@ User-facing guides:
 - **[In and out of the booth](docs/IN-OUT.md)** — Every way to put or connect things outside `/home/coder/code`: build, mount, copy, env, network
 - **[booth expose](docs/BOOTH_EXPOSE.md)** — Runtime port tunneling: expose container ports to the host without restarting
 - **[booth message](docs/BOOTH_MESSAGE.md)** — Send interactive messages and toast notifications to booth users
+- **[Sound from a booth](docs/BOOTH_AUDIO.md)** — `host-audio`: play through the host's speakers (Linux hosts)
 - **[booth runtime](docs/BOOTH_RUNTIME.md)** — Session timers: elapsed time and countdown to shutdown
 - **[booth tmp](docs/BOOTH_TMP.md)** — Ephemeral runtime state: `.booth/.tmp/` lifecycle and debugging
 

@@ -1,0 +1,11 @@
+# Configured by: booth config --no-tui --overwrite --select python/host-audio
+
+
+run-args = [
+    "-e", "PYTHONDONTWRITEBYTECODE=1",
+    "-v", "~/.config/pip:/etc/cb-home-seed/.config/pip:ro",
+    "-v", "~/Library/Application Support/pip:/etc/cb-home-seed/.config/pip:ro",
+    "-v", "~/AppData/Roaming/pip:/etc/cb-home-seed/.config/pip:ro",
+    "-v", "$XDG_RUNTIME_DIR/pulse/native:/run/pulse/native:ro",
+    "-e", "PULSE_SERVER=unix:/run/pulse/native"
+]

@@ -4,6 +4,24 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Booths can play sound through your speakers: the `host-audio` template.** Select it
+  (`--select 'python/host-audio'`) and code in the booth plays on the host's speakers — `paplay`,
+  any PulseAudio client, and ALSA-only programs, since ALSA's default device is routed through
+  PulseAudio. The template mounts the host's PulseAudio socket (PipeWire serves one too) read-only,
+  so it starts without a consent prompt, and points `PULSE_SERVER` at it. Linux hosts with local
+  Docker only: on macOS and Windows the mount is skipped and the booth starts with no sound. The
+  socket also lets the booth record from the microphone. The new `drum-beat-example` synthesizes a
+  drum beat in plain Python and plays it with `just beat`. See `docs/BOOTH_AUDIO.md`.
+- **Music as code: LilyPond, Csound, ChucK and SuperCollider templates.** `lilypond` engraves `.ly`
+  text into a PDF score and MIDI, and `lilypond+play` adds FluidSynth with a General MIDI SoundFont
+  to hear it; `csound` is the instrument-and-score synthesis language; `chuck` is the strongly-timed
+  language for drum patterns; `supercollider` is sclang + scsynth with sc3-plugins, and runs headless
+  when there is no display. With `host-audio` they play on your speakers, and all of them render to
+  WAV with no audio device. scsynth needs JACK, so the new `host-audio+jack` extension mounts the
+  host's PipeWire socket read-only and makes PipeWire's libjack the system one — no jackd in the
+  booth; it needs a PipeWire host. The new `music-example` plays one progression across all four —
+  melody, drums, bass and pad — with `just jam`.
+
 - **A `wails+android` booth builds again.** The extension put `--platform` in both `run-args` and
   `build-args`, and the CLI also copies a `run-args` `--platform` into the build. With the flag
   twice, buildx saw a multi-platform build, and Docker's default driver refused it ("Multi-platform

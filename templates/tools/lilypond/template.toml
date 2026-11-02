@@ -1,0 +1,11 @@
+cb-version = "0.1.0"
+display-name = "LilyPond"
+display-disc = "Music notation as code: .ly text to a PDF score and MIDI"
+display-detail = "Installs LilyPond, which engraves sheet music from a plain-text .ly file into a publication-quality PDF, and writes a MIDI file when the score has a \\midi block. Add +play to hear that MIDI through FluidSynth, and host-audio to hear it on your speakers."
+display-order = 59
+tags = ["music", "notation", "score", "midi", "lilypond"]
+
+[segments]
+"Boothfile--45" = """
+setup lilypond
+"""
