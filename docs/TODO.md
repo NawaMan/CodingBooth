@@ -634,14 +634,14 @@ absent from `main` is `variants/base/setups/libs/git-on-token.sh`, deleted on pu
 
 ---
 
-## Data modes (after 0.81.0)
+## Data modes (0.82.0 line)
 
 One extension per data item (`+config`, `+history`, `+bookmarks`, `+pkg-cache`, `+data`, …), with
 where it lives — bind / seed / cache / shared / volume — chosen as its value (`neovim+config:shared`).
 
 Plan, inventory and phases: **[TODO-data.md](TODO-data.md)**.
 
-- [ ] Implement (planned after the 0.81.0 release)
+- [ ] Implement (0.81.0 is out — ready to start)
 
 ---
 
