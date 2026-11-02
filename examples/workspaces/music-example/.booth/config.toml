@@ -1,0 +1,9 @@
+# Configured by: booth config --no-tui --overwrite --select lilypond+play/supercollider/csound/chuck/host-audio+jack
+
+
+run-args = [
+    "-v", "$XDG_RUNTIME_DIR/pulse/native:/run/pulse/native:ro",
+    "-e", "PULSE_SERVER=unix:/run/pulse/native",
+    "-v", "$XDG_RUNTIME_DIR/pipewire-0:/run/pipewire/pipewire-0:ro",
+    "-e", "PIPEWIRE_RUNTIME_DIR=/run/pipewire"
+]

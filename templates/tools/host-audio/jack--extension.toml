@@ -1,0 +1,18 @@
+cb-version = "0.1.0"
+display-name = "JACK"
+display-disc = "JACK programs (SuperCollider) through the host's PipeWire"
+display-detail = "Mounts the host's PipeWire socket read-only and makes PipeWire's libjack the system libjack, so JACK programs — SuperCollider's scsynth among them — play on the host's speakers with no jackd in the booth. Needs a PipeWire host: on a plain-PulseAudio host the socket is missing and the mount is skipped. The PipeWire socket reaches more than sound — microphones, and cameras that PipeWire manages. See docs/BOOTH_AUDIO.md."
+display-order = 10
+auto-select = false
+tags = ["audio", "jack", "pipewire", "supercollider"]
+
+# Read-only, as for the PulseAudio socket: connecting does not need it writable.
+run-args = [
+    "-v", "$XDG_RUNTIME_DIR/pipewire-0:/run/pipewire/pipewire-0:ro",
+    "-e", "PIPEWIRE_RUNTIME_DIR=/run/pipewire",
+]
+
+[segments]
+"Boothfile--45" = """
+setup host-audio --jack
+"""

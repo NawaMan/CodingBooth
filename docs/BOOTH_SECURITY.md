@@ -81,6 +81,7 @@ booth. Common examples:
 "-v", "~/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro"  # +credential    ← LIVE OAUTH TOKENS
 "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro"                        # +settings-cache ← paths, usage, account metadata
 "-v", "~/.config/pip:/etc/cb-home-seed/.config/pip:ro"                          # +pip-config    ← pip config (may embed index creds)
+"-v", "$XDG_RUNTIME_DIR/pulse/native:/run/pulse/native:ro"                      # host-audio     ← the host's sound server
 ```
 
 | Mount | Contains | Severity if untrusted code runs |
@@ -88,6 +89,8 @@ booth. Common examples:
 | `~/.claude/.credentials.json` | **Live access + refresh OAuth tokens** | 🔴 Critical — account takeover until tokens are revoked |
 | `~/.claude.json` | Host directory layout, per-project usage, account identity | 🟡 Recon / privacy |
 | `~/.config/pip` | pip index URLs — may embed registry credentials | 🟡 Depends on contents |
+| `$XDG_RUNTIME_DIR/pulse/native` | The host's sound server (PulseAudio / PipeWire) — **including the microphone**; `:ro` does not limit what the socket can do | 🟡 Privacy — can record audio |
+| `$XDG_RUNTIME_DIR/pipewire-0` (`host-audio+jack`) | PipeWire itself — audio, microphones, and cameras / screen-share streams it carries | 🟡 Privacy — can record audio and possibly video |
 
 A refresh token is the worst case: it is long-lived and mints new access tokens, so a copied refresh
 token outlives the session.

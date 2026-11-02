@@ -1,0 +1,11 @@
+cb-version = "0.1.0"
+display-name = "Csound"
+display-disc = "Sound-synthesis language: instruments and scores in one .csd file"
+display-detail = "Installs Csound, the long-standing sound and music computing language: you write instruments (an orchestra) and the notes they play (a score). csound -odac piece.csd plays through ALSA's default device — select host-audio to hear it on your speakers; csound -o piece.wav piece.csd renders to a file without one."
+display-order = 59
+tags = ["music", "audio", "synthesis", "dsp", "csound"]
+
+[segments]
+"Boothfile--45" = """
+setup csound
+"""
