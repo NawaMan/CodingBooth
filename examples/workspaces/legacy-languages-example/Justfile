@@ -1,0 +1,38 @@
+# {{run-in-booth}} runs a line in this project's booth (starting one if needed),
+# {{run-on-host}} keeps a line on the host. From `booth just-init`:
+# https://github.com/NawaMan/CodingBooth/blob/main/docs/just/Justfile
+booth        := env("BOOTH", "./booth")
+run-in-booth := if env("BOOTH_CONTAINER_NAME", "") == "" { booth + " exec --run --" } else { "" }
+run-on-host  := if env("BOOTH_CONTAINER_NAME", "") == "" { "" } else { "echo 'just: this recipe runs on the host - exit the booth and run it there.' >&2; exit 2;" }
+
+[private]
+default:
+    @just --list
+
+# Primes up to 30 in every language
+run:
+    {{run-in-booth}} ./run-primes.sh all
+
+# Fortran 90 with gfortran
+fortran:
+    {{run-in-booth}} ./run-primes.sh fortran
+
+# COBOL with gcobol
+cobol:
+    {{run-in-booth}} ./run-primes.sh cobol
+
+# ALGOL 68 with ga68
+algol68:
+    {{run-in-booth}} ./run-primes.sh algol68
+
+# Prolog with SWI-Prolog
+prolog:
+    {{run-in-booth}} ./run-primes.sh prolog
+
+# Smalltalk with Pharo (headless)
+smalltalk:
+    {{run-in-booth}} ./run-primes.sh smalltalk
+
+# Pascal with Free Pascal
+pascal:
+    {{run-in-booth}} ./run-primes.sh pascal

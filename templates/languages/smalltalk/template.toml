@@ -1,0 +1,26 @@
+cb-version = "0.1.0"
+display-name = "Smalltalk (Pharo)"
+display-disc = "Pharo Smalltalk VM and image"
+display-detail = """Installs the Pharo VM and a fresh Pharo image. 'pharo' runs headless \
+(pharo eval, pharo st --quit script.st); 'pharo-ui' opens the Pharo IDE on a desktop \
+variant. Each user works in a private copy of the image."""
+display-order = 79
+tags = [
+    "smalltalk",
+    "pharo",
+    "legacy",
+    "oop",
+]
+unsupported-arch = ["arm64"]
+unsupported-arch-note = """\
+files.pharo.org publishes Linux arm64 VMs only up to 10.x, which cannot run Pharo 12 \
+and later images. Use Pharo on the macOS host, or an amd64 booth."""
+
+[params.PHARO_VERSION]
+default = "14"
+suggests = ["14", "13"]
+
+[segments]
+Boothfile = """
+setup pharo --version ${PHARO_VERSION}
+"""

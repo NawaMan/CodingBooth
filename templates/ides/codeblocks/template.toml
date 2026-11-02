@@ -1,0 +1,25 @@
+cb-version = "0.1.0"
+display-name = "Code::Blocks"
+display-disc = "Code::Blocks IDE for C, C++ and Fortran"
+display-detail = """Installs Code::Blocks, the classic cross-platform IDE, with its contrib plugins, \
+gdb for debugging and xterm for running console programs. It builds with GCC, so selecting it \
+selects gcc too; add gcc+fortran for Fortran projects. Requires a desktop variant. The wxSmith \
+GUI-designer plugins are left disabled: on Ubuntu 26.04 they hang Code::Blocks at its splash \
+screen."""
+display-order = 41
+requires = ["gcc"]
+tags = [
+    "codeblocks",
+    "ide",
+    "c",
+    "cpp",
+    "fortran",
+    "gui",
+    "desktop",
+    "legacy",
+]
+
+[segments]
+"Boothfile--60" = """
+setup codeblocks
+"""

@@ -52,6 +52,8 @@ setup clojure-code-extension
 setup cloudbeaver
 setup cmake
 setup cmake-code-extension
+setup cobol-code-extension
+setup codeblocks
 setup codeserver
 setup codex
 setup codex-code-extension
@@ -105,6 +107,7 @@ setup flutter
 setup flutter-android
 setup flutter-code-extension
 setup flutter-linux-desktop
+setup fortran-code-extension
 setup fpc
 setup fpc-code-extension
 setup freelens
@@ -114,6 +117,7 @@ setup fsharp-code-extension
 setup fzf
 setup gcc
 setup gcc-code-extension
+setup gcc-frontend
 setup gcloud
 setup gemini-cli
 setup gh
@@ -266,6 +270,7 @@ setup openssh
 setup opensshd
 setup orca
 setup orchis-gtk
+setup pharo
 setup php
 setup php-code-extension
 setup pinentry
@@ -277,6 +282,7 @@ setup playwright-code-extension
 setup postgresql
 setup postgrest
 setup posting
+setup prolog
 setup protobuf-code-extension
 setup protoc-gen-grpc-java
 setup protoc-gen-grpc-web
