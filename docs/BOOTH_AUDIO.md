@@ -5,7 +5,7 @@ Code in a booth can play sound two ways. Pick one:
 | Template | Sound plays | Works on |
 |----------|-------------|----------|
 | `host-audio` | through **your computer's speakers**, at native latency, via the host's sound server | Linux hosts with local Docker |
-| `browser-audio` | in **the browser tab viewing the booth** — click *Sound on* in the Booth panel | any host: Linux, macOS, Windows, a remote Docker host |
+| `browser-audio` | in **the browser tab viewing the booth** — click *Turn sound on* in the Booth panel | any host: Linux, macOS, Windows, a remote Docker host |
 
 ```bash
 booth config --select 'python/host-audio'      # or add host-audio to any selection
@@ -45,14 +45,18 @@ booth config --select 'lilypond+play/csound/chuck/supercollider/host-audio+jack'
 booth config --select 'python/browser-audio'
 ```
 
-Open the booth in the browser and click **Sound on** in the Booth panel; from then on, sound made in
-the booth plays in that tab. The choice is remembered by the browser: after a reload, the first
-click or key press anywhere on the page turns it back on (browsers allow sound only after one).
+Open the booth in the browser and click **Turn sound on** in the Booth panel; from then on, sound
+made in the booth plays in that tab. Sound made while it is off is not kept, so when the booth plays
+something and the tab is not listening, the button pulses with *The booth is playing sound* (and a
+♪ in the panel header, for a collapsed panel). The choice is remembered by the browser: after a
+reload, the first click or key press anywhere on the page turns it back on (browsers allow sound
+only after one).
 
 | Piece | What it does |
 |-------|--------------|
 | `setup browser-audio` | Installs `pulseaudio` and starts it as the booth user at each start, with one output: a silent virtual sink, `booth`, listening at `/run/booth-audio/native`. |
 | `-e PULSE_SERVER=unix:/run/booth-audio/native` | Points every PulseAudio client in the booth — and ALSA, through its pulse plugin — at that server. |
+| `GET /booth-messages/api/audio/state` | Whether the booth has `browser-audio`, its server is up, and anything is playing right now (`"playing":true`). A booth without it answers 404. |
 | `GET /booth-messages/api/audio/stream` | Records the sink's monitor with `parec` and sends it as raw 16-bit 48 kHz stereo, for as long as the page listens. Behind the booth's login, like the rest of the Booth panel's API. |
 | The Booth panel's **Sound** button | Reads the stream and plays it with WebAudio, about 0.1 s behind the booth. Shows only in a booth with `browser-audio`. |
 
@@ -64,7 +68,7 @@ the booth no access to your microphone.
 **Things to know:**
 
 - **About 1.5 Mbit/s** per tab while Sound is on, silence included: the stream is uncompressed.
-  Fine on a LAN and most connections; Sound off stops it.
+  Fine on a LAN and most connections; clicking **Sound on** again stops it.
 - **Every tab with Sound on plays it**, each with its own stream. Anyone who can open the booth
   can listen — the same people who can already use its terminal.
 - **Only browser pages get it.** `./booth -- paplay x.wav` from the host plays into the booth's

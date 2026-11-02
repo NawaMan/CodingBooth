@@ -57,7 +57,8 @@ STREAM_BIN=/usr/local/bin/booth--audio-stream
 cat >"$STREAM_BIN" <<'EOF'
 #!/bin/bash
 # booth--audio-stream state|http — called by booth-message-api-server.
-#   state  JSON for GET /booth-messages/api/audio/state
+#   state  JSON for GET /booth-messages/api/audio/state (also whether
+#          anything is playing)
 #   http   the whole HTTP response for GET /booth-messages/api/audio/stream:
 #          headers, then raw s16le 48 kHz stereo from the "booth" sink's
 #          monitor until the viewer goes away (parec then dies on the write)
@@ -65,9 +66,15 @@ RATE=48000
 CHANNELS=2
 case "${1:-}" in
   state)
-    if pactl info >/dev/null 2>&1; then running=true; else running=false; fi
-    printf '{"enabled":true,"running":%s,"format":"s16le","rate":%s,"channels":%s}' \
-      "$running" "$RATE" "$CHANNELS"
+    # playing: something is sending sound to the sink right now, so a tab that
+    # has sound off can say what it is missing.
+    running=false; playing=false
+    if pactl info >/dev/null 2>&1; then
+      running=true
+      [[ -n "$(pactl list short sink-inputs 2>/dev/null)" ]] && playing=true
+    fi
+    printf '{"enabled":true,"running":%s,"playing":%s,"format":"s16le","rate":%s,"channels":%s}' \
+      "$running" "$playing" "$RATE" "$CHANNELS"
     ;;
   http)
     if ! pactl info >/dev/null 2>&1; then
@@ -109,7 +116,7 @@ chmod 755 "$STARTUP_FILE"
 
 echo "✅ Browser audio installed."
 cat <<'EOF'
-ℹ️ Ready to use — open the booth in the browser and click the Booth panel's Sound button, then:
+ℹ️ Ready to use — open the booth in the browser and click Turn sound on in the Booth panel, then:
   paplay sound.wav
   pactl info | grep -E '^(Server Name|Default Sink):'
 EOF
