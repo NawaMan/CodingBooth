@@ -15,10 +15,13 @@ sleep 0.5
 head -c 192000 /dev/urandom | pacat --raw --format=s16le --rate=48000 --channels=2 &
 noise=$!
 sleep 0.3
-echo "state playing: $(request state | booth-message-api-server --handle | tail -1)"
+# In the background: the answer can take longer than the noise lasts, and the
+# ALSA second must still start on time to fit inside the stream's 3 s.
+request state | booth-message-api-server --handle | tail -1 > /tmp/state-playing &
 wait "$noise"
 aplay -q -t raw -f S16_LE -r 48000 -c 2 -d 1 /dev/urandom 2>/dev/null
 wait
+echo "state playing: $(cat /tmp/state-playing)"
 
 echo "status: $(head -1 /tmp/stream.http | tr -d '\r')"
 body_from=$(grep -abo $'\r\n\r\n' /tmp/stream.http | head -1 | cut -d: -f1)
