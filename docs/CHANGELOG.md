@@ -13,6 +13,16 @@ This file contains a list of changes for each released version.
   place as before. The starter Justfile (`booth just-init`) and every example's Justfile have it;
   an existing project's Justfile changes only if you copy the two lines over from
   `docs/just/Justfile`.
+- **Sound from a booth on any host: the `browser-audio` template.** Select it
+  (`--select 'python/browser-audio'`), click **Turn sound on** in the Booth panel, and sound made in the
+  booth plays in that browser tab — on macOS, Windows, a remote Docker host, or for anyone viewing
+  the booth. The booth runs its own PulseAudio server with one silent output; the Booth panel's
+  new Sound button plays a recording of it, streamed uncompressed (about 1.5 Mbit/s while on) from
+  the new `/booth-messages/api/audio/stream`, behind the booth's login. `paplay`, ALSA programs,
+  FluidSynth, Csound and ChucK work as with `host-audio`; JACK (SuperCollider live) does not yet.
+  When the booth plays and the tab is not listening, the button pulses with a hint.
+  No host mount, so no consent prompt and no microphone access. Pick it or `host-audio`, not
+  both. See `docs/BOOTH_AUDIO.md`.
 
 - **Booths can play sound through your speakers: the `host-audio` template.** Select it
   (`--select 'python/host-audio'`) and code in the booth plays on the host's speakers — `paplay`,
