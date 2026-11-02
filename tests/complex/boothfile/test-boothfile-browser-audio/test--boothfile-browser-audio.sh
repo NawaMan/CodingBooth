@@ -42,8 +42,18 @@ check() {
 check 1 "the booth's own sink is the default output"   "default sink" '^booth$'
 check 2 "/audio/state reports the stream as running"   "state"        '"enabled":true,"running":true,"playing":false'
 check 3 "/audio/stream answers 200"                    "status"       '^HTTP/1\.0 200 OK$'
-# 3 s of 48 kHz stereo s16le is 576000 bytes; allow for start-up.
-check 4 "the stream flows at about real time"          "bytes"        '^(3[0-9]{5}|[4-9][0-9]{5}|[0-9]{7,})$'
+# An idle sink sends nothing, so the stream holds what played: 2 s of noise,
+# 384000 bytes at 48 kHz stereo s16le. At least one of those seconds must come
+# through (start-up and the 3 s cut can shave the ends; under load it lands
+# near 300000), and never more than the 3 s of real time the stream lasted.
+bytes=$(printf '%s\n' "$OUT" | sed -n 's/^bytes: //p' | head -1)
+if [[ "$bytes" =~ ^[0-9]+$ ]] && (( bytes >= 192000 && bytes <= 576000 )); then
+    print_test_result "true" "$0" "4" "the stream carries what played, at real time"
+else
+    print_test_result "false" "$0" "4" "the stream carries what played, at real time"
+    echo "  bytes: '$bytes' (want 192000..576000)"
+    FAILED=$((FAILED + 1))
+fi
 check 5 "the stream carries the sound that played"     "signal bytes" '^[1-9][0-9]{5,}$'
 check 6 "parec exits when the viewer goes away"        "parec left"   '^0$'
 check 7 "/audio/state says when something is playing"  "state playing" '"playing":true'
