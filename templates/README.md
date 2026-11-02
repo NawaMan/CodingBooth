@@ -349,6 +349,7 @@ Themes beyond the XFCE default are standalone, opt-in templates at order **60** 
 | `tools/apt-pkg`            | apt Packages |
 | `tools/ffmpeg`             | ffmpeg |
 | `tools/graphviz`           | Graphviz |
+| `tools/host-audio`         | Host Audio |
 | `tools/protobuf`           | Protocol Buffers |
 | `rust/gui-deps--extension` | GUI Libraries |
 

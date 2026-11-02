@@ -1,0 +1,27 @@
+cb-version = "0.1.0"
+display-name = "Host Audio"
+display-disc = "Play sound through the host's speakers (Linux hosts)"
+display-detail = "Mounts the host's PulseAudio socket (PipeWire provides one too) read-only and points PULSE_SERVER at it, then installs paplay/pactl and routes ALSA's default device through it — so code in the booth plays on your speakers. Linux host with local Docker only: on macOS and Windows the socket does not exist and the mount is skipped. The socket gives the booth the whole sound server, microphone included. See docs/BOOTH_AUDIO.md."
+display-order = 58
+tags = [
+    "audio",
+    "sound",
+    "pulseaudio",
+    "pipewire",
+    "alsa",
+    "music",
+]
+
+# Read-only is enough to connect to a socket, and keeps the mount out of the
+# writable-host-mount consent prompt. Where $XDG_RUNTIME_DIR has no pulse socket
+# (macOS, Windows, a remote Docker host) the mount is skipped and the booth still
+# starts — it just has no sound.
+run-args = [
+    "-v", "$XDG_RUNTIME_DIR/pulse/native:/run/pulse/native:ro",
+    "-e", "PULSE_SERVER=unix:/run/pulse/native",
+]
+
+[segments]
+"Boothfile--45" = """
+setup host-audio
+"""
