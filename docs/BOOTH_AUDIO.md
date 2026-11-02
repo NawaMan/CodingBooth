@@ -1,6 +1,11 @@
-# Sound from a booth (`host-audio`)
+# Sound from a booth (`host-audio`, `browser-audio`)
 
-Code in a booth can play sound through your own speakers. Select the `host-audio` template:
+Code in a booth can play sound two ways. Pick one:
+
+| Template | Sound plays | Works on |
+|----------|-------------|----------|
+| `host-audio` | through **your computer's speakers**, at native latency, via the host's sound server | Linux hosts with local Docker |
+| `browser-audio` | in **the browser tab viewing the booth** — click *Turn sound on* in the Booth panel | any host: Linux, macOS, Windows, a remote Docker host |
 
 ```bash
 booth config --select 'python/host-audio'      # or add host-audio to any selection
@@ -18,7 +23,7 @@ Two examples use it:
 
 ## Music tools
 
-Each is its own template; select it with `host-audio` to hear it. All of them also render to a file
+Each is its own template; select it with `host-audio` or `browser-audio` to hear it. All of them also render to a file
 with no audio device, so they are useful on any host.
 
 | Template | What you write | Plays through | Renders with |
@@ -31,6 +36,43 @@ with no audio device, so they are useful on any host.
 ```bash
 booth config --select 'lilypond+play/csound/chuck/supercollider/host-audio+jack'
 ```
+
+---
+
+## In the browser: `browser-audio`
+
+```bash
+booth config --select 'python/browser-audio'
+```
+
+Open the booth in the browser and click **Turn sound on** in the Booth panel; from then on, sound
+made in the booth plays in that tab. Sound made while it is off is not kept, so when the booth plays
+something and the tab is not listening, the button pulses with *The booth is playing sound* (and a
+♪ in the panel header, for a collapsed panel). The choice is remembered by the browser: after a
+reload, the first click or key press anywhere on the page turns it back on (browsers allow sound
+only after one).
+
+| Piece | What it does |
+|-------|--------------|
+| `setup browser-audio` | Installs `pulseaudio` and starts it as the booth user at each start, with one output: a silent virtual sink, `booth`, listening at `/run/booth-audio/native`. |
+| `-e PULSE_SERVER=unix:/run/booth-audio/native` | Points every PulseAudio client in the booth — and ALSA, through its pulse plugin — at that server. |
+| `GET /booth-messages/api/audio/state` | Whether the booth has `browser-audio`, its server is up, and anything is playing right now (`"playing":true`). A booth without it answers 404. |
+| `GET /booth-messages/api/audio/stream` | Records the sink's monitor with `parec` and sends it as raw 16-bit 48 kHz stereo, for as long as the page listens. Behind the booth's login, like the rest of the Booth panel's API. |
+| The Booth panel's **Sound** button | Reads the stream and plays it with WebAudio, about 0.1 s behind the booth. Shows only in a booth with `browser-audio`. |
+
+Everything that works with `host-audio` works the same here — `paplay`, `aplay`, FluidSynth,
+Csound, ChucK — except JACK: there is no `+jack` for the browser yet, so SuperCollider's live server
+has no output (it still renders to a file). It needs no host mount, so it asks no consent and gives
+the booth no access to your microphone.
+
+**Things to know:**
+
+- **About 1.5 Mbit/s** per tab while Sound is on, silence included: the stream is uncompressed.
+  Fine on a LAN and most connections; clicking **Sound on** again stops it.
+- **Every tab with Sound on plays it**, each with its own stream. Anyone who can open the booth
+  can listen — the same people who can already use its terminal.
+- **Only browser pages get it.** `./booth -- paplay x.wav` from the host plays into the booth's
+  silent sink; open the booth in a browser with Sound on to hear it.
 
 ---
 
@@ -71,15 +113,15 @@ does not trigger booth's writable-host-mount consent prompt (see [Security](BOOT
 
 ---
 
-## Where it works
+## Where `host-audio` works
 
 | Host | Status |
 |------|--------|
 | **Linux, local Docker, PipeWire** | ✅ Works. Tested on PipeWire 1.6.2: PulseAudio, ALSA and JACK (`+jack`) playback, no cookie needed. |
 | **Linux, local Docker, PulseAudio** | Expected to work (same socket path), not tested. If the server refuses the connection, it may want its cookie; mount `~/.config/pulse/cookie` too. No JACK route: `+jack` needs PipeWire. |
-| **Linux, remote Docker host** (`DOCKER_HOST=ssh://…`) | ❌ The socket is on *that* machine, so the sound plays there, or nowhere. |
-| **macOS** (Docker Desktop, Podman machine) | ❌ Not supported. Containers run in a Linux VM with no sound device, and macOS has no PulseAudio socket to mount. |
-| **Windows** (Docker Desktop) | ❌ Not supported. WSLg runs a PulseAudio server inside WSL, but a Docker Desktop container reaching it is untested. |
+| **Linux, remote Docker host** (`DOCKER_HOST=ssh://…`) | ❌ The socket is on *that* machine, so the sound plays there, or nowhere — use `browser-audio`. |
+| **macOS** (Docker Desktop, Podman machine) | ❌ Not supported — use `browser-audio`. Containers run in a Linux VM with no sound device, and macOS has no PulseAudio socket to mount. |
+| **Windows** (Docker Desktop) | ❌ Not supported — use `browser-audio`. WSLg runs a PulseAudio server inside WSL, but a Docker Desktop container reaching it is untested. |
 | **Rootless Podman** | Untested. |
 
 **On an unsupported host, the booth still starts — it just has no sound.** `$XDG_RUNTIME_DIR` is unset
@@ -98,11 +140,10 @@ $ aplay beat.wav
 aplay: main:850: audio open error: Connection refused
 ```
 
-You can still *generate* sound in such a booth — render to a WAV file and play it on the host.
+You can still *generate* sound in such a booth — render to a WAV file and play it on the host — or select `browser-audio` instead and hear it in the browser.
 
-**Not built yet** (ideas, not promises): on macOS, a PulseAudio server on the Mac reached over TCP
-(`PULSE_SERVER=tcp:host.docker.internal:4713`); and for any host, including a remote one, streaming the
-booth's audio to the browser tab you already have open.
+**Not built yet** (an idea, not a promise): on macOS, a PulseAudio server on the Mac reached over TCP
+(`PULSE_SERVER=tcp:host.docker.internal:4713`), for native latency there too.
 
 ---
 
