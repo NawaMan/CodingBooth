@@ -1,0 +1,12 @@
+cb-version = "0.1.0"
+display-name = "Play (FluidSynth)"
+display-disc = "Hear LilyPond's MIDI: FluidSynth with a General MIDI SoundFont"
+display-detail = "Installs FluidSynth and the small TimGM6mb General MIDI SoundFont (the system default), so the MIDI LilyPond writes can be played — live through PulseAudio with host-audio (fluidsynth -qni -a pulseaudio <sf2> score.midi), or rendered to WAV with no audio device (-F score.wav)."
+display-order = 10
+auto-select = false
+tags = ["music", "midi", "fluidsynth", "soundfont"]
+
+[segments]
+"Boothfile--45" = """
+setup fluidsynth
+"""

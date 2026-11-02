@@ -16,10 +16,37 @@
 #                         also reach the host
 #   - alsa-utils          aplay / arecord, to try the ALSA route
 #
+# With --jack (the host-audio+jack extension) it adds the JACK route instead:
+# PipeWire's libjack, made the system's libjack, so JACK programs (SuperCollider's
+# scsynth) reach the host's PipeWire through its native socket, which that
+# extension mounts at /run/pipewire/pipewire-0. No jackd runs in the booth.
+#
 # Linux hosts with local Docker only — see docs/BOOTH_AUDIO.md.
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
+
+usage() {
+  cat <<'EOF'
+Usage: host-audio--setup.sh [--jack]
+
+  (no flag)  PulseAudio clients + ALSA routed through PulseAudio
+  --jack     JACK through the host's PipeWire (pipewire-jack as the system libjack)
+
+Examples:
+  host-audio--setup.sh
+  host-audio--setup.sh --jack
+EOF
+}
+
+MODE=pulse
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --jack)    MODE=jack; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *)         echo "❌ Unknown arg: $1" >&2; usage >&2; exit 1 ;;
+  esac
+done
 
 if [ "$EUID" -ne 0 ]; then
     echo "❌ This script must be run as root (use sudo)" >&2
@@ -30,6 +57,26 @@ fi
 HOME=/root
 
 export DEBIAN_FRONTEND=noninteractive
+
+if [[ "$MODE" == "jack" ]]; then
+  apt-get update
+  apt-get install -y --no-install-recommends pipewire-jack
+  rm -rf /var/lib/apt/lists/*
+
+  # pipewire-jack keeps its libjack out of the linker path (pw-jack adds it per
+  # command); listing the directory makes it the libjack every program loads.
+  JACK_DIR="$(dirname "$(ls /usr/lib/*/pipewire-0.3/jack/libjack.so.0 | head -n1)")"
+  echo "$JACK_DIR" > /etc/ld.so.conf.d/pipewire-jack.conf
+  ldconfig
+
+  echo "✅ host-audio JACK route installed: libjack is PipeWire's ($JACK_DIR)"
+  cat <<'EON'
+ℹ️ Ready to use (the booth must be started with the host-audio+jack extension's mount):
+- JACK programs (scsynth, sclang's s.boot) connect to the host's PipeWire; no jackd needed
+EON
+  exit 0
+fi
+
 apt-get update
 apt-get install -y --no-install-recommends \
   pulseaudio-utils \

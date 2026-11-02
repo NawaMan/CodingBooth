@@ -40,6 +40,7 @@ setup	bun	1.0.0	b5e82ae237e4b8056b489bbe1a9477827ec3e46d9f20f101b4160ae597a19134
 setup	bun-code-extension	1.0.0	e00901212b24b71ec5de264aa30b8575012267199abe7a7541bd0adbb9ab9a75	variants/base/setups/bun-code-extension--setup.sh
 setup	chrome-managed-policies	1.0.0	6df6f5ed90a5201e885d33b76617fa33e33553404cbda13c3b706b98cec89970	variants/base/setups/chrome-managed-policies--setup.sh
 setup	chromium-browser	1.1.0	ce17b8bc2b2b4808af628a488f54fb91c24f529f93292f382ca0feae416fe2d2	variants/base/setups/chromium-browser--setup.sh
+setup	chuck	0.1.0	efe57b1b8690351c413abc5e4694f413b0d94bbb142e45cce403dfcb5d59289e	variants/base/setups/chuck--setup.sh
 setup	clang	1.0.0	d2ec5f9bf1997f8a6037704a63bc07ae7d9fb8e81cb2f81abb09bfa915c498b3	variants/base/setups/clang--setup.sh
 setup	clang-code-extension	1.0.0	45965425fa1c115ea8697de95f152aeb07ebdc73ffaa949a7e9afa6ea3c18c15	variants/base/setups/clang-code-extension--setup.sh
 setup	claude-code	1.1.0	4dac8f16f7d41f16f5d0389a71d9acac42b2b5e109f4e7de33bee4a6a93cd11f	variants/base/setups/claude-code--setup.sh
@@ -59,6 +60,7 @@ setup	cpp-nb-kernel	0.1.0	ca55497f946f98c9c381a35d26928eda13adc0febd1228f469a021
 setup	croft	0.2.0	52eb063c8732bfb672f61cc4672cbee54bf62197aed9c6e6f8a17904a06e1a86	variants/base/setups/croft--setup.sh
 setup	crystal	1.0.0	61384d7bce11d836a007a7815f4cf24888e028dc442db554b382562a8d48a84f	variants/base/setups/crystal--setup.sh
 setup	crystal-code-extension	1.0.0	14c2ce6f0561eec9ff041e616cd1b93c789c101ab5fdb2ba3a03b3255b82e03f	variants/base/setups/crystal-code-extension--setup.sh
+setup	csound	0.1.0	c39eaf434548370ba0345cf324b371e98eb02125cb3ffb1367b2479012c6c9ef	variants/base/setups/csound--setup.sh
 setup	cuda	0.1.1	a26ca96634a5c13e62518198fd192d5976f66cf97853280a570be2d1c1812eca	variants/base/setups/cuda--setup.sh
 setup	cursor	1.0.0	b157012b2d424a25501f4088de21e8e4bd4eb32b6082434ca53ace404187543e	variants/base/setups/cursor--setup.sh
 setup	cypress	1.0.0	3758a04ba55ea39dce40d7c535060116bd28f3de2af01b213cb022dce3375917	variants/base/setups/cypress--setup.sh
@@ -96,6 +98,7 @@ setup	firebase	1.0.0	cb173cd4ef650d421702b797c175e1104e2974be965d684f6ecee5fe00a
 setup	firefox	1.0.0	e5ddd08461944d477d87ca40779b2d1bb632a0b77fedc15b0122bb83f2ba76e6	variants/base/setups/firefox--setup.sh
 setup	firefox-managed-policies	1.0.0	56725f8b7e2225e097ca92cd31a387847995e8a37b1b01654ec022780c30f37d	variants/base/setups/firefox-managed-policies--setup.sh
 setup	floci	0.2.0	392788647897f472ea3712107cb3111842c39d47618349323ca1c74a88bac57c	variants/base/setups/floci--setup.sh
+setup	fluidsynth	0.1.0	5df109d2280a6386a275f4e552653358c218cc66bba998e3729aff18cae85df5	variants/base/setups/fluidsynth--setup.sh
 setup	flutter	0.2.0	498c5e201d6d47defc821a97b24e824eccca65f4c420cd93b2f421ef5bc4c3c9	variants/base/setups/flutter--setup.sh
 setup	flutter-android	0.1.1	70509a18385e6b0ffc0c1d7850db0d05592e24e6113a005b4731022583e57ebe	variants/base/setups/flutter-android--setup.sh
 setup	flutter-code-extension	0.1.0	3b1c741f03af53c3d4871e3632e1918818234d0cdf23955853db0f7d11c52d38	variants/base/setups/flutter-code-extension--setup.sh
@@ -141,7 +144,7 @@ setup	helm	1.0.0	7afeaf721ee89c9362432d1691902f3b61dbde5ee9f8a755da0d256a7aa701d
 setup	herdr	1.0.0	f84266e5badb254f8faaf6e5c4ee1d09123d0ac9fe2902bc6b5c236f43e80f31	variants/base/setups/herdr--setup.sh
 setup	homebrew	1.1.0	9e2d074235ef94493d711f66ebc059716e26844db3f34f1f7dd0fb3e72b93ebc	variants/base/setups/homebrew--setup.sh
 setup	hoppscotch	0.1.0	08109dde5ef1e4c1043ce0376217c0b71a3461a7f9b71a25b7f34764ce1685e7	variants/base/setups/hoppscotch--setup.sh
-setup	host-audio	0.1.0	c45dddfa2ef0eefde510179c2589b6b6a7788b493322c686f686eb75b63a6cf7	variants/base/setups/host-audio--setup.sh
+setup	host-audio	0.1.0	0fe6d2c3235616ede9efa0498cf4e073d55680ff936c1d6d423464308688c0d4	variants/base/setups/host-audio--setup.sh
 setup	i3	1.0.1	868dcaa511c035c720530a9fb8e445e8458c01ae14c870a9b71cf129bdc1e854	variants/base/setups/i3--setup.sh
 setup	i3-ctrl-alt	1.0.0	2b1946eff53514fefe4d0943cffbf80f988833350a36f0b537dc9473a5ae48e4	variants/base/setups/i3-ctrl-alt--setup.sh
 setup	i3-default	1.0.0	9d1e51d1d23899ee8753b204850a4a4cb45c5637b44e2ad3c6c2c735071811a1	variants/base/setups/i3-default--setup.sh
@@ -197,6 +200,7 @@ setup	lean-lsp-mcp	0.2.0	bdd53479d3621942c6609ada8b64f22a5fb096ff240750680ace2ce
 setup	lean-nvim	0.1.0	3fd3b1dc067931baf13a4440c48cf9b0fe7dc6f3469140b778ea510fbe89f80c	variants/base/setups/lean-nvim--setup.sh
 setup	lean-toolchain-file	0.1.0	64b58a4c3e4211ea7261de973e619583a2651d6927b946397f9719ea7bcce9e2	variants/base/setups/lean-toolchain-file--setup.sh
 setup	libreoffice	1.0.0	c20c5ac0724088909c1e0bfa1b844c4aaad47d8f25285ce54b9dfab40ba0c3fc	variants/base/setups/libreoffice--setup.sh
+setup	lilypond	0.1.0	68178c54b7cbbc93f40c75960fe2cdc97dd3f85bbcb12bea57a398a28da68d79	variants/base/setups/lilypond--setup.sh
 setup	logo	0.1.0	508b45f46b768c84eca8adb35753e16e51e29bd72eebb4733620d0ae6df52875	variants/base/setups/logo--setup.sh
 setup	lombok-eclipse	1.0.0	4a8e7542bba4ffcdb70b0e17867c16f5646f394bc1c9d15ce7f2dc2146a7c6c8	variants/base/setups/lombok-eclipse--setup.sh
 setup	lombok-idea	0.1.0	32ea8debd47df5ecd96f954a1bcc4721e53cfbd292528de1dc7ba5a2922757b1	variants/base/setups/lombok-idea--setup.sh
@@ -315,6 +319,7 @@ setup	sql-studio	1.0.0	37c2fd6242fcc3e7925b3a037f868e7e6aa2c3620478e360c49a3a058
 setup	sqlite	1.0.0	893824be9b031bffd397f44550a3a9fcf3a5747c69f7bdf4b110a5d285226b72	variants/base/setups/sqlite--setup.sh
 setup	sqluv	1.0.0	2df7cbc86aad89c1a6478dd3e38e24fc7e32cf7dcb8d0bcc4616c7449a87eddd	variants/base/setups/sqluv--setup.sh
 setup	stern	1.0.0	34ea4d09b559d24efa60cde0b1f79536d24bce1a33904c40f08648f1fc095fd7	variants/base/setups/stern--setup.sh
+setup	supercollider	0.1.0	90e9a0ab1920027a12ef18ddb7234f9bd03560ed8f855e22cae86e2acf230016	variants/base/setups/supercollider--setup.sh
 setup	superfile	0.1.0	dd678bfaf672bc74af3e3aa3a734317aa9a407b2e10b1ad2caef70ad2783f262	variants/base/setups/superfile--setup.sh
 setup	svelte-code-extension	1.0.0	72a89f4990116bf86fe62a09ae0269fbd5f6e1aa73519b10b2d1beb5a47c7999	variants/base/setups/svelte-code-extension--setup.sh
 setup	sway	0.1.1	a84990c34c0f35888fe43de5bd99a5311033b2a39253e27ce8aa1a76f1f81113	variants/base/setups/sway--setup.sh
@@ -437,6 +442,7 @@ template	buf	1.1.0	85b4ee8d5f030140f5372331443592b4c767cfa545de4cd5c886e395e55b3
 template	build-essential	1.0.0	254c6538ac77b763ac57bc3376981463f62b56cf4de0e107debe05e85f456c8c	templates/tools/build-essential/template.toml
 template	bun	1.0.0	fba2d87e164a277373a3d7a67fecc31c4534597716584c27ef44677f407b9dc5	templates/languages/bun/template.toml
 template	chromium	1.0.0	c97c90a29d8105486f20dcc0ee4d2865706a2b2a54d25a2047d6596610ec5c35	templates/desktops/chromium/template.toml
+template	chuck	0.1.0	555f6e1def21f3b8a95232524ea6a5986af3e94bc8d0dee12c05a08dee171180	templates/tools/chuck/template.toml
 template	clang	1.1.0	d8a5083f9caa05ae1803cafdee506e170183d9618ba81b47d8d05fbfec799a97	templates/languages/clang/template.toml
 template	claude-code	1.0.0	068c01fcb7e3cec8747f5b0c4920dd5bc8c6883d8f18d5073b8c56d3bf870a7a	templates/ai-tools/claude-code/template.toml
 template	clion	1.0.0	4007787575752d0e3b522a5e24564772969761e23cc512229be762c72cd4f75f	templates/ides/clion/template.toml
@@ -451,6 +457,7 @@ template	conda	1.1.0	2d4488f43dfbde1d94972aafb0f6f4300b1f94335d59699bde4a58ad318
 template	croft	0.2.0	fd45975607af7fdb0526cdbcc3dc836a3e053018b1008272f405dc9195df5aaf	templates/tools/croft/template.toml
 template	crystal	1.0.0	a39b3b18bfeb2e280bab82c8fe68d8dc8736e1ff0dae91f676598ef6e6a46fe5	templates/languages/crystal/template.toml
 template	csharp	1.1.0	b6e52c52efd79c2c3bd7136cfb10cd01a81c0b1cb03b7d6177edeff4d4e313ec	templates/languages/csharp/template.toml
+template	csound	0.1.0	69a4ed8473cb724633da2e573ec5cd90c7e38d248e8eed55f525507504213c59	templates/tools/csound/template.toml
 template	cuda	0.1.1	cab429e200ce0088b6758f24f44cf27c4df765966762c84d167354b5a382552d	templates/tools/cuda/template.toml
 template	cursor	1.0.0	21e1f62fcf42b9ea42d83afcf9dce53b6a07234a6dbd9f8d057b62d43d2131b0	templates/ai-tools/cursor/template.toml
 template	cypress	1.1.0	3548c907df1542edd2ae8640dfee68e92aafa79d61da5ed7dca239df536dbd6e	templates/tools/cypress/template.toml
@@ -537,6 +544,7 @@ template	lazygit	1.1.0	28f5a2160e5907030eb3d373a048d74151f735cee84038162be41ba99
 template	lazysql	0.2.0	19acb1774853c31c1937aa939d9d3b8692e97590626876f8cf77255dc4585b9b	templates/tools/lazysql/template.toml
 template	lean	0.1.0	c9b0ac621897d8e771e0a64fcc074e56c2527c50f40eae5463aa4be709de60f0	templates/languages/lean/template.toml
 template	libreoffice	1.0.0	8b693055cc5e8dcd6c5f53d302ac127c8ad55a21eb3fa050420fa7d593208df3	templates/desktops/libreoffice/template.toml
+template	lilypond	0.1.0	8b549c4b3bfbae6cd5badbaa099747598bd5362b7ae08aaab436cdc321743162	templates/tools/lilypond/template.toml
 template	logo	0.1.0	04549157796baba24738e89cec29ab7fbf9131dbe17f12dcee9eb7670500abe0	templates/education/logo/template.toml
 template	lsp	0.2.0	9464c1f37dcc5390e135a9e246cb0841a21e76fd5ca914050553bd6197169cfd	templates/tools/lsp/template.toml
 template	lua	1.0.0	280f87fd4a9f035ceb5a1c0590f601c9f2532088d3ef8d4a45a2afa039b883d9	templates/languages/lua/template.toml
@@ -601,6 +609,7 @@ template	sqlite	1.0.0	acb431a561235cd8e3a1aa4440602eae54201f1058767e97e2273c62c5
 template	sqluv	0.1.0	2ca235a1be79ace871a862f26ba71382222a6b7d24a51de0de3909b9c89294be	templates/tools/sqluv/template.toml
 template	ssh	1.0.0	799d6d517963cfca52189f35818190cbbc8ac088ab4068a71f581810ccd845a8	templates/tools/ssh/template.toml
 template	stern	1.0.0	f9651b9141a4d7c4870e46426794ad0f5b6dd5c0c31d0bf82a42a7f99be0eeda	templates/tools/stern/template.toml
+template	supercollider	0.1.0	bce23515a0bcb3cb61bd2f230b14d595c46746d02ca006cae74a03cfc9ceae9f	templates/tools/supercollider/template.toml
 template	superfile	0.1.2	b4719fbf3db32ebd0fc8291d15a23db317402a492e48969b75508b7321e1b573	templates/tools/superfile/template.toml
 template	svelte	0.1.0	2ef837e43415e3798d32fbe342d88e9073abab5be2ee0261c6e0ce3e4734b862	templates/frameworks/svelte/template.toml
 template	sway	0.1.1	73aede41360cf6557b64d58f994563e678a2a339650bc595a9283b86378f1c75	templates/desktops/sway/template.toml
@@ -764,6 +773,7 @@ extension	helm+vscode-ext	0.1.0	234b37f513a542241199e495b1bddfa925ef0f79e9234323
 extension	herdr+autostart	0.1.0	9903e944367fe8ec0f870c105fc8d549c0735cd39738c743a51d9e581ccaaf71	templates/ai-tools/herdr/autostart--extension.toml
 extension	hoppscotch+autostart	0.1.0	324d97b3c81575f5805560d5446033563e3b805dfd2181e27259f3178aa09745	templates/tools/hoppscotch/autostart--extension.toml
 extension	hoppscotch+expose	1.0.0	214626527e482a4fa11bc243924724a6bae5d08b634f7a3ba29e365354976e73	templates/tools/hoppscotch/expose--extension.toml
+extension	host-audio+jack	0.1.0	9ea206207c83c0e8e6b49d9e9bdaa2d02f05ee100eee1429a34ea880effb5394	templates/tools/host-audio/jack--extension.toml
 extension	i3+ctrl-alt	1.0.0	f20edb2606a30fd2d8e68779606709b47eae2466618e8d3ef46281fbebbe215b	templates/desktops/i3/ctrl-alt--extension.toml
 extension	i3+default	1.0.0	b218fc0cd28092d0a8eaf6fa553444751b160cca6a6a186a4719d9d731099651	templates/desktops/i3/default--extension.toml
 extension	i3+gaps	1.1.0	146de0937e6773658a8d279436fae9fb01ac91873d939b9c6ed2ca2c7652d466	templates/desktops/i3/gaps--extension.toml
@@ -804,6 +814,7 @@ extension	lean+mcp	0.2.0	8f1732e7418fdb8f58a04a518c2e1e0fe56c4afcf166847b6f1ffe0
 extension	lean+nvim	0.1.0	a9fbb15595bff1ebe5997ef6df1b13f2ae8a96c0406d777a90e10e51ed84abe9	templates/languages/lean/nvim--extension.toml
 extension	lean+toolchain-file	0.1.0	84032dbc78a367c0fb68636484b83f2220e48f24598cf80b06fcc59074e853a9	templates/languages/lean/toolchain-file--extension.toml
 extension	lean+vscode-ext	0.1.0	ef46f57e4fd2d7611bee78ddbbc266ab87169d3048d57054f7f43f5028d154f4	templates/languages/lean/vscode-ext--extension.toml
+extension	lilypond+play	0.1.0	29c6fe3a5409c4d54720bdc89229d4efc902135dc4d289acd997b7120224c05d	templates/tools/lilypond/play--extension.toml
 extension	logo+autostart	0.1.0	290bfb03d1021250d843a6776607eae4c85d2f353c4e8705c9a4ab7c6a71af56	templates/education/logo/autostart--extension.toml
 extension	logo+expose	1.0.0	1dd58d0cb8a6262950c2193c3a5c7d8562ea2573b007729462c2937c9d047639	templates/education/logo/expose--extension.toml
 extension	lsp+bash	0.1.0	572c4aad677ad914640c89ff6f926c248b069279cca2343fd7c44ddf6c64c197	templates/tools/lsp/bash--extension.toml

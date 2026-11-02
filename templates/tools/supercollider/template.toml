@@ -1,0 +1,11 @@
+cb-version = "0.1.0"
+display-name = "SuperCollider"
+display-disc = "Live-coding sound synthesis: sclang language + scsynth server"
+display-detail = "Installs SuperCollider's language (sclang) and synthesis server (scsynth) with the sc3-plugins UGens; sclang runs headless when there is no display. scsynth is a JACK program: to hear it, select host-audio with its +jack extension (JACK through the host's PipeWire). Score.recordNRT renders to a file with no audio server."
+display-order = 59
+tags = ["music", "audio", "synthesis", "live-coding", "supercollider"]
+
+[segments]
+"Boothfile--45" = """
+setup supercollider
+"""

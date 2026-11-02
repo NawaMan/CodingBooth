@@ -41,6 +41,7 @@ setup bun
 setup bun-code-extension
 setup chrome-managed-policies
 setup chromium-browser
+setup chuck
 setup clang
 setup clang-code-extension
 setup claude-code
@@ -60,6 +61,7 @@ setup cpp-nb-kernel
 setup croft
 setup crystal
 setup crystal-code-extension
+setup csound
 setup cuda
 setup cursor
 setup cypress
@@ -97,6 +99,7 @@ setup firebase
 setup firefox
 setup firefox-managed-policies
 setup floci
+setup fluidsynth
 setup flutter
 setup flutter-android
 setup flutter-code-extension
@@ -198,6 +201,7 @@ setup lean-lsp-mcp
 setup lean-nvim
 setup lean-toolchain-file
 setup libreoffice
+setup lilypond
 setup logo
 setup lombok-eclipse
 setup lombok-idea
@@ -316,6 +320,7 @@ setup sql-studio
 setup sqlite
 setup sqluv
 setup stern
+setup supercollider
 setup superfile
 setup svelte-code-extension
 setup sway
