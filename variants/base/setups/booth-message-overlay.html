@@ -388,6 +388,50 @@
     color: #60a5fa;
   }
 
+  /* Sound button (browser-audio): the booth is playing and this tab is not listening. */
+  .bl-btn-capture.bl-audio-nudge {
+    color: #fde68a;
+    animation: bl-audio-pulse 1.6s ease-in-out infinite;
+  }
+
+  .bl-audio-hint {
+    margin-top: 4px;
+    font-size: 11px;
+    color: #fbbf24;
+    text-align: center;
+  }
+
+  .bl-audio-dot {
+    color: #fbbf24;
+    animation: bl-audio-fade 1.6s ease-in-out infinite;
+  }
+
+  @keyframes bl-audio-fade {
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.4;
+    }
+  }
+
+  @keyframes bl-audio-pulse {
+
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.0);
+      opacity: 1;
+    }
+
+    50% {
+      box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.3);
+      opacity: 0.75;
+    }
+  }
+
   .bl-btn-icon {
     font-size: 16px;
   }
@@ -3121,6 +3165,10 @@
   // a remote booth on plain http:// is the case this is for. Being on is
   // remembered per browser; after a reload the first click or key anywhere
   // starts it again, since browsers only allow sound after a gesture.
+  //
+  // Sound is not buffered while off, so a tab that is off checks every few
+  // seconds whether the booth is playing, and if so the button pulses with a
+  // hint (and a note in the panel header, in case the panel is collapsed).
   (function () {
     if (!window.BoothPanel || !window.fetch || !window.ReadableStream) return;
     var AC = window.AudioContext || window.webkitAudioContext;
@@ -3130,7 +3178,9 @@
     var LEAD = 0.12;       // seconds queued ahead of the clock
     var MAX_AHEAD = 0.6;   // past this, drop a chunk to catch up
     var MIN_BYTES = 3840;  // 20 ms of 48 kHz stereo s16le
+    var POLL_MS = 3000;    // while off: is the booth playing?
     var ctx = null, abort = null, on = false, retry = null, btn = null;
+    var hint = null, dot = null, playing = false;
     var rate = 48000, channels = 2, nextTime = 0;
 
     function remembered() {
@@ -3141,11 +3191,25 @@
     }
     function render() {
       if (!btn) return;
+      var nudge = !on && playing;
       btn.classList.toggle("active", on);
+      btn.classList.toggle("bl-audio-nudge", nudge);
       btn.innerHTML = '<span class="bl-btn-icon">' + (on ? "&#x1F50A;" : "&#x1F507;") + "</span> " +
-        (on ? "Sound on" : "Sound off");
+        (on ? "Sound on" : "Turn sound on");
       btn.title = on ? "Booth sound plays in this tab - click to mute"
                      : "Play the booth's sound in this tab";
+      if (hint) hint.hidden = !nudge;
+      if (dot) dot.hidden = !nudge;
+    }
+
+    function poll() {
+      if (on || document.hidden) return;
+      fetch(apiBase + "/audio/state", { cache: "no-store" }).then(function (r) {
+        return r.ok ? r.json() : null;
+      }).then(function (j) {
+        var now = !!(j && j.playing);
+        if (now !== playing) { playing = now; render(); }
+      }).catch(function () { });
     }
 
     function play(bytes) {
@@ -3223,13 +3287,27 @@
       return r.ok ? r.json() : null;
     }).then(function (j) {
       if (!j || !j.enabled) return;
-      btn = window.BoothPanel.register({
+      var box = window.BoothPanel.register({
         id: "booth-audio",
         priority: 65,
-        html: '<button class="bl-btn bl-btn-capture" id="bl-audio-btn"></button>'
+        html: '<div><button class="bl-btn bl-btn-capture" id="bl-audio-btn"></button>' +
+          '<div class="bl-audio-hint" id="bl-audio-hint" hidden>The booth is playing sound</div></div>'
       });
-      if (!btn) return;
+      if (!box) return;
+      btn = box.querySelector("#bl-audio-btn");
+      hint = box.querySelector("#bl-audio-hint");
+      var title = document.querySelector("#bl-drag-handle > span");
+      if (title) {
+        dot = document.createElement("span");
+        dot.className = "bl-audio-dot";
+        dot.hidden = true;
+        dot.title = "The booth is playing sound - turn sound on to hear it";
+        dot.innerHTML = " &#x266A;";
+        title.appendChild(dot);
+      }
+      playing = !!j.playing;
       render();
+      setInterval(poll, POLL_MS);
       btn.addEventListener("click", function () { if (on) stop(); else start(); });
       if (remembered()) {
         var resume = function () {
