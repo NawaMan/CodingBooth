@@ -4,6 +4,16 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A recipe run from the wrong booth says so.** In a booth started on a parent folder (say
+  `examples/workspaces`), `cd music-example && just drums` ran `chuck` right there, in a booth
+  without ChucK: `{{run-in-booth}}` only asked whether it was in *a* booth. It now also asks
+  whether the Justfile's folder is that booth's project: one with its own `.booth/` that is not the
+  booth's `/home/coder/code` stops with "music-example has its own booth, and this is the
+  workspaces booth - exit it and run the recipe on the host". Subfolders without a `.booth/` run in
+  place as before. The starter Justfile (`booth just-init`) and every example's Justfile have it;
+  an existing project's Justfile changes only if you copy the two lines over from
+  `docs/just/Justfile`.
+
 - **Booths can play sound through your speakers: the `host-audio` template.** Select it
   (`--select 'python/host-audio'`) and code in the booth plays on the host's speakers — `paplay`,
   any PulseAudio client, and ALSA-only programs, since ALSA's default device is routed through

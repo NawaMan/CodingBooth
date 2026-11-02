@@ -6,6 +6,8 @@
 #   {{run-in-booth}}  On the host: `./booth exec --run --`, which runs the line in
 #                     this project's booth, starting one first if none is running
 #                     (and stopping it again after). Inside the booth: as is.
+#                     Inside another project's booth (a parent folder's, say):
+#                     refused, as that booth lacks this project's tools.
 #   {{run-on-host}}   On the host: as is. Inside the booth: refused, for lines that
 #                     drive the booth from outside (./booth ...).
 #
@@ -19,7 +21,8 @@
 # https://github.com/NawaMan/CodingBooth/blob/main/docs/just/Justfile
 
 booth        := env("BOOTH", "./booth")
-run-in-booth := if env("BOOTH_CONTAINER_NAME", "") == "" { booth + " exec --run --" } else { "" }
+own-booth    := if justfile_directory() == "/home/coder/code" { "true" } else if path_exists(justfile_directory() / ".booth") == "true" { "false" } else { "true" }
+run-in-booth := if env("BOOTH_CONTAINER_NAME", "") == "" { booth + " exec --run --" } else if own-booth == "true" { "" } else { "echo 'just: " + file_name(justfile_directory()) + " has its own booth, and this is the " + env("BOOTH_CONTAINER_NAME") + " booth - exit it and run the recipe on the host.' >&2; exit 2;" }
 run-on-host  := if env("BOOTH_CONTAINER_NAME", "") == "" { "" } else { "echo 'just: this recipe runs on the host - exit the booth and run it there.' >&2; exit 2;" }
 
 [private]
