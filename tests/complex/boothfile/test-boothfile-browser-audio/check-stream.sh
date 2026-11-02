@@ -8,10 +8,15 @@ request() { printf 'GET /booth-messages/api/audio/%s HTTP/1.1\r\nHost: booth\r\n
 echo "state: $(request state | booth-message-api-server --handle | tail -1)"
 
 # Stream for 3 s while a second of noise plays through PulseAudio and a second
-# through ALSA, which the pulse plugin routes into the same sink.
+# through ALSA, which the pulse plugin routes into the same sink. Mid-noise,
+# /audio/state should say something is playing.
 request stream | timeout 3 booth-message-api-server --handle > /tmp/stream.http &
 sleep 0.5
-head -c 192000 /dev/urandom | pacat --raw --format=s16le --rate=48000 --channels=2
+head -c 192000 /dev/urandom | pacat --raw --format=s16le --rate=48000 --channels=2 &
+noise=$!
+sleep 0.3
+echo "state playing: $(request state | booth-message-api-server --handle | tail -1)"
+wait "$noise"
 aplay -q -t raw -f S16_LE -r 48000 -c 2 -d 1 /dev/urandom 2>/dev/null
 wait
 
