@@ -33,6 +33,7 @@ setup	booth-restart-code-extension	1.0.0	6d7311954cb5c0869b7826bee302c2b0bdebe07
 setup	booth-shutdown-code-extension	1.0.0	5b6f200990ef0ad2f80181dc489808eddc15a581bee3bc0750e3d1d33a638d89	variants/base/setups/booth-shutdown-code-extension--setup.sh
 setup	booth-web-preview-code-extension	0.1.0	62d0ee4f84454ef4efa09185c79b74f9a6ee98650de82ff8fa8ceb65fc4f3b87	variants/base/setups/booth-web-preview-code-extension--setup.sh
 setup	booth-web-preview-notebook	0.1.0	137259c6c971c91d3b360f91793672f0dc1f8d184d8a1d82b96bef7dc7393fd9	variants/base/setups/booth-web-preview-notebook--setup.sh
+setup	browser-audio	0.1.0	7bb5f0b55a9409f1f328a1fe8dab83037811e6a8ddca286007d52110ac57aacb	variants/base/setups/browser-audio--setup.sh
 setup	buf	1.1.0	3699af0acd45777f032f6957ef6d3eb04f48dad7bd9ca587621b4da9500c45df	variants/base/setups/buf--setup.sh
 setup	buf-code-extension	0.1.0	80adc91ce78dcb830912fb1518c53916fae7fbb1685599f7a6f5bbe3be359350	variants/base/setups/buf-code-extension--setup.sh
 setup	build-essential	1.0.0	eb750169b91459caa5f62a3a59efed4bab6a1a20a144e2f753f51960dd9faf2a	variants/base/setups/build-essential--setup.sh
@@ -393,8 +394,8 @@ helper	booth--shutdown	1.0.0	2b7d830b4da0ac0cd237e304c90454dda06febf68fe86c869ce
 helper	booth--theme	0.1.1	438e1bcb87e380d6e4013ed3dac1780bb4ae45aa110d65e45174093c1de40469	variants/base/setups/booth--theme
 helper	booth-keyboard-capture.js	0.1.0	1b8bdf5a1dd143bb693efb5d01ff2fc1ac227a91fffadf5e25a45fdbecb05b18	variants/base/setups/booth-keyboard-capture.js
 helper	booth-lifecycle-watcher	1.0.0	2542a0cbd246097ec7b16b5c30d14769abf02bcc8190b8755b1bb0db4dad2b7f	variants/base/setups/booth-lifecycle-watcher
-helper	booth-message-api-server	1.4.0	1fd9887efa76e3d247b5eddace42a179fc8d329f1ad53908a16e528136d6bd66	variants/base/setups/booth-message-api-server
-helper	booth-message-overlay.html	1.2.0	f595e010691948121adcec4c642393f6fdb5ad5cc1f4b5a86b787d710a4b5b53	variants/base/setups/booth-message-overlay.html
+helper	booth-message-api-server	1.5.0	d347248f2b10844347e1c5f81c98d5a84d50bdd822cc7198fa651b242e5c1a7e	variants/base/setups/booth-message-api-server
+helper	booth-message-overlay.html	1.3.0	2913c1cd534abe9b5d0a2c6d1838b44b64288753072edd398628c659156bfa68	variants/base/setups/booth-message-overlay.html
 helper	booth-ready.js	0.1.1	7f34aa1fc35ab3436a405bb4d037746e60fd207aaf857a16838a889378205d0a	variants/base/setups/booth-ready.js
 helper	booth-timer-notifier	1.0.0	989957246822c338cb8d8d99c3be2e9d8fede407bc75b68469e3981635d620c1	variants/base/setups/booth-timer-notifier
 helper	cb-booth-favicon.sh	0.1.0	1a58ecdc1b85acfb1cc1bf8e775dc533308ed7520611c0c8b62e51d22e31690e	variants/base/setups/cb-booth-favicon.sh
@@ -438,6 +439,7 @@ template	bash	0.3.0	dcd4a26a8e1ecd097203c7f73b9ba2fc38e7142debd8ff02c66df61ad0d6
 template	bash-nb-kernel	1.0.0	dbb76597b7fdce528c63c7e45ae18d7a287b460f23efed73409de544545ebf9c	templates/tools/bash-nb-kernel/template.toml
 template	bluej	1.2.0	06cd719f3f830dba55064ac1b0cbb43848627be40551471be5ee0d6dec307fe5	templates/education/bluej/template.toml
 template	brew-pkg	1.0.0	2af46f813c76f44e49fdc2c42d6520989ac389632145f642636614d22f85ee4c	templates/tools/brew-pkg/template.toml
+template	browser-audio	0.1.0	328cde8cf8156c2662c8f6ad4a3755e9161874114f8b1b50ab75bf94ef588b98	templates/tools/browser-audio/template.toml
 template	buf	1.1.0	85b4ee8d5f030140f5372331443592b4c767cfa545de4cd5c886e395e55b395f	templates/tools/buf/template.toml
 template	build-essential	1.0.0	254c6538ac77b763ac57bc3376981463f62b56cf4de0e107debe05e85f456c8c	templates/tools/build-essential/template.toml
 template	bun	1.0.0	fba2d87e164a277373a3d7a67fecc31c4534597716584c27ef44677f407b9dc5	templates/languages/bun/template.toml

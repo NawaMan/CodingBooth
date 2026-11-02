@@ -1,5 +1,5 @@
 <!-- Booth Message Overlay — shared across all variants -->
-<!-- cb-version: 1.2.0 -->
+<!-- cb-version: 1.3.0 -->
 <style>
   .msg-overlay {
     display: none;
@@ -386,6 +386,50 @@
   .bl-btn-capture.active {
     background: #1e3a5f;
     color: #60a5fa;
+  }
+
+  /* Sound button (browser-audio): the booth is playing and this tab is not listening. */
+  .bl-btn-capture.bl-audio-nudge {
+    color: #fde68a;
+    animation: bl-audio-pulse 1.6s ease-in-out infinite;
+  }
+
+  .bl-audio-hint {
+    margin-top: 4px;
+    font-size: 11px;
+    color: #fbbf24;
+    text-align: center;
+  }
+
+  .bl-audio-dot {
+    color: #fbbf24;
+    animation: bl-audio-fade 1.6s ease-in-out infinite;
+  }
+
+  @keyframes bl-audio-fade {
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.4;
+    }
+  }
+
+  @keyframes bl-audio-pulse {
+
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.0);
+      opacity: 1;
+    }
+
+    50% {
+      box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.3);
+      opacity: 0.75;
+    }
   }
 
   .bl-btn-icon {
@@ -3108,5 +3152,174 @@
     window.addEventListener("pageshow", function (e) {
       if (e.persisted) { gone = false; beat(); }
     });
+  })();
+
+  // Sound button (browser-audio). A booth with the browser-audio template runs
+  // its own sound server and streams it at /audio/stream as raw s16le PCM; the
+  // button plays that stream here, in whatever tab views the booth, so a booth
+  // on macOS, Windows or a remote host still has sound. A booth without it
+  // answers /audio/state with a 404, and no button shows.
+  //
+  // Playback schedules one AudioBuffer per chunk, a little ahead of the clock.
+  // An AudioWorklet would be smoother but only exists in a secure context, and
+  // a remote booth on plain http:// is the case this is for. Being on is
+  // remembered per browser; after a reload the first click or key anywhere
+  // starts it again, since browsers only allow sound after a gesture.
+  //
+  // Sound is not buffered while off, so a tab that is off checks every few
+  // seconds whether the booth is playing, and if so the button pulses with a
+  // hint (and a note in the panel header, in case the panel is collapsed).
+  (function () {
+    if (!window.BoothPanel || !window.fetch || !window.ReadableStream) return;
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    var apiBase = window.BOOTH_MSG_API_BASE || "booth-messages/api";
+    var KEY = "booth-audio-on";
+    var LEAD = 0.12;       // seconds queued ahead of the clock
+    var MAX_AHEAD = 0.6;   // past this, drop a chunk to catch up
+    var MIN_BYTES = 3840;  // 20 ms of 48 kHz stereo s16le
+    var POLL_MS = 3000;    // while off: is the booth playing?
+    var ctx = null, abort = null, on = false, retry = null, btn = null;
+    var hint = null, dot = null, playing = false;
+    var rate = 48000, channels = 2, nextTime = 0;
+
+    function remembered() {
+      try { return localStorage.getItem(KEY) === "1"; } catch (e) { return false; }
+    }
+    function remember(v) {
+      try { localStorage.setItem(KEY, v ? "1" : "0"); } catch (e) { }
+    }
+    function render() {
+      if (!btn) return;
+      var nudge = !on && playing;
+      btn.classList.toggle("active", on);
+      btn.classList.toggle("bl-audio-nudge", nudge);
+      btn.innerHTML = '<span class="bl-btn-icon">' + (on ? "&#x1F50A;" : "&#x1F507;") + "</span> " +
+        (on ? "Sound on" : "Turn sound on");
+      btn.title = on ? "Booth sound plays in this tab - click to mute"
+                     : "Play the booth's sound in this tab";
+      if (hint) hint.hidden = !nudge;
+      if (dot) dot.hidden = !nudge;
+    }
+
+    function poll() {
+      if (on || document.hidden) return;
+      fetch(apiBase + "/audio/state", { cache: "no-store" }).then(function (r) {
+        return r.ok ? r.json() : null;
+      }).then(function (j) {
+        var now = !!(j && j.playing);
+        if (now !== playing) { playing = now; render(); }
+      }).catch(function () { });
+    }
+
+    function play(bytes) {
+      var frames = Math.floor(bytes.length / (2 * channels));
+      if (!frames) return;
+      var now = ctx.currentTime;
+      if (nextTime < now) nextTime = now + LEAD;          // underrun: start again
+      if (nextTime - now > MAX_AHEAD) return;             // backlog: drop
+      var buf = ctx.createBuffer(channels, frames, rate);
+      var view = new DataView(bytes.buffer, bytes.byteOffset, frames * 2 * channels);
+      for (var c = 0; c < channels; c++) {
+        var out = buf.getChannelData(c);
+        for (var i = 0; i < frames; i++) {
+          out[i] = view.getInt16((i * channels + c) * 2, true) / 32768;
+        }
+      }
+      var src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(ctx.destination);
+      src.start(nextTime);
+      nextTime += buf.duration;
+    }
+
+    function stream() {
+      if (!on) return;
+      abort = new AbortController();
+      var pending = new Uint8Array(0);
+      fetch(apiBase + "/audio/stream", { cache: "no-store", signal: abort.signal }).then(function (r) {
+        if (!r.ok || !r.body) throw new Error("audio stream: HTTP " + r.status);
+        rate = parseInt(r.headers.get("X-Audio-Rate"), 10) || 48000;
+        channels = parseInt(r.headers.get("X-Audio-Channels"), 10) || 2;
+        nextTime = 0;
+        var reader = r.body.getReader();
+        function pump() {
+          return reader.read().then(function (res) {
+            if (res.done) throw new Error("audio stream ended");
+            var joined = new Uint8Array(pending.length + res.value.length);
+            joined.set(pending);
+            joined.set(res.value, pending.length);
+            if (joined.length < MIN_BYTES) { pending = joined; return pump(); }
+            var whole = joined.length - (joined.length % (2 * channels));
+            play(joined.subarray(0, whole));
+            pending = joined.slice(whole);
+            return pump();
+          });
+        }
+        return pump();
+      }).catch(function () {
+        // A restart or a dropped connection: ask again while still on.
+        if (on) retry = setTimeout(stream, 2000);
+      });
+    }
+
+    function start() {
+      if (on) return;
+      on = true;
+      remember(true);
+      if (!ctx) {
+        try { ctx = new AC({ sampleRate: 48000 }); } catch (e) { ctx = new AC(); }
+      }
+      if (ctx.state !== "running") ctx.resume().catch(function () { });
+      render();
+      stream();
+    }
+    function stop() {
+      on = false;
+      remember(false);
+      clearTimeout(retry);
+      if (abort) abort.abort();
+      if (ctx) ctx.suspend().catch(function () { });
+      render();
+    }
+
+    fetch(apiBase + "/audio/state", { cache: "no-store" }).then(function (r) {
+      return r.ok ? r.json() : null;
+    }).then(function (j) {
+      if (!j || !j.enabled) return;
+      var box = window.BoothPanel.register({
+        id: "booth-audio",
+        priority: 65,
+        html: '<div><button class="bl-btn bl-btn-capture" id="bl-audio-btn"></button>' +
+          '<div class="bl-audio-hint" id="bl-audio-hint" hidden>The booth is playing sound</div></div>'
+      });
+      if (!box) return;
+      btn = box.querySelector("#bl-audio-btn");
+      hint = box.querySelector("#bl-audio-hint");
+      var title = document.querySelector("#bl-drag-handle > span");
+      if (title) {
+        dot = document.createElement("span");
+        dot.className = "bl-audio-dot";
+        dot.hidden = true;
+        dot.title = "The booth is playing sound - turn sound on to hear it";
+        dot.innerHTML = " &#x266A;";
+        title.appendChild(dot);
+      }
+      playing = !!j.playing;
+      render();
+      setInterval(poll, POLL_MS);
+      btn.addEventListener("click", function () { if (on) stop(); else start(); });
+      if (remembered()) {
+        var resume = function () {
+          ["keydown", "mousedown", "touchstart"].forEach(function (type) {
+            document.removeEventListener(type, resume, true);
+          });
+          if (!on) start();
+        };
+        ["keydown", "mousedown", "touchstart"].forEach(function (type) {
+          document.addEventListener(type, resume, true);
+        });
+      }
+    }).catch(function () { });
   })();
 </script>
