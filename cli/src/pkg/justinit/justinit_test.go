@@ -205,6 +205,19 @@ func TestStarterRuns(t *testing.T) {
 	if out, err := runWith(local, true, "--dry-run", "info"); err != nil || strings.Contains(out, "codingbooth") || !strings.Contains(out, "booth--info") {
 		t.Errorf("in-booth info with BOOTH: err=%v out=%q, want a bare booth--info", err, out)
 	}
+
+	// A project with its own .booth/, outside /home/coder/code, is another
+	// project's folder seen from this booth (a parent folder's): its recipes
+	// would run without its tools, so run-in-booth refuses instead.
+	if err := os.Mkdir(filepath.Join(dir, ".booth"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if out, err := run(true, "info"); err == nil || !strings.Contains(out, "a project has its own booth, and this is the test-booth booth") {
+		t.Errorf("in another project's booth: err=%v out=%q, want a wrong-booth refusal", err, out)
+	}
+	if out, err := run(false, "--dry-run", "info"); err != nil || !strings.Contains(out, "./booth exec --run -- booth--info") {
+		t.Errorf("host info with .booth/: err=%v out=%q, want it handed to ./booth exec --run", err, out)
+	}
 }
 
 // sameFile reports whether two paths lead to the same file on disk, so a test
