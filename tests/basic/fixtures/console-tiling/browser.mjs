@@ -160,8 +160,8 @@ try {
       specRan: window.BOOTH_CONSOLE_SPEC === "shared",
       hint: (document.getElementById('shortcut-hint') || {}).textContent || '',
       // No platform is emulated here, so the hint follows the host's: ⌃⌥ on a
-      // Mac, ^⎇ elsewhere (the same test the console makes).
-      hintMod: /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || "") ? "⌃⌥" : "^⎇",
+      // Mac, the words elsewhere (the same test the console makes).
+      hintMod: /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || "") ? "⌃⌥" : "Ctrl+Alt",
     }))()`);
     report(loaded && f.intact && f.specRan && f.hint.includes(f.hintMod),
       "A console.json with </script> and <!-- inside a tab still loads the whole page and its scripts", f);
@@ -586,14 +586,13 @@ try {
     await frameKey(1, { key: "l", code: "KeyL", ctrlKey: true, altKey: true });
     const winPlain = await focusedNow();
     const winLabels = await evaluate(LABELS);
-    // The hint is short forms, the tooltip and everything roomier is words.
-    const winSaysCtrlAlt = winLabels.hint.includes("^⎇") && winLabels.hint.includes("^⎇⇧")
-      && !/Ctrl\+Alt|Control\+Option/.test(winLabels.hint)
-      && winLabels.title.includes("^⎇ is Ctrl+Alt")
+    // Off a Mac the hint says the words too; the symbols are a Mac's alone.
+    const winSaysCtrlAlt = winLabels.hint.includes("Ctrl+Alt") && winLabels.hint.includes("Ctrl+Alt+Shift")
+      && !Object.values(winLabels).some((text) => /[⌃⌥⇧⎇]/.test(text))
       && [winLabels.help, winLabels.add, winLabels.reset].every((text) => text.includes("Ctrl+Alt"))
       && !Object.values(winLabels).some((text) => text.includes("Control+Option"));
     report(ready && winStart === "1" && winAltGr === "1" && winPlain === "2" && winSaysCtrlAlt,
-      "On Windows, AltGr typing a character is not a shortcut, Ctrl+Alt+l still focuses right, the hint reads ^⎇ and the words stay Ctrl+Alt",
+      "On Windows, AltGr typing a character is not a shortcut, Ctrl+Alt+l still focuses right, the hint and the words say Ctrl+Alt",
       { ready, winStart, winAltGr, winPlain, winLabels });
 
     // On a Mac the same keys are Control+Option, and Option is that layout's
