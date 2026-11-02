@@ -1,6 +1,6 @@
 # CodingBooth
 
-**Current Version:** 0.82.0--legacy-langs
+**Current Version:** v0.82.0--rc1
 
 ![Works On My Machine](docs/Works-On-My-Machine-small.png)
 
