@@ -94,7 +94,9 @@ func onlyMarker(dir string) bool {
 		return false
 	}
 	for _, e := range entries {
-		if e.Name() != mountMarker {
+		// The marker must be a plain file: a folder or symlink of that name is
+		// something of the user's, and copying over it would fail or write elsewhere.
+		if e.Name() != mountMarker || !e.Type().IsRegular() {
 			return false
 		}
 	}

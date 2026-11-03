@@ -148,6 +148,25 @@ func TestApply_FillsAFolderHoldingOnlyTheMarker(t *testing.T) {
 	}
 }
 
+// A ".mount-this" that is a folder is not booth's marker: the folder is the user's.
+func TestApply_LeavesAFolderWhoseMarkerIsNotAFile(t *testing.T) {
+	seed, target := t.TempDir(), t.TempDir()
+	dir := "home/coder/.config/tool"
+	write(t, filepath.Join(seed, dir, mountMarker), "")
+	write(t, filepath.Join(seed, dir, "a.conf"), "a")
+	if err := os.MkdirAll(filepath.Join(target, dir, mountMarker), 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	seeded, err := Apply(seed, target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(seeded) != 0 {
+		t.Errorf("seeded = %v, want none", seeded)
+	}
+}
+
 func TestApply_SkipsFilesAtTheRoot(t *testing.T) {
 	seed, target := t.TempDir(), t.TempDir()
 	write(t, filepath.Join(seed, "README.md"), "docs")
