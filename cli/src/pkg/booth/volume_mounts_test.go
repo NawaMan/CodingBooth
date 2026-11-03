@@ -428,3 +428,40 @@ func TestCreateMarkedVolumeSources_DryrunCreatesNothing(t *testing.T) {
 		t.Fatalf("dry run should still show the mount; got %v", got)
 	}
 }
+
+// "-v=spec" / "--volume=spec" must reach every volume step in the two-item form:
+// otherwise a missing host folder is not dropped, `create` is not stripped, and a
+// cache entry on the same target gives Docker a duplicate mount point.
+func TestSplitInlineVolumeItems_InlineFormsGetTheVolumeSteps(t *testing.T) {
+	home := t.TempDir()
+	created := filepath.Join(home, "sccache")
+	missing := filepath.Join(home, "absent")
+
+	items := splitInlineVolumeItems([]string{
+		"-v=" + missing + ":/home/coder/.m2",
+		"--volume=" + created + ":/home/coder/.cache/sccache:create",
+		"--volume-driver=local",
+		"--mount=type=volume,dst=/x",
+	})
+	want := []string{
+		"-v", missing + ":/home/coder/.m2",
+		"--volume", created + ":/home/coder/.cache/sccache:create",
+		"--volume-driver=local",
+		"--mount=type=volume,dst=/x",
+	}
+	if strings.Join(items, "\n") != strings.Join(want, "\n") {
+		t.Fatalf("split = %q, want %q", items, want)
+	}
+
+	items, assumed := createMarkedVolumeSources(items, home, false)
+	kept := filterMissingVolumeMountItemsAssuming(items, home, assumed)
+	if containsSubstring(kept, "/home/coder/.m2") {
+		t.Errorf("a missing -v= host folder must be dropped; got %v", kept)
+	}
+	if containsSubstring(kept, ":create") {
+		t.Errorf("`create` must be stripped from a --volume= spec; got %v", kept)
+	}
+	if !containsPair(kept, "--volume", created+":/home/coder/.cache/sccache") {
+		t.Errorf("expected the create mount kept; got %v", kept)
+	}
+}

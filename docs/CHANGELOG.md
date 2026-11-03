@@ -14,7 +14,8 @@ This file contains a list of changes for each released version.
   makes the Cache or Shared entry step aside, so Docker does not get two mounts on one path. Only
   `-v` / `--volume` with an exactly matching target counted: `--mount type=bind,…,dst=…`, the `-v=…`
   form, or a target with a trailing `/` left both in place, and the booth refused to start. They
-  all count now. See [Live Links](IN-OUT.md#2-start-time--live-links).
+  all count now. The `-v=…` / `--volume=…` forms also get the same missing-host-folder and `:create`
+  handling as `-v …` now. See [Live Links](IN-OUT.md#2-start-time--live-links).
 
 - **A `--booth-dir` cache is checked for being gitignored too.** The check that refuses to start
   while `.booth/cache/` could be committed was skipped for any `--booth-dir`, even one inside a git
