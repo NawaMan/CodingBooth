@@ -105,8 +105,31 @@ func TestApply_CopiesAMarkedFolderWhole(t *testing.T) {
 	}
 }
 
-// Once the folder exists it is the user's: a file deleted from it stays deleted.
+// Once the folder holds anything of its own it is the user's: a file deleted from it
+// stays deleted.
 func TestApply_LeavesAnExistingMarkedFolder(t *testing.T) {
+	seed, target := t.TempDir(), t.TempDir()
+	dir := "home/coder/.config/tool"
+	write(t, filepath.Join(seed, dir, mountMarker), "")
+	write(t, filepath.Join(seed, dir, "a.conf"), "a")
+	write(t, filepath.Join(target, dir, mountMarker), "")
+	write(t, filepath.Join(target, dir, "mine.conf"), "mine")
+
+	seeded, err := Apply(seed, target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(target, dir, "a.conf")); !os.IsNotExist(err) {
+		t.Errorf("a.conf should not be put back into an existing folder")
+	}
+	if len(seeded) != 0 {
+		t.Errorf("seeded = %v, want none", seeded)
+	}
+}
+
+// A folder holding only the marker is what booth creates for a declared folder with no
+// seed, so a seed added later fills it, as an empty file is filled.
+func TestApply_FillsAFolderHoldingOnlyTheMarker(t *testing.T) {
 	seed, target := t.TempDir(), t.TempDir()
 	dir := "home/coder/.config/tool"
 	write(t, filepath.Join(seed, dir, mountMarker), "")
@@ -117,8 +140,27 @@ func TestApply_LeavesAnExistingMarkedFolder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := os.Stat(filepath.Join(target, dir, "a.conf")); !os.IsNotExist(err) {
-		t.Errorf("a.conf should not be put back into an existing folder")
+	if got := read(t, filepath.Join(target, dir, "a.conf")); got != "a" {
+		t.Errorf("a.conf = %q, want the seed", got)
+	}
+	if want := []string{filepath.FromSlash(dir)}; !reflect.DeepEqual(seeded, want) {
+		t.Errorf("seeded = %v, want %v", seeded, want)
+	}
+}
+
+// A ".mount-this" that is a folder is not booth's marker: the folder is the user's.
+func TestApply_LeavesAFolderWhoseMarkerIsNotAFile(t *testing.T) {
+	seed, target := t.TempDir(), t.TempDir()
+	dir := "home/coder/.config/tool"
+	write(t, filepath.Join(seed, dir, mountMarker), "")
+	write(t, filepath.Join(seed, dir, "a.conf"), "a")
+	if err := os.MkdirAll(filepath.Join(target, dir, mountMarker), 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	seeded, err := Apply(seed, target)
+	if err != nil {
+		t.Fatal(err)
 	}
 	if len(seeded) != 0 {
 		t.Errorf("seeded = %v, want none", seeded)
