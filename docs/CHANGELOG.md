@@ -4,6 +4,11 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The Console UI's shortcut hint says `Ctrl+Alt` again, except on a Mac.** The toolbar's
+  Keyboard Shortcut Hint had written its modifiers as `^⎇` / `^⎇⇧` on Linux and Windows — symbols
+  few people read as Ctrl+Alt. They are the words `Ctrl+Alt` / `Ctrl+Alt+Shift` there once more;
+  a Mac keeps Apple's own `⌃⌥` / `⌃⌥⇧`, the way its keyboard prints them.
+  See [Keyboard Shortcuts (Tiling)](BOOTH_CONSOLE.md#keyboard-shortcuts-tiling).
 - **A recipe run from the wrong booth says so.** In a booth started on a parent folder (say
   `examples/workspaces`), `cd music-example && just drums` ran `chuck` right there, in a booth
   without ChucK: `{{run-in-booth}}` only asked whether it was in *a* booth. It now also asks
