@@ -4,6 +4,11 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A `--booth-dir` cache is checked for being gitignored too.** The check that refuses to start
+  while `.booth/cache/` could be committed was skipped for any `--booth-dir`, even one inside a git
+  repo. It now runs against the repo the cache folder is in, whichever that is; a booth dir in no
+  repo (`booth express`'s spec) still has nothing to check. A host without `git` now gets a warning
+  instead of a silent skip. See [Gitignore Requirement](BOOTH_LOCALCACHE.md#gitignore-requirement).
 - **Shared mounts any path, like Cache.** `.booth/shared/` mounted only paths under `home`, `opt`,
   `etc`, `usr`, `var`, `tmp` and `root`; anything else (`srv/…`, `data/…`) was created and then
   silently not mounted. Both now follow one rule: any path mounts except a file directly in the
