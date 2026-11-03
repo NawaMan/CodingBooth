@@ -1,0 +1,12 @@
+{ Primes up to 30, in ALGOL 68. Needs ga68 from GCC 16: GCC 15's ga68 cannot yet compile whole. }
+begin
+  puts ("ALGOL 68:");
+  for n from 2 to 30 do
+    bool prime := true;
+    for d from 2 while d * d <= n do
+      if n MOD d = 0 then prime := false fi
+    od;
+    if prime then puts (" " + whole (n, 0)) fi
+  od;
+  puts ("'n")
+end

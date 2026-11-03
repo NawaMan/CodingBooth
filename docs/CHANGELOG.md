@@ -29,6 +29,24 @@ This file contains a list of changes for each released version.
   No host mount, so no consent prompt and no microphone access. Pick it or `host-audio`, not
   both. See `docs/BOOTH_AUDIO.md`.
 
+- **Legacy languages: Fortran, COBOL, ALGOL 68, Prolog and Smalltalk.** Three new extensions of
+  the `gcc` template add GCC's own front ends at the selected `GCC_VERSION`: `gcc+fortran`
+  (gfortran, plus the Modern Fortran VS Code extension and fortls on IDE variants), `gcc+cobol`
+  (gcobol, plus the COBOL VS Code extension) and `gcc+algol68` (ga68). gcobol and ga68 exist from
+  GCC 15 onward, but GCC 15's ga68 cannot yet compile `whole`, so pick `gcc:16` for ALGOL 68; the
+  gcc template now suggests 16. A new `prolog` template installs SWI-Prolog, or GNU Prolog with
+  `PROLOG_IMPL=gnu` (`both` for both). A new `smalltalk` template installs Pharo (`PHARO_VERSION`,
+  default 14): `pharo` runs headless, `pharo-ui` opens the IDE on a desktop variant, and every
+  user works in a private copy of the image. Pharo is amd64 only, because files.pharo.org has no
+  Linux arm64 VM that runs Pharo 12 or later. The `fpc` (Pascal) template gains a `legacy` tag,
+  and so do the new templates. `examples/workspaces/legacy-languages-example` prints the primes up
+  to 30 in all six languages (`just run`).
+- **Code::Blocks IDE: the `codeblocks` template.** Installs Code::Blocks 25.03 with its contrib
+  plugins, gdb and xterm on a desktop variant, and selects `gcc` with it; add `gcc+fortran` and it
+  builds Fortran projects too. Code::Blocks only looks for GCC at `/usr/bin/gcc`, so the setup
+  points that at the booth's chosen GCC when nothing else is there. Its wxSmith GUI-designer
+  plugins are parked in `/usr/lib/codeblocks/plugins-disabled`: with Ubuntu 26.04's gdk-pixbuf
+  they hang Code::Blocks on its splash screen.
 - **Booths can play sound through your speakers: the `host-audio` template.** Select it
   (`--select 'python/host-audio'`) and code in the booth plays on the host's speakers — `paplay`,
   any PulseAudio client, and ALSA-only programs, since ALSA's default device is routed through
