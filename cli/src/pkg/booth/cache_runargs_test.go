@@ -5,6 +5,7 @@
 package booth
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -120,4 +121,64 @@ func TestAddCacheAndSharedMounts_CacheStepsAsideForCreateMount(t *testing.T) {
 		}
 		return true
 	})
+}
+
+// Through addCacheAndSharedMounts, Shared mounts any path (it once kept only home/,
+// opt/, … and dropped srv/ in silence), and a file at the top of either tree is left
+// out with a notice instead of landing at /README.md.
+func TestAddCacheAndSharedMounts_AnySharedPathAndTopLevelNotice(t *testing.T) {
+	spec := t.TempDir()
+	for _, d := range []string{"shared/srv/app", "cache/data"} {
+		dir := filepath.Join(spec, filepath.FromSlash(d))
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, ".mount-this"), nil, 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, f := range []string{"shared/README.md", "cache/README.md"} {
+		if err := os.WriteFile(filepath.Join(spec, filepath.FromSlash(f)), []byte("doc"), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	builder := &appctx.AppContextBuilder{
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+		BoothDir:   spec,
+	}
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	orig := os.Stderr
+	os.Stderr = w
+	// Folder entries only, so no image is inspected for booth--file-sync.
+	addCacheAndSharedMounts(builder, t.TempDir(), "docker", "")
+	os.Stderr = orig
+	w.Close()
+	notices, _ := io.ReadAll(r)
+
+	var targets []string
+	builder.CommonArgs.Snapshot().Range(func(_ int, group ilist.List[string]) bool {
+		if group.Length() == 2 && group.At(0) == "-v" {
+			targets = append(targets, volumeTarget(group.At(1)))
+		}
+		return true
+	})
+	joined := strings.Join(targets, " ")
+	for _, want := range []string{"/srv/app", "/data"} {
+		if !strings.Contains(joined, want) {
+			t.Errorf("expected %s to mount, got %s", want, joined)
+		}
+	}
+	if strings.Contains(joined, "/README.md") {
+		t.Errorf("a top-level file must not mount: %s", joined)
+	}
+	for _, want := range []string{".booth/shared/README.md", ".booth/cache/README.md"} {
+		if !strings.Contains(string(notices), want) {
+			t.Errorf("expected a notice naming %s, got %q", want, notices)
+		}
+	}
 }
