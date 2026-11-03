@@ -13,6 +13,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -1588,9 +1589,14 @@ func removeHomeVolume(containerName string) {
 	_ = docker.Docker(flags, "volume", ilist.NewList(ilist.NewList("rm", homeVolName)))
 }
 
+// isProtectedPath reports whether a mount at containerPath would cover a protected
+// path: the path itself, one under it, or a folder above it -- a whole-folder mount of
+// /opt hides /opt/codingbooth just as surely as one of /opt/codingbooth.
 func isProtectedPath(containerPath string) bool {
+	containerPath = path.Clean("/" + containerPath)
 	for _, p := range protectedPaths {
-		if containerPath == p || strings.HasPrefix(containerPath, p+"/") {
+		if containerPath == p || strings.HasPrefix(containerPath, p+"/") ||
+			containerPath == "/" || strings.HasPrefix(p, containerPath+"/") {
 			return true
 		}
 	}
@@ -1625,7 +1631,7 @@ func topLevelFileNotice(kind, name string) string {
 // the booth in a way that is hard to trace back to a stray directory under .booth/<kind>/.
 func protectedPathMountsError(kind string, protected []string) error {
 	var b strings.Builder
-	fmt.Fprintf(&b, ".booth/%s/ maps onto %d protected container path(s):\n", kind, len(protected))
+	fmt.Fprintf(&b, ".booth/%s/ maps onto, or over, %d protected container path(s):\n", kind, len(protected))
 	for _, p := range protected {
 		fmt.Fprintf(&b, "  %s\t(from .booth/%s%s)\n", p, kind, p)
 	}
