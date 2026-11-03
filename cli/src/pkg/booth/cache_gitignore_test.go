@@ -50,23 +50,23 @@ func git(t *testing.T, dir string, args ...string) {
 }
 
 func TestValidateCacheGitignore_NotAGitRepo(t *testing.T) {
-	codeDir, cacheDir := newCacheRepo(t, false, "")
+	_, cacheDir := newCacheRepo(t, false, "")
 	// Nothing to commit to, so nothing to guard against.
-	if err := validateCacheGitignore(codeDir, cacheDir); err != nil {
+	if err := validateCacheGitignore(cacheDir); err != nil {
 		t.Fatalf("expected nil for non-git project, got %v", err)
 	}
 }
 
 func TestValidateCacheGitignore_Ignored(t *testing.T) {
-	codeDir, cacheDir := newCacheRepo(t, true, "cache/\n")
-	if err := validateCacheGitignore(codeDir, cacheDir); err != nil {
+	_, cacheDir := newCacheRepo(t, true, "cache/\n")
+	if err := validateCacheGitignore(cacheDir); err != nil {
 		t.Fatalf("expected nil for gitignored cache, got %v", err)
 	}
 }
 
 func TestValidateCacheGitignore_NotIgnored(t *testing.T) {
-	codeDir, cacheDir := newCacheRepo(t, true, "")
-	err := validateCacheGitignore(codeDir, cacheDir)
+	_, cacheDir := newCacheRepo(t, true, "")
+	err := validateCacheGitignore(cacheDir)
 	if err == nil {
 		t.Fatal("expected an error when the cache is not gitignored")
 	}
@@ -83,7 +83,7 @@ func TestValidateCacheGitignore_TrackedDespiteIgnoreRule(t *testing.T) {
 	git(t, codeDir, "add", "-f", ".booth/cache")
 	git(t, codeDir, "commit", "-m", "oops")
 
-	err := validateCacheGitignore(codeDir, cacheDir)
+	err := validateCacheGitignore(cacheDir)
 	if err == nil {
 		t.Fatal("expected an error when cache files are tracked, even with a 'cache/' rule present")
 	}
@@ -93,5 +93,41 @@ func TestValidateCacheGitignore_TrackedDespiteIgnoreRule(t *testing.T) {
 	// The message must point at untracking; adding a gitignore rule cannot fix this.
 	if !strings.Contains(err.Error(), "git rm -r --cached") {
 		t.Fatalf("expected the error to give the untrack remedy, got %q", err)
+	}
+}
+
+// A --booth-dir is checked against the repo it sits in, not the project's. One inside a
+// repo that does not ignore it is refused like a project .booth/cache/ would be.
+func TestValidateCacheGitignore_BoothDirInOtherRepo(t *testing.T) {
+	other := t.TempDir()
+	git(t, other, "init")
+	cacheDir := filepath.Join(other, "specs", ".booth", "cache")
+	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	err := validateCacheGitignore(cacheDir)
+	if err == nil || !strings.Contains(err.Error(), "NOT gitignored") {
+		t.Fatalf("expected a 'NOT gitignored' error for a booth dir inside a repo, got %v", err)
+	}
+	if !strings.Contains(err.Error(), "specs/.booth/cache/") {
+		t.Fatalf("expected the path relative to that repo, got %q", err)
+	}
+
+	if err := os.WriteFile(filepath.Join(other, "specs", ".booth", ".gitignore"), []byte("cache/\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := validateCacheGitignore(cacheDir); err != nil {
+		t.Fatalf("expected nil once that repo ignores it, got %v", err)
+	}
+}
+
+// A booth dir in no repo (express's temp spec) has nothing to be committed to.
+func TestValidateCacheGitignore_BoothDirInNoRepo(t *testing.T) {
+	cacheDir := filepath.Join(t.TempDir(), ".booth", "cache")
+	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := validateCacheGitignore(cacheDir); err != nil {
+		t.Fatalf("expected nil for a booth dir outside any repo, got %v", err)
 	}
 }
