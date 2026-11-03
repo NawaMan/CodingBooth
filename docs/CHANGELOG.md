@@ -17,6 +17,14 @@ This file contains a list of changes for each released version.
   all count now. The `-v=…` / `--volume=…` forms also get the same missing-host-folder and `:create`
   handling as `-v …` now. See [Live Links](IN-OUT.md#2-start-time--live-links).
 
+- **`booth config` keeps a Cache or Shared path you added, even if some template declares it.**
+  On every reconfigure, a `cache-*` / `shared-*` path in `config.toml` was dropped when *any*
+  template in the catalog declared it, selected or not — so a hand-added
+  `cache-files = ["home/coder/.zsh_history"]` vanished unless `shell-history` was selected. Only
+  paths of the templates in the recorded or the new selection are dropped now (they come back from
+  the selection, or leave with a deselected template).
+  See [booth config](BOOTH_CONFIG.md).
+
 - **A `--booth-dir` cache is checked for being gitignored too.** The check that refuses to start
   while `.booth/cache/` could be committed was skipped for any `--booth-dir`, even one inside a git
   repo. It now runs against the repo the cache folder is in, whichever that is; a booth dir in no
