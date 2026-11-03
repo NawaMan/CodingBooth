@@ -112,7 +112,8 @@ from `.booth/config.toml` (the long-form `--env` / `--volume` / `--publish`
 run-args, plus the `cache-*` / `shared-*` paths that no template of the recorded or the new
 selection declares — a template's own paths come back from the selection, so a
 deselected template's leave with it, while a path you added that only matches some
-unselected template stays yours).
+unselected template stays yours; when the recorded selection read stdin or a recipe, every
+template's paths count, since it cannot be rebuilt as it was).
 A booth that selects no templates has
 no Boothfile, only `config.toml` — which carries the same header, so the baseline is
 read from there instead.

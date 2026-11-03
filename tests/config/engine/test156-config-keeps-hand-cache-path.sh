@@ -21,6 +21,9 @@ assert-line "$config" "cache-files = " '["home/coder/.zsh_history"]' "a hand-add
 
 # A template's own path still leaves with the template.
 run booth config $prj --no-tui --overwrite --select "go/shell-history"
+check="$prj/select-check.txt"
+echo "bash_history lines: $(grep -c 'bash_history' "$config")" > "$check"
+assert-line "$check" "bash_history lines: " "1" "the selected template's path is written"
 run booth config $prj --no-tui --overwrite --select "go"
 check="$prj/deselect-check.txt"
 echo "bash_history lines: $(grep -c 'bash_history' "$config")" > "$check"
