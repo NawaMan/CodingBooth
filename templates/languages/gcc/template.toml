@@ -1,4 +1,4 @@
-cb-version = "1.1.0"
+cb-version = "1.1.1"
 display-name = "GCC (C/C++)"
 primary = true
 display-disc = "GNU Compiler Collection for C and C++"
@@ -15,7 +15,7 @@ tags = [
 
 [params.GCC_VERSION]
 default = "15"
-suggests = ["15", "14", "13", "12"]
+suggests = ["15", "16", "14", "13", "12"]
 
 # Image environment, not a shell profile. `booth exec` runs the command with no
 # shell, so /etc/profile.d never runs: these mirror what the setup's profile sets.

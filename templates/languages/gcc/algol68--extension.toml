@@ -1,0 +1,19 @@
+cb-version = "0.1.0"
+display-name = "ALGOL 68 (ga68)"
+display-disc = "GCC's ALGOL 68 compiler (pick GCC 16)"
+display-detail = """Installs ga68, the GNU ALGOL 68 front end, for the selected GCC version. \
+Pick GCC 16 (gcc:16): the ga68 in GCC 15 is an early cut that cannot yet compile parts of the \
+standard prelude, such as whole."""
+display-order = 4
+tags = [
+    "algol",
+    "algol68",
+    "ga68",
+    "legacy",
+    "compiled",
+]
+
+[segments]
+"Boothfile--55" = """
+setup gcc-frontend --lang algol68 --version ${GCC_VERSION}
+"""

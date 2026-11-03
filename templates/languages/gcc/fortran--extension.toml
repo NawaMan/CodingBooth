@@ -1,0 +1,22 @@
+cb-version = "0.1.0"
+display-name = "Fortran (gfortran)"
+display-disc = "GNU Fortran compiler, matching the GCC version"
+display-detail = """Installs gfortran for the selected GCC version, beside gcc and g++. \
+On an IDE variant it also adds the Modern Fortran VS Code extension and the fortls \
+language server."""
+display-order = 2
+tags = [
+    "fortran",
+    "gfortran",
+    "legacy",
+    "scientific",
+    "compiled",
+]
+
+[segments]
+"Boothfile--55" = """
+setup gcc-frontend --lang fortran --version ${GCC_VERSION}
+"""
+"Boothfile--65" = """
+setup fortran-code-extension
+"""

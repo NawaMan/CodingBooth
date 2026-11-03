@@ -51,6 +51,7 @@ setup	clojure-code-extension	1.0.0	701ebfa9133409194342e7219aaad39716bf1ca824a1e
 setup	cloudbeaver	1.0.0	0fc166fe6e7c21963e73f5aef0374fbb404faffcaf38096c8d6e961e0d60f463	variants/base/setups/cloudbeaver--setup.sh
 setup	cmake	1.0.0	6c78f883af7e7367c66c10fc35f0cd73695221dc1114a549d45d827c9488b14b	variants/base/setups/cmake--setup.sh
 setup	cmake-code-extension	0.1.0	d5358d9ef2d2c44609ff9aa96529a4f4cb5ae2310424ade736b28ea12c920185	variants/base/setups/cmake-code-extension--setup.sh
+setup	cobol-code-extension	0.1.0	d81974f9b54f4695014a9e5b7f8c6d7368869b5de64957c692f25050f52bb878	variants/base/setups/cobol-code-extension--setup.sh
 setup	codeserver	1.1.0	c4870be37ae1135819b27018867ab059c26a40c8648295b2817992a8ca3ae383	variants/base/setups/codeserver--setup.sh
 setup	codex	1.0.0	a0f76155dd0b93e901a5b994393d68d545214b3b568d1de237febc9a36d0962c	variants/base/setups/codex--setup.sh
 setup	codex-code-extension	1.0.0	076be4c351d968b8775495057013581f1190d7f0f3557742beec8e8324a04ea1	variants/base/setups/codex-code-extension--setup.sh
@@ -104,6 +105,7 @@ setup	flutter	0.2.0	498c5e201d6d47defc821a97b24e824eccca65f4c420cd93b2f421ef5bc4
 setup	flutter-android	0.1.1	70509a18385e6b0ffc0c1d7850db0d05592e24e6113a005b4731022583e57ebe	variants/base/setups/flutter-android--setup.sh
 setup	flutter-code-extension	0.1.0	3b1c741f03af53c3d4871e3632e1918818234d0cdf23955853db0f7d11c52d38	variants/base/setups/flutter-code-extension--setup.sh
 setup	flutter-linux-desktop	0.1.0	93a35066e84353c24de3ab432f0d6a9dd36839f56fbe71c7c8e2bf1f9709fc1e	variants/base/setups/flutter-linux-desktop--setup.sh
+setup	fortran-code-extension	0.1.0	5de8e727c4938e5999656f69edb683dad1a18bec79edad593d7132343737a719	variants/base/setups/fortran-code-extension--setup.sh
 setup	fpc	1.0.0	f39f2f6bd2fc69558d9157730c73c62f8bbe221c93c4d12e2a7df276092f1b9e	variants/base/setups/fpc--setup.sh
 setup	fpc-code-extension	1.0.0	340a97f4bd0ce3161f84575fc557c79a99363867ef7aa75abb95170138291426	variants/base/setups/fpc-code-extension--setup.sh
 setup	freelens	0.1.0	674f129bbdbd411f6a996f8cd88f655e1136b3d0726e4d36c1f22d2a506f6358	variants/base/setups/freelens--setup.sh
@@ -113,6 +115,7 @@ setup	fsharp-code-extension	1.0.0	2b2d956e31cf59c0240a4e457fc9bf6995b38555de0bac
 setup	fzf	1.0.0	146bce9168c8db7639bce92862d7c91e455279187ae80ad69a14d5c39626233f	variants/base/setups/fzf--setup.sh
 setup	gcc	1.1.0	0c3ab4db99ac29698633aded554f44850fcb955d87b0e0180d9609f62f8c0787	variants/base/setups/gcc--setup.sh
 setup	gcc-code-extension	1.0.0	4bead0b7f116778815855e31ed6353762c6deb020517fa92ea9dda9c7e3a717f	variants/base/setups/gcc-code-extension--setup.sh
+setup	gcc-frontend	0.1.0	a52ea9e0cdc42e578b8f58ca67b35b3663d32741d4c54bac429db4f8e6d730f6	variants/base/setups/gcc-frontend--setup.sh
 setup	gcloud	1.0.0	a7d4650483f3f74d604619f844debedb72c33330b1a906355a5b52276de2538a	variants/base/setups/gcloud--setup.sh
 setup	gemini-cli	1.0.0	6102af714bff3e30b13dc002ae3c1a0a045741c9e971abf6e08a9e12c0aa4c87	variants/base/setups/gemini-cli--setup.sh
 setup	gh	1.0.0	b1e63c8fc519900ff34c074f9e4af391abde032117eec55c563f9a7976070b65	variants/base/setups/gh--setup.sh
@@ -265,6 +268,7 @@ setup	openssh	1.0.0	6a93cef06723e5533a896967d599f9699809d12de641ad055aa5f7354568
 setup	opensshd	1.0.0	5c7dbf41db974b86119595853d8ec2f167dd6f0bd6f98e101f8faeb53aed5ce6	variants/base/setups/opensshd--setup.sh
 setup	orca	0.2.0	abdaf91faddd4b51598f81e9aa90977b2b6046c1b81f7903fa7086ea1f7562a6	variants/base/setups/orca--setup.sh
 setup	orchis-gtk	0.1.0	03bb0f3bb90620590a2cd7ab9682d99544ae0ec3bef77be80a7e83b78b3e4df2	variants/base/setups/orchis-gtk--setup.sh
+setup	pharo	0.1.0	274140a4e2802bb6a6ccd3b86b0a3c194dc9f7154fa445f67c95a2e91393af76	variants/base/setups/pharo--setup.sh
 setup	php	1.0.0	397c63cb432fd45e81a827200be0a0bde3f1ac4bc6da62595944a4e51a3b0a93	variants/base/setups/php--setup.sh
 setup	php-code-extension	1.0.0	938a5949e6a3723c576a0b6f7c4bf04f346db5fb165b976774730f8974d74dbf	variants/base/setups/php-code-extension--setup.sh
 setup	pinentry	0.1.0	2d620aea1d4330e497c9325db624753b1aeba2b3f9d519b637d6b0328bac9ba4	variants/base/setups/pinentry--setup.sh
@@ -276,6 +280,7 @@ setup	playwright-code-extension	1.0.0	19ce485ba67bda927701ee3143a1e254743214cf58
 setup	postgresql	1.0.1	d5e755bdd74013e8305c1de853192c4b8cd0fe9e364b807bcea9e1188dfd6bd7	variants/base/setups/postgresql--setup.sh
 setup	postgrest	0.2.0	93b018838ccd01593e622d4c372b8b9f0f1da9b53f00855a36c07ad74a2227ef	variants/base/setups/postgrest--setup.sh
 setup	posting	1.1.0	f29364ae1fcff439658ee077e033bb34f70e01925425226014a8aae309988ed6	variants/base/setups/posting--setup.sh
+setup	prolog	0.1.0	55eb561ff42c992831e9cdb421dd6ee90bc95f607a3f53f83c6c990895aa0ea9	variants/base/setups/prolog--setup.sh
 setup	protobuf-code-extension	0.1.0	1d6fa2c8084c0f4f1033469dd521ad95c6ab33f1ff5313d9df498d263f890e6d	variants/base/setups/protobuf-code-extension--setup.sh
 setup	protoc-gen-grpc-java	0.3.0	23de6040ea3a9d0f90fb6fa76cf992dd973c0eaa265f238d3cc5940805e806b3	variants/base/setups/protoc-gen-grpc-java--setup.sh
 setup	protoc-gen-grpc-web	0.1.0	8bfbd439133b6c5475c83a25119409c654982384fb69482cfe5345d32a98ba4c	variants/base/setups/protoc-gen-grpc-web--setup.sh
@@ -489,13 +494,13 @@ template	firebase	1.0.0	dc0e54f22dee9bc7241799bace704d20794388f1b7433d139edb2e5d
 template	firefox	1.0.0	f66cae6754afb97560e80091f722fb74be336a468fa56769423ba963d0300557	templates/desktops/firefox/template.toml
 template	floci	0.4.0	14b5a5a5751977bf9d1112227ac70defd74d6a9900efff434c7553dcca21be27	templates/tools/floci/template.toml
 template	flutter	0.3.1	7809a3a7d96b2a45d145154bc1036a4dda51a9ddfd7be01b3c63ee799722b4e2	templates/languages/flutter/template.toml
-template	fpc	1.0.0	833b92d6fb18707c1d678ee941562af8ccbe880c68abbe61bb4f0ec3f8604a62	templates/languages/fpc/template.toml
+template	fpc	1.0.1	2b888b45db9ea947c02a775760a62dffc650453ab8560ee56cd89946a6942872	templates/languages/fpc/template.toml
 template	freelens	0.1.0	8120af7df1f43318882fbe66b5f86b01da2cebe33cd66c431a1beacc07d8c41a	templates/tools/freelens/template.toml
 template	freeplane	1.0.0	68b6c0db16c41749e533797b2593263871ef318be6e049338b1b8091e3ba8a14	templates/tools/freeplane/template.toml
 template	fresh	0.3.0	ddd1b1109aeee62ad5a102a4ed607a573dc280db910b4a73cfda1eb8be303de8	templates/tools/fresh/template.toml
 template	fsharp	1.0.0	d6fb2e63c932dfa9610f0fba9c0e509847995529426c12727912ce59fd62700b	templates/languages/fsharp/template.toml
 template	fzf	1.0.0	05eb2cff0d7a101ba7c56b3f9afc385e307b59d03119ae54a097ede57864991f	templates/tools/fzf/template.toml
-template	gcc	1.1.0	23d421cf4f83970ad83ca73302257f994f00a1d2281c09e9589eb2869b296c8b	templates/languages/gcc/template.toml
+template	gcc	1.1.1	bce38098a6e6a9c77b1a73185c6c950b0e1d5fdb85a044df459b96beef1a91c2	templates/languages/gcc/template.toml
 template	gcloud	1.0.0	940e408cbacadb057a279e942fcacbd282b648212b27856597b8c47a7191cfea	templates/tools/gcloud/template.toml
 template	gemini-cli	1.0.0	8c65a1e0cc3cbc884b71bf3e577db765d23c54f49fe9a3fc6af14d8e8f25f7f7	templates/ai-tools/gemini-cli/template.toml
 template	gh	1.1.0	b35a3ce5fc6fe31abd6890d6e72faaf6f62d9b1f5f7a59038bea46d531607ef7	templates/tools/gh/template.toml
@@ -584,6 +589,7 @@ template	playwright	1.2.0	5d0f1954ee77165e3d5349f20e9bff4b08cf8ab263d36da86dddc6
 template	postgresql	2.0.0	28af9041e2355bb1ec03ccfd92698b5d03ddcca8519c41b92db23908ce2df49a	templates/middlewares/postgresql/template.toml
 template	postgrest	0.2.0	36d06aa35013ce2ae973897c3a4c80f661ca21ed10b608a8aa1c2592a096817f	templates/middlewares/postgrest/template.toml
 template	posting	1.1.0	b2ded009ec45b1981af9d76f7dac47ee217bbb2c016b98056cb29ae700674dca	templates/tools/posting/template.toml
+template	prolog	0.1.0	9810e5006e4034cecc5790179dd7bdbcc53008f0074d2a7a14f65feef706ebb9	templates/languages/prolog/template.toml
 template	protobuf	1.0.0	349519f43d0d87a56498f4c87e5152dcf97de88f069902098b69a9b919ea86b8	templates/tools/protobuf/template.toml
 template	pulumi	1.0.0	ab578054080f6fcd60dd69e74e90777c10f4d4d573f5e9194805ac7109d6af3c	templates/tools/pulumi/template.toml
 template	puppeteer	1.1.0	8fe6b84848d8ddaf3774d404d3e4c23ff8795d63fe5f7cdddfbd8602fc55bcac	templates/tools/puppeteer/template.toml
@@ -605,6 +611,7 @@ template	scala	1.0.0	d916f41afbd0950ce3636b3a3eb6058a0b0ac6239e077a9b2a02b687ed3
 template	scratch	1.0.0	25969a6f9678973d0c56db08fc423408f8c0e55fcab7c66b8c1002a0151d3275	templates/education/scratch/template.toml
 template	selenium	1.1.0	296218febfad3d643f927852081ebf43faf50f95dc795db503573ecb1f7ad51a	templates/tools/selenium/template.toml
 template	shell-history	1.0.0	2ad7b8cc5193673ae32cc06413c9e9e1eb739de7d024a0912817627175b10a56	templates/tools/shell-history/template.toml
+template	smalltalk	0.1.0	efbaf9185f64f9395ad62d788b277ccd81a336b4c88fbe23feffd64d0cb4eee8	templates/languages/smalltalk/template.toml
 template	spring-boot	0.1.0	d58b168720b14746fa46766fb6fcc1da16a3502d17b42774bf26cc50ea1cf956	templates/frameworks/spring-boot/template.toml
 template	sql-studio	1.0.0	27f2d3dcb343971621e6e4cad9f9a909720eab664d3d6bf6f70acf6cfb635c09	templates/tools/sql-studio/template.toml
 template	sqlite	1.0.0	acb431a561235cd8e3a1aa4440602eae54201f1058767e97e2273c62c524bb37	templates/middlewares/sqlite/template.toml
@@ -735,6 +742,9 @@ extension	fpc+vscode-ext	1.0.0	3eff946a4e4eaa30869f8ae31814cb5a78541a0d46cbd1adb
 extension	fresh+config-shared	0.1.0	8c97c5790a3f6cdec5e371a3d8be33f62a2f680a39a8946f884f889a36cf3228	templates/tools/fresh/config-shared--extension.toml
 extension	fresh+theme	0.3.0	cf0adbb46d159af58a87c9288f34ba1f65abab9b55a02dd0686d5a488c4b660f	templates/tools/fresh/theme--extension.toml
 extension	fsharp+vscode-ext	1.0.0	dc6ecfb458f479486a5bbfb6f5da2aeed82fe11485330800bd2c841fb8bb76b9	templates/languages/fsharp/vscode-ext--extension.toml
+extension	gcc+algol68	0.1.0	18f88a6c3ed89dc12516eb47cbbc8fb1ed6064949309eb0e700766501e1f20d5	templates/languages/gcc/algol68--extension.toml
+extension	gcc+cobol	0.1.0	ad9e23528838f31aa637f97dc22cd94834ae7e76f0ca4a4564bd65990eb26c4d	templates/languages/gcc/cobol--extension.toml
+extension	gcc+fortran	0.1.0	2068c275918309fe20a7c4446653c5d8e6eb818fe678fccd61ceee9e2a3587ec	templates/languages/gcc/fortran--extension.toml
 extension	gcc+vscode-ext	1.0.0	f2a4fd981a7f306825555b0ce347c29b6deedac0594346ca1653dee4bacdbcd2	templates/languages/gcc/vscode-ext--extension.toml
 extension	gcloud+credential	1.0.0	d0fb957b01bf30dac1f6c989e8b3d1a5ee70f60b4ce6d7f75511281ff720ecc0	templates/tools/gcloud/credential--extension.toml
 extension	gemini-cli+credential	1.0.0	67b574634bb8083faed2df2383bdcac167e6419f705d0be168821ac394fb08d7	templates/ai-tools/gemini-cli/credential--extension.toml
