@@ -304,11 +304,27 @@ Many templates include built-in cache extensions you can enable during `booth co
 | `codeserver+settings-cache` | `~/.local/share/code-server/` |
 | `neovim+data-cache` | `~/.local/share/nvim/`, `~/.local/state/nvim/` |
 
+### AI Coding Agents (`cache-dirs`, auto-selected)
+
+Each agent's settings, sessions and **login token** stay in `.booth/cache/`, so you sign in once per
+project on this machine. That is why Cache must never reach git (see
+[Gitignore Requirement](#gitignore-requirement)). `claude-code+settings-cache` is listed above.
+
+| Template Selection | What's Cached |
+|--------------------|---------------|
+| `codex+settings-cache` | `~/.codex/` |
+| `gemini-cli+settings-cache` | `~/.gemini/` |
+| `grok+settings-cache` | `~/.grok/` |
+| `goose+settings-cache` | `~/.config/goose/` |
+| `oh-my-pi+settings-cache` | `~/.omp/` |
+| `opencode+settings-cache` | `~/.config/opencode/`, `~/.local/share/opencode/` |
+
 ### Package Caches (`cache-dirs`)
 
 | Template Selection | What's Cached |
 |--------------------|---------------|
 | `rust+registry-cache` (auto-selected) | `~/.cargo/registry/`, `~/.cargo/git/` |
+| `flutter+pub-cache` (auto-selected) | `~/.pub-cache/` |
 
 Downloaded crates survive the booth, so a fresh one does not fetch every dependency again. A
 `run-args` mount of the same path — `rust+cargo-cache` shares the host's `~/.cargo/registry` —
@@ -339,6 +355,8 @@ For the team/git version of either, see [Shared State](BOOTH_SHARED.md).
 | Template Selection | What's Cached |
 |--------------------|---------------|
 | `envfolio+store-cache` | `~/.local/share/envfolio/` (the store is `store/` inside it), `~/.gnupg/` — both created `0700` |
+| `n8n+persist` | `~/.n8n/` — workflows, **saved credentials**, and the key that encrypts them |
+| `appwrite-server+persist` | `~/.appwrite-server/` — Appwrite's data, including projects and the console user |
 
 The EnvFolio store and the GPG keyring that holds its private key (still protected by its
 passphrase). The extension sets `FOLIO_STORE_DIR` to a folder *inside* the cached one: a
