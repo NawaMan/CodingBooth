@@ -2,7 +2,7 @@
 
 > Files outside `/home/coder/code` that are **live** in the container **and** meant to be **committed**.
 
-`.booth/shared/` is a host-side mirror of selected container paths. Its structure mirrors the container filesystem — the same layout rules as [`.booth/cache/`](BOOTH_LOCALCACHE.md) — but it is **intended for git**. Edits inside the booth write straight into the project tree so teammates pick them up on the next pull.
+`.booth/shared/` is a host-side mirror of selected container paths. Its structure mirrors the container filesystem — the same layout rules as [`.booth/cache/`](BOOTH_LOCALCACHE.md) — but it is **intended for git**. Edits inside the booth reach the project tree — at once for a folder, within 2 seconds for a [single file](BOOTH_LOCALCACHE.md#single-files-are-kept-in-sync) — so teammates pick them up on the next pull.
 
 ```
 .booth/shared/
