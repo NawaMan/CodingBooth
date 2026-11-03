@@ -1193,7 +1193,8 @@ func overlapEntries(cacheMounts, sharedMounts []cacheMount) []mountoverlap.Entry
 // the booth would not start. The run-args mount is the explicit choice, so it wins
 // and the cache entry steps aside. A run-args mount whose host path is missing is
 // dropped later (filterMissingVolumeMountItems) and does not count here, so the
-// cache still covers that path.
+// cache still covers that path -- unless it carries the `create` option, whose host
+// folder is created then (rust+cargo-cache on a host without ~/.cargo/registry).
 func runArgVolumeTargets(runArgs *ilist.AppendableList[ilist.List[string]]) map[string]bool {
 	targets := make(map[string]bool)
 	if runArgs == nil {
@@ -1209,7 +1210,10 @@ func runArgVolumeTargets(runArgs *ilist.AppendableList[ilist.List[string]]) map[
 			spec := items[i+1]
 			i++ // skip the value
 			source := volumeSource(spec)
-			if isBindMountSource(source) {
+			// A `create` mount's missing folder is made later, and the mount kept, so
+			// it counts as mounted even before its host folder exists.
+			_, create := stripCreateVolumeOption(spec)
+			if isBindMountSource(source) && !create {
 				if _, err := os.Stat(expandHostPath(os.ExpandEnv(source), homeDir)); err != nil {
 					continue
 				}

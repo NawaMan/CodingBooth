@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`rust+cargo-cache` starts on a host without `~/.cargo/registry`.** With it and the
+  auto-selected `rust+registry-cache`, the first start failed with Docker's "Duplicate mount point":
+  the cache entry steps aside for a run-args mount of the same path, but a mount whose host folder
+  was still missing did not count, although its `:create` option makes that folder a moment later.
+  A `:create` mount now always counts. See [Live Links](IN-OUT.md#2-start-time--live-links).
+
 - **The Console UI's shortcut hint says `Ctrl+Alt` again, except on a Mac.** The toolbar's
   Keyboard Shortcut Hint had written its modifiers as `^⎇` / `^⎇⇧` on Linux and Windows — symbols
   few people read as Ctrl+Alt. They are the words `Ctrl+Alt` / `Ctrl+Alt+Shift` there once more;
