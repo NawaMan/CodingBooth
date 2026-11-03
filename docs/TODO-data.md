@@ -1,7 +1,10 @@
 # TODO — Data modes: one extension per data item, the storage is a choice
 
-Plan, written 2026-10-29 against `0.81.0--rc1` (`96b39cd1`). **To be implemented after the 0.81.0
-release.** Nothing below is built yet.
+Plan, written 2026-10-29 against `0.81.0--rc1` (`96b39cd1`); rebased 2026-11-01 onto `0.82.0--rc1`
+(`f61c445a`, after the 0.81.0 release) — the catalog moved by one item, `flutter+pub-cache` — and
+again 2026-11-02 onto `9feee1e8` (host-audio, browser-audio, music, legacy languages): no new data
+items, only the host-audio socket binds listed under [Out of scope](#out-of-scope--host-mounts-that-are-not-data).
+**Ready to start** (0.81.0 is out). Nothing below is built yet.
 
 Back to [TODO](TODO.md) | See also: [Home seeding](BOOTH_HOME.md), [cache](BOOTH_LOCALCACHE.md),
 [shared](BOOTH_SHARED.md), [IN-OUT](IN-OUT.md), [template schema](AGENT_TEMPLATE.md)
@@ -42,7 +45,7 @@ sensible home (a credential, a template-content seed) simply allows one mode.
 
 ## Why
 
-The survey of the catalog (2026-10-29) found **110** templates/extensions using one of these
+The survey of the catalog (2026-10-29; re-run 2026-11-02) found **113** templates/extensions using one of these
 mechanisms, spelled five different ways (`run-args` host mounts, `/etc/cb-home-seed`,
 `cache-*`, `shared-*`, named volumes), and the mode baked into the extension *name*:
 
@@ -175,7 +178,9 @@ guards exist to stop.
 Each phase is its own commit series in one worktree (`worktree/data-modes`), landed together or
 in two halves (1–3, then the rest).
 
-- [ ] **0. Prereqs** — 0.81.0 released; worktree + version stamp.
+- [ ] **0. Prereqs** — ~~0.81.0 released~~ (done 2026-11-01); worktree + version stamp; re-run the
+      survey (the python in the 2026-10-29 session; diff against the inventory below) in case the
+      catalog moved again.
 - [ ] **1. Schema + compiler** (Go only, no catalog change)
   - [ ] `[data]` / `[[data.path]]` / `aliases` in the loader and model
   - [ ] reserved mode param: positional `:mode`, `runtime = true`, default dropped from header
@@ -258,6 +263,7 @@ become aliases.
 | `+pkg-cache` | python | `+pip-cache`, `+uv-cache` (volume) | **volume**, bind, cache — same question |
 | `+pkg-cache` | java | `+gradle-cache` (volume), `+m2` (bind) | **volume**, bind, cache |
 | `+pkg-cache` | lean | `+mathlib-cache` (bind) | **volume**, bind, cache |
+| `+pkg-cache` | flutter | `+pub-cache` (cache, **auto-selected**, added after the first survey) | **cache**, volume, bind — keep auto-select and the cache default: its reason is the project's `.dart_tool/` pointing into the cache, which is per-project, not machine-wide. `flutter~pub-cache` must keep working through the alias. |
 | `+sccache` | rust | `+sccache` (bind) | **volume**, bind, cache |
 
 **Service and app data (phase 7)**
@@ -283,6 +289,17 @@ become aliases.
 
 zed, desktop VS Code (`settings`/`keybindings`/`snippets` — only code-server has them), JetBrains
 IDEs, lazygit, k9s, alacritty, kitty, ghostty.
+
+### Out of scope — host mounts that are not data
+
+A bind of a host **socket or device** is plumbing, not data: there is nothing to seed, cache or
+commit. These keep their plain `run-args` and get no `[data]` table:
+
+- `tools/host-audio` (`$XDG_RUNTIME_DIR/pulse/native`), `tools/host-audio+jack`
+  (`$XDG_RUNTIME_DIR/pipewire-0`)
+- `android-sdk+kvm` (`--device /dev/kvm`) and similar device passthroughs
+
+The phase-2 guard should not flag them: it applies only to extensions that declare `[data]`.
 
 ## Open questions
 
