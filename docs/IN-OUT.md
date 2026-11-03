@@ -121,7 +121,8 @@ The two are checked against each other. A path in both refuses to start. One ins
 [Cache and Shared on the same path](BOOTH_LOCALCACHE.md#cache-and-shared-on-the-same-path).
 
 A run-args mount of the same path wins over both: the Cache or Shared entry is skipped with a
-notice, since Docker refuses two mounts on one path. `rust+cargo-cache` (the host's
+notice, since Docker refuses two mounts on one path. Every form counts — `-v`, `--volume`,
+`--mount type=…,dst=…`, with the value after a space or an `=` — and `/x/` is the same path as `/x`. `rust+cargo-cache` (the host's
 `~/.cargo/registry`) over the auto-selected `rust+registry-cache` is the catalog's case. A run-args
 bind mount whose host path is missing is dropped anyway, so it does not count, and the entry still
 covers that path — unless it ends in `:create`, which creates that folder and keeps the mount

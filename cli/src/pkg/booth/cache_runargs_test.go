@@ -53,6 +53,31 @@ func TestRunArgVolumeTargets(t *testing.T) {
 	}
 }
 
+// Every way Docker takes a mount counts, and a target is compared after cleaning:
+// --mount, -v=/--volume= inline values, and a trailing slash.
+func TestRunArgVolumeTargets_MountFormsAndCleanTargets(t *testing.T) {
+	existing := t.TempDir()
+	missing := filepath.Join(t.TempDir(), "absent")
+
+	got := runArgVolumeTargets(runArgsOf(
+		[]string{"--mount", "type=bind,src=" + existing + ",dst=/home/coder/.m2"},
+		[]string{"--mount=type=volume,source=vol,target=/var/lib/pg"},
+		[]string{"--mount", "type=bind,source=" + missing + ",destination=/home/coder/.gradle"},
+		[]string{"-v=" + existing + ":/home/coder/.npm/"},
+		[]string{"--volume=named:/opt/data//cache"},
+		[]string{"--volume-driver=local"},
+	))
+
+	for _, want := range []string{"/home/coder/.m2", "/var/lib/pg", "/home/coder/.gradle", "/home/coder/.npm", "/opt/data/cache"} {
+		if !got[want] {
+			t.Errorf("expected %s to count as mounted: %v", want, got)
+		}
+	}
+	if len(got) != 5 {
+		t.Errorf("--volume-driver is not a mount; got %v", got)
+	}
+}
+
 // A cache entry on a path run-args already mount must step aside: Docker refuses a
 // duplicate mount point, so keeping both stops the booth from starting. This is the
 // rust registry-cache (auto) + cargo-cache (host mount) pair.

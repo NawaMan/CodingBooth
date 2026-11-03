@@ -1204,27 +1204,57 @@ func runArgVolumeTargets(runArgs *ilist.AppendableList[ilist.List[string]]) map[
 	homeDir, _ := os.UserHomeDir()
 	for _, group := range runArgs.Slice() {
 		items := group.Slice()
-		for i := 0; i+1 < len(items); i++ {
-			if !isVolumeFlag(items[i]) {
+		for i := 0; i < len(items); i++ {
+			// "-v spec", "-v=spec", "--volume …", "--mount …" and "--mount=…" all mount.
+			name, spec, inline := strings.Cut(items[i], "=")
+			mount := name == "--mount"
+			if !mount && !isVolumeFlag(name) {
 				continue
 			}
-			spec := items[i+1]
-			i++ // skip the value
-			source := volumeSource(spec)
-			// A `create` mount's missing folder is made later, and the mount kept, so
-			// it counts as mounted even before its host folder exists.
-			_, create := stripCreateVolumeOption(spec)
-			if isBindMountSource(source) && !create {
-				if _, err := os.Stat(expandHostPath(os.ExpandEnv(source), homeDir)); err != nil {
-					continue
+			if !inline {
+				if i+1 >= len(items) {
+					break
 				}
+				spec = items[i+1]
+				i++ // skip the value
 			}
-			if target := volumeTarget(spec); target != "" {
-				targets[target] = true
+			var target string
+			if mount {
+				// --mount takes no `create` option and Docker refuses a missing bind
+				// source outright, so it always counts.
+				target = mountFlagTarget(spec)
+			} else {
+				source := volumeSource(spec)
+				// A `create` mount's missing folder is made later, and the mount kept, so
+				// it counts as mounted even before its host folder exists.
+				_, create := stripCreateVolumeOption(spec)
+				if isBindMountSource(source) && !create {
+					if _, err := os.Stat(expandHostPath(os.ExpandEnv(source), homeDir)); err != nil {
+						continue
+					}
+				}
+				target = volumeTarget(spec)
+			}
+			// Docker compares targets after cleaning them: /a/b/ and /a/b are one mount point.
+			if target != "" {
+				targets[path.Clean(target)] = true
 			}
 		}
 	}
 	return targets
+}
+
+// mountFlagTarget returns the container path of a --mount spec
+// ("type=bind,src=/x,dst=/y"): its dst, destination or target field.
+func mountFlagTarget(spec string) string {
+	for _, field := range strings.Split(spec, ",") {
+		key, value, _ := strings.Cut(field, "=")
+		switch strings.TrimSpace(key) {
+		case "dst", "destination", "target":
+			return strings.TrimSpace(value)
+		}
+	}
+	return ""
 }
 
 // shadowedPathMountNotice words the skip of a cache/shared entry that run-args
