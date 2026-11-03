@@ -1069,6 +1069,9 @@ func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath, engine
 			fmt.Fprintf(os.Stderr, "Error: %v\n", protectedPathMountsError("cache", protected))
 			os.Exit(1)
 		}
+		for _, name := range topLevelFiles(cachePath) {
+			fmt.Fprint(os.Stderr, topLevelFileNotice("cache", name))
+		}
 		explicit := runArgVolumeTargets(builder.RunArgs)
 		for _, m := range mounts {
 			if explicit[m.containerPath] {
@@ -1085,7 +1088,6 @@ func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath, engine
 
 	// Mount .booth/shared/ contents (git-friendly team state). Same layout rules
 	// as cache, but intentionally NOT gitignored — live edits land in the repo.
-	// Skip doc files at the tree root (e.g. README.md → would mount as /README.md).
 	var sharedMounts []cacheMount
 	sharedPath := filepath.Join(hostPath, "shared")
 	if info, err := os.Stat(sharedPath); err == nil && info.IsDir() {
@@ -1094,11 +1096,11 @@ func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath, engine
 			fmt.Fprintf(os.Stderr, "Error: %v\n", protectedPathMountsError("shared", protected))
 			os.Exit(1)
 		}
+		for _, name := range topLevelFiles(sharedPath) {
+			fmt.Fprint(os.Stderr, topLevelFileNotice("shared", name))
+		}
 		explicit := runArgVolumeTargets(builder.RunArgs)
 		for _, m := range mounts {
-			if !isMountableContainerPath(m.containerPath) {
-				continue
-			}
 			if explicit[m.containerPath] {
 				fmt.Fprint(os.Stderr, shadowedPathMountNotice("shared", m.containerPath))
 				continue
@@ -1323,10 +1325,14 @@ func materializePathMounts(baseDir string, files, dirs []string) {
 	}
 }
 
-// protectedPaths are container paths that must not be overridden by cache mounts.
+// protectedPaths are container paths that Cache and Shared mounts must not cover.
 var protectedPaths = []string{
 	"/opt/codingbooth",
 	"/home/coder/code",
+	// The kernel's own filesystems: a mount there breaks the container, not a tool.
+	"/proc",
+	"/sys",
+	"/dev",
 }
 
 // validateCacheGitignore enforces that .booth/cache/ is gitignored. The cache holds
@@ -1436,8 +1442,9 @@ func walkCacheDir(baseDir, dir string, mounts *[]cacheMount, protected *[]string
 		fullPath := filepath.Join(dir, entry.Name())
 		if entry.IsDir() {
 			walkCacheDir(baseDir, fullPath, mounts, protected)
-		} else {
-			// Individual file mount
+		} else if dir != baseDir {
+			// Individual file mount. A file at the top of the tree (a README.md) is
+			// skipped: it would mount at /README.md. See topLevelFiles.
 			fileRelPath, err := filepath.Rel(baseDir, fullPath)
 			if err != nil {
 				continue
@@ -1554,21 +1561,27 @@ func isProtectedPath(containerPath string) bool {
 	return false
 }
 
-// isMountableContainerPath reports whether a shared/cache tree entry should be
-// bind-mounted. Docs left under .booth/shared/ (README.md, …) would otherwise
-// map to "/"-rooted paths like /README.md.
-func isMountableContainerPath(containerPath string) bool {
-	trimmed := strings.TrimPrefix(containerPath, "/")
-	if trimmed == "" {
-		return false
+// topLevelFiles lists the files directly in a cache or shared tree. They are not
+// mounted -- a README.md there would land at /README.md -- and the start says so,
+// the same rule pathseed applies to a seed's top-level files.
+func topLevelFiles(treeDir string) []string {
+	entries, err := os.ReadDir(treeDir)
+	if err != nil {
+		return nil
 	}
-	first, _, _ := strings.Cut(trimmed, "/")
-	switch first {
-	case "home", "opt", "etc", "usr", "var", "tmp", "root":
-		return true
-	default:
-		return false
+	var names []string
+	for _, e := range entries {
+		if !e.IsDir() && e.Name() != ".mount-this" {
+			names = append(names, e.Name())
+		}
 	}
+	return names
+}
+
+// topLevelFileNotice words the skip of a file at the top of .booth/<kind>/.
+func topLevelFileNotice(kind, name string) string {
+	return fmt.Sprintf("   Not mounting .booth/%s/%s: a file at the top of .booth/%s/ would land at /%s\n",
+		kind, name, kind, name)
 }
 
 // protectedPathMountsError explains cache/shared entries that would mount over a protected
@@ -1580,7 +1593,7 @@ func protectedPathMountsError(kind string, protected []string) error {
 	for _, p := range protected {
 		fmt.Fprintf(&b, "  %s\t(from .booth/%s%s)\n", p, kind, p)
 	}
-	b.WriteString("  Mounting there would shadow the project directory or CodingBooth's own install.\n")
+	b.WriteString("  Mounting there would shadow the project directory, CodingBooth's own install, or /proc, /sys or /dev.\n")
 	fmt.Fprintf(&b, "  Remove or rename those entries under .booth/%s/.\n", kind)
 	b.WriteString("  Refusing to start")
 	return fmt.Errorf("%s", b.String())

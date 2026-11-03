@@ -69,6 +69,10 @@ CodingBooth walks `.booth/cache/` top-down. At each directory:
 
 2. **Otherwise** — mount any individual **files** in this directory one by one (see [Single files](#single-files-are-kept-in-sync)), then continue traversing into subdirectories.
 
+Any container path may be used, outside the [protected ones](#protected-paths). The one exception is
+a file directly in `.booth/cache/` — a `README.md` there would land at `/README.md` — so it is not
+mounted, and the start prints a notice naming it.
+
 ### Summary
 
 | What's found                          | Mount behavior                | Traversal |
@@ -76,6 +80,7 @@ CodingBooth walks `.booth/cache/` top-down. At each directory:
 | Directory with `.mount-this`          | Whole directory mount         | Stops     |
 | Directory without `.mount-this`       | Not mounted (structural only) | Continues |
 | File in a non-`.mount-this` directory | Individual file, kept in sync | N/A       |
+| File directly in `.booth/cache/`      | Not mounted, with a notice    | N/A       |
 
 ### Why `.mount-this`?
 
@@ -113,6 +118,7 @@ The following container paths must **not** be overridden. **If `.booth/cache/` c
 |--------------------|------------------------------------|
 | `/opt/codingbooth` | CodingBooth's own installation     |
 | `/home/coder/code` | The bind-mounted project directory |
+| `/proc`, `/sys`, `/dev` | The kernel's filesystems — a mount there breaks the container |
 
 So `.booth/cache/opt/codingbooth/` or `.booth/cache/home/coder/code/` is an error, and the message names every offending path at once. Booth refuses rather than skipping the entry, because a silently-dropped mount looks exactly like a cache that inexplicably does not work.
 

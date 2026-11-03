@@ -84,6 +84,10 @@ Same rules as [local cache](BOOTH_LOCALCACHE.md#mount-rules):
 | Directory with `.mount-this` | Whole directory mount |
 | File in a non-marker directory | Individual file, kept in sync — [rename-safe](BOOTH_LOCALCACHE.md#single-files-are-kept-in-sync) |
 | Directory without marker | Structural only (not mounted itself) |
+| File directly in `.booth/shared/` (a `README.md`) | Not mounted, with a notice — it would land at `/README.md` |
+
+Any other container path may be used — `srv/`, `data/` as well as `home/` — outside the
+protected ones below.
 
 ---
 
@@ -95,6 +99,7 @@ The following container paths must not be overridden. If `.booth/shared/` would 
 |------|--------|
 | `/opt/codingbooth` | CodingBooth install |
 | `/home/coder/code` | Project bind mount |
+| `/proc`, `/sys`, `/dev` | The kernel's filesystems |
 
 A path that is in both `.booth/shared/` and `.booth/cache/` also refuses to start, and one inside
 the other starts with a notice — see
