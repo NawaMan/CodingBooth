@@ -1,0 +1,8 @@
+language
+legacy
+fortran
+cobol
+algol68
+prolog
+smalltalk
+pascal

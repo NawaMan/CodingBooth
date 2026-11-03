@@ -1,0 +1,21 @@
+cb-version = "0.1.0"
+display-name = "COBOL (gcobol)"
+display-disc = "GCC's COBOL compiler (GCC 15 and later)"
+display-detail = """Installs gcobol, the COBOL front end that joined GCC in version 15, for the \
+selected GCC version. On an IDE variant it also adds the COBOL VS Code extension \
+(bitlang.cobol)."""
+display-order = 3
+tags = [
+    "cobol",
+    "gcobol",
+    "legacy",
+    "compiled",
+]
+
+[segments]
+"Boothfile--55" = """
+setup gcc-frontend --lang cobol --version ${GCC_VERSION}
+"""
+"Boothfile--65" = """
+setup cobol-code-extension
+"""
