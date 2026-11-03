@@ -1,6 +1,6 @@
 # CodingBooth
 
-**Current Version:** v0.82.0--rc1
+**Current Version:** v0.82.0--m8-home-seed-every-start
 
 ![Works On My Machine](docs/Works-On-My-Machine-small.png)
 
