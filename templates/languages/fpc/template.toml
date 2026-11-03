@@ -1,10 +1,11 @@
-cb-version = "1.0.0"
+cb-version = "1.0.1"
 display-name = "Free Pascal"
 display-disc = "Free Pascal compiler and development tools"
 display-detail = "Installs the Free Pascal compiler for Object Pascal development."
 display-order = 78
 tags = [
     "pascal",
+    "legacy",
     "compiled"
 ]
 

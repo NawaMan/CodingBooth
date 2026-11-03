@@ -1,0 +1,23 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --select gcc:16+fortran+cobol+algol68/prolog/smalltalk/fpc
+
+env APT_SNAPSHOT=20261023T000000Z
+
+arg FPC_VERSION=latest
+arg GCC_VERSION=16
+arg PHARO_VERSION=14
+arg PROLOG_IMPL=swi
+
+setup fpc --version ${FPC_VERSION}
+env GCC_HOME=/opt/gcc-stable
+env PATH=/opt/gcc-stable/bin:$PATH
+setup gcc --version ${GCC_VERSION}
+setup prolog --impl ${PROLOG_IMPL}
+setup pharo --version ${PHARO_VERSION}
+setup gcc-frontend --lang algol68 --version ${GCC_VERSION}
+setup gcc-frontend --lang cobol --version ${GCC_VERSION}
+setup gcc-frontend --lang fortran --version ${GCC_VERSION}
+setup fpc-code-extension
+setup cobol-code-extension
+setup fortran-code-extension
+setup gcc-code-extension

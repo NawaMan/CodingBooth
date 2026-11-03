@@ -1,0 +1,22 @@
+cb-version = "0.1.0"
+display-name = "Prolog"
+display-disc = "SWI-Prolog (default) or GNU Prolog"
+display-detail = """Installs SWI-Prolog (swipl), or GNU Prolog (gprolog + the gplc native \
+compiler) with PROLOG_IMPL=gnu, or both. Versions are Ubuntu's packages."""
+display-order = 79
+tags = [
+    "prolog",
+    "swi-prolog",
+    "gprolog",
+    "logic",
+    "legacy",
+]
+
+[params.PROLOG_IMPL]
+default = "swi"
+suggests = ["swi", "gnu", "both"]
+
+[segments]
+Boothfile = """
+setup prolog --impl ${PROLOG_IMPL}
+"""
