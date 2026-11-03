@@ -31,6 +31,8 @@ func TestRunArgVolumeTargets(t *testing.T) {
 		[]string{"-v", existing + ":/home/coder/.cargo/registry"},
 		[]string{"--volume", missing + ":/home/coder/.npm:ro"},
 		[]string{"-v", "named_vol:/var/lib/data"},
+		[]string{"-v", missing + ":/home/coder/.cargo/git:create"},
+		[]string{"-v", missing + ":/home/coder/.m2:ro,create"},
 	))
 
 	if !got["/home/coder/.cargo/registry"] {
@@ -41,6 +43,9 @@ func TestRunArgVolumeTargets(t *testing.T) {
 	}
 	if !got["/var/lib/data"] {
 		t.Errorf("a named volume should count as mounted: %v", got)
+	}
+	if !got["/home/coder/.cargo/git"] || !got["/home/coder/.m2"] {
+		t.Errorf("a missing host path with `create` is created later, so it must count: %v", got)
 	}
 	if len(runArgVolumeTargets(nil)) != 0 {
 		t.Errorf("nil run-args should mount nothing")
@@ -86,4 +91,33 @@ func TestAddCacheAndSharedMounts_CacheStepsAsideForRunArgMount(t *testing.T) {
 	if !strings.Contains(joined, "/home/coder/.cargo/git") {
 		t.Errorf("the other cache entry should still mount: %s", joined)
 	}
+}
+
+// The same pair on a fresh host: rust+cargo-cache's host folder does not exist yet, but
+// its `create` option makes it later, so the cache entry must still step aside.
+func TestAddCacheAndSharedMounts_CacheStepsAsideForCreateMount(t *testing.T) {
+	project := t.TempDir()
+	spec := t.TempDir()
+	dir := filepath.Join(spec, "cache", "home", "coder", ".cargo", "registry")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, ".mount-this"), nil, 0644); err != nil {
+		t.Fatal(err)
+	}
+	notYet := filepath.Join(t.TempDir(), "registry")
+
+	builder := &appctx.AppContextBuilder{
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:    runArgsOf([]string{"-v", notYet + ":/home/coder/.cargo/registry:create"}),
+		BoothDir:   spec,
+	}
+	addCacheAndSharedMounts(builder, project, "docker", "")
+
+	builder.CommonArgs.Snapshot().Range(func(_ int, group ilist.List[string]) bool {
+		if group.Length() == 2 && group.At(0) == "-v" && volumeTarget(group.At(1)) == "/home/coder/.cargo/registry" {
+			t.Errorf("cache mounted ~/.cargo/registry although a `create` run-arg mounts it: %s", group.At(1))
+		}
+		return true
+	})
 }

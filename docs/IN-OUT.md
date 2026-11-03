@@ -122,7 +122,8 @@ A run-args mount of the same path wins over both: the Cache or Shared entry is s
 notice, since Docker refuses two mounts on one path. `rust+cargo-cache` (the host's
 `~/.cargo/registry`) over the auto-selected `rust+registry-cache` is the catalog's case. A run-args
 bind mount whose host path is missing is dropped anyway, so it does not count, and the entry still
-covers that path.
+covers that path — unless it ends in `:create`, which creates that folder and keeps the mount
+(`rust+cargo-cache` on a host that has never run Cargo).
 
 See [Local Cache](BOOTH_LOCALCACHE.md), [Shared State](BOOTH_SHARED.md) and
 [Persist Home](BOOTH_PERSIST_HOME.md).
