@@ -5,11 +5,15 @@
 package booth
 
 import (
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
 // newCacheRepo builds a project with .booth/cache/home/coder/.claude/.credentials.json in it.
@@ -130,4 +134,86 @@ func TestValidateCacheGitignore_BoothDirInNoRepo(t *testing.T) {
 	if err := validateCacheGitignore(cacheDir); err != nil {
 		t.Fatalf("expected nil for a booth dir outside any repo, got %v", err)
 	}
+}
+
+// A git hook runs with GIT_DIR exported, and a booth started from it inherits that. The
+// check must still find the repo from the cache folder, not treat the folder as the top of
+// the work tree -- which listed every tracked file as "inside the cache".
+func TestValidateCacheGitignore_InheritedGitDir(t *testing.T) {
+	codeDir, cacheDir := newCacheRepo(t, true, "cache/\n")
+	if err := os.WriteFile(filepath.Join(codeDir, "main.go"), []byte("package main\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	git(t, codeDir, "add", "main.go", ".booth/.gitignore")
+	git(t, codeDir, "commit", "-m", "init")
+
+	t.Setenv("GIT_DIR", filepath.Join(codeDir, ".git"))
+	if err := validateCacheGitignore(cacheDir); err != nil {
+		t.Fatalf("expected nil with an inherited GIT_DIR, got %v", err)
+	}
+}
+
+// Without git the check cannot run: it says so instead of passing in silence.
+func TestValidateCacheGitignore_NoGitWarns(t *testing.T) {
+	_, cacheDir := newCacheRepo(t, false, "")
+	t.Setenv("PATH", t.TempDir())
+
+	var err error
+	stderr := captureStderr(t, func() { err = validateCacheGitignore(cacheDir) })
+	if err != nil {
+		t.Fatalf("expected nil without git, got %v", err)
+	}
+	if !strings.Contains(stderr, "git not found") {
+		t.Fatalf("expected a warning without git, got %q", stderr)
+	}
+}
+
+// The call site: a --booth-dir inside a repo that does not ignore its cache must stop
+// the start. addCacheAndSharedMounts exits the process, so it runs in a child test
+// process.
+func TestAddCacheAndSharedMounts_BoothDirCacheNotIgnoredRefuses(t *testing.T) {
+	if boothDir := os.Getenv("CB_TEST_BOOTH_DIR"); boothDir != "" {
+		builder := &appctx.AppContextBuilder{
+			CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+			RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+			BoothDir:   boothDir,
+		}
+		addCacheAndSharedMounts(builder, t.TempDir(), "docker", "")
+		os.Exit(0)
+	}
+
+	repo := t.TempDir()
+	git(t, repo, "init")
+	boothDir := filepath.Join(repo, "spec", ".booth")
+	if err := os.MkdirAll(filepath.Join(boothDir, "cache", "home", "coder", ".claude"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(boothDir, "cache", "home", "coder", ".claude", ".mount-this"), nil, 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := exec.Command(os.Args[0], "-test.run=^TestAddCacheAndSharedMounts_BoothDirCacheNotIgnoredRefuses$")
+	cmd.Env = append(os.Environ(), "CB_TEST_BOOTH_DIR="+boothDir)
+	out, err := cmd.CombinedOutput()
+	if exit, ok := err.(*exec.ExitError); !ok || exit.ExitCode() != 1 {
+		t.Fatalf("expected the start to stop with exit 1, got %v\n%s", err, out)
+	}
+	if !strings.Contains(string(out), "NOT gitignored") {
+		t.Fatalf("expected a 'NOT gitignored' error, got:\n%s", out)
+	}
+}
+
+func captureStderr(t *testing.T, fn func()) string {
+	t.Helper()
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	orig := os.Stderr
+	os.Stderr = w
+	defer func() { os.Stderr = orig }()
+	fn()
+	w.Close()
+	out, _ := io.ReadAll(r)
+	return string(out)
 }
