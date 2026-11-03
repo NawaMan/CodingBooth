@@ -1325,7 +1325,7 @@ func materializePathMounts(baseDir string, files, dirs []string) {
 	}
 }
 
-// protectedPaths are container paths that must not be overridden by cache mounts.
+// protectedPaths are container paths that Cache and Shared mounts must not cover.
 var protectedPaths = []string{
 	"/opt/codingbooth",
 	"/home/coder/code",
