@@ -158,7 +158,13 @@ CodingBooth asks git, not the `.gitignore` file, and refuses to start on either 
 | Cache is gitignored | Starts normally |
 | No `cache/` rule anywhere | `is NOT gitignored` — add the rule |
 | Cache files are **tracked** | `is tracked by git` — `git rm -r --cached .booth/cache` |
-| Project is not a git repo | Check skipped (nothing to commit to) |
+| Cache is in no git repo | Check skipped (nothing to commit to) |
+| `git` is not installed | Check skipped, with a warning |
+
+The repo checked is the one the cache folder itself is in. For `.booth/cache/` that is the
+project's; for a `--booth-dir` it is whichever repo holds that folder, if any — a booth dir kept in
+another repo is held to the same rule, and one outside every repo (such as `booth express`'s spec)
+has nothing to check.
 
 The tracked case is the one that bites. **A gitignore rule does not untrack a file that is already committed** — git keeps committing it, and a check that only greps `.booth/.gitignore` for `cache/` would report everything as fine while your credentials go into every commit. If you hit it, untrack the files (they stay on disk) and **rotate any credential that was committed**.
 
