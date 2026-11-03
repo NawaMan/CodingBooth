@@ -43,4 +43,17 @@ assert-line "$boothfile" 'setup pharo --version ${PHARO_VERSION}' "" "pharo setu
 run booth config $prj --no-tui --overwrite --select "smalltalk:13"
 assert-line "$boothfile" "arg PHARO_VERSION=" "13" "PHARO_VERSION pin"
 
+# --- 4. Code::Blocks ------------------------------------------------------
+# It builds with GCC, so selecting it alone must bring gcc along, before it.
+run booth config $prj --no-tui --overwrite --select "codeblocks"
+assert-line "$boothfile" 'setup codeblocks' "" "codeblocks setup line"
+assert-line "$boothfile" 'setup gcc --version ${GCC_VERSION}' "" "gcc (required by codeblocks)"
+
+line_gcc=$(grep -n '^setup gcc --version' "$boothfile" | cut -d: -f1)
+line_cb=$(grep -n '^setup codeblocks'     "$boothfile" | cut -d: -f1)
+if [[ -z "$line_gcc" || -z "$line_cb" ]] || (( line_cb <= line_gcc )); then
+    echo "  ❌ codeblocks (line $line_cb) must come after setup gcc ($line_gcc)"
+    exit 1
+fi
+
 finally

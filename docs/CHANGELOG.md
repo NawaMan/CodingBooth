@@ -41,6 +41,12 @@ This file contains a list of changes for each released version.
   Linux arm64 VM that runs Pharo 12 or later. The `fpc` (Pascal) template gains a `legacy` tag,
   and so do the new templates. `examples/workspaces/legacy-languages-example` prints the primes up
   to 30 in all six languages (`just run`).
+- **Code::Blocks IDE: the `codeblocks` template.** Installs Code::Blocks 25.03 with its contrib
+  plugins, gdb and xterm on a desktop variant, and selects `gcc` with it; add `gcc+fortran` and it
+  builds Fortran projects too. Code::Blocks only looks for GCC at `/usr/bin/gcc`, so the setup
+  points that at the booth's chosen GCC when nothing else is there. Its wxSmith GUI-designer
+  plugins are parked in `/usr/lib/codeblocks/plugins-disabled`: with Ubuntu 26.04's gdk-pixbuf
+  they hang Code::Blocks on its splash screen.
 - **Booths can play sound through your speakers: the `host-audio` template.** Select it
   (`--select 'python/host-audio'`) and code in the booth plays on the host's speakers — `paplay`,
   any PulseAudio client, and ALSA-only programs, since ALSA's default device is routed through

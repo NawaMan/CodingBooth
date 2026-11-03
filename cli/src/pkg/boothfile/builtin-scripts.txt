@@ -53,6 +53,7 @@ setup cloudbeaver
 setup cmake
 setup cmake-code-extension
 setup cobol-code-extension
+setup codeblocks
 setup codeserver
 setup codex
 setup codex-code-extension
