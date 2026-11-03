@@ -33,6 +33,13 @@ This file contains a list of changes for each released version.
   missing. A folder holding nothing but the marker now counts as empty, the way an empty file
   already did. See [Initial Content](BOOTH_LOCALCACHE.md#initial-content).
 
+- **A seed no longer mounts a path that nothing declares.** Every file in `.booth/cache-seed/` and
+  `.booth/shared-seed/` was copied in and then mounted, declared or not, and seeds outlive their
+  template. After deselecting `google-chrome+bookmarks-seed` and deleting the shared files, the next
+  start put the bookmarks back into the committed Shared tree. Only a path that `config.toml`
+  declares (or one inside a declared folder) is seeded now; a start names any seed it leaves alone.
+  See [Initial Content](BOOTH_LOCALCACHE.md#initial-content).
+
 - **A `--booth-dir` cache is checked for being gitignored too.** The check that refuses to start
   while `.booth/cache/` could be committed was skipped for any `--booth-dir`, even one inside a git
   repo. It now runs against the repo the cache folder is in, whichever that is; a booth dir in no
