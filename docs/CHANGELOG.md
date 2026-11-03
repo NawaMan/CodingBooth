@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A Cache or Shared folder mount above a protected path refuses to start.**
+  `.booth/cache/opt/.mount-this` (or the same under `.booth/shared/`) mounted all of `/opt`, hiding
+  `/opt/codingbooth`, and the booth started broken with no error. A mount on `/`, `/opt`, `/home` or
+  `/home/coder` now stops the start like one on `/opt/codingbooth` itself. See
+  [Protected Paths](BOOTH_LOCALCACHE.md#protected-paths).
+
 - **A `--booth-dir` cache is checked for being gitignored too.** The check that refuses to start
   while `.booth/cache/` could be committed was skipped for any `--booth-dir`, even one inside a git
   repo. It now runs against the repo the cache folder is in, whichever that is; a booth dir in no

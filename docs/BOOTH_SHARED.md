@@ -93,7 +93,7 @@ protected ones below.
 
 ## Protected Paths
 
-The following container paths must not be overridden. If `.booth/shared/` would mount onto one of them, the booth **refuses to start**:
+The following container paths must not be overridden. If `.booth/shared/` would mount onto one of them, inside one, or over a folder above one (`opt/.mount-this` hides `/opt/codingbooth`), the booth **refuses to start**:
 
 | Path | Reason |
 |------|--------|

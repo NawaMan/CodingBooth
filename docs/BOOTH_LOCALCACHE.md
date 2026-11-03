@@ -112,7 +112,7 @@ mounted directly, as before.
 
 ## Protected Paths
 
-The following container paths must **not** be overridden. **If `.booth/cache/` contains an entry that maps to one of them, the booth will not start.**
+The following container paths must **not** be overridden. **If `.booth/cache/` contains an entry that maps to one of them, to a path inside one, or to a folder above one, the booth will not start.** A whole-folder mount of `opt/` (`.booth/cache/opt/.mount-this`) hides `/opt/codingbooth` as surely as a mount of `/opt/codingbooth` itself; so do `/`, `/home` and `/home/coder`.
 
 | Path               | Reason                             |
 |--------------------|------------------------------------|
