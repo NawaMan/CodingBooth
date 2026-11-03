@@ -131,18 +131,48 @@ func TestProtectedPathMountsError_SharedKind(t *testing.T) {
 	}
 }
 
-func TestIsMountableContainerPath(t *testing.T) {
-	cases := map[string]bool{
-		"/home/coder/.chrome-data/Default/Bookmarks": true,
-		"/opt/foo":     true,
-		"/README.md":   false,
-		"/shared-note": false,
-		"/":            false,
+// Cache and Shared walk one way: any path mounts, except a file at the top of the tree
+// (it would land at /README.md), which is skipped and listed for a notice.
+func TestCollectCacheMounts_AnyPathButTopLevelFiles(t *testing.T) {
+	dir := writeCacheTree(t,
+		"README.md",
+		"srv/app/config.json",
+		"data/.mount-this",
+		"home/coder/.chrome-data/Default/Bookmarks",
+	)
+	mounts, protected := collectCacheMounts(dir)
+	if len(protected) != 0 {
+		t.Fatalf("expected no protected paths, got %v", protected)
 	}
-	for p, want := range cases {
-		if got := isMountableContainerPath(p); got != want {
-			t.Errorf("isMountableContainerPath(%q) = %v, want %v", p, got, want)
+	got := strings.Join(containerPaths(mounts), " ")
+	for _, want := range []string{"/srv/app/config.json", "/data", "/home/coder/.chrome-data/Default/Bookmarks"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("expected %s to mount, got %s", want, got)
 		}
+	}
+	if strings.Contains(got, "/README.md") {
+		t.Errorf("a top-level file must not mount at /README.md: %s", got)
+	}
+	if files := topLevelFiles(dir); len(files) != 1 || files[0] != "README.md" {
+		t.Errorf("topLevelFiles = %v, want [README.md]", files)
+	}
+	if n := topLevelFileNotice("shared", "README.md"); !strings.Contains(n, ".booth/shared/README.md") || !strings.Contains(n, "/README.md") {
+		t.Errorf("notice should name the file and where it would land: %q", n)
+	}
+}
+
+// The kernel's filesystems are protected like CodingBooth's own paths.
+func TestCollectCacheMounts_KernelPathsProtected(t *testing.T) {
+	dir := writeCacheTree(t, "proc/.mount-this", "sys/kernel/x", "dev/shm/.mount-this", "devices/ok")
+	mounts, protected := collectCacheMounts(dir)
+	got := strings.Join(protected, " ")
+	for _, want := range []string{"/proc", "/sys/kernel/x", "/dev/shm"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("expected %s to be protected, got %v", want, protected)
+		}
+	}
+	if paths := containerPaths(mounts); len(paths) != 1 || paths[0] != "/devices/ok" {
+		t.Errorf("/devices is not /dev and should mount: %v", paths)
 	}
 }
 
