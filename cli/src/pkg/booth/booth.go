@@ -1056,13 +1056,11 @@ func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath, engine
 	var cacheMounts []cacheMount
 	cachePath := filepath.Join(hostPath, "cache")
 	if info, err := os.Stat(cachePath); err == nil && info.IsDir() {
-		// An explicit booth dir is outside the project, so the project's gitignore
-		// does not apply to it.
-		if builder.BoothDir == "" {
-			if err := validateCacheGitignore(codePath, cachePath); err != nil {
-				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-				os.Exit(1)
-			}
+		// Checked against the repo the cache itself sits in, so an explicit booth dir
+		// (--booth-dir) is held to the same rule when it lives inside a repo.
+		if err := validateCacheGitignore(cachePath); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
 		}
 		mounts, protected := collectCacheMounts(cachePath)
 		if len(protected) > 0 {
@@ -1345,26 +1343,33 @@ var protectedPaths = []string{
 // every commit. "git check-ignore" consults the index, so it reports a cache directory with
 // tracked content as NOT ignored, which is what we want.
 //
-// Skipped when git is unavailable or the project is not a git repo: there is nothing to
-// commit the cache to.
-func validateCacheGitignore(codeDir, cacheDir string) error {
+// The repo is the one the cache folder itself is in, which is the project's for
+// .booth/cache/, and whatever repo (if any) holds a --booth-dir. A cache in no repo has
+// nothing to be committed to, so it passes. Without git the check cannot run; it warns
+// and passes rather than refusing every booth on a host with no git.
+func validateCacheGitignore(cacheDir string) error {
 	gitPath, err := exec.LookPath("git")
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: git not found, so %s is not checked for being gitignored\n", cacheDir)
 		return nil
 	}
-	if err := exec.Command(gitPath, "-C", codeDir, "rev-parse", "--git-dir").Run(); err != nil {
+	top, err := exec.Command(gitPath, "-C", cacheDir, "rev-parse", "--show-toplevel").Output()
+	if err != nil {
 		return nil
 	}
 
-	relPath, err := filepath.Rel(codeDir, cacheDir)
-	if err != nil {
-		relPath = cacheDir
+	// Shown relative to the repo root; every git command below runs inside the cache
+	// folder and names it ".", so symlinked paths need no reconciling.
+	relPath := cacheDir
+	if real, err := filepath.EvalSymlinks(cacheDir); err == nil {
+		if rel, err := filepath.Rel(strings.TrimSpace(string(top)), real); err == nil {
+			relPath = filepath.ToSlash(rel)
+		}
 	}
-	relPath = filepath.ToSlash(relPath)
 
 	// Tracked cache is the dangerous case: adding a gitignore rule will NOT untrack it, so
 	// this needs its own message pointing at the only fix that works.
-	if out, err := exec.Command(gitPath, "-C", codeDir, "ls-files", "--", relPath).Output(); err == nil {
+	if out, err := exec.Command(gitPath, "-C", cacheDir, "ls-files", "--full-name", "--", ".").Output(); err == nil {
 		if tracked := strings.Fields(string(out)); len(tracked) > 0 {
 			return fmt.Errorf(
 				"%s/ is tracked by git (%d file(s), e.g. %s).\n"+
@@ -1376,11 +1381,11 @@ func validateCacheGitignore(codeDir, cacheDir string) error {
 		}
 	}
 
-	if err := exec.Command(gitPath, "-C", codeDir, "check-ignore", "-q", relPath).Run(); err != nil {
+	if err := exec.Command(gitPath, "-C", cacheDir, "check-ignore", "-q", ".").Run(); err != nil {
 		return fmt.Errorf(
 			"%s/ is NOT gitignored.\n"+
 				"  Cached files can contain credentials, so this must never be committed.\n"+
-				"  Add 'cache/' to .booth/.gitignore (or '%s/' to the repo's .gitignore).\n"+
+				"  Add 'cache/' to the .gitignore beside it (or '%s/' to the repo's .gitignore).\n"+
 				"  Refusing to start",
 			relPath, relPath)
 	}
