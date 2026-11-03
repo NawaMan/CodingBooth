@@ -104,7 +104,8 @@ is synced on its own; a folder holding a `.mount-this` marker is mounted whole. 
 bind-mounted at its path, since a tool that saves by renaming a new file over it would fail: it is
 staged elsewhere, copied into place at start, and copied back every 2 seconds and at a clean stop
 ([details](BOOTH_LOCALCACHE.md#single-files-are-kept-in-sync)). Neither may mount
-over `/opt/codingbooth` or `/home/coder/code`. Both are mounted whether or not `.booth/` itself is
+over `/opt/codingbooth`, `/home/coder/code`, `/proc`, `/sys` or `/dev`, and a file directly in
+`.booth/cache/` or `.booth/shared/` (a `README.md`) is skipped with a notice. Both are mounted whether or not `.booth/` itself is
 writable (`--writable-booth`).
 
 A declared path starts empty unless a **seed** gives it content: `.booth/cache-seed/` and
