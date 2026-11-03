@@ -1,6 +1,6 @@
 # CodingBooth
 
-**Current Version:** v0.82.0--m11-protected-parents
+**Current Version:** v0.82.0--rc1
 
 ![Works On My Machine](docs/Works-On-My-Machine-small.png)
 
