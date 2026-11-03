@@ -176,6 +176,47 @@ func TestCollectCacheMounts_KernelPathsProtected(t *testing.T) {
 	}
 }
 
+// A whole-folder mount above a protected path hides it as surely as one on it:
+// opt/.mount-this would cover /opt/codingbooth, home/coder/.mount-this the project.
+func TestCollectCacheMounts_ParentOfProtectedPath(t *testing.T) {
+	dir := writeCacheTree(t, "opt/.mount-this", "home/coder/.mount-this", "home/coder2/.mount-this", "optional/.mount-this")
+	mounts, protected := collectCacheMounts(dir)
+	got := strings.Join(protected, " ")
+	for _, want := range []string{"/opt", "/home/coder"} {
+		if !strings.Contains(" "+got+" ", " "+want+" ") {
+			t.Errorf("expected %s to be protected, got %v", want, protected)
+		}
+	}
+	paths := strings.Join(containerPaths(mounts), " ")
+	for _, want := range []string{"/home/coder2", "/optional"} {
+		if !strings.Contains(paths, want) {
+			t.Errorf("%s is not above a protected path and should mount: %s", want, paths)
+		}
+	}
+}
+
+func TestIsProtectedPath(t *testing.T) {
+	cases := map[string]bool{
+		"/opt/codingbooth":        true,
+		"/opt/codingbooth/x":      true,
+		"/opt":                    true,
+		"/opt/":                   true,
+		"/":                       true,
+		"/home":                   true,
+		"/home/coder":             true,
+		"/home/coder/code/src":    true,
+		"/home/coder/.config":     false,
+		"/opt/other":              false,
+		"/optional":               false,
+		"/home/coder/code-server": false,
+	}
+	for p, want := range cases {
+		if got := isProtectedPath(p); got != want {
+			t.Errorf("isProtectedPath(%q) = %v, want %v", p, got, want)
+		}
+	}
+}
+
 // A config.toml cache-dirs entry with a permission suffix is created with that
 // mode at start; an existing dir is left alone; a bad suffix is skipped, not mounted
 // under a path with a colon in it.
