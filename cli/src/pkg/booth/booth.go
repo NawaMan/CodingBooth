@@ -677,6 +677,12 @@ func appleLowPortsNote(engine string, lowPorts, public bool) string {
 func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder := ctx.ToBuilder()
 
+	// Split "-v=spec" / "--volume=spec" into "-v spec" first, so every volume step
+	// (cache shadowing, the @code rewrite, {name} expansion, the missing-host filter,
+	// `create` handling) sees one form of the flag.
+	builder.RunArgs = splitInlineVolumeGroups(builder.RunArgs)
+	builder.CommonArgs = splitInlineVolumeGroups(builder.CommonArgs)
+
 	containerName := ctx.Name()
 	if containerName == "" {
 		containerName = ctx.ProjectName()
@@ -1204,27 +1210,57 @@ func runArgVolumeTargets(runArgs *ilist.AppendableList[ilist.List[string]]) map[
 	homeDir, _ := os.UserHomeDir()
 	for _, group := range runArgs.Slice() {
 		items := group.Slice()
-		for i := 0; i+1 < len(items); i++ {
-			if !isVolumeFlag(items[i]) {
+		for i := 0; i < len(items); i++ {
+			// "-v spec", "-v=spec", "--volume …", "--mount …" and "--mount=…" all mount.
+			name, spec, inline := strings.Cut(items[i], "=")
+			mount := name == "--mount"
+			if !mount && !isVolumeFlag(name) {
 				continue
 			}
-			spec := items[i+1]
-			i++ // skip the value
-			source := volumeSource(spec)
-			// A `create` mount's missing folder is made later, and the mount kept, so
-			// it counts as mounted even before its host folder exists.
-			_, create := stripCreateVolumeOption(spec)
-			if isBindMountSource(source) && !create {
-				if _, err := os.Stat(expandHostPath(os.ExpandEnv(source), homeDir)); err != nil {
-					continue
+			if !inline {
+				if i+1 >= len(items) {
+					break
 				}
+				spec = items[i+1]
+				i++ // skip the value
 			}
-			if target := volumeTarget(spec); target != "" {
-				targets[target] = true
+			var target string
+			if mount {
+				// --mount takes no `create` option and Docker refuses a missing bind
+				// source outright, so it always counts.
+				target = mountFlagTarget(spec)
+			} else {
+				source := volumeSource(spec)
+				// A `create` mount's missing folder is made later, and the mount kept, so
+				// it counts as mounted even before its host folder exists.
+				_, create := stripCreateVolumeOption(spec)
+				if isBindMountSource(source) && !create {
+					if _, err := os.Stat(expandHostPath(os.ExpandEnv(source), homeDir)); err != nil {
+						continue
+					}
+				}
+				target = volumeTarget(spec)
+			}
+			// Docker compares targets after cleaning them: /a/b/ and /a/b are one mount point.
+			if target != "" {
+				targets[path.Clean(target)] = true
 			}
 		}
 	}
 	return targets
+}
+
+// mountFlagTarget returns the container path of a --mount spec
+// ("type=bind,src=/x,dst=/y"): its dst, destination or target field.
+func mountFlagTarget(spec string) string {
+	for _, field := range strings.Split(spec, ",") {
+		key, value, _ := strings.Cut(field, "=")
+		switch strings.TrimSpace(key) {
+		case "dst", "destination", "target":
+			return strings.TrimSpace(value)
+		}
+	}
+	return ""
 }
 
 // shadowedPathMountNotice words the skip of a cache/shared entry that run-args
@@ -1669,6 +1705,33 @@ func formatPortMapping(public bool, hostPort, containerPort int) string {
 // and rejects a symlink pointing outside its own folder needs the project
 // bind-mounted a second time inside that folder.
 const atCodeVolumeSource = "@code"
+
+// splitInlineVolumeGroups rewrites "-v=spec" and "--volume=spec" into the two-item
+// "-v spec" form in every group. Docker treats both alike; booth's volume steps only
+// read the two-item form.
+func splitInlineVolumeGroups(args *ilist.AppendableList[ilist.List[string]]) *ilist.AppendableList[ilist.List[string]] {
+	out := ilist.NewAppendableList[ilist.List[string]]()
+	if args == nil {
+		return out
+	}
+	args.ToList().Range(func(_ int, group ilist.List[string]) bool {
+		out.Append(ilist.NewListFromSlice(splitInlineVolumeItems(group.Slice())))
+		return true
+	})
+	return out
+}
+
+func splitInlineVolumeItems(items []string) []string {
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		if name, spec, inline := strings.Cut(item, "="); inline && isVolumeFlag(name) {
+			out = append(out, name, spec)
+			continue
+		}
+		out = append(out, item)
+	}
+	return out
+}
 
 func rewriteAtCodeVolumeGroups(args *ilist.AppendableList[ilist.List[string]], codePath string) *ilist.AppendableList[ilist.List[string]] {
 	out := ilist.NewAppendableList[ilist.List[string]]()
