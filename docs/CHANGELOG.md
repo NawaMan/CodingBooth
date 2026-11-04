@@ -27,6 +27,12 @@ This file contains a list of changes for each released version.
   are dropped, as before.
   See [booth config](BOOTH_CONFIG.md).
 
+- **A folder seed added later reaches its Cache or Shared folder.** A declared folder with no seed
+  is created holding only its `.mount-this` marker, and a seed added afterwards — by a template
+  upgrade, or by hand — never filled it, since a folder seed was copied only when the folder was
+  missing. A folder holding nothing but the marker now counts as empty, the way an empty file
+  already did. See [Initial Content](BOOTH_LOCALCACHE.md#initial-content).
+
 - **A `--booth-dir` cache is checked for being gitignored too.** The check that refuses to start
   while `.booth/cache/` could be committed was skipped for any `--booth-dir`, even one inside a git
   repo. It now runs against the repo the cache folder is in, whichever that is; a booth dir in no
