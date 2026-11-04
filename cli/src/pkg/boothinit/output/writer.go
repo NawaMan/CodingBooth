@@ -224,16 +224,27 @@ func writeOutput(out *BoothOutput, targetPath string, beside []string) error {
 	// Write the Cache and Shared seeds, and fill the paths they cover first, so the
 	// touches below create empty files only where no seed applies.
 	for _, seed := range []struct {
-		name  string
-		files []FileContent
-	}{{"cache", out.CacheSeed}, {"shared", out.SharedSeed}} {
+		name     string
+		files    []FileContent
+		declared [][]FileContent
+	}{
+		{"cache", out.CacheSeed, [][]FileContent{out.Cache, out.CacheDirs}},
+		{"shared", out.SharedSeed, [][]FileContent{out.Shared, out.SharedDirs}},
+	} {
 		seedDir := filepath.Join(boothDir, seed.name+"-seed")
 		if len(seed.files) > 0 {
 			if err := CopyFiles(seed.files, seedDir); err != nil {
 				return fmt.Errorf("writing %s-seed/: %w", seed.name, err)
 			}
 		}
-		if _, err := pathseed.Apply(seedDir, filepath.Join(boothDir, seed.name)); err != nil {
+		// Only declared paths: a seed alone must not create a path that then mounts.
+		declared := []string{}
+		for _, list := range seed.declared {
+			for _, f := range list {
+				declared = append(declared, pathmode.Path(f.RelPath))
+			}
+		}
+		if _, _, err := pathseed.ApplyDeclared(seedDir, filepath.Join(boothDir, seed.name), declared); err != nil {
 			return fmt.Errorf("seeding %s/: %w", seed.name, err)
 		}
 	}

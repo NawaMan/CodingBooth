@@ -111,7 +111,8 @@ writable (`--writable-booth`).
 
 A declared path starts empty unless a **seed** gives it content: `.booth/cache-seed/` and
 `.booth/shared-seed/` are committed, use the same layout, and are copied into `.booth/cache/` and
-`.booth/shared/` while a path there is missing or empty — never over content. A template ships
+`.booth/shared/` while a path there is missing or empty — never over content, and only for a
+declared path: a seed alone creates no mount. A template ships
 them with `[files.cache-seed]` / `[files.shared-seed]`. Because the Cache seed is in git, a fresh
 clone gets the content too. See [Initial Content](BOOTH_LOCALCACHE.md#initial-content).
 

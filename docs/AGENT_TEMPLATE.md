@@ -219,7 +219,9 @@ set -Eeuo pipefail
 The two seed tables are keyed by container path, like `cache-files` (`"home/coder/.config/x.json"`),
 not by a path under `~`. A seed fills the Cache or Shared path while it is missing or empty, and
 never replaces content — see [Local Cache → Initial Content](BOOTH_LOCALCACHE.md#initial-content).
-Declare the path too (`cache-files` / `shared-files`); the seed only gives it content.
+Declare the path too (`cache-files` / `cache-dirs` / `shared-files` / `shared-dirs`): only a declared
+path, or one inside a declared folder, is seeded. A seed alone creates nothing and mounts nothing,
+so deselecting the template stops its seed even though the file stays in `.booth/*-seed/`.
 
 The directory equivalents (`setups/`, `home/`, `home-seed/`, `cache-seed/`, `shared-seed/` next to
 `template.toml`) do the same

@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/nawaman/codingbooth/src/internal/hostskip"
@@ -165,6 +166,57 @@ func TestApply_LeavesAFolderWhoseMarkerIsNotAFile(t *testing.T) {
 	if len(seeded) != 0 {
 		t.Errorf("seeded = %v, want none", seeded)
 	}
+}
+
+// Only declared paths are seeded, a file inside a declared folder included; the rest are
+// reported as skipped, so a seed left by a deselected template creates no mount.
+func TestApplyDeclared_SeedsOnlyDeclaredPaths(t *testing.T) {
+	seed, target := t.TempDir(), t.TempDir()
+	write(t, filepath.Join(seed, settings), "declared file")
+	write(t, filepath.Join(seed, "home/coder/.tool/inside.conf"), "inside a declared folder")
+	write(t, filepath.Join(seed, "home/coder/.chrome-data/Default", mountMarker), "")
+	write(t, filepath.Join(seed, "home/coder/.chrome-data/Default/Bookmarks"), "left behind")
+	write(t, filepath.Join(seed, "home/coder/.stray"), "left behind")
+
+	seeded, skipped, err := ApplyDeclared(seed, target, []string{settings, "home/coder/.tool"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{filepath.FromSlash("home/coder/.config/tool/settings.json"), filepath.FromSlash("home/coder/.tool/inside.conf")}
+	if !reflect.DeepEqual(sorted(seeded), sorted(want)) {
+		t.Errorf("seeded = %v, want %v", seeded, want)
+	}
+	wantSkipped := []string{filepath.FromSlash("home/coder/.chrome-data/Default"), filepath.FromSlash("home/coder/.stray")}
+	if !reflect.DeepEqual(sorted(skipped), sorted(wantSkipped)) {
+		t.Errorf("skipped = %v, want %v", skipped, wantSkipped)
+	}
+	for _, p := range []string{"home/coder/.chrome-data", "home/coder/.stray"} {
+		if _, err := os.Stat(filepath.Join(target, p)); !os.IsNotExist(err) {
+			t.Errorf("%s was created from an undeclared seed", p)
+		}
+	}
+}
+
+// A declared path written as "./a//b/" names the same path as "a/b".
+func TestApplyDeclared_CleansDeclaredPaths(t *testing.T) {
+	for _, declared := range []string{"./home/coder/.tool/", "home//coder/./.tool", "/home/coder/.tool"} {
+		seed, target := t.TempDir(), t.TempDir()
+		write(t, filepath.Join(seed, "home/coder/.tool/a.conf"), "a")
+
+		seeded, skipped, err := ApplyDeclared(seed, target, []string{declared})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(seeded) != 1 || len(skipped) != 0 {
+			t.Errorf("%q: seeded = %v, skipped = %v; want a.conf seeded", declared, seeded, skipped)
+		}
+	}
+}
+
+func sorted(list []string) []string {
+	out := append([]string(nil), list...)
+	sort.Strings(out)
+	return out
 }
 
 func TestApply_SkipsFilesAtTheRoot(t *testing.T) {

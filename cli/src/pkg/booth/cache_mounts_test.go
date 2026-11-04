@@ -5,6 +5,7 @@
 package booth
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -295,6 +296,45 @@ func TestSeedFrom_BeforeEnsure(t *testing.T) {
 	other, err := os.ReadFile(filepath.Join(boothDir, "shared", "home", "coder", ".other"))
 	if err != nil || len(other) != 0 {
 		t.Errorf(".other = %q, %v; want an empty file", other, err)
+	}
+}
+
+// At start, a seed that config.toml no longer declares (its template was deselected) is
+// not applied, so it creates no path and no mount; the start says why.
+func TestSeedFrom_SkipsUndeclaredSeed(t *testing.T) {
+	boothDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(boothDir, "config.toml"), []byte("shared-files = [\"home/coder/.kept\"]\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range []string{"home/coder/.kept", "home/coder/.chrome-data/Default/.mount-this", "home/coder/.chrome-data/Default/Bookmarks"} {
+		p := filepath.Join(boothDir, "shared-seed", filepath.FromSlash(f))
+		if err := os.MkdirAll(filepath.Dir(p), 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte("seed"), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	orig := os.Stderr
+	os.Stderr = w
+	seedFrom(boothDir, "shared")
+	os.Stderr = orig
+	w.Close()
+	notices, _ := io.ReadAll(r)
+
+	if _, err := os.Stat(filepath.Join(boothDir, "shared", "home", "coder", ".kept")); err != nil {
+		t.Errorf("the declared seed should apply: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(boothDir, "shared", "home", "coder", ".chrome-data")); !os.IsNotExist(err) {
+		t.Errorf("an undeclared seed must not create its path")
+	}
+	if !strings.Contains(string(notices), "Not seeding .booth/shared/home/coder/.chrome-data/Default") {
+		t.Errorf("expected a notice for the undeclared seed, got %q", notices)
 	}
 }
 
