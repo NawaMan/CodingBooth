@@ -1278,16 +1278,46 @@ type cacheMount struct {
 }
 
 // seedFrom copies .booth/<name>-seed/ into .booth/<name>/ where a path is still missing
-// (see package pathseed), and says which paths it filled. A failure only warns: the
-// booth still starts, with those paths empty as before.
+// (see package pathseed), and says which paths it filled. Only a path config.toml declares
+// (<name>-files / <name>-dirs) is seeded: a seed alone must not make a path mount, so a
+// seed left behind by a deselected template stays out. A failure only warns: the booth
+// still starts, with those paths empty as before.
 func seedFrom(boothDir, name string) {
-	seeded, err := pathseed.Apply(filepath.Join(boothDir, name+"-seed"), filepath.Join(boothDir, name))
+	seeded, skipped, err := pathseed.ApplyDeclared(filepath.Join(boothDir, name+"-seed"), filepath.Join(boothDir, name),
+		declaredPaths(boothDir, name))
 	for _, p := range seeded {
 		fmt.Fprintf(os.Stderr, "Seeded .booth/%s/%s from .booth/%s-seed/\n", name, filepath.ToSlash(p), name)
+	}
+	for _, p := range skipped {
+		fmt.Fprintf(os.Stderr, "   Not seeding .booth/%s/%s: no %s-files or %s-dirs entry in config.toml declares it\n",
+			name, filepath.ToSlash(p), name, name)
 	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Warning: seeding .booth/%s/ from .booth/%s-seed/: %v\n", name, name, err)
 	}
+}
+
+// declaredPaths returns config.toml's <name>-files and <name>-dirs, mode suffixes
+// removed. It is never nil, so a booth with no config.toml seeds nothing.
+func declaredPaths(boothDir, name string) []string {
+	paths := []string{}
+	data, err := os.ReadFile(filepath.Join(boothDir, "config.toml"))
+	if err != nil {
+		return paths
+	}
+	var cfg map[string]any
+	if _, err := toml.Decode(string(data), &cfg); err != nil {
+		return paths
+	}
+	for _, key := range []string{name + "-files", name + "-dirs"} {
+		list, _ := cfg[key].([]any)
+		for _, v := range list {
+			if str, ok := v.(string); ok {
+				paths = append(paths, pathmode.Path(str))
+			}
+		}
+	}
+	return paths
 }
 
 // ensureCacheFromConfig reads cache-files and cache-dirs from config.toml
