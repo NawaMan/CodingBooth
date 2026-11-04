@@ -65,7 +65,7 @@ any that are missing — so a fresh clone, which has no `.booth/cache/`, gets th
 
 CodingBooth walks `.booth/cache/` top-down. At each directory:
 
-1. **If `.mount-this` marker exists** — mount the entire directory at its corresponding container path. Stop traversing into it. The `.mount-this` file itself is not included in the mount content (it can be empty).
+1. **If `.mount-this` marker exists** — mount the entire directory at its corresponding container path. Stop traversing into it. The `.mount-this` file (it can be empty) goes along with the folder, so it is visible inside the booth too — a tool that wants an empty folder must use a subfolder of the mounted one (see `envfolio+store-cache` below).
 
 2. **Otherwise** — mount any individual **files** in this directory one by one (see [Single files](#single-files-are-kept-in-sync)), then continue traversing into subdirectories.
 
