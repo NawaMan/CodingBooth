@@ -1297,8 +1297,9 @@ func seedFrom(boothDir, name string) {
 	}
 }
 
-// declaredPaths returns config.toml's <name>-files and <name>-dirs, mode suffixes
-// removed. It is never nil, so a booth with no config.toml seeds nothing.
+// declaredPaths returns config.toml's <name>-files and <name>-dirs as written, mode
+// suffixes included (the seed step applies them). It is never nil, so a booth with no
+// config.toml seeds nothing.
 func declaredPaths(boothDir, name string) []string {
 	paths := []string{}
 	data, err := os.ReadFile(filepath.Join(boothDir, "config.toml"))
@@ -1313,7 +1314,7 @@ func declaredPaths(boothDir, name string) []string {
 		list, _ := cfg[key].([]any)
 		for _, v := range list {
 			if str, ok := v.(string); ok {
-				paths = append(paths, pathmode.Path(str))
+				paths = append(paths, str)
 			}
 		}
 	}
