@@ -182,7 +182,7 @@ Before mounting, booth copies each seed into `.booth/cache/` where that path is 
 | Seed | Copied when |
 |---|---|
 | A file | the Cache file is missing **or empty** — empty is what booth creates for a path with no seed, so a seed added later still reaches it |
-| A marked folder, whole | the Cache folder does not exist — once it does, it is the user's, and a file deleted from it stays deleted |
+| A marked folder, whole | the Cache folder is missing, or holds nothing but `.mount-this` — which is what booth creates for a folder with no seed. Once anything else is in it, it is the user's, and a file deleted from it stays deleted |
 
 A seed never replaces content, files at the seed's root (a `README.md`) are skipped, and the start
 says what it seeded. `booth config` does the same as soon as it writes the files, so a fresh
