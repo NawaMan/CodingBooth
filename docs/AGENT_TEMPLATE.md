@@ -151,7 +151,7 @@ install go golang.org/x/tools/gopls@latest
 | `requires`      | []string   | Other template names that must also be selected          |
 | `cache-files`   | []string   | Files to persist in `.booth/cache/` (see below)          |
 | `cache-dirs`    | []string   | Directories to persist in `.booth/cache/`                |
-| `shared-files`  | []string   | Files to bind-mount live from `.booth/shared/`           |
+| `shared-files`  | []string   | Files to keep in sync with `.booth/shared/` (copied in, synced back) |
 | `shared-dirs`   | []string   | Directories to bind-mount live from `.booth/shared/`     |
 | `owner-permission` | array of tables | Mount points `booth-entry` updates on startup. Merged into `.booth/owner-permission.yaml`. `path` is absolute. `user`, `group`, and `mode` are optional; `mode` is a 3- or 4-digit octal string such as `"1777"`. A directory entry sets the mode on that directory and every directory under it, and the owner on everything in the tree, files included. A path that is not a mount point is left alone. |
 | `unsupported-arch`      | []string | Architectures with no build (`"arm64"`, `"amd64"`)  |
@@ -167,7 +167,8 @@ user's home is `home/coder/…`. The difference is intent:
 - **`cache-*`** — machine-local state that should survive a rebuild but is not worth committing:
   REPL history, a tool's settings dir. Materialised under `.booth/cache/`.
 - **`shared-*`** — state you *want* in git so a team shares it: editor settings, DB connections,
-  keyboard shortcuts. Materialised under `.booth/shared/` as a live bind mount.
+  keyboard shortcuts. Materialised under `.booth/shared/`: a folder as a live bind mount, a file copied in and synced
+  back every 2 seconds.
 
 ```toml
 # templates/languages/python/repl-history--extension.toml

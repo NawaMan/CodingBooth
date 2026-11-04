@@ -198,7 +198,7 @@ run-args = [
 
 ## Live Team State (`.booth/shared/`)
 
-Home seed and override are **copy-in** mechanisms: edits inside the booth do not write back to the project. When the team needs a **live** bind mount of a file outside `/home/coder/code` that **is** committed (bookmarks, editor settings, DB connection defs), use [`.booth/shared/`](BOOTH_SHARED.md) instead (`shared-files` / `shared-dirs`).
+Home seed and override are **copy-in** mechanisms: edits inside the booth do not write back to the project. When the team needs a file outside `/home/coder/code` that **is** committed and whose edits in the booth flow back (a folder as a live mount, a single file synced every 2 seconds) (bookmarks, editor settings, DB connection defs), use [`.booth/shared/`](BOOTH_SHARED.md) instead (`shared-files` / `shared-dirs`).
 
 ---
 

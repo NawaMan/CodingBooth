@@ -44,16 +44,19 @@ The directory is:
 
 The directory structure inside `.booth/cache/` mirrors the container's root filesystem. CodingBooth traverses the tree and creates bind mounts based on what it finds.
 
+A folder is a live bind mount. A single file is copied in at start and synced back every 2
+seconds — see [Single files are kept in sync](#single-files-are-kept-in-sync) for why.
+
 A template's `cache-files` / `cache-dirs` are recorded in `config.toml`, and every start creates
 any that are missing — so a fresh clone, which has no `.booth/cache/`, gets the same mounts.
 
 ```
 .booth/cache/
   home/coder/
-    .bash_history        --> -v .booth/cache/home/coder/.bash_history:/home/coder/.bash_history
-    .zsh_history         --> -v .booth/cache/home/coder/.zsh_history:/home/coder/.zsh_history
+    .bash_history        --> /home/coder/.bash_history (a file: copied in, synced back)
+    .zsh_history         --> /home/coder/.zsh_history  (a file: copied in, synced back)
   opt/ex-app/
-    .mount-this          --> -v .booth/cache/opt/ex-app:/opt/ex-app (whole directory)
+    .mount-this          --> -v .booth/cache/opt/ex-app:/opt/ex-app (whole directory, live)
     config.yaml
     data/
       stuff.db
