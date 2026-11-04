@@ -458,3 +458,21 @@ func TestWriteOutput_CacheAndSharedSeeds(t *testing.T) {
 	assert.Contains(t, OutputPaths(out, tmpDir), filepath.Join(booth, "cache-seed", "home", "coder", ".tool", "state.json"))
 	assert.Contains(t, OutputPaths(out, tmpDir), filepath.Join(booth, "shared-seed", "home", "coder", ".kept"))
 }
+
+// booth config seeds only declared paths: a seed with no cache-*/shared-* entry (a
+// deselected template's, left in .booth/shared-seed/) creates nothing.
+func TestWriteOutput_UndeclaredSeedNotApplied(t *testing.T) {
+	tmpDir := t.TempDir()
+	out := &BoothOutput{
+		Config:     &ConfigToml{Variant: "base"},
+		Shared:     []FileContent{{RelPath: "home/coder/.kept"}},
+		SharedSeed: []FileContent{{RelPath: "home/coder/.kept", Content: "team"}, {RelPath: "home/coder/.stray", Content: "old"}},
+	}
+	require.NoError(t, WriteOutput(out, tmpDir))
+
+	data, err := os.ReadFile(filepath.Join(tmpDir, ".booth", "shared", "home", "coder", ".kept"))
+	require.NoError(t, err)
+	assert.Equal(t, "team", string(data))
+	_, err = os.Stat(filepath.Join(tmpDir, ".booth", "shared", "home", "coder", ".stray"))
+	assert.True(t, os.IsNotExist(err), "an undeclared seed must not be applied")
+}

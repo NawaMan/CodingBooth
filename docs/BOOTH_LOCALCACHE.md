@@ -177,7 +177,10 @@ seeds; unlike `.booth/cache/` it is **committed**, so every clone gets them. It 
 layout: the tree mirrors the container's root, a file stands for itself, and a folder holding a
 `.mount-this` marker stands for the whole folder.
 
-Before mounting, booth copies each seed into `.booth/cache/` where that path is still missing:
+Only a path that `config.toml` declares (`cache-files` / `cache-dirs`), or one inside a declared
+folder, is seeded; a seed for anything else is left alone with a notice, so a seed left behind by a
+deselected template creates no mount. Before mounting, booth copies each declared seed into
+`.booth/cache/` where that path is still missing:
 
 | Seed | Copied when |
 |---|---|
