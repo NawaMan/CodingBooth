@@ -238,10 +238,11 @@ func writeOutput(out *BoothOutput, targetPath string, beside []string) error {
 			}
 		}
 		// Only declared paths: a seed alone must not create a path that then mounts.
+		// Entries keep their :mode suffix, which a folder the seed creates gets.
 		declared := []string{}
 		for _, list := range seed.declared {
 			for _, f := range list {
-				declared = append(declared, pathmode.Path(f.RelPath))
+				declared = append(declared, f.RelPath)
 			}
 		}
 		if _, _, err := pathseed.ApplyDeclared(seedDir, filepath.Join(boothDir, seed.name), declared); err != nil {
