@@ -677,6 +677,12 @@ func appleLowPortsNote(engine string, lowPorts, public bool) string {
 func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder := ctx.ToBuilder()
 
+	// Split "-v=spec" / "--volume=spec" into "-v spec" first, so every volume step
+	// (cache shadowing, the @code rewrite, {name} expansion, the missing-host filter,
+	// `create` handling) sees one form of the flag.
+	builder.RunArgs = splitInlineVolumeGroups(builder.RunArgs)
+	builder.CommonArgs = splitInlineVolumeGroups(builder.CommonArgs)
+
 	containerName := ctx.Name()
 	if containerName == "" {
 		containerName = ctx.ProjectName()
@@ -1699,6 +1705,33 @@ func formatPortMapping(public bool, hostPort, containerPort int) string {
 // and rejects a symlink pointing outside its own folder needs the project
 // bind-mounted a second time inside that folder.
 const atCodeVolumeSource = "@code"
+
+// splitInlineVolumeGroups rewrites "-v=spec" and "--volume=spec" into the two-item
+// "-v spec" form in every group. Docker treats both alike; booth's volume steps only
+// read the two-item form.
+func splitInlineVolumeGroups(args *ilist.AppendableList[ilist.List[string]]) *ilist.AppendableList[ilist.List[string]] {
+	out := ilist.NewAppendableList[ilist.List[string]]()
+	if args == nil {
+		return out
+	}
+	args.ToList().Range(func(_ int, group ilist.List[string]) bool {
+		out.Append(ilist.NewListFromSlice(splitInlineVolumeItems(group.Slice())))
+		return true
+	})
+	return out
+}
+
+func splitInlineVolumeItems(items []string) []string {
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		if name, spec, inline := strings.Cut(item, "="); inline && isVolumeFlag(name) {
+			out = append(out, name, spec)
+			continue
+		}
+		out = append(out, item)
+	}
+	return out
+}
 
 func rewriteAtCodeVolumeGroups(args *ilist.AppendableList[ilist.List[string]], codePath string) *ilist.AppendableList[ilist.List[string]] {
 	out := ilist.NewAppendableList[ilist.List[string]]()
