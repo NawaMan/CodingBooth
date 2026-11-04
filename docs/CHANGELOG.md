@@ -40,6 +40,12 @@ This file contains a list of changes for each released version.
   declares (or one inside a declared folder) is seeded now; a start names any seed it leaves alone.
   See [Initial Content](BOOTH_LOCALCACHE.md#initial-content).
 
+- **A seeded Cache or Shared folder keeps its `:0700` mode.** A `cache-dirs` / `shared-dirs` entry
+  such as `home/coder/.gnupg:0700` got its mode only when booth created the folder empty; when a
+  seed created it (a marked folder seed, or a file seed such as `.gnupg/gpg.conf`), it got `0755`,
+  which gpg and ssh refuse. A declared folder the seed step creates now gets its declared mode, at
+  start and in `booth config`; a folder that already existed keeps its own.
+
 - **A `--booth-dir` cache is checked for being gitignored too.** The check that refuses to start
   while `.booth/cache/` could be committed was skipped for any `--booth-dir`, even one inside a git
   repo. It now runs against the repo the cache folder is in, whichever that is; a booth dir in no

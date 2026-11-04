@@ -7,6 +7,7 @@ package output
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -475,4 +476,29 @@ func TestWriteOutput_UndeclaredSeedNotApplied(t *testing.T) {
 	assert.Equal(t, "team", string(data))
 	_, err = os.Stat(filepath.Join(tmpDir, ".booth", "shared", "home", "coder", ".stray"))
 	assert.True(t, os.IsNotExist(err), "an undeclared seed must not be applied")
+}
+
+// booth config seeds before it creates the declared folders, so a seeded folder must get
+// its ":0700" mode from the seed step.
+func TestWriteOutput_SeededDirKeepsDeclaredMode(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("no Unix modes")
+	}
+	tmpDir := t.TempDir()
+	// An empty marker comes from a file, as a template's cache-seed/ folder ships it.
+	marker := filepath.Join(t.TempDir(), ".mount-this")
+	require.NoError(t, os.WriteFile(marker, nil, 0644))
+	out := &BoothOutput{
+		Config:    &ConfigToml{Variant: "base"},
+		CacheDirs: []FileContent{{RelPath: "home/coder/.gnupg:0700"}},
+		CacheSeed: []FileContent{
+			{RelPath: "home/coder/.gnupg/.mount-this", SourcePath: marker},
+			{RelPath: "home/coder/.gnupg/gpg.conf", Content: "keyserver x"},
+		},
+	}
+	require.NoError(t, WriteOutput(out, tmpDir))
+
+	info, err := os.Stat(filepath.Join(tmpDir, ".booth", "cache", "home", "coder", ".gnupg"))
+	require.NoError(t, err)
+	assert.Equal(t, os.FileMode(0700), info.Mode().Perm())
 }

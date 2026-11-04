@@ -259,3 +259,65 @@ func TestApply_MissingSeedFolder(t *testing.T) {
 		t.Errorf("Apply = %v, %v; want nil, nil", seeded, err)
 	}
 }
+
+// A declared folder that this seeding creates gets its ":0700" mode, however the seed
+// reaches it: a marked folder seed, a file seed inside it, or a seed nested deeper. The
+// mode step only sets a folder it creates, and the seed would leave this one at 0755.
+func TestApplyDeclared_GivesACreatedFolderItsMode(t *testing.T) {
+	hostskip.NoUnixModes(t)
+	dir := "home/coder/.gnupg"
+	for name, seedFiles := range map[string][]string{
+		"marked folder": {dir + "/" + mountMarker, dir + "/gpg.conf"},
+		"file seed":     {dir + "/gpg.conf"},
+		"nested marked": {dir + "/private-keys-v1.d/" + mountMarker, dir + "/private-keys-v1.d/k.key"},
+	} {
+		seed, target := t.TempDir(), t.TempDir()
+		for _, f := range seedFiles {
+			write(t, filepath.Join(seed, f), "x")
+		}
+
+		seeded, _, err := ApplyDeclared(seed, target, []string{dir + "/:0700"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(seeded) == 0 {
+			t.Errorf("%s: nothing seeded", name)
+		}
+		info, err := os.Stat(filepath.Join(target, dir))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := info.Mode().Perm(); got != 0700 {
+			t.Errorf("%s: mode = %o, want 700", name, got)
+		}
+	}
+}
+
+// A folder that existed before the seeding keeps its mode, even one holding only the
+// marker that the seed now fills.
+func TestApplyDeclared_LeavesAnExistingFoldersMode(t *testing.T) {
+	hostskip.NoUnixModes(t)
+	seed, target := t.TempDir(), t.TempDir()
+	dir := "home/coder/.gnupg"
+	write(t, filepath.Join(seed, dir, mountMarker), "")
+	write(t, filepath.Join(seed, dir, "gpg.conf"), "x")
+	write(t, filepath.Join(target, dir, mountMarker), "")
+	if err := os.Chmod(filepath.Join(target, dir), 0750); err != nil {
+		t.Fatal(err)
+	}
+
+	seeded, _, err := ApplyDeclared(seed, target, []string{dir + ":0700"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(seeded) != 1 {
+		t.Fatalf("seeded = %v, want the folder", seeded)
+	}
+	info, err := os.Stat(filepath.Join(target, dir))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := info.Mode().Perm(); got != 0750 {
+		t.Errorf("mode = %o, want 750 (left as it was)", got)
+	}
+}
