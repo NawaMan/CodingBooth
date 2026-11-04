@@ -2,7 +2,7 @@
 
 > Files outside `/home/coder/code` that are **live** in the container **and** meant to be **committed**.
 
-`.booth/shared/` is a host-side mirror of selected container paths. Its structure mirrors the container filesystem — the same layout rules as [`.booth/cache/`](BOOTH_LOCALCACHE.md) — but it is **intended for git**. Edits inside the booth write straight into the project tree so teammates pick them up on the next pull.
+`.booth/shared/` is a host-side mirror of selected container paths. Its structure mirrors the container filesystem — the same layout rules as [`.booth/cache/`](BOOTH_LOCALCACHE.md) — but it is **intended for git**. Edits inside the booth reach the project tree — at once for a folder, within 2 seconds for a [single file](BOOTH_LOCALCACHE.md#single-files-are-kept-in-sync) — so teammates pick them up on the next pull.
 
 ```
 .booth/shared/
@@ -35,8 +35,8 @@ By default, everything outside `/home/coder/code` is ephemeral. Three mechanisms
 
 | Mechanism | Host path | Live bind mount? | Git? |
 |-----------|-----------|------------------|------|
-| **Shared** | `.booth/shared/` | Yes | **Yes — intended** |
-| **Local cache** | `.booth/cache/` | Yes | **No — forbidden** |
+| **Shared** | `.booth/shared/` | Yes (a single file: synced every 2 s) | **Yes — intended** |
+| **Local cache** | `.booth/cache/` | Yes (a single file: synced every 2 s) | **No — forbidden** |
 | **Home seed / override** | `.booth/home-seed/`, `.booth/home/` | No (copy at start) | Yes |
 
 Use **shared** when the team should edit the same file (bookmark bar, editor settings, DB connection defs) and commit it. Use **cache** for personal session state (shell history, full browser profile). Use **home-seed** when you only need a one-time default that users may then diverge from.
