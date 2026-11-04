@@ -1564,8 +1564,9 @@ func withoutTemplatePaths(flags initFlags, declared map[string]bool) initFlags {
 // templates: those of the selection it was written with (prevDSLs, from its header) and
 // of the one being compiled now. A hand-written path that merely matches some other,
 // unselected template is the user's, and is kept. When the old selection can no longer
-// be resolved (a template since removed), it falls back to every template's paths, so
-// a deselected template's paths are still dropped.
+// be resolved (a template since removed), or cannot be rebuilt as it was (it read
+// stdin, or a recipe that may have been edited since), it falls back to every
+// template's paths, so a deselected template's paths are still dropped.
 func selectionTemplatePaths(prevDSLs []string, current *selection.ResolvedSelection, projectRoot string, registry *tmpl.TemplateRegistry) map[string]bool {
 	declared := map[string]bool{}
 	addTemplate := func(t *tmpl.Template) {
@@ -1586,7 +1587,11 @@ func selectionTemplatePaths(prevDSLs []string, current *selection.ResolvedSelect
 	if len(prevDSLs) == 0 {
 		return declared
 	}
-	prev, err := resolvePreviousSelection(prevDSLs, projectRoot, registry)
+	var prev *selection.ResolvedSelection
+	err := errPreviousNotReplayable
+	if previousSelectionReplayable(prevDSLs) {
+		prev, err = resolvePreviousSelection(prevDSLs, projectRoot, registry)
+	}
 	if err != nil {
 		var addAll func(t *tmpl.Template)
 		addAll = func(t *tmpl.Template) {
@@ -1625,6 +1630,22 @@ func templatePathsOf(r *selection.ResolvedSelection) map[string]bool {
 		}
 	}
 	return paths
+}
+
+var errPreviousNotReplayable = errors.New("previous selection cannot be replayed")
+
+// previousSelectionReplayable reports whether the recorded --select fragments name
+// the same templates today as when config.toml was written. "-" read stdin, which
+// must never be read again here (it would block on a terminal), and a recipe
+// ("@name", "@./file", "@@url") may have changed since.
+func previousSelectionReplayable(dsls []string) bool {
+	for _, dsl := range dsls {
+		dsl = strings.TrimSpace(dsl)
+		if dsl == "-" || strings.HasPrefix(dsl, "@") {
+			return false
+		}
+	}
+	return true
 }
 
 func resolvePreviousSelection(dsls []string, projectRoot string, registry *tmpl.TemplateRegistry) (*selection.ResolvedSelection, error) {
