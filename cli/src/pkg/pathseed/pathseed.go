@@ -26,8 +26,11 @@ const mountMarker = ".mount-this"
 //   - A file is seeded when the target is missing or empty. Empty counts as missing
 //     because booth creates a declared path with no seed as an empty file, and a seed
 //     added later must still reach it.
-//   - A marked folder is copied whole, and only when the target folder does not exist,
-//     so a file the user deleted from it stays deleted.
+//   - A marked folder is copied whole when the target folder is missing or empty --
+//     holding nothing but the .mount-this marker counts as empty, because booth creates
+//     a declared folder with no seed that way, and a seed added later must still reach
+//     it. A folder with anything else in it is the user's, so a file deleted from it
+//     stays deleted.
 //   - Files at the seed root are skipped: they map to "/" (a README.md, say).
 //
 // A missing seedDir is not an error.
@@ -46,7 +49,7 @@ func walk(seedDir, targetDir, rel string, seeded *[]string) error {
 
 	if rel != "." {
 		if _, err := os.Stat(filepath.Join(src, mountMarker)); err == nil {
-			if _, err := os.Stat(dst); err == nil {
+			if _, err := os.Stat(dst); err == nil && !onlyMarker(dst) {
 				return nil
 			}
 			if err := copyTree(src, dst); err != nil {
@@ -84,7 +87,21 @@ func walk(seedDir, targetDir, rel string, seeded *[]string) error {
 	return nil
 }
 
-// copyTree copies the folder src to dst, which does not exist yet.
+// onlyMarker reports whether dir is a folder holding nothing but the .mount-this marker.
+func onlyMarker(dir string) bool {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return false
+	}
+	for _, e := range entries {
+		if e.Name() != mountMarker {
+			return false
+		}
+	}
+	return true
+}
+
+// copyTree copies the folder src into dst, which is missing or holds only the marker.
 func copyTree(src, dst string) error {
 	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
