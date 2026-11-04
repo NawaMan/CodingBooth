@@ -15,7 +15,9 @@ package pathseed
 import (
 	"io"
 	"os"
+	"path"
 	"path/filepath"
+	"strings"
 )
 
 const mountMarker = ".mount-this"
@@ -35,27 +37,74 @@ const mountMarker = ".mount-this"
 //
 // A missing seedDir is not an error.
 func Apply(seedDir, targetDir string) ([]string, error) {
-	if info, err := os.Stat(seedDir); err != nil || !info.IsDir() {
-		return nil, nil
-	}
-	var seeded []string
-	err := walk(seedDir, targetDir, ".", &seeded)
+	seeded, _, err := ApplyDeclared(seedDir, targetDir, nil)
 	return seeded, err
 }
 
-func walk(seedDir, targetDir, rel string, seeded *[]string) error {
+// ApplyDeclared is Apply limited to the declared paths: a seed is copied only when its
+// path is one of them or lies inside one (a declared folder). The others are returned as
+// skipped. A seed alone must not make a path mount: the declaration -- a template's
+// cache-files/-dirs, or config.toml's -- is what does, so deselecting the template
+// stops the seeding (content already copied stays until deleted). declared holds paths
+// relative to targetDir, without a :mode suffix; nil means every seed.
+func ApplyDeclared(seedDir, targetDir string, declared []string) (seeded, skipped []string, err error) {
+	if info, err := os.Stat(seedDir); err != nil || !info.IsDir() {
+		return nil, nil, nil
+	}
+	w := walker{seedDir: seedDir, targetDir: targetDir}
+	if declared != nil {
+		w.declared = map[string]bool{}
+		for _, d := range declared {
+			w.declared[cleanRel(d)] = true
+		}
+	}
+	err = w.walk(".")
+	return w.seeded, w.skipped, err
+}
+
+// cleanRel turns a declared path ("home/coder/.x/", "./home//coder/.x", "/home/coder/.x")
+// into the slash form the walk compares against ("home/coder/.x").
+func cleanRel(p string) string {
+	return path.Clean(strings.TrimPrefix(path.Clean("/"+filepath.ToSlash(p)), "/"))
+}
+
+type walker struct {
+	seedDir, targetDir string
+	declared           map[string]bool // nil: every seed applies
+	seeded, skipped    []string
+}
+
+// covered reports whether rel is a declared path or inside one.
+func (w *walker) covered(rel string) bool {
+	if w.declared == nil {
+		return true
+	}
+	for p := filepath.ToSlash(rel); p != "." && p != "/" && p != ""; p = path.Dir(p) {
+		if w.declared[p] {
+			return true
+		}
+	}
+	return false
+}
+
+func (w *walker) walk(rel string) error {
+	seedDir, targetDir := w.seedDir, w.targetDir
 	src := filepath.Join(seedDir, rel)
 	dst := filepath.Join(targetDir, rel)
 
 	if rel != "." {
 		if _, err := os.Stat(filepath.Join(src, mountMarker)); err == nil {
+			if !w.covered(rel) {
+				w.skipped = append(w.skipped, rel)
+				return nil
+			}
 			if _, err := os.Stat(dst); err == nil && !onlyMarker(dst) {
 				return nil
 			}
 			if err := copyTree(src, dst); err != nil {
 				return err
 			}
-			*seeded = append(*seeded, rel)
+			w.seeded = append(w.seeded, rel)
 			return nil
 		}
 	}
@@ -67,12 +116,16 @@ func walk(seedDir, targetDir, rel string, seeded *[]string) error {
 	for _, entry := range entries {
 		childRel := filepath.Join(rel, entry.Name())
 		if entry.IsDir() {
-			if err := walk(seedDir, targetDir, childRel, seeded); err != nil {
+			if err := w.walk(childRel); err != nil {
 				return err
 			}
 			continue
 		}
 		if rel == "." || !entry.Type().IsRegular() {
+			continue
+		}
+		if !w.covered(childRel) {
+			w.skipped = append(w.skipped, childRel)
 			continue
 		}
 		target := filepath.Join(targetDir, childRel)
@@ -82,7 +135,7 @@ func walk(seedDir, targetDir, rel string, seeded *[]string) error {
 		if err := copyFile(filepath.Join(seedDir, childRel), target); err != nil {
 			return err
 		}
-		*seeded = append(*seeded, childRel)
+		w.seeded = append(w.seeded, childRel)
 	}
 	return nil
 }
