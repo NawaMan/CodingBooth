@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/output"
+	"github.com/nawaman/codingbooth/src/pkg/boothinit/selection"
 	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -393,27 +394,46 @@ func TestRoundTrip_ApplyFlags_WriteConfig_ExtractUserRunArgs(t *testing.T) {
 		"only long-form --volume values should be extracted")
 }
 
-// Paths read back from config.toml that a template declares are dropped — the selected
-// templates add theirs again — so a deselected template's paths do not stay; the
-// user's own paths are kept.
+// Paths read back from config.toml that a template of the previous or the current
+// selection declares are dropped -- the selected templates add theirs again -- so a
+// deselected template's paths do not stay. The user's own paths are kept, including one
+// that merely matches a template nobody selected.
 func TestWithoutTemplatePaths(t *testing.T) {
 	ext := &tmpl.Template{Name: "settings-shared", SharedFiles: []string{"home/coder/.config/x/settings.json"}}
-	registry := &tmpl.TemplateRegistry{ByName: map[string]*tmpl.Template{
-		"history": {Name: "history", CacheFiles: []string{"home/coder/.zsh_history"}, Extensions: []*tmpl.Template{ext}},
-		"gnupg":   {Name: "gnupg", CacheDirs: []string{"home/coder/.gnupg:0700"}},
-	}}
+	history := &tmpl.Template{Name: "history", CacheFiles: []string{"home/coder/.zsh_history"}, Extensions: []*tmpl.Template{ext}}
+	gnupg := &tmpl.Template{Name: "gnupg", CacheDirs: []string{"home/coder/.gnupg:0700"}}
+	registry := &tmpl.TemplateRegistry{ByName: map[string]*tmpl.Template{"history": history, "gnupg": gnupg}}
 	flags := initFlags{
 		cacheFiles:  []string{"home/coder/.zsh_history", "home/coder/.mine_history"},
 		cacheDirs:   []string{"home/coder/.gnupg:0700"},
 		sharedFiles: []string{"home/coder/.config/x/settings.json", "home/coder/.team.conf"},
 		sharedDirs:  []string{"home/coder/.snippets"},
 	}
+	// Previously history+settings-shared; now nothing of it is selected.
+	prev := &selection.ResolvedSelection{Templates: []selection.SelectedTemplate{{
+		Template:   history,
+		Extensions: []selection.SelectedExtension{{Extension: ext}},
+	}}}
+	declared := map[string]bool{}
+	for p := range templatePathsOf(prev) {
+		declared[p] = true
+	}
 
-	got := withoutTemplatePaths(flags, registry)
+	got := withoutTemplatePaths(flags, declared)
 	assert.Equal(t, []string{"home/coder/.mine_history"}, got.cacheFiles)
-	assert.Empty(t, got.cacheDirs)
+	assert.Equal(t, []string{"home/coder/.gnupg:0700"}, got.cacheDirs,
+		"a hand-written path matching an unselected template (gnupg) is the user's")
 	assert.Equal(t, []string{"home/coder/.team.conf"}, got.sharedFiles, "an extension's path is a template's too")
 	assert.Equal(t, []string{"home/coder/.snippets"}, got.sharedDirs)
+
+	// A previous selection that no longer resolves falls back to every template.
+	all := selectionTemplatePaths([]string{"no-such-template"}, nil, t.TempDir(), registry)
+	assert.True(t, all["home/coder/.gnupg:0700"] && all["home/coder/.zsh_history"] && all["home/coder/.config/x/settings.json"],
+		"fallback should hold every template's paths: %v", all)
+
+	// No previous selection: only the current one counts.
+	cur := selectionTemplatePaths(nil, &selection.ResolvedSelection{Templates: []selection.SelectedTemplate{{Template: gnupg}}}, t.TempDir(), registry)
+	assert.Equal(t, map[string]bool{"home/coder/.gnupg:0700": true}, cur)
 }
 
 func TestPrintMountOverlaps(t *testing.T) {

@@ -854,6 +854,9 @@ func readExistingBooth(targetPath string) initFlags {
 	cmd, source, found := readBoothHeader(targetPath)
 	if found {
 		flags = parseAdjustCommand(cmd)
+		// The selection this config.toml was written with: its templates' paths are
+		// the ones to drop from the read-back lists (see selectionTemplatePaths).
+		flags.prevSelectDSLs = flags.selectDSLs
 	}
 
 	// Also read config.toml to extract user-set values from long-form run-args.
