@@ -18,6 +18,8 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/nawaman/codingbooth/src/pkg/pathmode"
 )
 
 const mountMarker = ".mount-this"
@@ -45,20 +47,46 @@ func Apply(seedDir, targetDir string) ([]string, error) {
 // path is one of them or lies inside one (a declared folder). The others are returned as
 // skipped. A seed alone must not make a path mount: the declaration -- a template's
 // cache-files/-dirs, or config.toml's -- is what does, so deselecting the template
-// stops the seeding (content already copied stays until deleted). declared holds paths
-// relative to targetDir, without a :mode suffix; nil means every seed.
+// stops the seeding (content already copied stays until deleted).
+//
+// declared holds the cache-*/shared-* entries as written, relative to targetDir; nil
+// means every seed. An entry's ":0700" mode suffix is applied to that folder when this
+// seeding creates it -- whether a marked folder seed, a file seed, or a seed nested
+// further down made it -- since the folder would otherwise get 0755 and the step that
+// applies the mode leaves an existing folder alone. A folder that existed before keeps
+// its mode.
 func ApplyDeclared(seedDir, targetDir string, declared []string) (seeded, skipped []string, err error) {
 	if info, err := os.Stat(seedDir); err != nil || !info.IsDir() {
 		return nil, nil, nil
 	}
 	w := walker{seedDir: seedDir, targetDir: targetDir}
+	modes := map[string]os.FileMode{} // folders with a mode that do not exist yet
 	if declared != nil {
 		w.declared = map[string]bool{}
-		for _, d := range declared {
-			w.declared[cleanRel(d)] = true
+		for _, entry := range declared {
+			p, mode, err := pathmode.Split(entry)
+			if err != nil {
+				p, mode = pathmode.Path(entry), 0
+			}
+			rel := cleanRel(p)
+			w.declared[rel] = true
+			if _, seen := modes[rel]; seen || mode == 0 {
+				continue // the first entry for a path wins, as when booth creates it
+			}
+			if _, err := os.Lstat(filepath.Join(targetDir, filepath.FromSlash(rel))); os.IsNotExist(err) {
+				modes[rel] = mode
+			}
 		}
 	}
 	err = w.walk(".")
+	for rel, mode := range modes {
+		dir := filepath.Join(targetDir, filepath.FromSlash(rel))
+		if info, statErr := os.Stat(dir); statErr == nil && info.IsDir() {
+			if chErr := os.Chmod(dir, mode); chErr != nil && err == nil {
+				err = chErr
+			}
+		}
+	}
 	return w.seeded, w.skipped, err
 }
 

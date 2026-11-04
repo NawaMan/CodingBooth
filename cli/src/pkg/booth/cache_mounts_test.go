@@ -378,3 +378,33 @@ func TestOverlapEntries_CacheFolderHoldsSharedFile(t *testing.T) {
 		t.Fatalf("nested = %+v, want the Shared file inside the Cache folder", nested)
 	}
 }
+
+// At start, a cache-dirs folder with a ":0700" suffix that a seed creates ends up 0700,
+// even when the seed is a plain file inside it (gpg refuses a keyring folder others can
+// read).
+func TestSeedFrom_AppliesDeclaredDirMode(t *testing.T) {
+	hostskip.NoUnixModes(t)
+	boothDir := t.TempDir()
+	config := "cache-dirs = [\"home/coder/.gnupg:0700\"]\n"
+	if err := os.WriteFile(filepath.Join(boothDir, "config.toml"), []byte(config), 0644); err != nil {
+		t.Fatal(err)
+	}
+	seedDir := filepath.Join(boothDir, "cache-seed", "home", "coder", ".gnupg")
+	if err := os.MkdirAll(seedDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(seedDir, "gpg.conf"), []byte("keyserver x"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	seedFrom(boothDir, "cache")
+	ensureCacheFromConfig(boothDir)
+
+	info, err := os.Stat(filepath.Join(boothDir, "cache", "home", "coder", ".gnupg"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := info.Mode().Perm(); got != 0700 {
+		t.Errorf("mode = %o, want 700", got)
+	}
+}
