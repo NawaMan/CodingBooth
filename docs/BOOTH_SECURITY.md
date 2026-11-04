@@ -247,19 +247,33 @@ with any of these. The warning groups them by what untrusted code could do, and 
 | <a id="host-network"></a>**host network** | `--network=host` | reach every service listening on the host, including ones bound only to localhost |
 
 **A booth on a git worktree does not ask either.** A worktree's `.git` is a file pointing into the
-main clone's `.git/`, outside the workspace, so booth also mounts that folder, writable, at the path
-git looks for it. That is the same exposure as a booth on a plain clone, whose `.git/` is inside the
+main clone's `.git/`, outside the workspace, so booth also mounts that folder, writable, at
+`/opt/codingbooth/git/<repo>/.git`. That is the same exposure as a booth on a plain clone, whose `.git/` is inside the
 workspace mount: code in the booth can change refs and objects, and write `.git/hooks/` or
 `.git/config`, which run as you the next time you use git on the host. Treat it like any other
 writable workspace (§1). Submodules are not mounted this way, so git does not work in a booth
 opened on a submodule.
 
-In a booth on any repository that has worktrees, booth also mounts each worktree's `.git` file —
-read-only, and only that one-line file, not the worktree — at the path git's record of it names.
-Without it every record looks stale in the container, and a `git worktree prune` there would drop
-worktrees that are alive on the host. Booth also writes one file per worktree into the repository's
-own `.git/worktrees/<id>/` (`cb-host-path`, the worktree's host path), from which it undoes a
-`git worktree repair` run in a booth.
+Git finds a worktree through absolute host paths in one-line pointer files: the worktree's `.git`
+file, and each record's `.git/worktrees/<id>/gitdir`. Booth covers each of them in the container
+with a generated read-only file that points within the booth, so no host path appears there —
+not even the empty folders leading to the repository, which would look like your home directory.
+`/opt/codingbooth/git` itself is a read-only tmpfs, so even root in the booth cannot write there.
+The host's own pointer files do not change. The generated ones are kept in
+`~/.cache/codingbooth/git-pointers/` (or under `$XDG_CACHE_HOME`).
+
+In a booth on any repository that has worktrees, the main clone too, each other worktree gets a
+read-only one-line `.git` file under `/opt/codingbooth/git/<repo>/worktrees/<id>/` (just that file,
+not the worktree), so its record does not look stale and an in-booth `git worktree prune` does not
+drop it. A worktree that `git worktree add` makes in the booth is written with the booth's paths.
+The next booth on the same folder writes the host's paths back, if that worktree is inside the
+workspace (one outside it exists only in the container). Booth also writes one file per worktree
+into the repository's own `.git/worktrees/<id>/` (`cb-host-path`, the worktree's host path),
+from which it undoes a `git worktree repair` an older booth ran.
+
+On Apple container and on a Windows host, booth keeps the older layout: the main clone's `.git`
+and each worktree's `.git` file are mounted at their host paths, so those paths appear in the
+booth.
 
 Read-only mounts (`:ro`), like the credential seeds templates add, do not ask — they leak what they
 contain (§3) but do not let the booth run anything on the host. A `--device` the host does not have
