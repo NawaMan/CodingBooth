@@ -400,7 +400,7 @@ booth config --no-tui . --select go --set cache-dirs=home/coder/.custom_app_data
   `.booth/cache-seed/` has that path, a copy of the seed ([Initial Content](#initial-content))
 - `cache-dirs` creates directories with `.mount-this` markers that are bind-mounted as whole directories
 - A `cache-dirs` entry may end in an octal mode — `home/coder/.gnupg:0700` — for a tool that refuses a folder others can read (gpg, ssh). The mode is set when the folder is created; an existing folder keeps its own
-- These paths are merged with any cache paths from selected templates — duplicates are automatically removed
+- These paths are merged with any cache paths from selected templates — duplicates are automatically removed — and stay across `booth config` runs. The one exception is a path a selected template also declares: it belongs to that template, and goes when the template is deselected
 - Paths are relative to the container root (e.g., `home/coder/.foo` maps to `/home/coder/.foo`)
 
 

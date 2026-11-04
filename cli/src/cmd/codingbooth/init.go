@@ -58,6 +58,7 @@ type initFlags struct {
 	cacheDirs         []string // cache-dirs read back from existing config.toml
 	sharedFiles       []string // shared-files read back from existing config.toml
 	sharedDirs        []string // shared-dirs read back from existing config.toml
+	prevSelectDSLs    []string // the selection the existing booth's header records
 	variant           string
 	port              string
 	templatesPath     string
@@ -564,7 +565,6 @@ func compileSelectionE(flags initFlags, projectRoot string, overrides map[string
 	if err != nil {
 		return nil, nil, fmt.Errorf("loading templates: %w", err)
 	}
-	flags = withoutTemplatePaths(flags, registry)
 
 	// Parse DSL
 	parsed, err := selection.ParseSelectDSL(rawInput)
@@ -577,6 +577,7 @@ func compileSelectionE(flags initFlags, projectRoot string, overrides map[string
 	if err != nil {
 		return nil, nil, fmt.Errorf("resolving selection: %w", err)
 	}
+	flags = withoutTemplatePaths(flags, selectionTemplatePaths(flags.prevSelectDSLs, resolved, projectRoot, registry))
 
 	// Compile to output
 	out, err := compiler.Compile(resolved)
@@ -1535,29 +1536,14 @@ func asStringList(value interface{}) []string {
 	}
 }
 
-// withoutTemplatePaths drops the Cache and Shared paths a template declares from the
-// lists read back out of an existing config.toml (extractUserRunArgs). config.toml
-// records the selected templates' paths next to the user's own, and a reconfigure
-// reads all of them back as the user's: a template deselected since then kept its
-// paths for good. The templates still selected add theirs again when compiled, so
-// only paths no template declares — the user's own — are carried over. A path the
-// user also set with --set is in the header, and comes back through that.
-func withoutTemplatePaths(flags initFlags, registry *tmpl.TemplateRegistry) initFlags {
-	declared := map[string]bool{}
-	var add func(t *tmpl.Template)
-	add = func(t *tmpl.Template) {
-		for _, list := range [][]string{t.CacheFiles, t.CacheDirs, t.SharedFiles, t.SharedDirs} {
-			for _, p := range list {
-				declared[p] = true
-			}
-		}
-		for _, ext := range t.Extensions {
-			add(ext)
-		}
-	}
-	for _, t := range registry.ByName {
-		add(t)
-	}
+// withoutTemplatePaths drops the Cache and Shared paths in declared from the lists read
+// back out of an existing config.toml (extractUserRunArgs). config.toml records the
+// selected templates' paths next to the user's own, and a reconfigure reads all of them
+// back as the user's: a template deselected since then kept its paths for good. The
+// templates still selected add theirs again when compiled, so only the user's own are
+// carried over. A path the user also set with --set is in the header, and comes back
+// through that.
+func withoutTemplatePaths(flags initFlags, declared map[string]bool) initFlags {
 	keep := func(paths []string) []string {
 		var kept []string
 		for _, p := range paths {
@@ -1572,6 +1558,106 @@ func withoutTemplatePaths(flags initFlags, registry *tmpl.TemplateRegistry) init
 	flags.sharedFiles = keep(flags.sharedFiles)
 	flags.sharedDirs = keep(flags.sharedDirs)
 	return flags
+}
+
+// selectionTemplatePaths returns the Cache and Shared paths that config.toml got from
+// templates: those of the selection it was written with (prevDSLs, from its header) and
+// of the one being compiled now. A hand-written path that merely matches some other,
+// unselected template is the user's, and is kept. When the old selection can no longer
+// be resolved (a template since removed), or cannot be rebuilt as it was (it read
+// stdin, or a recipe that may have been edited since), it falls back to every
+// template's paths, so a deselected template's paths are still dropped.
+func selectionTemplatePaths(prevDSLs []string, current *selection.ResolvedSelection, projectRoot string, registry *tmpl.TemplateRegistry) map[string]bool {
+	declared := map[string]bool{}
+	addTemplate := func(t *tmpl.Template) {
+		for _, list := range [][]string{t.CacheFiles, t.CacheDirs, t.SharedFiles, t.SharedDirs} {
+			for _, p := range list {
+				declared[p] = true
+			}
+		}
+	}
+	addSelection := func(r *selection.ResolvedSelection) {
+		for p := range templatePathsOf(r) {
+			declared[p] = true
+		}
+	}
+	if current != nil {
+		addSelection(current)
+	}
+	if len(prevDSLs) == 0 {
+		return declared
+	}
+	var prev *selection.ResolvedSelection
+	err := errPreviousNotReplayable
+	if previousSelectionReplayable(prevDSLs) {
+		prev, err = resolvePreviousSelection(prevDSLs, projectRoot, registry)
+	}
+	if err != nil {
+		var addAll func(t *tmpl.Template)
+		addAll = func(t *tmpl.Template) {
+			addTemplate(t)
+			for _, ext := range t.Extensions {
+				addAll(ext)
+			}
+		}
+		for _, t := range registry.ByName {
+			addAll(t)
+		}
+		return declared
+	}
+	addSelection(prev)
+	return declared
+}
+
+// templatePathsOf returns the Cache and Shared paths the templates and extensions of a
+// resolved selection declare.
+func templatePathsOf(r *selection.ResolvedSelection) map[string]bool {
+	paths := map[string]bool{}
+	add := func(t *tmpl.Template) {
+		if t == nil {
+			return
+		}
+		for _, list := range [][]string{t.CacheFiles, t.CacheDirs, t.SharedFiles, t.SharedDirs} {
+			for _, p := range list {
+				paths[p] = true
+			}
+		}
+	}
+	for _, st := range r.Templates {
+		add(st.Template)
+		for _, ext := range st.Extensions {
+			add(ext.Extension)
+		}
+	}
+	return paths
+}
+
+var errPreviousNotReplayable = errors.New("previous selection cannot be replayed")
+
+// previousSelectionReplayable reports whether the recorded --select fragments name
+// the same templates today as when config.toml was written. "-" read stdin, which
+// must never be read again here (it would block on a terminal), and a recipe
+// ("@name", "@./file", "@@url") may have changed since.
+func previousSelectionReplayable(dsls []string) bool {
+	for _, dsl := range dsls {
+		dsl = strings.TrimSpace(dsl)
+		if dsl == "-" || strings.HasPrefix(dsl, "@") {
+			return false
+		}
+	}
+	return true
+}
+
+func resolvePreviousSelection(dsls []string, projectRoot string, registry *tmpl.TemplateRegistry) (*selection.ResolvedSelection, error) {
+	text, err := resolveDSLFragments(dsls, projectRoot)
+	if err != nil {
+		return nil, err
+	}
+	parsed, err := selection.ParseSelectDSL(text)
+	if err != nil {
+		return nil, err
+	}
+	return selection.Resolve(parsed, registry)
 }
 
 // mergeConfigCache merges cache-files and cache-dirs from ConfigToml into
