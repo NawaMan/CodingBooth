@@ -22,7 +22,9 @@ This file contains a list of changes for each released version.
   template in the catalog declared it, selected or not — so a hand-added
   `cache-files = ["home/coder/.zsh_history"]` vanished unless `shell-history` was selected. Only
   paths of the templates in the recorded or the new selection are dropped now (they come back from
-  the selection, or leave with a deselected template).
+  the selection, or leave with a deselected template). When the recorded selection came from stdin
+  (`--select -`) or a recipe (`@name`), it cannot be rebuilt as it was, so every template's paths
+  are dropped, as before.
   See [booth config](BOOTH_CONFIG.md).
 
 - **A `--booth-dir` cache is checked for being gitignored too.** The check that refuses to start

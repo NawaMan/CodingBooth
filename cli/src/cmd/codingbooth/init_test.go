@@ -436,6 +436,43 @@ func TestWithoutTemplatePaths(t *testing.T) {
 	assert.Equal(t, map[string]bool{"home/coder/.gnupg:0700": true}, cur)
 }
 
+// A previous selection that read stdin or a recipe cannot be rebuilt as it was: stdin
+// must not be read again (it blocks on a terminal) and a recipe may have been edited
+// since. Both fall back to every template's paths, as before hand paths were kept.
+func TestSelectionTemplatePaths_StdinAndRecipeFallBack(t *testing.T) {
+	history := &tmpl.Template{Name: "history", CacheFiles: []string{"home/coder/.zsh_history"}}
+	gnupg := &tmpl.Template{Name: "gnupg", CacheDirs: []string{"home/coder/.gnupg:0700"}}
+	registry := &tmpl.TemplateRegistry{ByName: map[string]*tmpl.Template{"history": history, "gnupg": gnupg}}
+
+	// A recipe that now holds only gnupg; it held history when config.toml was written.
+	root := t.TempDir()
+	recipes := filepath.Join(root, ".booth", "recipes")
+	if err := os.MkdirAll(recipes, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(recipes, "r.recipe"), []byte("gnupg\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Stdin that would block forever if read.
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer w.Close()
+	defer r.Close()
+	saved := os.Stdin
+	os.Stdin = r
+	defer func() { os.Stdin = saved }()
+
+	for _, prev := range [][]string{{"-"}, {"@r"}, {"gnupg", " @r"}} {
+		got := selectionTemplatePaths(prev, nil, root, registry)
+		assert.True(t, got["home/coder/.zsh_history"] && got["home/coder/.gnupg:0700"],
+			"%q should fall back to every template's paths: %v", prev, got)
+	}
+	assert.True(t, previousSelectionReplayable([]string{"gnupg", "history+x"}))
+}
+
 func TestPrintMountOverlaps(t *testing.T) {
 	var b strings.Builder
 	printMountOverlaps(&b, &output.BoothOutput{
