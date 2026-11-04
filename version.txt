@@ -1,1 +1,1 @@
-0.82.0--m5-keep-hand-paths
+0.82.0--rc1
