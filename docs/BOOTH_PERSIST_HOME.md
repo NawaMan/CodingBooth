@@ -169,7 +169,7 @@ Both features work together. `--keep-alive` preserves the entire container state
 
 ### .booth/cache/
 
-Cache mounts overlay on top of the persist-home volume for their specific paths. If you have both `--persist-home` and `.booth/cache/home/coder/.bash_history`, the cache mount takes precedence for `.bash_history`.
+The cache wins over the persist-home volume for its own paths. A cached folder is mounted over the volume at that path. A cached single file, such as `.booth/cache/home/coder/.bash_history`, is copied over the volume's copy at every start and synced back, so the volume holds a copy that the cache replaces each time.
 
 ### Home seeding (.booth/home-seed/, .booth/home/)
 
