@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.1
+# cb-version: 1.1.0
 
 set -Eeuo pipefail
 trap 'echo "Error on line $LINENO"; exit 1' ERR
@@ -107,6 +107,19 @@ if [[ -d "$CB_SEED_DIR" && ! -d "$GH_CONFIG_DIR" ]]; then
     mkdir -p "$GH_CONFIG_DIR"
     cp -r "$CB_SEED_DIR/." "$GH_CONFIG_DIR/"
     chmod 600 "$GH_CONFIG_DIR/hosts.yml" 2>/dev/null || true
+fi
+
+# A token in the environment (GH_TOKEN / GITHUB_TOKEN / GH_ENTERPRISE_TOKEN, passed in by the
+# gh+token extension) logs gh in, but git does not read it: git asks its own
+# credential helper. Point that helper at this booth's gh, so `git push` over
+# HTTPS works with no manual step. This also replaces a helper copied in from
+# the host's ~/.gitconfig that names the host's gh path, which does not exist
+# here. Never fail the booth's start over it.
+if [[ -n "${GH_TOKEN:-}${GITHUB_TOKEN:-}" ]]; then
+    gh auth setup-git --hostname github.com >/dev/null 2>&1 || true
+fi
+if [[ -n "${GH_ENTERPRISE_TOKEN:-}" && -n "${GH_HOST:-}" ]]; then
+    gh auth setup-git --hostname "$GH_HOST" >/dev/null 2>&1 || true
 fi
 EOF
 chmod 755 "${STARTUP_FILE}"

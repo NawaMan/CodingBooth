@@ -119,7 +119,7 @@ setup	gcc-code-extension	1.0.0	4bead0b7f116778815855e31ed6353762c6deb020517fa92e
 setup	gcc-frontend	0.1.0	a52ea9e0cdc42e578b8f58ca67b35b3663d32741d4c54bac429db4f8e6d730f6	variants/base/setups/gcc-frontend--setup.sh
 setup	gcloud	1.0.0	a7d4650483f3f74d604619f844debedb72c33330b1a906355a5b52276de2538a	variants/base/setups/gcloud--setup.sh
 setup	gemini-cli	1.0.0	6102af714bff3e30b13dc002ae3c1a0a045741c9e971abf6e08a9e12c0aa4c87	variants/base/setups/gemini-cli--setup.sh
-setup	gh	1.0.1	36410bbe8936ee420fb1070212096d2ee9210f81835db7d49f0750b58079e802	variants/base/setups/gh--setup.sh
+setup	gh	1.1.0	b44bb776a1e46bfb8485d640c7730cf5e55d02f5c974014b60f73e088c40b452	variants/base/setups/gh--setup.sh
 setup	gh-copilot	1.0.1	ac6e9f129eb0aec518088b3aefedd2dc5546e3edf9ee3a96800dbd0b6560788c	variants/base/setups/gh-copilot--setup.sh
 setup	ghostty	1.0.0	325bb5d495fe371a8ce609b71b8331b48e34cdaa888f60007cbb49914fa5a103	variants/base/setups/ghostty--setup.sh
 setup	ghostty-fancy	1.0.0	bc14a3b49c2cdae66514cdd66d3b874f0988728d8b3a831ce6490bec096fd91b	variants/base/setups/ghostty-fancy--setup.sh
@@ -753,7 +753,7 @@ extension	gemini-cli+credential	1.0.0	67b574634bb8083faed2df2383bdcac167e6419f70
 extension	gemini-cli+plugins	1.0.0	22e7a775bb4a88edef00b70b4c212ddaea2b2147a3a84a59123a7d2990cca2c1	templates/ai-tools/gemini-cli/plugins--extension.toml
 extension	gemini-cli+settings-cache	1.0.0	6baf2286ae93675efc968782ce0babcf6690a7630b89090523b568bfb9d3dacd	templates/ai-tools/gemini-cli/settings-cache--extension.toml
 extension	gh+copilot	1.0.0	4352c563f6af159dfcccc995766c24e4ee6ad04dfa64142719f15d3bf5223005	templates/tools/gh/copilot--extension.toml
-extension	gh+token	0.1.0	77d8489f5513ff9593a916f0efc6ab3fbff52bda5a7c3c76cfbdc0dfe2a5007f	templates/tools/gh/token--extension.toml
+extension	gh+token	0.2.0	6ac5f0215f0200fff7627cbf6f17c56afcfea2830d548e6b00cc91deaf58a604	templates/tools/gh/token--extension.toml
 extension	ghostty+fancy	1.0.0	37f51efa6635527d3d359422f1cbba38c8f6e72daad9f9164b2d5ba96208edc7	templates/desktops/ghostty/fancy--extension.toml
 extension	gleam+vscode-ext	0.1.0	b74fa1fc7fed3a2882a520227a1a09f1502e7fcddf9a35d506a1b2fcbe474ffb	templates/languages/gleam/vscode-ext--extension.toml
 extension	go+go-mod	1.0.0	d0ce534aaa86760a1384b2241206a294bec0fe086d52eadafd8390e1c97b54b5	templates/languages/go/go-mod--extension.toml
