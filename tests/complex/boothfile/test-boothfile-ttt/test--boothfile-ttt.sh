@@ -9,9 +9,11 @@
 # ttt --version only proves a binary landed on PATH. --exec types into a file,
 # saves it, and quits: that is the edit a user does in the first minute.
 # rg --version proves workspace search has its dependency. The fixture is
-# `ttt/lsp`, so ttt+theme and ttt+lsp come selected with ttt and lsp+markdown with
-# lsp: the start-up seeds the theme and the marksman entry, and TTT opening a
-# Markdown file must reach a connected server (Markdown ◉ in the status bar).
+# `ttt+theme:nord,double/lsp`, so ttt+lsp comes selected with ttt and lsp+markdown
+# with lsp. ttt+theme pins values other than the base default (zenith, rounded) to
+# prove they reach the base image's theme start-up; the plain-booth default is
+# tests/basic/test041. The start-up also seeds the marksman entry, and TTT opening
+# a Markdown file must reach a connected server (Markdown ◉ in the status bar).
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -54,10 +56,10 @@ else
 fi
 
 ACTUAL=$(capture_codingbooth "tail -1" --silence-build -- 'jq -c "[.theme, .editor.borderStyle, .lsp.servers.markdown.command]" ~/.config/ttt/settings.json')
-if [[ "$ACTUAL" == '["zenith","rounded",["marksman","server"]]' ]]; then
-    print_test_result "true" "$0" "4" "start-up seeds the zenith theme, rounded borders, and marksman"
+if [[ "$ACTUAL" == '["nord","double",["marksman","server"]]' ]]; then
+    print_test_result "true" "$0" "4" "start-up seeds ttt+theme's nord and double, and marksman"
 else
-    print_test_result "false" "$0" "4" "settings.json should hold zenith, rounded, and the marksman entry"
+    print_test_result "false" "$0" "4" "settings.json should hold nord, double, and the marksman entry"
     echo "  Actual output: $ACTUAL"
     FAILED=$((FAILED + 1))
 fi
