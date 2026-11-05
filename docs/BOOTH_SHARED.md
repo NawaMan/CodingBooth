@@ -41,7 +41,7 @@ By default, everything outside `/home/coder/code` is ephemeral. Three mechanisms
 | **Local cache** | `.booth/cache/` | Yes (a single file: synced every 2 s) | **No — forbidden** |
 | **Home seed / override** | `.booth/home-seed/`, `.booth/home/` | No (copy at start) | Yes |
 
-Use **shared** when the team should edit the same file (bookmark bar, editor settings, DB connection defs) and commit it. Use **cache** for personal session state (shell history, full browser profile). Use **home-seed** when you only need a one-time default that users may then diverge from.
+Use **shared** when the team should edit the same file (bookmark bar, editor settings, DB connection defs) and commit it. Use **cache** for personal session state (shell history, full browser profile). Use **home-seed** when you only need a default that users may then change inside the booth — their change lasts until the container is recreated, when the seed is copied in again (unless `--persist-home`).
 
 ---
 
@@ -50,7 +50,7 @@ Use **shared** when the team should edit the same file (bookmark bar, editor set
 | | **shared** | **cache** | **home / home-seed** |
 |--|------------|-----------|----------------------|
 | Container effect | Bind mount onto home/app path (a single file: a copy kept in sync) | Same as shared | Copy into `~` at start |
-| Survives restart | Yes | Yes | Seed once / override always |
+| Survives restart | Yes | Yes | No — both are copied in again on every new container; with `--persist-home`, seed only on the first start |
 | Live write-back to project | Yes | Yes (local only) | No |
 | Git | Commit it | Must stay untracked | Commit it |
 | Typical content | Bookmarks, settings.json, data-sources.json | History, full profiles, tokens | Dotfiles, team configs |
