@@ -4,6 +4,15 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Every booth starts TTT on the zenith theme with rounded borders.** TTT is the base image's
+  default editor, but the zenith/rounded defaults came only with `ttt+theme`, so a plain booth — one
+  that selects no `ttt` template — opened on TTT's own look. The base image now seeds `theme` and
+  `editor.borderStyle` in `~/.config/ttt/settings.json` at each new container, only where the file
+  has none, so a theme picked inside TTT stays. `ttt+theme:dracula,double` still picks others; it now
+  hands them to that start-up as `TTT_THEME` / `TTT_BORDER_STYLE` instead of writing a start-up of
+  its own. To keep TTT's own defaults, set them empty:
+  `booth config --env TTT_THEME= --env TTT_BORDER_STYLE=`. Needs a rebuilt base image.
+
 - **A Cache or Shared folder mount above a protected path refuses to start.**
   `.booth/cache/opt/.mount-this` (or the same under `.booth/shared/`) mounted all of `/opt`, hiding
   `/opt/codingbooth`, and the booth started broken with no error. A mount on `/`, `/opt`, `/home` or

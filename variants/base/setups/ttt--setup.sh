@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.2.0
+# cb-version: 0.3.0
 
 # ttt--setup.sh — Install the TTT terminal editor from GitHub releases.
 set -Eeuo pipefail
@@ -24,6 +24,10 @@ Notes:
 - Supports amd64 and arm64
 - Checks the asset against the release's checksums.txt (published since 1.8.0);
   an older release without one installs with a warning
+- Writes /usr/share/startup.d/74-cb-ttt-theme--startup.sh, which at each container
+  start sets theme and editor.borderStyle in ~/.config/ttt/settings.json where the
+  file has none: \$TTT_THEME (default zenith), \$TTT_BORDER_STYLE (default rounded);
+  set either to empty to leave that key to TTT
 USAGE
 }
 
@@ -121,6 +125,37 @@ mkdir -p /opt/ttt
 install -m 755 "$TMP/$ASSET" /opt/ttt/ttt
 ln -sfn /opt/ttt/ttt /usr/local/bin/ttt
 
+# Default look: zenith with rounded borders, filled in only where settings.json
+# has none, so a theme or border picked inside TTT stays. The ttt+theme extension
+# picks others through TTT_THEME / TTT_BORDER_STYLE; an empty value skips that key.
+THEME_STARTUP=/usr/share/startup.d/74-cb-ttt-theme--startup.sh
+install -d "$(dirname "$THEME_STARTUP")"
+cat > "$THEME_STARTUP" <<'STARTUP'
+#!/usr/bin/env bash
+# Written by ttt--setup.sh (CodingBooth). Seeds TTT's theme and border style where
+# ~/.config/ttt/settings.json has none; see ttt--setup.sh --help.
+set -uo pipefail
+
+THEME="${TTT_THEME-zenith}"
+BORDER="${TTT_BORDER_STYLE-rounded}"
+[[ -n "$THEME" || -n "$BORDER" ]] || exit 0
+
+CONF="$HOME/.config/ttt/settings.json"
+mkdir -p "$(dirname "$CONF")"
+[[ -s "$CONF" ]] || echo '{"version":1}' > "$CONF"
+tmp="$(mktemp)"
+if jq --arg theme "$THEME" --arg border "$BORDER" '
+     (if $theme  != "" then .theme //= $theme else . end)
+     | (if $border != "" then .editor.borderStyle //= $border else . end)' \
+     "$CONF" > "$tmp"; then
+  mv "$tmp" "$CONF"
+else
+  rm -f "$tmp"
+  echo "⚠️  TTT theme was not set; ${CONF} is not JSON." >&2
+fi
+STARTUP
+chmod 755 "$THEME_STARTUP"
+
 echo "✅ TTT installed."
 echo -n "   ttt → "; ttt --version 2>/dev/null || true
 
@@ -130,6 +165,7 @@ cat <<'EON'
 - Open a file:      ttt README.md
 - Script a session: ttt --size 80x24 --exec 'wait-for Explore; quit'
 - Config:           ~/.config/ttt/settings.json
+- Look:             zenith theme, rounded borders (ttt+theme picks others)
 
 Notes:
 - Workspace search uses rg. This setup installs ripgrep when it is missing.
