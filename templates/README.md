@@ -405,11 +405,13 @@ with no dependency on a language, so they sit here too.
 | `languages/ocaml`          | OCaml (prebuilt compiler, Dune, UTop, OCamlFormat; experimental) |
 | `languages/octave`         | GNU Octave |
 | `languages/php`            | PHP |
+| `languages/prolog`         | Prolog *(SWI-Prolog or GNU Prolog)* |
 | `languages/python`         | Python |
 | `languages/r`              | R |
 | `languages/roc`            | Roc |
 | `languages/ruby`           | Ruby |
 | `languages/rust`           | Rust |
+| `languages/smalltalk`      | Smalltalk *(Pharo)* |
 | `languages/swift`          | Swift |
 | `languages/zig`            | Zig |
 | `middlewares/kafka`        | Kafka |
@@ -550,6 +552,7 @@ never the whole context, so editing source does not invalidate its layer.
 | `education/thonny`         | Thonny |
 | `fpc/lazarus--extension`   | Lazarus *(IDE on desktop variants; lazbuild everywhere)* |
 | `ides/clion`               | CLion |
+| `ides/codeblocks`          | Code::Blocks |
 | `ides/codeserver`          | code-server |
 | `ides/datagrip`            | DataGrip |
 | `ides/dbeaver`             | DBeaver |
