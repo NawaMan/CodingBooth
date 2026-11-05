@@ -739,22 +739,22 @@ cache-dirs = [
 ]
 ```
 
-- `cache-files` creates empty files in `.booth/cache/` — mounted individually into the container
+- `cache-files` creates empty files in `.booth/cache/` — each is copied into the container and synced back (see [single files](BOOTH_LOCALCACHE.md#single-files-are-kept-in-sync))
 - `cache-dirs` creates directories with a `.mount-this` marker — the entire directory is mounted as a single bind mount
 
 Both use no-clobber: existing files and markers are never overwritten. See the [Local Cache Guide](BOOTH_LOCALCACHE.md) for details on mount rules and the `.mount-this` mechanism.
 
 ### Shared Files and Directories (team / git)
 
-The same layout works under `.booth/shared/` for **git-friendly** team state — live bind mounts that teammates can commit:
+The same layout works under `.booth/shared/` for **git-friendly** team state — folders are bind-mounted live, single files are synced, and teammates can commit both:
 
 ```toml
 shared-files = [
-    "home/coder/.chrome-data/Default/Bookmarks",
     "home/coder/.local/share/code-server/User/settings.json",
 ]
 
 shared-dirs = [
+    "home/coder/.chrome-data/Default",    # the whole profile folder, as the bookmarks templates mount it
     "home/coder/.config/myapp/snippets",
 ]
 ```
