@@ -62,7 +62,7 @@ different places.
 |---|---|---|---|---|
 | **Host user** | `--mount` / run-args `-v $HOME/…` (`java+m2`, `rust+cargo-cache`) | `/etc/cb-home-seed/` (credential extensions, `npmrc`, `pip-config`) | `/etc/cb-home/` | — |
 | **Project, in git** | **Shared** — `.booth/shared/` | `.booth/home-seed/` | `.booth/home/` | Boothfile, `*-install` extensions |
-| **Project, not in git** | **Cache** — `.booth/cache/` (`rust+registry-cache`) | — | — | — |
+| **Project, not in git** | **Cache** — `.booth/cache/` (`rust+registry-cache`, `flutter+pub-cache`, the AI agents' `settings-cache`) | — | — | — |
 | **Docker storage** | `--persist-home` (one volume per booth); service volumes (one per booth); package caches (one per tool, every booth) | — | — | — |
 | **Image** | — | `/etc/skel` re-seed (desktop launchers) | — | variant, `--image`, `--dockerfile` |
 | **None** | the container's own layer | | | |
@@ -393,7 +393,7 @@ See [Connect](BOOTH_CONNECT.md), [Message](BOOTH_MESSAGE.md) and [booth tmp](BOO
 | Team settings that must always apply | `.booth/home/` |
 | A team file that is edited inside the booth and committed | **Shared** |
 | Personal state kept between runs of this project — history, profiles, tool logins | **Cache** |
-| Downloads kept for this project only, without touching the host | **Cache** (`rust+registry-cache`) |
+| Downloads kept for this project only, without touching the host | **Cache** (`rust+registry-cache`, `flutter+pub-cache`) |
 | A Cache or Shared path that starts with content, not empty | A seed — `.booth/cache-seed/`, `.booth/shared-seed/` |
 | A file copied to a system path, such as `/etc`, on every start | A startup script with `sudo install` ([Copying outside home](#copying-outside-home)) |
 | A one-time file transfer between host and an existing booth | [`booth cp`](BOOTH_TOOLS.md#copy-files-outside-the-shared-project) |

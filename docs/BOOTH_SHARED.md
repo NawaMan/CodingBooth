@@ -212,6 +212,10 @@ layout at session start and the mirror then overwrites the good saved copy with 
 | `codeserver+keybindings-shared` | `User/keybindings.json` | keybindings | — |
 | `codeserver+snippets-shared` | `User/snippets/` | snippets | secrets in snippet bodies |
 | `neovim+config-shared` | `~/.config/nvim/` | init.lua / Lua config | API tokens, credential files |
+| `helix+config-shared` | `~/.config/helix/` | config.toml, languages.toml, themes | API tokens, credential files |
+| `fresh+config-shared` | `~/.config/fresh/` | config.json, themes, plugins | API tokens, credential files |
+| `ttt+config-shared` | `~/.config/ttt/` | settings.json, keybindings.json, themes | API tokens, credential files |
+| `croft+config-shared` | `~/.config/croft/` | config.json, keybindings, snippets | API tokens, credential files |
 | `notebook+lab-settings-shared` | `~/.jupyter/lab/user-settings/` | Lab UI prefs | cookies, GitHub tokens |
 | `dbeaver+connections-shared` | `…/.dbeaver/data-sources.json` | host/port/db/user | **passwords**, secure storage |
 | `dbeaver+drivers-shared` | `…/DBeaverData/drivers/` | JDBC JARs (durable) | n/a (bulky; often gitignore jars) |
