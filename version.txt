@@ -1,1 +1,1 @@
-0.82.0--m7-shared-bookmarks-example
+0.82.0--rc1
