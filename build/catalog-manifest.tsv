@@ -343,7 +343,7 @@ setup	thinkrail	0.1.0	b867328f48541b3e15e21bd7692be49cbf41de033702b70b3f89896cad
 setup	thonny	1.0.0	a14c0b5793457d929adfcb899ee169b3dd57ea2efa6eb3a6a400ff7a9f7168d7	variants/base/setups/thonny--setup.sh
 setup	tls	1.1.0	8b4c1ffcd41f8ad069da2c235d247862a50df2eb10e82bf5ade6815962e2d5cb	variants/base/setups/tls--setup.sh
 setup	toml-code-extension	0.1.0	b32c730a20ee3d570253cfffa23d2b9eeeee4ce8c3993b4c66aa4acf10b1f3ed	variants/base/setups/toml-code-extension--setup.sh
-setup	ttt	0.2.0	681e0f28b8ba59412bcca7f5023e11a07df71b1826c839894d68559d99be28ce	variants/base/setups/ttt--setup.sh
+setup	ttt	0.3.0	d4821a4a05ed650ec64aa41ffcf7d4ee75802ac1724e9881a57621023fe0b18d	variants/base/setups/ttt--setup.sh
 setup	ttt-lsp	0.1.1	0ab046f6184a0b802c7235f544e5b689d56fcd5f1b2ef5efd88c3967cd630eb9	variants/base/setups/ttt-lsp--setup.sh
 setup	ttyd-nerd-font-index	0.2.0	7695b34cf707159cbeb1f5e6f3ebaf836b0f808efe824bcdbeb565f6ca6ec6e9	variants/base/setups/ttyd-nerd-font-index--setup.sh
 setup	vhs	1.0.0	a5ed3a8d5ae5e152d8907f9f6bb2c398e40d52c3e2b3b4eda5a8b9429416b9dd	variants/base/setups/vhs--setup.sh
@@ -630,7 +630,7 @@ template	tela-icons	0.1.0	bc9fb120c9a2a35da5e4078832bc039a940fdefacc925f99eb66e6
 template	terraform	1.0.0	151cdf8d4ddba87cd10e5b51a11c17d61e35a29be195131aec1ff425781da76c	templates/tools/terraform/template.toml
 template	thinkrail	0.1.0	5607ae0565dea0de475a063935904dd67545ed1beee013330a4fa2fcba16a06f	templates/ai-tools/thinkrail/template.toml
 template	thonny	1.0.0	64571e52b43139716e35c9bd72304a5642bd69c155b599bfdeba438e67388d0e	templates/education/thonny/template.toml
-template	ttt	0.2.0	ba69d3745a63953e372731189063f0116fa0b0c719e14886d5669acc57cc9bb5	templates/tools/ttt/template.toml
+template	ttt	0.2.1	2e87ce4d4baf40d41174b20897518734b0ab139965962cfd83797e3447cee9ef	templates/tools/ttt/template.toml
 template	vhs	1.0.0	f2f8d6aca4c461eea09eb9922032616049a00be4f6994ab510538cda9cf29a07	templates/tools/vhs/template.toml
 template	vm-cpus	1.0.0	c843ec808161827deac4fc590e588a5e89bf63e0b6c3c70daf7519b14c990412	templates/booth-vm/vm-cpus/template.toml
 template	vm-memory	1.0.0	adc63eaf0d364e048e73443de713f63bc0f60d6d1cce6118aa8952081c5f97ee	templates/booth-vm/vm-memory/template.toml
@@ -994,7 +994,7 @@ extension	thinkrail+autostart	0.1.0	376d0a609d59f086b8166c31c193601a28e3a2f32d03
 extension	thinkrail+expose	0.1.0	b4732e458430d2ffd4228edac3593fc4ce5c584dba0744bc2a8936a6186b8bd6	templates/ai-tools/thinkrail/expose--extension.toml
 extension	ttt+config-shared	0.1.0	680b160a87365913a6bac4f1a50942431acca19e393fb673674869a5fb463488	templates/tools/ttt/config-shared--extension.toml
 extension	ttt+lsp	0.1.1	beacea618740673dd8a23a67fec33ce4f33efa77c3ac470e6ac97c843d6f458b	templates/tools/ttt/lsp--extension.toml
-extension	ttt+theme	0.1.0	dffb469bd276a449032ab9ab11be4ff10b3da1cf47d408221f23f834b9a803bd	templates/tools/ttt/theme--extension.toml
+extension	ttt+theme	0.2.0	2d9b681e6facb743faae119894eb737171d0d0c5a96b0debbcf7ab199c323f60	templates/tools/ttt/theme--extension.toml
 extension	wails+android	0.1.1	20a3c00d23a18fbd58f072bfec96dbb918cbdfbff6e30084b08d60f3b26f2d4e	templates/languages/wails/android--extension.toml
 extension	wails+cross	0.1.0	25aa26c799d144a1ceadba10207544d514f145ec49f853e4b25d6c1893c0dbc4	templates/languages/wails/cross--extension.toml
 extension	warp+credential	1.0.0	dc35501a634880687f8a723760af347f22a6b9ba5e8855ae377774ff6302bed5	templates/ai-tools/warp/credential--extension.toml
