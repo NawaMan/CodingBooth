@@ -1,1 +1,1 @@
-0.82.0--m8-home-seed-every-start
+0.82.0--rc1
