@@ -1,13 +1,15 @@
-cb-version = "0.1.0"
+cb-version = "0.2.0"
 display-name = "Theme"
-display-disc = "Start TTT on the zenith theme with rounded borders"
-display-detail = """Sets theme and editor.borderStyle in ~/.config/ttt/settings.json when the container \
-starts, only where the file does not already have them, so a theme or border picked inside TTT stays. \
-Pick another built-in theme with ttt+theme:dracula (aurora, bubblegum, default-dark, default-light, \
+display-disc = "Pick TTT's theme and border style (default zenith, rounded)"
+display-detail = """Every booth already starts TTT on zenith with rounded borders: the base image's \
+start-up sets theme and editor.borderStyle in ~/.config/ttt/settings.json when the container starts, \
+only where the file does not already have them, so a theme or border picked inside TTT stays. \
+Select this to pick others: ttt+theme:dracula (aurora, bubblegum, default-dark, default-light, \
 high-contrast-dark, high-contrast-light, hotline, monokai, nord, one-dark, rainy-day, rainy-day-dark, \
 solarized-dark, solarized-light, turbo-vision, virtru-dark, vscode-dark-plus), and another border \
 with ttt+theme:zenith,double (default, theme, rounded, sharp, double, bold, ascii, none). \
-Deselect it (ttt~theme) to start on TTT's own defaults."""
+To leave a key to TTT's own default, set it empty in the container: \
+booth config --env TTT_THEME= --env TTT_BORDER_STYLE=."""
 display-order = 30
 auto-select = true
 tags = ["ttt", "editor", "theme"]
@@ -31,17 +33,7 @@ default = "rounded"
 suggests = ["rounded", "default", "sharp", "double", "bold", "ascii", "none"]
 
 [segments]
-"startup--74.sh" = """
-# Seed the TTT theme and border style where settings.json has none yet.
-conf="${HOME}/.config/ttt/settings.json"
-mkdir -p "$(dirname "$conf")"
-[[ -s "$conf" ]] || echo '{"version":1}' > "$conf"
-tmp="$(mktemp)"
-if jq --arg theme "${TTT_THEME}" --arg border "${TTT_BORDER_STYLE}" \\
-     '.theme //= $theme | .editor.borderStyle //= $border' "$conf" > "$tmp"; then
-  mv "$tmp" "$conf"
-else
-  rm -f "$tmp"
-  echo "⚠️  TTT theme was not set; ${conf} is not JSON." >&2
-fi
+"Boothfile--60" = """
+env TTT_THEME=${TTT_THEME}
+env TTT_BORDER_STYLE=${TTT_BORDER_STYLE}
 """

@@ -16,18 +16,22 @@ startup="$prj/.booth/startups/74-ttt-theme--startup.sh"
 assert-line "$boothfile" "setup ttt-lsp" '' "ttt auto-selects ttt+lsp"
 assert-line "$boothfile" "arg TTT_THEME=" "$(template-default ttt+theme TTT_THEME)" "TTT_THEME default is the catalog's"
 assert-line "$boothfile" "arg TTT_BORDER_STYLE=" "$(template-default ttt+theme TTT_BORDER_STYLE)" "TTT_BORDER_STYLE default is the catalog's"
+assert-line "$boothfile" "env TTT_THEME=" '${TTT_THEME}' "ttt+theme hands TTT_THEME to the base start-up"
+assert-line "$boothfile" "env TTT_BORDER_STYLE=" '${TTT_BORDER_STYLE}' "ttt+theme hands TTT_BORDER_STYLE to the base start-up"
 TEST_COUNT=$((TEST_COUNT + 1))
-label="ttt+theme seeds theme and border only where unset "
+label="ttt+theme writes no start-up of its own "
 pad=$(printf '%*s' $((64 - ${#label})) '' | tr ' ' '.')
 echo -n "Test ${TEST_COUNT}: ${label}${pad} "
-if grep -qF '.theme //= $theme | .editor.borderStyle //= $border' "$startup" 2>/dev/null; then
+# The base image's start-up seeds the theme; a project one would run after it and
+# could no longer change anything (it only fills keys that are unset).
+if [ ! -e "$startup" ]; then
     PASS_COUNT=$((PASS_COUNT + 1))
     echo -e "\033[32mPASSED\033[0m"
 else
     FAIL_COUNT=$((FAIL_COUNT + 1))
     FAIL_TESTS+=("Test ${TEST_COUNT}: ${label}")
     echo -e "\033[31mFAILED\033[0m"
-    echo "  startup: $(ls "$startup" 2>&1)"
+    echo "  unexpected: $startup"
 fi
 
 # --- a theme and border pin ---------------------------------------------------
@@ -45,14 +49,14 @@ TEST_COUNT=$((TEST_COUNT + 1))
 label="ttt~lsp~theme drops both "
 pad=$(printf '%*s' $((64 - ${#label})) '' | tr ' ' '.')
 echo -n "Test ${TEST_COUNT}: ${label}${pad} "
-if ! grep -qE '^(setup ttt-lsp|arg TTT_THEME=)' "$boothfile" && [ ! -e "$startup" ]; then
+if ! grep -qE '^(setup ttt-lsp|arg TTT_THEME=|env TTT_)' "$boothfile"; then
     PASS_COUNT=$((PASS_COUNT + 1))
     echo -e "\033[32mPASSED\033[0m"
 else
     FAIL_COUNT=$((FAIL_COUNT + 1))
     FAIL_TESTS+=("Test ${TEST_COUNT}: ${label}")
     echo -e "\033[31mFAILED\033[0m"
-    grep -E '^(setup ttt-lsp|arg TTT_THEME=)' "$boothfile"; ls "$startup" 2>/dev/null
+    grep -E '^(setup ttt-lsp|arg TTT_THEME=|env TTT_)' "$boothfile"
 fi
 
 # --- pinned ------------------------------------------------------------------
