@@ -153,7 +153,8 @@ run-args = [
     # Azure CLI credentials
     "-v", "~/.azure:/etc/cb-home-seed/.azure:ro",
 
-    # GitHub CLI
+    # GitHub CLI (logs in only if the token is in hosts.yml, not the keyring;
+    # the gh+token template passes GH_TOKEN instead)
     "-v", "~/.config/gh:/etc/cb-home-seed/.config/gh:ro",
 
     # GitHub Copilot

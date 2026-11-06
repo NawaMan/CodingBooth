@@ -110,7 +110,7 @@ booth template show <name>              # params, extensions, requirements
 - **How do they want to open it?** `base` (browser terminal), `codeserver` (VS Code), `notebook`
   (Jupyter), or a desktop (`xfce`, `kde`). Pass it with `--variant`.
 - **Which credentials does the booth need?** Use the templates — `git-credential`, `ssh`,
-  `gh+credential`, `<ai-tool>+credential` — never hand-written `-v` mounts. Bring in only what the
+  `gh+token`, `<ai-tool>+credential` — never hand-written `-v` mounts. Bring in only what the
   project needs.
 - **Which AI tools do they use in the booth?** For example `claude-code+credential+auto-accept`.
 

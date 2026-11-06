@@ -1,0 +1,14 @@
+cb-version = "0.1.0"
+display-name = "GitHub CLI Token"
+display-disc = "Log gh in with GH_TOKEN / GITHUB_TOKEN from the host"
+display-detail = "Passes `GH_TOKEN` and `GITHUB_TOKEN` from the host environment into the booth, so `gh` is logged in without `gh auth login`. A host that keeps the gh login in the system keyring (the default) can hand it over with `GH_TOKEN=$(gh auth token) booth ...`; a fine-grained personal access token works the same way. Either variable may instead go in `.booth/.env`, which reaches the booth without this extension. A variable not set on the host is left out, so selecting it without a token does nothing. Only `gh` reads the token: git over HTTPS needs `gh auth setup-git` inside the booth."
+display-order = 2
+auto-select = false
+tags = ["github", "credential", "token"]
+
+# Bare passthrough: booth emits each -e only when the host has the variable,
+# so an unset token never lands as an empty one.
+run-args = [
+    "-e", "GH_TOKEN",
+    "-e", "GITHUB_TOKEN",
+]

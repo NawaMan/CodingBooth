@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 
 set -Eeuo pipefail
 trap 'echo "Error on line $LINENO"; exit 1' ERR
@@ -102,8 +102,8 @@ echo "To reuse GitHub Copilot credentials from host, add to .booth/config.toml:"
 echo ""
 echo '  run-args = ['
 echo '      # GitHub Copilot credentials (home-seeding: may update tokens)'
-echo '      "-v", "~/.config/github-copilot:/etc/cb-home-seed/.config/github-copilot:ro",'
-echo '      # Also need GitHub CLI credentials'
-echo '      "-v", "~/.config/gh:/etc/cb-home-seed/.config/gh:ro"'
+echo '      "-v", "~/.config/github-copilot:/etc/cb-home-seed/.config/github-copilot:ro"'
 echo '  ]'
+echo ""
+echo "gh itself also needs a login: select gh+token and pass GH_TOKEN=\$(gh auth token)."
 echo ""
