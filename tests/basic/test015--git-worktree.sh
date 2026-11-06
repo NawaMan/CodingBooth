@@ -134,3 +134,54 @@ else
   echo "$ACTUAL"
   exit 1
 fi
+
+# --- The host's paths stay out of the booth ------------------------------------
+# booth shows git a neutral layout (/opt/codingbooth/git/<repo>/.git) instead of
+# mounting the main clone's .git at its host path, so the host's folders -- which
+# look like the user's home and, made by the engine, are writable with sudo --
+# never appear. The neutral root is a read-only tmpfs, so even root cannot write
+# there. And with the records covered, an in-booth `git worktree prune` sees no
+# live worktree as stale.
+ACTUAL=$("$BOOTH_BIN" --variant base -- bash -c '
+  if [ -e "'"$WORK_DIR"'" ]; then echo HOST-PATH-VISIBLE; else echo HOST-PATH-ABSENT; fi
+  if sudo -n touch /opt/codingbooth/git/probe 2>/dev/null; then echo NEUTRAL-WRITABLE; else echo NEUTRAL-READ-ONLY; fi
+  git worktree prune -v 2>&1 && echo PRUNE-DONE
+' 2>&1) || true
+
+if [[ "$ACTUAL" == *HOST-PATH-ABSENT* && "$ACTUAL" == *NEUTRAL-READ-ONLY* ]]; then
+  print_test_result "true" "$SCRIPT_PATH" "6" "The host's paths are absent from the booth, and the neutral root is read-only"
+else
+  print_test_result "false" "$SCRIPT_PATH" "6" "The host's paths show in the booth, or the neutral root is writable"
+  echo "$ACTUAL"
+  exit 1
+fi
+
+if [[ "$ACTUAL" == *PRUNE-DONE* && "$ACTUAL" != *Removing* ]] &&
+   [[ -d "$WORK_DIR/main-repo/.git/worktrees/other" ]]; then
+  print_test_result "true" "$SCRIPT_PATH" "7" "git worktree prune in the booth drops no live worktree"
+else
+  print_test_result "false" "$SCRIPT_PATH" "7" "git worktree prune in the booth dropped a live worktree"
+  echo "$ACTUAL"
+  exit 1
+fi
+
+# --- A worktree added in the booth works on the host after the next start -------
+# git in the booth writes the new worktree's .git file and record with the paths
+# it sees there. The next booth on the same folder writes the host's back.
+ACTUAL=$("$BOOTH_BIN" --variant base -- bash -c '
+  git worktree add -q in/added -b added && echo ADDED
+' 2>&1) || true
+"$BOOTH_BIN" --variant base -- true > /dev/null 2>&1 || true
+ADDED_GIT="$WORK_DIR/worktree/in/added/.git"
+RECORD="$WORK_DIR/main-repo/.git/worktrees/added/gitdir"
+if [[ "$ACTUAL" == *ADDED* ]] &&
+   git -C "$WORK_DIR/worktree/in/added" status > /dev/null 2>&1 &&
+   [[ "$(cat "$RECORD" 2>/dev/null)" == "$ADDED_GIT" ]]; then
+  print_test_result "true" "$SCRIPT_PATH" "8" "A worktree added in the booth works on the host after the next booth start"
+else
+  print_test_result "false" "$SCRIPT_PATH" "8" "A worktree added in the booth is still broken on the host"
+  echo "$ACTUAL"
+  echo "record: $(cat "$RECORD" 2>&1)"
+  echo ".git:   $(cat "$ADDED_GIT" 2>&1)"
+  exit 1
+fi

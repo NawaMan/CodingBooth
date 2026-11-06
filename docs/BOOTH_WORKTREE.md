@@ -156,10 +156,16 @@ take them.
 
 ## Git inside the booth
 
-A booth on a worktree has a working git: booth mounts the main clone's git folder at the path the
-worktree's `.git` file points to, and keeps an in-booth `git worktree prune` or `git worktree
-repair` from breaking your other worktrees. Run `git worktree add`, `remove` and `prune` on the
-host, not in the booth.
+A booth on a worktree has a working git. Booth mounts the main clone's git folder at
+`/opt/codingbooth/git/<repo>/.git` and points git there through generated read-only files, so your
+host's folders (such as `/home/<you>/…`) do not show up in the booth. It also keeps an in-booth
+`git worktree prune` or `git worktree repair` from breaking your other worktrees. In the booth,
+`git worktree list` shows the booth's paths for them.
+
+Run `git worktree add`, `remove` and `prune` on the host, not in the booth. A worktree added in the
+booth inside the workspace works in the booth right away, but works on the host only after the next
+booth starts on the same folder, which writes the host's paths back. One added outside the
+workspace exists only in the container.
 
 ## Not yet
 
