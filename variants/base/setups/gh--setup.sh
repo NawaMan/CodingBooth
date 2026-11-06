@@ -115,11 +115,28 @@ fi
 # HTTPS works with no manual step. This also replaces a helper copied in from
 # the host's ~/.gitconfig that names the host's gh path, which does not exist
 # here. Never fail the booth's start over it.
+#
+# The helper is for HTTPS only. A clone made over SSH (git@github.com:owner/repo) has
+# no use for the token, and a booth with no ssh client cannot reach that remote at all.
+# So when there is no ssh, git is told to use HTTPS for that host instead -- in
+# ~/.gitconfig only; the repo's remote is not changed. A booth with ssh (the openssh
+# template) keeps SSH.
+cb_gh_setup_git() {
+    local host="$1" base from
+    gh auth setup-git --hostname "$host" >/dev/null 2>&1 || true
+    command -v ssh >/dev/null 2>&1 && return 0
+    command -v git >/dev/null 2>&1 || return 0
+    base="https://${host}/"
+    for from in "git@${host}:" "ssh://git@${host}/"; do
+        git config --global --get-all "url.${base}.insteadOf" 2>/dev/null | grep -qxF "$from" \
+            || git config --global --add "url.${base}.insteadOf" "$from" >/dev/null 2>&1 || true
+    done
+}
 if [[ -n "${GH_TOKEN:-}${GITHUB_TOKEN:-}" ]]; then
-    gh auth setup-git --hostname github.com >/dev/null 2>&1 || true
+    cb_gh_setup_git github.com
 fi
 if [[ -n "${GH_ENTERPRISE_TOKEN:-}" && -n "${GH_HOST:-}" ]]; then
-    gh auth setup-git --hostname "$GH_HOST" >/dev/null 2>&1 || true
+    cb_gh_setup_git "$GH_HOST"
 fi
 EOF
 chmod 755 "${STARTUP_FILE}"

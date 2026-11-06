@@ -9,7 +9,10 @@ This file contains a list of changes for each released version.
   on a helper copied in by `git-credential` that names the host's `gh` path. The `gh` setup now runs
   `gh auth setup-git` at start when `GH_TOKEN` or `GITHUB_TOKEN` is set, so git's credential helper
   is the booth's `gh`. `gh+token` also passes `GH_ENTERPRISE_TOKEN` and `GH_HOST`, each only when
-  set, and with both the enterprise host's helper is set up the same way.
+  set, and with both the enterprise host's helper is set up the same way. A clone made over SSH
+  (`git@github.com:owner/repo`) works too: the booth has no `ssh` client, so the setup tells git
+  (in the booth's `~/.gitconfig`, not the repo) to reach that host over HTTPS, where the token
+  applies. A booth with `ssh` installed (the `openssh` template) keeps SSH.
 
 - **A booth on a git worktree no longer shows your host's folders.** To make git work, booth
   mounted the main clone's `.git` at its host path, so the booth held `/home/<you>/dev/…/.git` and
