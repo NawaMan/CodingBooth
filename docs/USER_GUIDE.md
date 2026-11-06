@@ -244,7 +244,7 @@ credentials the booth was set up to bring in from the host:
 |---|---|
 | `git-credential` | your host `~/.gitconfig` (name, email, credential helper) |
 | `ssh` / `openssh/credential` | your host `~/.ssh` keys and config, read-only |
-| `gh/credential` | your host GitHub CLI login |
+| `gh+token` | your host `GH_TOKEN` / `GITHUB_TOKEN`, so `gh` is logged in |
 
 They are copied into the booth's home at start (from `/etc/cb-home-seed/`), so the host files are
 never written. If a push fails for authentication, check what is there (`ls ~/.ssh`,
