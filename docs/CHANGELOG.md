@@ -4,6 +4,19 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A booth on a git worktree no longer shows your host's folders.** To make git work, booth
+  mounted the main clone's `.git` at its host path, so the booth held `/home/<you>/dev/…/.git` and
+  the empty folders above it. Those looked like your home directory and, made by the engine, were
+  writable with `sudo`. The `.git` is now mounted at `/opt/codingbooth/git/<repo>/.git` (a read-only
+  tmpfs, so not even root can write the folders there), and the pointers git reads (the worktree's
+  `.git` file and each record's `gitdir`) are covered in the container by generated read-only files.
+  The host's own files do not change. This applies to booths on the main clone of a repository with
+  worktrees too, and a worktree nested inside the main clone now has a working git in that booth.
+  An in-booth `git worktree repair` can no longer rewrite a record. A `git worktree add` in a booth
+  still writes the booth's paths, but the next booth on the same folder writes the host's back, so
+  the new worktree also works on the host. Apple container and Windows hosts keep the old layout. See
+  [Git inside the booth](BOOTH_WORKTREE.md#git-inside-the-booth).
+
 - **`php+composer-install` builds on its own.** It ran `composer install` at build time, but
   Composer comes from the separate `php+composer` extension, so selecting `composer-install` alone
   failed the image build with `composer: command not found`. It now installs Composer itself,
