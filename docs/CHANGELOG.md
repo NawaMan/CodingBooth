@@ -4,6 +4,13 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`nodejs+pnpm-install` no longer fails the start on a checkout without `node_modules`.** pnpm
+  writes `node_modules/.pnpm-workspace-state-v1.json` as `0600`, and the image cache is built as
+  root, so the start-up restore (run as `coder`) could not copy that file and the booth exited 1 —
+  on a fresh clone or a new `booth --worktree`, never on a checkout that already had
+  `node_modules`. The build step now makes `/opt/pnpm-cache` readable. Re-run `booth config` to
+  pick up the new Boothfile line.
+
 - **`gh` no longer mounts the host `~/.config/gh`; `gh+token` passes `GH_TOKEN` instead.** The
   auto-selected `gh+credential` copied the host's gh config into the booth, but gh keeps its token
   in the system keyring by default, so the booth got the account name and no token. `gh auth
