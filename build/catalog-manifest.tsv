@@ -364,7 +364,7 @@ setup	yaml-code-extension	0.1.0	a645a17343854b3f3fc21a01e0fb6346878cc777aacf9935
 setup	zed	0.4.0	ae7487b3c6c31ce9259f92cad4be192193a39c8a446e772e51315361ba72c102	variants/base/setups/zed--setup.sh
 setup	zig	1.0.0	b4697e1c090e510c423ef961dd6bfcc06a480adf78bd774e3f5291ac468f459e	variants/base/setups/zig--setup.sh
 setup	zig-code-extension	1.0.0	2b398b4a16070263e1e4929a512e1cbf7c997bb6b7124688aa0d5e30812ecb5c	variants/base/setups/zig-code-extension--setup.sh
-install	apt	1.2.0	ca178927eb42e3f199970b247f80ae7ba4033f62a694f6927eaa7ffd1a8882c6	variants/base/setups/apt--install.sh
+install	apt	1.3.0	9f27151c289fd06e1d0ed926bb1949a8c0da899435df821999e3253849d5873d	variants/base/setups/apt--install.sh
 install	brew	1.1.0	32dad9bef6f985460b7597fa0d1595a386e18df5c16e9a576d3d19a6cc6300fa	variants/base/setups/brew--install.sh
 install	bun	1.1.0	f87fab5c1327111cdda83a31966ee46b6123e0ede051b89295cc7777817d7dda	variants/base/setups/bun--install.sh
 install	cabal	1.0.0	0960aa673e85c85a5745402a35984fa84a37f5de601ef3b0c98f176b7ce3a960	variants/base/setups/cabal--install.sh
