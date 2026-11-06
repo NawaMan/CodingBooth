@@ -509,7 +509,7 @@ template	gh	1.1.0	b35a3ce5fc6fe31abd6890d6e72faaf6f62d9b1f5f7a59038bea46d531607e
 template	gh-copilot	1.0.0	c5c8e74b544f0e3dc3dd7977093d60779cdd4a1c8e13da4666439b47b95aff3c	templates/ai-tools/gh-copilot/template.toml
 template	ghostty	1.0.0	dfd4b340de849325faebce647f64b0230fdea7b52208075fc01b4e050bbe98f1	templates/desktops/ghostty/template.toml
 template	gimp	1.0.0	1855591e9d1aee68552d78e04c8f42d3c312421e8544d23f134f3ef53d82f85f	templates/desktops/gimp/template.toml
-template	git-credential	1.0.0	549e26c9ea8a3c7b95c9d4b859a0382020b0b273c57ab23216eb6f0d23a93148	templates/tools/git-credential/template.toml
+template	git-credential	1.0.1	de28f82873973111f0982ec8cbda74e8dedaa57b15084e80b5bb234c9fe18720	templates/tools/git-credential/template.toml
 template	gleam	0.2.0	cd7dd2489d3c3dace9868b0b13857e58ba32cea312fd65d27f3870d2e49f73e1	templates/languages/gleam/template.toml
 template	go	1.2.0	8f16643ccefe5622b7ccdd7ba28650bc41fdd98ec09ebf6491bcb81fe389be86	templates/languages/go/template.toml
 template	goland	1.0.0	e657667702b91cc74de699fc1a4fd329c253579685824186871c7f9d9aadc111	templates/ides/goland/template.toml
