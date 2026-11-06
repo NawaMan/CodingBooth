@@ -202,7 +202,7 @@ booth's home at start, read-only:
 | Select | Brings in |
 |---|---|
 | `git-credential` | `~/.gitconfig` |
-| `ssh` | `~/.ssh` keys and config |
+| `openssh+credential` | `~/.ssh` keys and config, with the ssh client |
 | `gh+token` | GitHub CLI login, from the host `GH_TOKEN` (`GH_TOKEN=$(gh auth token) booth …`); git uses it too, an SSH remote included when the booth has no `ssh` |
 | `claude-code+credential`, `codex+credential`, `gemini-cli+credential`, … | that AI tool's login |
 

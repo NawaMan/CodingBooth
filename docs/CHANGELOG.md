@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The `ssh` template is folded into `openssh+credential`.** `ssh` mounted the host `~/.ssh` but
+  installed no ssh client, so git over SSH still failed (`cannot run ssh`). `openssh+credential`
+  mounts the same folder and its `openssh` parent installs the client; `openssh` is now listed by
+  default in its place. A selection that names `ssh` now errors as an unknown template: use
+  `openssh+credential`.
+
 - **`gh+token` also sets up git, and passes GitHub Enterprise tokens.** With only `GH_TOKEN` in
   the booth, `gh` was logged in but `git push` over HTTPS still prompted for a username, or failed
   on a helper copied in by `git-credential` that names the host's `gh` path. The `gh` setup now runs
