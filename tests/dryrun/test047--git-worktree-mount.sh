@@ -7,26 +7,31 @@
 # Test: a booth on a git worktree also mounts the main clone's git folder
 #
 # A worktree's .git is a file pointing into <main>/.git/worktrees/<name>, which
-# is outside the workspace mount. booth mounts <main>/.git at the same path in
-# the container so git finds the repository, and pins gc.worktreePruneExpire to
-# never so an in-booth `git gc` cannot prune the host's worktrees.
+# is outside the workspace mount. booth mounts <main>/.git at a neutral path,
+# /opt/codingbooth/git/<repo>/.git, and covers the pointers git reads -- the
+# worktree's .git file and each record's gitdir -- with generated read-only
+# files that point within the booth. No host path shows in the booth. It pins
+# gc.worktreePruneExpire to never so an in-booth `git gc` cannot prune the
+# host's worktrees.
 #
-# In a booth on any repository with worktrees -- the main clone too -- booth
-# also mounts each worktree's .git file read-only at the path its record names,
-# so an in-booth `git worktree prune` sees no record as stale.
+# In a booth on any repository with worktrees -- the main clone too -- each
+# other worktree gets a read-only .git file under the neutral root, so an
+# in-booth `git worktree prune` sees no record as stale.
 #
-# Test 1: worktree     -> -v <main>/.git:<main>/.git
+# Test 1: worktree     -> -v <main>/.git:/opt/codingbooth/git/main/.git
 # Test 2: worktree     -> GIT_CONFIG_KEY_0=gc.worktreePruneExpire
 # Test 3: main clone   -> no extra git folder mount
 # Test 4: main clone   -> GIT_CONFIG_KEY_0=gc.worktreePruneExpire
-# Test 5: worktree     -> -v <wt>/.git:<wt>/.git:ro (its own record resolves)
-# Test 6: main clone   -> -v <wt>/.git:<wt>/.git:ro
+# Test 5: worktree     -> its .git file covered read-only
+# Test 6: main clone   -> the worktree's .git under the neutral root, read-only
 # Test 7: plain repo   -> no git env (no worktrees to protect)
+# Test 8: worktree     -> no mount target under the host's own paths
+# Test 9: worktree     -> the neutral root is a read-only tmpfs
 #
-# The mount only works where the host's own absolute path is also a path the
-# booth can hold, which a Windows gitdir ("C:/proj/.git") is not: booth declines
-# it there and says so, and tests 1-2 and 5-6 assert that refusal instead. The
-# gap is recorded under Problems in docs/TODO.md.
+# A Windows host keeps the older layout -- the host's own paths, which a
+# Windows gitdir ("C:/proj/.git") cannot be -- so booth declines the mount there
+# and says so, and tests 1-2 and 5-6 assert that refusal instead. The gap is
+# recorded under Problems in docs/TODO.md.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -71,14 +76,18 @@ if [[ "$HOST_OS" == "WIN" ]]; then
     check 6 "Main clone on Windows: no .git file mirror" \
         no ".git:ro" "$WORK/main"
 else
-    check 1 "Worktree mounts the main clone's .git at its own path" \
-        yes "-v $WORK/main/.git:$WORK/main/.git" "$WORK/wt"
+    check 1 "Worktree mounts the main clone's .git at the neutral path" \
+        yes "-v $WORK/main/.git:/opt/codingbooth/git/main/.git" "$WORK/wt"
     check 2 "Worktree pins gc.worktreePruneExpire" \
         yes "GIT_CONFIG_KEY_0=gc.worktreePruneExpire" "$WORK/wt"
-    check 5 "Worktree mirrors its own .git file read-only at its host path" \
-        yes "-v $WORK/wt/.git:$WORK/wt/.git:ro" "$WORK/wt"
-    check 6 "Main clone mirrors the worktree's .git file read-only" \
-        yes "-v $WORK/wt/.git:$WORK/wt/.git:ro" "$WORK/main"
+    check 5 "Worktree covers its own .git file read-only" \
+        yes ":/home/coder/code/.git:ro" "$WORK/wt"
+    check 6 "Main clone mirrors the worktree's .git file under the neutral root" \
+        yes ":/opt/codingbooth/git/main/worktrees/wt/.git:ro" "$WORK/main"
+    check 8 "Worktree mounts nothing at the host's own paths" \
+        no ":$WORK/" "$WORK/wt"
+    check 9 "Worktree's neutral root is a read-only tmpfs" \
+        yes "/opt/codingbooth/git:ro,mode=755" "$WORK/wt"
 fi
 check 3 "Main clone gets no extra git folder mount" \
     no "$WORK/main/.git:" "$WORK/main"
