@@ -580,7 +580,7 @@ template	octave	1.0.0	1e1343507d54d758196791e0eb5367eb572558a11de061c7b4e11eaeda
 template	oh-my-pi	1.0.0	f61b666f10af21eeafcefb31545620ab82b22627684749fb1602351c680fcbde	templates/ai-tools/oh-my-pi/template.toml
 template	ollama	1.0.0	5fdb875baa6eaf50f9441fd727fc92d3b2638de822e280b13d16b0e6048e701d	templates/ai-tools/ollama/template.toml
 template	opencode	1.0.0	2871adf254f8f249db6118eb8c330dd3321501b66f2769ee69b2c61b3b9bf470	templates/ai-tools/opencode/template.toml
-template	openssh	1.0.0	3f9a44c7fea93ca4024e7939267d8e200a8419bfda285dbc2e9a5f4e0db8ccd3	templates/tools/openssh/template.toml
+template	openssh	1.1.0	9aa4a993508f3e75c1f08ead4cf69204076e10b6578c9aabcdc4e21382671883	templates/tools/openssh/template.toml
 template	orca	0.2.0	27361ccf343d367260d96f2796f727123ebde89ba1e4a416446509f165cadf70	templates/ai-tools/orca/template.toml
 template	orchis-gtk	0.1.0	90d120c836c889c8ee0f98ab8f29f20dd873e3ee952951daa39d475082bc0116	templates/desktops/orchis-gtk/template.toml
 template	php	1.0.0	1c7bf5b149e8922242abac9d78935da6c45881f91a58268e3fdada08e5cbaa63	templates/languages/php/template.toml
@@ -618,7 +618,6 @@ template	spring-boot	0.1.0	d58b168720b14746fa46766fb6fcc1da16a3502d17b42774bf26c
 template	sql-studio	1.0.0	27f2d3dcb343971621e6e4cad9f9a909720eab664d3d6bf6f70acf6cfb635c09	templates/tools/sql-studio/template.toml
 template	sqlite	1.0.0	acb431a561235cd8e3a1aa4440602eae54201f1058767e97e2273c62c524bb37	templates/middlewares/sqlite/template.toml
 template	sqluv	0.1.0	2ca235a1be79ace871a862f26ba71382222a6b7d24a51de0de3909b9c89294be	templates/tools/sqluv/template.toml
-template	ssh	1.0.0	799d6d517963cfca52189f35818190cbbc8ac088ab4068a71f581810ccd845a8	templates/tools/ssh/template.toml
 template	stern	1.0.0	f9651b9141a4d7c4870e46426794ad0f5b6dd5c0c31d0bf82a42a7f99be0eeda	templates/tools/stern/template.toml
 template	supercollider	0.1.0	bce23515a0bcb3cb61bd2f230b14d595c46746d02ca006cae74a03cfc9ceae9f	templates/tools/supercollider/template.toml
 template	superfile	0.1.2	b4719fbf3db32ebd0fc8291d15a23db317402a492e48969b75508b7321e1b573	templates/tools/superfile/template.toml
@@ -903,7 +902,7 @@ extension	ollama+expose	1.0.0	7ccc39d0fbb2f8d2c3e742ccf635d105a144f3bd94fc7fddae
 extension	opencode+credential	1.0.0	bcdabc07a81f1a199c6c898f66828c44c430b45d66ee939170b83702a17c18a4	templates/ai-tools/opencode/credential--extension.toml
 extension	opencode+plugins	1.0.0	1510cdd0b53d2ee041375c21d4956c35127463b74864f72dd7871770234bb289	templates/ai-tools/opencode/plugins--extension.toml
 extension	opencode+settings-cache	1.0.0	730145895c15155043c10f19475682577b8b9a9ab47d7811c293aa46fdb21507	templates/ai-tools/opencode/settings-cache--extension.toml
-extension	openssh+credential	1.0.0	605b1875399044c02b199736d5ede36bf78ed1493da9ca748ac6205047b727fe	templates/tools/openssh/credential--extension.toml
+extension	openssh+credential	1.1.0	46b3cb7d3aee5862ed2ee67e56089f4ca02fb03a39152aaf117038d13ad76842	templates/tools/openssh/credential--extension.toml
 extension	openssh+expose	1.0.0	f88138a819c24a8c4a74ccfa14df73a3bac03e82e2713d3f899c30fcd7aa948b	templates/tools/openssh/expose--extension.toml
 extension	openssh+server	1.0.0	46290b15c093ae48ff741a1196268ea5e3edb3c1d2485055258aad2776c984a4	templates/tools/openssh/server--extension.toml
 extension	orca+expose	0.1.0	e0c3ec20bae9f489b4bda9a0d027b4584da3a0a6acbe3e1483aa711d37f8c7cc	templates/ai-tools/orca/expose--extension.toml

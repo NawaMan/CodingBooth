@@ -243,7 +243,7 @@ credentials the booth was set up to bring in from the host:
 | Booth set up with | Gives you |
 |---|---|
 | `git-credential` | your host `~/.gitconfig` (name, email, credential helper) |
-| `ssh` / `openssh/credential` | your host `~/.ssh` keys and config, read-only |
+| `openssh+credential` | your host `~/.ssh` keys and config, read-only |
 | `gh+token` | your host `GH_TOKEN` / `GITHUB_TOKEN`, so `gh` is logged in |
 
 They are copied into the booth's home at start (from `/etc/cb-home-seed/`), so the host files are
