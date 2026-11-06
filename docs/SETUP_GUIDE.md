@@ -203,7 +203,7 @@ booth's home at start, read-only:
 |---|---|
 | `git-credential` | `~/.gitconfig` |
 | `ssh` | `~/.ssh` keys and config |
-| `gh+credential` | GitHub CLI login |
+| `gh+token` | GitHub CLI login, from the host `GH_TOKEN` (`GH_TOKEN=$(gh auth token) booth …`) |
 | `claude-code+credential`, `codex+credential`, `gemini-cli+credential`, … | that AI tool's login |
 
 Bring in only what the project needs. Every credential in the booth is reachable by whatever code

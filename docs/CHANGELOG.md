@@ -4,6 +4,15 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`gh` no longer mounts the host `~/.config/gh`; `gh+token` passes `GH_TOKEN` instead.** The
+  auto-selected `gh+credential` copied the host's gh config into the booth, but gh keeps its token
+  in the system keyring by default, so the booth got the account name and no token. `gh auth
+  status` then reported an invalid login (and exited 1), and the copied `git_protocol: ssh` sent
+  `gh repo clone` over SSH. `gh+credential` is removed — a selection that names it (including
+  `gh~credential`) now errors as an unknown extension; drop it. The new opt-in `gh+token` passes
+  `GH_TOKEN` and `GITHUB_TOKEN` from the host when they are set:
+  `GH_TOKEN=$(gh auth token) booth --select gh+token`. `.booth/.env` works too, with or without it.
+
 - **Every booth starts TTT on the zenith theme with rounded borders.** TTT is the base image's
   default editor, but the zenith/rounded defaults came only with `ttt+theme`, so a plain booth — one
   that selects no `ttt` template — opened on TTT's own look. The base image now seeds `theme` and

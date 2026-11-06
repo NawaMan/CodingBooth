@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 
 set -Eeuo pipefail
 trap 'echo "Error on line $LINENO"; exit 1' ERR
@@ -132,11 +132,10 @@ echo "  Profile: ${PROFILE_FILE}"
 echo ""
 echo "To authenticate: gh auth login"
 echo ""
-echo "=== Credential Seeding ==="
-echo "To reuse credentials from host, add to .booth/config.toml:"
+echo "=== Host Login ==="
+echo "To reuse the host's gh login, select gh+token and pass the token:"
 echo ""
-echo '  run-args = ['
-echo '      # GitHub CLI credentials (home-seeding: gh may refresh tokens)'
-echo '      "-v", "~/.config/gh:/etc/cb-home-seed/.config/gh:ro"'
-echo '  ]'
+echo '  GH_TOKEN=$(gh auth token) booth ...'
+echo ""
+echo "or put GH_TOKEN=<token> in .booth/.env."
 echo ""

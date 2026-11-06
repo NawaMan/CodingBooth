@@ -119,8 +119,8 @@ setup	gcc-code-extension	1.0.0	4bead0b7f116778815855e31ed6353762c6deb020517fa92e
 setup	gcc-frontend	0.1.0	a52ea9e0cdc42e578b8f58ca67b35b3663d32741d4c54bac429db4f8e6d730f6	variants/base/setups/gcc-frontend--setup.sh
 setup	gcloud	1.0.0	a7d4650483f3f74d604619f844debedb72c33330b1a906355a5b52276de2538a	variants/base/setups/gcloud--setup.sh
 setup	gemini-cli	1.0.0	6102af714bff3e30b13dc002ae3c1a0a045741c9e971abf6e08a9e12c0aa4c87	variants/base/setups/gemini-cli--setup.sh
-setup	gh	1.0.0	b1e63c8fc519900ff34c074f9e4af391abde032117eec55c563f9a7976070b65	variants/base/setups/gh--setup.sh
-setup	gh-copilot	1.0.0	d7027722f1cf2d1a72181c7c0f8f6774052ce77e1ac92683daf4cf431fbfea41	variants/base/setups/gh-copilot--setup.sh
+setup	gh	1.0.1	36410bbe8936ee420fb1070212096d2ee9210f81835db7d49f0750b58079e802	variants/base/setups/gh--setup.sh
+setup	gh-copilot	1.0.1	ac6e9f129eb0aec518088b3aefedd2dc5546e3edf9ee3a96800dbd0b6560788c	variants/base/setups/gh-copilot--setup.sh
 setup	ghostty	1.0.0	325bb5d495fe371a8ce609b71b8331b48e34cdaa888f60007cbb49914fa5a103	variants/base/setups/ghostty--setup.sh
 setup	ghostty-fancy	1.0.0	bc14a3b49c2cdae66514cdd66d3b874f0988728d8b3a831ce6490bec096fd91b	variants/base/setups/ghostty-fancy--setup.sh
 setup	gimp	1.0.0	4b4effac44795f1c333af66c5f520921b98066c9dba84e8d5a3f096fd451b92a	variants/base/setups/gimp--setup.sh
@@ -505,7 +505,7 @@ template	fzf	1.0.0	05eb2cff0d7a101ba7c56b3f9afc385e307b59d03119ae54a097ede578649
 template	gcc	1.1.1	bce38098a6e6a9c77b1a73185c6c950b0e1d5fdb85a044df459b96beef1a91c2	templates/languages/gcc/template.toml
 template	gcloud	1.0.0	940e408cbacadb057a279e942fcacbd282b648212b27856597b8c47a7191cfea	templates/tools/gcloud/template.toml
 template	gemini-cli	1.0.0	8c65a1e0cc3cbc884b71bf3e577db765d23c54f49fe9a3fc6af14d8e8f25f7f7	templates/ai-tools/gemini-cli/template.toml
-template	gh	1.1.0	b35a3ce5fc6fe31abd6890d6e72faaf6f62d9b1f5f7a59038bea46d531607ef7	templates/tools/gh/template.toml
+template	gh	2.0.0	9d24bc62cc128abd9b567770a16d60511720663c382908edeb68b192648c62c0	templates/tools/gh/template.toml
 template	gh-copilot	1.0.0	c5c8e74b544f0e3dc3dd7977093d60779cdd4a1c8e13da4666439b47b95aff3c	templates/ai-tools/gh-copilot/template.toml
 template	ghostty	1.0.0	dfd4b340de849325faebce647f64b0230fdea7b52208075fc01b4e050bbe98f1	templates/desktops/ghostty/template.toml
 template	gimp	1.0.0	1855591e9d1aee68552d78e04c8f42d3c312421e8544d23f134f3ef53d82f85f	templates/desktops/gimp/template.toml
@@ -753,7 +753,7 @@ extension	gemini-cli+credential	1.0.0	67b574634bb8083faed2df2383bdcac167e6419f70
 extension	gemini-cli+plugins	1.0.0	22e7a775bb4a88edef00b70b4c212ddaea2b2147a3a84a59123a7d2990cca2c1	templates/ai-tools/gemini-cli/plugins--extension.toml
 extension	gemini-cli+settings-cache	1.0.0	6baf2286ae93675efc968782ce0babcf6690a7630b89090523b568bfb9d3dacd	templates/ai-tools/gemini-cli/settings-cache--extension.toml
 extension	gh+copilot	1.0.0	4352c563f6af159dfcccc995766c24e4ee6ad04dfa64142719f15d3bf5223005	templates/tools/gh/copilot--extension.toml
-extension	gh+credential	1.0.0	ef17718b11b19773c5ff205a6e29f5fa0e734a6e8d8f483bfeb8111cf6de8097	templates/tools/gh/credential--extension.toml
+extension	gh+token	0.1.0	77d8489f5513ff9593a916f0efc6ab3fbff52bda5a7c3c76cfbdc0dfe2a5007f	templates/tools/gh/token--extension.toml
 extension	ghostty+fancy	1.0.0	37f51efa6635527d3d359422f1cbba38c8f6e72daad9f9164b2d5ba96208edc7	templates/desktops/ghostty/fancy--extension.toml
 extension	gleam+vscode-ext	0.1.0	b74fa1fc7fed3a2882a520227a1a09f1502e7fcddf9a35d506a1b2fcbe474ffb	templates/languages/gleam/vscode-ext--extension.toml
 extension	go+go-mod	1.0.0	d0ce534aaa86760a1384b2241206a294bec0fe086d52eadafd8390e1c97b54b5	templates/languages/go/go-mod--extension.toml
