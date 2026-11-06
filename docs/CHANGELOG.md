@@ -4,6 +4,11 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`php+composer-install` builds on its own.** It ran `composer install` at build time, but
+  Composer comes from the separate `php+composer` extension, so selecting `composer-install` alone
+  failed the image build with `composer: command not found`. It now installs Composer itself,
+  unless `+composer` already has.
+
 - **`nodejs+pnpm-install` no longer fails the start on a checkout without `node_modules`.** pnpm
   writes `node_modules/.pnpm-workspace-state-v1.json` as `0600`, and the image cache is built as
   root, so the start-up restore (run as `coder`) could not copy that file and the booth exited 1 —
