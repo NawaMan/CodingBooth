@@ -1,0 +1,16 @@
+cb-version = "1.0.0"
+display-name = "SSH Keys (chosen folder)"
+display-disc = "Bring in only the SSH keys in one folder you choose"
+display-detail = "Mounts one host folder (default ~/.ssh/booth) read-only and copies its files into the booth's ~/.ssh at start, private keys as 600. Put there only what this booth should have, such as a GitHub deploy key or a key made for booths, so a leak exposes that and nothing else. A missing folder is skipped with a notice. Add a `config` file beside the key to pick it per host; GitHub's host keys are built in. Combines with +credential, whose files win on a clash."
+display-order = 4
+auto-select = false
+tags = ["ssh", "credential", "git", "key"]
+
+# Not a home seed (/etc/cb-home-seed/.ssh): that target belongs to +credential, and
+# Docker refuses two mounts on one. The openssh startup copies this folder in.
+run-args = [
+    "-v", "${SSH_KEYS_DIR}:/etc/cb-ssh-keys:ro",
+]
+
+[params.SSH_KEYS_DIR]
+default = "~/.ssh/booth"
