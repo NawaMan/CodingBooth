@@ -909,7 +909,7 @@ extension	openssh+server	1.0.0	46290b15c093ae48ff741a1196268ea5e3edb3c1d24850552
 extension	orca+expose	0.1.0	e0c3ec20bae9f489b4bda9a0d027b4584da3a0a6acbe3e1483aa711d37f8c7cc	templates/ai-tools/orca/expose--extension.toml
 extension	orca+serve	0.1.0	0d2893f53bf211ed1901cf9301008adc001d5827d6832c02d24a7193121134c3	templates/ai-tools/orca/serve--extension.toml
 extension	php+composer	0.1.0	f09b39d4b52798b2723f098179bfd1a72e4261b0cf0ac8137f769c6542c43af9	templates/languages/php/composer--extension.toml
-extension	php+composer-install	1.0.0	168df8033d46ba56955b2c8da1a48719b74b2a5bb8a847850ec5b82566f28136	templates/languages/php/composer-install--extension.toml
+extension	php+composer-install	1.1.0	7fe1d6720d96d2b65070d1c975cd61d07eebe4a94d4be565c79c4829c79feb58	templates/languages/php/composer-install--extension.toml
 extension	php+pecl-pkg	1.0.0	2aca90dbc112c9807d61bf93939644cae94b8f7b9eb7b4ee2519b4552ee32b1f	templates/languages/php/pecl-pkg--extension.toml
 extension	php+repl-history	1.0.0	a8400a772d7cca3943edf6a114e0d4d552bdeb8370cff181772984cda9120478	templates/languages/php/repl-history--extension.toml
 extension	php+vscode-ext	1.0.0	2a8f7aa3d0f782ce936489b0106a4dc75e9f8d92c591c2ffaaaf0a383749f097	templates/languages/php/vscode-ext--extension.toml

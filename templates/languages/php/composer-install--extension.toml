@@ -1,7 +1,7 @@
-cb-version = "1.0.0"
+cb-version = "1.1.0"
 display-name = "composer install"
 display-disc = "Pre-install Composer dependencies into the image"
-display-detail = """Installs your project's dependencies from composer.json with `composer install` into the image's \
+display-detail = """Installs Composer (unless `+composer` already did), then your project's dependencies from composer.json with `composer install` into the image's \
 cache (/opt/composer-cache/vendor) at build time, then restores them into the running booth's \
 vendor/ on startup if not already there (regenerating the autoloader). This is for your project's \
 own dependencies; it does not run your code. If composer.json is missing, the build still succeeds \
@@ -11,6 +11,12 @@ auto-select = false
 tags = ["php", "composer", "packages"]
 
 [segments]
+# Needs Composer, which the separate php+composer extension installs. Install it here
+# too unless that extension (same band, sorts first) already did, so selecting
+# composer-install alone builds, and selecting both does not download it twice.
+"Boothfile--55" = """
+run command -v composer >/dev/null 2>&1 || php--setup.sh --composer-only
+"""
 "Boothfile--90" = """
 run --mount=type=bind,target=/tmp/ctx \
   if [ -f /tmp/ctx/composer.json ]; then \
