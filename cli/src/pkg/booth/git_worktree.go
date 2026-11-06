@@ -9,12 +9,18 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/docker"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
+// This file is the host-path layout, which booth now uses only on Apple container and on a Windows
+// host; everywhere else git_pointers.go shows git a neutral layout instead. The healing of records
+// further down serves both.
+//
 // In a git worktree, .git is a file holding `gitdir: <path>`, and that path leads into the main
 // clone's .git/worktrees/<name> -- outside the mounted workspace. Inside the booth git then finds
 // no repository at all. So when the workspace is a worktree, booth also mounts the main clone's git
@@ -382,12 +388,27 @@ var gitWorktreeEnv = []string{
 // addGitWorktreeMount makes git in the booth safe for the repository's worktrees. On a worktree it
 // mounts the main clone's git folder; on the main clone or a worktree it mirrors every worktree's
 // .git file and keeps gc from pruning their records. It first heals the records a booth broke.
-func addGitWorktreeMount(builder *appctx.AppContextBuilder, codePath string, dryrun bool) {
+//
+// It shows git the neutral layout (git_pointers.go) wherever it can, and the host's own paths
+// (below) where it cannot: on Apple container, which drops a folder's mount when a file directly
+// in it is mounted too -- here /home/coder/code/.git -- and on a Windows host, whose paths the
+// neutral layout has not been tried with.
+func addGitWorktreeMount(builder *appctx.AppContextBuilder, codePath, engine string, dryrun bool) {
 	if !dryrun {
 		record, err := healWorktreeBackLink(codePath)
 		reportHealed([]string{record}, err)
 	}
+	if engine != docker.EngineApple && runtime.GOOS != "windows" {
+		if addNeutralGitMounts(builder, codePath, dryrun) {
+			return
+		}
+	}
+	addHostPathGitMounts(builder, codePath, dryrun)
+}
 
+// addHostPathGitMounts mounts the main clone's git folder, and mirrors each worktree's .git file,
+// at the host's own paths.
+func addHostPathGitMounts(builder *appctx.AppContextBuilder, codePath string, dryrun bool) {
 	mount, ok, warning := resolveGitWorktreeMount(codePath)
 	if warning != "" {
 		fmt.Fprintf(os.Stderr, "Warning: git will not work in this booth: %s.\n", warning)

@@ -409,7 +409,10 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
       Windows gitdir (`C:/proj/.git`) is refused with a warning, so git inside the booth sees a
       `.git` file pointing nowhere. The fix is a translated target — mount the main clone's `.git`
       somewhere mountable and rewrite the worktree's `gitdir`/`commondir` to match — which is more
-      than the "same path on both sides" trick the Unix case gets away with.
+      than the "same path on both sides" trick the Unix case gets away with. Linux and macOS now
+      do exactly that (`git_pointers.go`, the neutral layout); Windows is routed to the old layout
+      only because the neutral one has not been tried there (generated file mounts on Docker
+      Desktop for Windows).
 - [ ] **Open risks from the 0.79.0 catalog sweep (2026-10-03, n−1 rule applied).** Each is a
       guess until the full suite runs on the 26.04 images; drop the line once a run settles it.
       - **Held at the previous major on purpose:** mermaid 11.17.2 (12.1.0 is out), appwrite-server
