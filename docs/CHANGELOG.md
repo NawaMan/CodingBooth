@@ -10,6 +10,16 @@ This file contains a list of changes for each released version.
   default in its place. A selection that names `ssh` now errors as an unknown template: use
   `openssh+credential`.
 
+- **SSH in a booth without handing it all of `~/.ssh`.** `openssh+credential` copies every key in
+  `~/.ssh` into the booth, where any code there can read them; it stays, described now as the
+  you-are-on-your-own mode. Two new extensions are for general use. `openssh+agent` mounts the
+  host ssh-agent socket, so git over SSH signs with your agent's keys and no key file enters the
+  booth (a native engine on Linux; with no agent the mount is skipped with a notice).
+  `openssh+keys` brings in only one folder you choose — default `~/.ssh/booth`, another with
+  `--select 'openssh+keys:"~/keys/booth"'` (a value with `/` is quoted) — copied in with ssh's
+  modes and never over a file already there. The `openssh` setup also pins GitHub's host keys, so
+  git over SSH to github.com asks no yes/no question in either mode.
+
 - **`gh+token` also sets up git, and passes GitHub Enterprise tokens.** With only `GH_TOKEN` in
   the booth, `gh` was logged in but `git push` over HTTPS still prompted for a username, or failed
   on a helper copied in by `git-credential` that names the host's `gh` path. The `gh` setup now runs

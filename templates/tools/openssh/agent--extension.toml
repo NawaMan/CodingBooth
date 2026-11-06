@@ -1,0 +1,17 @@
+cb-version = "1.0.0"
+display-name = "SSH Agent"
+display-disc = "Use the host's ssh-agent: keys never enter the booth"
+display-detail = "Mounts the host ssh-agent socket (SSH_AUTH_SOCK) into the booth, so git over SSH and ssh sign with the keys loaded in your host agent while no key file is ever copied in. Code in the booth can still ask the agent to sign while the booth runs, but cannot take a key away; `ssh-add -c` on the host makes each use ask you first. Needs an agent running on the host (ssh-add -l lists its keys); with none, the mount is skipped with a notice. Works with a native engine on Linux; Docker Desktop and macOS run containers in a VM that cannot reach the host socket. GitHub's host keys are built in, so no known_hosts is needed for it."
+display-order = 3
+auto-select = false
+tags = ["ssh", "credential", "git", "agent"]
+
+# Read-only: a client still connects to a socket through it, and the booth cannot
+# replace the socket file (the consent gate treats a writable host mount as one).
+# Expanded at run time from the host environment. With no agent the source is a
+# path that does not exist, so the missing-mount filter drops it (an empty source
+# would reach Docker as "-v :/..." and stop the booth).
+run-args = [
+    "-v", "${SSH_AUTH_SOCK:-/nonexistent/no-ssh-agent.sock}:/run/cb-ssh-agent.sock:ro",
+    "-e", "SSH_AUTH_SOCK=/run/cb-ssh-agent.sock",
+]
