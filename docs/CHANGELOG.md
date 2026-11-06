@@ -4,6 +4,13 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`gh+token` also sets up git, and passes GitHub Enterprise tokens.** With only `GH_TOKEN` in
+  the booth, `gh` was logged in but `git push` over HTTPS still prompted for a username, or failed
+  on a helper copied in by `git-credential` that names the host's `gh` path. The `gh` setup now runs
+  `gh auth setup-git` at start when `GH_TOKEN` or `GITHUB_TOKEN` is set, so git's credential helper
+  is the booth's `gh`. `gh+token` also passes `GH_ENTERPRISE_TOKEN` and `GH_HOST`, each only when
+  set, and with both the enterprise host's helper is set up the same way.
+
 - **A booth on a git worktree no longer shows your host's folders.** To make git work, booth
   mounted the main clone's `.git` at its host path, so the booth held `/home/<you>/dev/…/.git` and
   the empty folders above it. Those looked like your home directory and, made by the engine, were
