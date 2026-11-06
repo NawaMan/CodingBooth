@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.2.0
+# cb-version: 1.3.0
 
 # This script installs Debian/Ubuntu system packages via apt.
 # Usage: apt--install.sh <package>[=<version>] [package...]
@@ -29,6 +29,15 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 # error (a 5xx, a dropped connection) and nothing else, so a bad package name
 # still fails on the first attempt. The lib sits beside this script both in the
 # image (/opt/codingbooth/setups/) and in the repo, so a host-run test finds it.
+#
+# apt gets a longer window than the other package managers' 3 x 5s: Ubuntu's
+# snapshot service has been seen 502/503ing for 10-15 minutes at a stretch, and
+# 15s of waiting failed every build in that time. 8 attempts, waiting 30s, 60s,
+# ... 210s (about 14 minutes), the same as the base Dockerfile's own apt loops.
+# Read before the lib is sourced, so an explicit CB_RETRY_ATTEMPTS/CB_RETRY_DELAY
+# from the caller (the tests set CB_RETRY_DELAY=0) still wins over these defaults.
+CB_APT_RETRY_ATTEMPTS="${CB_APT_RETRY_ATTEMPTS:-${CB_RETRY_ATTEMPTS:-8}}"
+CB_APT_RETRY_DELAY="${CB_APT_RETRY_DELAY:-${CB_RETRY_DELAY:-30}}"
 SETUP_LIBS_DIR="${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}"
 if [ ! -r "${SETUP_LIBS_DIR}/retry-source.sh" ]; then
     SETUP_LIBS_DIR="$(dirname "$0")/libs"
@@ -173,8 +182,10 @@ apt_get_update() {
 # SNAPSHOT_ARGS is empty where the pin does not apply (arm64), and bash 3.2 — what
 # macOS ships, and what the host-side tests run this with — calls an empty
 # "${arr[@]}" unbound under `set -u`; this form expands to nothing instead.
-cb_retry apt_get_update ${SNAPSHOT_ARGS[@]+"${SNAPSHOT_ARGS[@]}"}
-if ! cb_retry apt_get_timed "$CB_APT_INSTALL_TIMEOUT" install -y --no-install-recommends ${SNAPSHOT_ARGS[@]+"${SNAPSHOT_ARGS[@]}"} "$@"; then
+CB_RETRY_ATTEMPTS="$CB_APT_RETRY_ATTEMPTS" CB_RETRY_DELAY="$CB_APT_RETRY_DELAY" \
+    cb_retry apt_get_update ${SNAPSHOT_ARGS[@]+"${SNAPSHOT_ARGS[@]}"}
+if ! CB_RETRY_ATTEMPTS="$CB_APT_RETRY_ATTEMPTS" CB_RETRY_DELAY="$CB_APT_RETRY_DELAY" \
+        cb_retry apt_get_timed "$CB_APT_INSTALL_TIMEOUT" install -y --no-install-recommends ${SNAPSHOT_ARGS[@]+"${SNAPSHOT_ARGS[@]}"} "$@"; then
     if [ -n "$OLDER_THAN_IMAGE" ]; then
         echo "" >&2
         echo "❌ apt could not install from snapshot ${APT_SNAPSHOT}: it is older than this" >&2

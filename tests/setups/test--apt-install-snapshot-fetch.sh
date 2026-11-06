@@ -17,6 +17,11 @@
 # It also times out an apt-get that never returns: a desktop-kde build sat in
 # apt-get update for over three hours, every connection closed, and nothing
 # retried it because nothing ever exited.
+#
+# And it waits long enough to matter: snapshot.ubuntu.com has 502/503'd for
+# 10-15 minutes at a stretch, which the generic 3 x 5s retry could not outlast.
+# apt gets 8 attempts, waiting 30s, 60s, ... 210s, unless the caller sets
+# CB_RETRY_ATTEMPTS / CB_RETRY_DELAY (or the CB_APT_RETRY_* pair) explicitly.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -66,6 +71,7 @@ if [ "$cmd" = install ]; then
         sleep 30
     fi
     echo "install $*"
+    if [ -n "${INSTALL_MSG:-}" ]; then echo "$INSTALL_MSG"; fi
     exit "${APT_INSTALL_RC:-0}"
 fi
 exit 0
@@ -94,6 +100,27 @@ run_apt_install() {
     CB_RETRY_DELAY=0 \
     CB_APT_UPDATE_TIMEOUT=1 \
     CB_APT_INSTALL_TIMEOUT=1 \
+        ${ROOT_RUN[@]+"${ROOT_RUN[@]}"} bash "$APT_SCRIPT" "$@" 2>&1
+}
+
+# The defaults, with nothing from the caller: `sleep` is stubbed to record the
+# backoff instead of waiting it out (cb_retry is the only caller of sleep here).
+SLEEP_STUB="$STUB/sleep-stub"
+mkdir -p "$SLEEP_STUB"
+cat > "$SLEEP_STUB/sleep" << 'EOF2'
+#!/bin/bash
+echo "sleep $*" >> "${STUB_LOG:?}"
+EOF2
+chmod +x "$SLEEP_STUB/sleep"
+
+run_apt_install_defaults() {
+    : > "$MARKER"
+    rm -f "$STATE"/*.n
+    env -u CB_RETRY_ATTEMPTS -u CB_RETRY_DELAY -u CB_APT_RETRY_ATTEMPTS -u CB_APT_RETRY_DELAY \
+    PATH="$SLEEP_STUB:$STUB:$PATH" \
+    STUB_LOG="$MARKER" \
+    STUB_STATE="$STATE" \
+    SETUP_LIBS_DIR="$REPO_ROOT/variants/base/setups/libs" \
         ${ROOT_RUN[@]+"${ROOT_RUN[@]}"} bash "$APT_SCRIPT" "$@" 2>&1
 }
 
@@ -134,13 +161,13 @@ else
         "rc=$RC updates=$(updates) installs=$(installs)" "$OUT"
 fi
 
-# 3. Snapshot never comes back — fail after 3 updates, never install.
+# 3. Snapshot never comes back — fail after 8 updates, never install.
 RC=0
 OUT=$(FAIL_UPDATES=99 run_apt_install jq) || RC=$?
-if [ "$RC" -ne 0 ] && [ "$(updates)" = 3 ] && [ "$(installs)" = 0 ]; then
-    pass_fail true "a snapshot that never recovers fails after 3 updates and does not install"
+if [ "$RC" -ne 0 ] && [ "$(updates)" = 8 ] && [ "$(installs)" = 0 ]; then
+    pass_fail true "a snapshot that never recovers fails after 8 updates and does not install"
 else
-    pass_fail false "a snapshot that never recovers fails after 3 updates and does not install" \
+    pass_fail false "a snapshot that never recovers fails after 8 updates and does not install" \
         "rc=$RC updates=$(updates) installs=$(installs)" "$OUT"
 fi
 
@@ -170,15 +197,61 @@ if command -v timeout >/dev/null 2>&1; then
             "rc=$RC updates=$(updates) installs=$(installs)" "$OUT"
     fi
 
-    # 6. An install that hangs every time gives up after 3 attempts.
+    # 6. An install that hangs every time gives up after the attempts run out
+    #    (2 here, to keep the 1s timeouts short).
     RC=0
-    OUT=$(HANG_INSTALLS=99 run_apt_install jq) || RC=$?
-    if [ "$RC" -ne 0 ] && [ "$(installs)" = 3 ]; then
-        pass_fail true "an apt-get install that always hangs fails after 3 attempts"
+    OUT=$(CB_RETRY_ATTEMPTS=2 HANG_INSTALLS=99 run_apt_install jq) || RC=$?
+    if [ "$RC" -ne 0 ] && [ "$(installs)" = 2 ]; then
+        pass_fail true "an apt-get install that always hangs fails after its attempts run out"
     else
-        pass_fail false "an apt-get install that always hangs fails after 3 attempts" \
+        pass_fail false "an apt-get install that always hangs fails after its attempts run out" \
             "rc=$RC updates=$(updates) installs=$(installs)" "$OUT"
     fi
+fi
+
+# 7. The default window: 8 updates, waiting 30s, 60s, ... 210s between them.
+RC=0
+OUT=$(FAIL_UPDATES=99 run_apt_install_defaults jq) || RC=$?
+SLEEPS="$(grep '^sleep ' "$MARKER" | awk '{print $2}' | paste -sd' ' -)"
+if [ "$RC" -ne 0 ] && [ "$(updates)" = 8 ] && [ "$(installs)" = 0 ] \
+   && [ "$SLEEPS" = "30 60 90 120 150 180 210" ]; then
+    pass_fail true "by default apt retries 8 times over about 14 minutes (30s, 60s, ... 210s)"
+else
+    pass_fail false "by default apt retries 8 times over about 14 minutes (30s, 60s, ... 210s)" \
+        "rc=$RC updates=$(updates) installs=$(installs) sleeps=[$SLEEPS]" "$OUT"
+fi
+
+# 8. The install step gets the same window: a 503 on a .deb is retried at 30s.
+RC=0
+OUT=$(INSTALL_MSG="Err:1 https://snapshot.ubuntu.com jq  503  Service Unavailable" APT_INSTALL_RC=100 \
+      run_apt_install_defaults jq) || RC=$?
+SLEEPS="$(grep '^sleep ' "$MARKER" | awk '{print $2}' | paste -sd' ' -)"
+if [ "$RC" -ne 0 ] && [ "$(installs)" = 8 ] && [ "$SLEEPS" = "30 60 90 120 150 180 210" ]; then
+    pass_fail true "a 503 during apt-get install gets the same 8-attempt window"
+else
+    pass_fail false "a 503 during apt-get install gets the same 8-attempt window" \
+        "rc=$RC installs=$(installs) sleeps=[$SLEEPS]" "$OUT"
+fi
+
+# 9. A missing package still fails at once — the long window costs nothing there.
+RC=0
+OUT=$(INSTALL_MSG="E: Unable to locate package no-such-pkg" APT_INSTALL_RC=100 \
+      run_apt_install_defaults no-such-pkg) || RC=$?
+if [ "$RC" -ne 0 ] && [ "$(installs)" = 1 ] && ! grep -q '^sleep ' "$MARKER"; then
+    pass_fail true "an unknown package is not retried, even with the long apt window"
+else
+    pass_fail false "an unknown package is not retried, even with the long apt window" \
+        "rc=$RC installs=$(installs)" "$OUT"
+fi
+
+# 10. An explicit CB_RETRY_ATTEMPTS from the caller still wins over apt's default.
+RC=0
+OUT=$(CB_RETRY_ATTEMPTS=2 FAIL_UPDATES=99 run_apt_install jq) || RC=$?
+if [ "$RC" -ne 0 ] && [ "$(updates)" = 2 ]; then
+    pass_fail true "an explicit CB_RETRY_ATTEMPTS overrides apt's 8-attempt default"
+else
+    pass_fail false "an explicit CB_RETRY_ATTEMPTS overrides apt's 8-attempt default" \
+        "rc=$RC updates=$(updates)" "$OUT"
 fi
 
 if [[ "$ALL_PASSED" != "true" ]]; then
