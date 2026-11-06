@@ -1,9 +1,9 @@
 # NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
-cb-version = "1.0.0"
+cb-version = "1.0.1"
 display-name = "Git Credentials"
 primary = true
-display-disc = "Git credential helper for host authentication"
-display-detail = "Mounts host Git credentials and configuration into the container for seamless authentication."
+display-disc = "Your host git identity (user.name/email) and ~/.gitconfig"
+display-detail = "Seeds your host ~/.gitconfig (read-only) into the booth, so commits carry your user.name/user.email, along with your aliases and credential-helper settings. Credential helpers that point at host-only paths won't run inside the booth."
 display-order = 31
 tags = [
     "git",
