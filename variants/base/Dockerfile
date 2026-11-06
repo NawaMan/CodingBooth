@@ -21,8 +21,11 @@ ARG APT_SNAPSHOT=
 # and the same loop: a .deb that keeps 503ing fails the install, and the next
 # attempt fetches only what is still missing, since the downloaded archives stay
 # in /var/cache/apt/archives until the step cleans up. The loop is for outages
-# that outlast apt's own retries — a few minutes of 502/503 from the snapshot
-# service — waiting 15s, 30s, 45s, 60s between attempts. apt has no overall
+# that outlast apt's own retries — snapshot.ubuntu.com has been seen 502/503ing
+# for 10-15 minutes at a stretch — so it makes 8 attempts, waiting 30s, 60s, …
+# 210s between them (about 14 minutes in all). apt--install.sh uses the same
+# window (CB_APT_RETRY_ATTEMPTS / CB_APT_RETRY_DELAY), so a setup step outlasts
+# the same outage this image's own steps do. apt has no overall
 # time limit, and a desktop-kde build once hung in apt-get update for hours with
 # every connection closed, so each attempt also runs under `timeout`: 10 minutes
 # for update, 30 for install (a slow but healthy snapshot service took 15 for
@@ -74,18 +77,18 @@ RUN touch /tmp/startups.log \
 # purpose even once that's possible: a snapshotted root CA bundle is a stale
 # root CA bundle, and freshness is the point of this particular package.
 RUN set -euo pipefail \
-  ; for attempt in 1 2 3 4 5; do \
+  ; for attempt in 1 2 3 4 5 6 7 8; do \
       timeout --kill-after=30 600 apt-get update -o APT::Update::Error-Mode=any && break \
-    ; [ "$attempt" -lt 5 ] || exit 1 \
-    ; echo "⚠️  apt-get update failed (attempt $attempt of 5); retrying in $((attempt * 15))s" \
-    ; sleep $((attempt * 15)) \
+    ; [ "$attempt" -lt 8 ] || exit 1 \
+    ; echo "⚠️  apt-get update failed (attempt $attempt of 8); retrying in $((attempt * 30))s" \
+    ; sleep $((attempt * 30)) \
     ; done \
-  ; for attempt in 1 2 3 4 5; do \
+  ; for attempt in 1 2 3 4 5 6 7 8; do \
       timeout --kill-after=30 1800 apt-get install -y --no-install-recommends -o Acquire::Retries=5 ca-certificates && break \
     ; dpkg --configure -a || true \
-    ; [ "$attempt" -lt 5 ] || exit 1 \
-    ; echo "⚠️  apt-get install failed (attempt $attempt of 5); retrying in $((attempt * 15))s" \
-    ; sleep $((attempt * 15)) \
+    ; [ "$attempt" -lt 8 ] || exit 1 \
+    ; echo "⚠️  apt-get install failed (attempt $attempt of 8); retrying in $((attempt * 30))s" \
+    ; sleep $((attempt * 30)) \
     ; done \
   ; rm -rf /var/lib/apt/lists/*
 
@@ -98,11 +101,11 @@ RUN set -euo pipefail \
         *) echo "⚠️  APT_SNAPSHOT=${APT_SNAPSHOT} ignored on $(dpkg --print-architecture): no ports.ubuntu.com snapshots" ;; \
       esac \
     fi \
-  ; for attempt in 1 2 3 4 5; do \
+  ; for attempt in 1 2 3 4 5 6 7 8; do \
       timeout --kill-after=30 600 apt-get update -o APT::Update::Error-Mode=any "${SNAPSHOT_ARGS[@]}" && break \
-    ; [ "$attempt" -lt 5 ] || exit 1 \
-    ; echo "⚠️  apt-get update failed (attempt $attempt of 5); retrying in $((attempt * 15))s" \
-    ; sleep $((attempt * 15)) \
+    ; [ "$attempt" -lt 8 ] || exit 1 \
+    ; echo "⚠️  apt-get update failed (attempt $attempt of 8); retrying in $((attempt * 30))s" \
+    ; sleep $((attempt * 30)) \
     ; done \
   ; PACKAGES=( \
       bash                   \
@@ -124,12 +127,12 @@ RUN set -euo pipefail \
       xz-utils               \
       zip                    \
     ) \
-  ; for attempt in 1 2 3 4 5; do \
+  ; for attempt in 1 2 3 4 5 6 7 8; do \
       timeout --kill-after=30 1800 apt-get install -y --no-install-recommends -o Acquire::Retries=5 "${SNAPSHOT_ARGS[@]}" "${PACKAGES[@]}" && break \
     ; dpkg --configure -a || true \
-    ; [ "$attempt" -lt 5 ] || exit 1 \
-    ; echo "⚠️  apt-get install failed (attempt $attempt of 5); retrying in $((attempt * 15))s" \
-    ; sleep $((attempt * 15)) \
+    ; [ "$attempt" -lt 8 ] || exit 1 \
+    ; echo "⚠️  apt-get install failed (attempt $attempt of 8); retrying in $((attempt * 30))s" \
+    ; sleep $((attempt * 30)) \
     ; done \
   ; rm -rf /var/lib/apt/lists/*      \
   ; rm -rf /var/cache/apt/archives/* \
@@ -145,11 +148,11 @@ RUN set -euo pipefail \
         *) echo "⚠️  APT_SNAPSHOT=${APT_SNAPSHOT} ignored on $(dpkg --print-architecture): no ports.ubuntu.com snapshots" ;; \
       esac \
     fi \
-  ; for attempt in 1 2 3 4 5; do \
+  ; for attempt in 1 2 3 4 5 6 7 8; do \
       timeout --kill-after=30 600 apt-get update -o APT::Update::Error-Mode=any "${SNAPSHOT_ARGS[@]}" && break \
-    ; [ "$attempt" -lt 5 ] || exit 1 \
-    ; echo "⚠️  apt-get update failed (attempt $attempt of 5); retrying in $((attempt * 15))s" \
-    ; sleep $((attempt * 15)) \
+    ; [ "$attempt" -lt 8 ] || exit 1 \
+    ; echo "⚠️  apt-get update failed (attempt $attempt of 8); retrying in $((attempt * 30))s" \
+    ; sleep $((attempt * 30)) \
     ; done \
   ; PACKAGES=( \
       direnv   \
@@ -165,12 +168,12 @@ RUN set -euo pipefail \
       whiptail \
       zsh      \
     ) \
-  ; for attempt in 1 2 3 4 5; do \
+  ; for attempt in 1 2 3 4 5 6 7 8; do \
       timeout --kill-after=30 1800 apt-get install -y --no-install-recommends -o Acquire::Retries=5 "${SNAPSHOT_ARGS[@]}" "${PACKAGES[@]}" && break \
     ; dpkg --configure -a || true \
-    ; [ "$attempt" -lt 5 ] || exit 1 \
-    ; echo "⚠️  apt-get install failed (attempt $attempt of 5); retrying in $((attempt * 15))s" \
-    ; sleep $((attempt * 15)) \
+    ; [ "$attempt" -lt 8 ] || exit 1 \
+    ; echo "⚠️  apt-get install failed (attempt $attempt of 8); retrying in $((attempt * 30))s" \
+    ; sleep $((attempt * 30)) \
     ; done \
   ; rm -rf /var/lib/apt/lists/*      \
   ; rm -rf /var/cache/apt/archives/* \
