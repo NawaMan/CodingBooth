@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`envfolio+store-cache` now keeps the store under `~/.local/share/folio/`** (was
+  `~/.local/share/envfolio/`), named after the `folio` command; the store is `store/` inside it, as
+  before, and `FOLIO_STORE_DIR` follows. A store cached at the old path is not found any more: move
+  it before the next start, from the project folder:
+  `mv .booth/cache/home/coder/.local/share/envfolio .booth/cache/home/coder/.local/share/folio`.
+
 - **`envfolio+key`: a booth that opens its seeded secrets by itself.** With `envfolio+seed`, it
   also copies the store key's private key files as gpg keeps them — still encrypted with the key's
   passphrase, nothing unlocked on the host — so the booth's own gpg-agent asks for the passphrase

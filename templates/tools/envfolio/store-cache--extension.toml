@@ -1,13 +1,13 @@
-cb-version = "2.0.1"
+cb-version = "2.0.2"
 display-name = "Store Cache"
 display-disc = "Keep the EnvFolio store and its GPG key across sessions (.booth/cache)"
-display-detail = """Persists the store (texts plain and signed, secrets encrypted) and ~/.gnupg (the keyring, including the store's private key, protected by its passphrase) in .booth/cache/, which stays on this machine and out of git. Without it both are lost when the container is recreated; folio backup / restore is the portable alternative. The store lives at ~/.local/share/envfolio/store (FOLIO_STORE_DIR): the cached folder is its parent, so `folio init` and `folio restore` find no folder there and make it themselves (a mounted folder is never empty — it holds the cache's .mount-this marker)."""
+display-detail = """Persists the store (texts plain and signed, secrets encrypted) and ~/.gnupg (the keyring, including the store's private key, protected by its passphrase) in .booth/cache/, which stays on this machine and out of git. Without it both are lost when the container is recreated; folio backup / restore is the portable alternative. The store lives at ~/.local/share/folio/store (FOLIO_STORE_DIR): the cached folder is its parent, so `folio init` and `folio restore` find no folder there and make it themselves (a mounted folder is never empty — it holds the cache's .mount-this marker)."""
 display-order = 91
 tags = ["persistence", "cache", "secrets"]
 
 cache-dirs = [
-    "home/coder/.local/share/envfolio:0700",
+    "home/coder/.local/share/folio:0700",
     "home/coder/.gnupg:0700",
 ]
 
-run-args = ["-e", "FOLIO_STORE_DIR=/home/coder/.local/share/envfolio/store"]
+run-args = ["-e", "FOLIO_STORE_DIR=/home/coder/.local/share/folio/store"]
