@@ -27,6 +27,7 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 	"github.com/nawaman/codingbooth/src/pkg/mountoverlap"
 	"github.com/nawaman/codingbooth/src/pkg/pathmode"
+	"github.com/nawaman/codingbooth/src/pkg/pathmount"
 	"github.com/nawaman/codingbooth/src/pkg/pathseed"
 	"golang.org/x/term"
 )
@@ -1046,7 +1047,9 @@ func addReadOnlyBoothDir(builder *appctx.AppContextBuilder, codePath string) {
 // It runs whether or not .booth/ itself is read-only: --writable-booth only changes how the
 // project's own .booth/ is seen, and must not drop these mounts (or the cache gitignore check).
 //
-// A path that is both Cache and Shared stops the start; one inside the other earns a notice.
+// Only what config.toml declares is mounted (collectDeclaredMounts); the rest is named in a
+// notice, for `booth prune cache|shared`. A path that is both Cache and Shared stops the start;
+// one inside the other earns a notice.
 // A single file is staged for booth--file-sync when the image has it (see fileSyncMountTarget).
 func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath, engine, image string) {
 	hostPath := boothHostDir(builder, codePath)
@@ -1059,7 +1062,7 @@ func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath, engine
 	seedFrom(hostPath, "cache")
 	ensureCacheFromConfig(hostPath)
 
-	// Mount .booth/cache/ contents into the container based on directory structure.
+	// Mount what config.toml declares of .booth/cache/, by its directory structure.
 	var cacheMounts []cacheMount
 	cachePath := filepath.Join(hostPath, "cache")
 	if info, err := os.Stat(cachePath); err == nil && info.IsDir() {
@@ -1069,7 +1072,8 @@ func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath, engine
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
-		mounts, protected := collectCacheMounts(cachePath)
+		mounts, protected, left := collectDeclaredMounts(hostPath, "cache")
+		fmt.Fprint(os.Stderr, pathmount.LeftoverNotice("cache", left))
 		if len(protected) > 0 {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", protectedPathMountsError("cache", protected))
 			os.Exit(1)
@@ -1096,7 +1100,8 @@ func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath, engine
 	var sharedMounts []cacheMount
 	sharedPath := filepath.Join(hostPath, "shared")
 	if info, err := os.Stat(sharedPath); err == nil && info.IsDir() {
-		mounts, protected := collectCacheMounts(sharedPath)
+		mounts, protected, left := collectDeclaredMounts(hostPath, "shared")
+		fmt.Fprint(os.Stderr, pathmount.LeftoverNotice("shared", left))
 		if len(protected) > 0 {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", protectedPathMountsError("shared", protected))
 			os.Exit(1)
@@ -1501,69 +1506,36 @@ func withoutGitLocalEnv(env []string) []string {
 // They are a misconfiguration the caller refuses to start on: silently dropping them would
 // leave the user with a cache entry that never takes effect and no idea why.
 func collectCacheMounts(cacheDir string) (mounts []cacheMount, protected []string) {
-	walkCacheDir(cacheDir, cacheDir, &mounts, &protected)
-	return mounts, protected
+	return cacheMountsOf(pathmount.Walk(cacheDir), cacheDir)
 }
 
-func walkCacheDir(baseDir, dir string, mounts *[]cacheMount, protected *[]string) {
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return
-	}
+// collectDeclaredMounts is collectCacheMounts for .booth/<kind>/, keeping only what config.toml
+// declares (<kind>-files / <kind>-dirs, or inside a declared folder). The rest is returned as
+// left: an item a deselected template made is not mounted, so a booth never gets half of a
+// template (its cached folder without the settings that go with it). Leftovers on a protected
+// path are left too, not an error: nothing asks for them.
+func collectDeclaredMounts(boothDir, kind string) (mounts []cacheMount, protected []string, left []pathmount.Entry) {
+	treeDir := filepath.Join(boothDir, kind)
+	kept, left := pathmount.Split(pathmount.Walk(treeDir), pathmount.Declared(boothDir, kind))
+	mounts, protected = cacheMountsOf(kept, treeDir)
+	return mounts, protected, left
+}
 
-	// Check for .mount-this marker
-	hasMountMarker := false
-	for _, entry := range entries {
-		if !entry.IsDir() && entry.Name() == ".mount-this" {
-			hasMountMarker = true
-			break
-		}
-	}
-
-	relPath, err := filepath.Rel(baseDir, dir)
-	if err != nil {
-		return
-	}
-
-	if hasMountMarker && relPath != "." {
-		containerPath := "/" + filepath.ToSlash(relPath)
+// cacheMountsOf turns the items of a tree into mounts, or protected paths.
+func cacheMountsOf(entries []pathmount.Entry, treeDir string) (mounts []cacheMount, protected []string) {
+	for _, e := range entries {
+		containerPath := "/" + e.Rel
 		if isProtectedPath(containerPath) {
-			*protected = append(*protected, containerPath)
-		} else {
-			*mounts = append(*mounts, cacheMount{
-				hostPath:      dir,
-				containerPath: containerPath,
-				dir:           true,
-			})
-		}
-		return // stop traversal
-	}
-
-	for _, entry := range entries {
-		if entry.Name() == ".mount-this" {
+			protected = append(protected, containerPath)
 			continue
 		}
-		fullPath := filepath.Join(dir, entry.Name())
-		if entry.IsDir() {
-			walkCacheDir(baseDir, fullPath, mounts, protected)
-		} else if dir != baseDir {
-			// Individual file mount. A file at the top of the tree (a README.md) is
-			// skipped: it would mount at /README.md. See topLevelFiles.
-			fileRelPath, err := filepath.Rel(baseDir, fullPath)
-			if err != nil {
-				continue
-			}
-			containerPath := "/" + filepath.ToSlash(fileRelPath)
-			if isProtectedPath(containerPath) {
-				*protected = append(*protected, containerPath)
-			} else {
-				*mounts = append(*mounts, cacheMount{
-					hostPath:      fullPath,
-					containerPath: containerPath,
-				})
-			}
-		}
+		mounts = append(mounts, cacheMount{
+			hostPath:      filepath.Join(treeDir, filepath.FromSlash(e.Rel)),
+			containerPath: containerPath,
+			dir:           e.Dir,
+		})
 	}
+	return mounts, protected
 }
 
 // IdleShutdownError signals that the booth was shut down due to idle timeout.
