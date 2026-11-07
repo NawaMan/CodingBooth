@@ -9,6 +9,24 @@ This file contains a list of changes for each released version.
   `glow` to browse a folder's `.md` files), with its man page and bash/zsh/fish completions. It is
   the terminal counterpart of `viewmd`. The `glow` template picks another release.
 
+- **`envfolio+store-host`: the host's EnvFolio store and gpg keyring, live in the booth.** It
+  mounts the host's store (`~/.folio`) and gpg home (`~/.gnupg`) read-write — the parameters
+  `FOLIO_HOST_STORE` / `FOLIO_HOST_GNUPG` name others — so the booth uses the same store and keys
+  as the host, and what it adds or removes changes the host's store. Full trust: every private key
+  in the keyring is in the booth, and each start says so. The booth's gpg-agent keeps its sockets in
+  a `/run/user/<uid>` tmpfs, not in the shared gpg home (on macOS the host agent's socket lives
+  there). The booth does not start when a host folder is missing (`folio init` on the host first),
+  or with `+store-cache`, `+seed` or `gnupg+keys`, which would each bring a second store or key.
+  The four EnvFolio modes are now: alone (in the container), `+store-cache`, `+seed`, `+store-host`.
+
+- **`gnupg+keys`: bring chosen GPG keys from the host.** `gnupg+keys:"me@example.com"` (key ids,
+  fingerprints or emails) copies those keys' private key files, still encrypted with their
+  passphrase, and the host's public keyring into the booth's `~/.gnupg` at each start — to decrypt,
+  sign, or encrypt to the people the host knows. Only the named keys' private parts come, never the
+  rest of the keyring's, its trust database or its settings; each start says which. The booth's
+  gpg-agent asks for a passphrase in the booth. A key gpg does not know, or one on a smartcard,
+  stops the start with gpg's message. `tools/gnupg` itself adds nothing: GnuPG is in every booth.
+
 - **Breaking: only declared Cache and Shared paths are mounted.** A folder or file in
   `.booth/cache/` or `.booth/shared/` now mounts only when `config.toml` declares it
   (`cache-files` / `cache-dirs` / `shared-files` / `shared-dirs`, from a template or `--set`), or
@@ -31,15 +49,6 @@ This file contains a list of changes for each released version.
   it before the next start, from the project folder:
   `mv .booth/cache/home/coder/.local/share/envfolio .booth/cache/home/coder/.local/share/folio`.
 
-- **`envfolio+key`: a booth that opens its seeded secrets by itself.** With `envfolio+seed`, it
-  also copies the store key's private key files as gpg keeps them — still encrypted with the key's
-  passphrase, nothing unlocked on the host — so the booth's own gpg-agent asks for the passphrase
-  in the booth (the Console UI too) and needs no host: `booth --select
-  'envfolio+seed:"--secrets gh"+key' -- folio exec -s gh -- git push`, in a remote or cloud booth
-  as well. The key comes along on purpose, protected only by its passphrase; without `+key` the
-  seed stays encrypted items only. Passing a value in from the host
-  (`folio exec -s gh -- booth --select gh+token …`) remains the way to keep the key out.
-
 - **gh is now always git's credential helper for github.com,** not only when a token is set at
   start, so a token set later (`folio exec -s gh -- git push`) is used too. With no token gh answers
   nothing and git asks as before. The SSH-to-HTTPS rewrite for a booth without `ssh` follows the
@@ -52,8 +61,14 @@ This file contains a list of changes for each released version.
   or decrypted, the key is not unlocked) and copies just those files, with the store's key id and
   public key, into `.booth/.tmp/folio-seed/`; the booth's store is made from it. Items keep their
   paths and namespaces, so the same `folio exec` command gives the same result in the booth and on
-  the host — seed with the arguments you will run. Texts read with the public key alone; a secret
-  needs the private key, which never comes along. `seed` (default) makes the store only when the
+  the host — seed with the arguments you will run. Texts read with the public key alone. The store
+  key comes too: its private key files as gpg keeps them — still encrypted with the key's
+  passphrase, nothing unlocked on the host — so the booth's own gpg-agent asks for the passphrase in
+  the booth (the Console UI too) and needs no host: `booth --select 'envfolio+seed:"--secrets gh"'
+  -- folio exec -s gh -- git push` works in a remote or cloud booth as well. The key comes along on
+  purpose, protected only by its passphrase; passing a value in from the host
+  (`folio exec -s gh -- booth --select gh+token …`) is the way to keep it out. A key on a smartcard
+  cannot be copied: the items still come, with a warning. `seed` (default) makes the store only when the
   booth has none, so a store kept by `+store-cache` is used as it is; `envfolio+seed:"…",fill` adds
   what it lacks when it has the same key. folio must be on the host; when `--names` fails, the
   booth does not start and shows folio's message. The value can come from someone else's project

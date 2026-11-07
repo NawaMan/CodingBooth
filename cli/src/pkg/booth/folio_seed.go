@@ -19,7 +19,7 @@ import (
 )
 
 // Folio seed (envfolio+seed): the booth gets a copy of some items of the host's EnvFolio store,
-// still encrypted, so whoever holds the key decrypts them -- never the whole store, never a key.
+// still encrypted, and the store's key to open them -- never the whole store, never another key.
 //
 // The extension passes the items as `folio exec` arguments in run-args (-e CB_FOLIO_SEED=…), the
 // only way a template param reaches the host side. Before the container starts, the host's
@@ -29,14 +29,14 @@ import (
 // through its .booth mount; the envfolio startup hook makes it the booth's store (CB_FOLIO_SEED_MODE
 // says when). Paths keep their namespaces (@app2/@prod/…), so the same `folio exec --use …` means
 // the same thing in the booth and on the host.
+//
+// The store key comes too, so folio in the booth decrypts on its own (a remote or cloud booth has
+// no host to ask): its private key files, still protected by the passphrase, go the way every key
+// reaches a booth -- .booth/.tmp/gnupg-keys/ (see gnupg_keys.go), imported by the gnupg hook.
 const (
 	folioSeedEnv     = "CB_FOLIO_SEED"
 	folioSeedDirName = "folio-seed"
 	folioSeedPubKey  = "pubkey.asc"
-	// envfolio+key: also bring the store key's private key files, so folio in the booth
-	// decrypts on its own -- a remote or cloud booth has no host to ask.
-	folioSeedKeyEnv = "CB_FOLIO_SEED_KEY"
-	folioSeedKeyDir = "private-keys"
 )
 
 // folioCommand and gpgCommand are the host commands, variables so tests can stand in for them.
@@ -65,23 +65,33 @@ func PrepareFolioSeed(ctx appctx.AppContext) (appctx.AppContext, error) {
 	}
 	seedDir := filepath.Join(boothDir, ".tmp", folioSeedDirName)
 	items, err := buildFolioSeedFromHost(spec, ctx.Code(), seedDir)
-	keys := 0
-	if err == nil {
-		if want, _ := runArgEnvValue(ctx.RunArgs(), folioSeedKeyEnv); want == "1" || want == "true" {
-			keys, err = copyFolioSeedKeys(ctx.Code(), seedDir)
-		}
-	}
 	if err != nil {
 		os.RemoveAll(seedDir)
 		return ctx, fmt.Errorf("folio seed: %w", err)
 	}
 	// Every start says what came in, so a selection that takes more than meant is seen.
 	fmt.Fprint(os.Stderr, folioSeedReport(spec, items))
-	if keys > 0 {
+	// The store key. One that cannot be copied (on a smartcard) does not stop the seed: the items
+	// still come and the texts still read; only the secrets need the key brought another way.
+	keys, err := copyFolioSeedKey(ctx.Code(), seedDir, gnupgKeysDir(boothDir))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: EnvFolio seed: the store key could not be brought (%v); "+
+			"its secrets cannot be opened in the booth.\n", err)
+	} else {
 		fmt.Fprintf(os.Stderr, "Info: EnvFolio seed: and %d private key file(s) of the store key, "+
-			"still protected by its passphrase (envfolio+key).\n", keys)
+			"still protected by its passphrase.\n", keys)
 	}
 	return ctx, nil
+}
+
+// copyFolioSeedKey copies the private key files of the key(s) in the seed's .gpg-id into the
+// booth's key folder (gnupgKeysDir).
+func copyFolioSeedKey(codePath, seedDir, keysDir string) (int, error) {
+	idData, err := os.ReadFile(filepath.Join(seedDir, ".gpg-id"))
+	if err != nil {
+		return 0, err
+	}
+	return copyHostPrivateKeys(codePath, strings.Fields(string(idData)), filepath.Join(keysDir, gnupgPrivateKeysDir))
 }
 
 // folioSeedReport lists the items a seed copied, one per line.
@@ -128,7 +138,7 @@ func buildFolioSeedFromHost(spec, codePath, seedDir string) ([]string, error) {
 	}
 	// The texts are signed by the store's key: the booth needs its public half to read them.
 	// Without it the secrets still come; only reading a text fails, so this is a warning.
-	if err := exportFolioPubKey(codePath, filepath.Join(seedDir, folioSeedPubKey), ids); err != nil {
+	if err := exportHostPublicKeys(codePath, filepath.Join(seedDir, folioSeedPubKey), ids); err != nil {
 		fmt.Fprintf(os.Stderr, "Warning: folio seed: could not export the store's public key (%v); "+
 			"texts will not verify in the booth.\n", err)
 	}
@@ -205,28 +215,11 @@ func runHost(dir, name string, args ...string) (string, error) {
 
 // runArgEnvValue returns the value of the last `-e NAME=value` (or --env, --env=…) in runArgs.
 func runArgEnvValue(runArgs ilist.List[ilist.List[string]], name string) (string, bool) {
-	value, found := "", false
-	prefix := name + "="
-	runArgs.Range(func(_ int, group ilist.List[string]) bool {
-		items := group.Slice()
-		for i := 0; i < len(items); i++ {
-			var spec string
-			switch {
-			case (items[i] == "-e" || items[i] == "--env") && i+1 < len(items):
-				spec = items[i+1]
-				i++
-			case strings.HasPrefix(items[i], "--env="):
-				spec = strings.TrimPrefix(items[i], "--env=")
-			default:
-				continue
-			}
-			if strings.HasPrefix(spec, prefix) {
-				value, found = strings.TrimPrefix(spec, prefix), true
-			}
-		}
-		return true
-	})
-	return value, found
+	values := runArgEnvValues(runArgs, name)
+	if len(values) == 0 {
+		return "", false
+	}
+	return values[len(values)-1], true
 }
 
 // splitSeedArgs splits the seed's `folio exec` arguments as a shell would: on blanks, with
@@ -411,81 +404,3 @@ func copyStoreFile(storeDir, seedDir, rel string) error {
 	return out.Close()
 }
 
-// copyFolioSeedKeys copies the private key files of the key(s) in the seed's .gpg-id -- each is
-// <keygrip>.key in the host's gpg home, private-keys-v1.d/, already encrypted with the key's
-// passphrase -- into the seed's private-keys/. Nothing is unlocked and no passphrase is asked: the
-// booth's own gpg-agent asks it, in the booth, when a secret is opened. It is an error when the
-// host has none of them (a key on a smartcard, or another machine's key).
-func copyFolioSeedKeys(dir, seedDir string) (int, error) {
-	idData, err := os.ReadFile(filepath.Join(seedDir, ".gpg-id"))
-	if err != nil {
-		return 0, err
-	}
-	ids := strings.Fields(string(idData))
-	homeOut, err := runHost(dir, gpgconfCommand, "--list-dirs", "homedir")
-	if err != nil {
-		return 0, fmt.Errorf("`gpgconf --list-dirs homedir` failed: %w", err)
-	}
-	keyDir := filepath.Join(strings.TrimSpace(homeOut), "private-keys-v1.d")
-	args := append([]string{"--batch", "--with-colons", "--with-keygrip", "--list-secret-keys"}, ids...)
-	listing, err := runHost(dir, gpgCommand, args...)
-	if err != nil {
-		return 0, fmt.Errorf("gpg has no private key for %s: %w", strings.Join(ids, ", "), err)
-	}
-	dst := filepath.Join(seedDir, folioSeedKeyDir)
-	if err := os.MkdirAll(dst, 0o700); err != nil {
-		return 0, err
-	}
-	count := 0
-	for _, grip := range parseKeygrips(listing) {
-		if !isRegularFile(filepath.Join(keyDir, grip+".key")) {
-			continue // a stub (smartcard) or a subkey kept elsewhere
-		}
-		if err := copyStoreFile(keyDir, dst, grip+".key"); err != nil {
-			return 0, err
-		}
-		count++
-	}
-	if count == 0 {
-		return 0, fmt.Errorf("no private key file for %s in %s (on a smartcard, or not on this machine?)",
-			strings.Join(ids, ", "), keyDir)
-	}
-	return count, nil
-}
-
-// parseKeygrips returns the keygrips in `gpg --with-colons --with-keygrip` output (the "grp"
-// records, field 10), each once. Only 40 hex digits count: the value names a file.
-func parseKeygrips(listing string) []string {
-	var grips []string
-	seen := map[string]bool{}
-	for _, line := range strings.Split(listing, "\n") {
-		fields := strings.Split(line, ":")
-		if len(fields) < 10 || fields[0] != "grp" {
-			continue
-		}
-		grip := fields[9]
-		if keygripPattern.MatchString(grip) && !seen[grip] {
-			seen[grip] = true
-			grips = append(grips, grip)
-		}
-	}
-	return grips
-}
-
-var keygripPattern = regexp.MustCompile(`^[0-9A-F]{40}$`)
-
-// exportFolioPubKey writes the public keys of ids (armored) to dst, from the host's keyring.
-func exportFolioPubKey(dir, dst string, ids []string) error {
-	if len(ids) == 0 {
-		return fmt.Errorf("no key in .gpg-id")
-	}
-	args := append([]string{"--batch", "--armor", "--export"}, ids...)
-	out, err := runHost(dir, gpgCommand, args...)
-	if err != nil {
-		return err
-	}
-	if strings.TrimSpace(out) == "" {
-		return fmt.Errorf("gpg has no public key for %s", strings.Join(ids, ", "))
-	}
-	return os.WriteFile(dst, []byte(out), 0o644)
-}
