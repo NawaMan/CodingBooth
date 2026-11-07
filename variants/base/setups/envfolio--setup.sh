@@ -126,26 +126,6 @@ cat > "$STARTUP_FILE" <<'EOF'
 #!/usr/bin/env bash
 set -uo pipefail
 
-# ---- envfolio+agent: decrypt with the host's gpg-agent ----
-# The extension mounts the host agent's extra socket (made for remote use: it decrypts and signs,
-# but gives no key away) at CB_GPG_AGENT_SOCK. gpg here finds its agent at its own socket path, so
-# that path gets an Assuan redirect file pointing at the mounted one, and no-autostart keeps gpg
-# from starting an agent of its own in its place. Passphrase prompts appear on the host.
-if [[ -n "${CB_GPG_AGENT_SOCK:-}" && -S "$CB_GPG_AGENT_SOCK" ]]; then
-    agent_sock="$(gpgconf --list-dirs agent-socket 2>/dev/null)" || agent_sock=""
-    [[ -n "$agent_sock" ]] || agent_sock="${GNUPGHOME:-$HOME/.gnupg}/S.gpg-agent"
-    gnupg_dir="$(dirname "$agent_sock")"
-    mkdir -p "$gnupg_dir" && chmod 700 "$gnupg_dir"
-    gpgconf --kill gpg-agent >/dev/null 2>&1 || true
-    rm -f "$agent_sock"
-    printf '%%Assuan%%\nsocket=%s\n' "$CB_GPG_AGENT_SOCK" > "$agent_sock"
-    conf="${GNUPGHOME:-$HOME/.gnupg}/gpg.conf"
-    grep -qx 'no-autostart' "$conf" 2>/dev/null || echo 'no-autostart' >> "$conf"
-    echo "EnvFolio: gpg uses the host's gpg-agent (keys stay on the host)."
-elif [[ -n "${CB_GPG_AGENT_SOCK:-}" ]]; then
-    echo "EnvFolio: no host gpg-agent socket at $CB_GPG_AGENT_SOCK; secrets cannot be decrypted here."
-fi
-
 SEED="${CB_FOLIO_SEED_DIR:-/home/coder/code/.booth/.tmp/folio-seed}"   # override: tests only
 [[ -n "${CB_FOLIO_SEED:-}" && -s "$SEED/.gpg-id" ]] || exit 0
 MODE="${CB_FOLIO_SEED_MODE:-seed}"
@@ -156,6 +136,23 @@ say() { echo "EnvFolio seed: $*"; }
 
 # The texts are signed by the store's key; folio shows one only when that signature checks out.
 [[ -s "$SEED/pubkey.asc" ]] && gpg --batch --quiet --import "$SEED/pubkey.asc" >/dev/null 2>&1
+
+# envfolio+key: the store key's private key files, as gpg keeps them (<keygrip>.key, still encrypted
+# with the passphrase). Into this booth's gpg home, never over one already there; the booth's own
+# gpg-agent asks for the passphrase, in the booth, when a secret is opened. Done in every mode: a
+# store kept by +store-cache may still lack the key.
+if [[ -d "$SEED/private-keys" ]]; then
+    gnupg_home="${GNUPGHOME:-$HOME/.gnupg}"
+    mkdir -p "$gnupg_home/private-keys-v1.d" && chmod 700 "$gnupg_home" "$gnupg_home/private-keys-v1.d"
+    keys=0
+    for key in "$SEED/private-keys"/*.key; do
+        [[ -f "$key" ]] || continue
+        dst="$gnupg_home/private-keys-v1.d/$(basename "$key")"
+        [[ -e "$dst" ]] && continue
+        cp "$key" "$dst" && chmod 600 "$dst" && keys=$((keys + 1))
+    done
+    (( keys == 0 )) || say "brought $keys private key file(s) of the store key (passphrase-protected)."
+fi
 
 # commit_store MESSAGE -- record what was added, as folio does for its own changes.
 commit_store() {
@@ -176,7 +173,7 @@ if [[ ! -s "$STORE/.gpg-id" || ! -e "$STORE/.git" ]]; then
         exit 0
     fi
     mkdir -p "$STORE" && chmod 700 "$STORE"
-    (cd "$SEED" && find . -mindepth 1 -maxdepth 1 ! -name pubkey.asc -exec cp -a {} "$STORE/" \;)
+    (cd "$SEED" && find . -mindepth 1 -maxdepth 1 ! -name pubkey.asc ! -name private-keys -exec cp -a {} "$STORE/" \;)
     git -C "$STORE" init -q >/dev/null 2>&1
     commit_store "Seeded from the host: folio exec $CB_FOLIO_SEED"
     say "made $STORE from the host's items ($(seed_items | wc -l))."

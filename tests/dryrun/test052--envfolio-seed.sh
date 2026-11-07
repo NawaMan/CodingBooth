@@ -4,8 +4,7 @@
 # you may not use this file except in compliance with the License.
 
 # -----------------------------------------------------------------------------
-# envfolio+seed and +agent: the selection reaches the run, a dry run makes no
-# seed, and +agent mounts the host gpg-agent socket read-only
+# envfolio+seed: the selection reaches the run, and a dry run makes no seed
 #
 # The extension's params become -e CB_FOLIO_SEED / CB_FOLIO_SEED_MODE in
 # run-args: the host side reads the selection from there before the container
@@ -54,25 +53,11 @@ else
   printf '%s\n' "$OUT" | grep -i folio; exit 1
 fi
 
-# ---- envfolio+agent: the host agent's extra socket, read-only ----
-RUNTIME="$PROJECT/runtime"
-mkdir -p "$RUNTIME/gnupg"
-: > "$RUNTIME/gnupg/S.gpg-agent.extra"   # the missing-mount filter only checks it exists
-
-OUT=$(export XDG_RUNTIME_DIR="$RUNTIME"; dry 'envfolio+agent')
-if printf '%s\n' "$OUT" | grep -F -- "$RUNTIME/gnupg/S.gpg-agent.extra:/run/cb-gpg-agent.sock:ro" >/dev/null \
-  && printf '%s\n' "$OUT" | grep -F -- "CB_GPG_AGENT_SOCK=/run/cb-gpg-agent.sock" >/dev/null; then
-  print_test_result "true"  "$0" "4" "+agent: the host agent's extra socket is mounted read-only, CB_GPG_AGENT_SOCK points at it"
+OUT=$(dry 'envfolio+seed:"--secrets gh"+key')
+if printf '%s\n' "$OUT" | grep -F -- "CB_FOLIO_SEED_KEY=1" >/dev/null \
+  && printf '%s\n' "$OUT" | grep -F -- "CB_FOLIO_SEED=--secrets gh" >/dev/null; then
+  print_test_result "true"  "$0" "4" "+key asks the run for the store key's private key files (CB_FOLIO_SEED_KEY=1)"
 else
-  print_test_result "false" "$0" "4" "+agent: the host agent's extra socket is mounted read-only, CB_GPG_AGENT_SOCK points at it"
-  printf '%s\n' "$OUT" | grep -i -E 'gpg|skipping'; exit 1
-fi
-
-OUT=$(unset XDG_RUNTIME_DIR; dry 'envfolio+agent')
-if ! printf '%s\n' "$OUT" | grep -F -- ":/run/cb-gpg-agent.sock" >/dev/null \
-  && printf '%s\n' "$OUT" | grep -F "Skipping volume mount: host path does not exist: /nonexistent/gnupg/S.gpg-agent.extra" >/dev/null; then
-  print_test_result "true"  "$0" "5" "+agent with no XDG_RUNTIME_DIR: the mount is skipped with a notice"
-else
-  print_test_result "false" "$0" "5" "+agent with no XDG_RUNTIME_DIR: the mount is skipped with a notice"
-  printf '%s\n' "$OUT" | grep -i -E 'gpg|skipping'; exit 1
+  print_test_result "false" "$0" "4" "+key asks the run for the store key's private key files (CB_FOLIO_SEED_KEY=1)"
+  printf '%s\n' "$OUT" | grep -i folio; exit 1
 fi

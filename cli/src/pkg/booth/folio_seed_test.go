@@ -207,9 +207,10 @@ func stubHostTools(t *testing.T, folioScript, gpgScript string) {
 		}
 		return path
 	}
-	oldFolio, oldGpg := folioCommand, gpgCommand
+	oldFolio, oldGpg, oldGpgconf := folioCommand, gpgCommand, gpgconfCommand
 	folioCommand, gpgCommand = write("folio", folioScript), write("gpg", gpgScript)
-	t.Cleanup(func() { folioCommand, gpgCommand = oldFolio, oldGpg })
+	gpgconfCommand = write("gpgconf", `echo "$CB_TEST_GNUPGHOME"`)
+	t.Cleanup(func() { folioCommand, gpgCommand, gpgconfCommand = oldFolio, oldGpg, oldGpgconf })
 }
 
 func TestBuildFolioSeedFromHost(t *testing.T) {
@@ -349,5 +350,72 @@ func TestFolioSeedReport(t *testing.T) {
 		"        gh/user\n        @app1/server/db\n"
 	if got != want {
 		t.Errorf("report:\n%s\nwant:\n%s", got, want)
+	}
+}
+
+// `gpg --with-colons --with-keygrip --list-secret-keys <id>` from GnuPG 2.5.24, verbatim.
+const keygripListing = `sec:u:255:22:28A920C00F1DC63C:1794017463:::u:::scESC:::+::ed25519:::0:
+fpr:::::::::0123456789ABCDEF0123456728A920C00F1DC63C:
+grp:::::::::E46C9395D7426A1C84DB57D6CD874C312A280EBF:
+uid:u::::1794017463::ABCDEF::folio-test <t@example.com>::::::::::0:
+ssb:u:255:18:7664A239D4147971:1794017463::::::e:::+::cv25519::
+fpr:::::::::0123456789ABCDEF012345677664A239D4147971:
+grp:::::::::C57CA7B533407125984D2402DCA0A0D36B819A9D:
+`
+
+func TestParseKeygrips(t *testing.T) {
+	got := parseKeygrips(keygripListing + "grp:::::::::E46C9395D7426A1C84DB57D6CD874C312A280EBF:\ngrp:::::::::../../etc/passwd:\n")
+	want := []string{"E46C9395D7426A1C84DB57D6CD874C312A280EBF", "C57CA7B533407125984D2402DCA0A0D36B819A9D"}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("keygrips = %q, want %q (each once; only 40 hex digits)", got, want)
+	}
+}
+
+func TestCopyFolioSeedKeys(t *testing.T) {
+	gnupg := t.TempDir()
+	keyDir := filepath.Join(gnupg, "private-keys-v1.d")
+	os.MkdirAll(keyDir, 0o700)
+	os.WriteFile(filepath.Join(keyDir, "E46C9395D7426A1C84DB57D6CD874C312A280EBF.key"), []byte("protected-primary"), 0o600)
+	os.WriteFile(filepath.Join(keyDir, "C57CA7B533407125984D2402DCA0A0D36B819A9D.key"), []byte("protected-sub"), 0o600)
+	os.WriteFile(filepath.Join(keyDir, "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF.key"), []byte("another key"), 0o600)
+	t.Setenv("CB_TEST_GNUPGHOME", gnupg)
+	listingFile := filepath.Join(t.TempDir(), "listing")
+	os.WriteFile(listingFile, []byte(keygripListing), 0o600)
+	stubHostTools(t, `exit 0`, `echo "$@" > "`+listingFile+`.args"; cat "`+listingFile+`"`)
+
+	seed := t.TempDir()
+	os.WriteFile(filepath.Join(seed, ".gpg-id"), []byte("28A920C00F1DC63C\n"), 0o600)
+	n, err := copyFolioSeedKeys(t.TempDir(), seed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != 2 {
+		t.Errorf("copied %d key files, want 2 (the store key's own, not another key's)", n)
+	}
+	want := []string{".gpg-id", "private-keys/C57CA7B533407125984D2402DCA0A0D36B819A9D.key",
+		"private-keys/E46C9395D7426A1C84DB57D6CD874C312A280EBF.key"}
+	if got := listFiles(t, seed); !reflect.DeepEqual(got, want) {
+		t.Errorf("seed holds %q, want %q", got, want)
+	}
+	if b, _ := os.ReadFile(filepath.Join(seed, "private-keys/E46C9395D7426A1C84DB57D6CD874C312A280EBF.key")); string(b) != "protected-primary" {
+		t.Errorf("a key file must be copied as it is, got %q", b)
+	}
+	if args, _ := os.ReadFile(listingFile + ".args"); !strings.Contains(string(args), "--list-secret-keys 28A920C00F1DC63C") {
+		t.Errorf("gpg must be asked for the .gpg-id key, was run with %q", args)
+	}
+	if runtime.GOOS != "windows" {
+		if info, _ := os.Stat(filepath.Join(seed, "private-keys")); info.Mode().Perm() != 0o700 {
+			t.Errorf("private-keys/ is %o, want 700", info.Mode().Perm())
+		}
+	}
+}
+
+func TestCopyFolioSeedKeysWithoutKeyFiles(t *testing.T) {
+	t.Setenv("CB_TEST_GNUPGHOME", t.TempDir()) // no private-keys-v1.d: a smartcard, or another machine's key
+	stubHostTools(t, `exit 0`, `printf '%s' '`+keygripListing+`'`)
+	seed := t.TempDir()
+	os.WriteFile(filepath.Join(seed, ".gpg-id"), []byte("28A920C00F1DC63C\n"), 0o600)
+	if _, err := copyFolioSeedKeys(t.TempDir(), seed); err == nil || !strings.Contains(err.Error(), "no private key file") {
+		t.Errorf("no key file to copy must be an error, got %v", err)
 	}
 }

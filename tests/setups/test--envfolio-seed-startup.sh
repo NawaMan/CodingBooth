@@ -13,9 +13,9 @@
 #   fill           -- also adds what an existing store lacks, when it has the
 #                     same key; never replaces an item, never mixes keys.
 #
-# envfolio+agent mounts the host gpg-agent's extra socket at CB_GPG_AGENT_SOCK;
-# the hook points gpg at it with an Assuan redirect file at gpg's own socket path,
-# and no-autostart, so the booth decrypts with the host key and never holds it.
+# envfolio+key adds the store key's private key files (private-keys/<grip>.key,
+# still passphrase-protected): the hook puts them in ~/.gnupg/private-keys-v1.d
+# (700/600), never over one there, and never into the store itself.
 #
 # The hook is extracted from envfolio--setup.sh and run with a stub folio (for
 # `folio path`), gpg (records the import) and gpgconf; git is real.
@@ -145,25 +145,31 @@ run_hook "$WORK/h6" CB_FOLIO_SEED="gh"
     && check "true"  "a non-empty folder that is not a store is left alone" \
     || check "false" "a non-empty folder that is not a store is left alone" "$(files "$WORK/h6/.folio")"$'\n'"$OUT"
 
-# ---- 7. envfolio+agent: gpg is pointed at the host agent's socket ----
-SOCK="$WORK/agent.sock"
-python3 -c 'import socket,sys; socket.socket(socket.AF_UNIX).bind(sys.argv[1])' "$SOCK"
-run_hook "$WORK/h7" CB_GPG_AGENT_SOCK="$SOCK"
-redirect="$WORK/h7/.gnupg/S.gpg-agent"
-[[ "$RUN_EXIT" -eq 0 && "$(cat "$redirect" 2>/dev/null)" == $'%Assuan%\nsocket='"$SOCK" \
-   && "$(stat -c %a "$WORK/h7/.gnupg")" == 700 && "$(grep -cx no-autostart "$WORK/h7/.gnupg/gpg.conf")" == 1 ]] \
-    && check "true"  "agent: gpg's socket is a redirect to the host agent, with no-autostart" \
-    || check "false" "agent: gpg's socket is a redirect to the host agent, with no-autostart" \
-         "redirect: $(cat "$redirect" 2>&1)"$'\n'"gpg.conf: $(cat "$WORK/h7/.gnupg/gpg.conf" 2>&1)"$'\n'"$OUT"
+# ---- 7. envfolio+key: the store key's private key files ----
+KSEED="$WORK/seed-with-key"
+cp -a "$SEED" "$KSEED"
+mk "$KSEED/private-keys/E46C9395D7426A1C84DB57D6CD874C312A280EBF.key" "protected-primary"
+mk "$KSEED/private-keys/C57CA7B533407125984D2402DCA0A0D36B819A9D.key" "protected-sub"
+chmod 644 "$KSEED/private-keys/"*.key
+mkdir -p "$WORK/h7/.gnupg/private-keys-v1.d"
+echo "already-here" > "$WORK/h7/.gnupg/private-keys-v1.d/C57CA7B533407125984D2402DCA0A0D36B819A9D.key"
+run_hook "$WORK/h7" CB_FOLIO_SEED="--secrets gh" CB_FOLIO_SEED_DIR="$KSEED"
+K="$WORK/h7/.gnupg/private-keys-v1.d"
+[[ "$RUN_EXIT" -eq 0 && "$(cat "$K/E46C9395D7426A1C84DB57D6CD874C312A280EBF.key")" == protected-primary \
+   && "$(stat -c %a "$K/E46C9395D7426A1C84DB57D6CD874C312A280EBF.key")" == 600 \
+   && "$(stat -c %a "$K")" == 700 && "$(stat -c %a "$WORK/h7/.gnupg")" == 700 ]] \
+    && check "true"  "key: the private key files go to ~/.gnupg/private-keys-v1.d, 600 in a 700 folder" \
+    || check "false" "key: the private key files go to ~/.gnupg/private-keys-v1.d, 600 in a 700 folder" "$(ls -la "$K" 2>&1)"$'\n'"$OUT"
 
-run_hook "$WORK/h7" CB_GPG_AGENT_SOCK="$SOCK"
-[[ "$RUN_EXIT" -eq 0 && "$(grep -cx no-autostart "$WORK/h7/.gnupg/gpg.conf")" == 1 ]] \
-    && check "true"  "agent: a restart adds no-autostart once" \
-    || check "false" "agent: a restart adds no-autostart once" "$(cat "$WORK/h7/.gnupg/gpg.conf")"
+[[ "$(cat "$K/C57CA7B533407125984D2402DCA0A0D36B819A9D.key")" == already-here && ! -e "$WORK/h7/.folio/private-keys" \
+   && -f "$WORK/h7/.folio/gh/user.txt" ]] \
+    && check "true"  "key: a key file already there is kept, and none goes into the store" \
+    || check "false" "key: a key file already there is kept, and none goes into the store" "$(files "$WORK/h7/.folio")"
 
-run_hook "$WORK/h8" CB_GPG_AGENT_SOCK="$WORK/no-such.sock"
-[[ "$RUN_EXIT" -eq 0 && ! -e "$WORK/h8/.gnupg/S.gpg-agent" && "$OUT" == *"no host gpg-agent socket"* ]] \
-    && check "true"  "agent: no socket mounted -- nothing redirected, and it says so" \
-    || check "false" "agent: no socket mounted -- nothing redirected, and it says so" "$OUT"
+make_store "$WORK/h8/.folio" HOSTKEY
+run_hook "$WORK/h8" CB_FOLIO_SEED="--secrets gh" CB_FOLIO_SEED_DIR="$KSEED"
+[[ "$RUN_EXIT" -eq 0 && -f "$WORK/h8/.gnupg/private-keys-v1.d/E46C9395D7426A1C84DB57D6CD874C312A280EBF.key" ]] \
+    && check "true"  "key: brought even when a store is already there (seed mode keeps the store)" \
+    || check "false" "key: brought even when a store is already there (seed mode keeps the store)" "$OUT"
 
 $ALL_PASSED
