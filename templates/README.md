@@ -444,7 +444,7 @@ with no dependency on a language, so they sit here too.
 | `tools/docker-buildx`      | Docker Buildx |
 | `tools/docker-compose`     | Docker Compose |
 | `tools/duckdb`             | DuckDB |
-| `tools/envfolio`           | EnvFolio (`+store-cache`) |
+| `tools/envfolio`           | EnvFolio (`+store-cache`, `+seed`, `+store-host`) |
 | `tools/firebase`           | Firebase CLI |
 | `tools/floci`              | Floci (local AWS emulator) |
 | `tools/freelens`           | FreeLens |
@@ -453,6 +453,7 @@ with no dependency on a language, so they sit here too.
 | `tools/gcloud`             | Google Cloud SDK |
 | `tools/gh`                 | GitHub CLI |
 | `tools/glow`               | Glow |
+| `tools/gnupg`              | GnuPG keys from the host (`+keys`) |
 | `tools/gradle`             | Gradle |
 | `tools/harlequin`          | Harlequin |
 | `tools/helm`               | Helm |

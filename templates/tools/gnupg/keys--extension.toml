@@ -1,0 +1,14 @@
+cb-version = "1.0.0"
+display-name = "Bring Keys from the Host"
+display-disc = "Copy chosen private keys (passphrase-protected) and the public keyring from the host's gpg"
+display-detail = """At each start, copies the private keys GNUPG_KEYS names — fingerprints, key ids or emails, separated by blanks or commas, e.g. `me@example.com` — from the host's gpg home (private-keys-v1.d/) as gpg keeps them, still encrypted with each key's passphrase, together with the host's whole public keyring (public keys only). They go through .booth/.tmp/gnupg-keys/ (out of git, emptied at the next start) into the booth's ~/.gnupg; a key file already there is kept. Nothing is unlocked on the host and no passphrase is asked there: the booth's own gpg-agent asks for it, in the booth's terminal (the Console UI too), the first time a key is used. Only the named keys' private parts come — never the rest of the keyring's private keys, its trust database or its settings — and each start says which. The risk is the point of it: those keys are in the booth, protected only by their passphrase, and any code there can copy a key file (and see the passphrase when it is typed there). A key gpg does not know, or one on a smartcard (no key file to copy), stops the start with gpg's message. Needs gpg on the host. It cannot be combined with tools/envfolio+store-host, which already brings the host's whole keyring, live."""
+display-order = 1
+auto-select = false
+tags = ["gpg", "credential", "key", "host"]
+
+# The host side reads CB_GNUPG_KEYS from these run-args before the container starts (the only way a
+# param reaches it); the gnupg startup hook imports what it copied.
+run-args = ["-e", "CB_GNUPG_KEYS=${GNUPG_KEYS}"]
+
+[params.GNUPG_KEYS]
+default = ""

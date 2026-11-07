@@ -53,11 +53,12 @@ else
   printf '%s\n' "$OUT" | grep -i folio; exit 1
 fi
 
-OUT=$(dry 'envfolio+seed:"--secrets gh"+key')
-if printf '%s\n' "$OUT" | grep -F -- "CB_FOLIO_SEED_KEY=1" >/dev/null \
-  && printf '%s\n' "$OUT" | grep -F -- "CB_FOLIO_SEED=--secrets gh" >/dev/null; then
-  print_test_result "true"  "$0" "4" "+key asks the run for the store key's private key files (CB_FOLIO_SEED_KEY=1)"
+# The store key comes with every seed now: there is no +key to ask for it, and no flag for it.
+OUT=$(dry 'envfolio+seed:"--secrets gh"')
+if ! printf '%s\n' "$OUT" | grep -F -- "CB_FOLIO_SEED_KEY" >/dev/null \
+  && dry 'envfolio+seed:"--secrets gh"+key' | grep -F 'unknown extension "key"' >/dev/null; then
+  print_test_result "true"  "$0" "4" "the store key needs no +key: no CB_FOLIO_SEED_KEY, and envfolio+key is gone"
 else
-  print_test_result "false" "$0" "4" "+key asks the run for the store key's private key files (CB_FOLIO_SEED_KEY=1)"
+  print_test_result "false" "$0" "4" "the store key needs no +key: no CB_FOLIO_SEED_KEY, and envfolio+key is gone"
   printf '%s\n' "$OUT" | grep -i folio; exit 1
 fi

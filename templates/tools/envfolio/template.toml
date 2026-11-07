@@ -1,8 +1,8 @@
-cb-version = "2.5.0"
+cb-version = "2.5.1"
 display-name = "EnvFolio"
 primary = true
 display-disc = "Texts and secrets as environment variables, built on pass"
-display-detail = "Installs EnvFolio (the `folio` command), a command-line store for plain texts and GPG-encrypted secrets built on pass, which loads them into a command or a shell as environment variables (secrets only with --secrets). Already in every booth; select this to pin a version, or with +store-cache to keep the store and its GPG key across container restarts."
+display-detail = "Installs EnvFolio (the `folio` command), a command-line store for plain texts and GPG-encrypted secrets built on pass, which loads them into a command or a shell as environment variables (secrets only with --secrets). Already in every booth; select this to pin a version. Where the store and its GPG key live: alone, in the container (lost when it is recreated); +store-cache, in .booth/cache/ on this machine; +seed, chosen items and the store key copied from the host at each start; +store-host, the host's own store and keyring, live. To keep the key out of the booth altogether, run the booth under the host's folio instead: `folio exec -s gh -- booth --select gh+token`."
 display-order = 66
 tags = [
     "cli",
