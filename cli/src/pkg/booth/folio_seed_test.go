@@ -246,7 +246,7 @@ esac
 	if got := listFiles(t, seed); !reflect.DeepEqual(got, want) {
 		t.Errorf("seed holds %q, want %q", got, want)
 	}
-	if pub, _ := os.ReadFile(filepath.Join(seed, "pubkey.asc")); !strings.Contains(string(pub), "--export ABCDEF0123456789") {
+	if pub, _ := os.ReadFile(filepath.Join(seed, "pubkey.asc")); !strings.Contains(string(pub), "--export -- ABCDEF0123456789") {
 		t.Errorf("pubkey.asc must be the public key of the .gpg-id key, got %q", pub)
 	}
 }
@@ -371,7 +371,7 @@ func TestParseKeygrips(t *testing.T) {
 	}
 }
 
-func TestCopyFolioSeedKeys(t *testing.T) {
+func TestCopyFolioSeedKey(t *testing.T) {
 	gnupg := t.TempDir()
 	keyDir := filepath.Join(gnupg, "private-keys-v1.d")
 	os.MkdirAll(keyDir, 0o700)
@@ -385,37 +385,42 @@ func TestCopyFolioSeedKeys(t *testing.T) {
 
 	seed := t.TempDir()
 	os.WriteFile(filepath.Join(seed, ".gpg-id"), []byte("28A920C00F1DC63C\n"), 0o600)
-	n, err := copyFolioSeedKeys(t.TempDir(), seed)
+	keys := t.TempDir()
+	n, err := copyFolioSeedKey(t.TempDir(), seed, keys)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if n != 2 {
 		t.Errorf("copied %d key files, want 2 (the store key's own, not another key's)", n)
 	}
-	want := []string{".gpg-id", "private-keys/C57CA7B533407125984D2402DCA0A0D36B819A9D.key",
-		"private-keys/E46C9395D7426A1C84DB57D6CD874C312A280EBF.key"}
-	if got := listFiles(t, seed); !reflect.DeepEqual(got, want) {
-		t.Errorf("seed holds %q, want %q", got, want)
+	// The key goes the way every key reaches a booth, never into the seed (the store).
+	if got := listFiles(t, seed); !reflect.DeepEqual(got, []string{".gpg-id"}) {
+		t.Errorf("seed holds %q, want only .gpg-id", got)
 	}
-	if b, _ := os.ReadFile(filepath.Join(seed, "private-keys/E46C9395D7426A1C84DB57D6CD874C312A280EBF.key")); string(b) != "protected-primary" {
+	want := []string{"private-keys/C57CA7B533407125984D2402DCA0A0D36B819A9D.key",
+		"private-keys/E46C9395D7426A1C84DB57D6CD874C312A280EBF.key"}
+	if got := listFiles(t, keys); !reflect.DeepEqual(got, want) {
+		t.Errorf("key folder holds %q, want %q", got, want)
+	}
+	if b, _ := os.ReadFile(filepath.Join(keys, "private-keys/E46C9395D7426A1C84DB57D6CD874C312A280EBF.key")); string(b) != "protected-primary" {
 		t.Errorf("a key file must be copied as it is, got %q", b)
 	}
-	if args, _ := os.ReadFile(listingFile + ".args"); !strings.Contains(string(args), "--list-secret-keys 28A920C00F1DC63C") {
+	if args, _ := os.ReadFile(listingFile + ".args"); !strings.Contains(string(args), "--list-secret-keys -- 28A920C00F1DC63C") {
 		t.Errorf("gpg must be asked for the .gpg-id key, was run with %q", args)
 	}
 	if runtime.GOOS != "windows" {
-		if info, _ := os.Stat(filepath.Join(seed, "private-keys")); info.Mode().Perm() != 0o700 {
+		if info, _ := os.Stat(filepath.Join(keys, "private-keys")); info.Mode().Perm() != 0o700 {
 			t.Errorf("private-keys/ is %o, want 700", info.Mode().Perm())
 		}
 	}
 }
 
-func TestCopyFolioSeedKeysWithoutKeyFiles(t *testing.T) {
+func TestCopyFolioSeedKeyWithoutKeyFiles(t *testing.T) {
 	t.Setenv("CB_TEST_GNUPGHOME", t.TempDir()) // no private-keys-v1.d: a smartcard, or another machine's key
 	stubHostTools(t, `exit 0`, `printf '%s' '`+keygripListing+`'`)
 	seed := t.TempDir()
 	os.WriteFile(filepath.Join(seed, ".gpg-id"), []byte("28A920C00F1DC63C\n"), 0o600)
-	if _, err := copyFolioSeedKeys(t.TempDir(), seed); err == nil || !strings.Contains(err.Error(), "no private key file") {
+	if _, err := copyFolioSeedKey(t.TempDir(), seed, t.TempDir()); err == nil || !strings.Contains(err.Error(), "no private key file") {
 		t.Errorf("no key file to copy must be an error, got %v", err)
 	}
 }

@@ -67,8 +67,16 @@ func (runner *BoothRunner) Run() error {
 	ctx = CheckHostPortsFree(ctx)
 	ctx = ShowDebugBanner(ctx)
 	ctx = PrepareBoothTmp(ctx)
-	// After PrepareBoothTmp, which empties .booth/.tmp/: the seed it writes there is this start's.
+	// envfolio+store-host first: a combination it refuses must not have copied anything yet.
+	if ctx, err = PrepareFolioHost(ctx); err != nil {
+		return err
+	}
+	// After PrepareBoothTmp, which empties .booth/.tmp/: the seed and keys written there are this
+	// start's.
 	if ctx, err = PrepareFolioSeed(ctx); err != nil {
+		return err
+	}
+	if ctx, err = PrepareGnupgKeys(ctx); err != nil {
 		return err
 	}
 	// WritePortManifest and ApplyEnvFile both run after PrepareBoothTmp so the
