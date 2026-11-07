@@ -91,7 +91,7 @@ setup	elixir	1.1.0	babd375fad790de916e90d4b579af09636776c061b51d4bd290e066fc1db9
 setup	elixir-code-extension	1.0.0	1743fe565bbebf15186049e8fc3dee0bfedf050c56c3e26cdf7fa2e2c03b1cc4	variants/base/setups/elixir-code-extension--setup.sh
 setup	elm	1.2.0	cde7019ecf2f9789bf0f9c4ad5bbf3690f001c69df6b9bf83836fc42994a20a2	variants/base/setups/elm--setup.sh
 setup	elm-code-extension	1.0.0	6e0caa93413bd80117a033e9a2f94c537a9867e775427f778347a4f8e312aedc	variants/base/setups/elm-code-extension--setup.sh
-setup	envfolio	2.5.0	4f2dc7ed6b22fc5ac362af890c715f787937a6062dd5bd7c70cba63a0b2ef953	variants/base/setups/envfolio--setup.sh
+setup	envfolio	2.6.0	37174816d28bcde9cecb2e0abf565eb208b53e20c2a340fe2f8775934005d534	variants/base/setups/envfolio--setup.sh
 setup	erlang	1.0.0	24ad8e50ad69aef9725262acd39b14885d8007f85bacd31e360b75a39d6175ab	variants/base/setups/erlang--setup.sh
 setup	erlang-code-extension	1.0.0	6e5b09d75439bec5b67b899d850b0a99cb07c3fe72052e8061458843f60aff70	variants/base/setups/erlang-code-extension--setup.sh
 setup	excalidraw	1.1.0	02f04628f0678822959537b54d80a34743aae9c1d30c77b41fb45aaa06f34f87	variants/base/setups/excalidraw--setup.sh
@@ -721,6 +721,7 @@ extension	elixir+mix-deps	1.0.0	22616ac46a460263aa755b2639698546c95cba7e46a5e638
 extension	elixir+repl-history	1.0.0	3516d04cfa6733442c41993f050f6d0d58a8d2400c95c7b161c0342be94ed53a	templates/languages/elixir/repl-history--extension.toml
 extension	elixir+vscode-ext	1.0.0	3957ded1247420d09f277913d2598a7717d4d1d6dc16dee3d8c08bdc7b0df913	templates/languages/elixir/vscode-ext--extension.toml
 extension	elm+vscode-ext	1.0.0	e7db7995335a5c73a4a79143ee82c59ad8d021edea1037bea9f06dcdbb367d9e	templates/languages/elm/vscode-ext--extension.toml
+extension	envfolio+seed	1.0.0	ac9d851400cf980d0e5590659982e01e9a9e1ad692708a9726a20caa0d9c3f25	templates/tools/envfolio/seed--extension.toml
 extension	envfolio+store-cache	2.0.1	2d792fe969aa23b617e8e32b3e6ffcf13d925e05cdeb425045e1d1702192a344	templates/tools/envfolio/store-cache--extension.toml
 extension	erlang+vscode-ext	1.0.0	34931fad7207f9b5f0c9305fc1fde92cb8279cad00888b2281c95d8ee61b68b7	templates/languages/erlang/vscode-ext--extension.toml
 extension	excalidraw+autostart	1.0.0	3f44a9a28ac8113581eedfee087e4ddb1c6e0078ee9e232af86320cee76955b3	templates/tools/excalidraw/autostart--extension.toml
