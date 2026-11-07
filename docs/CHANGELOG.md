@@ -15,7 +15,9 @@ This file contains a list of changes for each released version.
   needs the private key, which never comes along. `seed` (default) makes the store only when the
   booth has none, so a store kept by `+store-cache` is used as it is; `envfolio+seed:"…",fill` adds
   what it lacks when it has the same key. folio must be on the host; when `--names` fails, the
-  booth does not start and shows folio's message.
+  booth does not start and shows folio's message. The value can come from someone else's project
+  config, so only entries, `VAR=<name>`, `--secrets`, `--all`, `--use <@namespace>` and
+  `--vars <file>` inside the project are accepted, and each start lists the items it copied.
 
 - **The `ssh` template is folded into `openssh+credential`.** `ssh` mounted the host `~/.ssh` but
   installed no ssh client, so git over SSH still failed (`cannot run ssh`). `openssh+credential`
