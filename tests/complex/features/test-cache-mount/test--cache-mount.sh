@@ -15,6 +15,8 @@
 # Test 4: A save by rename (write a new file, mv it over) persists too
 # Test 5: zsh rewriting its history file (fc -W, a rename) persists
 # Test 6: A path in both .booth/cache/ and .booth/shared/ refuses to start
+# Test 7: A folder config.toml does not declare (a deselected template's) is not
+#         mounted, and the start names it
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -36,6 +38,14 @@ mkdir -p .booth/cache/opt/testapp
 echo "" > .booth/cache/opt/testapp/.mount-this
 echo "CACHED_DATA" > .booth/cache/opt/testapp/data.txt
 
+# Only what config.toml declares is mounted. The fixture's config.toml is a stub:
+# add the declarations for this run, and put the stub back on exit.
+cp .booth/config.toml .booth/config.toml.orig
+cat >> .booth/config.toml <<'TOML'
+cache-files = ["home/coder/.bash_history", "home/coder/.zsh_history"]
+cache-dirs = ["opt/testapp"]
+TOML
+
 # Ensure .gitignore contains cache/ (required by runtime validation)
 if ! grep -q '^cache/' .booth/.gitignore 2>/dev/null; then
   echo "cache/" >> .booth/.gitignore
@@ -44,6 +54,7 @@ fi
 # Cleanup cache on exit
 cleanup() {
   rm -rf .booth/cache .booth/shared
+  [[ -f .booth/config.toml.orig ]] && mv .booth/config.toml.orig .booth/config.toml
   sed_inplace '/^cache\/$/d' .booth/.gitignore 2>/dev/null || true
 }
 trap cleanup EXIT
@@ -123,7 +134,10 @@ fi
 # refuses before Docker does, and names both.
 mkdir -p .booth/shared/home/coder
 echo "SHARED" > .booth/shared/home/coder/.bash_history
+cp .booth/config.toml .booth/config.toml.t6
+echo 'shared-files = ["home/coder/.bash_history"]' >> .booth/config.toml
 ACTUAL=$(run_coding_booth -- true 2>&1 >/dev/null || true)
+mv .booth/config.toml.t6 .booth/config.toml
 rm -rf .booth/shared
 
 if [[ "$ACTUAL" == *"both Cache and Shared"* && "$ACTUAL" == *".booth/shared/home/coder/.bash_history"* ]]; then
@@ -131,6 +145,23 @@ if [[ "$ACTUAL" == *"both Cache and Shared"* && "$ACTUAL" == *".booth/shared/hom
 else
   print_test_result "false" "$0" "6" "a path in both cache and shared should refuse to start"
   echo "  Actual stderr: $ACTUAL"
+  FAILED=$((FAILED + 1))
+fi
+
+# Test 7: a marked folder no template or config.toml entry declares -- what a
+# deselected template leaves behind -- is not mounted, and the start says so.
+mkdir -p .booth/cache/opt/leftover
+: > .booth/cache/opt/leftover/.mount-this
+echo "LEFTOVER" > .booth/cache/opt/leftover/data.txt
+OUTPUT=$(run_coding_booth -- 'cat /opt/leftover/data.txt 2>/dev/null || echo NOT_MOUNTED' 2>&1 || true)
+rm -rf .booth/cache/opt/leftover
+
+if [[ "$OUTPUT" == *"NOT_MOUNTED"* && "$OUTPUT" != *"LEFTOVER"$'\n'* \
+      && "$OUTPUT" == *".booth/cache/opt/leftover/"* && "$OUTPUT" == *"booth prune cache"* ]]; then
+  print_test_result "true" "$0" "7" "an undeclared folder is not mounted, and the start names it"
+else
+  print_test_result "false" "$0" "7" "an undeclared folder should not mount, with a notice naming it"
+  echo "  Output: $OUTPUT"
   FAILED=$((FAILED + 1))
 fi
 

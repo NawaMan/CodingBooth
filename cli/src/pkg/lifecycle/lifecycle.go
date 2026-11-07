@@ -473,10 +473,29 @@ func Prune(args []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) e
 	engineChoice := engineFlag(flagSet)
 	yes := flagSet.Bool("yes", false, "Skip confirmation prompt")
 	flagSet.BoolVar(yes, "y", false, "Skip confirmation prompt")
+	code := flagSet.String("code", "", "The project folder (prune cache|shared; default: the current folder)")
 	flagSet.SetOutput(stderr)
 
 	if err := parseLifecycleFlags(flagSet, args); err != nil {
 		return commandExit(2, "")
+	}
+
+	// `booth prune cache|shared`: this project's leftover Cache or Shared items, not containers.
+	if flagSet.NArg() > 0 {
+		kind, ok := pruneDataKind(flagSet.Arg(0))
+		if !ok || flagSet.NArg() > 1 {
+			return commandExit(2, fmt.Sprintf("Error: booth prune takes no argument, or one of: cache, shared (got %q)",
+				strings.Join(flagSet.Args(), " ")))
+		}
+		codeDir := *code
+		if codeDir == "" {
+			codeDir, _ = os.Getwd()
+		}
+		containers, queryErr := managedContainersAcross(resolveLifecycleEngines(codeDir, *engineChoice), false, stderr)
+		return pruneData(kind, codeDir, *yes, containers, queryErr, stdin, stdout, stderr)
+	}
+	if *code != "" {
+		return commandExit(2, "Error: --code is for booth prune cache|shared")
 	}
 
 	engines := resolveLifecycleEngines("", *engineChoice)
