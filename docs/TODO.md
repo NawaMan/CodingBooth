@@ -82,6 +82,32 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
 - [ ] ...
 
 ## Features
+- [ ] **Default templates — top-level templates in every booth unless deselected with `~name`.**
+      Some tools most people want but some will swap for their own: `gh` (needed for git to use a
+      token, e.g. `folio exec -s gh -- git push` with `envfolio+seed:"--secrets gh"+key`, where
+      forgetting `--select gh` fails with `cannot run ssh`), and TTT as the editor. Today a
+      top-level template is in a booth only when named or pulled in by `requires`; "always there"
+      exists only as tools baked into the base image (TTT, `folio`, `git`), which cannot be removed.
+      Approach: the same behaviour extensions already have one level down (`auto-select = true` +
+      `~` to drop, e.g. `java/idea~jdk-sdk`) — the selection parser, TUI and config-header DSL
+      already understand `~`. Three tiers, decided with the user (2026-11-07):
+      - **Core** — baked into the base image, not a template (`git`, `folio`, booth tooling):
+        never deselectable. Anything that must always be there goes here, not into a locked
+        template, so "default" stays purely "on unless you opt out".
+      - **Default** — `default = true` in `template.toml`: selected in every new config, TUI shows
+        it pre-checked, `~gh` drops it. **Unless a selected template `requires` it**: then `~gh` is
+        an error naming who needs it (`~gh: gh-copilot requires gh`), and the TUI shows it locked
+        with that reason. The lock comes from `requires`, not a separate flag kept in sync by hand.
+      - **Optional** — today's templates.
+      `booth config` records the decision in the header DSL (`gh` / `~gh`), so a default set that
+      grows later does not change an existing booth on reconfigure.
+      Work besides the flag: audit the catalog for undeclared uses of each new default (a setup
+      that calls `gh` without `requires`) and declare them, or deselecting breaks it silently.
+      First candidates: `gh`, `ttt`.
+      Open questions: TTT — keep the binary baked into the image (fast, shared layer; `~ttt` only
+      drops its editor role: `EDITOR`, the `editor` link, theme and LSP wiring) or move it fully
+      into the template (removable, but built per booth). How a default is shown in
+      `booth template list` and recipes. Whether `booth express --select` adds defaults too.
 - [ ] **Extend `--egress` to DNS: today it filters HTTP(S) only, so data can still leave in DNS
       queries.** Not a bug — DNS is let out on purpose (`cli/src/pkg/booth/egress_setup.go:455-456`,
       documented in `docs/implementations/EGRESS.md`), and egress was built as an HTTP(S) host
