@@ -142,8 +142,10 @@ done
 ./build/cli-build.sh
 ```
 
-This stamp is a session label, not a release — `work-finish` restores it to match main before
-landing. Full text: `AGENTS.md` → *Worktree version stamp*.
+This stamp is a session label, not a release. Commit it normally — alone, or inside the first
+feature commit — and never add a "restore main version" commit later: `work-finish` strips the
+stamp out of the branch history (`build/strip-session-stamp.sh`), so main never sees it.
+Full text: `AGENTS.md` → *Worktree version stamp*.
 
 If step 4 stashed something, bring it across now — `apply`, then `drop` only once you've eyeballed
 the result:
@@ -169,10 +171,10 @@ Tell the user, plainly:
   (`x.x.x--<name>` in `version.txt`);
 - that the branch is created and that you will **commit to it as you go**, without asking (Rule 8:
   commits are free inside a worktree; push and landing still wait for the user). The version stamp
-  is a session label and is restored to match main before landing;
+  is a session label and is stripped from the branch history when it lands;
 - that they can open `worktree/<name>` in GitKraken or an editor, and that if they'd rather run a
   fresh agent inside the session they can start one from that folder;
-- that the session ends with **`work-finish`**, which rebases, tests, merges (`--no-ff`, or a
+- that the session ends with **`work-finish`**, which strips the stamp, rebases, tests, merges (`--no-ff`, or a
   fast-forward if the branch is a single commit), and removes the worktree and branch.
 
 Then start the approved work — in that folder, and only there.
