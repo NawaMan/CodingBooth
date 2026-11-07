@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.2.0
+# cb-version: 0.3.0
 
 # gnupg--setup.sh — Install GnuPG 2.5 into /usr/local, so it shadows Ubuntu's
 # gpg on PATH: prebuilt when CodingBoothPrebuilt has it, else from the release.
@@ -202,6 +202,48 @@ for b in bin/gpg bin/gpg-agent bin/gpgsm bin/gpgconf bin/dirmngr libexec/keyboxd
   fi
 done
 
+# ---- startup: keys brought from the host (gnupg+keys, envfolio+seed) ----
+# The CLI copies the private key files of the keys asked for -- private-keys-v1.d/<keygrip>.key, as
+# the host's gpg keeps them, still encrypted with the key's passphrase -- into
+# .booth/.tmp/gnupg-keys/private-keys/, and for gnupg+keys the host's public keyring into
+# pubkeys.asc. This hook puts them into the booth's gpg home, never over a key file already there;
+# the booth's own gpg-agent asks for a passphrase, in the booth, when a key is used.
+STARTUP_FILE="/usr/share/startup.d/55-cb-gnupg-keys--startup.sh"
+mkdir -p "$(dirname "$STARTUP_FILE")"
+cat > "$STARTUP_FILE" <<'EOF'
+#!/usr/bin/env bash
+set -uo pipefail
+
+KEYS="${CB_GNUPG_KEYS_DIR:-/home/coder/code/.booth/.tmp/gnupg-keys}"   # override: tests only
+[[ -d "$KEYS" ]] || exit 0
+
+say() { echo "GnuPG keys: $*"; }
+gnupg_home="${GNUPGHOME:-$HOME/.gnupg}"
+mkdir -p "$gnupg_home" && chmod 700 "$gnupg_home"
+
+if [[ -s "$KEYS/pubkeys.asc" ]]; then
+    if gpg --batch --quiet --import "$KEYS/pubkeys.asc" >/dev/null 2>&1; then
+        say "imported the host's public keyring."
+    else
+        say "could not import the host's public keyring."
+    fi
+fi
+
+if [[ -d "$KEYS/private-keys" ]]; then
+    mkdir -p "$gnupg_home/private-keys-v1.d" && chmod 700 "$gnupg_home/private-keys-v1.d"
+    keys=0
+    for key in "$KEYS/private-keys"/*.key; do
+        [[ -f "$key" ]] || continue
+        dst="$gnupg_home/private-keys-v1.d/$(basename "$key")"
+        [[ -e "$dst" ]] && continue
+        cp "$key" "$dst" && chmod 600 "$dst" && keys=$((keys + 1))
+    done
+    (( keys == 0 )) || say "brought $keys private key file(s) from the host (passphrase-protected)."
+fi
+true
+EOF
+chmod 755 "$STARTUP_FILE"
+
 echo "✅ GnuPG ${VERSION} installed."
 echo -n "   gpg → "; gpg --version | head -1
 
@@ -210,6 +252,7 @@ cat <<'EON'
 - gpg, gpg-agent, gpgconf, dirmngr from /usr/local/bin shadow Ubuntu's 2.4.
 - Post-quantum key:   gpg --quick-gen-key you@example.com pqc
 - If an older agent is still running:   gpgconf --kill all
+- Keys from the host:   select tools/gnupg+keys:"<key id or email>"
 
 Notes:
 - Ubuntu's gnupg packages stay installed for apt; /usr/bin/gpg is still 2.4.

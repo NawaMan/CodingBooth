@@ -206,8 +206,9 @@ booth's home at start, read-only:
 | `openssh+keys` | only the keys in one folder you choose (default `~/.ssh/booth`) — e.g. a deploy key |
 | `openssh+credential` | all of `~/.ssh`, every private key included — the you-are-on-your-own mode, for code you trust |
 | `gh+token` | GitHub CLI login, from the host `GH_TOKEN` (`GH_TOKEN=$(gh auth token) booth …`); git uses it too, an SSH remote included when the booth has no `ssh` |
-| `envfolio+seed` | chosen items of your host's EnvFolio store, still encrypted (`envfolio+seed:"gh @app1 --secrets"` — the arguments you give `folio exec`) |
-| `envfolio+key` | with `+seed`, the store key's private key too (passphrase-protected), so `folio` in the booth opens the secrets itself: `envfolio+seed:"--secrets gh"+key` |
+| `envfolio+seed` | chosen items of your host's EnvFolio store, still encrypted, and the store key (passphrase-protected), so `folio` in the booth opens the secrets itself (`envfolio+seed:"gh @app1 --secrets"` — the arguments you give `folio exec`) |
+| `envfolio+store-host` | your host's whole EnvFolio store and gpg keyring, live and writable — every private key included |
+| `gnupg+keys` | chosen GPG keys (passphrase-protected) and your public keyring: `gnupg+keys:"me@example.com"` |
 | `claude-code+credential`, `codex+credential`, `gemini-cli+credential`, … | that AI tool's login |
 
 Bring in only what the project needs. Every credential in the booth is reachable by whatever code

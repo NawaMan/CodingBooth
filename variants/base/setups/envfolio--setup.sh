@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 2.7.0
+# cb-version: 2.8.0
 
 set -Eeuo pipefail
 
@@ -119,7 +119,6 @@ rm -f /usr/local/bin/envfolio
 #                     with another key could not read them: secrets are encrypted to the seed's key,
 #                     texts signed by it). What is already there is never replaced.
 # Paths are kept (@app2/@prod/...), so the same `folio exec` means the same here as on the host.
-# Decrypting a secret still needs the private key: that is up to whoever uses the booth.
 STARTUP_FILE="/usr/share/startup.d/60-cb-envfolio--startup.sh"
 mkdir -p "$(dirname "$STARTUP_FILE")"
 cat > "$STARTUP_FILE" <<'EOF'
@@ -137,22 +136,9 @@ say() { echo "EnvFolio seed: $*"; }
 # The texts are signed by the store's key; folio shows one only when that signature checks out.
 [[ -s "$SEED/pubkey.asc" ]] && gpg --batch --quiet --import "$SEED/pubkey.asc" >/dev/null 2>&1
 
-# envfolio+key: the store key's private key files, as gpg keeps them (<keygrip>.key, still encrypted
-# with the passphrase). Into this booth's gpg home, never over one already there; the booth's own
-# gpg-agent asks for the passphrase, in the booth, when a secret is opened. Done in every mode: a
-# store kept by +store-cache may still lack the key.
-if [[ -d "$SEED/private-keys" ]]; then
-    gnupg_home="${GNUPGHOME:-$HOME/.gnupg}"
-    mkdir -p "$gnupg_home/private-keys-v1.d" && chmod 700 "$gnupg_home" "$gnupg_home/private-keys-v1.d"
-    keys=0
-    for key in "$SEED/private-keys"/*.key; do
-        [[ -f "$key" ]] || continue
-        dst="$gnupg_home/private-keys-v1.d/$(basename "$key")"
-        [[ -e "$dst" ]] && continue
-        cp "$key" "$dst" && chmod 600 "$dst" && keys=$((keys + 1))
-    done
-    (( keys == 0 )) || say "brought $keys private key file(s) of the store key (passphrase-protected)."
-fi
+# The store key's private key files come with every seed, but not through here: they go the way
+# every key reaches a booth, .booth/.tmp/gnupg-keys/, imported by the gnupg startup hook (55),
+# which runs before this one.
 
 # commit_store MESSAGE -- record what was added, as folio does for its own changes.
 commit_store() {

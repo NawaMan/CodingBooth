@@ -1,0 +1,22 @@
+cb-version = "1.0.0"
+display-name = "Host Store (live)"
+display-disc = "Use the host's EnvFolio store and gpg keyring in the booth, live — private keys included"
+display-detail = """Mounts the host's EnvFolio store (FOLIO_HOST_STORE, default ~/.folio) at the booth's ~/.folio and the host's gpg home (FOLIO_HOST_GNUPG, default ~/.gnupg) at its ~/.gnupg, read-write: the booth uses the same store and the same keys as the host, and an item added or removed in the booth is added or removed on the host. The booth's own gpg-agent asks for the store key's passphrase in the booth's terminal; it keeps its sockets in /run/user/<uid>/gnupg inside the booth, not in the shared gpg home. This is full trust: every private key in the keyring is in the booth, and anything run there can read, change or copy the store and the keys (and see a passphrase typed there). Each start says so. Both host folders must exist (`folio init` on the host first). It cannot be combined with +store-cache, +seed or gnupg+keys — each would bring a second store or key — and the booth does not start if it is. Needs the booth to run on the machine that has the store: not for a remote or cloud booth."""
+display-order = 94
+auto-select = false
+tags = ["secrets", "credential", "gpg", "host"]
+
+# The CLI reads CB_FOLIO_HOST from these run-args before the container starts: it checks the
+# combination and the host folders, adds the /run/user/<uid> tmpfs for gpg's sockets, and warns.
+run-args = [
+    "-v", "${FOLIO_HOST_STORE}:/home/coder/.folio",
+    "-v", "${FOLIO_HOST_GNUPG}:/home/coder/.gnupg",
+    "-e", "FOLIO_STORE_DIR=/home/coder/.folio",
+    "-e", "CB_FOLIO_HOST=1",
+]
+
+[params.FOLIO_HOST_STORE]
+default = "~/.folio"
+
+[params.FOLIO_HOST_GNUPG]
+default = "~/.gnupg"

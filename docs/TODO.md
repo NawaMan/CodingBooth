@@ -84,7 +84,7 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
 ## Features
 - [ ] **Default templates — top-level templates in every booth unless deselected with `~name`.**
       Some tools most people want but some will swap for their own: `gh` (needed for git to use a
-      token, e.g. `folio exec -s gh -- git push` with `envfolio+seed:"--secrets gh"+key`, where
+      token, e.g. `folio exec -s gh -- git push` with `envfolio+seed:"--secrets gh"`, where
       forgetting `--select gh` fails with `cannot run ssh`), and TTT as the editor. Today a
       top-level template is in a booth only when named or pulled in by `requires`; "always there"
       exists only as tools baked into the base image (TTT, `folio`, `git`), which cannot be removed.
