@@ -95,6 +95,7 @@ USAGE:
   %s restart [--name <n>] [--timeout <n>]         (restart a running booth)
   %s remove [--name <n>] [--force]             (remove booth container(s))
   %s prune [--yes]                             (remove stopped booth containers)
+  %s prune cache|shared [--yes] [--code <p>]   (delete this project's undeclared cache/shared items)
   %s shell [--name <n>] [--shell <s>]          (open interactive shell in booth)
   %s exec [--name <n>] -- <command>            (run a command in a running booth)
   %s cp [options] SOURCE DESTINATION          (copy between host and booth)
@@ -341,6 +342,7 @@ EXAMPLES:
 		s, s, s, s, s, s,
 		s,
 		s, s, s, s, s,
+		s,
 	)
 	fmt.Println("\nCOPY AND INSPECTION COMMANDS:")
 	for _, command := range []string{"cp", "inspect", "stats", "top", "diff", "wait"} {
@@ -650,14 +652,23 @@ OPTIONS:
 
 func showHelpPrune() {
 	s := scriptName()
-	fmt.Printf(`%s prune — remove stopped booth containers
+	fmt.Printf(`%s prune — remove stopped booth containers, or a project's leftover cache/shared items
 
 USAGE:  %s prune [options]
+        %s prune cache|shared [options]
+
+With no argument, removes every stopped booth container (and orphaned sidecars).
+
+With cache or shared (share), deletes what this project's .booth/cache/ or .booth/shared/
+holds that config.toml does not declare: what a deselected template left behind, which booth
+no longer mounts. Lists the items and asks first. Refuses while a booth runs on the project.
+.booth/cache/ is not in git, so what is deleted there is gone.
 
 OPTIONS:
   --engine <docker|podman|apple>  Select the engine explicitly
   --yes           Skip confirmation prompt
-`, s, s)
+  --code <path>   The project folder (cache|shared only; default: the current folder)
+`, s, s, s)
 }
 
 func showHelpExample() {
