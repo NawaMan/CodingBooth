@@ -93,6 +93,7 @@ func TestAddCacheAndSharedMounts_CacheStepsAsideForRunArgMount(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	writeBoothConfig(t, spec, "cache-dirs = [\"home/coder/.cargo/registry\", \"home/coder/.cargo/git\"]\n")
 	hostRegistry := t.TempDir()
 
 	builder := &appctx.AppContextBuilder{
@@ -131,6 +132,7 @@ func TestAddCacheAndSharedMounts_CacheStepsAsideForCreateMount(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, ".mount-this"), nil, 0644); err != nil {
 		t.Fatal(err)
 	}
+	writeBoothConfig(t, spec, "cache-dirs = [\"home/coder/.cargo/registry\"]\n")
 	notYet := filepath.Join(t.TempDir(), "registry")
 
 	builder := &appctx.AppContextBuilder{
@@ -162,6 +164,7 @@ func TestAddCacheAndSharedMounts_AnySharedPathAndTopLevelNotice(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	writeBoothConfig(t, spec, "cache-dirs = [\"data\"]\nshared-dirs = [\"srv/app\"]\n")
 	for _, f := range []string{"shared/README.md", "cache/README.md"} {
 		if err := os.WriteFile(filepath.Join(spec, filepath.FromSlash(f)), []byte("doc"), 0644); err != nil {
 			t.Fatal(err)
@@ -205,5 +208,82 @@ func TestAddCacheAndSharedMounts_AnySharedPathAndTopLevelNotice(t *testing.T) {
 		if !strings.Contains(string(notices), want) {
 			t.Errorf("expected a notice naming %s, got %q", want, notices)
 		}
+	}
+}
+
+// writeBoothConfig writes boothDir/config.toml: cache and shared items mount only when it
+// declares them.
+func writeBoothConfig(t *testing.T, boothDir, content string) {
+	t.Helper()
+	if err := os.MkdirAll(boothDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(boothDir, "config.toml"), []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// Only what config.toml declares mounts: a folder a deselected template left in .booth/cache/
+// (here envfolio+store-cache's ~/.gnupg) is named in a notice instead, so a booth never gets a
+// template's cached folder without the settings that go with it.
+func TestAddCacheAndSharedMounts_LeftoverNotMounted(t *testing.T) {
+	spec := t.TempDir()
+	for _, d := range []string{"cache/home/coder/.gnupg", "cache/home/coder/.n8n", "shared/opt/left"} {
+		dir := filepath.Join(spec, filepath.FromSlash(d))
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, ".mount-this"), nil, 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// An undeclared single file, and one on a protected path: neither mounts, neither is an error.
+	for _, f := range []string{"cache/home/coder/.old_history", "cache/opt/codingbooth/x"} {
+		path := filepath.Join(spec, filepath.FromSlash(f))
+		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, nil, 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	writeBoothConfig(t, spec, "cache-dirs = [\"home/coder/.n8n:0700\"]\n")
+
+	builder := &appctx.AppContextBuilder{
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+		BoothDir:   spec,
+	}
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	orig := os.Stderr
+	os.Stderr = w
+	addCacheAndSharedMounts(builder, t.TempDir(), "docker", "")
+	os.Stderr = orig
+	w.Close()
+	notices, _ := io.ReadAll(r)
+
+	var targets []string
+	builder.CommonArgs.Snapshot().Range(func(_ int, group ilist.List[string]) bool {
+		if group.Length() == 2 && group.At(0) == "-v" {
+			targets = append(targets, volumeTarget(group.At(1)))
+		}
+		return true
+	})
+	if got := strings.Join(targets, " "); got != "/home/coder/.n8n" {
+		t.Errorf("only the declared ~/.n8n (mode suffix and all) should mount, got %q", got)
+	}
+	for _, want := range []string{
+		".booth/cache/home/coder/.gnupg/", ".booth/cache/home/coder/.old_history",
+		".booth/cache/opt/codingbooth/x", ".booth/shared/opt/left/", "booth prune cache", "booth prune shared",
+	} {
+		if !strings.Contains(string(notices), want) {
+			t.Errorf("the notice should name %q:\n%s", want, notices)
+		}
+	}
+	if strings.Contains(string(notices), "home/coder/.n8n") {
+		t.Errorf("a declared folder is not a leftover:\n%s", notices)
 	}
 }

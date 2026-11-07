@@ -57,7 +57,8 @@ trap cleanup EXIT
 new_project() {
   local proj="$WORK_DIR/$1"
   mkdir -p "$proj/.booth/cache/home/coder/.claude"
-  printf 'variant = "base"\n' > "$proj/.booth/config.toml"
+  # Declared, as a template would: only a declared .booth/cache/ path is mounted.
+  printf 'variant = "base"\ncache-dirs = ["home/coder/.claude"]\n' > "$proj/.booth/config.toml"
   printf '{"accessToken":"SECRET-TOKEN"}' > "$proj/.booth/cache/home/coder/.claude/.credentials.json"
   printf '' > "$proj/.booth/cache/home/coder/.claude/.mount-this"
 
@@ -141,6 +142,8 @@ PROJ_5="$(new_project protected)"
 printf 'cache/\n' > "$PROJ_5/.booth/.gitignore"
 mkdir -p "$PROJ_5/.booth/cache/home/coder/code"
 printf '' > "$PROJ_5/.booth/cache/home/coder/code/.mount-this"
+# Declared: an undeclared one is a leftover, not mounted, so nothing to refuse.
+printf 'variant = "base"\ncache-dirs = ["home/coder/.claude", "home/coder/code"]\n' > "$PROJ_5/.booth/config.toml"
 
 run_guard "$PROJ_5"
 if [[ "$GUARD_RC" -ne 0 ]] && grep -q "/home/coder/code" <<< "$GUARD_OUT"; then

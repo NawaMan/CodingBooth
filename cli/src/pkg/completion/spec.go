@@ -339,7 +339,14 @@ func Spec() *Command {
 			{Name: "remove", Desc: "Remove booth containers",
 				Flags: []Flag{engineFlag, nameFlag, boolFlag("--force", "-f")}, Args: []Kind{Booth}, Variadic: true},
 			{Name: "prune", Desc: "Remove stopped booth containers",
-				Flags: []Flag{engineFlag, boolFlag("--yes", "-y")}},
+				// --code belongs to prune cache|shared; the parser takes it here too.
+				Flags: []Flag{engineFlag, boolFlag("--yes", "-y"), flag(Dir, "--code")},
+				Subs: []*Command{
+					{Name: "cache", Desc: "Delete this project's undeclared .booth/cache/ items",
+						Flags: []Flag{engineFlag, boolFlag("--yes", "-y"), flag(Dir, "--code")}},
+					{Name: "shared", Aliases: []string{"share"}, Desc: "Delete this project's undeclared .booth/shared/ items",
+						Flags: []Flag{engineFlag, boolFlag("--yes", "-y"), flag(Dir, "--code")}},
+				}},
 			{Name: "home-volume-list", Desc: "List persisted home volumes", Flags: []Flag{engineFlag}},
 			{Name: "home-volume-export", Desc: "Export a home volume to tar.gz",
 				Flags: []Flag{engineFlag}, Args: []Kind{Text, File}},

@@ -169,6 +169,18 @@ Batch-remove all stopped booth containers.
 
 Also cleans up orphaned sidecar containers (DinD, egress) whose parent no longer exists.
 
+With `cache` or `shared` (`share`), it prunes this project's data instead of containers: what
+`.booth/cache/` or `.booth/shared/` holds that `config.toml` does not declare — the leftovers of a
+deselected template, which booth no longer mounts. It lists them with their sizes and asks;
+refuses while a booth runs on the project.
+
+```bash
+./booth prune cache                       # this folder's project
+./booth prune shared --yes --code ../app  # another project, no question
+```
+
+See [Leftovers of a Deselected Template](BOOTH_LOCALCACHE.md#leftovers-of-a-deselected-template).
+
 ### `logs`
 
 Show what a booth printed, or the logs its services wrote.
