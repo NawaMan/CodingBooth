@@ -365,6 +365,10 @@ mounted folder always holds the cache's `.mount-this` marker, and `folio init` /
 and out of git; `folio backup` /
 `restore` is the portable way to move a store.
 
+With `envfolio+seed` as well, the cached store is what the seed meets: by default (`seed`) a
+store already there is used as it is, and the host's items only make the first one; with
+`envfolio+seed:"…",fill` the items it lacks are added, when it uses the host store's key.
+
 ### Browser Profiles (`cache-dirs`)
 
 | Template Selection | What's Cached |

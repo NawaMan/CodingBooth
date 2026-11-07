@@ -1,6 +1,6 @@
 # CodingBooth
 
-**Current Version:** v0.82.0--rc1
+**Current Version:** v0.82.0--folio-seed
 
 ![Works On My Machine](docs/Works-On-My-Machine-small.png)
 
