@@ -1,6 +1,6 @@
 ---
 name: work-finish
-description: Land a worktree's feature branch into main — preflight (gap audit: missing tests, stale docs, unfinished experiments, accidental changes), wait for close-gaps vs land-as-is, rebase, tests, --no-ff merge (fast-forward allowed for a single-commit branch), then delete the worktree/branch. Use when the user says "land this", "merge the branch", "merge into main", or asks to finish a worktree session. Never pushes.
+description: Land a worktree's feature branch into main — preflight (gap audit: missing tests, stale docs, unfinished experiments, accidental changes), wait for close-gaps vs land-as-is, strip the session version stamp from history, rebase, tests, --no-ff merge (fast-forward allowed for a single-commit branch), then delete the worktree/branch. Use when the user says "land this", "merge the branch", "merge into main", or asks to finish a worktree session. Never pushes.
 ---
 
 # Land a worktree's branch into main
@@ -17,7 +17,7 @@ safe — see step 7.
 **This skill's own Proposal before code gate** (replaces the generic `AGENTS.md` form — do not
 stack both): after the read-only preflight below (including the **gap audit**), report as
 **Problem · Diagnostic · Approach** — git shape, **any gaps** (owner definition below), and the
-exact rebase→test→merge plan, naming which merge form step 4 will use (or "close gaps first, then
+exact strip→rebase→test→merge plan, naming which merge form step 4 will use (or "close gaps first, then
 land") — and **wait** before stash /
 rebase / merge / gap-closing edits. The user's original "land this" is not enough once preflight
 can change the plan (conflicts, dirty main, branch behind, open gaps).
@@ -34,7 +34,13 @@ git log --oneline <branch>..main      # is the branch behind? (non-empty ⇒ reb
 git merge-tree --write-tree main <branch> >/dev/null; echo $?   # 0 = clean, 1 = conflicts
 ```
 
-`merge-tree` is a genuine dry run — it writes nothing to the index or working tree.
+`merge-tree` is a genuine dry run — it writes nothing to the index or working tree. A conflict it
+reports in `version.txt` / `README.md`'s version line alone is the session stamp, which step 2
+strips before the rebase — not a real conflict.
+
+**Merge form is decided on the commits that survive the strip.** Stamp-only and restore-only
+commits (`chore: stamp worktree version…`, `chore: restore main version…`) are dropped in step 2,
+so count the rest: one left ⇒ fast-forward, two or more ⇒ `--no-ff`. Name which in Approach.
 
 **Check where the worktree actually lives.** It must be `<repo>/worktree/<name>` — a linked
 worktree whose `.git` is a *file* containing `gitdir: …`. If an agent CLI put it somewhere else
@@ -89,7 +95,7 @@ In **Approach**, if there **are** gaps, offer both paths and **wait**:
 2. **Land as-is** — user says e.g. "land as-is", "finish as is", "merge anyway", "skip gaps";
    then proceed with known gaps left in place (re-mention only if re-verify fails).
 
-If **no gaps**, Approach is only the land plan (commit if needed → rebase → test → merge); still
+If **no gaps**, Approach is only the land plan (commit if needed → strip → rebase → test → merge); still
 **wait** for green light on that plan (git shape may still need a decision).
 
 Fold git verdict **and** the gap line into **Problem · Diagnostic · Approach**, then **wait**
@@ -108,19 +114,32 @@ git -C <main-clone> stash push -u -m "land-<branch>"
 git -C <main-clone> stash list --format='%H %gs' | grep "land-<branch>"   # capture the SHA
 ```
 
-## 2. Rebase the branch onto main
+## 2. Strip the session stamp, then rebase onto main
 
-Restore the worktree version stamp first. `version.txt` / README `**Current Version:**` were
-retargeted to `x.x.x--<name>` for this session — that is not a release. Set them back to whatever
-main currently has, then rebase:
+`version.txt` / README `**Current Version:**` were retargeted to `x.x.x--<name>` for this session —
+a session label, not a release, and it must not show up in main's history at all: not the stamp
+commit, not a restore commit, not the stamp riding inside a feature commit. **Do not** make a
+"restore main version" commit. Strip it from the branch instead, then rebase:
 
 ```bash
-git -C <main-clone> show main:version.txt
-# copy that value into worktree/<name>/version.txt and the README Current Version line
-git -C worktree/<name> rebase main
+cd worktree/<name>                       # clean working tree — the script refuses otherwise
+build/strip-session-stamp.sh             # rewrites main's merge-base..HEAD; prints dropped/cleaned
+git diff main -- version.txt             # must be empty
+git rebase main
 ```
 
-Resolve conflicts as they come. Run **git on the host**.
+The script rebuilds every branch commit from its own tree with both version spots set to the
+value the branch forked from — stamp-only and restore-only commits are dropped, a stamp inside a
+feature commit is removed from it, everything else (other README edits, author, dates, message)
+is kept. Nothing is replayed as a patch, so it cannot conflict, and because the branch no longer
+changes the version, the rebase cannot conflict on it even if main moved from `--rc1` to `--rc2`
+meanwhile. It prints the old tip; `git reset --keep <old-tip>` undoes it. Its test is
+`tests/tooling/test001-strip-session-stamp.sh` (git only, no Docker).
+
+The branch's commits get new SHAs. That is fine — they are what step 4 merges, so step 7's
+`git branch -d` still sees the branch as merged.
+
+Resolve rebase conflicts as they come. Run **git on the host**.
 
 ## 3. Re-verify in that worktree
 

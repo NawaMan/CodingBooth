@@ -21,6 +21,7 @@ runners must be run from their own directory.
 | `config/template/` | `run-all-tests.sh` | one template's selection builds a real booth with the tool in it (`--heavy` adds the desktop ones); suite `template` in `run-automate-tests.sh` | `config/test-helpers--source.sh` |
 | `config-tui/` | `run-all-tests.sh` | drives the config TUI with scripted keystrokes (needs `vhs`, `ttyd`, `ffmpeg`) | `config-tui/tui-helpers--source.sh` |
 | `wrapper/` | `run-all.sh` | the `booth` wrapper script, exercised inside a container | `wrapper/_lib.sh` |
+| `tooling/` | run each `test*.sh` directly | repo tooling under `build/` (e.g. `strip-session-stamp.sh`), in throwaway git repos; no booth, no Docker | none (self-contained) |
 
 Three different helper libraries means three different vocabularies. `common--source.sh` suites
 report with `print_test_result`; `config/` and `config-tui/` open with `begin` and use

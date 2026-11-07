@@ -271,8 +271,12 @@ done
 ./build/cli-build.sh
 ```
 
-The stamp is a **session label, not a release**. Restore `version.txt` and the README version
-line to match main **before** landing (`work-finish`); do not merge `x.x.x--<name>` onto main.
+The stamp is a **session label, not a release**. Commit it like any other change during the
+session (on its own or riding inside a feature commit — either is fine, and the pre-commit hook
+needs the two files to match). Do **not** add a "restore main version" commit before landing:
+landing runs `build/strip-session-stamp.sh`, which rewrites the branch so that the stamp commit, any
+restore commit, and the stamp inside feature commits are all gone. Main's history shows only the
+real changes, and `x.x.x--<name>` never reaches it.
 
 **Pre-edit self-check (feature work) — fail closed:**
 
@@ -294,15 +298,20 @@ Summary of the procedure:
    "Not yet committed" is a process step, not a gap. Full text: `work-finish` skill step 0b.
 1. **In the main clone**, stash anything uncommitted so main is clean before the merge
    (`git stash push -u -m "land-<branch>"` — skip if main is already clean).
-2. **In the worktree**, restore `version.txt` and the README `**Current Version:**` line to
-   match main (drop the `x.x.x--<name>` session stamp — it is not a release), then rebase the
-   feature branch onto main: `git rebase main`. Resolve conflicts. If the rebase touched covered
-   code, re-run the relevant tests (Go unit tests and/or targeted shell tests) in that worktree
-   **before** merging.
+2. **In the worktree**, strip the session stamp from the branch history, then rebase onto main:
+   `build/strip-session-stamp.sh && git rebase main`. The script rebuilds every branch commit with
+   `version.txt` and the README `**Current Version:**` line at the value the branch forked from:
+   stamp-only and restore-only commits are dropped, and a stamp inside a feature commit is removed
+   from it (the rest of the commit is kept). Nothing is replayed, so it cannot conflict, and the
+   rebase then cannot conflict on the version either. No "restore main version" commit is made.
+   Check that `git diff main -- version.txt` is empty afterwards. Resolve rebase conflicts. If the
+   rebase touched covered code, re-run the relevant tests (Go unit tests and/or targeted shell
+   tests) in that worktree **before** merging.
 3. **From the main clone**, `git merge --no-ff <branch>` — a real merge commit, so the worktree's
    commit history is kept. **Never squash.** *Exception:* if the branch is exactly **one** commit
    (`git rev-list --count main..<branch>` = 1), a plain fast-forward `git merge <branch>` is fine —
-   there is no history to preserve. Two or more commits ⇒ `--no-ff`.
+   there is no history to preserve. Two or more commits ⇒ `--no-ff`. Count **after** step 2's
+   strip — dropping the stamp commits often leaves a single commit.
 4. If step 1 stashed anything, `git stash apply <sha>` (not `pop`), confirm, then `git stash drop
    <sha>`.
 5. **Clean up the worktree and branch** as part of landing: stop any booth *you* started for that
