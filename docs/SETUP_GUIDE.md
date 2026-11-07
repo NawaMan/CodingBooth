@@ -202,8 +202,10 @@ booth's home at start, read-only:
 | Select | Brings in |
 |---|---|
 | `git-credential` | `~/.gitconfig` |
-| `ssh` | `~/.ssh` keys and config |
-| `gh+token` | GitHub CLI login, from the host `GH_TOKEN` (`GH_TOKEN=$(gh auth token) booth …`) |
+| `openssh+agent` | your host ssh-agent: git over SSH signs with its keys, no key file enters the booth (native engine on Linux) |
+| `openssh+keys` | only the keys in one folder you choose (default `~/.ssh/booth`) — e.g. a deploy key |
+| `openssh+credential` | all of `~/.ssh`, every private key included — the you-are-on-your-own mode, for code you trust |
+| `gh+token` | GitHub CLI login, from the host `GH_TOKEN` (`GH_TOKEN=$(gh auth token) booth …`); git uses it too, an SSH remote included when the booth has no `ssh` |
 | `claude-code+credential`, `codex+credential`, `gemini-cli+credential`, … | that AI tool's login |
 
 Bring in only what the project needs. Every credential in the booth is reachable by whatever code

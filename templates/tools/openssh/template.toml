@@ -1,7 +1,8 @@
-cb-version = "1.0.0"
+cb-version = "1.1.0"
 display-name = "OpenSSH Client"
+primary = true
 display-disc = "SSH client for remote access (ssh, scp, sftp)"
-display-detail = "Installs OpenSSH client tools: ssh, scp, sftp, ssh-keygen, ssh-agent. Use the +server extension to also install the SSH server for inbound access."
+display-detail = "Installs OpenSSH client tools: ssh, scp, sftp, ssh-keygen, ssh-agent. Client only: no server is installed or started. Add +credential to bring in the host ~/.ssh keys (git over SSH), or +server for inbound access."
 display-order = 35
 tags = [
     "ssh",
