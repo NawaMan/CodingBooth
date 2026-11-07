@@ -81,6 +81,9 @@ func TestPrepareCommonArgs_CacheAndSharedMountedEitherWay(t *testing.T) {
 				t.Fatal(err)
 			}
 		}
+		// Only declared paths mount.
+		writeBoothConfig(t, filepath.Join(project, ".booth"),
+			"cache-files = [\"home/coder/.bash_history\"]\nshared-files = [\"home/coder/.team\"]\n")
 
 		builder := &appctx.AppContextBuilder{
 			CommonArgs: ilist.NewAppendableList[ilist.List[string]](),

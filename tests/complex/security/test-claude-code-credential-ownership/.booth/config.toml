@@ -8,6 +8,9 @@
 
 variant = "base"
 
+# What settings-cache declares: only a declared .booth/cache/ path is mounted.
+cache-dirs = ["home/coder/.claude"]
+
 run-args = [
     # Override path (always overwrites) — mode 0600, as real credentials are.
     "-v", "./host-credential/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro",

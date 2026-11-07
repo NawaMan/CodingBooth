@@ -4,6 +4,22 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Breaking: only declared Cache and Shared paths are mounted.** A folder or file in
+  `.booth/cache/` or `.booth/shared/` now mounts only when `config.toml` declares it
+  (`cache-files` / `cache-dirs` / `shared-files` / `shared-dirs`, from a template or `--set`), or
+  it is inside a declared folder. Deselecting a template used to leave its cached folders mounted
+  without the rest of it — `envfolio+store-cache` kept `~/.gnupg` while `FOLIO_STORE_DIR` was
+  gone, so a store made then was lost with the container. Those leftovers are now skipped, and
+  each start names them. A folder you made in `.booth/cache/` yourself needs declaring:
+  `booth config --set cache-dirs=<path>`.
+
+- **`booth prune cache|shared`: delete a project's leftovers.** It lists what `.booth/cache/`
+  (or `.booth/shared/`) holds that `config.toml` does not declare, with sizes, asks (`--yes`
+  skips), and deletes it with the folders that leaves empty. Declared paths are never touched,
+  and it refuses while a booth runs on the project. `--code <path>` names another project;
+  `share` is accepted for `shared`. `booth prune` with no argument still removes stopped booth
+  containers.
+
 - **`envfolio+store-cache` now keeps the store under `~/.local/share/folio/`** (was
   `~/.local/share/envfolio/`), named after the `folio` command; the store is `store/` inside it, as
   before, and `FOLIO_STORE_DIR` follows. A store cached at the old path is not found any more: move
