@@ -178,11 +178,11 @@ assert_file "$prj/.booth/cache/home/coder/.config/pcmanfm-qt/.mount-this" "lxqt+
 # holds .mount-this and `folio init` only takes an empty one.
 run rm -Rf $prj ; mkdir -p $prj
 run booth config $prj --no-tui --select "envfolio+store-cache"
-assert_file "$prj/.booth/cache/home/coder/.local/share/envfolio/.mount-this" "envfolio+store-cache creates the store's parent dir"
+assert_file "$prj/.booth/cache/home/coder/.local/share/folio/.mount-this" "envfolio+store-cache creates the store's parent dir"
 assert_file "$prj/.booth/cache/home/coder/.gnupg/.mount-this" "envfolio+store-cache creates .gnupg dir"
-assert_mode "$prj/.booth/cache/home/coder/.local/share/envfolio" 700 "envfolio+store-cache creates the store's parent 0700"
+assert_mode "$prj/.booth/cache/home/coder/.local/share/folio" 700 "envfolio+store-cache creates the store's parent 0700"
 assert_mode "$prj/.booth/cache/home/coder/.gnupg" 700 "envfolio+store-cache creates .gnupg 0700"
-assert-line "$prj/.booth/config.toml" "run-args = " '["-e", "FOLIO_STORE_DIR=/home/coder/.local/share/envfolio/store"]' \
+assert-line "$prj/.booth/config.toml" "run-args = " '["-e", "FOLIO_STORE_DIR=/home/coder/.local/share/folio/store"]' \
     "envfolio+store-cache points FOLIO_STORE_DIR inside the cache"
 
 finally
