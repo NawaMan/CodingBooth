@@ -59,27 +59,41 @@ func PrepareFolioSeed(ctx appctx.AppContext) (appctx.AppContext, error) {
 		return ctx, fmt.Errorf("folio seed: the booth has no .booth folder to put the seed in (%s)", boothDir)
 	}
 	seedDir := filepath.Join(boothDir, ".tmp", folioSeedDirName)
-	count, err := buildFolioSeedFromHost(spec, ctx.Code(), seedDir)
+	items, err := buildFolioSeedFromHost(spec, ctx.Code(), seedDir)
 	if err != nil {
 		os.RemoveAll(seedDir)
 		return ctx, fmt.Errorf("folio seed: %w", err)
 	}
-	fmt.Fprintf(os.Stderr, "Info: EnvFolio seed: %d item(s) copied, still encrypted, for `folio exec %s`.\n", count, spec)
+	// Every start says what came in, so a selection that takes more than meant is seen.
+	fmt.Fprint(os.Stderr, folioSeedReport(spec, items))
 	return ctx, nil
 }
 
+// folioSeedReport lists the items a seed copied, one per line.
+func folioSeedReport(spec string, items []string) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "Info: EnvFolio seed: %d item(s) from the host's store, still encrypted, for `folio exec %s`:\n", len(items), spec)
+	for _, item := range items {
+		fmt.Fprintf(&b, "        %s\n", item)
+	}
+	return b.String()
+}
+
 // buildFolioSeedFromHost asks the host's folio which entries spec takes, then copies them.
-func buildFolioSeedFromHost(spec, codePath, seedDir string) (int, error) {
+func buildFolioSeedFromHost(spec, codePath, seedDir string) ([]string, error) {
 	args, err := splitSeedArgs(spec)
 	if err != nil {
-		return 0, err
+		return nil, err
+	}
+	if err := checkSeedArgs(args); err != nil {
+		return nil, err
 	}
 	if _, err := exec.LookPath(folioCommand); err != nil {
-		return 0, fmt.Errorf("EnvFolio (%s) is not installed on this machine, so the items for `folio exec %s` cannot be found", folioCommand, spec)
+		return nil, fmt.Errorf("EnvFolio (%s) is not installed on this machine, so the items for `folio exec %s` cannot be found", folioCommand, spec)
 	}
 	storeOut, err := runHost(codePath, folioCommand, "path")
 	if err != nil {
-		return 0, fmt.Errorf("`%s path` failed: %w", folioCommand, err)
+		return nil, fmt.Errorf("`%s path` failed: %w", folioCommand, err)
 	}
 	storeDir := strings.TrimSpace(storeOut)
 
@@ -87,15 +101,15 @@ func buildFolioSeedFromHost(spec, codePath, seedDir string) (int, error) {
 	names = append(names, "--", "true")
 	out, err := runHost(codePath, folioCommand, names...)
 	if err != nil {
-		return 0, fmt.Errorf("`folio exec --names %s` failed: %w", spec, err)
+		return nil, fmt.Errorf("`folio exec --names %s` failed: %w", spec, err)
 	}
 	entries := parseFolioNames(out)
-	count, ids, err := copyFolioSeed(storeDir, seedDir, entries)
+	items, ids, err := copyFolioSeed(storeDir, seedDir, entries)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	if count == 0 {
-		return 0, fmt.Errorf("`folio exec %s` takes no item from the store at %s", spec, storeDir)
+	if len(items) == 0 {
+		return nil, fmt.Errorf("`folio exec %s` takes no item from the store at %s", spec, storeDir)
 	}
 	// The texts are signed by the store's key: the booth needs its public half to read them.
 	// Without it the secrets still come; only reading a text fails, so this is a warning.
@@ -103,7 +117,57 @@ func buildFolioSeedFromHost(spec, codePath, seedDir string) (int, error) {
 		fmt.Fprintf(os.Stderr, "Warning: folio seed: could not export the store's public key (%v); "+
 			"texts will not verify in the booth.\n", err)
 	}
-	return count, nil
+	return items, nil
+}
+
+// checkSeedArgs lets through only what names items: entries, VAR=<name>, -s/--secrets, -a/--all,
+// --use <@namespace> and --vars <file>, the file inside the project. FOLIO_SEED comes from the
+// project's config, which may be someone else's, and these arguments go to a command on the
+// host: anything else -- `--`, --debug, --confirm, --from, the --*-fd options, an unknown flag --
+// is refused here, rather than trusting that folio's --names keeps them harmless.
+func checkSeedArgs(args []string) error {
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		switch arg {
+		case "-s", "--secrets", "-a", "--all":
+			continue
+		case "--use":
+			if i+1 >= len(args) || !strings.HasPrefix(args[i+1], "@") {
+				return fmt.Errorf("--use needs an @namespace after it, e.g. --use @app2/@prod")
+			}
+			i++
+			continue
+		case "--vars":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--vars needs a file after it")
+			}
+			if !isProjectRelative(args[i+1]) {
+				return fmt.Errorf("--vars %s: the vars file must be a path inside the project (relative, no ..), "+
+					"where the booth can read it too", args[i+1])
+			}
+			i++
+			continue
+		}
+		if strings.HasPrefix(arg, "-") {
+			return fmt.Errorf("%q is not allowed in FOLIO_SEED: only entries, VAR=<name>, --secrets, --all, "+
+				"--use <@namespace> and --vars <file> name what to copy", arg)
+		}
+	}
+	return nil
+}
+
+// isProjectRelative: a relative path that stays in the folder it is relative to.
+func isProjectRelative(path string) bool {
+	if path == "" || filepath.IsAbs(path) || strings.HasPrefix(path, "/") || strings.HasPrefix(path, "~") ||
+		strings.Contains(path, "\\") || (len(path) > 1 && path[1] == ':') {
+		return false
+	}
+	for _, part := range strings.Split(path, "/") {
+		if part == ".." {
+			return false
+		}
+	}
+	return true
 }
 
 // runHost runs a host command in dir and returns its stdout; on failure the error carries its
@@ -232,30 +296,30 @@ func parseFolioNames(out string) []string {
 
 // copyFolioSeed makes seedDir afresh: the store's .gpg-id (and .gitattributes), then for each entry that is in the
 // store, its secret (<name>.gpg) or its text (<name>.txt and <name>.txt.sig), at the same path.
-// Folders are 700 and files 600, as in a store. It returns how many entries it copied and the key
+// Folders are 700 and files 600, as in a store. It returns the entries it copied and the key
 // ids in .gpg-id. A name that would leave the store (.., an absolute path) is never followed.
-func copyFolioSeed(storeDir, seedDir string, entries []string) (int, []string, error) {
+func copyFolioSeed(storeDir, seedDir string, entries []string) ([]string, []string, error) {
 	idFile := filepath.Join(storeDir, ".gpg-id")
 	idData, err := os.ReadFile(idFile)
 	if err != nil || len(bytes.TrimSpace(idData)) == 0 {
-		return 0, nil, fmt.Errorf("%s is not an EnvFolio store: it has no .gpg-id", storeDir)
+		return nil, nil, fmt.Errorf("%s is not an EnvFolio store: it has no .gpg-id", storeDir)
 	}
 	if err := os.RemoveAll(seedDir); err != nil {
-		return 0, nil, err
+		return nil, nil, err
 	}
 	if err := os.MkdirAll(seedDir, 0o700); err != nil {
-		return 0, nil, err
+		return nil, nil, err
 	}
 	if err := os.Chmod(seedDir, 0o700); err != nil {
-		return 0, nil, err
+		return nil, nil, err
 	}
 	if err := os.WriteFile(filepath.Join(seedDir, ".gpg-id"), idData, 0o600); err != nil {
-		return 0, nil, err
+		return nil, nil, err
 	}
 	// pass writes it at init (*.gpg diff=gpg); a store made from the seed should look the same.
 	if isRegularFile(filepath.Join(storeDir, ".gitattributes")) {
 		if err := copyStoreFile(storeDir, seedDir, ".gitattributes"); err != nil {
-			return 0, nil, err
+			return nil, nil, err
 		}
 	}
 	var ids []string
@@ -265,7 +329,7 @@ func copyFolioSeed(storeDir, seedDir string, entries []string) (int, []string, e
 		}
 	}
 
-	count := 0
+	var copied []string
 	for _, name := range entries {
 		if !isStoreRelative(name) {
 			continue
@@ -286,12 +350,12 @@ func copyFolioSeed(storeDir, seedDir string, entries []string) (int, []string, e
 		}
 		for _, f := range files {
 			if err := copyStoreFile(storeDir, seedDir, f); err != nil {
-				return 0, nil, err
+				return nil, nil, err
 			}
 		}
-		count++
+		copied = append(copied, name)
 	}
-	return count, ids, nil
+	return copied, ids, nil
 }
 
 func isStoreRelative(name string) bool {

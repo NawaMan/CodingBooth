@@ -151,7 +151,7 @@ func TestCopyFolioSeed(t *testing.T) {
 	os.MkdirAll(seed, 0o755)
 	os.WriteFile(filepath.Join(seed, "stale.gpg"), []byte("x"), 0o600)
 
-	count, ids, err := copyFolioSeed(store, seed, []string{
+	copied, ids, err := copyFolioSeed(store, seed, []string{
 		"gh/user", "@app1/server/password", "server/db", // server/db: a peeled name, not in the store
 		"../etc/passwd", "/abs", "gh/../gh/token", // never followed
 	})
@@ -162,8 +162,8 @@ func TestCopyFolioSeed(t *testing.T) {
 	if got := listFiles(t, seed); !reflect.DeepEqual(got, want) {
 		t.Errorf("seed holds %q, want %q", got, want)
 	}
-	if count != 2 {
-		t.Errorf("count = %d, want 2", count)
+	if !reflect.DeepEqual(copied, []string{"gh/user", "@app1/server/password"}) {
+		t.Errorf("copied = %q, want the two entries in the store, in order", copied)
 	}
 	if !reflect.DeepEqual(ids, []string{"ABCDEF0123456789"}) {
 		t.Errorf("ids = %q", ids)
@@ -226,12 +226,12 @@ esac
 `, `echo "-----BEGIN PGP PUBLIC KEY BLOCK----- $*"`)
 
 	seed := filepath.Join(t.TempDir(), "folio-seed")
-	count, err := buildFolioSeedFromHost(`gh --use @app1 --vars '.booth/my.vars' --secrets`, code, seed)
+	items, err := buildFolioSeedFromHost(`gh --use @app1 --vars '.booth/my.vars' --secrets`, code, seed)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if count != 2 {
-		t.Errorf("count = %d, want 2", count)
+	if !reflect.DeepEqual(items, []string{"@app1/server/password", "gh/user"}) {
+		t.Errorf("items = %q", items)
 	}
 	logged, _ := os.ReadFile(argsLog)
 	lines := strings.Split(strings.TrimSpace(string(logged)), "\n")
@@ -285,5 +285,69 @@ func TestBuildFolioSeedFromHostWithoutFolio(t *testing.T) {
 	_, err := buildFolioSeedFromHost("gh", t.TempDir(), filepath.Join(t.TempDir(), "s"))
 	if err == nil || !strings.Contains(err.Error(), "not installed") {
 		t.Errorf("no folio on the host must be a clear error, got %v", err)
+	}
+}
+
+func TestCheckSeedArgs(t *testing.T) {
+	allowed := []string{
+		"gh server @app1",
+		"gh --secrets",
+		"-s -a",
+		"--use @app2/@prod server",
+		"--vars deploy.vars --vars config/prod.vars -s",
+		"DB=@app1/server/db gh",
+		"--use @app1 --use @app2 --all --secrets",
+	}
+	for _, in := range allowed {
+		args, _ := splitSeedArgs(in)
+		if err := checkSeedArgs(args); err != nil {
+			t.Errorf("%q must be allowed: %v", in, err)
+		}
+	}
+	refused := map[string]string{
+		"gh -- sh -c 'curl evil'":         `"--"`,
+		"--debug gh":                      `"--debug"`,
+		"--confirm gh":                    `"--confirm"`,
+		"--from /tmp/x.folio":             `"--from"`,
+		"--store-passphrase-fd 0 gh":      `"--store-passphrase-fd"`,
+		"-n gh":                           `"-n"`,
+		"--plain gh":                      `"--plain"`,
+		"-sa":                             `"-sa"`,
+		"--use=@app1":                     `"--use=@app1"`,
+		"--use":                           "@namespace",
+		"--use server":                    "@namespace",
+		"--vars":                          "needs a file",
+		"--vars /home/me/.ssh/id_ed25519": "inside the project",
+		"--vars ~/.bashrc":                "inside the project",
+		"--vars ../other/x.vars":          "inside the project",
+		"--vars config/../../x.vars":      "inside the project",
+		`--vars C:\\x.vars`:               "inside the project",
+	}
+	for in, want := range refused {
+		args, _ := splitSeedArgs(in)
+		err := checkSeedArgs(args)
+		if err == nil || !strings.Contains(err.Error(), want) {
+			t.Errorf("%q must be refused naming %s, got %v", in, want, err)
+		}
+	}
+}
+
+func TestBuildFolioSeedFromHostRefusesBeforeRunningFolio(t *testing.T) {
+	ran := filepath.Join(t.TempDir(), "ran")
+	stubHostTools(t, `touch "`+ran+`"`, `exit 0`)
+	if _, err := buildFolioSeedFromHost("--debug gh -- sh -c 'echo x'", t.TempDir(), filepath.Join(t.TempDir(), "s")); err == nil {
+		t.Fatal("a refused argument must stop the seed")
+	}
+	if _, err := os.Stat(ran); err == nil {
+		t.Error("folio must not be run at all for a refused argument")
+	}
+}
+
+func TestFolioSeedReport(t *testing.T) {
+	got := folioSeedReport("gh @app1", []string{"gh/user", "@app1/server/db"})
+	want := "Info: EnvFolio seed: 2 item(s) from the host's store, still encrypted, for `folio exec gh @app1`:\n" +
+		"        gh/user\n        @app1/server/db\n"
+	if got != want {
+		t.Errorf("report:\n%s\nwant:\n%s", got, want)
 	}
 }
