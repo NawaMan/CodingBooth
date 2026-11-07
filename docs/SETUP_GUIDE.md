@@ -207,6 +207,7 @@ booth's home at start, read-only:
 | `openssh+credential` | all of `~/.ssh`, every private key included — the you-are-on-your-own mode, for code you trust |
 | `gh+token` | GitHub CLI login, from the host `GH_TOKEN` (`GH_TOKEN=$(gh auth token) booth …`); git uses it too, an SSH remote included when the booth has no `ssh` |
 | `envfolio+seed` | chosen items of your host's EnvFolio store, still encrypted (`envfolio+seed:"gh @app1 --secrets"` — the arguments you give `folio exec`) |
+| `envfolio+key` | with `+seed`, the store key's private key too (passphrase-protected), so `folio` in the booth opens the secrets itself: `envfolio+seed:"--secrets gh"+key` |
 | `claude-code+credential`, `codex+credential`, `gemini-cli+credential`, … | that AI tool's login |
 
 Bring in only what the project needs. Every credential in the booth is reachable by whatever code

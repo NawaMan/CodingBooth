@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 2.6.0
+# cb-version: 2.7.0
 
 set -Eeuo pipefail
 
@@ -137,6 +137,23 @@ say() { echo "EnvFolio seed: $*"; }
 # The texts are signed by the store's key; folio shows one only when that signature checks out.
 [[ -s "$SEED/pubkey.asc" ]] && gpg --batch --quiet --import "$SEED/pubkey.asc" >/dev/null 2>&1
 
+# envfolio+key: the store key's private key files, as gpg keeps them (<keygrip>.key, still encrypted
+# with the passphrase). Into this booth's gpg home, never over one already there; the booth's own
+# gpg-agent asks for the passphrase, in the booth, when a secret is opened. Done in every mode: a
+# store kept by +store-cache may still lack the key.
+if [[ -d "$SEED/private-keys" ]]; then
+    gnupg_home="${GNUPGHOME:-$HOME/.gnupg}"
+    mkdir -p "$gnupg_home/private-keys-v1.d" && chmod 700 "$gnupg_home" "$gnupg_home/private-keys-v1.d"
+    keys=0
+    for key in "$SEED/private-keys"/*.key; do
+        [[ -f "$key" ]] || continue
+        dst="$gnupg_home/private-keys-v1.d/$(basename "$key")"
+        [[ -e "$dst" ]] && continue
+        cp "$key" "$dst" && chmod 600 "$dst" && keys=$((keys + 1))
+    done
+    (( keys == 0 )) || say "brought $keys private key file(s) of the store key (passphrase-protected)."
+fi
+
 # commit_store MESSAGE -- record what was added, as folio does for its own changes.
 commit_store() {
     git -C "$STORE" add -A >/dev/null 2>&1 \
@@ -156,7 +173,7 @@ if [[ ! -s "$STORE/.gpg-id" || ! -e "$STORE/.git" ]]; then
         exit 0
     fi
     mkdir -p "$STORE" && chmod 700 "$STORE"
-    (cd "$SEED" && find . -mindepth 1 -maxdepth 1 ! -name pubkey.asc -exec cp -a {} "$STORE/" \;)
+    (cd "$SEED" && find . -mindepth 1 -maxdepth 1 ! -name pubkey.asc ! -name private-keys -exec cp -a {} "$STORE/" \;)
     git -C "$STORE" init -q >/dev/null 2>&1
     commit_store "Seeded from the host: folio exec $CB_FOLIO_SEED"
     say "made $STORE from the host's items ($(seed_items | wc -l))."

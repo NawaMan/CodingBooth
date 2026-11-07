@@ -52,3 +52,12 @@ else
   print_test_result "false" "$0" "3" "no FOLIO_SEED: mode defaults to seed, and nothing is seeded"
   printf '%s\n' "$OUT" | grep -i folio; exit 1
 fi
+
+OUT=$(dry 'envfolio+seed:"--secrets gh"+key')
+if printf '%s\n' "$OUT" | grep -F -- "CB_FOLIO_SEED_KEY=1" >/dev/null \
+  && printf '%s\n' "$OUT" | grep -F -- "CB_FOLIO_SEED=--secrets gh" >/dev/null; then
+  print_test_result "true"  "$0" "4" "+key asks the run for the store key's private key files (CB_FOLIO_SEED_KEY=1)"
+else
+  print_test_result "false" "$0" "4" "+key asks the run for the store key's private key files (CB_FOLIO_SEED_KEY=1)"
+  printf '%s\n' "$OUT" | grep -i folio; exit 1
+fi

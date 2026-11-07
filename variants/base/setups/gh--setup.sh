@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.1.0
+# cb-version: 1.2.0
 
 set -Eeuo pipefail
 trap 'echo "Error on line $LINENO"; exit 1' ERR
@@ -109,21 +109,22 @@ if [[ -d "$CB_SEED_DIR" && ! -d "$GH_CONFIG_DIR" ]]; then
     chmod 600 "$GH_CONFIG_DIR/hosts.yml" 2>/dev/null || true
 fi
 
-# A token in the environment (GH_TOKEN / GITHUB_TOKEN / GH_ENTERPRISE_TOKEN, passed in by the
-# gh+token extension) logs gh in, but git does not read it: git asks its own
-# credential helper. Point that helper at this booth's gh, so `git push` over
-# HTTPS works with no manual step. This also replaces a helper copied in from
-# the host's ~/.gitconfig that names the host's gh path, which does not exist
-# here. Never fail the booth's start over it.
+# git does not read GH_TOKEN (or GITHUB_TOKEN / GH_ENTERPRISE_TOKEN): it asks its own credential
+# helper. Point that helper at this booth's gh, so `git push` over HTTPS uses whatever token is
+# set when git runs -- one passed in at start (gh+token, .booth/.env) or one set later, such as
+# `folio exec -s gh -- git push` with a seeded store. Done always, not only when a token is here
+# now: with no token gh answers nothing and git asks for a username as it would anyway (checked),
+# so a booth that never gets one loses nothing. --force: gh is not logged in yet. This also
+# replaces a helper copied in from the host's ~/.gitconfig, which names the host's gh path.
+# Never fail the booth's start over it.
 #
-# The helper is for HTTPS only. A clone made over SSH (git@github.com:owner/repo) has
-# no use for the token, and a booth with no ssh client cannot reach that remote at all.
-# So when there is no ssh, git is told to use HTTPS for that host instead -- in
-# ~/.gitconfig only; the repo's remote is not changed. A booth with ssh (the openssh
-# template) keeps SSH.
+# The helper is for HTTPS only. A clone made over SSH (git@github.com:owner/repo) has no use for
+# the token, and a booth with no ssh client cannot reach that remote at all. So when there is no
+# ssh, git is told to use HTTPS for that host instead -- in ~/.gitconfig only; the repo's remote is
+# not changed. A booth with ssh (the openssh template) keeps SSH.
 cb_gh_setup_git() {
     local host="$1" base from
-    gh auth setup-git --hostname "$host" >/dev/null 2>&1 || true
+    gh auth setup-git --hostname "$host" --force >/dev/null 2>&1 || true
     command -v ssh >/dev/null 2>&1 && return 0
     command -v git >/dev/null 2>&1 || return 0
     base="https://${host}/"
@@ -132,10 +133,8 @@ cb_gh_setup_git() {
             || git config --global --add "url.${base}.insteadOf" "$from" >/dev/null 2>&1 || true
     done
 }
-if [[ -n "${GH_TOKEN:-}${GITHUB_TOKEN:-}" ]]; then
-    cb_gh_setup_git github.com
-fi
-if [[ -n "${GH_ENTERPRISE_TOKEN:-}" && -n "${GH_HOST:-}" ]]; then
+cb_gh_setup_git github.com
+if [[ -n "${GH_HOST:-}" && "${GH_HOST}" != "github.com" ]]; then
     cb_gh_setup_git "$GH_HOST"
 fi
 EOF
