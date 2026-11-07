@@ -4,17 +4,18 @@
 # you may not use this file except in compliance with the License.
 
 # -----------------------------------------------------------------------------
-# Unit test: the gh startup points git at gh when a token is in the environment
+# Unit test: the gh startup always points git at gh
 #
-# gh+token passes GH_TOKEN / GITHUB_TOKEN (and GH_ENTERPRISE_TOKEN / GH_HOST) into the booth.
-# gh reads it, but git does not: `git push` over HTTPS asks git's credential
-# helper, and without one it prompts for a username. A helper copied in from
-# the host's ~/.gitconfig is no better -- it names the host's gh path. So the
-# startup hook runs `gh auth setup-git` for each host it has a token for, and
-# nothing when it has none (a booth without a token keeps its git config).
+# git does not read GH_TOKEN: `git push` over HTTPS asks git's credential helper,
+# and without one it prompts for a username. A helper copied in from the host's
+# ~/.gitconfig is no better -- it names the host's gh path. So the startup runs
+# `gh auth setup-git --force` for github.com (and GH_HOST when set) every time,
+# token or not: the token may come only later, e.g. `folio exec -s gh -- git push`
+# with an envfolio+seed store. With no token gh answers nothing and git prompts as
+# it would anyway (checked in a booth), so this costs a tokenless booth nothing.
 #
 # The helper is for HTTPS only, and an SSH remote (git@github.com:owner/repo)
-# cannot use the token. A booth with no ssh client cannot reach it at all, so the
+# cannot use a token. A booth with no ssh client cannot reach it at all, so the
 # hook then also points git at HTTPS for that host (url.<https>.insteadOf, in
 # ~/.gitconfig only). A booth with ssh keeps SSH. Real git checks the rewrite.
 #
@@ -98,30 +99,28 @@ resolved() {
     HOME="$WORK/home-$TEST_NUM" "$GIT_BIN" ls-remote --get-url "$1" 2>/dev/null || true
 }
 
+GH="gh auth setup-git --hostname github.com --force"
+GHE="gh auth setup-git --hostname ghe.example.com --force"
+
 run_startup
-[[ "$RUN_EXIT" -eq 0 && ! -s "$GH_LOG" ]] \
-    && check "true"  "no token: git's helper is left alone" \
-    || check "false" "no token: git's helper is left alone" "exit=$RUN_EXIT"$'\n'"$(cat "$GH_LOG")"
+[[ "$RUN_EXIT" -eq 0 && "$(cat "$GH_LOG")" == "$GH" ]] \
+    && check "true"  "no token yet: git's github.com helper is still set to gh (a token may come later)" \
+    || check "false" "no token yet: git's github.com helper is still set to gh (a token may come later)" "exit=$RUN_EXIT"$'\n'"$(cat "$GH_LOG")"
 
 run_startup GH_TOKEN=t0ken
-[[ "$RUN_EXIT" -eq 0 && "$(cat "$GH_LOG")" == "gh auth setup-git --hostname github.com" ]] \
+[[ "$RUN_EXIT" -eq 0 && "$(cat "$GH_LOG")" == "$GH" ]] \
     && check "true"  "GH_TOKEN: git's github.com helper is set to gh" \
     || check "false" "GH_TOKEN: git's github.com helper is set to gh" "exit=$RUN_EXIT"$'\n'"$(cat "$GH_LOG")"
 
-run_startup GITHUB_TOKEN=t0ken
-[[ "$RUN_EXIT" -eq 0 && "$(cat "$GH_LOG")" == "gh auth setup-git --hostname github.com" ]] \
-    && check "true"  "GITHUB_TOKEN: git's github.com helper is set to gh" \
-    || check "false" "GITHUB_TOKEN: git's github.com helper is set to gh" "exit=$RUN_EXIT"$'\n'"$(cat "$GH_LOG")"
+run_startup GH_HOST=ghe.example.com
+[[ "$RUN_EXIT" -eq 0 && "$(cat "$GH_LOG")" == "$GH"$'\n'"$GHE" ]] \
+    && check "true"  "GH_HOST: the enterprise host's helper is set too, token or not" \
+    || check "false" "GH_HOST: the enterprise host's helper is set too, token or not" "exit=$RUN_EXIT"$'\n'"$(cat "$GH_LOG")"
 
-run_startup GH_ENTERPRISE_TOKEN=t0ken GH_HOST=ghe.example.com
-[[ "$RUN_EXIT" -eq 0 && "$(cat "$GH_LOG")" == "gh auth setup-git --hostname ghe.example.com" ]] \
-    && check "true"  "GH_ENTERPRISE_TOKEN + GH_HOST: the enterprise host's helper is set to gh" \
-    || check "false" "GH_ENTERPRISE_TOKEN + GH_HOST: the enterprise host's helper is set to gh" "exit=$RUN_EXIT"$'\n'"$(cat "$GH_LOG")"
-
-run_startup GH_ENTERPRISE_TOKEN=t0ken
-[[ "$RUN_EXIT" -eq 0 && ! -s "$GH_LOG" ]] \
-    && check "true"  "GH_ENTERPRISE_TOKEN without GH_HOST: nothing to point git at" \
-    || check "false" "GH_ENTERPRISE_TOKEN without GH_HOST: nothing to point git at" "exit=$RUN_EXIT"$'\n'"$(cat "$GH_LOG")"
+run_startup GH_HOST=github.com
+[[ "$RUN_EXIT" -eq 0 && "$(cat "$GH_LOG")" == "$GH" ]] \
+    && check "true"  "GH_HOST=github.com: set up once, not twice" \
+    || check "false" "GH_HOST=github.com: set up once, not twice" "exit=$RUN_EXIT"$'\n'"$(cat "$GH_LOG")"
 
 run_startup GH_TOKEN=t0ken STUB_GH_FAIL=1
 [[ "$RUN_EXIT" -eq 0 ]] \
@@ -155,16 +154,14 @@ run_startup GH_TOKEN=t0ken
 
 RUN_PATH="$PATH_NOSSH"
 run_startup
-[[ "$RUN_EXIT" -eq 0 && ! -e "$WORK/home-$TEST_NUM/.gitconfig" ]] \
-    && check "true"  "no token, no ssh: ~/.gitconfig is not touched" \
-    || check "false" "no token, no ssh: ~/.gitconfig is not touched" \
-         "$(cat "$WORK/home-$TEST_NUM/.gitconfig" 2>/dev/null)"
+[[ "$RUN_EXIT" -eq 0 && "$(insteadof github.com)" == "$want" ]] \
+    && check "true"  "no token yet, no ssh: SSH remotes go over HTTPS, ready for a token set later" \
+    || check "false" "no token yet, no ssh: SSH remotes go over HTTPS, ready for a token set later" "$(insteadof github.com)"
 
-run_startup GH_ENTERPRISE_TOKEN=t0ken GH_HOST=ghe.example.com
-[[ "$RUN_EXIT" -eq 0 && -z "$(insteadof github.com)" \
+run_startup GH_HOST=ghe.example.com
+[[ "$RUN_EXIT" -eq 0 && "$(insteadof github.com)" == "$want" \
    && "$(resolved git@ghe.example.com:o/r.git)" == "https://ghe.example.com/o/r.git" ]] \
-    && check "true"  "GH_ENTERPRISE_TOKEN + GH_HOST, no ssh: only the enterprise host is rewritten" \
-    || check "false" "GH_ENTERPRISE_TOKEN + GH_HOST, no ssh: only the enterprise host is rewritten" \
+    && check "true"  "GH_HOST, no ssh: github.com and the enterprise host are both rewritten" \
+    || check "false" "GH_HOST, no ssh: github.com and the enterprise host are both rewritten" \
          "github.com: $(insteadof github.com)"$'\n'"ghe: $(insteadof ghe.example.com)"
-
 $ALL_PASSED
