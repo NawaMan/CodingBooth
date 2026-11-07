@@ -4,6 +4,21 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`envfolio+seed`: bring chosen EnvFolio items into a booth, still encrypted.** Give it the
+  arguments you would give `folio exec` — `envfolio+seed:"gh @app1 --secrets"`, or
+  `envfolio+seed:"--use @app2/@prod --vars deploy.vars --secrets"` with a vars file in the project.
+  At each start booth asks the host's `folio exec --names` which items those take (nothing is read
+  or decrypted, the key is not unlocked) and copies just those files, with the store's key id and
+  public key, into `.booth/.tmp/folio-seed/`; the booth's store is made from it. Items keep their
+  paths and namespaces, so the same `folio exec` command gives the same result in the booth and on
+  the host — seed with the arguments you will run. Texts read with the public key alone; a secret
+  needs the private key, which never comes along. `seed` (default) makes the store only when the
+  booth has none, so a store kept by `+store-cache` is used as it is; `envfolio+seed:"…",fill` adds
+  what it lacks when it has the same key. folio must be on the host; when `--names` fails, the
+  booth does not start and shows folio's message. The value can come from someone else's project
+  config, so only entries, `VAR=<name>`, `--secrets`, `--all`, `--use <@namespace>` and
+  `--vars <file>` inside the project are accepted, and each start lists the items it copied.
+
 - **The `ssh` template is folded into `openssh+credential`.** `ssh` mounted the host `~/.ssh` but
   installed no ssh client, so git over SSH still failed (`cannot run ssh`). `openssh+credential`
   mounts the same folder and its `openssh` parent installs the client; `openssh` is now listed by

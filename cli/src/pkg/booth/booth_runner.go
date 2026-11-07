@@ -67,6 +67,10 @@ func (runner *BoothRunner) Run() error {
 	ctx = CheckHostPortsFree(ctx)
 	ctx = ShowDebugBanner(ctx)
 	ctx = PrepareBoothTmp(ctx)
+	// After PrepareBoothTmp, which empties .booth/.tmp/: the seed it writes there is this start's.
+	if ctx, err = PrepareFolioSeed(ctx); err != nil {
+		return err
+	}
 	// WritePortManifest and ApplyEnvFile both run after PrepareBoothTmp so the
 	// files they write into .booth/.tmp/ are not wiped by the start-of-run
 	// cleanup. WritePortManifest also relies on the port steps above having
