@@ -4,6 +4,20 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`envfolio+key`: a booth that opens its seeded secrets by itself.** With `envfolio+seed`, it
+  also copies the store key's private key files as gpg keeps them — still encrypted with the key's
+  passphrase, nothing unlocked on the host — so the booth's own gpg-agent asks for the passphrase
+  in the booth (the Console UI too) and needs no host: `booth --select
+  'envfolio+seed:"--secrets gh"+key' -- folio exec -s gh -- git push`, in a remote or cloud booth
+  as well. The key comes along on purpose, protected only by its passphrase; without `+key` the
+  seed stays encrypted items only. Passing a value in from the host
+  (`folio exec -s gh -- booth --select gh+token …`) remains the way to keep the key out.
+
+- **gh is now always git's credential helper for github.com,** not only when a token is set at
+  start, so a token set later (`folio exec -s gh -- git push`) is used too. With no token gh answers
+  nothing and git asks as before. The SSH-to-HTTPS rewrite for a booth without `ssh` follows the
+  same rule.
+
 - **`envfolio+seed`: bring chosen EnvFolio items into a booth, still encrypted.** Give it the
   arguments you would give `folio exec` — `envfolio+seed:"gh @app1 --secrets"`, or
   `envfolio+seed:"--use @app2/@prod --vars deploy.vars --secrets"` with a vars file in the project.
