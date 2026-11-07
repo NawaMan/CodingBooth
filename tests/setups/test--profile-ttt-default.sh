@@ -40,6 +40,7 @@ grep -q '^EDITOR=ttt$'                       <<<"$out" || fail "EDITOR is not tt
 grep -q 'editor  *Text editor (ttt)'         <<<"$out" || fail "welcome does not name ttt: $out"
 grep -q 'tilde'                              <<<"$out" && fail "welcome still mentions tilde: $out"
 grep -q 'explorer  *File manager (mc)'       <<<"$out" || fail "welcome does not name mc as explorer: $out"
+grep -q 'glow  *Markdown viewer in the terminal' <<<"$out" || fail "welcome does not list glow: $out"
 grep -qE '^  spf ' <<<"$out"                && fail "welcome still lists spf: $out"
 grep -qE '^  lazygit ' <<<"$out"            && fail "welcome still lists lazygit: $out"
 grep -qE '^  differ ' <<<"$out"             && fail "welcome still lists differ: $out"

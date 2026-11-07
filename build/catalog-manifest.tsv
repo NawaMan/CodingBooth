@@ -126,6 +126,7 @@ setup	ghostty-fancy	1.0.0	bc14a3b49c2cdae66514cdd66d3b874f0988728d8b3a831ce6490b
 setup	gimp	1.0.0	4b4effac44795f1c333af66c5f520921b98066c9dba84e8d5a3f096fd451b92a	variants/base/setups/gimp--setup.sh
 setup	gleam	0.2.0	956d29f3571a07bc410dc1e03a027362800dc087961241a111f22378c71a6e49	variants/base/setups/gleam--setup.sh
 setup	gleam-code-extension	0.1.0	3c69d444f944b4a29febf2da07ef1da671db38f78af0677b41e544aa26b7e0ec	variants/base/setups/gleam-code-extension--setup.sh
+setup	glow	1.0.0	28b4080bb70b2a6d359a0ca21f12223e8ed0cd455cabe1c6a7c01377e5cd89fc	variants/base/setups/glow--setup.sh
 setup	gnupg	0.2.0	4e9b631cbd9a6c468f1b02ad5ca7740080fc5bac38b16eecf93648d72c17241e	variants/base/setups/gnupg--setup.sh
 setup	go	1.2.0	d54cbc8dceeba615fc1e7813d5b225d6710c68383d7f3f49028439b514f71c8b	variants/base/setups/go--setup.sh
 setup	go-code-extension	1.0.0	14b5c05adef0b6e5f5eb1593ef84feca1320bdf1ad6150cf845e96b39c822371	variants/base/setups/go-code-extension--setup.sh
@@ -511,6 +512,7 @@ template	ghostty	1.0.0	dfd4b340de849325faebce647f64b0230fdea7b52208075fc01b4e050
 template	gimp	1.0.0	1855591e9d1aee68552d78e04c8f42d3c312421e8544d23f134f3ef53d82f85f	templates/desktops/gimp/template.toml
 template	git-credential	1.0.1	de28f82873973111f0982ec8cbda74e8dedaa57b15084e80b5bb234c9fe18720	templates/tools/git-credential/template.toml
 template	gleam	0.2.0	cd7dd2489d3c3dace9868b0b13857e58ba32cea312fd65d27f3870d2e49f73e1	templates/languages/gleam/template.toml
+template	glow	1.0.0	30adaf822ce3c0d3e5a220bd402a9a0f110ddd868d0631876502771d46e8d526	templates/tools/glow/template.toml
 template	go	1.2.0	8f16643ccefe5622b7ccdd7ba28650bc41fdd98ec09ebf6491bcb81fe389be86	templates/languages/go/template.toml
 template	goland	1.0.0	e657667702b91cc74de699fc1a4fd329c253579685824186871c7f9d9aadc111	templates/ides/goland/template.toml
 template	google-chrome	1.0.0	135a1bce24ab8dd6420199954a5ba74a5ccb6170a62a4a0a981b185830c68e83	templates/desktops/google-chrome/template.toml
