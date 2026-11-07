@@ -4,6 +4,11 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **glow in every booth: Markdown in the terminal.** The base image now ships
+  [glow](https://github.com/charmbracelet/glow) 3.0.0 (`glow README.md`, `glow -p` to page, plain
+  `glow` to browse a folder's `.md` files), with its man page and bash/zsh/fish completions. It is
+  the terminal counterpart of `viewmd`. The `glow` template picks another release.
+
 - **Breaking: only declared Cache and Shared paths are mounted.** A folder or file in
   `.booth/cache/` or `.booth/shared/` now mounts only when `config.toml` declares it
   (`cache-files` / `cache-dirs` / `shared-files` / `shared-dirs`, from a template or `--set`), or

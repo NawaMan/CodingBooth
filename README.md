@@ -334,7 +334,7 @@ These essentials are preinstalled so you can start working immediately — no ex
   `git`, `gh` (GitHub CLI), `tig`, `lazygit` (terminal UI for git), `differ` (review what an agent changed)
 
 - **Editors & File Browsers**
-  `ttt` (the default editor, with LSP), `nano`, `tilde` (menu-driven, Windows-style keys), `mc` (Midnight Commander), `spf` (superfile, file manager), `less`, `viewmd` (Markdown viewer in a browser)
+  `ttt` (the default editor, with LSP), `nano`, `tilde` (menu-driven, Windows-style keys), `mc` (Midnight Commander), `spf` (superfile, file manager), `less`, `viewmd` (Markdown viewer in a browser), `glow` (Markdown viewer in the terminal)
 
 - **Secrets & Environment**
   `folio` (EnvFolio: texts and secrets as environment variables, on `pass`)

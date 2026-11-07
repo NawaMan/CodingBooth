@@ -311,6 +311,9 @@ RUN tls--setup.sh
 # Markdown viewer (viewmd) - every booth can serve a folder of .md files to a browser
 RUN viewmd--setup.sh
 
+# Terminal Markdown renderer (glow) - pinned; the glow template picks another release
+RUN glow--setup.sh --version 3.0.0
+
 # GnuPG 2.5 (Ubuntu ships the end-of-life 2.4) - built into /usr/local, ahead of /usr/bin on PATH
 RUN gnupg--setup.sh --version 2.5.24
 

@@ -1,0 +1,16 @@
+cb-version = "1.0.0"
+display-name = "Glow"
+primary = true
+display-disc = "Render Markdown in the terminal"
+display-detail = "glow 3.0.0 is already in the base image; select this template to pick another release. Installs glow, Charm's terminal Markdown renderer, from the official GitHub release to /usr/local/bin/glow, checked against the release's checksums.txt, with its man page and shell completions. Run glow README.md to render a file, glow -p to page through it, or plain glow to browse every .md under the current folder. For Markdown in a browser, use viewmd. Pin a release with glow:3.0.0; the default is latest, falling back to 3.0.0."
+display-order = 60
+tags = ["markdown", "tui", "cli"]
+
+[params.GLOW_VERSION]
+default = "latest"
+suggests = ["latest", "3.0.0"]
+
+[segments]
+Boothfile = """
+setup glow --version ${GLOW_VERSION}
+"""
