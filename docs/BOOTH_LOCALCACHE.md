@@ -354,7 +354,7 @@ For the team/git version of either, see [Shared State](BOOTH_SHARED.md).
 
 | Template Selection | What's Cached |
 |--------------------|---------------|
-| `envfolio+store-cache` | `~/.local/share/envfolio/` (the store is `store/` inside it), `~/.gnupg/` — both created `0700` |
+| `envfolio+store-cache` | `~/.local/share/folio/` (the store is `store/` inside it), `~/.gnupg/` — both created `0700` |
 | `n8n+persist` | `~/.n8n/` — workflows, **saved credentials**, and the key that encrypts them |
 | `appwrite-server+persist` | `~/.appwrite-server/` — Appwrite's data, including projects and the console user |
 
