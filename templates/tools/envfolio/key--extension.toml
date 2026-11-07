@@ -1,0 +1,9 @@
+cb-version = "1.0.0"
+display-name = "Bring the Store Key"
+display-disc = "With +seed: also bring the store key's private key, so folio in the booth opens secrets itself"
+display-detail = """With +seed, also copies the private key files of the store's key (from the host's gpg home, private-keys-v1.d/) into the booth, as they are: still encrypted with the key's passphrase, which the booth's own gpg-agent asks for in the booth's terminal (the Console UI too) the first time a secret is opened. Nothing is unlocked on the host and no passphrase is asked there. The booth then needs no host: `folio exec -s gh -- git push` works in a remote or cloud booth too. The risk is the point of it: the key comes along, protected only by its passphrase, and any code in the booth can copy the key file (and see the passphrase when it is typed there). It also stays in .booth/.tmp/folio-seed/ until the next start or exit, and with +store-cache in the cached ~/.gnupg. Without it, the seed brings encrypted items only, and the secrets need a key brought in another way. A key on a smartcard cannot be copied: the booth then does not start, and says so."""
+display-order = 93
+auto-select = false
+tags = ["secrets", "credential", "gpg", "key"]
+
+run-args = ["-e", "CB_FOLIO_SEED_KEY=1"]
