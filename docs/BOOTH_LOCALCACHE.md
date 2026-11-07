@@ -20,6 +20,7 @@ Back to [README](../README.md)
 - [Overview](#overview)
 - [How It Works](#how-it-works)
 - [Mount Rules](#mount-rules)
+- [Leftovers of a Deselected Template](#leftovers-of-a-deselected-template)
 - [Protected Paths](#protected-paths)
 - [Gitignore Requirement](#gitignore-requirement)
 - [Initial Content](#initial-content)
@@ -31,7 +32,7 @@ Back to [README](../README.md)
 
 ## Overview
 
-Container home directories are ephemeral — shell history, tool configs, and other runtime state are lost every time the container is recreated. `.booth/cache/` solves this by letting users place files and directories that get bind-mounted into the container automatically.
+Container home directories are ephemeral — shell history, tool configs, and other runtime state are lost every time the container is recreated. `.booth/cache/` solves this: the files and directories `config.toml` declares (`cache-files` / `cache-dirs`, usually from a template) are kept there and bind-mounted into the container automatically.
 
 The directory is:
 - **Per-project** — lives inside `.booth/`, scoped to this project
@@ -42,7 +43,7 @@ The directory is:
 
 ## How It Works
 
-The directory structure inside `.booth/cache/` mirrors the container's root filesystem. CodingBooth traverses the tree and creates bind mounts based on what it finds.
+The directory structure inside `.booth/cache/` mirrors the container's root filesystem. CodingBooth traverses the tree and mounts what `config.toml` declares (see [Mount Rules](#mount-rules)).
 
 A folder is a live bind mount. A single file is copied in at start and synced back every 2
 seconds — see [Single files are kept in sync](#single-files-are-kept-in-sync) for why.
@@ -66,13 +67,15 @@ any that are missing — so a fresh clone, which has no `.booth/cache/`, gets th
 
 ## Mount Rules
 
-CodingBooth walks `.booth/cache/` top-down. At each directory:
+CodingBooth walks `.booth/cache/` top-down, and mounts only what `config.toml` declares: a path
+in `cache-files` or `cache-dirs`, or one inside a declared folder. Anything else is a leftover —
+see [Leftovers of a Deselected Template](#leftovers-of-a-deselected-template). At each directory:
 
 1. **If `.mount-this` marker exists** — mount the entire directory at its corresponding container path. Stop traversing into it. The `.mount-this` file (it can be empty) goes along with the folder, so it is visible inside the booth too — a tool that wants an empty folder must use a subfolder of the mounted one (see `envfolio+store-cache` below).
 
 2. **Otherwise** — mount any individual **files** in this directory one by one (see [Single files](#single-files-are-kept-in-sync)), then continue traversing into subdirectories.
 
-Any container path may be used, outside the [protected ones](#protected-paths). The one exception is
+Any container path may be declared, outside the [protected ones](#protected-paths). The one exception is
 a file directly in `.booth/cache/` — a `README.md` there would land at `/README.md` — so it is not
 mounted, and the start prints a notice naming it.
 
@@ -84,6 +87,38 @@ mounted, and the start prints a notice naming it.
 | Directory without `.mount-this`       | Not mounted (structural only) | Continues |
 | File in a non-`.mount-this` directory | Individual file, kept in sync | N/A       |
 | File directly in `.booth/cache/`      | Not mounted, with a notice    | N/A       |
+| Any of the above not declared in `config.toml` | Not mounted, with a notice | N/A |
+
+## Leftovers of a Deselected Template
+
+Deselecting a template removes its paths from `config.toml`, but `booth config` never deletes
+what `.booth/cache/` holds — a cached key, store or database is data. Those folders and files
+are then *leftovers*: booth does not mount them, so a booth never gets half of a template (its
+cached `~/.gnupg` without the `FOLIO_STORE_DIR` that `envfolio+store-cache` sets with it), and
+each start names them:
+
+```
+   Not mounting what config.toml does not declare (left by a deselected template?):
+     .booth/cache/home/coder/.gnupg/
+   'booth prune cache' removes them; 'booth config --set cache-dirs=<path>' (or cache-files) keeps one mounted.
+```
+
+Select the template again and they mount again, as they were. To keep one without the
+template, declare it: `booth config --set cache-dirs=home/coder/.gnupg:0700`. To delete them:
+
+```bash
+booth prune cache            # lists the leftovers with their sizes, then asks
+booth prune cache --yes      # no question
+booth prune cache --code ../other-project
+```
+
+`booth prune cache` deletes only what `config.toml` does not declare, removes the folders that
+leaves empty, and refuses while a booth runs on the project. `.booth/cache/` is not in git, so
+what it deletes is gone. `booth prune shared` does the same for `.booth/shared/`
+([Shared State](BOOTH_SHARED.md)), where a deletion shows in `git status`.
+
+A folder made by hand in `.booth/cache/` is a leftover too until `config.toml` declares it —
+the [User-Defined Cache](#user-defined-cache-in-configtoml) section shows how.
 
 ### Why `.mount-this`?
 
@@ -214,6 +249,9 @@ Never put a secret in a seed: both seed folders are committed.
 
 ## Examples
 
+Each tree below mounts only with its paths declared in `config.toml` — by the template that
+makes them, or by you (the `cache-files` / `cache-dirs` lines shown).
+
 ### Shell history across sessions
 
 ```
@@ -224,6 +262,7 @@ Never put a secret in a seed: both seed folders are committed.
 ```
 
 Both files are mounted individually. Your command history survives container recreation.
+Declared by `shell-history`: `cache-files = ["home/coder/.bash_history", "home/coder/.zsh_history"]`.
 
 ### Application data directory
 
@@ -236,7 +275,7 @@ Both files are mounted individually. Your command history survives container rec
       app.db
 ```
 
-The entire `opt/ex-app/` directory is mounted at `/opt/ex-app` in the container, including `data/app.db`. The `.mount-this` file signals "mount this whole directory."
+The entire `opt/ex-app/` directory is mounted at `/opt/ex-app` in the container, including `data/app.db`. The `.mount-this` file signals "mount this whole directory"; `cache-dirs = ["opt/ex-app"]` declares it.
 
 ### Mixed: individual files and directory mounts
 
@@ -252,6 +291,8 @@ The entire `opt/ex-app/` directory is mounted at `/opt/ex-app` in the container,
 ```
 
 History and gitconfig are individual file mounts. The PostgreSQL data directory is a whole-directory mount.
+Declared as `cache-files = ["home/coder/.bash_history", "home/coder/.gitconfig"]` and
+`cache-dirs = ["var/lib/postgresql"]`.
 
 ### Claude Code settings persistence
 
@@ -430,6 +471,8 @@ booth config --no-tui . --select go --set cache-dirs=home/coder/.custom_app_data
 - A `cache-dirs` entry may end in an octal mode — `home/coder/.gnupg:0700` — for a tool that refuses a folder others can read (gpg, ssh). The mode is set when the folder is created — by booth, or by copying in a [seed](#initial-content) at or under it; an existing folder keeps its own
 - These paths are merged with any cache paths from selected templates — duplicates are automatically removed — and stay across `booth config` runs. The one exception is a path a selected template also declares: it belongs to that template, and goes when the template is deselected
 - Paths are relative to the container root (e.g., `home/coder/.foo` maps to `/home/coder/.foo`)
+- Only declared paths are mounted, so this is also how a folder or file you put in `.booth/cache/`
+  yourself gets mounted; undeclared, it is a [leftover](#leftovers-of-a-deselected-template)
 
 
 ---
