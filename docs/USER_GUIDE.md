@@ -243,7 +243,9 @@ credentials the booth was set up to bring in from the host:
 | Booth set up with | Gives you |
 |---|---|
 | `git-credential` | your host `~/.gitconfig` (name, email, credential helper) |
-| `ssh` / `openssh/credential` | your host `~/.ssh` keys and config, read-only |
+| `openssh+agent` | your host ssh-agent: SSH works, but no key file is copied in |
+| `openssh+keys` | only the keys in one host folder (default `~/.ssh/booth`) |
+| `openssh+credential` | all of your host `~/.ssh` keys and config, read-only |
 | `gh+token` | your host `GH_TOKEN` / `GITHUB_TOKEN`, so `gh` is logged in |
 
 They are copied into the booth's home at start (from `/etc/cb-home-seed/`), so the host files are
@@ -256,8 +258,7 @@ home is persisted (see [What survives a restart](#what-survives-a-restart)).
 More: [booth home → Credential seeding](https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_HOME.md#common-credential-seeding-examples) ·
 [Security → Convenience mounts](https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_SECURITY.md)
 
-> **Not covered yet:** SSH agent forwarding (using your host's `ssh-agent` instead of copying
-> keys) and GPG-signed commits. Neither is built in today.
+> **Not covered yet:** GPG-signed commits.
 
 ### Log in to AI coding tools
 

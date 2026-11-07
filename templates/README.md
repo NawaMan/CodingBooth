@@ -888,7 +888,6 @@ never becomes a Boothfile `arg` (which would rebuild the image):
 | `tools/git-credential`  | Git Credentials | `run-args` seeding the host `~/.gitconfig` |
 | `tools/no-sudo`         | No Sudo         | `sudo = false` |
 | `tools/shell-history`   | Shell History   | `cache-files` for bash/zsh history |
-| `tools/ssh`             | SSH Config      | `run-args` seeding the host `~/.ssh` |
 | `tools/zsh`             | Zsh             | nothing on its own (zsh is in the base image); `+default` sets `USER_SHELL=/bin/zsh` |
 
 Machine-wide package-download caches are `run-args` only. Each one mounts a named volume

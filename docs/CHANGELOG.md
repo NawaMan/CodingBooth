@@ -4,6 +4,32 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The `ssh` template is folded into `openssh+credential`.** `ssh` mounted the host `~/.ssh` but
+  installed no ssh client, so git over SSH still failed (`cannot run ssh`). `openssh+credential`
+  mounts the same folder and its `openssh` parent installs the client; `openssh` is now listed by
+  default in its place. A selection that names `ssh` now errors as an unknown template: use
+  `openssh+credential`.
+
+- **SSH in a booth without handing it all of `~/.ssh`.** `openssh+credential` copies every key in
+  `~/.ssh` into the booth, where any code there can read them; it stays, described now as the
+  you-are-on-your-own mode. Two new extensions are for general use. `openssh+agent` mounts the
+  host ssh-agent socket, so git over SSH signs with your agent's keys and no key file enters the
+  booth (a native engine on Linux; with no agent the mount is skipped with a notice).
+  `openssh+keys` brings in only one folder you choose — default `~/.ssh/booth`, another with
+  `--select 'openssh+keys:"~/keys/booth"'` (a value with `/` is quoted) — copied in with ssh's
+  modes and never over a file already there. The `openssh` setup also pins GitHub's host keys, so
+  git over SSH to github.com asks no yes/no question in either mode.
+
+- **`gh+token` also sets up git, and passes GitHub Enterprise tokens.** With only `GH_TOKEN` in
+  the booth, `gh` was logged in but `git push` over HTTPS still prompted for a username, or failed
+  on a helper copied in by `git-credential` that names the host's `gh` path. The `gh` setup now runs
+  `gh auth setup-git` at start when `GH_TOKEN` or `GITHUB_TOKEN` is set, so git's credential helper
+  is the booth's `gh`. `gh+token` also passes `GH_ENTERPRISE_TOKEN` and `GH_HOST`, each only when
+  set, and with both the enterprise host's helper is set up the same way. A clone made over SSH
+  (`git@github.com:owner/repo`) works too: the booth has no `ssh` client, so the setup tells git
+  (in the booth's `~/.gitconfig`, not the repo) to reach that host over HTTPS, where the token
+  applies. A booth with `ssh` installed (the `openssh` template) keeps SSH.
+
 - **A booth on a git worktree no longer shows your host's folders.** To make git work, booth
   mounted the main clone's `.git` at its host path, so the booth held `/home/<you>/dev/…/.git` and
   the empty folders above it. Those looked like your home directory and, made by the engine, were
