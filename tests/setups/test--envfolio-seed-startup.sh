@@ -13,8 +13,12 @@
 #   fill           -- also adds what an existing store lacks, when it has the
 #                     same key; never replaces an item, never mixes keys.
 #
+# envfolio+key adds the store key's private key files (private-keys/<grip>.key,
+# still passphrase-protected): the hook puts them in ~/.gnupg/private-keys-v1.d
+# (700/600), never over one there, and never into the store itself.
+#
 # The hook is extracted from envfolio--setup.sh and run with a stub folio (for
-# `folio path`) and gpg (records the import); git is real.
+# `folio path`), gpg (records the import) and gpgconf; git is real.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -39,7 +43,8 @@ fi
 mkdir -p "$WORK/bin"
 printf '#!/bin/sh\n[ "$1" = path ] && echo "${FOLIO_STORE_DIR:-$HOME/.folio}"\n' > "$WORK/bin/folio"
 printf '#!/bin/sh\necho "gpg $*" >> "%s/gpg.log"\n' "$WORK" > "$WORK/bin/gpg"
-chmod +x "$WORK/bin/folio" "$WORK/bin/gpg"
+printf '#!/bin/sh\n[ "$1" = --list-dirs ] && echo "$HOME/.gnupg/S.gpg-agent"\nexit 0\n' > "$WORK/bin/gpgconf"
+chmod +x "$WORK/bin/folio" "$WORK/bin/gpg" "$WORK/bin/gpgconf"
 GIT_BIN_DIR="$(dirname "$(command -v git)")"
 
 # The seed, as the CLI writes it.
@@ -139,5 +144,32 @@ run_hook "$WORK/h6" CB_FOLIO_SEED="gh"
 [[ "$RUN_EXIT" -eq 0 && "$(files "$WORK/h6/.folio")" == "notes.txt " ]] \
     && check "true"  "a non-empty folder that is not a store is left alone" \
     || check "false" "a non-empty folder that is not a store is left alone" "$(files "$WORK/h6/.folio")"$'\n'"$OUT"
+
+# ---- 7. envfolio+key: the store key's private key files ----
+KSEED="$WORK/seed-with-key"
+cp -a "$SEED" "$KSEED"
+mk "$KSEED/private-keys/E46C9395D7426A1C84DB57D6CD874C312A280EBF.key" "protected-primary"
+mk "$KSEED/private-keys/C57CA7B533407125984D2402DCA0A0D36B819A9D.key" "protected-sub"
+chmod 644 "$KSEED/private-keys/"*.key
+mkdir -p "$WORK/h7/.gnupg/private-keys-v1.d"
+echo "already-here" > "$WORK/h7/.gnupg/private-keys-v1.d/C57CA7B533407125984D2402DCA0A0D36B819A9D.key"
+run_hook "$WORK/h7" CB_FOLIO_SEED="--secrets gh" CB_FOLIO_SEED_DIR="$KSEED"
+K="$WORK/h7/.gnupg/private-keys-v1.d"
+[[ "$RUN_EXIT" -eq 0 && "$(cat "$K/E46C9395D7426A1C84DB57D6CD874C312A280EBF.key")" == protected-primary \
+   && "$(stat -c %a "$K/E46C9395D7426A1C84DB57D6CD874C312A280EBF.key")" == 600 \
+   && "$(stat -c %a "$K")" == 700 && "$(stat -c %a "$WORK/h7/.gnupg")" == 700 ]] \
+    && check "true"  "key: the private key files go to ~/.gnupg/private-keys-v1.d, 600 in a 700 folder" \
+    || check "false" "key: the private key files go to ~/.gnupg/private-keys-v1.d, 600 in a 700 folder" "$(ls -la "$K" 2>&1)"$'\n'"$OUT"
+
+[[ "$(cat "$K/C57CA7B533407125984D2402DCA0A0D36B819A9D.key")" == already-here && ! -e "$WORK/h7/.folio/private-keys" \
+   && -f "$WORK/h7/.folio/gh/user.txt" ]] \
+    && check "true"  "key: a key file already there is kept, and none goes into the store" \
+    || check "false" "key: a key file already there is kept, and none goes into the store" "$(files "$WORK/h7/.folio")"
+
+make_store "$WORK/h8/.folio" HOSTKEY
+run_hook "$WORK/h8" CB_FOLIO_SEED="--secrets gh" CB_FOLIO_SEED_DIR="$KSEED"
+[[ "$RUN_EXIT" -eq 0 && -f "$WORK/h8/.gnupg/private-keys-v1.d/E46C9395D7426A1C84DB57D6CD874C312A280EBF.key" ]] \
+    && check "true"  "key: brought even when a store is already there (seed mode keeps the store)" \
+    || check "false" "key: brought even when a store is already there (seed mode keeps the store)" "$OUT"
 
 $ALL_PASSED
