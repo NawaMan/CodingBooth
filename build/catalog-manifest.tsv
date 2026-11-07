@@ -91,7 +91,7 @@ setup	elixir	1.1.0	babd375fad790de916e90d4b579af09636776c061b51d4bd290e066fc1db9
 setup	elixir-code-extension	1.0.0	1743fe565bbebf15186049e8fc3dee0bfedf050c56c3e26cdf7fa2e2c03b1cc4	variants/base/setups/elixir-code-extension--setup.sh
 setup	elm	1.2.0	cde7019ecf2f9789bf0f9c4ad5bbf3690f001c69df6b9bf83836fc42994a20a2	variants/base/setups/elm--setup.sh
 setup	elm-code-extension	1.0.0	6e0caa93413bd80117a033e9a2f94c537a9867e775427f778347a4f8e312aedc	variants/base/setups/elm-code-extension--setup.sh
-setup	envfolio	2.6.0	37174816d28bcde9cecb2e0abf565eb208b53e20c2a340fe2f8775934005d534	variants/base/setups/envfolio--setup.sh
+setup	envfolio	2.7.0	60c1ccda37e2b1ec6f212c44fb14b0d68648047588825ef04fb3e58721c92006	variants/base/setups/envfolio--setup.sh
 setup	erlang	1.0.0	24ad8e50ad69aef9725262acd39b14885d8007f85bacd31e360b75a39d6175ab	variants/base/setups/erlang--setup.sh
 setup	erlang-code-extension	1.0.0	6e5b09d75439bec5b67b899d850b0a99cb07c3fe72052e8061458843f60aff70	variants/base/setups/erlang-code-extension--setup.sh
 setup	excalidraw	1.1.0	02f04628f0678822959537b54d80a34743aae9c1d30c77b41fb45aaa06f34f87	variants/base/setups/excalidraw--setup.sh
@@ -119,7 +119,7 @@ setup	gcc-code-extension	1.0.0	4bead0b7f116778815855e31ed6353762c6deb020517fa92e
 setup	gcc-frontend	0.1.0	a52ea9e0cdc42e578b8f58ca67b35b3663d32741d4c54bac429db4f8e6d730f6	variants/base/setups/gcc-frontend--setup.sh
 setup	gcloud	1.0.0	a7d4650483f3f74d604619f844debedb72c33330b1a906355a5b52276de2538a	variants/base/setups/gcloud--setup.sh
 setup	gemini-cli	1.0.0	6102af714bff3e30b13dc002ae3c1a0a045741c9e971abf6e08a9e12c0aa4c87	variants/base/setups/gemini-cli--setup.sh
-setup	gh	1.1.0	2c703588d6574843ca1f35b672f844aa99a1383a11bd2f1b3fa6663cd7f33d1b	variants/base/setups/gh--setup.sh
+setup	gh	1.2.0	a527539fabdbed2f0176db66418b10653a9f8e86843044256582619b7dfc0020	variants/base/setups/gh--setup.sh
 setup	gh-copilot	1.0.1	ac6e9f129eb0aec518088b3aefedd2dc5546e3edf9ee3a96800dbd0b6560788c	variants/base/setups/gh-copilot--setup.sh
 setup	ghostty	1.0.0	325bb5d495fe371a8ce609b71b8331b48e34cdaa888f60007cbb49914fa5a103	variants/base/setups/ghostty--setup.sh
 setup	ghostty-fancy	1.0.0	bc14a3b49c2cdae66514cdd66d3b874f0988728d8b3a831ce6490bec096fd91b	variants/base/setups/ghostty-fancy--setup.sh
@@ -721,6 +721,7 @@ extension	elixir+mix-deps	1.0.0	22616ac46a460263aa755b2639698546c95cba7e46a5e638
 extension	elixir+repl-history	1.0.0	3516d04cfa6733442c41993f050f6d0d58a8d2400c95c7b161c0342be94ed53a	templates/languages/elixir/repl-history--extension.toml
 extension	elixir+vscode-ext	1.0.0	3957ded1247420d09f277913d2598a7717d4d1d6dc16dee3d8c08bdc7b0df913	templates/languages/elixir/vscode-ext--extension.toml
 extension	elm+vscode-ext	1.0.0	e7db7995335a5c73a4a79143ee82c59ad8d021edea1037bea9f06dcdbb367d9e	templates/languages/elm/vscode-ext--extension.toml
+extension	envfolio+agent	1.0.0	75b8742dc517c85a5245cfaefdcce7bc3fdf74bcc8a910bdcc78f67f5eb74baa	templates/tools/envfolio/agent--extension.toml
 extension	envfolio+seed	1.0.0	ac9d851400cf980d0e5590659982e01e9a9e1ad692708a9726a20caa0d9c3f25	templates/tools/envfolio/seed--extension.toml
 extension	envfolio+store-cache	2.0.1	2d792fe969aa23b617e8e32b3e6ffcf13d925e05cdeb425045e1d1702192a344	templates/tools/envfolio/store-cache--extension.toml
 extension	erlang+vscode-ext	1.0.0	34931fad7207f9b5f0c9305fc1fde92cb8279cad00888b2281c95d8ee61b68b7	templates/languages/erlang/vscode-ext--extension.toml
@@ -753,7 +754,7 @@ extension	gemini-cli+credential	1.0.0	67b574634bb8083faed2df2383bdcac167e6419f70
 extension	gemini-cli+plugins	1.0.0	22e7a775bb4a88edef00b70b4c212ddaea2b2147a3a84a59123a7d2990cca2c1	templates/ai-tools/gemini-cli/plugins--extension.toml
 extension	gemini-cli+settings-cache	1.0.0	6baf2286ae93675efc968782ce0babcf6690a7630b89090523b568bfb9d3dacd	templates/ai-tools/gemini-cli/settings-cache--extension.toml
 extension	gh+copilot	1.0.0	4352c563f6af159dfcccc995766c24e4ee6ad04dfa64142719f15d3bf5223005	templates/tools/gh/copilot--extension.toml
-extension	gh+token	0.2.0	a0468c12d11295915e85b69f6f1799ef19d53852f034aa8db8a1da640b256381	templates/tools/gh/token--extension.toml
+extension	gh+token	0.2.1	19e553548f9dea3230edcedacbdab64a49720c31f872d70e280f7d7d0274464c	templates/tools/gh/token--extension.toml
 extension	ghostty+fancy	1.0.0	37f51efa6635527d3d359422f1cbba38c8f6e72daad9f9164b2d5ba96208edc7	templates/desktops/ghostty/fancy--extension.toml
 extension	gleam+vscode-ext	0.1.0	b74fa1fc7fed3a2882a520227a1a09f1502e7fcddf9a35d506a1b2fcbe474ffb	templates/languages/gleam/vscode-ext--extension.toml
 extension	go+go-mod	1.0.0	d0ce534aaa86760a1384b2241206a294bec0fe086d52eadafd8390e1c97b54b5	templates/languages/go/go-mod--extension.toml

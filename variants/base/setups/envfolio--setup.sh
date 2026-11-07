@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 2.6.0
+# cb-version: 2.7.0
 
 set -Eeuo pipefail
 
@@ -125,6 +125,26 @@ mkdir -p "$(dirname "$STARTUP_FILE")"
 cat > "$STARTUP_FILE" <<'EOF'
 #!/usr/bin/env bash
 set -uo pipefail
+
+# ---- envfolio+agent: decrypt with the host's gpg-agent ----
+# The extension mounts the host agent's extra socket (made for remote use: it decrypts and signs,
+# but gives no key away) at CB_GPG_AGENT_SOCK. gpg here finds its agent at its own socket path, so
+# that path gets an Assuan redirect file pointing at the mounted one, and no-autostart keeps gpg
+# from starting an agent of its own in its place. Passphrase prompts appear on the host.
+if [[ -n "${CB_GPG_AGENT_SOCK:-}" && -S "$CB_GPG_AGENT_SOCK" ]]; then
+    agent_sock="$(gpgconf --list-dirs agent-socket 2>/dev/null)" || agent_sock=""
+    [[ -n "$agent_sock" ]] || agent_sock="${GNUPGHOME:-$HOME/.gnupg}/S.gpg-agent"
+    gnupg_dir="$(dirname "$agent_sock")"
+    mkdir -p "$gnupg_dir" && chmod 700 "$gnupg_dir"
+    gpgconf --kill gpg-agent >/dev/null 2>&1 || true
+    rm -f "$agent_sock"
+    printf '%%Assuan%%\nsocket=%s\n' "$CB_GPG_AGENT_SOCK" > "$agent_sock"
+    conf="${GNUPGHOME:-$HOME/.gnupg}/gpg.conf"
+    grep -qx 'no-autostart' "$conf" 2>/dev/null || echo 'no-autostart' >> "$conf"
+    echo "EnvFolio: gpg uses the host's gpg-agent (keys stay on the host)."
+elif [[ -n "${CB_GPG_AGENT_SOCK:-}" ]]; then
+    echo "EnvFolio: no host gpg-agent socket at $CB_GPG_AGENT_SOCK; secrets cannot be decrypted here."
+fi
 
 SEED="${CB_FOLIO_SEED_DIR:-/home/coder/code/.booth/.tmp/folio-seed}"   # override: tests only
 [[ -n "${CB_FOLIO_SEED:-}" && -s "$SEED/.gpg-id" ]] || exit 0
