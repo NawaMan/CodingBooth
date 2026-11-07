@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 2.5.0
+# cb-version: 2.6.0
 
 set -Eeuo pipefail
 
@@ -109,6 +109,81 @@ rm -rf "${TMP_DIR}"
 # An image built on top of one with EnvFolio 0.3.0 or older still carries the
 # old command, which no longer matches the store this one uses.
 rm -f /usr/local/bin/envfolio
+
+# ---- startup: a store seeded from the host (envfolio+seed) ----
+# The CLI copies the items named by CB_FOLIO_SEED (`folio exec` arguments) from the host's store,
+# still encrypted, into .booth/.tmp/folio-seed/ before the container starts, with the store's
+# .gpg-id and public key. This hook makes that the booth's store. CB_FOLIO_SEED_MODE:
+#   seed (default) -- only when the booth has no store yet; one there (e.g. +store-cache) is kept.
+#   fill           -- also add the items an existing store lacks, when it has the same key (a store
+#                     with another key could not read them: secrets are encrypted to the seed's key,
+#                     texts signed by it). What is already there is never replaced.
+# Paths are kept (@app2/@prod/...), so the same `folio exec` means the same here as on the host.
+# Decrypting a secret still needs the private key: that is up to whoever uses the booth.
+STARTUP_FILE="/usr/share/startup.d/60-cb-envfolio--startup.sh"
+mkdir -p "$(dirname "$STARTUP_FILE")"
+cat > "$STARTUP_FILE" <<'EOF'
+#!/usr/bin/env bash
+set -uo pipefail
+
+SEED="${CB_FOLIO_SEED_DIR:-/home/coder/code/.booth/.tmp/folio-seed}"   # override: tests only
+[[ -n "${CB_FOLIO_SEED:-}" && -s "$SEED/.gpg-id" ]] || exit 0
+MODE="${CB_FOLIO_SEED_MODE:-seed}"
+STORE="$(folio path 2>/dev/null)" || STORE=""
+[[ -n "$STORE" ]] || STORE="${FOLIO_STORE_DIR:-$HOME/.folio}"
+
+say() { echo "EnvFolio seed: $*"; }
+
+# The texts are signed by the store's key; folio shows one only when that signature checks out.
+[[ -s "$SEED/pubkey.asc" ]] && gpg --batch --quiet --import "$SEED/pubkey.asc" >/dev/null 2>&1
+
+# commit_store MESSAGE -- record what was added, as folio does for its own changes.
+commit_store() {
+    git -C "$STORE" add -A >/dev/null 2>&1 \
+        && git -C "$STORE" -c user.name="CodingBooth" -c user.email="booth@localhost" \
+               commit -q -m "$1" >/dev/null 2>&1
+    true
+}
+
+# Each item of the seed: <name>.gpg, or <name>.txt with its .txt.sig.
+seed_items() {
+    (cd "$SEED" && find . -type f \( -name '*.gpg' -o -name '*.txt' \) | sed 's|^\./||' | sort)
+}
+
+if [[ ! -s "$STORE/.gpg-id" || ! -e "$STORE/.git" ]]; then
+    if [[ -d "$STORE" && -n "$(ls -A "$STORE" 2>/dev/null)" ]]; then
+        say "$STORE is not an EnvFolio store and not empty; not seeding it."
+        exit 0
+    fi
+    mkdir -p "$STORE" && chmod 700 "$STORE"
+    (cd "$SEED" && find . -mindepth 1 -maxdepth 1 ! -name pubkey.asc -exec cp -a {} "$STORE/" \;)
+    git -C "$STORE" init -q >/dev/null 2>&1
+    commit_store "Seeded from the host: folio exec $CB_FOLIO_SEED"
+    say "made $STORE from the host's items ($(seed_items | wc -l))."
+    exit 0
+fi
+
+if [[ "$MODE" != "fill" ]]; then
+    say "$STORE already exists; kept as it is (CB_FOLIO_SEED_MODE=fill adds missing items)."
+    exit 0
+fi
+if ! cmp -s "$SEED/.gpg-id" "$STORE/.gpg-id"; then
+    say "$STORE uses another key than the host's store; nothing added (its items could not be read here)."
+    exit 0
+fi
+added=0
+while IFS= read -r item; do
+    [[ -e "$STORE/$item" ]] && continue
+    mkdir -p "$(dirname "$STORE/$item")"
+    cp -a "$SEED/$item" "$STORE/$item" || continue
+    [[ "$item" == *.txt && -f "$SEED/$item.sig" ]] && cp -a "$SEED/$item.sig" "$STORE/$item.sig"
+    added=$((added + 1))
+done < <(seed_items)
+(( added == 0 )) || commit_store "Filled from the host: folio exec $CB_FOLIO_SEED"
+say "added $added missing item(s) to $STORE."
+true
+EOF
+chmod 755 "$STARTUP_FILE"
 
 # ---- friendly summary ----
 echo "✅ folio installed."
