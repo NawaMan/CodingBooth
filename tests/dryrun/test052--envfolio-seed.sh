@@ -4,7 +4,8 @@
 # you may not use this file except in compliance with the License.
 
 # -----------------------------------------------------------------------------
-# envfolio+seed: the selection reaches the run, and a dry run makes no seed
+# envfolio+seed and +agent: the selection reaches the run, a dry run makes no
+# seed, and +agent mounts the host gpg-agent socket read-only
 #
 # The extension's params become -e CB_FOLIO_SEED / CB_FOLIO_SEED_MODE in
 # run-args: the host side reads the selection from there before the container
@@ -51,4 +52,27 @@ if printf '%s\n' "$OUT" | grep -F -- "CB_FOLIO_SEED_MODE=seed" >/dev/null \
 else
   print_test_result "false" "$0" "3" "no FOLIO_SEED: mode defaults to seed, and nothing is seeded"
   printf '%s\n' "$OUT" | grep -i folio; exit 1
+fi
+
+# ---- envfolio+agent: the host agent's extra socket, read-only ----
+RUNTIME="$PROJECT/runtime"
+mkdir -p "$RUNTIME/gnupg"
+: > "$RUNTIME/gnupg/S.gpg-agent.extra"   # the missing-mount filter only checks it exists
+
+OUT=$(export XDG_RUNTIME_DIR="$RUNTIME"; dry 'envfolio+agent')
+if printf '%s\n' "$OUT" | grep -F -- "$RUNTIME/gnupg/S.gpg-agent.extra:/run/cb-gpg-agent.sock:ro" >/dev/null \
+  && printf '%s\n' "$OUT" | grep -F -- "CB_GPG_AGENT_SOCK=/run/cb-gpg-agent.sock" >/dev/null; then
+  print_test_result "true"  "$0" "4" "+agent: the host agent's extra socket is mounted read-only, CB_GPG_AGENT_SOCK points at it"
+else
+  print_test_result "false" "$0" "4" "+agent: the host agent's extra socket is mounted read-only, CB_GPG_AGENT_SOCK points at it"
+  printf '%s\n' "$OUT" | grep -i -E 'gpg|skipping'; exit 1
+fi
+
+OUT=$(unset XDG_RUNTIME_DIR; dry 'envfolio+agent')
+if ! printf '%s\n' "$OUT" | grep -F -- ":/run/cb-gpg-agent.sock" >/dev/null \
+  && printf '%s\n' "$OUT" | grep -F "Skipping volume mount: host path does not exist: /nonexistent/gnupg/S.gpg-agent.extra" >/dev/null; then
+  print_test_result "true"  "$0" "5" "+agent with no XDG_RUNTIME_DIR: the mount is skipped with a notice"
+else
+  print_test_result "false" "$0" "5" "+agent with no XDG_RUNTIME_DIR: the mount is skipped with a notice"
+  printf '%s\n' "$OUT" | grep -i -E 'gpg|skipping'; exit 1
 fi

@@ -4,6 +4,17 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`envfolio+agent`: open seeded secrets with your host key, which stays on the host.** It mounts
+  the host gpg-agent's extra socket (the one made for remote use: it decrypts, but gives no key
+  away) read-only and points the booth's gpg at it. With `envfolio+seed`, a token never has to be
+  passed in at start: `booth --select 'envfolio+seed:"--secrets gh"+agent' -- folio exec -s gh --
+  git push`. A passphrase is asked on the host. Linux with a native engine; with no agent the mount
+  is skipped with a notice.
+- **gh is now always git's credential helper for github.com,** not only when a token is set at
+  start, so a token set later (`folio exec -s gh -- git push`) is used too. With no token gh answers
+  nothing and git asks as before. The SSH-to-HTTPS rewrite for a booth without `ssh` follows the
+  same rule.
+
 - **`envfolio+seed`: bring chosen EnvFolio items into a booth, still encrypted.** Give it the
   arguments you would give `folio exec` — `envfolio+seed:"gh @app1 --secrets"`, or
   `envfolio+seed:"--use @app2/@prod --vars deploy.vars --secrets"` with a vars file in the project.
