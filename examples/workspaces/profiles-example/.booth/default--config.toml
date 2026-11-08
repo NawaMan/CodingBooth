@@ -1,0 +1,5 @@
+# Profile "default": applied when no profile is selected (no --profile, no
+# BOOTH_PROFILES). Selecting any other profile drops it, unless it is named too:
+# --profile default,prod.
+port     = "50912"
+run-args = ["--env", "DEFAULT_ONLY=yes"]

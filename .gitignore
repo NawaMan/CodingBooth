@@ -18,6 +18,9 @@ Thumbs.db
 # --- Env & secrets ---
 .env
 .env.*
+# Booth profile env files (.booth/.<name>--env). .booth/.gitignore lists them too,
+# but that file is not committed, so a clone has only this rule.
+.*--env
 *.pem
 *.key
 id_rsa*

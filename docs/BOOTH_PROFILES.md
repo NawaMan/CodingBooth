@@ -345,5 +345,6 @@ Details worth knowing:
 
 ## See also
 
+- [profiles-example](../examples/workspaces/profiles-example/) — `default` and `prod` profiles you can run, with a test for each selection
 - [booth run](BOOTH_RUN.md#config-files) — `config.toml` keys and precedence
 - [Booth Variable Expansion](BOOTH_VARS.md) — `$VAR` / `~` in `config.toml` and `.env`
