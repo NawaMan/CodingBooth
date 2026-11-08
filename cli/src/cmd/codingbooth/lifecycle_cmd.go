@@ -15,7 +15,7 @@ func listBooths(_ string) {
 	handleLifecycleErr(lifecycle.List(os.Args[2:], os.Stdout, os.Stderr))
 }
 
-// worktreeCommand is `booth worktree <subcommand>`. The run options (--worktree, --push, …) are
+// worktreeCommand is `booth worktree <subcommand>`. The run options (--worktree, --worktree-push, …) are
 // in worktree_run.go.
 func worktreeCommand(_ string) {
 	if len(os.Args) < 3 {

@@ -4,6 +4,11 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`--push` is now `--worktree-push`, and `--keep-worktree` is now `--worktree-keep`.** Every
+  `booth --worktree` option now starts with `--worktree`, and the branch push no longer shares its
+  name with `booth build --push <registry>`, which pushes an image. The 0.81.0 names still work,
+  with a warning naming the new one, and are no longer offered by tab completion.
+
 - **glow in every booth: Markdown in the terminal.** The base image now ships
   [glow](https://github.com/charmbracelet/glow) 3.0.0 (`glow README.md`, `glow -p` to page, plain
   `glow` to browse a folder's `.md` files), with its man page and bash/zsh/fish completions. It is

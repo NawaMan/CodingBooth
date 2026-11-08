@@ -22,8 +22,8 @@ import (
 // FinishOptions says how a session ends, besides the booth's exit code.
 type FinishOptions struct {
 	ExitCode     int
-	Push         bool // --push: push the branch when the run succeeded
-	KeepWorktree bool // --keep-worktree: keep the worktree this run created
+	Push         bool // --worktree-push: push the branch when the run succeeded
+	KeepWorktree bool // --worktree-keep: keep the worktree this run created
 	Existing     bool // the worktree existed before this run: never removed
 }
 
@@ -32,7 +32,7 @@ type Outcome struct {
 	Removed       bool
 	BranchDeleted bool
 	Pushed        bool
-	NotPushed     bool     // --push was given and the branch was not pushed, for a reason to look at
+	NotPushed     bool     // --worktree-push was given and the branch was not pushed, for a reason to look at
 	Messages      []string // one line each, for the user
 }
 
@@ -49,7 +49,7 @@ func Finish(dir string, plan Plan, opts FinishOptions) Outcome {
 	}
 	kept := func() Outcome {
 		if opts.KeepWorktree && !opts.Existing {
-			say("Kept worktree %s (--keep-worktree).", plan.Path)
+			say("Kept worktree %s (--worktree-keep).", plan.Path)
 		}
 		return out
 	}

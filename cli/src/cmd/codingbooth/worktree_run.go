@@ -14,13 +14,13 @@ import (
 )
 
 // worktreeRun is a run's `--worktree` session: what happens when the booth exits. A worktree this
-// run created is removed again; with --push, the branch is pushed first. A worktree that already
-// existed, without --push, needs no session; init finds it.
+// run created is removed again; with --worktree-push, the branch is pushed first. A worktree that already
+// existed, without --worktree-push, needs no session; init finds it.
 type worktreeRun struct {
 	dir      string // where booth started; git runs from here
 	plan     gitworktree.Plan
-	keep     bool // --keep-worktree
-	push     bool // --push
+	keep     bool // --worktree-keep
+	push     bool // --worktree-push
 	existing bool // the worktree existed before this run
 	checked  bool // the first init has been checked against the session
 }
@@ -52,9 +52,17 @@ func readWorktreeFlags(args []string) worktreeFlags {
 		case "--worktree-from":
 			f.from = value(i)
 			i++
+		case "--worktree-keep":
+			f.keep = true
+		case "--worktree-push":
+			f.push = true
+		// The names 0.81.0 shipped, still taken for now. init skips them too
+		// (initialize_app_context.go), and express refuses them.
 		case "--keep-worktree":
+			warnRenamedFlag("--keep-worktree", "--worktree-keep")
 			f.keep = true
 		case "--push":
+			warnRenamedFlag("--push", "--worktree-push")
 			f.push = true
 		case "--dryrun":
 			f.dryrun = true
@@ -71,12 +79,12 @@ func prepareWorktree(args []string) *worktreeRun {
 	f := readWorktreeFlags(args)
 	if f.name == "" {
 		if f.root != "" || f.from != "" || f.keep || f.push {
-			worktreeFail("--worktree-root, --worktree-from, --keep-worktree and --push need --worktree")
+			worktreeFail("--worktree-root, --worktree-from, --worktree-keep and --worktree-push need --worktree")
 		}
 		return nil
 	}
 	if f.push && f.background {
-		worktreeFail("--push pushes when the booth exits, and a --daemon or --keep-alive booth " +
+		worktreeFail("--worktree-push pushes when the booth exits, and a --daemon or --keep-alive booth " +
 			"outlives this command; push from the host when you are done")
 	}
 
@@ -93,7 +101,7 @@ func prepareWorktree(args []string) *worktreeRun {
 			return nil // it existed before this run, so this run leaves it be
 		}
 		if entry.Branch == "" {
-			worktreeFail("worktree %s has no branch checked out, so --push has nothing to push", entry.Path)
+			worktreeFail("worktree %s has no branch checked out, so --worktree-push has nothing to push", entry.Path)
 		}
 		if f.dryrun {
 			fmt.Printf("Dryrun: would push branch %s when the booth exits cleanly.\n", entry.Branch)
@@ -107,7 +115,7 @@ func prepareWorktree(args []string) *worktreeRun {
 
 	if f.background && !f.keep {
 		worktreeFail("a --daemon or --keep-alive booth outlives this command, so nothing would remove " +
-			"the worktree it creates; add --keep-worktree")
+			"the worktree it creates; add --worktree-keep")
 	}
 	plan, err := gitworktree.PlanCreate(dir, entries, gitworktree.CreateOptions{Name: f.name, Root: f.root, From: f.from})
 	if err != nil {
@@ -140,17 +148,17 @@ func (w *worktreeRun) check(ctx appctx.AppContext) {
 	if w.push {
 		w.push = false // nothing was done yet: do not push
 		w.finish(0)
-		worktreeFail("this booth is keep-alive or daemon (config.toml), and --push pushes when the " +
+		worktreeFail("this booth is keep-alive or daemon (config.toml), and --worktree-push pushes when the " +
 			"booth exits; push from the host when you are done")
 	}
 	if !w.keep && !w.existing {
 		w.finish(0)
 		worktreeFail("this booth is keep-alive or daemon (config.toml), so nothing would remove " +
-			"the worktree it creates; add --keep-worktree")
+			"the worktree it creates; add --worktree-keep")
 	}
 }
 
-// finish ends the session: it pushes (--push) and removes the worktree this run created, when
+// finish ends the session: it pushes (--worktree-push) and removes the worktree this run created, when
 // the run succeeded, and reports what happened. It returns the code booth exits with: a push that
 // was asked for and did not happen turns a 0 into 1, so a script can tell.
 func (w *worktreeRun) finish(exitCode int) int {
@@ -180,6 +188,10 @@ func short(sha string) string {
 		return sha[:8]
 	}
 	return sha
+}
+
+func warnRenamedFlag(old, renamed string) {
+	fmt.Fprintf(os.Stderr, "Warning: %s is now %s; the old name will go away.\n", old, renamed)
 }
 
 func worktreeFail(format string, args ...any) {
