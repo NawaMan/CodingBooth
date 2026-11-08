@@ -4,6 +4,11 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`fortran-code-extension` installs fortls through `apt--install.sh`.** It used to call
+  `apt-get` directly, so fortls came from the live archive even in a booth pinned to an
+  `APT_SNAPSHOT`, and a snapshot outage failed the build at once. It now follows the snapshot pin
+  and the apt retry window like every other apt install.
+
 - **EnvFolio 2.0.0.** The base image and `tools/envfolio` install EnvFolio 2.0.0 (was 1.1.0).
   `FOLIO_FILE_DIR` names a `.folio` export instead of its path (`folio exec --from app2-prod`);
   `folio show` and `folio ls` read an export with `--from`; `-q`/`--quiet` (or `FOLIO_QUIET=1`)

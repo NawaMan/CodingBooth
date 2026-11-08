@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.1.1
 
 # fortran-code-extension--setup.sh
 # Modern Fortran for VS Code, plus fortls — the language server it looks for on PATH.
@@ -24,10 +24,7 @@ if ! "$SCRIPT_DIR/cb-has-vscode.sh"; then
     skip_setup "$SCRIPT_NAME" "code-server/VSCode not installed"
 fi
 
-export DEBIAN_FRONTEND=noninteractive
-apt-get update
-apt-get install -y --no-install-recommends fortran-language-server
-rm -rf /var/lib/apt/lists/*
+apt--install.sh fortran-language-server
 
 SETUP_LIBS_DIR=${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}
 CODE_EXTENSION_LIB=${CODE_EXTENSION_LIB:-code-extension-source.sh}
