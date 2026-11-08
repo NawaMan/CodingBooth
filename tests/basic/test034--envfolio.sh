@@ -11,9 +11,8 @@ source ../common--source.sh
 # Test: EnvFolio (the `folio` command) ships in the base image
 #
 # folio is installed by variants/base/setups/envfolio--setup.sh from the
-# Dockerfile, together with pass, so every variant inherits it. It is also
-# advertised in the login welcome message. Since EnvFolio 0.4.0 the command is
-# `folio`; the old `envfolio` command must be gone.
+# Dockerfile, together with pass, so every variant inherits it. Since EnvFolio
+# 0.4.0 the command is `folio`; the old `envfolio` command must be gone.
 #
 # Deliberately NOT `set -e`: see test016--viewmd.sh — a booth that fails to
 # start makes every capture empty, and each check reports what it got instead.
@@ -50,21 +49,7 @@ else
 fi
 
 # -------------------------------------------------------
-# Test 3: the welcome message lists folio
-# (see test016 for why the inner `bash -lic` prints the banner)
-# -------------------------------------------------------
-ACTUAL=$(run_coding_booth --variant base -- 'bash -lic true 2>/dev/null | grep -c "^  folio "' 2>&1 | tail -1) || ACTUAL=""
-
-if [[ "$ACTUAL" == "1" ]]; then
-  print_test_result "true" "$0" "3" "welcome message lists folio"
-else
-  print_test_result "false" "$0" "3" "welcome message lists folio"
-  echo "  Matching welcome lines: ${ACTUAL:-<empty — the booth did not run>} (want 1)"
-  FAILED=$((FAILED + 1))
-fi
-
-# -------------------------------------------------------
-# Test 4: folio does what a user does with it first
+# Test 3: folio does what a user does with it first
 #
 # Make a store, add a text and a secret, and load both into a command's
 # environment. Signing a text and decrypting a secret ask gpg for the key's
@@ -85,9 +70,9 @@ folio exec --secrets app -- bash -c "echo GOT=\$APP_GREETING/\$APP_TOKEN"
 ACTUAL=$(run_coding_booth --variant base -- "$SCRIPT" 2>&1 | tail -1) || ACTUAL=""
 
 if [[ "$ACTUAL" == "GOT=hello-text/s3cret" ]]; then
-  print_test_result "true" "$0" "4" "folio stores a text and a secret and loads them as env vars"
+  print_test_result "true" "$0" "3" "folio stores a text and a secret and loads them as env vars"
 else
-  print_test_result "false" "$0" "4" "folio stores a text and a secret and loads them as env vars"
+  print_test_result "false" "$0" "3" "folio stores a text and a secret and loads them as env vars"
   echo "  Actual output: ${ACTUAL:-<empty — the booth did not run>} (want GOT=hello-text/s3cret)"
   FAILED=$((FAILED + 1))
 fi
