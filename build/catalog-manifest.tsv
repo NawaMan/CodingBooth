@@ -106,7 +106,7 @@ setup	flutter	0.2.0	498c5e201d6d47defc821a97b24e824eccca65f4c420cd93b2f421ef5bc4
 setup	flutter-android	0.1.1	70509a18385e6b0ffc0c1d7850db0d05592e24e6113a005b4731022583e57ebe	variants/base/setups/flutter-android--setup.sh
 setup	flutter-code-extension	0.1.0	3b1c741f03af53c3d4871e3632e1918818234d0cdf23955853db0f7d11c52d38	variants/base/setups/flutter-code-extension--setup.sh
 setup	flutter-linux-desktop	0.1.0	93a35066e84353c24de3ab432f0d6a9dd36839f56fbe71c7c8e2bf1f9709fc1e	variants/base/setups/flutter-linux-desktop--setup.sh
-setup	fortran-code-extension	0.1.0	5de8e727c4938e5999656f69edb683dad1a18bec79edad593d7132343737a719	variants/base/setups/fortran-code-extension--setup.sh
+setup	fortran-code-extension	0.1.1	8c1674ab3b947982f62108c9aec2c71d3808e56a4065b3876342e8da43c9bbc1	variants/base/setups/fortran-code-extension--setup.sh
 setup	fpc	1.0.0	f39f2f6bd2fc69558d9157730c73c62f8bbe221c93c4d12e2a7df276092f1b9e	variants/base/setups/fpc--setup.sh
 setup	fpc-code-extension	1.0.0	340a97f4bd0ce3161f84575fc557c79a99363867ef7aa75abb95170138291426	variants/base/setups/fpc-code-extension--setup.sh
 setup	freelens	0.1.0	674f129bbdbd411f6a996f8cd88f655e1136b3d0726e4d36c1f22d2a506f6358	variants/base/setups/freelens--setup.sh
