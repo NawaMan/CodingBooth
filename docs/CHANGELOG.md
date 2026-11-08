@@ -4,6 +4,15 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **EnvFolio 2.0.0.** The base image and `tools/envfolio` install EnvFolio 2.0.0 (was 1.1.0).
+  `FOLIO_FILE_DIR` names a `.folio` export instead of its path (`folio exec --from app2-prod`);
+  `folio show` and `folio ls` read an export with `--from`; `-q`/`--quiet` (or `FOLIO_QUIET=1`)
+  leaves out the notes; `-` and `.` in an entry's name turn into `_` (`gh/api-key` is
+  `GH_API_KEY`); and an export's own key can have a passphrase, and be post-quantum
+  (`--key-type pqc`). Breaking: `folio export -o` takes a path ending in `.folio` or a name in
+  `FOLIO_FILE_DIR` (`-o <folder>` is gone), and a folder holding both `api-key` and `api_key` is
+  refused as a clash. `+seed` works as before: it reads `folio exec --names`, which is unchanged.
+
 - **`profiles-example`: booth profiles, shown and tested.** `examples/workspaces/profiles-example`
   has a `default` and a `prod` profile over one base `config.toml`. `just none`, `just prod`,
   `just both` and `just reversed` print what each selection brings, and its test checks that
