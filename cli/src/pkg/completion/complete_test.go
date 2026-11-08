@@ -208,3 +208,22 @@ func TestLiveWorktrees(t *testing.T) {
 	assert.Equal(t, []Item{{"spare", "branch: makes a new worktree"}}, branches,
 		"the main checkout's branch is left out")
 }
+
+func TestRenamedFlagIsNotOffered(t *testing.T) {
+	run := Spec().Sub("run")
+	for _, it := range flagItems(run, "--") {
+		if it.Value == "--push" || it.Value == "--keep-worktree" {
+			t.Errorf("completion offers the old name %s", it.Value)
+		}
+	}
+	if f := run.Flag("--push"); f == nil || f.Names[0] != "--worktree-push" {
+		t.Errorf("the old name --push should still be known as --worktree-push, got %+v", f)
+	}
+	offered := map[string]bool{}
+	for _, it := range flagItems(run, "--worktree-") {
+		offered[it.Value] = true
+	}
+	if !offered["--worktree-push"] || !offered["--worktree-keep"] {
+		t.Errorf("completion should offer --worktree-push and --worktree-keep, got %v", offered)
+	}
+}

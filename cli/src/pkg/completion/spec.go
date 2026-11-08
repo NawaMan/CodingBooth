@@ -37,6 +37,8 @@ type Flag struct {
 	Names  []string
 	Kind   Kind
 	Values []string // for Enum
+	// Renamed holds old spellings the parser still takes but completion does not offer.
+	Renamed []string
 }
 
 // Command is a command or subcommand.
@@ -72,10 +74,10 @@ func (c *Command) Sub(name string) *Command {
 	return nil
 }
 
-// Flag returns the flag spelled name, or nil.
+// Flag returns the flag spelled name (an old, renamed spelling too), or nil.
 func (c *Command) Flag(name string) *Flag {
 	for i := range c.Flags {
-		for _, n := range c.Flags[i].Names {
+		for _, n := range append(append([]string{}, c.Flags[i].Names...), c.Flags[i].Renamed...) {
 			if n == name {
 				return &c.Flags[i]
 			}
@@ -88,6 +90,12 @@ func flag(kind Kind, names ...string) Flag { return Flag{Names: names, Kind: kin
 func boolFlag(names ...string) Flag        { return Flag{Names: names, Kind: None} }
 func enumFlag(name string, values ...string) Flag {
 	return Flag{Names: []string{name}, Kind: Enum, Values: values}
+}
+
+// renamedFrom records old spellings of f that still parse (see Flag.Renamed).
+func renamedFrom(f Flag, old ...string) Flag {
+	f.Renamed = append(f.Renamed, old...)
+	return f
 }
 
 func join(groups ...[]Flag) []Flag {
@@ -125,8 +133,8 @@ var runFlags = []Flag{
 	flag(Worktree, "--worktree"),
 	flag(Dir, "--worktree-root"),
 	flag(Text, "--worktree-from"),
-	boolFlag("--keep-worktree"),
-	boolFlag("--push"),
+	renamedFrom(boolFlag("--worktree-keep"), "--keep-worktree"), // renamed after 0.81.0
+	renamedFrom(boolFlag("--worktree-push"), "--push"),
 	flag(File, "--config"),
 	flag(Dir, "--booth-dir"),
 	flag(Profile, "--profile"),
@@ -204,7 +212,7 @@ var expressOwnFlags = []Flag{
 // cmd/codingbooth/express.go), so its completion does not offer them.
 var expressRefusedRunFlags = []string{
 	"--config", "--profile", "--booth-dir",
-	"--worktree", "--worktree-root", "--worktree-from", "--keep-worktree", "--push",
+	"--worktree", "--worktree-root", "--worktree-from", "--worktree-keep", "--worktree-push",
 	"--writable-booth", "--no-writable-booth", "--console-spec",
 	"--keep-tmp-on-start", "--leave-tmp-on-exit",
 }

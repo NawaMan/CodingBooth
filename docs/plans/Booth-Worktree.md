@@ -4,6 +4,9 @@
 name completion) built on branch `booth-worktree`, 2026-10-26. Dropped from P4: the port fallback
 (§5). Still deferred: untracked files (§3), which `worktree-include` was for. User docs: `docs/BOOTH_WORKTREE.md`.
 
+**Renamed after 0.81.0:** `--push` → `--worktree-push`, `--keep-worktree` → `--worktree-keep`
+(old names kept with a warning). The plan below keeps the names it was written with.
+
 ## Problem
 
 A booth on a git worktree already works: `cli/src/pkg/booth/git_worktree.go` mounts the main

@@ -119,7 +119,7 @@ func specCommand(t *testing.T, path string) *completion.Command {
 func specFlags(t *testing.T, path string) nameSet {
 	set := nameSet{}
 	for _, f := range specCommand(t, path).Flags {
-		for _, n := range f.Names {
+		for _, n := range append(append([]string{}, f.Names...), f.Renamed...) {
 			set[bare(n)] = true
 		}
 	}
