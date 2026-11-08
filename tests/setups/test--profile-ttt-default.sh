@@ -37,10 +37,10 @@ run_profile() {
 # ---- EDITOR and banner say ttt ----
 out="$(run_profile)"
 grep -q '^EDITOR=ttt$'                       <<<"$out" || fail "EDITOR is not ttt: $out"
-grep -q 'editor  *Text editor (ttt)'         <<<"$out" || fail "welcome does not name ttt: $out"
+grep -qE '^  editor  +Text editor$'          <<<"$out" || fail "welcome editor line is not plain 'Text editor': $out"
 grep -q 'tilde'                              <<<"$out" && fail "welcome still mentions tilde: $out"
-grep -q 'explorer  *File manager (mc)'       <<<"$out" || fail "welcome does not name mc as explorer: $out"
-grep -q 'glow  *Markdown viewer in the terminal' <<<"$out" || fail "welcome does not list glow: $out"
+grep -qE '^  explorer  +File manager$'       <<<"$out" || fail "welcome explorer line is not plain 'File manager': $out"
+grep -qE '^  (viewmd|glow|folio) ' <<<"$out" && fail "welcome still lists viewmd, glow or folio: $out"
 grep -qE '^  spf ' <<<"$out"                && fail "welcome still lists spf: $out"
 grep -qE '^  lazygit ' <<<"$out"            && fail "welcome still lists lazygit: $out"
 grep -qE '^  differ ' <<<"$out"             && fail "welcome still lists differ: $out"

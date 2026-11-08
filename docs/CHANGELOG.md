@@ -4,6 +4,9 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A shorter welcome message.** It no longer lists `viewmd`, `glow` or `folio` (all still in every
+  booth), and the `editor` / `explorer` lines no longer name the tool behind them.
+
 - **`--push` is now `--worktree-push`, and `--keep-worktree` is now `--worktree-keep`.** Every
   `booth --worktree` option now starts with `--worktree`, and the branch push no longer shares its
   name with `booth build --push <registry>`, which pushes an image. The 0.81.0 names still work,
