@@ -62,7 +62,7 @@ show() {
     echo
     echo "=== $label ==="
     OUT="$("$BOOTH" "$@" --name "$CONTAINER_NAME" -- ./scripts/show-profile.sh 2>&1 | tr -d '\r' \
-            | grep -E '^(PORT|BASE_ONLY|DEFAULT_ONLY|PROD_ONLY|LEVEL)=' || true)"
+            | grep -E '^(PORT|FROM_BASE|FROM_DEFAULT|FROM_PROD|LEVEL)=' || true)"
     echo "$OUT"
     [[ -n "$OUT" ]] || fail "$label: the probe printed nothing"
 }
@@ -83,36 +83,36 @@ docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
 
 show "no selection: default applies"
 expect PORT         50912
-expect BASE_ONLY    yes
-expect DEFAULT_ONLY yes
-expect PROD_ONLY    ""
+expect FROM_BASE    yes
+expect FROM_DEFAULT yes
+expect FROM_PROD    ""
 expect LEVEL        default
 
 show "--profile prod: default steps aside" --profile prod
 expect PORT         50913
-expect BASE_ONLY    yes
-expect DEFAULT_ONLY ""
-expect PROD_ONLY    yes
+expect FROM_BASE    yes
+expect FROM_DEFAULT ""
+expect FROM_PROD    yes
 expect LEVEL        prod
 
 show "--profile default,prod: both, prod applied last" --profile default,prod
 expect PORT         50913     # scalar: the later profile wins
-expect BASE_ONLY    yes       # run-args: lists add up across all layers
-expect DEFAULT_ONLY yes
-expect PROD_ONLY    yes
+expect FROM_BASE    yes       # run-args: lists add up across all layers
+expect FROM_DEFAULT yes
+expect FROM_PROD    yes
 expect LEVEL        prod      # env files: the later profile's wins
 
 show "--profile prod,default: both, default applied last" --profile prod,default
 expect PORT         50912
-expect BASE_ONLY    yes
-expect DEFAULT_ONLY yes
-expect PROD_ONLY    yes
+expect FROM_BASE    yes
+expect FROM_DEFAULT yes
+expect FROM_PROD    yes
 expect LEVEL        default
 
 BOOTH_PROFILES=prod show "BOOTH_PROFILES=prod: same as --profile prod"
 expect PORT         50913
-expect DEFAULT_ONLY ""
-expect PROD_ONLY    yes
+expect FROM_DEFAULT ""
+expect FROM_PROD    yes
 expect LEVEL        prod
 
 echo
