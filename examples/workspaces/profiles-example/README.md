@@ -38,6 +38,8 @@ just test        # all of the above, checked
 
 Each recipe starts a one-shot booth and runs `scripts/show-profile.sh`, which prints the settings.
 
+The recipes call `./booth`. In a CodingBooth checkout that wrapper is not committed: run `./examples/update-booth.sh` once from the repository root, or use `BOOTH=../../../codingbooth just none`.
+
 ## What you get
 
 | Selection | `PORT` | `BASE_ONLY` | `DEFAULT_ONLY` | `PROD_ONLY` | `LEVEL` |
