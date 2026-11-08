@@ -88,6 +88,13 @@ EOF
     chmod +x "$STUB/bin/zip"
 fi
 
+# A setup that also needs a system package (fortran's fortls) gets it through
+# apt--install.sh. The scripts run as root only by EUID here, so the real apt
+# cannot take its lock, and what this file checks is the extension install, not
+# the package — so the package install just succeeds.
+printf '#!/bin/bash\nexit 0\n' > "$STUB/bin/apt--install.sh"
+chmod +x "$STUB/bin/apt--install.sh"
+
 ALL_PASSED=true
 TEST_NUM=0
 CHECKED=0

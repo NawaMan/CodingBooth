@@ -65,8 +65,10 @@ else
 fi
 
 # wait-for fails the --exec, and the command, when the text never appears.
+# The status bar pads its segments, so the gap before ◉ is one or more spaces.
 ACTUAL=$(capture_codingbooth "cat" --silence-build -- 'd=$(mktemp -d) && printf "# Notes\n\nSee [Notes](#notes).\n" > "$d/notes.md" && ttt "$d/notes.md" --size 100x24 --exec "wait-for ◉ timeout=60000; screenshot $d/screen.txt; quit" && tail -1 "$d/screen.txt"')
-if [[ "$ACTUAL" == *"Markdown ◉"* ]]; then
+CONNECTED='Markdown +◉'
+if [[ "$ACTUAL" =~ $CONNECTED ]]; then
     print_test_result "true" "$0" "5" "ttt connects to marksman for a Markdown file"
 else
     print_test_result "false" "$0" "5" "ttt should show Markdown ◉ (connected) for a .md file"
