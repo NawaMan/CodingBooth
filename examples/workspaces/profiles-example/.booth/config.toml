@@ -1,0 +1,5 @@
+# Configured by: booth config --no-tui --overwrite --port 50911 --env FROM_BASE=yes
+
+port = "50911"
+
+run-args = ["--env", "FROM_BASE=yes"]

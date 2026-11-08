@@ -1,0 +1,3 @@
+# Profile "prod": applied with --profile prod (or BOOTH_PROFILES=prod).
+port     = "50913"
+run-args = ["--env", "FROM_PROD=yes"]
