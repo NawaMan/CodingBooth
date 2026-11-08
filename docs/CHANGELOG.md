@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`profiles-example`: booth profiles, shown and tested.** `examples/workspaces/profiles-example`
+  has a `default` and a `prod` profile over one base `config.toml`. `just none`, `just prod`,
+  `just both` and `just reversed` print what each selection brings, and its test checks that
+  `default` applies only when nothing is selected, and how a scalar, a list and an env file combine
+  when both profiles are.
+
 - **A shorter welcome message.** It no longer lists `viewmd`, `glow` or `folio` (all still in every
   booth), and the `editor` / `explorer` lines no longer name the tool behind them.
 
