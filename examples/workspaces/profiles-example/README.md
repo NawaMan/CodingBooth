@@ -10,9 +10,9 @@ See [docs/BOOTH_PROFILES.md](../../../docs/BOOTH_PROFILES.md) for the full rules
 
 | File | Sets | Committed |
 |---|---|---|
-| `.booth/config.toml` | `port = "50911"`, `--env BASE_ONLY=yes` | yes (`booth config` output) |
-| `.booth/default--config.toml` | `port = "50912"`, `--env DEFAULT_ONLY=yes` | yes (hand-written) |
-| `.booth/prod--config.toml` | `port = "50913"`, `--env PROD_ONLY=yes` | yes (hand-written) |
+| `.booth/config.toml` | `port = "50911"`, `--env FROM_BASE=yes` | yes (`booth config` output) |
+| `.booth/default--config.toml` | `port = "50912"`, `--env FROM_DEFAULT=yes` | yes (hand-written) |
+| `.booth/prod--config.toml` | `port = "50913"`, `--env FROM_PROD=yes` | yes (hand-written) |
 | `.booth/.env` | `LEVEL=base` | no |
 | `.booth/.default--env` | `LEVEL=default` | no |
 | `.booth/.prod--env` | `LEVEL=prod` | no |
@@ -42,7 +42,7 @@ The recipes call `./booth`. In a CodingBooth checkout that wrapper is not commit
 
 ## What you get
 
-| Selection | `PORT` | `BASE_ONLY` | `DEFAULT_ONLY` | `PROD_ONLY` | `LEVEL` |
+| Selection | `PORT` | `FROM_BASE` | `FROM_DEFAULT` | `FROM_PROD` | `LEVEL` |
 |---|---|---|---|---|---|
 | none | 50912 | yes | yes | — | default |
 | `--profile prod` | 50913 | yes | — | yes | prod |
@@ -52,9 +52,9 @@ The recipes call `./booth`. In a CodingBooth checkout that wrapper is not commit
 
 Things to notice:
 
-- `BASE_ONLY` is always there. The base is not a profile and cannot be deselected.
-- With `--profile prod`, `DEFAULT_ONLY` is gone and the port is prod's: selecting a profile drops `default`.
-- With both selected, the lists combine (both `*_ONLY` variables), while the scalar and the env file come from whichever profile is listed **last**.
+- `FROM_BASE` is always there. The base is not a profile and cannot be deselected.
+- With `--profile prod`, `FROM_DEFAULT` is gone and the port is prod's: selecting a profile drops `default`.
+- With both selected, the lists combine (both `FROM_DEFAULT` and `FROM_PROD`), while the scalar and the env file come from whichever profile is listed **last**.
 - A command-line `--port` beats every profile. The test passes none for that reason.
 
 ## Testing
