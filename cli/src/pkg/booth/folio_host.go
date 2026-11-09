@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"slices"
 	"strings"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
@@ -62,6 +63,12 @@ func PrepareFolioHost(ctx appctx.AppContext) (appctx.AppContext, error) {
 	}
 
 	builder := ctx.ToBuilder()
+	if ctx.Dryrun() {
+		// The check above is skipped, so the missing-mount filter would drop a folder this host
+		// lacks, and print a run the real one never is: that one refuses instead. Marked
+		// `create`, a dry run takes both as there and shows the mounts (nothing is created).
+		builder.RunArgs = markVolumesCreate(ctx.RunArgs(), folioHostStorePath, folioHostGnupgPath)
+	}
 	builder.CommonArgs.Append(ilist.NewList[string]("--tmpfs", folioHostSocketTmpfs(ctx.HostUID(), ctx.HostGID())))
 	fmt.Fprintf(os.Stderr, "Warning: envfolio+store-host: the host's EnvFolio store (%s) and gpg home (%s), "+
 		"private keys included, are live in this booth: anything run in it can read, change or copy them.\n",
@@ -116,6 +123,37 @@ func runArgEnvValues(runArgs ilist.List[ilist.List[string]], name string) []stri
 		return true
 	})
 	return values
+}
+
+// markVolumesCreate adds the booth-only `create` option to each `-v` / `--volume` spec in runArgs
+// whose target is one of targets ("src:dst" -> "src:dst:create", "src:dst:ro" -> "src:dst:ro,create").
+func markVolumesCreate(runArgs ilist.List[ilist.List[string]], targets ...string) *ilist.AppendableList[ilist.List[string]] {
+	marked := ilist.NewAppendableList[ilist.List[string]]()
+	runArgs.Range(func(_ int, group ilist.List[string]) bool {
+		items := append([]string(nil), group.Slice()...)
+		for i := 0; i+1 < len(items); i++ {
+			if !isVolumeFlag(items[i]) {
+				continue
+			}
+			i++
+			spec := items[i]
+			target := volumeTarget(spec)
+			if target == "" || !slices.Contains(targets, path.Clean(target)) {
+				continue
+			}
+			if _, already := stripCreateVolumeOption(spec); already {
+				continue
+			}
+			if len(spec) > len(volumeSource(spec))+1+len(target) {
+				items[i] = spec + "," + createVolumeOption
+			} else {
+				items[i] = spec + ":" + createVolumeOption
+			}
+		}
+		marked.Append(ilist.NewListFromSlice(items))
+		return true
+	})
+	return marked
 }
 
 // runArgBindSources maps each -v / --volume target in runArgs to its host source, as written.
