@@ -113,6 +113,7 @@ func Finish(dir string, plan Plan, opts FinishOptions) Outcome {
 		_ = os.RemoveAll(filepath.Join(plan.Path, boothRuntimeDir))
 		_ = os.Remove(filepath.Join(plan.Path, ".booth")) // only if that left it empty
 	}
+	keepWorktreesDir(dir) // a prune since Create may have dropped it
 	if _, err := git(dir, "worktree", "remove", plan.Path); err != nil {
 		say("Kept worktree %s: %v", plan.Path, err)
 		return out

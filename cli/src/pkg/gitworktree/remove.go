@@ -70,6 +70,7 @@ func Remove(dir string, e Entry, force bool) error {
 		_ = os.RemoveAll(filepath.Join(e.Path, boothRuntimeDir))
 		_ = os.Remove(filepath.Join(e.Path, ".booth")) // only if that left it empty
 	}
+	keepWorktreesDir(dir)
 	args := []string{"worktree", "remove"}
 	if force {
 		args = append(args, "--force")
