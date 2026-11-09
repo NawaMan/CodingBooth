@@ -799,6 +799,19 @@ sed_inplace() {
   fi
 }
 
+# A file's permission bits in octal ("600"), on both GNU and BSD.
+#
+# GNU stat takes `-c '%a'`; BSD/macOS stat has no -c ("stat: illegal option -- c")
+# and spells it `-f '%Lp'`. Fails, printing nothing, when the file is missing,
+# the same as stat. Detected by feature, like sed_inplace.
+file_mode() {
+  if stat -c '%a' . >/dev/null 2>&1; then
+    stat -c '%a' "$1"
+  else
+    stat -f '%Lp' "$1"
+  fi
+}
+
 # Architecture the Docker daemon builds for — "amd64" or "arm64" (arm64 is the
 # default on Apple Silicon). Browser tests need it because Google publishes no
 # linux-arm64 build of Chrome for Testing: on arm64 the selenium and puppeteer

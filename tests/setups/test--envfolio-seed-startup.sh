@@ -98,7 +98,7 @@ run_hook "$WORK/h2" CB_FOLIO_SEED="gh @app2 --secrets"
 S="$WORK/h2/.folio"
 want=".gitattributes .gpg-id @app2/@prod/server/password.gpg gh/user.txt gh/user.txt.sig "
 [[ "$RUN_EXIT" -eq 0 && "$(files "$S")" == "$want" && "$(commits "$S")" == 1 \
-   && "$(stat -c %a "$S")" == 700 ]] \
+   && "$(file_mode "$S")" == 700 ]] \
     && check "true"  "seed, no store: the store is the seed (paths and namespaces kept), committed, 700" \
     || check "false" "seed, no store: the store is the seed (paths and namespaces kept), committed, 700" \
          "files: $(files "$S")"$'\n'"commits: $(commits "$S")"$'\n'"$OUT"

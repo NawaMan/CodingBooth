@@ -50,7 +50,7 @@ check() {
     fi
 }
 
-mode() { stat -c '%a' "$1" 2>/dev/null || echo missing; }
+mode() { file_mode "$1" 2>/dev/null || echo missing; }
 
 # run_startup HOME KEYS_DIR -- the hook in a clean environment (twice = a restart).
 RUN_EXIT=0

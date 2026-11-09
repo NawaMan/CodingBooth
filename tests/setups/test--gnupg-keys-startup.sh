@@ -80,8 +80,8 @@ chmod 644 "$K2/private-keys/"*.key
 run_hook "$WORK/h2" "$K2"
 P="$WORK/h2/.gnupg/private-keys-v1.d"
 [[ "$RUN_EXIT" -eq 0 && "$(cat "$P/$GRIP1.key")" == protected-primary && "$(cat "$P/$GRIP2.key")" == protected-sub \
-   && "$(stat -c %a "$P/$GRIP1.key")" == 600 && "$(stat -c %a "$P")" == 700 \
-   && "$(stat -c %a "$WORK/h2/.gnupg")" == 700 ]] \
+   && "$(file_mode "$P/$GRIP1.key")" == 600 && "$(file_mode "$P")" == 700 \
+   && "$(file_mode "$WORK/h2/.gnupg")" == 700 ]] \
     && check "true"  "the key files go to ~/.gnupg/private-keys-v1.d as they are, 600 in 700 folders" \
     || check "false" "the key files go to ~/.gnupg/private-keys-v1.d as they are, 600 in 700 folders" "$(ls -laR "$WORK/h2/.gnupg" 2>&1)"$'\n'"$OUT"
 
