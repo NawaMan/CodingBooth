@@ -85,3 +85,20 @@ func TestFolioHostSocketTmpfs(t *testing.T) {
 		t.Errorf("tmpfs = %q", got)
 	}
 }
+
+func TestMarkVolumesCreate(t *testing.T) {
+	got := markVolumesCreate(runArgs(
+		storeHostArgs("~/.folio", "~/.gnupg"),
+		[]string{"-v", "/data:/home/coder/.folio/:ro", "-v", "/x:/home/coder/.gnupg:create", "-v", "/other:/srv"},
+	), folioHostStorePath, folioHostGnupgPath)
+	var flat []string
+	for _, group := range got.Slice() {
+		flat = append(flat, group.Slice()...)
+	}
+	want := []string{"-v", "~/.folio:/home/coder/.folio:create", "-v", "~/.gnupg:/home/coder/.gnupg:create",
+		"-e", "FOLIO_STORE_DIR=/home/coder/.folio", "-e", "CB_FOLIO_HOST=1",
+		"-v", "/data:/home/coder/.folio/:ro,create", "-v", "/x:/home/coder/.gnupg:create", "-v", "/other:/srv"}
+	if !reflect.DeepEqual(flat, want) {
+		t.Errorf("marked = %q,\n want %q", flat, want)
+	}
+}

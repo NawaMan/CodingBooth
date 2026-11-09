@@ -4,6 +4,10 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`envfolio+store-host` dry runs show the mounts.** On a host without `~/.folio` or `~/.gnupg`,
+  `--dryrun` printed the run with both mounts skipped, a run that never happens: the real one
+  refuses. It now prints both mounts, as the real run makes them.
+
 - **`fortran-code-extension` installs fortls through `apt--install.sh`.** It used to call
   `apt-get` directly, so fortls came from the live archive even in a booth pinned to an
   `APT_SNAPSHOT`, and a snapshot outage failed the build at once. It now follows the snapshot pin
