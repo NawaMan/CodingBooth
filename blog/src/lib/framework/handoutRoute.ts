@@ -1,7 +1,13 @@
 import { error } from '@sveltejs/kit';
 import { deckNames, isDeck } from '$lib/handout/handoutDecks';
 
-export const prerender = true;
+// Prerendered — one handout per deck, from `entries()` below. But a site may have NO deck at all
+// (a blog, a single page), and then `entries()` is empty: SvelteKit finds a route marked
+// prerenderable that nothing prerendered, and fails the whole build ("not prerendered because
+// they were not found while crawling"). So with no deck the route is only 'auto' — nothing to
+// print, nothing built, and the site's own pages build as normal. (Static hosting still serves
+// it through the adapter's fallback page, which every GeekPresent svelte.config sets.)
+export const prerender: boolean | 'auto' = deckNames().length > 0 ? true : 'auto';
 export const trailingSlash = 'never';
 
 // `/_handout/slides.html` — outside the deck, and RESERVING NOTHING. A handout that lived at
