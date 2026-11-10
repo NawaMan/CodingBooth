@@ -155,6 +155,7 @@ func Create(dir string, plan Plan) error {
 	if _, err := git(dir, args...); err != nil {
 		return err
 	}
+	keepWorktreesDir(dir)
 	if plan.ExcludeFile != "" {
 		if err := ensureLine(plan.ExcludeFile, plan.ExcludeLine); err != nil {
 			return fmt.Errorf("worktree created, but %s could not be updated: %w", plan.ExcludeFile, err)

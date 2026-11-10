@@ -230,7 +230,10 @@ volumes yourself.
 **Folders:** the empty folders a nested branch made (`<root>/feature/` for `feature/x`) go. The
 root itself, such as `../<project>.worktrees/`, stays even when empty: Docker Desktop on macOS
 cannot mount a folder under one that was deleted and recreated a moment before, so removing it
-would break the next `booth --worktree` started right after.
+would break the next `booth --worktree` started right after. For the same reason booth keeps the
+repository's `.git/worktrees/`, which git deletes with its last worktree: when booth creates or
+removes a worktree, it leaves a `.codingbooth-keep` file there. Git lists nothing for it;
+`git worktree prune` drops it, and the next worktree booth makes or removes puts it back.
 
 **The remote branch is never touched.** booth prints the command that deletes it.
 
