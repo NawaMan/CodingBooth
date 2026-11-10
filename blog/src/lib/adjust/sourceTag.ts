@@ -13,6 +13,10 @@ import { parse } from 'svelte/compiler';
 // save endpoint patches that file. Dev-only, like every other write here; a built
 // deck carries no stamp and has no endpoint.
 //
+// The tag's LINE rides along as `__line={n}`, so ADJUST can open that file at
+// that tag in the EDIT window. The stamp is inserted on the tag's own line, so
+// the number is the line the author sees.
+//
 // Server-side (node) code: parse() is svelte/compiler, so never import this from
 // a component.
 
@@ -22,9 +26,12 @@ export const STAMPED_TAGS = ['Block', 'ImageBlock', 'TextBlock', 'SvgBlock'];
 /** The prop a stamp rides in. Block declares it; the wrappers forward it. */
 export const FILE_PROP = '__file';
 
+/** The prop the tag's 1-based source line rides in, next to FILE_PROP. */
+export const LINE_PROP = '__line';
+
 type Node = { type?: string; name?: string; start?: number; [key: string]: unknown };
 
-/** Insert `__file="file"` into every STAMPED_TAGS opening tag of the markup.
+/** Insert `__file="file" __line={n}` into every STAMPED_TAGS opening tag of the markup.
     Tags inside the script (a code sample in a string) are left alone — only
     markup is parsed. A tag that already carries the prop, or source that doesn't
     parse, is left exactly as it was: the stamp is a convenience, never a reason
@@ -57,9 +64,12 @@ export function stampSourceFile(code: string, file: string, tags: string[] = STA
 	walk(ast.html);
 	if (!at.length) return code;
 	const attr = ` ${FILE_PROP}=${JSON.stringify(file)}`;
+	const lineOf = (i: number) => code.slice(0, i).split('\n').length;
 	let out = code;
 	// Back to front, so each insert leaves the earlier offsets valid.
-	for (const i of at.sort((a, b) => b - a)) out = out.slice(0, i) + attr + out.slice(i);
+	for (const i of at.sort((a, b) => b - a)) {
+		out = out.slice(0, i) + `${attr} ${LINE_PROP}={${lineOf(i)}}` + out.slice(i);
+	}
 	return out;
 }
 

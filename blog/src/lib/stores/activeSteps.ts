@@ -34,6 +34,16 @@ export type ActiveSteps = {
 	/** Take a step back — the same action as Shift+Space. (What a VOD replay's
 	    `step back` calls.) */
 	prev?: () => void;
+	/** How many steps have been taken, 0..total (Fragments revealed, chapters
+	    reached, commands run). With `total`, what <StepDots> draws; a build that
+	    leaves either out simply shows no dots. */
+	index?: number;
+	/** How many steps the build has in all. */
+	total?: number;
+	/** Is the step just taken still PLAYING (a Fragment fading in, a command typing, a
+	    video running on to its next chapter)? <StepDots> cues the next Space only once
+	    this goes false. Left out = never busy. */
+	busy?: boolean;
 };
 
 export const activeSteps = writable<ActiveSteps | null>(null);

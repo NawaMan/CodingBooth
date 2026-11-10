@@ -1,10 +1,13 @@
-// Pure half of deck structure editing (add / remove slides via Overview).
+// Pure half of deck structure editing (add / remove / duplicate / rename slides
+// via Overview).
 //
 // A slide is a route folder + a pages.ts entry. This module owns:
 //   - path slug / validation (never invent a bad folder name)
-//   - line-based insert/remove of one-line pages.ts entries (same bargain as
-//     wire-og.mjs / patchSource: refuse multi-line or unparseable entries)
+//   - line-based insert/remove/rename/duplicate of one-line pages.ts entries
+//     (same bargain as wire-og.mjs / patchSource: refuse multi-line or
+//     unparseable entries)
 //   - the two-file scaffold (+layout.js + +page.svelte) as strings
+//   - finding and rewriting links to a slide whose path changes
 //
 // Total: garbage input yields null / empty / a refused result, never a throw.
 
@@ -192,6 +195,158 @@ export function removePagesEntry(source: string, path: string): PagesEditResult 
 	}
 	if (!removed) return { ok: false, error: `no pages.ts entry for "${norm}"` };
 	return { ok: true, source: keep.join('\n') };
+}
+
+/** The one clean one-line entry for `path`, or why it can't be edited. A body with
+    nested braces or a comment inside is left for a human (wire-og bargain). */
+function findSimpleEntry(
+	lines: string[],
+	path: string
+): { ok: true; index: number } | PagesEditFail {
+	for (let i = 0; i < lines.length; i++) {
+		const m = lines[i].match(ENTRY_LINE);
+		if (!m || pathFromBody(m[2]) !== path) continue;
+		if (/[{}]/.test(m[2]) || m[2].includes('//')) {
+			return {
+				ok: false,
+				error: `entry for "${path}" is not a simple one-line object — edit pages.ts by hand`
+			};
+		}
+		return { ok: true, index: i };
+	}
+	return { ok: false, error: `no pages.ts entry for "${path}"` };
+}
+
+/** A string field (`path` / `title` / `image`) in an entry body: the whole
+    `name: "…"` match, so it can be replaced or dropped. */
+function fieldRe(name: string): RegExp {
+	return new RegExp(`\\b${name}\\s*:\\s*(["'])(?:\\\\.|(?!\\1).)*\\1`);
+}
+
+function quote(s: string): string {
+	return `"${String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
+/** Rewrite one entry line's path and/or title, keeping every other field
+    (`hidden`, `adjust`, `transition`, …) and the line's own spacing. */
+function rewriteEntryLine(line: string, next: { path?: string; title?: string }): string | null {
+	let out = line;
+	if (next.path != null) {
+		if (!fieldRe('path').test(out)) return null;
+		out = out.replace(fieldRe('path'), `path: ${quote(next.path)}`);
+	}
+	if (next.title != null) {
+		if (!fieldRe('title').test(out)) return null;
+		out = out.replace(fieldRe('title'), `title: ${quote(next.title)}`);
+	}
+	return out;
+}
+
+/**
+ * Change an entry's path and/or title in place. Refuses: missing / non-simple
+ * entry, a bad new path, a new path already listed, an empty title.
+ */
+export function renamePagesEntry(
+	source: string,
+	path: string,
+	next: { path?: string; title?: string }
+): PagesEditResult {
+	const norm = normalizeSlidePath(path) ?? String(path ?? '');
+	const lines = String(source ?? '').split('\n');
+	const at = findSimpleEntry(lines, norm);
+	if (!at.ok) return at;
+
+	const want: { path?: string; title?: string } = {};
+	if (next.path != null && next.path !== norm) {
+		const np = normalizeSlidePath(next.path);
+		if (!np) return { ok: false, error: `invalid slide path "${next.path}"` };
+		if (np !== norm && listEntryPaths(source).includes(np)) {
+			return { ok: false, error: `pages.ts already lists "${np}"` };
+		}
+		want.path = np;
+	}
+	if (next.title != null) {
+		const t = String(next.title).trim();
+		if (!t) return { ok: false, error: 'title is required' };
+		want.title = t;
+	}
+	const line = rewriteEntryLine(lines[at.index], want);
+	if (line == null) return { ok: false, error: `entry for "${norm}" has no plain path/title — edit pages.ts by hand` };
+	lines[at.index] = line;
+	return { ok: true, source: lines.join('\n') };
+}
+
+/**
+ * Insert a copy of `path`'s entry right after it, with a new path and title. The
+ * copy keeps the original's other fields, minus `image` (that social card is a
+ * picture of the ORIGINAL slide).
+ */
+export function duplicatePagesEntry(
+	source: string,
+	path: string,
+	newPath: string,
+	title: string
+): PagesEditResult {
+	const norm = normalizeSlidePath(path) ?? String(path ?? '');
+	const np = normalizeSlidePath(newPath);
+	if (!np) return { ok: false, error: `invalid slide path "${newPath}"` };
+	const t = String(title ?? '').trim();
+	if (!t) return { ok: false, error: 'title is required' };
+	if (listEntryPaths(source).includes(np)) return { ok: false, error: `pages.ts already lists "${np}"` };
+	const lines = String(source ?? '').split('\n');
+	const at = findSimpleEntry(lines, norm);
+	if (!at.ok) return at;
+	let copy = rewriteEntryLine(lines[at.index], { path: np, title: t });
+	if (copy == null) return { ok: false, error: `entry for "${norm}" has no plain path/title — edit pages.ts by hand` };
+	copy = copy.replace(new RegExp(`,?\\s*${fieldRe('image').source}`), '');
+	lines.splice(at.index + 1, 0, copy);
+	return { ok: true, source: lines.join('\n') };
+}
+
+// ─── Links to a slide ───────────────────────────────────────────────────────
+//
+// A slide `<deck>/<name>.html` is referred to two ways in route sources:
+//   - from ANY route file, deck-qualified: `slides/old.html`, `../slides/old.html`,
+//     `/slides/old.html`, and ViewSource's own `src/routes/slides/old.html/+page.svelte`;
+//   - from a file INSIDE the same deck folder, bare: `"old.html"`, `'./old.html'`,
+//     `to="old.html?x"` — a relative link from one slide resolves to its sibling —
+//     and `'/old.html'`, which the deck's index redirect appends to its own pathname.
+// A bare name is only ever read inside its own deck: `title.html` in another deck
+// is that deck's title. Matches are whole names (`old.html` never matches
+// `bold.html`) ending at a quote, `?`, `#`, `/` or backtick.
+
+function escRe(s: string): string {
+	return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function refPatterns(deck: string, name: string, sameDeck: boolean): RegExp[] {
+	const end = `(?=[?#/"'\`])`;
+	const res = [new RegExp(`(?<=[/"'\`])${escRe(deck)}/${escRe(name)}${end}`, 'g')];
+	if (sameDeck) res.push(new RegExp(`(?<=["'\`](?:\\.?/)?)${escRe(name)}${end}`, 'g'));
+	return res;
+}
+
+/** How many references to `<deck>/<name>` a file holds. */
+export function countSlideRefs(source: string, deck: string, name: string, sameDeck: boolean): number {
+	let n = 0;
+	for (const re of refPatterns(deck, name, sameDeck)) n += (String(source).match(re) ?? []).length;
+	return n;
+}
+
+/** Point every reference to `<deck>/<from>` at `<deck>/<to>` instead. */
+export function rewriteSlideRefs(
+	source: string,
+	deck: string,
+	from: string,
+	to: string,
+	sameDeck: boolean
+): { source: string; count: number } {
+	let out = String(source);
+	let count = 0;
+	const [qualified, bare] = refPatterns(deck, from, sameDeck);
+	out = out.replace(qualified, () => (count++, `${deck}/${to}`));
+	if (bare) out = out.replace(bare, () => (count++, to));
+	return { source: out, count };
 }
 
 /** Standard slide +layout.js — both lines required for the static build. */

@@ -45,6 +45,7 @@
 	import { frontZ, backZ } from '$lib/utils/stackingCore';
 	import { trackPointer } from '$lib/utils/drag';
 	import { guardStyle } from '$lib/adjust/styleGuardCore';
+	import { openSourceEditor } from '$lib/stores/sourceEditWindow';
 	import { getGroup } from '$lib/utils/groupContext';
 	import {
 		IDENTITY,
@@ -181,6 +182,9 @@
 	    so SAVE can patch a Block that lives in a component — a shared scene —
 	    instead of looking for it in the slide. Empty in a build. */
 	export let __file = '';
+	/** The 1-based line of this tag in `__file` — stamped alongside it, never
+	    authored. With it, ADJUST offers </> to open the tag in the EDIT window. */
+	export let __line = 0;
 
 	/** Inline style for the root element, applied last so it wins — EXCEPT for the
 	    properties this Block writes itself (left/top/width/height/inset/position),
@@ -395,6 +399,20 @@
 	// the {#each} at the end of the markup. Pending until SAVE, like a delete.
 	let copied = false;
 	let copiedTimer: ReturnType<typeof setTimeout> | undefined;
+	/** Open the file this tag was written in at its line (dev only: the stamp
+	    exists only there). */
+	function openSource() {
+		openSourceEditor({
+			route: location.pathname,
+			path: __file,
+			source: '',
+			language: 'svelte',
+			canSave: true,
+			file: __file,
+			line: __line
+		});
+	}
+
 	function copyThis() {
 		if (!deletable || removed) return;
 		copyBlock({ host: pasteHost ?? blockId, x, y, width, height, z, baseName: pasteOf ? pasteOf.name : name });
@@ -656,6 +674,13 @@
 	{#if editing}
 		<div class="readout">
 			{name ? name + ' · ' : ''}{Math.round(x)},{Math.round(y)} · {Math.round(width)}×{Math.round(height)}{z ? ' · z' + Math.round(z) : ''}{scaled ? ' · ×' + +frame.s.toFixed(3) : ''}{moved ? ' · moved' : ''}
+			{#if __file && __line}
+				<button
+					class="zbtn" type="button" title="Open this tag in the editor ({__file}:{__line})"
+					aria-label="Open source"
+					on:pointerdown|stopPropagation on:click|stopPropagation={openSource}
+				>&lt;/&gt;</button>
+			{/if}
 			<button
 				class="zbtn" type="button" title="Send to back" aria-label="Send to back"
 				on:pointerdown|stopPropagation on:click|stopPropagation={sendToBack}

@@ -44,8 +44,8 @@
 	export let source: string;
 	/** The path shown in the CodeBox title bar. */
 	export let path: string = '';
-	/** Monaco language for highlighting. Svelte files read best as `html`. */
-	export let language: string = 'html';
+	/** Monaco language for highlighting; `svelte` is coloured by Shiki's grammar (monacoShiki). */
+	export let language: string = 'svelte';
 	/** Button label (Text-mode corner control only). */
 	export let text: string = '</> Source';
 	/** Recede into the frame like the other chrome controls (MODE / nav). Default

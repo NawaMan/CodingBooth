@@ -1,5 +1,7 @@
 import { get } from 'svelte/store';
 import { adjustChanges, shapeChanges } from './adjustChanges';
+import { SITE } from '$lib/config/site';
+import { drawModule } from '$lib/config/siteConfigCore';
 
 // Client half of the ADJUST "Save" feature (dev only). Gathers the page's dirty
 // Block edits from the adjustChanges registry and POSTs them to the dev-server
@@ -65,7 +67,7 @@ async function post(changes: unknown[]): Promise<SaveResult> {
     which is the path a published deck has anyway. */
 export async function saveFreeze(insert: string, insertImports: string[] = []): Promise<SaveResult> {
 	if (!insert.trim()) return { ok: true, patched: 0, unmatched: [] };
-	return post([{ kind: 'Draw', insert, insertImports }]);
+	return post([{ kind: 'Draw', insert, insertImports, importFrom: drawModule(SITE) }]);
 }
 
 /** Write every dirty Block AND Draw shape on the current slide back to source. */

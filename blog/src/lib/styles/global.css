@@ -48,7 +48,7 @@ h1, h2, h3, h4, h5, h6 {
 /* Hand-lettering for <Draw rough> labels — see specs/DRAW-4.md.
  *
  * Excalifont (the face Excalidraw itself uses), SIL Open Font License 1.1;
- * the full licence and attribution are in static/fonts/Excalifont-OFL.txt.
+ * the full licence and attribution are in ./fonts/Excalifont-OFL.txt.
  * Only the Latin and Latin-Extended-A subsets are bundled — the unicode-range
  * split means a deck with plain English labels fetches just the 25 KB first
  * file and never asks for the second.
@@ -62,7 +62,7 @@ h1, h2, h3, h4, h5, h6 {
     font-style: normal;
     font-weight: normal;
     font-display: swap;
-    src: url('/fonts/Excalifont-Regular-latin.woff2') format('woff2');
+    src: url('./fonts/Excalifont-Regular-latin.woff2') format('woff2');
     unicode-range: U+20-7e, U+a0-a3, U+a5-a6, U+a8-ab, U+ad-b1, U+b4, U+b6-b8,
         U+ba-ff, U+131, U+152-153, U+2bc, U+2c6, U+2da, U+2dc, U+304, U+308,
         U+2013-2014, U+2018-201a, U+201c-201e, U+2020, U+2022, U+2024-2026,
@@ -74,7 +74,7 @@ h1, h2, h3, h4, h5, h6 {
     font-style: normal;
     font-weight: normal;
     font-display: swap;
-    src: url('/fonts/Excalifont-Regular-latin-ext.woff2') format('woff2');
+    src: url('./fonts/Excalifont-Regular-latin-ext.woff2') format('woff2');
     unicode-range: U+100-130, U+132-137, U+139-149, U+14c-151, U+154-17e, U+192,
         U+1fc-1ff, U+218-21b, U+237, U+1e80-1e85, U+1ef2-1ef3, U+2113;
 }
@@ -83,42 +83,42 @@ h1, h2, h3, h4, h5, h6 {
     font-family: 'Playfair Display Regular';
     font-style: normal;
     font-weight: normal;
-    src: local('Playfair Display Regular'), url('/fonts/PlayfairDisplay-Regular.woff') format('woff');
+    src: local('Playfair Display Regular'), url('./fonts/PlayfairDisplay-Regular.woff') format('woff');
 }
 
 @font-face {
     font-family: 'Playfair Display Italic';
     font-style: normal;
     font-weight: normal;
-    src: local('Playfair Display Italic'), url('/fonts/PlayfairDisplay-Italic.woff') format('woff');
+    src: local('Playfair Display Italic'), url('./fonts/PlayfairDisplay-Italic.woff') format('woff');
 }
 
 @font-face {
     font-family: 'Playfair Display Bold';
     font-style: normal;
     font-weight: normal;
-    src: local('Playfair Display Bold'), url('/fonts/PlayfairDisplay-Bold.woff') format('woff');
+    src: local('Playfair Display Bold'), url('./fonts/PlayfairDisplay-Bold.woff') format('woff');
 }
 
 @font-face {
     font-family: 'Playfair Display Bold Italic';
     font-style: normal;
     font-weight: normal;
-    src: local('Playfair Display Bold Italic'), url('/fonts/PlayfairDisplay-BoldItalic.woff') format('woff');
+    src: local('Playfair Display Bold Italic'), url('./fonts/PlayfairDisplay-BoldItalic.woff') format('woff');
 }
 
 @font-face {
     font-family: 'Playfair Display Black';
     font-style: normal;
     font-weight: normal;
-    src: local('Playfair Display Black'), url('/fonts/PlayfairDisplay-Black.woff') format('woff');
+    src: local('Playfair Display Black'), url('./fonts/PlayfairDisplay-Black.woff') format('woff');
 }
 
 @font-face {
     font-family: 'Playfair Display Black Italic';
     font-style: normal;
     font-weight: normal;
-    src: local('Playfair Display Black Italic'), url('/fonts/PlayfairDisplay-BlackItalic.woff') format('woff');
+    src: local('Playfair Display Black Italic'), url('./fonts/PlayfairDisplay-BlackItalic.woff') format('woff');
 }
 
 @media print {

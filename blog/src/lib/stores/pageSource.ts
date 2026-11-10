@@ -168,7 +168,7 @@ export async function openPageSourceEdit(): Promise<void> {
 		route,
 		path: loaded.file ?? '',
 		source: loaded.content,
-		language: 'html',
+		language: 'svelte',
 		canSave: true
 	});
 	if (win) {

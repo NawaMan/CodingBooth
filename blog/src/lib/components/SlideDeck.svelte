@@ -47,6 +47,14 @@
 		applyBareParam,
 		toggleBars
 	} from '$lib/stores/chromeBare';
+	import LivePointer from '$lib/components/LivePointer.svelte';
+	import {
+		livePointer,
+		setLivePointerDeck,
+		applyPointerParam,
+		togglePointer
+	} from '$lib/stores/livePointer';
+	import { DEFAULT_POINTER_SIZE, type PointerShape } from '$lib/pointer/livePointerCore';
 	import OnboardHint from '$lib/components/OnboardHint.svelte';
 	import { markOnboarded } from '$lib/stores/onboard';
 	import { DEFAULT_ONBOARD_DELAY_MS, isBeyondFirst, isFirstSlide } from '$lib/onboard/onboardCore';
@@ -167,6 +175,13 @@
 	import { consoleIsLive, CONSOLE_BEAT_MS, CONSOLE_TTL_MS } from '$lib/utils/consoleLiveCore';
 	import { roleOf } from '$lib/utils/relayCore';
 	import Spotlight from '$lib/components/Spotlight.svelte';
+	import StepDots from '$lib/components/StepDots.svelte';
+	import {
+		STEP_CUE_NEXT,
+		STEP_CUE_SPENT,
+		type StepDotsPosition
+	} from '$lib/utils/stepDotsCore';
+	import { progressOf } from '$lib/utils/progressCore';
 	import { setHighlight } from '$lib/stores/highlightTarget';
 	import { fireTrigger } from '$lib/stores/triggers';
 	import { collectFinite, applyState } from '$lib/utils/slideAnim';
@@ -364,9 +379,34 @@
 	   without paging or opening a bar is told about →/Space/← and the two bars. Per
 	   viewer, once per origin; never on a screen an audience watches. `false` opts out. */
 	export let onboardHint = true;
+	/** The build indicator (see <StepDots>): a faint row of dots near the bottom of the
+	   canvas while the slide has a Space-driven build, filling as it advances. On by
+	   default; `false` drops it deck-wide, `stepDots: false` on a pages.ts entry for one slide. */
+	export let stepDots = true;
+	/** Where the build indicator sits: 'top' / 'bottom' / 'left' / 'right' (an edge's
+	   midpoint) or 'top-left' / 'top-right' / 'bottom-left' / 'bottom-right'. A slide's
+	   `stepDots: '<position>'` in pages.ts overrides it for that slide. */
+	export let stepDotsAt: StepDotsPosition = 'bottom';
+	/** The build's "your turn" cue (see <StepDots>): once a step has played and the slide
+	   has sat still a second, the next dot blinks and a tooltip says "SPACE for next step"
+	   ("SPACE for next slide" once the build is spent). On by default wherever the dots
+	   show; `false` drops it deck-wide, `stepCue: false` on a pages.ts entry for one slide.
+	   Never in kiosk mode, while a presenter console is live, or while recording. */
+	export let stepCue = true;
+	/** The cue's wording. */
+	export let stepCueNext: string = STEP_CUE_NEXT;
+	export let stepCueSpent: string = STEP_CUE_SPENT;
 	/** Idle ms on the first slide before that hint appears (a stray Enter/click/scroll
 	   brings it at once). */
 	export let onboardDelayMs = DEFAULT_ONBOARD_DELAY_MS;
+	/** Draw a pointer where the mouse is, and hide the real one (see <LivePointer>) — for a
+	   screen recorder that leaves the OS cursor out of the video. This is the deck's DEFAULT;
+	   a sticky `?pointer` / `?pointer=off` or ☰ → POINTER (Alt+. → I) outranks it. */
+	export let pointer = false;
+	/** The live pointer's glyph: `arrow` / `dot` / `ring`. */
+	export let pointerShape: PointerShape = 'arrow';
+	/** The live pointer's size in screen px. */
+	export let pointerSize = DEFAULT_POINTER_SIZE;
 
 	let viewport: HTMLElement;
 	let container: HTMLElement;
@@ -538,6 +578,24 @@
 	// both (adjust/adjustAccessCore). Browser-guarded so url.searchParams is never read
 	// during prerender.
 	$: slideOffersAdjust = pages.find((p) => p.path === currentSlide)?.adjust === true;
+	// A slide's own `stepDots` entry: false hides it there, a position string moves it.
+	$: slideStepDots = pages.find((p) => p.path === currentSlide)?.stepDots;
+	$: showStepDots = stepDots && !clean && slideStepDots !== false;
+	$: stepDotsPosition = typeof slideStepDots === 'string' ? slideStepDots : stepDotsAt;
+	// The cue is for the SPEAKER: not on a booth (kiosk), not on the audience screen while a
+	// console is driving it, not in a recording or a replay, not inside an embed.
+	$: showStepCue =
+		stepCue &&
+		pages.find((p) => p.path === currentSlide)?.stepCue !== false &&
+		isTopWindow &&
+		!$kioskActive &&
+		!$consoleLive &&
+		!$recordingLook &&
+		!$replaying;
+	// A spent build's Space pages on — except on the deck's last slide. (A hidden
+	// appendix is not "present" in the march, and its Space returns to the caller.)
+	$: deckProgress = progressOf(pages, currentSlide ?? '');
+	$: hasNextSlide = !deckProgress.present || deckProgress.position < deckProgress.total;
 	$: adjustOffered = slideOffersAdjust || adjust;
 	$: if (browser) setAdjustOffered(adjustOffered);
 	$: if (browser) applyAdjustParam($page.url);
@@ -548,6 +606,8 @@
 	$: if (browser) applyAnnotateParam($page.url);
 	$: if (browser) setChromeBareDeck(hideChrome);
 	$: if (browser) applyBareParam($page.url);
+	$: if (browser) setLivePointerDeck(pointer);
+	$: if (browser) applyPointerParam($page.url);
 	$: inkStaleAfterMs.set(Math.max(0, Number(inkStaleAfter) || 24) * 60 * 60 * 1000);
 
 	// Point the ink at THIS slide. Ink is persisted per slide (stores/annotation.inkBook), so
@@ -929,6 +989,10 @@
 					toggleBars();
 					// No keepChromeArmed after hiding: the raise is what would hold the bars up.
 					return;
+				case 'pointer':
+					togglePointer();
+					closeMoreMenu();
+					break;
 				case 'capture':
 					if (canCapture) onCapture();
 					closeMoreMenu();
@@ -951,6 +1015,29 @@
 			return;
 		}
 
+		/**
+		 * Tuck both bars now. Drop the ☰ open latch, then un-arm. Alt+. puts focus on the
+		 * top bar so ←/→ work; that focus keeps the top bar seated via CSS `:focus-within`
+		 * even after `armed` is false — so this must blur ANY focus inside the chrome
+		 * overlay (top tool bar or bottom control bar), not only the ☰. A pointer still
+		 * hovering a bar keeps that bar open — plain hover, leave to tuck.
+		 */
+		function retractChrome(): void {
+			closeMoreMenu();
+			printMenuOpen = false;
+			if (browser && document.activeElement instanceof HTMLElement) {
+				const el = document.activeElement;
+				if (
+					el.closest?.('.overlay') ||
+					el.closest?.('.annot-tools') ||
+					el.closest?.('.ctrl-bar')
+				) {
+					el.blur();
+				}
+			}
+			disarmChrome();
+		}
+
 		const intent = chromeKeyIntent(e, $chromeArmed);
 		if (intent === 'ignore') return;
 		e.preventDefault();
@@ -962,32 +1049,17 @@
 				queueMicrotask(() => focusToolbarEl(barFocusables()[0]));
 				return;
 			case 'disarm':
-				// Drop the ☰ open latch, then un-arm. Alt+. puts focus on the top bar so ←/→
-				// work; that focus keeps the top bar seated via CSS `:focus-within` even after
-				// `armed` is false — so Esc must blur ANY focus inside the chrome overlay
-				// (top tool bar or bottom control bar), not only the ☰. A pointer still
-				// hovering a bar keeps that bar open — plain hover, leave to tuck.
-				closeMoreMenu();
-				printMenuOpen = false;
-				if (browser && document.activeElement instanceof HTMLElement) {
-					const el = document.activeElement;
-					if (
-						el.closest?.('.overlay') ||
-						el.closest?.('.annot-tools') ||
-						el.closest?.('.ctrl-bar')
-					) {
-						el.blur();
-					}
-				}
-				disarmChrome();
+				retractChrome();
 				return;
 			case 'annotate':
+				// A and J enter a working mode where the bars are in the way, so they tuck
+				// them at once — Esc would too, but on an armed pen Esc also puts it down.
 				if ($canAnnotate) annotationMode.update((v) => !v);
-				keepChromeArmed();
+				retractChrome();
 				return;
 			case 'adjust':
 				if ($canAdjust) adjustMode.update((v) => !v);
-				keepChromeArmed();
+				retractChrome();
 				return;
 			case 'display':
 				// Open (toggle) the DISPLAY zoom menu — same control a click on FITTED (Z)
@@ -1581,6 +1653,18 @@
 			     inert until a <Note> line or a slide sets the highlightTarget store.
 			     Placed after the slot so it paints over the slide's own blocks. -->
 				<Spotlight canvasWidth={width} canvasHeight={height} />
+				<!-- The build indicator: draws only while a Space-driven build holds activeSteps. -->
+				{#if showStepDots}
+					<StepDots
+						canvasWidth={width}
+						canvasHeight={height}
+						position={stepDotsPosition}
+						cue={showStepCue}
+						cueNext={stepCueNext}
+						cueSpent={stepCueSpent}
+						{hasNextSlide}
+					/>
+				{/if}
 				<!-- The speaker's ink, the other canvas-level singleton. After Spotlight, so a
 			     stroke lands on top of the cue it is drawn next to. Renders nothing at all
 			     until there is ink or the pen is armed — so it is inert (and SSR-inert) on
@@ -1616,7 +1700,7 @@
 				{#if browser && $deckSourceFallback && !$pageSourceHasOwner}
 					<CodeBox
 						code={$deckSourceFallback.code}
-						language="html"
+						language="svelte"
 						title={$deckSourceFallback.path}
 						bind:expanded={deckSourceExpanded}
 						readOnly
@@ -1710,6 +1794,39 @@
 						</span>
 						<span class="tool-label"
 							>{$chromeBare ? 'SHOW' : 'HIDE'} <span class="tool-mn">B</span>ARS</span
+						>
+					</button>
+				{/snippet}
+
+				<!-- POINTER — draw a pointer where the mouse is and hide the real one, for a screen
+		     recorder that leaves the cursor out. The same sticky choice as `?pointer`. -->
+				{#snippet pointerItem()}
+					<button
+						type="button"
+						class="annot-tool"
+						title={$livePointer
+							? 'Stop drawing the pointer — show the real cursor again (I)'
+							: 'Draw a pointer where the mouse is, for screen recorders that leave the cursor out (I)'}
+						aria-keyshortcuts="i"
+						aria-pressed={$livePointer}
+						on:click={togglePointer}
+					>
+						<span class="tool-ico" aria-hidden="true">
+							<!-- an arrow pointer -->
+							<svg
+								viewBox="0 0 16 16"
+								width="1em"
+								height="1em"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="1.4"
+								stroke-linejoin="round"
+							>
+								<path d="M3 2l3.3 11 1.8-4.6L13 6.6z" />
+							</svg>
+						</span>
+						<span class="tool-label"
+							>{$livePointer ? 'HIDE' : 'DRAW'} PO<span class="tool-mn">I</span>NTER</span
 						>
 					</button>
 				{/snippet}
@@ -2057,6 +2174,13 @@
      window cannot change what the replay is filming (the keyboard is held in onMount). -->
 {#if browser && $replaying && !present}
 	<div class="replay-shield" aria-hidden="true"></div>
+{/if}
+
+<!-- The live pointer — after the replay shield, so it paints above it. Top window only: an
+     OVERVIEW tile or a console preview is an iframe of this deck, and a second pointer
+     drawn inside it would sit apart from the first. -->
+{#if browser && isTopWindow && !present}
+	<LivePointer shape={pointerShape} size={pointerSize} />
 {/if}
 
 <!-- Presenter console (this window loaded with ?present). Mounts OVER the hidden

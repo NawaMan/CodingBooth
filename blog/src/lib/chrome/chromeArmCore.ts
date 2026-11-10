@@ -4,7 +4,7 @@
 // Global letters fight typing and deck paging; so the model is:
 //   1. Alt+. raises both bars (arm)
 //   2. While armed, a/j/z/p/m/t/u pick a bar control (u = pause/resume a live kiosk)
-//   3. ☰ rows (o/k/b/c/r/s/e) fire while armed OR while the more menu is open —
+//   3. ☰ rows (o/k/b/i/c/r/s/e) fire while armed OR while the more menu is open —
 //      so Alt+. → m → c runs CAPTURE, and a bare Alt+. → c does too. K is dual-purpose:
 //      opens the Kiosk dialog while off, toggles the panel's forced-visible pin while live.
 //   4. Esc (or timeout) disarms
@@ -58,6 +58,7 @@ export type MoreMenuKeyIntent =
 	| 'overview'
 	| 'kiosk'
 	| 'bars'
+	| 'pointer'
 	| 'capture'
 	| 'print'
 	| 'source'
@@ -83,7 +84,7 @@ function mnemonicLetter(e: KeyboardEvent): string {
  * ☰ row mnemonic while the more menu is open, or while chrome is armed (so the
  * letter both opens the drop and runs the row — the underline is not a lie).
  *
- * Alphabet: O OVERVIEW · K KIOSK · B BARS · C CAPTURE · R PRINT · S SOURCE · E EDIT.
+ * Alphabet: O OVERVIEW · K KIOSK · B BARS · I POINTER · C CAPTURE · R PRINT · S SOURCE · E EDIT.
  * PRINT uses R because P is PRESENT on the bar. Case-insensitive; print flyout
  * case-sensitive keys (cCwWtT) are handled separately once PRINT is open.
  */
@@ -105,6 +106,9 @@ export function moreMenuKeyIntent(
 		case 'b':
 			// Hide / show both bars (bare chrome).
 			return 'bars';
+		case 'i':
+			// Draw / hide the live pointer (poInter — P is PRESENT on the bar).
+			return 'pointer';
 		case 'c':
 			return 'capture';
 		case 'r':

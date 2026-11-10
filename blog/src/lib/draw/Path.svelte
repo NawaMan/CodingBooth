@@ -951,7 +951,7 @@
 	   should not be set in the deck's typeface. Overridable with
 	   --draw-font-family; the stack ends in `cursive` so SOMETHING handwritten
 	   shows even with no webfont installed. Drop a real one (Excalifont,
-	   Virgil, Caveat…) into static/fonts, @font-face it in global.css, and name
+	   Virgil, Caveat…) into styles/fonts/, @font-face it in global.css, and name
 	   it in --draw-font-family to get the full Excalidraw look. */
 	.draw-label.hand {
 		font-family: var(

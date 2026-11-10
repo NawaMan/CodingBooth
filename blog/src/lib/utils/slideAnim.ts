@@ -68,14 +68,29 @@ export function isPlaying(anims: Animation[]): boolean {
  *
  * Callers that want a finished GROUP to replay must seek it to 0 first — then nothing is
  * finished any more, and every animation plays.
+ *
+ * "Finished" has to allow for float dust. The browser keeps CSS times in seconds, so an
+ * animation seeked to its end can read back a hair SHORT of `endTime`; JS then thinks it is
+ * still running, while the browser (which compares with its own tolerance) thinks it is done
+ * and rewinds it on `play()`. That is how a Terminal's last output line before a stop vanished
+ * for the whole next step — it ends exactly on the stop. So anything within `END_SLACK_MS` of
+ * its end is snapped onto the end instead of played: nothing a viewer could see is skipped,
+ * and a `steps()` reveal shows its last character rather than stopping one short.
  */
 export function playGroup(anims: Animation[]): void {
 	for (const a of anims) {
 		const ct = typeof a.currentTime === 'number' ? a.currentTime : 0;
-		if (ct >= endTimeOf(a)) continue;
+		const end = endTimeOf(a);
+		if (ct >= end - END_SLACK_MS) {
+			if (ct < end) a.currentTime = end;
+			continue;
+		}
 		a.play();
 	}
 }
+
+/** How close to its end an animation counts as finished, in ms. Well under a frame. */
+const END_SLACK_MS = 1;
 
 /** Detach the whole group from the clock. */
 export function pauseGroup(anims: Animation[]): void {

@@ -17,10 +17,14 @@ export interface SourceEditPayload {
 	path: string;
 	/** File bytes from the slide's `?raw` import. */
 	source: string;
-	/** Monaco language id (svelte → html). */
+	/** Monaco language id (`svelte` for a page; see monacoShiki). */
 	language: string;
 	/** Whether SAVE can write (vite dev). */
 	canSave: boolean;
+	/** Open this project file instead of the slide's page (ADJUST's </> on a Block). */
+	file?: string;
+	/** With `file`: the 1-based line to put the caret on. */
+	line?: number;
 	/** Bumped on every open so the popup notices a re-push of the same slide. */
 	ts: number;
 }
@@ -48,13 +52,18 @@ export function parseSourceEditPayload(raw: unknown): SourceEditPayload | null {
 	if (typeof o.language !== 'string') return null;
 	if (typeof o.canSave !== 'boolean') return null;
 	const ts = typeof o.ts === 'number' && Number.isFinite(o.ts) ? o.ts : Date.now();
+	const file = typeof o.file === 'string' && o.file ? o.file : undefined;
+	const line =
+		file && typeof o.line === 'number' && Number.isInteger(o.line) && o.line > 0 ? o.line : undefined;
 	return {
 		route: o.route,
 		path: o.path,
 		source: o.source,
 		language: o.language || 'html',
 		canSave: o.canSave,
-		ts
+		ts,
+		...(file ? { file } : {}),
+		...(line ? { line } : {})
 	};
 }
 

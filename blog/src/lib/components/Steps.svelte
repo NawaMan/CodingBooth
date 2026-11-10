@@ -51,11 +51,11 @@
   presenter console's CONTINUE relays a `gp:continue` pulse, which advances the
   build too (see `continueKey`).
 
-  Coordinates its children over Svelte context, exactly like Carousel/CarouselItem,
-  so authors just nest Fragments in document order.
+  Coordinates its children over Svelte context (utils/stepsContext.ts), so authors
+  just nest Fragments — and StepTerminals, one step per command — in document order.
 -->
 <script lang="ts">
-	import { setContext, onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { writable } from 'svelte/store';
 	import { browser } from '$app/environment';
 	import { getMode } from '$lib/presentation';
@@ -63,6 +63,7 @@
 	import { spaceIntent } from '$lib/utils/stepKeys';
 	import { reportAction } from '$lib/record/recordBus';
 	import { readArrivalAtEnd, clearArrival } from '$lib/utils/deckNav';
+	import { setStepsContext } from '$lib/utils/stepsContext';
 
 	/** Transition each Fragment uses unless it overrides its own. */
 	export let transition: 'fade' | 'fly' | 'slide' | 'scale' | 'none' = 'fade';
@@ -106,17 +107,29 @@
 	const defaults = writable({ transition, duration });
 	$: defaults.set({ transition, duration });
 
-	// Fragments register in document order during init, getting a stable index.
-	function register(): number {
+	// Members register in document order during init, getting a stable index: a Fragment
+	// claims one step, a StepTerminal one per command (utils/stepsContext.ts).
+	function register(n: number = 1): number {
 		let index = 0;
-		total.update((n) => {
-			index = n;
-			return n + 1;
+		total.update((t) => {
+			index = t;
+			return t + Math.max(0, Math.floor(n));
 		});
 		return index;
 	}
 
-	setContext('steps', { register, revealed, defaults });
+	// Members still PLAYING a step they were given (a Fragment fading in, a command
+	// typing). The build is busy while any is; <StepDots> waits for it to settle before
+	// it cues the next Space.
+	const busyMembers = new Set<object>();
+	const busy = writable(false);
+	function setBusy(member: object, on: boolean) {
+		if (on) busyMembers.add(member);
+		else busyMembers.delete(member);
+		busy.set(busyMembers.size > 0);
+	}
+
+	setStepsContext({ register, revealed, defaults, setBusy, arrivedAtEnd: arrivedBack });
 
 	function clamp(n: number): number {
 		return Math.max(0, Math.min($total, n));
@@ -160,7 +173,17 @@
 	// Only the keyboard-owning instance registers, matching who Space would drive.
 	const token = {};
 	$: drivesChrome = browser && !isText && keys === 'global';
-	$: if (drivesChrome) activeSteps.set({ owner: token, hasNext: !atEnd, hasPrev: !atStart, next, prev });
+	$: if (drivesChrome)
+		activeSteps.set({
+			owner: token,
+			hasNext: !atEnd,
+			hasPrev: !atStart,
+			next,
+			prev,
+			index: $revealed,
+			total: $total,
+			busy: $busy
+		});
 
 	onDestroy(() => {
 		// Only clear it if we're still the registered build (a later Steps may own it).
@@ -210,4 +233,6 @@
      where they sit in the parent's flow. `let:revealed` hands the slide the
      current step, for anything a Fragment can't express — a Group camera that
      moves on each Space, say (see animation/scene-camera.html). -->
-<div class="steps {klass}" id={id || undefined} style="display: contents; {style}"><slot revealed={Math.min($revealed, $total)} /></div>
+<div class="steps {klass}" id={id || undefined} style="display: contents; {style}">
+	<slot revealed={Math.min($revealed, $total)} />
+</div>

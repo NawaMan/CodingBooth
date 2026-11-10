@@ -9,6 +9,7 @@
 // shared with the handout via deckPathCore.
 import type { Page } from '$lib/utils/navigate';
 import { pathsFromPagesFile, slideSitePath } from '$lib/handout/deckPathCore';
+import { SITE } from '$lib/config/site';
 
 // Eagerly import every presentation's pages.ts (any depth under routes/).
 const pageModules = import.meta.glob<{ pages: Array<Page> }>('/src/routes/**/pages.ts', {
@@ -16,15 +17,9 @@ const pageModules = import.meta.glob<{ pages: Array<Page> }>('/src/routes/**/pag
 });
 
 // Standalone (non-deck) content routes: the landing page and the hand-authored
-// Texts (each blog post is a Text article). trailingSlash is "never", so '/' is
-// the only one that keeps a trailing slash. Add a new standalone Text route here
-// so it lands in the sitemap.
-const TEXT_ROUTES = [
-	'/',
-	'/2026-06-28.html',
-	'/2026-06-18.html',
-	'/2026-05-29.html'
-];
+// Texts. They are the project's to list — `textRoutes` in geekpresent.config.ts — so a
+// new Text reaches the sitemap without editing this file.
+const TEXT_ROUTES = SITE.textRoutes;
 
 /** All prerendered content routes as root-relative paths (e.g. '/slides/title.html'). */
 export function siteRoutes(): string[] {

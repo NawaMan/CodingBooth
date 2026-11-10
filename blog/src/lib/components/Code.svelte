@@ -1,5 +1,7 @@
 <script>
-	// Generic code viewer/editor built on the Monaco editor (loaded from a CDN).
+	// Generic code viewer/editor built on the Monaco editor (loaded from a CDN,
+	// once per page — see $lib/utils/monacoCdn). `language="svelte"` is coloured
+	// by Shiki's grammar through $lib/utils/monacoShiki; Monaco has none of its own.
 	// Distilled from JavaCode.svelte, but language is a parameter and it relies
 	// on Monaco's built-in, language-aware folding rather than a custom
 	// Java/brace-specific provider.
@@ -25,6 +27,8 @@
 	// CodeBox still mounts Monaco, see ViewSource.svelte) does none of this.
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
+	import { loadMonaco, MONACO_THEME } from '$lib/utils/monacoCdn';
+	import { ensureMonacoLanguage } from '$lib/utils/monacoShiki';
 
 	export let code           = '';
 	export let language       = 'java';
@@ -305,12 +309,20 @@
 	}
 
 	onMount(() => {
-		const script = document.createElement('script');
-		script.src = 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.21.2/min/vs/loader.js';
-		script.onload = initMonaco;
-		document.body.appendChild(script);
+		let unmounted = false;
+		// One Monaco per page (monacoCdn); a bridged language such as `svelte` is
+		// registered before the editor exists, so its first paint is already coloured.
+		loadMonaco()
+			// @ts-ignore
+			.then(async (monaco) => {
+				const lang = await ensureMonacoLanguage(monaco, language);
+				if (!unmounted) initMonaco(monaco, lang);
+			})
+			// @ts-ignore
+			.catch((err) => console.warn('[Code] Monaco did not load:', err));
 
 		return () => {
+			unmounted = true;
 			if (rafId != null) cancelAnimationFrame(rafId);
 			// @ts-ignore
 			if (editor) {
@@ -323,59 +335,38 @@
 		};
 	});
 
-	function initMonaco() {
-		if (browser) {
-			// Worker-backed languages (javascript / typescript) spin up the TS
-			// language service in a Web Worker for diagnostics. Monaco is loaded
-			// cross-origin from a CDN, so the default worker URL is cross-origin and
-			// the browser blocks creating a Worker from it — which throws and leaves
-			// the editor blank (java / python are tokenizer-only, so they were fine).
-			// Point getWorkerUrl at a same-origin data-URL shim that importScripts the
-			// CDN's workerMain, the standard cross-origin workaround for AMD Monaco.
-			const monacoBase = 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.21.2/min/';
-			// @ts-ignore
-			window.MonacoEnvironment = {
-				getWorkerUrl: function () {
-					return 'data:text/javascript;charset=utf-8,' + encodeURIComponent(
-						`self.MonacoEnvironment = { baseUrl: '${monacoBase}' };\n` +
-						`importScripts('${monacoBase}vs/base/worker/workerMain.js');`
-					);
-				}
-			};
-			// @ts-ignore
-			window.require.config({
-				paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.21.2/min/vs' }
-			});
-			// @ts-ignore
-			window.require(['vs/editor/editor.main'], function () {
-				// @ts-ignore
-				editor = monaco.editor.create(mountElement, {
-					value: code,
-					// Monaco sizes its own font in fixed px, so it ignores the canvas
-					// font-size lever — it comes from the `fontSize` prop instead.
-					// Pin the family to the deck's monospace so glyph metrics match
-					// the rendered text (a mismatch is another way carets drift).
-					fontSize,
-					fontFamily: "Fira Code, Menlo, Monaco, 'Courier New', monospace",
-					fontLigatures: true,
-					language: language,
-					minimap: { enabled: true },
-					folding: true,
-					automaticLayout: true,
-					readOnly,
-					theme: 'vs-dark',
-					foldingImportsByDefault: true
-				});
+	// @ts-ignore
+	function initMonaco(monaco, lang) {
+		// @ts-ignore
+		if (!browser || !mountElement) return;
+		// @ts-ignore
+		editor = monaco.editor.create(mountElement, {
+			value: code,
+			// Monaco sizes its own font in fixed px, so it ignores the canvas
+			// font-size lever — it comes from the `fontSize` prop instead.
+			// Pin the family to the deck's monospace so glyph metrics match
+			// the rendered text (a mismatch is another way carets drift).
+			fontSize,
+			fontFamily: "Fira Code, Menlo, Monaco, 'Courier New', monospace",
+			fontLigatures: true,
+			language: lang,
+			minimap: { enabled: true },
+			folding: true,
+			automaticLayout: true,
+			readOnly,
+			// The page's one theme — see MONACO_THEME; plain 'vs-dark' here would
+			// drop the Shiki colours from every other editor on the page.
+			theme: MONACO_THEME,
+			foldingImportsByDefault: true
+		});
 
-				// @ts-ignore
-				editor.onDidChangeModelContent(() => {
-					// @ts-ignore
-					dirty = editor.getValue() !== code;
-				});
+		// @ts-ignore
+		editor.onDidChangeModelContent(() => {
+			// @ts-ignore
+			dirty = editor.getValue() !== code;
+		});
 
-				revealTheLines();
-			});
-		}
+		revealTheLines();
 	}
 </script>
 

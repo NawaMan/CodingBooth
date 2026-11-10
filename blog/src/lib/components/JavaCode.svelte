@@ -12,6 +12,7 @@
 <script lang="javascript">
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
+	import { loadMonaco, MONACO_THEME } from '$lib/utils/monacoCdn';
 
 	export let javaCode       = '';
 	export let width          = '1200px';
@@ -109,10 +110,11 @@
 	}
 
 	onMount(() => {
-		const script = document.createElement('script');
-		script.src = 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.21.2/min/vs/loader.js';
-		script.onload = initMonaco;
-		document.body.appendChild(script);
+		// Shared with Code: one Monaco, one version per page (two would break `require`).
+		loadMonaco()
+			.then(initMonaco)
+			// @ts-ignore
+			.catch((err) => console.warn('[JavaCode] Monaco did not load:', err));
 
 		return () => {
 			// @ts-ignore
@@ -125,10 +127,6 @@
 	function initMonaco() {
 		if (browser) {
 			// @ts-ignore
-			window.require.config({
-				paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.21.2/min/vs' }
-			});
-			// @ts-ignore
 			window.require(['vs/editor/editor.main'], function () {
 				// @ts-ignore
 				editor = monaco.editor.create(editorElement, {
@@ -138,7 +136,7 @@
 					folding: true,
 					automaticLayout: true,
 					readOnly: true,
-					theme: "vs-dark",
+					theme: MONACO_THEME,
 					foldingImportsByDefault: true
 				});
 

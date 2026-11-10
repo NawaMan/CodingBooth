@@ -20,8 +20,10 @@
 		OG_IMAGE_WIDTH,
 		OG_IMAGE_HEIGHT,
 		absoluteUrl,
-		resolveImage
+		resolveImage,
+		stripBase
 	} from '$lib/seo/config';
+	import { base } from '$app/paths';
 
 	/** Full document <title> (already composed, e.g. "Slide — Deck"). */
 	export let title: string;
@@ -42,8 +44,9 @@
 
 	// Absolute-only values, each undefined when no base URL is configured (so the
 	// matching tag is omitted). The route comes from $page so canonical/og:url are
-	// correct per prerendered page; trailingSlash is "never", so no trailing slash.
-	$: url = canonical ?? absoluteUrl($page.url.pathname);
+	// correct per prerendered page; trailingSlash is "never", so no trailing slash. SITE_URL
+	// already ends in the base path, so the pathname drops it rather than repeat it.
+	$: url = canonical ?? absoluteUrl(stripBase($page.url.pathname, base));
 	$: ogImage = resolveImage(image);
 	// Dimensions are only known for the bundled default card; a custom image has an
 	// unknown size, so skip width/height for it rather than assert a wrong one.

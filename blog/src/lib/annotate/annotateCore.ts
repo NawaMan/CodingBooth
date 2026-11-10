@@ -25,11 +25,65 @@ import { finite, finitePoint, round, smoothPath } from '$lib/draw/drawCore';
     carries its own string. */
 export type AnnotateTool = 'pen' | 'line' | 'arrow' | 'rectangle' | 'highlighter' | 'text';
 
-/** What the bar can be set to: any DRAW tool, the ERASER, or FREEZE. Neither of the last
-    two is a tool a stroke can be — the eraser removes whole strokes and freeze promotes
-    them to source — so they live here and never in `Stroke.tool` or the per-tool colour
+/** What the bar can be set to: any DRAW tool, the ERASER, FREEZE, or POINTER. None of the
+    last three is a tool a stroke can be — the eraser removes whole strokes, freeze promotes
+    them to source, and pointer steps the ink surface out of the way so the mouse reaches the
+    slide underneath — so they live here and never in `Stroke.tool` or the per-tool colour
     map. */
-export type AnnotateMode = AnnotateTool | 'eraser' | 'freeze';
+export type AnnotateMode = AnnotateTool | 'eraser' | 'freeze' | 'pointer';
+
+/** What a key press on an ARMED pen asks for: the Nth bar mode (a bare digit), the Nth colour
+    swatch (Shift + a digit), or nothing. `index` is 0-based — the key `1` is index 0. */
+export type AnnotateKeyIntent = { kind: 'tool'; index: number } | { kind: 'color'; index: number } | null;
+
+/** The subset of a KeyboardEvent the key reading needs, so a test can hand in a plain object. */
+export interface AnnotateKeyEvent {
+	key: string;
+	code?: string;
+	shiftKey?: boolean;
+	ctrlKey?: boolean;
+	metaKey?: boolean;
+	altKey?: boolean;
+}
+
+/** Read a key press as a tool or colour pick, by POSITION on the bar: 1–9 pick the modes left to
+    right, Shift+1–9 pick the swatches left to right.
+
+    DIGITS, because nothing else in the slide window uses them — the paging keys, `o`, Esc and
+    the Alt+. letters are all elsewhere, and a slide's own key listener is far likelier to want a
+    letter. The digit is read from `code` first (`Digit3` / `Numpad3`), which is what makes
+    Shift+digit work at all: `key` is then `#`, `!` or whatever the layout puts on that key, and
+    on an AZERTY keyboard the bare digit row types `&é"` with no Shift. `key` is the fallback for
+    an event that carries no `code`.
+
+    Anything with Ctrl/Cmd/Alt held is NOT ours (Ctrl+1 switches browser tabs), nor is `0`, nor a
+    digit past the end of the list it would pick from (`tools` / `colors` are the list lengths).
+    Total: junk in → null. The caller decides whether the press is in a text field. */
+export function annotateKeyIntent(
+	e: AnnotateKeyEvent | null | undefined,
+	tools: number,
+	colors: number
+): AnnotateKeyIntent {
+	if (!e || e.ctrlKey || e.metaKey || e.altKey) return null;
+	const fromCode = typeof e.code === 'string' ? /^(?:Digit|Numpad)([1-9])$/.exec(e.code) : null;
+	const fromKey = typeof e.key === 'string' ? /^([1-9])$/.exec(e.key) : null;
+	const digit = fromCode?.[1] ?? fromKey?.[1];
+	if (!digit) return null;
+	const index = Number(digit) - 1;
+	if (e.shiftKey) return index < Math.max(0, finite(colors, 0)) ? { kind: 'color', index } : null;
+	return index < Math.max(0, finite(tools, 0)) ? { kind: 'tool', index } : null;
+}
+
+/** Which mode a pick actually lands on. Picking POINTER while already on POINTER hands you back
+    the tool you had before it — so a quick "click something on the slide, then keep drawing" is
+    1, click, 1, and the hand never leaves the keyboard. Every other pick is just that mode.
+    `previous` is the last mode that was not POINTER; with none (or a junk one) it is the pen. */
+export function pickMode(picked: AnnotateMode, current: AnnotateMode, previous: AnnotateMode | null): AnnotateMode {
+	if (picked === 'pointer' && current === 'pointer') {
+		return previous && previous !== 'pointer' ? previous : 'pen';
+	}
+	return picked;
+}
 
 /** One freehand mark. `id` exists so a mirrored list can be keyed without
     re-drawing every stroke on each update.
@@ -290,8 +344,14 @@ export function arrowD(points: Point[], headLen = 36, headAngle = Math.PI / 7): 
     NORMALISED (min/max), so dragging up-left draws the same box as down-right, and the outline
     is drawn stroke-only (the surface fills nothing) so it rings what it is put around. A
     zero-area drag — a tap, or a dead-horizontal/vertical drag — still yields a drawable path
-    rather than nothing. Total and NaN-safe, like the rest of the family. */
-export function rectD(points: Point[]): string {
+    rather than nothing. Total and NaN-safe, like the rest of the family.
+
+    `radius` rounds the corners, in canvas px. It is clamped PER AXIS to half the box's width
+    and half its height — exactly how SVG clamps a `<rect rx>` — so a box frozen into Draw's
+    `<Rect rounded>` draws the same corners it had as ink, and a box thinner than two radii
+    gets flattened (elliptical) corners instead of arcs that overrun its sides. A radius of 0,
+    or a box with no width or no height, draws square corners. */
+export function rectD(points: Point[], radius = 0): string {
 	if (!Array.isArray(points) || points.length === 0) return '';
 	const pts = points.map(finitePoint);
 	const a = pts[0];
@@ -300,7 +360,45 @@ export function rectD(points: Point[]): string {
 	const y1 = round(Math.min(a[1], b[1]));
 	const x2 = round(Math.max(a[0], b[0]));
 	const y2 = round(Math.max(a[1], b[1]));
-	return `M ${x1} ${y1} L ${x2} ${y1} L ${x2} ${y2} L ${x1} ${y2} Z`;
+
+	const r = Math.max(0, finite(radius, 0));
+	const rx = round(Math.min(r, (x2 - x1) / 2));
+	const ry = round(Math.min(r, (y2 - y1) / 2));
+	if (!(rx > 0) || !(ry > 0)) return `M ${x1} ${y1} L ${x2} ${y1} L ${x2} ${y2} L ${x1} ${y2} Z`;
+
+	// Clockwise from the top edge, a quarter arc at each corner (sweep-flag 1).
+	const arc = (x: number, y: number) => `A ${rx} ${ry} 0 0 1 ${round(x)} ${round(y)}`;
+	return (
+		`M ${round(x1 + rx)} ${y1} L ${round(x2 - rx)} ${y1} ${arc(x2, y1 + ry)}` +
+		` L ${x2} ${round(y2 - ry)} ${arc(x2 - rx, y2)}` +
+		` L ${round(x1 + rx)} ${y2} ${arc(x1, y2 - ry)}` +
+		` L ${x1} ${round(y1 + ry)} ${arc(x1 + rx, y1)} Z`
+	);
+}
+
+/** A RECTANGLE mark's outline as a closed polyline — the four corners and back to the first —
+    for hit-testing. A rectangle is STORED as its two opposite corners, and read as a polyline
+    those two points are the box's DIAGONAL: an eraser (or a freeze pick) would then catch the
+    box only across its middle, where no ink is drawn, and miss the edges you can see. The
+    outline is square-cornered even when the mark is drawn rounded (rectD's radius): at the
+    default 12px the curve sits ~3.5px inside each corner, well within the eraser's reach.
+    Total and NaN-safe; an empty input is an empty outline. */
+export function rectOutline(points: Point[]): Point[] {
+	if (!Array.isArray(points) || points.length === 0) return [];
+	const pts = points.map(finitePoint);
+	const a = pts[0];
+	const b = pts[pts.length - 1];
+	const x1 = Math.min(a[0], b[0]);
+	const y1 = Math.min(a[1], b[1]);
+	const x2 = Math.max(a[0], b[0]);
+	const y2 = Math.max(a[1], b[1]);
+	return [
+		[x1, y1],
+		[x2, y1],
+		[x2, y2],
+		[x1, y2],
+		[x1, y1]
+	];
 }
 
 /** Distance in canvas px from a point to a single segment a→b — the classic projection
@@ -398,6 +496,22 @@ export function clampBarPos(
 		x: round(Math.min(maxX, Math.max(0, finite(x, 0)))),
 		y: round(Math.min(maxY, Math.max(0, finite(y, 0))))
 	};
+}
+
+/** The scale the pen's bar is drawn at: `max` when it fits, smaller when it would not.
+
+    The bar stays ONE line — a wrapped bar reads as two bars, and its buttons move every time a
+    mode shows or hides a control — so on a canvas too narrow for it (a portrait deck, whose big
+    base font inflates every em on the bar) it shrinks to fit instead, leaving `margin` (a
+    fraction of the canvas) clear at the edges. `natural` is the bar's UNSCALED width in px, as
+    the browser lays it out; 0 or junk means "not measured yet" and yields `max`. Total. */
+export function fitBarScale(natural: number, canvasWidth: number, max: number, margin = 0.04): number {
+	const top = finite(max, 1) > 0 ? finite(max, 1) : 1;
+	const w = finite(natural, 0);
+	const cw = finite(canvasWidth, 0);
+	if (!(w > 0) || !(cw > 0)) return top;
+	const room = cw * (1 - Math.min(0.5, Math.max(0, finite(margin, 0.04))));
+	return Math.min(top, room / w);
 }
 
 /** Where the speaker parked the pen's bar, in canvas px. `null` means "wherever it

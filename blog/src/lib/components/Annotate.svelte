@@ -8,10 +8,14 @@
   the AUTHOR named in advance; this is for what the speaker decides to point at while
   answering a question.
 
-  Geometry is not ours: sampled pointer positions go through annotateCore.simplifyPoints
-  and then drawCore's `smoothPath` — the SAME Catmull-Rom smoothing <Polyline> and <Curve>
-  render through, so ink inherits the NaN-safe, total discipline the Draw family is already
-  tested against, and a stroke is nothing more exotic than a `d` string.
+  Geometry is not ours: sampled pointer positions go through annotateCore.simplifyPoints,
+  and the `d` is derived from them at render. The PEN is a filled freehand outline
+  (annotate/freehandCore, vendored perfect-freehand) whose width follows the hand's speed;
+  the highlighter — and the pen under `freehand={false}` — go through drawCore's
+  `smoothPath`, the SAME Catmull-Rom smoothing <Polyline> and <Curve> render through; line,
+  arrow and rectangle are straight (arrowD / rectD). Either way ink inherits the NaN-safe,
+  total discipline the Draw family is already tested against, and a stroke is nothing more
+  exotic than its points plus a `d` string.
 
   INK PERSISTS, per slide, across reloads (stores/annotation.inkBook). Two windows share it
   for free — they are the same origin, so the audience's copy of the store hears the
@@ -24,10 +28,12 @@
   server, so a prerendered page ships no surface, no listener and no ink — whatever happens
   to be in the author's browser.
 
-  Three z-layers, and the order matters: the ink surface (40) sits over the slide's own
-  Blocks; the bar and the ANNOTATE toggle (41/42) sit over the surface, because while the
-  pen is armed the surface owns EVERY pointer on the canvas — anything the speaker must
-  still be able to click has to out-rank it, or they can arm the pen and never put it down.
+  The z-layers, and the order matters: the ink surface (40) sits over the slide's own
+  Blocks; the pen's bar (41), the stale-ink notice (42) and the text-label input (43) sit
+  over the surface, because while the pen is armed the surface owns EVERY pointer on the
+  canvas — anything the speaker must still be able to click has to out-rank it, or they can
+  arm the pen and never put it down. The ANNOTATE toggle itself is not here: it lives in
+  <SlideToolbar>, in SlideDeck's window-fixed overlay at z-index 50.
 -->
 <script lang="ts">
 	import { browser } from '$app/environment';
@@ -57,13 +63,17 @@
 		dismissStale
 	} from '$lib/stores/annotation';
 	import {
+		annotateKeyIntent,
 		arrowD,
 		clampBarPos,
+		fitBarScale,
 		hitStroke,
 		hitText,
 		inkAgeText,
 		levelPoints,
+		pickMode,
 		rectD,
+		rectOutline,
 		sanitizeText,
 		simplifyPoints,
 		snapAxis,
@@ -84,6 +94,7 @@
 	} from '$lib/annotate/freehandCore';
 	import { barPos } from '$lib/stores/annotation';
 	import { trackPointer } from '$lib/utils/drag';
+	import { isChromeTypingTarget } from '$lib/chrome/chromeArmCore';
 	import type { Point } from '$lib/draw/types';
 
 	interface Props {
@@ -96,6 +107,10 @@
 		/** Arrowhead length in canvas px — the chevron on an ARROW mark. Clamped to the
 		 *  shaft, so a short arrow keeps a head no longer than itself (see arrowD). */
 		arrowHead?: number;
+		/** Corner radius of a RECTANGLE mark, in canvas px — a small rounding so a box reads as
+		 *  drawn rather than ruled. Clamped to the box (see rectD); 0 gives square corners. A
+		 *  frozen box carries it as `<Rect rounded>`, so it keeps its corners in source. */
+		rectRadius?: number;
 		/** The eraser's reach in canvas px, ON TOP of each stroke's own half-width — how close
 		 *  the pointer must come to a mark to catch it. Bigger = a more forgiving rubber. */
 		eraserRadius?: number;
@@ -128,6 +143,7 @@
 		penWidth = 6,
 		highlighterWidth = 34,
 		arrowHead = 36,
+		rectRadius = 12,
 		eraserRadius = 14,
 		textSize = 44,
 		inkColors = [null, '#E5484D', '#3FA9F5', '#4BD07A', '#FFFFFF'],
@@ -150,9 +166,17 @@
 	// "has ink" alone would give the speaker nothing to draw on.
 	const showSurface = $derived(armed || $strokes.length > 0);
 
-	// The modes that lay down NO ink: the eraser removes, freeze promotes to source, text
-	// types its own label. None of them has a colour to set or a stroke to build.
-	const picking = $derived($annotateTool === 'eraser' || $annotateTool === 'freeze');
+	// POINTER: the pen stays armed — bar up, ink showing, Esc/Ctrl+Z live — but the surface
+	// steps out of the way, so the mouse reaches the slide underneath (a link, a button, a
+	// video's controls) without closing ANNOTATE and losing the bar.
+	const passThrough = $derived(armed && $annotateTool === 'pointer');
+
+	// The modes that lay down NO ink: the eraser removes, freeze promotes to source, pointer
+	// draws nothing at all. None of them has a colour to set or a stroke to build. (Text types
+	// its own label; it is colourable, so it is not in this list.)
+	const picking = $derived(
+		$annotateTool === 'eraser' || $annotateTool === 'freeze' || $annotateTool === 'pointer'
+	);
 
 	// The tool actually drawn with as a stroke. The picking modes and text do not lay down a
 	// live path, so while any of them is selected we stand in the pen (the draw path never
@@ -161,9 +185,9 @@
 	const drawTool = $derived<AnnotateTool>(
 		picking || $annotateTool === 'text' ? 'pen' : ($annotateTool as AnnotateTool)
 	);
-	// The colour the next mark uses — the selected tool's own, or null while picking (neither
-	// the eraser nor freeze paints anything). Text is colourable, so it keeps its swatch.
-	const color = $derived(picking ? null : $annotateColor[$annotateTool as AnnotateTool]);
+	// The colour the next mark uses — the one shared colour, whichever tool draws it — or null
+	// while picking (neither the eraser, freeze nor pointer paints anything).
+	const color = $derived(picking ? null : $annotateColor);
 
 	let surface: SVGSVGElement | undefined = $state();
 	let live: Point[] = $state([]);
@@ -176,7 +200,7 @@
 	// Whole-stroke rubber: hover a mark and it lights up in the erase colour to say "this is
 	// what goes"; press (or drag across) and it is removed. There is no partial erase — a
 	// stroke is stored as points, and rubbing out a *piece* would mean splitting the polyline;
-	// the unit you drew is the unit you take back, same as UNDO.
+	// the unit you drew is the unit you take back, same as Ctrl/Cmd+Z.
 	let hoverPoint: Point | null = $state(null); // where the pointer is, in canvas px (null = off-surface)
 	let erasing = $state(false); // is a delete-drag in progress (button held)?
 
@@ -204,7 +228,9 @@
 					isFreehand(s.tool) && pen
 						? freehandMaxRadius(pen)
 						: strokeWidth(s.tool, penWidth, highlighterWidth) / 2;
-				if (hitStroke(p, s.points, eraserRadius + halfWidth)) return s.id;
+				// A rectangle is stored as two corners — its diagonal — so test its OUTLINE.
+				const ink = s.tool === 'rectangle' ? rectOutline(s.points) : s.points;
+				if (hitStroke(p, ink, eraserRadius + halfWidth)) return s.id;
 			}
 		}
 		return null;
@@ -243,7 +269,7 @@
 	/** The markup for the current pick, wrapped in a <Draw> for the clipboard (a <Polyline>
 	    outside one renders nothing). Recomputed rather than cached — it is cheap, and a
 	    stroke erased out from under the selection must drop out of it. */
-	const freezeOpts = $derived({ penWidth, highlighterWidth });
+	const freezeOpts = $derived({ penWidth, highlighterWidth, rectRadius });
 	const freezeMarkup = $derived(freezeSnippet($strokes, frozenPick, freezeOpts));
 
 	function toggleFreeze(id: string): void {
@@ -447,6 +473,12 @@
 	// the stroke under the pen immediately, not wait for the next sample.
 	let snapping = $state(false);
 
+	// Is Shift held right now — for the BAR, not the pen: while it is, the digit badges move off
+	// the mode buttons and onto the swatches, since that is what Shift+digit picks. Kept apart
+	// from `snapping`, which the pointer events also rewrite mid-stroke; this one follows only
+	// the key itself, and a lost focus (Shift released in another window) lets it go.
+	let shiftHeld = $state(false);
+
 	/** `null` colour → no inline style → the role token paints it. */
 	function paint(c: string | null | undefined, tool?: AnnotateTool): string {
 		if (!c) return '';
@@ -479,7 +511,7 @@
 	    the core's. (TEXT is never a path; it renders as an SVG <text>, not through here.) */
 	function dFor(points: Point[], tool: AnnotateTool, complete = true): string {
 		if (tool === 'arrow') return arrowD(points, arrowHead);
-		if (tool === 'rectangle') return rectD(points);
+		if (tool === 'rectangle') return rectD(points, rectRadius);
 		if (isFreehand(tool)) return freehandD(points, pen, complete);
 		return strokeD(points);
 	}
@@ -520,7 +552,9 @@
 	}
 
 	function onPointerDown(ev: PointerEvent): void {
-		if (!armed || ev.button !== 0) return;
+		// POINTER mode's surface takes no pointer (pointer-events: none), but the handler must
+		// agree on its own: an event that still lands here must not fall through to the pen.
+		if (!armed || passThrough || ev.button !== 0) return;
 		ev.preventDefault();
 
 		if ($annotateTool === 'eraser') {
@@ -552,7 +586,7 @@
 	}
 
 	function onPointerMove(ev: PointerEvent): void {
-		if (!armed) return;
+		if (!armed || passThrough) return;
 
 		if ($annotateTool === 'eraser') {
 			// Track the pointer whether or not a button is down: with no button it drives the
@@ -625,7 +659,7 @@
 	// transform and the dragged (inline) one below, so a drag can never lose it (see
 	// barStyle: `transform:none` used to wipe the scale outright once the bar had ever
 	// been moved, so anyone who'd dragged it even once got the full-size bar back forever).
-	const BAR_SCALE = 0.525;
+	const BAR_SCALE = 0.7;
 
 	// ── Dragging the bar ────────────────────────────────────────────────────────────────
 	// The bar is wide and it sits over the slide, so wherever it defaults to it is in someone's
@@ -677,25 +711,51 @@
 	// `null` → let the CSS place it (bottom-centre, scaled around its own centre-bottom).
 	// Dragged → explicit canvas coords, scaled around its own top-left so the box still
 	// renders exactly at the point the drag measured and clamped.
+	// ONE line, always: drawn at BAR_SCALE when it fits, shrunk to the canvas width when it
+	// would not (fitBarScale). Its natural width is measured live — it changes as FREEZE adds
+	// its commit or the swatches step aside — and a transform does not change what a
+	// ResizeObserver or offsetWidth reports, so the measurement is the UNSCALED width.
+	let barNatural = $state(0);
+	$effect(() => {
+		const el = bar;
+		if (!el || typeof ResizeObserver === 'undefined') return;
+		const ro = new ResizeObserver(() => (barNatural = el.offsetWidth));
+		ro.observe(el);
+		return () => ro.disconnect();
+	});
+	const barScale = $derived(fitBarScale(barNatural, canvasWidth, BAR_SCALE));
 	const barStyle = $derived(
-		$barPos
-			? `left:${$barPos.x}px; top:${$barPos.y}px; bottom:auto; transform:scale(${BAR_SCALE}); transform-origin:top left;`
-			: ''
+		`--annot-bar-scale:${barScale};` +
+			($barPos
+				? `left:${$barPos.x}px; top:${$barPos.y}px; bottom:auto; transform:scale(${barScale}); transform-origin:top left;`
+				: '')
 	);
 
+	// The last mode that was NOT pointer — where picking POINTER a second time hands you back
+	// to (see pickMode). Plain component state: it is a convenience for this sitting, not part
+	// of anything persisted or mirrored.
+	let beforePointer: AnnotateMode | null = null;
+	$effect(() => {
+		if ($annotateTool !== 'pointer') beforePointer = $annotateTool;
+	});
+
+	/** Select a bar mode — from a click or a digit key alike, so both toggle POINTER the same way. */
 	function pick(tool: AnnotateMode): void {
-		annotateTool.set(tool);
+		annotateTool.set(pickMode(tool, $annotateTool, beforePointer));
 	}
 
 	function setColor(c: string | null): void {
-		if (picking) return; // neither the eraser nor freeze has a colour to set
-		annotateColor.update((m) => ({ ...m, [$annotateTool]: c }));
+		if (picking) return; // neither the eraser, freeze nor pointer has a colour to set
+		annotateColor.set(c);
 	}
 
 	// The bar's mode buttons, as icons. Each carries its word as the aria-label AND the tooltip,
 	// so nothing is lost by dropping the text — a screen reader and a hover both still say "Pen".
 	// The `d` is a 24×24 line glyph, stroked in currentColor (see .annot-btn.icon svg).
 	const TOOLS: { tool: AnnotateMode; label: string; d: string }[] = [
+		// An arrow cursor: hands off the ink, the mouse is yours. First on the bar, the way a
+		// drawing app puts its select tool before the ones that make marks.
+		{ tool: 'pointer', label: 'Pointer', d: 'M6 3l12 9-5 1 3 6-2.5 1-3-6L6 17z' },
 		{ tool: 'pen', label: 'Pen', d: 'M4 20l1-4L15 5l4 4L9 19l-4 1z M14 6l4 4' },
 		{ tool: 'line', label: 'Line', d: 'M5 19L19 5' },
 		{ tool: 'arrow', label: 'Arrow', d: 'M5 19L19 5M11 5h8v8' },
@@ -709,7 +769,8 @@
 		{ tool: 'freeze', label: 'Freeze', d: 'M12 3v18M4.5 7.5l15 9M19.5 7.5l-15 9' }
 	];
 
-	/** Escape puts the pen down; Ctrl/Cmd+Z takes back a stroke.
+	/** Escape puts the pen down; Ctrl/Cmd+Z takes back a stroke; 1–9 pick a mode and Shift+1–9
+	    a colour (annotateKeyIntent).
 
 	    The paging keys are deliberately NOT captured: a speaker must never be unable to
 	    advance, and a key that both dismisses a tool and navigates away is the trap the
@@ -721,24 +782,39 @@
 		// not just from pointer events, so pressing it MID-stroke straightens the live line at
 		// once — the speaker does not have to twitch the pen to see the ruler engage. It never
 		// preventDefaults or returns early: Shift is also a chord prefix elsewhere.
-		if (ev.key === 'Shift') snapping = true;
+		if (ev.key === 'Shift') {
+			snapping = true;
+			shiftHeld = true;
+		}
 		if (ev.key === 'Escape') {
 			ev.preventDefault();
 			annotationMode.set(false);
 		} else if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'z') {
 			ev.preventDefault();
 			undoStroke();
+		} else if (!isChromeTypingTarget(ev.target)) {
+			// 1–9 pick the bar's modes, Shift+1–9 its swatches, both left to right — so the
+			// speaker switches tools without travelling to the bar. Never while typing in a
+			// field (the text label's own <input> also keeps its keys to itself).
+			const intent = annotateKeyIntent(ev, TOOLS.length, inkColors.length);
+			if (!intent) return;
+			ev.preventDefault();
+			if (intent.kind === 'tool') pick(TOOLS[intent.index].tool);
+			else setColor(inkColors[intent.index]);
 		}
 	}
 
 	function onKeyup(ev: KeyboardEvent): void {
 		// Releasing Shift returns the pen to freehand — the live stroke bows back to the samples
 		// the moment the key comes up, even if the pointer is holding still.
-		if (ev.key === 'Shift') snapping = false;
+		if (ev.key === 'Shift') {
+			snapping = false;
+			shiftHeld = false;
+		}
 	}
 </script>
 
-<svelte:window on:keydown={onKeydown} on:keyup={onKeyup} />
+<svelte:window on:keydown={onKeydown} on:keyup={onKeyup} on:blur={() => (shiftHeld = false)} />
 
 {#if showSurface}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -750,7 +826,7 @@
 		class:freezing={armed && $annotateTool === 'freeze'}
 		class:texting={armed && $annotateTool === 'text'}
 		viewBox="0 0 {canvasWidth} {canvasHeight}"
-		style="width:{canvasWidth}px; height:{canvasHeight}px; pointer-events:{armed
+		style="width:{canvasWidth}px; height:{canvasHeight}px; pointer-events:{armed && !passThrough
 			? 'auto'
 			: 'none'};"
 		aria-hidden="true"
@@ -870,11 +946,12 @@
 			onpointerdown={onGripDown}
 			ondblclick={homeBar}>⠿</span
 		>
-		<!-- The mode buttons, as icons — PEN LINE ARROW RECTANGLE HIGHLIGHT TEXT ERASE. The word
+		<!-- The mode buttons, as icons — POINTER PEN LINE ARROW RECTANGLE HIGHLIGHT TEXT ERASE
+		     FREEZE. The word
 		     lives on as the aria-label and the tooltip, so nothing is lost by dropping the text.
 		     ERASE is a MODE, not a colour of ink (it removes marks); it wears the erase tint when
 		     armed, the same token a mark about to be deleted lights up in. -->
-		{#each TOOLS as t (t.tool)}
+		{#each TOOLS as t, i (t.tool)}
 			<button
 				type="button"
 				class="annot-btn icon"
@@ -883,10 +960,14 @@
 				class:freeze={t.tool === 'freeze'}
 				aria-label={t.label}
 				aria-pressed={$annotateTool === t.tool}
-				title={t.label}
+				aria-keyshortcuts={String(i + 1)}
+				title="{t.label} ({i + 1})"
 				onclick={() => pick(t.tool)}
 			>
 				<svg viewBox="0 0 24 24" aria-hidden="true"><path d={t.d} /></svg>
+				<!-- Its key, so nobody has to remember the order — handed to the swatches while
+				     Shift is held, since Shift+digit picks a colour instead. -->
+				{#if !shiftHeld}<span class="annot-key" aria-hidden="true">{i + 1}</span>{/if}
 			</button>
 		{/each}
 
@@ -911,13 +992,15 @@
 			{/if}
 		{/if}
 
-		<!-- Colour is meaningless while picking, so the swatches step aside for the eraser
-		     and for freeze. -->
+		<!-- Colour is meaningless while picking, so the swatches step aside for the eraser,
+		     for freeze and for pointer. -->
 		{#if !picking}
 			<span class="annot-sep" aria-hidden="true"></span>
 
-			<!-- Swatches for speed (you are on stage), plus a picker for anything else. The first
-			     swatch is the THEME's colour, and picking it stores `null` rather than a hex. -->
+			<!-- Swatches, and only swatches — you are on stage, and a full colour picker is a dialog
+			     to fight with mid-answer; a deck that wants other colours sets `inkColors`. The first
+			     swatch is the THEME's colour, and picking it stores `null` rather than a hex. The ring
+			     on the picked swatch is the only "current colour" marker the bar needs. -->
 			{#each inkColors as c, i (i)}
 				<button
 					type="button"
@@ -928,23 +1011,17 @@
 					style={c ? `--swatch:${c};` : ''}
 					aria-label={c === null ? 'Theme colour' : `Colour ${c}`}
 					aria-pressed={color === c}
+					aria-keyshortcuts={i < 9 ? `Shift+${i + 1}` : undefined}
+					title="{c === null ? 'Theme colour' : c}{i < 9 ? ` (Shift+${i + 1})` : ''}"
 					onclick={() => setColor(c)}
-				></button>
+				>
+					{#if shiftHeld && i < 9}<span class="annot-key" aria-hidden="true">{i + 1}</span>{/if}
+				</button>
 			{/each}
-			<label class="annot-custom" title="Custom colour">
-				<input
-					type="color"
-					aria-label="Custom ink colour"
-					value={color ?? '#F0A33E'}
-					oninput={(e) => setColor((e.currentTarget as HTMLInputElement).value)}
-				/>
-			</label>
 		{/if}
 
 		<span class="annot-sep" aria-hidden="true"></span>
-		<button type="button" class="annot-btn" disabled={$strokes.length === 0} onclick={undoStroke}
-			>UNDO</button
-		>
+		<!-- No UNDO button: Ctrl/Cmd+Z takes back a stroke, and the bar is wide enough already. -->
 		<button type="button" class="annot-btn" disabled={$strokes.length === 0} onclick={resetSlideInk}
 			>RESET</button
 		>
@@ -1140,27 +1217,36 @@
 		left: 50%;
 		bottom: 28px;
 		/* 75% of prior size, then another 70% on top — the pen palette was reading large
-		   next to the window-edge chrome. Net 0.75 * 0.7 = 0.525 of the original size.
-		   Keep this literal in sync with BAR_SCALE above — the dragged (inline) transform
-		   reuses that constant so a drag never loses the shrink.
+		   next to the window-edge chrome. Net 0.75 * 0.7 = 0.525 of the original size — then
+		   back up to 0.7 once the bar lost its UNDO and stopped being squeezed, so it fills the
+		   room it now has (and a portrait deck's bar is not a strip of specks).
+		   The scale itself is --annot-bar-scale, set inline from BAR_SCALE — shrunk further
+		   when the bar would not fit the canvas (fitBarScale) — and the dragged (inline)
+		   transform uses the same value, so a drag never loses the shrink. Keep the
+		   fallback below in sync with BAR_SCALE.
 
 		   translateY(-100%) is listed AFTER scale on purpose: percentages in `translate()`
 		   resolve against the element's own (unscaled) box, but composed in THIS order the
 		   shift gets scaled down right along with everything else — so it moves the bar up
-		   by exactly its own RENDERED height (0.525 × unscaled), clearing the 28px gap it
+		   by exactly its own RENDERED height (scale × unscaled), clearing the 28px gap it
 		   sits in rather than overshooting by the unscaled height. Listed before translateX
 		   so translateX's own -50% (centering) still resolves against the unscaled width,
 		   unaffected — matches how it already behaved. */
-		transform: translateX(-50%) scale(0.525) translateY(-100%);
+		transform: translateX(-50%) scale(var(--annot-bar-scale, 0.7)) translateY(-100%);
 		transform-origin: center bottom;
 		z-index: 41;
 		display: flex;
 		align-items: center;
-		/* Tighter than before (gap 0.4→0.28, padding 0.45/0.7→0.3/0.5) so the icons can grow
-		   (font-size 0.8→0.92) without the bar getting wider — the buttons carry glyphs now, not
-		   words, so they read better big and packed close. */
-		gap: 0.28em;
-		padding: 0.3em 0.5em;
+		/* Its NATURAL width, on one line. Without this the bar was squeezed: an absolutely
+		   positioned box shrinks to fit the room between its `left` and the canvas's right
+		   edge — half the canvas, from `left: 50%` — and on a 1080-wide portrait deck (whose
+		   bigger base font scales every em here) flex then crushed the swatches to dots and
+		   slid the key badges off their icons. Too wide for the canvas, the bar is SCALED
+		   down to fit (--annot-bar-scale), never wrapped or squashed. */
+		width: max-content;
+		flex-wrap: nowrap;
+		gap: 0.18em;
+		padding: 0.26em 0.45em;
 		border-radius: 999px;
 		font-size: calc(var(--base-font, 16px) * 0.92);
 		background: var(--annot-bar-bg, rgba(20, 22, 26, 0.92));
@@ -1179,7 +1265,7 @@
 		font: inherit;
 		font-weight: bold;
 		letter-spacing: 0.03em;
-		padding: 0.2em 0.55em;
+		padding: 0.2em 0.45em;
 		border-radius: 999px;
 		border: 1px solid transparent;
 		background: transparent;
@@ -1190,10 +1276,11 @@
 	   The <svg> strokes in currentColor, so the icon flips to the on-fg colour when the button
 	   is active (.on sets both background and colour). */
 	.annot-btn.icon {
+		position: relative; /* anchors the .annot-key badge */
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		padding: 0.22em;
+		padding: 0.2em;
 		border-radius: 8px;
 	}
 	.annot-btn.icon svg {
@@ -1205,6 +1292,32 @@
 		stroke-width: 2;
 		stroke-linecap: round;
 		stroke-linejoin: round;
+	}
+	/* The mode's digit key, tucked into the button's corner — readable when you look for it,
+	   quiet when you don't, and costing the bar no width. */
+	.annot-key {
+		position: absolute;
+		right: 0.12em;
+		bottom: 0.02em;
+		font-size: 0.55em;
+		line-height: 1;
+		font-weight: bold;
+		opacity: 0.6;
+		pointer-events: none;
+	}
+	.annot-btn.on .annot-key {
+		opacity: 0.85;
+	}
+	/* On a swatch the digit sits over a colour of any brightness, so it carries its own dark
+	   outline rather than relying on the bar behind it. */
+	.annot-swatch .annot-key {
+		right: -0.35em;
+		bottom: -0.3em;
+		opacity: 1;
+		color: var(--annot-bar-fg, #d7dde5);
+		text-shadow:
+			0 0 2px var(--annot-bar-bg, #14161a),
+			0 0 2px var(--annot-bar-bg, #14161a);
 	}
 	.annot-btn:hover:not(:disabled) {
 		background: var(--annot-bar-hover, rgba(255, 255, 255, 0.1));
@@ -1261,8 +1374,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 1.7em;
-		height: 1.7em;
+		width: 1.6em;
+		height: 1.6em;
 		padding: 0;
 		border: 1px solid transparent;
 		border-radius: 50%;
@@ -1283,9 +1396,14 @@
 	}
 
 	.annot-swatch {
+		position: relative; /* anchors the .annot-key badge shown while Shift is held */
 		cursor: pointer;
-		width: 1.35em;
-		height: 1.35em;
+		/* A <button> does NOT inherit font-size — it falls back to the browser's ~13px — so
+		   without this the em size below measured against that, not the bar, and the swatches
+		   came out a fraction of the icons' size (specks, on a portrait deck's big base font). */
+		font-size: inherit;
+		width: 1.3em;
+		height: 1.3em;
 		padding: 0;
 		border-radius: 50%;
 		border: 2px solid transparent;
@@ -1304,23 +1422,13 @@
 		box-shadow: 0 0 0 2px var(--annot-bar-bg, rgba(20, 22, 26, 0.92));
 	}
 
-	.annot-custom {
-		display: flex;
-		align-items: center;
-		cursor: pointer;
+	/* Nothing on the bar shrinks: if it is too wide, the WHOLE bar scales down (fitBarScale). */
+	.annot-bar > :global(*) {
+		flex-shrink: 0;
 	}
-	.annot-custom input[type='color'] {
-		width: 1.35em;
-		height: 1.35em;
-		padding: 0;
-		border: 2px dashed var(--annot-bar-edge, rgba(255, 255, 255, 0.16));
-		border-radius: 50%;
-		background: transparent;
-		cursor: pointer;
-	}
-
 	.annot-sep {
 		width: 1px;
+		margin: 0 0.1em; /* a rule wants a little more air either side than the buttons get */
 		align-self: stretch;
 		background: var(--annot-bar-edge, rgba(255, 255, 255, 0.16));
 	}
@@ -1331,7 +1439,7 @@
 		/* The gesture is ours: without this, a drag over the bar would also be a scroll or a
 		   text-selection on a touch screen. */
 		touch-action: none;
-		padding: 0 0.35em 0 0.15em;
+		padding: 0 0.3em 0 0.1em;
 		line-height: 1;
 		font-size: 1.1em;
 		color: var(--annot-bar-fg, #d7dde5);

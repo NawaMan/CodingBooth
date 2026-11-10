@@ -39,7 +39,9 @@
       nothing earlier, so Shift+Space would page the deck away instead of rewinding.
 
       Opt-in because only ONE build per slide may own Space (a <Steps> run and a
-      stepping Terminal would fight over it and over the store).
+      stepping Terminal would fight over it and over the store). For several consoles
+      in one Space sequence, use <StepTerminal> inside a <Steps>: its commands become
+      steps of that build (it drives this component through `driven` + `playTo`).
 
   ONE OWNER PER CLOCK. <AnimationBar> collects every finite CSS animation in the slide's
   `.content` — including this one's. With `controls` on, the Terminal drives its own
@@ -68,7 +70,8 @@
   `error` / `muted` / `comment` / `dir` / `plain`; every colour is a roles.css token
   (`--terminal-*`). A tone colours the whole line; to keep the start of it plain (a tree's
   `├── `), put that part in `lead`: `{ lead: '│   └── ', out: '(T) region', tone: 'ok' }`.
-  A shell comment is an output line in tone `comment`: `{ out: '# list them', tone: 'comment' }`.
+  A shell comment is tone `comment`: typed after the prompt as `{ cmd: '# list them', tone: 'comment' }`
+  (the prompt keeps its colour), or printed whole as `{ out: '# list them', tone: 'comment' }`.
   A folder, as `ls` draws one, is tone `dir`. To mix colours on one line, give `out` as a list:
   a bare string takes the line's tone, `{ text, tone }` its own —
   `{ out: ['GH_TOKEN <- [', { text: 'gh/token', tone: 'warn' }, ']'] }`.
@@ -146,6 +149,9 @@
 	export let keys: 'global' | 'off' = 'off';
 	/** Also step on the presenter console's CONTINUE pulse (gp:continue). Needs `keys`. */
 	export let continueKey: boolean = true;
+	/** Something else drives this console through `jumpTo` / `playTo` (<StepTerminal>):
+	    it never starts itself, whatever `controls` / `autoplay` say. */
+	export let driven: boolean = false;
 	/** ms per typed character. */
 	export let charMs: number = 55;
 	/** ms of dead air before the first line. */
@@ -178,7 +184,7 @@
 	// Never a dead console: with no transport, no stepping and no autoplay there would be
 	// nothing left that could ever start the session, so it starts itself. (`degrade,
 	// never blank` — the same instinct as WebSite's IntersectionObserver fallback.)
-	$: runsItself = autoplay || (!controls && keys === 'off');
+	$: runsItself = !driven && (autoplay || (!controls && keys === 'off'));
 
 	let screenEl: HTMLElement;
 	let trackEl: HTMLElement;
@@ -209,7 +215,12 @@
 
 	$: build = {
 		hasNext: nextCheckpoint(markers, playhead) !== null,
-		hasPrev: prevCheckpoint(markers, playhead) !== null
+		hasPrev: prevCheckpoint(markers, playhead) !== null,
+		// commands run so far, for <StepDots>
+		index: reached,
+		total: markers.length,
+		// still typing toward a stop — <StepDots> waits for it before cueing Space
+		busy: playing
 	};
 
 	// Only the keyboard-owning instance publishes itself, matching who Space would drive.
@@ -248,11 +259,17 @@
 		playhead = clamped;
 	}
 
+	// What playTo() is waiting on: called once the clock stops, for any reason.
+	let settle: (() => void) | null = null;
+
 	function pauseClock() {
 		pauseGroup(anims);
 		playing = false;
 		target = null;
 		stopLoop();
+		const done = settle;
+		settle = null;
+		done?.();
 	}
 
 	function playClock() {
@@ -317,6 +334,22 @@
 		if (!ready) return;
 		pauseClock();
 		seek(t);
+	}
+
+	/** Play from where the playhead is to `t` and hold there exactly. Resolves when the clock
+	    stops — on arrival, or because something else (a jump, a pause) stopped it first. */
+	export function playTo(t: number): Promise<void> {
+		if (!ready) return Promise.resolve();
+		const to = Math.max(0, Math.min(t, duration));
+		if (to <= playhead) {
+			jumpTo(to);
+			return Promise.resolve();
+		}
+		settle?.();
+		const arrived = new Promise<void>((resolve) => (settle = resolve));
+		target = to;
+		playClock();
+		return arrived;
 	}
 
 	/** Play forward to the end of the next command's output, then stop. */
@@ -465,11 +498,15 @@
 		<div class="screen" bind:this={screenEl}>
 			{#each schedule.lines as line, i (i)}
 				{#if line.kind === 'cmd'}
-					<div class="line cmd" style={rowStyle('cmd', line.delayMs, line.durationMs)}>
+					<div
+						class="line cmd"
+						class:spaced={i > 0 && !line.cont}
+						style={rowStyle('cmd', line.delayMs, line.durationMs)}
+					>
 						{#if prompt}<span class="prompt" class:cont={line.cont} aria-hidden="true"
 								>{prompt}</span
 							>{/if}<span
-							class="typed"
+							class="typed tone-{line.tone}"
 							style={typedStyle(line.chars, line.delayMs, line.durationMs)}>{line.text}</span
 						>{#if caret && animating}<span
 								class="gate"
@@ -494,7 +531,11 @@
 				<!-- The resting caret on a fresh prompt: where the session leaves the machine. The
 				     ROW waits out the envelope too — otherwise its `$` (duration 0s, fill both →
 				     already finished) would sit under the blank transcript from the first frame. -->
-				<div class="line cmd rest" style={rowStyle('cmd', schedule.envelopeMs, 1)}>
+				<div
+					class="line cmd rest"
+					class:spaced={schedule.lines.length > 0}
+					style={rowStyle('cmd', schedule.envelopeMs, 1)}
+				>
 					{#if prompt}<span class="prompt" aria-hidden="true">{prompt}</span>{/if}<span
 						class="gate rest-gate"
 						style="animation-delay:{schedule.envelopeMs}ms;"
@@ -652,6 +693,12 @@
 	}
 	.line.rest {
 		min-height: var(--row-h);
+	}
+	/* Air above each command (not the first, not a `cont` line — that is the same command),
+	   so a session reads as separate commands rather than one block. A margin, so it holds
+	   its space before the command types, like every other line. */
+	.line.cmd.spaced {
+		margin-top: var(--terminal-cmd-gap, 0.6em);
 	}
 
 	.prompt {
