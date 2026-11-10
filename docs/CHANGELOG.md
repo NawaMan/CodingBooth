@@ -4,6 +4,13 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A `booth --worktree` right after the last worktree went no longer fails to start on macOS.**
+  Git deletes `.git/worktrees/` with its last worktree, and Docker Desktop cannot mount under a
+  folder recreated within about a minute, which a booth on a worktree does for git's pointer files.
+  booth now leaves a `.codingbooth-keep` file in `.git/worktrees/` when it creates or removes a
+  worktree, so the folder stays. `git worktree prune` drops it, and the next worktree booth makes
+  puts it back.
+
 - **`envfolio+store-host` dry runs show the mounts.** On a host without `~/.folio` or `~/.gnupg`,
   `--dryrun` printed the run with both mounts skipped, a run that never happens: the real one
   refuses. It now prints both mounts, as the real run makes them.

@@ -131,7 +131,10 @@ fi
 git init -q --bare "$WORK/origin.git"
 git -C "$WORK/proj" remote add origin "$WORK/origin.git"
 on_origin() { git -C "$WORK/origin.git" rev-parse --verify --quiet "refs/heads/$1"; }
-COMMIT='git -c user.email=t@t -c user.name=t commit -q --allow-empty -m w'
+# The branch in the message keeps each step's commit its own: steps 8-10 commit on the same
+# parent, and two booths a second apart would otherwise make the very same commit, so "half"'s
+# would already be on origin (pushed by 8 or 10) and step 15 would count none only on it.
+COMMIT='git -c user.email=t@t -c user.name=t commit -q --allow-empty -m "w on $(git branch --show-current)"'
 
 # 8-10 commit inside the booth; 13 needs 10's push, and 14-15 the branch "half" 9 commits to.
 if git_in_booth 8 "--worktree-push pushes, then removes the worktree and the local branch" \
