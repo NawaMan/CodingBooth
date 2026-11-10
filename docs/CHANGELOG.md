@@ -4,6 +4,8 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+## 0.82.0
+
 - **`setup bash` survives a GitHub outage.** Bash 3.2.48–3.2.57 come prebuilt from a GitHub
   release, and a 504 that outlasted curl's retries failed the image build. The download now retries
   for about half a minute, and when it still cannot get the file it builds the release from a GNU
@@ -235,22 +237,26 @@ This file contains a list of changes for each released version.
   repo. It now runs against the repo the cache folder is in, whichever that is; a booth dir in no
   repo (`booth express`'s spec) still has nothing to check. A host without `git` now gets a warning
   instead of a silent skip. See [Gitignore Requirement](BOOTH_LOCALCACHE.md#gitignore-requirement).
+
 - **Shared mounts any path, like Cache.** `.booth/shared/` mounted only paths under `home`, `opt`,
   `etc`, `usr`, `var`, `tmp` and `root`; anything else (`srv/…`, `data/…`) was created and then
   silently not mounted. Both now follow one rule: any path mounts except a file directly in the
   tree's top folder, which would land at `/` — a `README.md` there is skipped with a notice, in
   Cache too, where it used to mount as `/README.md`. `/proc`, `/sys` and `/dev` join the
   protected paths that refuse to start. See [Mount Rules](BOOTH_SHARED.md#mount-rules).
+
 - **`rust+cargo-cache` starts on a host without `~/.cargo/registry`.** With it and the
   auto-selected `rust+registry-cache`, the first start failed with Docker's "Duplicate mount point":
   the cache entry steps aside for a run-args mount of the same path, but a mount whose host folder
   was still missing did not count, although its `:create` option makes that folder a moment later.
   A `:create` mount now always counts. See [Live Links](IN-OUT.md#2-start-time--live-links).
+
 - **The Console UI's shortcut hint says `Ctrl+Alt` again, except on a Mac.** The toolbar's
   Keyboard Shortcut Hint had written its modifiers as `^⎇` / `^⎇⇧` on Linux and Windows — symbols
   few people read as Ctrl+Alt. They are the words `Ctrl+Alt` / `Ctrl+Alt+Shift` there once more;
   a Mac keeps Apple's own `⌃⌥` / `⌃⌥⇧`, the way its keyboard prints them.
   See [Keyboard Shortcuts (Tiling)](BOOTH_CONSOLE.md#keyboard-shortcuts-tiling).
+
 - **A recipe run from the wrong booth says so.** In a booth started on a parent folder (say
   `examples/workspaces`), `cd music-example && just drums` ran `chuck` right there, in a booth
   without ChucK: `{{run-in-booth}}` only asked whether it was in *a* booth. It now also asks
@@ -260,6 +266,7 @@ This file contains a list of changes for each released version.
   place as before. The starter Justfile (`booth just-init`) and every example's Justfile have it;
   an existing project's Justfile changes only if you copy the two lines over from
   `docs/just/Justfile`.
+
 - **Sound from a booth on any host: the `browser-audio` template.** Select it
   (`--select 'python/browser-audio'`), click **Turn sound on** in the Booth panel, and sound made in the
   booth plays in that browser tab — on macOS, Windows, a remote Docker host, or for anyone viewing
@@ -283,12 +290,14 @@ This file contains a list of changes for each released version.
   Linux arm64 VM that runs Pharo 12 or later. The `fpc` (Pascal) template gains a `legacy` tag,
   and so do the new templates. `examples/workspaces/legacy-languages-example` prints the primes up
   to 30 in all six languages (`just run`).
+
 - **Code::Blocks IDE: the `codeblocks` template.** Installs Code::Blocks 25.03 with its contrib
   plugins, gdb and xterm on a desktop variant, and selects `gcc` with it; add `gcc+fortran` and it
   builds Fortran projects too. Code::Blocks only looks for GCC at `/usr/bin/gcc`, so the setup
   points that at the booth's chosen GCC when nothing else is there. Its wxSmith GUI-designer
   plugins are parked in `/usr/lib/codeblocks/plugins-disabled`: with Ubuntu 26.04's gdk-pixbuf
   they hang Code::Blocks on its splash screen.
+
 - **Booths can play sound through your speakers: the `host-audio` template.** Select it
   (`--select 'python/host-audio'`) and code in the booth plays on the host's speakers — `paplay`,
   any PulseAudio client, and ALSA-only programs, since ALSA's default device is routed through
@@ -297,6 +306,7 @@ This file contains a list of changes for each released version.
   Docker only: on macOS and Windows the mount is skipped and the booth starts with no sound. The
   socket also lets the booth record from the microphone. The new `drum-beat-example` synthesizes a
   drum beat in plain Python and plays it with `just beat`. See `docs/BOOTH_AUDIO.md`.
+
 - **Music as code: LilyPond, Csound, ChucK and SuperCollider templates.** `lilypond` engraves `.ly`
   text into a PDF score and MIDI, and `lilypond+play` adds FluidSynth with a General MIDI SoundFont
   to hear it; `csound` is the instrument-and-score synthesis language; `chuck` is the strongly-timed
@@ -307,12 +317,15 @@ This file contains a list of changes for each released version.
   booth; it needs a PipeWire host. The new `music-example` plays one progression across all four —
   melody, drums, bass and pad — with `just jam`.
 
+## 0.81.0
+
 - **A `wails+android` booth builds again.** The extension put `--platform` in both `run-args` and
   `build-args`, and the CLI also copies a `run-args` `--platform` into the build. With the flag
   twice, buildx saw a multi-platform build, and Docker's default driver refused it ("Multi-platform
   build is not supported for the docker driver"). The extension no longer writes `build-args`, and
   the CLI adds no `--platform` to the build when `build-args` already has one, so a config
   generated before this fix also builds.
+
 - **A Flutter project's second booth no longer fails to build.** `~/.pub-cache` died with each
   booth, while the project's `.dart_tool/` lives in the mounted folder and kept pointing into it.
   Flutter only re-resolves when `pubspec.lock` is newer, so in every booth after the first,
@@ -321,6 +334,7 @@ This file contains a list of changes for each released version.
   `~/.pub-cache` in `.booth/cache/` (gitignored, this machine only), so packages also are not
   downloaded again. Existing booths pick it up on the next `booth config`; `flutter~pub-cache`
   drops it.
+
 - **The worktree root stays after the last worktree goes.** When `booth --worktree` (or `booth
   worktree remove`) removed the last worktree, it also deleted `../<project>.worktrees/`. On macOS,
   Docker Desktop then refused to mount the next worktree created under it within about a minute
@@ -328,20 +342,24 @@ This file contains a list of changes for each released version.
   folders a nested branch made (`feature/`) are still removed. git also deletes `.git/worktrees/`
   with the last worktree, which gave the next one `fatal: not a git repository` in the booth; the
   booth now refreshes the path to the worktree's git folder as it starts.
+
 - **GnuPG 2.5 no longer compiles in every base image build.** The base image's GnuPG 2.5.24 now
   comes from CodingBoothPrebuilt as an installed `/usr/local` tree, built there from the release
   tarball after the same check against the GnuPG release keys (recorded in
   `/usr/local/share/doc/gnupg/BUILD-INFO.txt`), and sha256-checked on download. That takes seconds
   instead of about three minutes. A version not prebuilt yet is still built from source as before.
+
 - **`protobuf+rust` installs its plugins prebuilt, at pinned versions.** `protoc-gen-prost` and
   `protoc-gen-tonic` were `cargo install`ed at whatever crates.io had that day, compiled in every
   image. They now have their own setups and come from CodingBoothPrebuilt on x86_64 and arm64,
   pinned by `PROTOC_GEN_PROST_VERSION` / `PROTOC_GEN_TONIC_VERSION` (default 0.5.0); a version
   not prebuilt yet is built with `cargo install --locked`.
+
 - **`go+kernel` installs GoNB prebuilt, at a pinned version.** The GoNB kernel was `go install`ed
   at `@latest`. It now comes from CodingBoothPrebuilt on both CPUs, pinned by `GONB_VERSION`
   (default 0.11.5) or `go-nb-kernel--setup.sh --version`; a version not prebuilt yet is built with
   `go install` at that tag. The setup is now tested end to end: a cell runs through the kernel.
+
 - **HLS works on arm64.** ghcup's HLS for aarch64 Linux is an unofficial build made against other
   builds of each GHC than the official ones, so it exited with "GHC ABIs don't match" and editors
   got no Haskell server. The `haskell` setup (which installs HLS by default) and `lsp+haskell` now
@@ -349,31 +367,38 @@ This file contains a list of changes for each released version.
   arm64 alike, for ghcup's recommended and latest HLS on GHC 9.6 and later; other pairs still come
   from ghcup. `lsp+haskell` also type-checks a one-line file at build time and warns if the server
   still cannot load the GHC, instead of leaving the editor silent.
+
 - **Nim installs on arm64.** nim-lang.org publishes Linux tarballs for x64 only (its arm64
   nightlies are branch snapshots, not releases), so `--select nim` on Apple Silicon or Ubuntu on
   ARM failed with a 404 and no image. Nim now comes as a sha256-checked build from
   CodingBoothPrebuilt on x86_64 and arm64 alike, laid out like upstream's x64 tarball; a version
   not prebuilt yet is built from nim-lang.org's source tarball (a few minutes).
+
 - **Flutter installs on arm64.** Google's Linux SDK archive bundles an x64 Dart SDK, so
   `--select flutter` skipped Flutter on Apple Silicon and Ubuntu on ARM. Google does publish the
   linux-arm64 Dart SDK and engine artifacts, though, so on arm64 the setup now checks the release
   out from its git tag and the flutter tool fetches those. Web and Linux desktop builds work there;
   `flutter+android` still needs the Android SDK, which is x86_64 only.
+
 - **sqls installs on arm64.** sqls publishes a linux amd64 build only, so `lsp+sql` skipped it on
   arm64. It now comes as a sha256-checked build from CodingBoothPrebuilt on x86_64 and arm64
   alike; a version not prebuilt yet is built from its release tag with a temporary Go toolchain.
+
 - **HeidiSQL installs on arm64.** Upstream packages its Linux build as an amd64 `.deb` only, and
   that needs a `libqt6pas6` Ubuntu does not ship, so `heidisql` was skipped on arm64. It now comes
   from CodingBoothPrebuilt on both CPUs: upstream's Qt6 build, made with the same Lazarus release
   and patches, with its `libQt6Pas` inside, in `/opt/heidisql/heidisql-<version>`. A version not
   prebuilt yet uses upstream's `.deb` on amd64 and is skipped with a warning on arm64.
+
 - **Elm 0.19.1 comes from CodingBoothPrebuilt on both CPUs.** Upstream's 0.19.1 binary is x64
   only, so arm64 used an unchecked community build that also needed Ubuntu 20.04's `libffi7`.
   0.19.1 is now built from its tag, sha256-checked, on x86_64 and arm64 alike; npm is the fallback
   on x86_64. 0.19.2 and later still use upstream's binaries.
+
 - **Older DBeaver releases install on arm64.** Releases before 25.3.1 have no arm64 `.deb`, so a
   pinned one failed there. Those releases do ship an aarch64 tarball without a JRE; the setup now
   installs it where the `.deb` would, with OpenJDK 21 from apt.
+
 - **TTT is the default editor; Fresh left the base image.** `$EDITOR` and `editor` are now TTT
   1.9.0, and a plain booth points it at whichever language servers it installs (what `ttt+lsp` did;
   delete an entry from `lsp.servers` in `~/.config/ttt/settings.json` to turn one off). Fresh is
@@ -382,10 +407,12 @@ This file contains a list of changes for each released version.
   **If you relied on `fresh` being there,** select `fresh`, and add `env EDITOR=fresh` to keep it as
   `$EDITOR`. `lsp-example` selects `fresh` so its install-from-the-LSP-popup demo still works.
   `setup ttt` now checks the download against the release's `checksums.txt`.
+
 - **CUDA installs from NVIDIA's Ubuntu 26.04 repo.** `--select cuda` still read NVIDIA's
   `ubuntu2404` apt repo after the base image moved to Ubuntu 26.04, so the toolkit came from a repo
   built for another release. It now reads `ubuntu2604`, which carries CUDA 13.3 and later; the
   template suggests `13-4` and `13-3` instead of `12-6`, which that repo does not have.
+
 - **`nvcc` is on `PATH` after `--select cuda`.** NVIDIA's packages install under `/usr/local/cuda`
   and add nothing to `PATH`, so `nvcc` was "command not found" in every CUDA booth. The setup now
   writes a profile script for terminals, and the template sets `PATH` on the image so
@@ -679,11 +706,13 @@ This file contains a list of changes for each released version.
   the count as before. The value is passed into the booth as `BOOTH_EXPECTED_VIEWER_COUNT`, and
   the `/booth-messages/api/presence` answer includes it as `expected`. It is also a field in
   `booth config`, under Session.
+
 - **Haskell booths get GHC in seconds, not 7 minutes.** `ghcup install ghc` downloads in
   seconds, then spends 6-7 minutes in its install step during an image build. The `haskell` and
   `haskell-nb-kernel` setups now unpack GHC prebuilt from CodingBoothPrebuilt (about 10 seconds),
   already in ghcup's layout: `ghcup list` shows it as installed and `ghcup set` switches to it as
   before. A GHC with no prebuilt build still installs through ghcup. Needs a rebuilt base image.
+
 - **The Haskell notebook kernel works, and installs in seconds.** `haskell+kernel` was broken for
   `coder`: IHaskell's data files sat in root's private cabal store, and the kernel's `--stack` flag
   made it download a GHC of its own and time out. The `haskell-nb-kernel` setup now installs a
@@ -695,6 +724,7 @@ This file contains a list of changes for each released version.
   that imports `Data.Map` also calls `insertWith`. `--ghc-version current` uses the booth's GHC
   instead, and `--ihaskell-version` pins IHaskell. `haskell-example` now selects the kernel and
   ships `Haskell-Tour.ipynb`. Needs a rebuilt base image.
+
 - **GPG passphrase prompts can open as a desktop dialog: select `pinentry`.** Every booth already
   had `pinentry-curses`, so `folio secret show`, `pass show` or a signed commit asked for the
   key's passphrase inside the terminal, even on a desktop. The new `pinentry` template (Desktop
@@ -702,6 +732,14 @@ This file contains a list of changes for each released version.
   (labwc, sway), `pinentry-gtk2` on XFCE, i3 and other X11 desktops, or a flavor you pin
   (`pinentry:qt`, `gtk2`, `gnome3`). A Console UI tab has no display and keeps the in-terminal
   prompt. It installs nothing on base, codeserver or notebook, so it is safe to select anywhere.
+
+- **The XFCE cursor is back to 40 px, with smaller sizes on hand.** 0.80.0 made 24 the default,
+  which drew Gruppled's arrow only 18 px tall. The default is Gruppled's own 40 again, and
+  `gruppled-cursors` now adds 30 px and 24 px sizes to every cursor (shrunk from the 40 px one,
+  animated frames included), because X never scales a cursor. `booth--theme set cursor-size 30`
+  gives an arrow the size of a standard 24 px cursor (Adwaita's), `24` a smaller one.
+
+## 0.80.0
 
 - **XFCE window edges are easier to grab.** The default window border theme is now
   Greybird-dark-wide: Greybird-dark-accessibility (the same look as Greybird-dark) with its edges
@@ -711,11 +749,7 @@ This file contains a list of changes for each released version.
   `XFCE_BORDER` param sets the width (3 to 16; 3 is the accessibility theme as shipped). A theme
   already chosen in Settings or with `booth--theme set wm <name>` still wins. Alt + right-drag
   resizes from anywhere in a window regardless.
-- **The XFCE cursor is back to 40 px, with smaller sizes on hand.** 0.80.0 made 24 the default,
-  which drew Gruppled's arrow only 18 px tall. The default is Gruppled's own 40 again, and
-  `gruppled-cursors` now adds 30 px and 24 px sizes to every cursor (shrunk from the 40 px one,
-  animated frames included), because X never scales a cursor. `booth--theme set cursor-size 30`
-  gives an arrow the size of a standard 24 px cursor (Adwaita's), `24` a smaller one.
+
 - **Lazarus is selectable: `fpc+lazarus`.** The new `lazarus` setup installs the Lazarus 4.4
   toolchain from apt: `lazbuild`, the LCL (GTK2) and the gtk2 headers an LCL program links
   against. Projects therefore build headless, in CI or on the base variant. On a desktop variant
@@ -1328,12 +1362,14 @@ This file contains a list of changes for each released version.
   The others scale the desktop to their window. Closing that tab hands control to the next one.
   Applies to every desktop variant (XFCE, KDE, LXQt, Wayland) and needs the rebuilt base image.
   See [One viewer fits the desktop](BOOTH_UI_OVERLAY.md#one-viewer-fits-the-desktop).
+
 - **`shell --run` and `exec --run` no longer open a browser tab.** They are terminal commands,
   but a booth they had to create opened its page like `booth run` does. A `Justfile` runs every
   recipe line through `exec --run`, so each call could add another tab, and on a desktop booth
   every tab resized the desktop to its own window. Pass `--browser` to get the tab back.
   `booth run` is unchanged. A `CB_BROWSER := "false"` line added to a Justfile to work around
   this can go.
+
 - **A booth whose image is already built starts without the registry.** Every start used to run
   `docker build`, and even a fully cached build contacts Docker Hub first, for the
   `docker/dockerfile` frontend and the `FROM` tag. During a Docker Hub outage (500/504 errors) a
@@ -1366,6 +1402,7 @@ This file contains a list of changes for each released version.
     does not put on the image env. The exceptions are listed in
     `tests/config/catalog/profile-only-exports.txt`, each with its reason: services, desktops, and
     values computed per shell.
+
 - **`rust+sccache`: share compiled crates across every Rust project.** Each project used to
   rebuild its whole dependency tree into its own `target/`. The new opt-in extension installs
   sccache (0.17.0 by default) and makes it cargo's `RUSTC_WRAPPER`, with the host's
@@ -1375,6 +1412,7 @@ This file contains a list of changes for each released version.
   it when it is missing (see `:create` below). If the cache still is not mounted, the first
   compile warns that nothing is shared. Select it as `--select rust+sccache`;
   `sccache --show-stats` shows the hits.
+
 - **`:create` on a bind mount makes a missing host folder instead of skipping the mount.** booth
   skips a `-v` whose host path does not exist, which is right for per-platform credential paths
   and wrong for a host cache that simply has not been made yet: `rust+cargo-cache` quietly did
@@ -1410,7 +1448,9 @@ This file contains a list of changes for each released version.
     bluej.org, and older versions as one `.deb`.
 
 - **Fresh is now in the catalog: `setup fresh` and a `fresh` tool template.** The script installs the official static musl release (the `fresh` binary, its install receipt, and icons) under `/opt/fresh-editor` for amd64 and arm64, and links `fresh` onto `PATH`. `--version X.Y.Z|latest` (fallback 0.5.2), checked against the release `.sha256`. Select `fresh` or `fresh:0.5.2`. `fresh+config-shared` bind-mounts `~/.config/fresh/` from `.booth/shared`. `fresh --cmd grammar list` and `fresh --cmd config show` are the checks that the editor runs.
+
 - **Fresh starts on the `terminal` theme, so it uses the terminal's own colors.** `fresh+theme` is selected with `fresh` and writes `theme` in `~/.config/fresh/config.json` at container start, leaving every other key alone. The default is `terminal`. Pick another built-in with `fresh+theme:dracula` (`dark`, `gruvbox`, `high-contrast`, `light`, `nord`, `nostalgia`, `solarized-dark`, `tokyo-night`). The selected theme is written again on the next start. `fresh~theme` leaves the theme to the user: the base image still starts Fresh on `terminal`, and a theme picked inside Fresh is kept.
+
 - **Wrapper `0.16.0` — `booth` on `PATH` finds the project itself, and every command works from
   a subfolder.** A wrapper with no lock beside it — the shell-config central copy, or one
   installed by a package manager such as Homebrew — walks up from the current folder to the
@@ -1435,16 +1475,20 @@ This file contains a list of changes for each released version.
   of `none` is treated as a password. Private booths remain password-free.
   Rebuild the base and affected desktop images and recreate existing booths
   to pick up this fix; updating the CLI alone does not change a running image.
+
 - **Native booth tools:** `booth cp`, `inspect`, `stats`, `top`, `diff`, and `wait`
   resolve a managed booth and invoke its owning engine. `cp` transfers files outside
   the shared project using `:PATH` or `NAME:PATH`; Docker/Podman also support stopped
   booths and tar streams. Apple supports ordinary copies while running, inspection,
   and statistics; unsupported commands fail clearly. See [Booth tools](BOOTH_TOOLS.md).
+
 - **Lifecycle commands accept `--engine`.** It overrides config and `CB_ENGINE`,
   including `shell`/`exec --run` creation and home-volume commands. Start, stop,
   restart, and remove now also parse flags after positional names.
+
 - **JSON for automation:** `booth list --json` and `booth expose list --json` return
   structured output, with empty arrays for empty results.
+
 - **Mount owner and mode.** Templates can list `[[owner-permission]]` entries.
   `booth config` writes them to `.booth/owner-permission.yaml`. On startup,
   `booth-entry` applies each entry to that mount point: a directory entry sets
@@ -1453,6 +1497,7 @@ This file contains a list of changes for each released version.
   to `coder:coder` mode `1777`, so a root-owned `http-v2` left by the image
   build does not block `coder` from storing downloads. This reader ships in the
   base image, so an existing base image ignores the file until that image is rebuilt.
+
 - **Shared package-download caches.** `go+mod-cache`, `nodejs+npm-cache`, `nodejs+pnpm-cache`,
   `python+pip-cache`, `python+uv-cache`, and `java+gradle-cache` mount one machine-wide named
   volume per tool (`booth-cache-gomod`, and so on). Every booth on the machine reuses the same
@@ -1462,6 +1507,7 @@ This file contains a list of changes for each released version.
   `docker volume rm booth-cache-gomod`. `java+m2` and `rust+cargo-cache` still bind-mount the
   host's own folders. The `*-install` extensions still bake dependencies into the image; these
   volumes are used when a tool downloads at run time.
+
 - **Fix: single Cache and Shared files survive rename-based saves.** A file under `.booth/cache/`
   or `.booth/shared/` (outside a `.mount-this` folder) was bind-mounted at its path, and a mounted
   file cannot be replaced, so a tool that saves by writing a new file and renaming it lost every
@@ -1471,12 +1517,14 @@ This file contains a list of changes for each released version.
   `booth--file-sync` every 2 seconds and at a clean stop or the end of a one-shot command; a host
   edit made while the booth runs is brought in. A hard kill loses at most the last 2 seconds.
   Needs the rebuilt base image; an older image gets the direct mount as before.
+
 - **Overlapping Cache and Shared paths are now caught.** A container path in both `.booth/cache/`
   and `.booth/shared/` refuses to start with a message naming both, instead of Docker's
   "Duplicate mount point". One inside the other — e.g. `google-chrome+profile-cache` with
   `+bookmarks-shared`, which sends `Default/` (cookies, saved logins) to git — starts with a
   one-line notice saying which part goes to git. `booth config` prints the same notice for the
   selection.
+
 - **Service data volumes are per booth — breaking for existing data.** The postgresql, mysql,
   mongodb, redis, kafka, rabbitmq, floci and penpot templates used one machine-wide volume each
   (`booth-pgdata`, …), so every project on the machine shared one database, and two booths running
@@ -1495,18 +1543,22 @@ This file contains a list of changes for each released version.
     volume (`booth config --add-mount booth-pgdata:/var/lib/postgresql`) or copy it across.
   - Re-run `booth config` in a project to pick up the new name; a `config.toml` written before
     keeps the old shared volume until then.
+
 - **`booth config --mount` can replace a template's mount.** A `--volume` on the same container
   path as a template's `-v` now replaces it, instead of adding a duplicate mount point Docker
   refuses; `--remove-mount` brings the template's back. This is how a project swaps a template's
   data volume for its own.
+
 - **Fix: `booth config --set` no longer writes a key twice.** `--set` on a key `config.toml` writes
   from its own field (`run-args`, `cmds`, `build-args`, `sudo`, `vm-*`) used to add a second line
   for that key — invalid TOML, so the booth refused to start. It now merges: `--set run-args=<token>`
   appends to the one `run-args` list, `--set cmds=…` replaces the command, the scalars overwrite.
+
 - **Fix: `--writable-booth` no longer drops `.booth/cache/` and `.booth/shared/`.** Both were
   mounted only on the read-only `.booth/` path, so `--writable-booth` (or `writable-booth = true`)
   silently started a booth without them — and skipped the check that the cache is gitignored.
   They are now mounted either way.
+
 - **Browsers can start with the team's bookmarks: `google-chrome+bookmarks-seed` and
   `firefox+bookmarks-seed`.** Each writes a sample bookmark bar to `.booth/shared-seed/` — Chrome's
   `Bookmarks` JSON, and for Firefox a fixed `booth.default` profile that imports a `bookmarks.html`
@@ -1514,6 +1566,7 @@ This file contains a list of changes for each released version.
   The Firefox one sets `MOZ_LEGACY_PROFILES=1` so Firefox uses that profile, and does not work
   together with `firefox+managed-policies` (see `docs/BOOTH_SHARED.md`).
   `browser-shared-example` now starts both browsers with them.
+
 - **Cache and Shared paths can start with content.** `.booth/cache-seed/` and `.booth/shared-seed/`
   hold seeds in the Cache layout (container-root paths; a `.mount-this` folder is copied whole).
   At start, and when `booth config` writes, booth copies a seed into `.booth/cache/` or
@@ -1521,23 +1574,28 @@ This file contains a list of changes for each released version.
   creating it empty. Both seed folders are committed, so a fresh clone's Cache starts with the
   content too. Templates ship seeds with `[files.cache-seed]` / `[files.shared-seed]` or
   `cache-seed/` / `shared-seed/` folders; a project can also write them by hand.
+
 - **Fix: a template's Cache paths now work on a fresh clone.** `booth config` recorded a template's
   `shared-files` / `shared-dirs` in `config.toml` but not its `cache-files` / `cache-dirs`, and
   only created those paths in `.booth/cache/` — which is gitignored. A teammate's clone therefore
   had no such path, nothing was mounted there, and what the booth wrote (shell history, a tool's
   state) was lost when the booth was removed, until someone re-ran `booth config`. They are now
   recorded too, and a start re-creates them. Re-run `booth config` in a project to record them.
+
 - **Fix: a deselected template's Cache and Shared paths leave `config.toml`.** A reconfigure read
   every recorded path back as if the user had set it, so deselecting, say, `+settings-shared`
   kept its mount for good. Paths a template declares now come only from the selection; paths no
   template declares (your own) are still carried over.
+
 - **Fix: code-server no longer overwrites a shared or cached `settings.json`.** `start-codeserver`
   rewrote `settings.json` with its defaults on every launch. Under `+settings-shared` that file is
   `.booth/shared/…/settings.json`, so each start replaced the team's committed settings on the
   host; under `+settings-cache` it reset the user's own. The defaults now go only into a missing or
   empty file.
+
 - **New doc: [In and Out of the Booth](IN-OUT.md)** — every way to put files into a booth, or
   connect it to something, outside `/home/coder/code`.
+
 - **Rust works from `booth exec`, and the toolchain is no longer read-only.** Two things made
   Rust booths hard to use for anything beyond an interactive shell:
   - *`booth exec` could not run cargo.* The rust setup set `RUSTUP_HOME` and the cargo `PATH`
@@ -1552,6 +1610,7 @@ This file contains a list of changes for each released version.
     with a pin, even `cargo --version` failed. It is writable now.
   - rust-analyzer and rust-src are installed. The template already said "includes rust-analyzer";
     the binary was only a rustup proxy that failed with "Unknown binary".
+
 - **New Rust extensions.**
   - `rust+toolchain-file` (auto-selected) installs the toolchain a project pins in
     `rust-toolchain.toml` — with the targets and components it lists — into the image at build
@@ -1565,17 +1624,20 @@ This file contains a list of changes for each released version.
   - `rust+gui-deps` installs the system libraries Rust GUI crates link to (winit, egui/eframe,
     wgpu, iced, bevy, slint): X11, Wayland, xkbcommon, GL/EGL, Vulkan, fontconfig, GTK 3, ALSA,
     udev.
+
 - **`rust+cargo-cache` is no longer auto-selected.** It bind-mounts the host's
   `~/.cargo/registry` writable, which booth treats as a way out of the container: every Rust
   booth asked for consent before starting, and a non-interactive start (`booth exec --run`, CI)
   refused outright. `registry-cache` replaces it as the default. Select `rust+cargo-cache` to
   keep sharing the host's cache. A booth regenerated with `booth config` drops the host mount
   unless the selection names it.
+
 - **A `.booth/cache/` entry no longer clashes with a `run-args` mount of the same path.** Docker
   refuses a duplicate mount point, so a booth with both did not start. The explicit `run-args`
   mount now wins and the cache entry is skipped with a notice. (Selecting `rust+cargo-cache`
   with the auto-selected `registry-cache` is how you would hit it.) The same applies to
   `.booth/shared/`.
+
 - **`rust+cargo-build` fetches for real.** It copied only the root `Cargo.toml` into a scratch
   folder, so `cargo fetch` failed for a workspace (no member manifests) and for a single crate
   (no `src/`), and it ran as root, filling `/root/.cargo`, which the booth user cannot read. It
@@ -1700,11 +1762,13 @@ This file contains a list of changes for each released version.
   `nodejs` template's default moved to Node 24: Excalidraw declares `"node": "18.0.0 - 22.x.x"`
   and yarn refused to install. The setup now skips yarn's engine check (the app builds fine on
   Node 24) and builds v0.18.1, the patch release for the Mermaid XSS CVE-2025-54881.
+
 - **`booth express --templates-path` no longer needs `--select`.** `express --variant xfce
   --templates-path templates` failed with "--templates-path and --apt-snapshot require --select".
   The path only says where to look for templates, so with nothing selected it is now simply unused,
   as `CB_TEMPLATES_PATH` already was. `--apt-snapshot` still requires `--select`: it asks for a
   build, and the prebuilt variant would quietly ignore it.
+
 - **Apps with an XFCE desktop icon are on the Plank dock too.** Until now the dock held only the
   terminal, the file manager, the browsers and VS Code, so TeXstudio, GIMP, DBeaver, JupyterLab and
   every other app with a desktop icon were missing from it. The dock now takes every launcher in
@@ -1712,6 +1776,7 @@ This file contains a list of changes for each released version.
   offered once and the offered set is kept in `~/.config/plank/dock1/.cb-offered`, so an app added
   by a later rebuild joins an existing dock (persisted homes included) and one you removed stays
   off. The starter is now its own script, `variants/base/setups/cb-plank-start`.
+
 - **A project's own setup can make itself selectable in `booth config`.** A `# cb-template:` line
   in the leading comment block of `.booth/setups/<name>--setup.sh` turns it into a template named
   `<name>`, listed under **This project** — no `template.toml` or `meta.toml` needed. Optional
@@ -1720,6 +1785,7 @@ This file contains a list of changes for each released version.
   project setup without making the Boothfile hand-written was a three-file local template. A
   `template.toml` of the same name still wins, with a warning. See
   [A setup that is its own template](BOOTH_CUSTOMIZATION.md#a-setup-that-is-its-own-template).
+
 - **Bash is now in the catalog: `setup bash` and a `bash` tool template.** The script builds a GNU release from source and installs it beside the image login shell, as `bash-<major>.<minor>` (`bash-3.2` for the default 3.2.57). `/bin/bash` stays the booth's shell. This is for testing scripts the way macOS does: macOS still ships Bash 3.2 as `/bin/bash`, and that shell treats `"${array[@]}"` on an empty array as an error when `set -u` is on. `--version X.Y` or `X.Y.Z` (suggests also include 4.4.18, 5.2.37, and 5.3). Select `bash` or `bash:5.2.37`. The Boothfile arg is `GNU_BASH_VERSION`, because the image build shell is bash and that shell already owns the name `BASH_VERSION`. `bash+default` sets `USER_SHELL` to `/opt/bash/bash-<version>/bin/bash`, so the console and a bare `booth` session log in with that release. `booth -- <cmd>` still runs with `/bin/bash`. Try `examples/workspaces/bash-example`.
 
 - **Notebook kernels for Deno, Lua and Scala, and six dead setups gone.** The kernels are
@@ -1735,6 +1801,7 @@ This file contains a list of changes for each released version.
   (an exact copy of `java-nb-kernel`; use `java+kernel`), and `booth-message-code-extension`
   (replaced by the booth-message overlay in April). A Boothfile that still names one fails to
   build with "unknown setup".
+
 - **`booth express` runs from arguments and leaves the project's `.booth` unread.**
   `--select` is compiled the same way `booth config` compiles it, into a directory express
   owns (a temp dir, or the user cache with `--daemon` or `--keep-alive`), and that directory
@@ -1764,6 +1831,7 @@ This file contains a list of changes for each released version.
   `alacritty`, `ghostty`, `i3`, `kitty`, `krohnkite`, `material-cursors`, `wayland`, `helix`,
   `posting`, `sql-studio` and the three `vm-*` settings — are now `cb-version`
   1.0.0, along with their extensions and the setups they emit.
+
 - **Every catalog item now has its own version.** All 833 setups, installs, helpers, libs, asset
   directories, templates and extensions carry a hand-written semver `cb-version` (`# cb-version:`
   in scripts, `cb-version = "…"` in templates). It says what kind of change happened; a generated
@@ -1773,6 +1841,7 @@ This file contains a list of changes for each released version.
   `release-push` and CI). `booth template show` prints the version, and each GitHub release
   publishes `catalog-manifest.tsv`. Items older than two months start at 1.0.0; newer or
   experimental ones at 0.1.0. See [CATALOG_VERSIONING.md](CATALOG_VERSIONING.md).
+
 - **The Console UI has six panes, every 2×2 layout, and + / − buttons.** Two more sessions
   (`/s5/`, `/s6/` on `10005`–`10006`; `11116`–`11117` for a `start-webconsole` console) and a
   `grid6` layout of three columns by two rows. The toolbar now covers every way to divide a 2×2
@@ -1876,6 +1945,7 @@ This file contains a list of changes for each released version.
   `/dev/pts` device to the booth user after the uid remap and before any user
   process. The mode stays `0620`. A start with no terminal skips the `chown`, and
   a failed `chown` does not stop the container. (`booth shell` was never affected.)
+
 - **The host-escape warning now says what each setting could do, and that it only matters for
   untrusted code.** It used to print the same "run commands on the host as root" paragraph for every
   reason, which overstated a writable data mount (`/run/media/...`), a `~/.m2` cache, or
@@ -1884,43 +1954,26 @@ This file contains a list of changes for each released version.
   the home directory and its dotfiles; local services for `--network=host` — plus a link to its row
   in `docs/BOOTH_SECURITY.md`, and the warning ends "This only matters if the booth runs code you do
   not trust. If you trust what it runs, go ahead." What is detected has not changed.
+
 - **`--dind-allowed` / `--privileged-allowed` still print the warning.** They skip the question
   (still command line only — no config key or env var), but the warning is printed with
   `Allowed by … — starting without asking.`, so an unattended launcher's log shows it.
+
 - **Starting a booth again warns again.** A booth records these settings on its container
   (`cb.security-warning` label); `booth start`, `booth restart`, and `booth shell --run` /
   `booth exec --run` on a stopped booth print the warning without asking. Attaching to a running
   booth prints nothing, and `exec` keeps it on stderr.
+
 - **The warning knows the engine.** Rootless Podman now also asks about writable mounts (home and
   dotfiles are code as you) and `--network=host`, but still not about `--dind` or
   `--privileged`-like run-args, which only reach your own account. VM-based engines (Docker Desktop
   on macOS, Windows, and Linux; Podman machine) say "root in the engine's VM", which shares your
   folders — and on Windows is the WSL 2 VM that also runs your other WSL distros. Apple container no
   longer asks about flags it rejects. New overview: `docs/BOOTH_ENGINES.md`.
+
 - **New `booth print-security-warning [options]`.** Takes the same options and config as a run and
   prints the warning that run would show, without building, starting, or asking: exit `1` with the
   warning, or exit `0` with `No security warning.`
-
-- **Swift suggests only 6.4.0, the one release built for Ubuntu 26.04.** swift.org publishes no
-  26.04 tarball for older releases, so `setup swift --version 6.0.1` 404s on the new base. The
-  default was already 6.4.0; the Swift test now pins it too.
-
-- **`setup i3-default` works on the Ubuntu 26.04 XFCE desktop.** 26.04's `xfce4-session.xml` has a
-  `FailsafeWayland` session block beside the X11 `Failsafe` one, with its own `xfdesktop`. The setup
-  only ever edits the X11 block, but its check read the whole file and failed the build with
-  "Failed to switch ... to i3". The check now reads the X11 block alone (and fails on an empty one).
-
-- **Catalog version pins refreshed (n−1 where a new major just landed).** Python 3.13.15 → **3.14.8**
-  (3.15.0 is a fresh `.0`), Zig 0.15.1 → **0.16.0** (0.17.0 is two days old), Julia → 1.13.1,
-  AnythingLLM → 1.17.0, appwrite-cli fallback → 28.1.0, Hoppscotch → 2026.9.0, Penpot → 2.18.1,
-  Wails fallback → v3.0.0-beta.27, Mermaid → 11.17.2 (staying on 11), conda's Python 3.12 → 3.13.
-  Suggest lists gain Go 1.27.1, Rust 1.99.0, Flutter 3.47.6, gh 2.102.0, Python 3.13.16. Held at the
-  previous major on purpose: appwrite-server 1.9.6, Ruby 3.4, Erlang 28, Lua 5.4, Clang 22, Go 1.26.8.
-
-- **Julia `1.11.3` dropped from the template's suggestions: it no longer starts on the Ubuntu 26.04
-  base.** Its `libopenlibm.so` asks for an executable stack (`GNU_STACK=RWE`), which 26.04's glibc
-  refuses ("cannot enable executable stack"). `1.12.7` and `1.13.0` (the default) are unaffected.
-  The Julia test now pins `1.13.0`.
 
 - **Homebrew formulae are on `PATH` for `booth exec`.** The homebrew setup only
   added Linuxbrew's bin directories through shell startup files, so a login shell
@@ -1929,20 +1982,6 @@ This file contains a list of changes for each released version.
   `/home/linuxbrew/.linuxbrew/bin` and `sbin` on the image `PATH`. The profile
   script is `50-cb-homebrew--profile.sh`, so an interactive shell that only
   re-sources `*-cb-*` profiles still gets `brew shellenv`.
-
-- **`setup aider` works on the Ubuntu 26.04 base again.** Aider supports Python 3.10-3.12 only;
-  26.04's `python3` is 3.14, so pip found no current release, backtracked through old ones and
-  crashed in its resolver. When the system Python is outside Aider's range, `aider--setup.sh` now
-  does what Aider's own installer does: a uv-managed Python 3.12 in `/opt/aider-python`, used only
-  by Aider's venv at `/opt/aider` (same path as before; `--version` pins still apply). A system
-  Python Aider supports is used as before; the system Python is never changed.
-
-- **`setup aider` works on the Ubuntu 26.04 base again.** Aider supports Python 3.10-3.12 only;
-  26.04's `python3` is 3.14, so pip found no current release, backtracked through old ones and
-  crashed in its resolver. When the system Python is outside Aider's range, `aider--setup.sh` now
-  does what Aider's own installer does: a uv-managed Python 3.12 in `/opt/aider-python`, used only
-  by Aider's venv at `/opt/aider` (same path as before; `--version` pins still apply). A system
-  Python Aider supports is used as before; the system Python is never changed.
 
 - **`--dind` and `--egress` stay unsupported on Apple container, and their tests say so.** Both are
   deferred (docs/CONTAINER_SUPPORT.md, "Not supported: --dind and --egress", with what a later
@@ -1986,6 +2025,7 @@ This file contains a list of changes for each released version.
   on `--engine apple` then looked for the dev tag on Docker Hub and failed with `404`. After a
   local build it now copies the new tags into Apple container when that is installed and running
   (`CB_NO_APPLE_COPY=1` skips it); a failed copy only warns.
+
 - **`build/build-all.sh base` no longer dies on macOS with `VARIANTS_TO_BUILD[@]: unbound
   variable`.** With only `base` asked for, the list of other variants is empty, and macOS's bash 3.2
   treats a loop over an empty array as unbound under `set -u`.
@@ -2033,17 +2073,20 @@ This file contains a list of changes for each released version.
   passes the network gateway (`BOOTH_HOST_GATEWAY`, also the value of `BOOTH_HOST_NAME` there) and
   `booth-entry` maps it in `/etc/hosts`; on images built before that, use `$BOOTH_HOST_NAME`.
   `--engine container` is not accepted — the engine is `apple`. See `docs/CONTAINER_SUPPORT.md`.
+
 - **Apple container is the default engine when it is installed and running.** With no engine
   chosen, `booth` now picks `apple` first (its service must be up — `container system status`),
   then `docker`, then `podman`, and says so in one line (hidden by `--quiet`); `--engine docker`
   keeps a run on Docker. `--dind` and `--egress` runs skip Apple container, since it cannot start
   their sidecars. An installed but stopped Apple container is passed over. The test suites pin
   `CB_ENGINE=docker` so their results do not depend on what is installed.
+
 - **`booth shell` and `booth exec` find a booth on any engine.** Like `stop` and `list`, with no
   engine chosen they look the booth up on every installed engine and run on the one that owns it,
   so `CB_ENGINE` is no longer needed to reach a Docker booth on a Mac where Apple container is the
   default (or a Podman one). A name on more than one engine is refused until `CB_ENGINE` picks.
   With `--run`, a missing booth is created on the default engine.
+
 - **Engine validation runs before the egress defaults.** A run refused for its engine no longer
   leaves a `.booth/egress/` directory behind.
 
@@ -2296,56 +2339,6 @@ This file contains a list of changes for each released version.
   upper bound — not a measured optimum, just a guard against `--max-parallel 500` quietly meaning
   "no limit." Nothing else in the repo called it by the old name.
 
-- **Base image moved to Ubuntu 26.04 LTS (Resolute Raccoon), from 24.04.** `variants/base/Dockerfile`'s
-  `UBUNTU_VERSION` is now `26.04`, so every variant (notebook, codeserver, the four desktops) rebuilds on
-  it. The `APT_SNAPSHOT` pin works as before (snapshot.ubuntu.com serves `resolute`). What had to change
-  for everything to install and run on the new release:
-  - **Desktops (all four):** apt on 26.04 rejects rsa1024 signatures outright, which broke
-    `firefox--setup.sh` against the mozillateam PPA's original key — it now trusts the PPA's rsa4096 key.
-  - **KDE is Plasma 6.6.** It moved the X11 session out of `plasma-desktop`, so `kde--setup.sh` also
-    installs `plasma-session-x11` and `kwin-x11` when the archive has them (otherwise there is no
-    `startplasma-x11`). `kde-set-wallpaper` borrows plasmashell's session bus when started from
-    `start-kde`, where Plasma 6's tools otherwise fail with "Not connected to D-Bus server".
-  - **Bismuth → Krohnkite.** `kwin-bismuth` is Plasma 5 only and gone from 26.04. The new
-    `krohnkite`/`krohnkite-default`/`krohnkite-gaps` setups and `templates/desktops/krohnkite`
-    (Krohnkite 0.9.9.2, pinned + SHA256-verified) replace it with the same Ctrl+Alt key scheme,
-    start/stop commands and Help tab. `setup bismuth*` lines still work: they are shims that print a
-    deprecation notice and run the Krohnkite equivalent.
-  - **i3 on XFCE: `xfce4-session.xml` carries two session blocks now.** 26.04 adds
-    `FailsafeWayland` alongside the X11 `Failsafe`, with its own `xfdesktop` client.
-    `i3-default--setup.sh` rewrites only the X11 block — i3 is an X11 window manager, so the
-    Wayland session is not ours to touch — but the check afterwards read the whole file, found the
-    Wayland block's `xfdesktop`, and failed the build with "Failed to switch ... to i3". The check
-    now reads the X11 block alone, and treats an empty block as a failure so a future restructure
-    is loud rather than silently green. `tests/complex/test-i3-desktops` had the same whole-file
-    grep and was scoped the same way; it also asserts the Wayland block is left intact.
-  - **PHP defaults to 8.5 from Ubuntu's own archive.** `ppa:ondrej/php` has not published for 26.04
-    yet, so the PPA is now added only when the requested version isn't in the archive, and a clear
-    error names what the archive has when the PPA can't be used. `php8.5-opcache` no longer exists
-    (OPcache is built in from 8.5), so it is installed only for versions that still ship it — this
-    also clears the blocker the last pin sweep hit.
-  - **Erlang/OTP now comes from builds.hex.pm** (the builds Hex, Elixir and setup-beam use), SHA256-checked
-    against Hex's own `builds.txt`, instead of the `rabbitmq-erlang` PPAs, which have no 26.04 builds.
-    Supported: 26, 27, 28 (default 28); a major installs its newest release, and an exact release
-    (`27.3.4.18`) works too. Hex publishes the same builds for arm64, which retires the old arm64
-    fallback to Ubuntu's OTP 25. OTP 25 is not available for 26.04 anywhere. `elixir-example` moved from
-    `erlang:25` to `erlang:27` (Elixir 1.18.4 ships no OTP 28 build). Also fixed: a positional version
-    followed by a flag (`erlang--setup.sh 27 --no-rebar3`) was rejected as an unknown argument.
-  - **Swift** maps `resolute` to swift.org's `ubuntu26.04` builds (Swift 6.4+, the default).
-  - **Ghostty** picks the community `.deb` built for the running Ubuntu release (26.04 or 24.04), each pinned
-    by SHA256.
-  - **Package renames:** 26.04 dropped the pre-t64 transitional names and a few old libraries —
-    `libatk1.0-0`, `libatk-bridge2.0-0`, `libatspi2.0-0`, `libcups2`, `libfuse2`, `libglib2.0-0`,
-    `libgtk-3-0` and `libpng16-16` → their `t64` names (valid on 24.04 too) across 8 setups;
-    `libncurses5-dev`/`libtinfo-dev` → `libncurses-dev` (ruby, haskell-nb-kernel); `libpcre3-dev` →
-    `libpcre2-dev` (crystal); `libxml2` → `libxml2-16` when that is the only real package (swift,
-    penpot).
-  - Clang's default LLVM 22 now comes from Ubuntu's archive (26.04 carries 17–22) rather than
-    apt.llvm.org.
-  - Test fixtures under `tests/complex/*/.booth/setups/` that were verbatim copies of a changed setup
-    were refreshed so they don't shadow the fix; docs and comments naming 24.04 as the current base
-    were updated.
-
 - **An example can declare the host architectures it runs on, and is skipped elsewhere.**
   `.cb-tests/requires-arch.txt` lists `uname -m` values, one per line; anywhere else
   `run-example-tests.sh` reports the example as `skipped` instead of running and failing it.
@@ -2419,6 +2412,93 @@ This file contains a list of changes for each released version.
   retried test's stale first-attempt line, its own finally() line, *and* the suite runner's summary
   line as three separate "failures" for one real one, which is why the same `Test 216: ...` kept
   reappearing, unlabeled, with no two copies even reading alike.
+
+## 0.79.0
+
+- **Swift suggests only 6.4.0, the one release built for Ubuntu 26.04.** swift.org publishes no
+  26.04 tarball for older releases, so `setup swift --version 6.0.1` 404s on the new base. The
+  default was already 6.4.0; the Swift test now pins it too.
+
+- **`setup i3-default` works on the Ubuntu 26.04 XFCE desktop.** 26.04's `xfce4-session.xml` has a
+  `FailsafeWayland` session block beside the X11 `Failsafe` one, with its own `xfdesktop`. The setup
+  only ever edits the X11 block, but its check read the whole file and failed the build with
+  "Failed to switch ... to i3". The check now reads the X11 block alone (and fails on an empty one).
+
+- **Catalog version pins refreshed (n−1 where a new major just landed).** Python 3.13.15 → **3.14.8**
+  (3.15.0 is a fresh `.0`), Zig 0.15.1 → **0.16.0** (0.17.0 is two days old), Julia → 1.13.1,
+  AnythingLLM → 1.17.0, appwrite-cli fallback → 28.1.0, Hoppscotch → 2026.9.0, Penpot → 2.18.1,
+  Wails fallback → v3.0.0-beta.27, Mermaid → 11.17.2 (staying on 11), conda's Python 3.12 → 3.13.
+  Suggest lists gain Go 1.27.1, Rust 1.99.0, Flutter 3.47.6, gh 2.102.0, Python 3.13.16. Held at the
+  previous major on purpose: appwrite-server 1.9.6, Ruby 3.4, Erlang 28, Lua 5.4, Clang 22, Go 1.26.8.
+
+- **Julia `1.11.3` dropped from the template's suggestions: it no longer starts on the Ubuntu 26.04
+  base.** Its `libopenlibm.so` asks for an executable stack (`GNU_STACK=RWE`), which 26.04's glibc
+  refuses ("cannot enable executable stack"). `1.12.7` and `1.13.0` (the default) are unaffected.
+  The Julia test now pins `1.13.0`.
+
+- **`setup aider` works on the Ubuntu 26.04 base again.** Aider supports Python 3.10-3.12 only;
+  26.04's `python3` is 3.14, so pip found no current release, backtracked through old ones and
+  crashed in its resolver. When the system Python is outside Aider's range, `aider--setup.sh` now
+  does what Aider's own installer does: a uv-managed Python 3.12 in `/opt/aider-python`, used only
+  by Aider's venv at `/opt/aider` (same path as before; `--version` pins still apply). A system
+  Python Aider supports is used as before; the system Python is never changed.
+
+- **`setup aider` works on the Ubuntu 26.04 base again.** Aider supports Python 3.10-3.12 only;
+  26.04's `python3` is 3.14, so pip found no current release, backtracked through old ones and
+  crashed in its resolver. When the system Python is outside Aider's range, `aider--setup.sh` now
+  does what Aider's own installer does: a uv-managed Python 3.12 in `/opt/aider-python`, used only
+  by Aider's venv at `/opt/aider` (same path as before; `--version` pins still apply). A system
+  Python Aider supports is used as before; the system Python is never changed.
+
+- **Base image moved to Ubuntu 26.04 LTS (Resolute Raccoon), from 24.04.** `variants/base/Dockerfile`'s
+  `UBUNTU_VERSION` is now `26.04`, so every variant (notebook, codeserver, the four desktops) rebuilds on
+  it. The `APT_SNAPSHOT` pin works as before (snapshot.ubuntu.com serves `resolute`). What had to change
+  for everything to install and run on the new release:
+  - **Desktops (all four):** apt on 26.04 rejects rsa1024 signatures outright, which broke
+    `firefox--setup.sh` against the mozillateam PPA's original key — it now trusts the PPA's rsa4096 key.
+  - **KDE is Plasma 6.6.** It moved the X11 session out of `plasma-desktop`, so `kde--setup.sh` also
+    installs `plasma-session-x11` and `kwin-x11` when the archive has them (otherwise there is no
+    `startplasma-x11`). `kde-set-wallpaper` borrows plasmashell's session bus when started from
+    `start-kde`, where Plasma 6's tools otherwise fail with "Not connected to D-Bus server".
+  - **Bismuth → Krohnkite.** `kwin-bismuth` is Plasma 5 only and gone from 26.04. The new
+    `krohnkite`/`krohnkite-default`/`krohnkite-gaps` setups and `templates/desktops/krohnkite`
+    (Krohnkite 0.9.9.2, pinned + SHA256-verified) replace it with the same Ctrl+Alt key scheme,
+    start/stop commands and Help tab. `setup bismuth*` lines still work: they are shims that print a
+    deprecation notice and run the Krohnkite equivalent.
+  - **i3 on XFCE: `xfce4-session.xml` carries two session blocks now.** 26.04 adds
+    `FailsafeWayland` alongside the X11 `Failsafe`, with its own `xfdesktop` client.
+    `i3-default--setup.sh` rewrites only the X11 block — i3 is an X11 window manager, so the
+    Wayland session is not ours to touch — but the check afterwards read the whole file, found the
+    Wayland block's `xfdesktop`, and failed the build with "Failed to switch ... to i3". The check
+    now reads the X11 block alone, and treats an empty block as a failure so a future restructure
+    is loud rather than silently green. `tests/complex/test-i3-desktops` had the same whole-file
+    grep and was scoped the same way; it also asserts the Wayland block is left intact.
+  - **PHP defaults to 8.5 from Ubuntu's own archive.** `ppa:ondrej/php` has not published for 26.04
+    yet, so the PPA is now added only when the requested version isn't in the archive, and a clear
+    error names what the archive has when the PPA can't be used. `php8.5-opcache` no longer exists
+    (OPcache is built in from 8.5), so it is installed only for versions that still ship it — this
+    also clears the blocker the last pin sweep hit.
+  - **Erlang/OTP now comes from builds.hex.pm** (the builds Hex, Elixir and setup-beam use), SHA256-checked
+    against Hex's own `builds.txt`, instead of the `rabbitmq-erlang` PPAs, which have no 26.04 builds.
+    Supported: 26, 27, 28 (default 28); a major installs its newest release, and an exact release
+    (`27.3.4.18`) works too. Hex publishes the same builds for arm64, which retires the old arm64
+    fallback to Ubuntu's OTP 25. OTP 25 is not available for 26.04 anywhere. `elixir-example` moved from
+    `erlang:25` to `erlang:27` (Elixir 1.18.4 ships no OTP 28 build). Also fixed: a positional version
+    followed by a flag (`erlang--setup.sh 27 --no-rebar3`) was rejected as an unknown argument.
+  - **Swift** maps `resolute` to swift.org's `ubuntu26.04` builds (Swift 6.4+, the default).
+  - **Ghostty** picks the community `.deb` built for the running Ubuntu release (26.04 or 24.04), each pinned
+    by SHA256.
+  - **Package renames:** 26.04 dropped the pre-t64 transitional names and a few old libraries —
+    `libatk1.0-0`, `libatk-bridge2.0-0`, `libatspi2.0-0`, `libcups2`, `libfuse2`, `libglib2.0-0`,
+    `libgtk-3-0` and `libpng16-16` → their `t64` names (valid on 24.04 too) across 8 setups;
+    `libncurses5-dev`/`libtinfo-dev` → `libncurses-dev` (ruby, haskell-nb-kernel); `libpcre3-dev` →
+    `libpcre2-dev` (crystal); `libxml2` → `libxml2-16` when that is the only real package (swift,
+    penpot).
+  - Clang's default LLVM 22 now comes from Ubuntu's archive (26.04 carries 17–22) rather than
+    apt.llvm.org.
+  - Test fixtures under `tests/complex/*/.booth/setups/` that were verbatim copies of a changed setup
+    were refreshed so they don't shadow the fix; docs and comments naming 24.04 as the current base
+    were updated.
 
 - **4 examples' `APT_SNAPSHOT` bumped back even with the base image.** `apt-example`,
   `clang-example`, `systemlib-example`, and `turtle-example` were pinned to `20260918`; the base
@@ -2523,6 +2603,7 @@ This file contains a list of changes for each released version.
   before, now with the lines that blocked it. `.booth/.generated` also records the template
   catalog version (`templates=…`) so edits are compared against the catalog that wrote the
   files. See [booth config — Edits that can be read back](BOOTH_CONFIG.md#edits-that-can-be-read-back).
+
 - **Example workspaces all open cleanly in `booth config`.** Examples whose files had drifted
   from what `booth config` generates were regenerated from their recorded selection — most had
   only been touched by a release's `APT_SNAPSHOT` bump. `appwrite-example` now selects its
@@ -2531,14 +2612,17 @@ This file contains a list of changes for each released version.
   ghcup/hswrap workarounds (the `haskell` setup fixed both long ago) and `cache-example` its
   empty hand-written Boothfile. `all-java-example` is removed: its six JDKs have no catalog
   form. `playwright-polyglot-example` remains hand-written, by design.
+
 - **Reconfiguring a booth with a hand-written Boothfile keeps its configuration.** The
   recorded `# Configured by:` header is now read from `config.toml` when the Boothfile has
   none, instead of reconfiguring from an empty selection — which opened the TUI blank and let
   a save wipe the settings `config.toml` still recorded.
+
 - **Reconfiguring keeps the booth's APT snapshot.** `booth config` on an existing booth now
   reuses the `env APT_SNAPSHOT=` date its Boothfile already holds rather than re-stamping
   today's, so adding an env var no longer moves every `install apt` package forward. Set
   `CB_APT_SNAPSHOT` to move it on purpose.
+
 - **The Console UI tiles like i3, with Ctrl+Alt shortcuts.** The base variant's browser
   console now takes the same Ctrl+Alt keys as the i3 template: focus (`h`/`j`/`k`/`l` or
   arrows), move (`Shift`+those), split beside/below (`b`/`v`), open (`Enter`), close
@@ -3118,6 +3202,8 @@ This file contains a list of changes for each released version.
   browser selection and Ctrl+C / Cmd+C / right-click copy work. The wheel
   still scrolls tmux history.
 
+## 0.78.0
+
 - **Bare runtime env passthrough now skips variables that are truly unset.**
   `run-args = ["-e", "NAME"]` and `["--env", "NAME"]` are passed to Docker
   only when `NAME` exists in the host environment. Empty-but-set variables
@@ -3666,6 +3752,33 @@ This file contains a list of changes for each released version.
   extension's own `requires` counts too), with order/tiebreak only deciding
   between segments that have no dependency relationship.
 
+- **Wails v3 is a catalog language (experimental).** `--select wails` installs the `wails3` CLI
+  (`go install github.com/wailsapp/wails/v3/cmd/wails3@…`) and the Linux compile
+  stack Wails v3 actually needs — GTK 4 and WebKitGTK 6.0 — and pulls in Go and
+  Node.js. `wails3 build` produces a Linux GUI binary. Windows is a free
+  cross-compile (`wails3 build GOOS=windows`); macOS and foreign-arch Linux
+  take `+cross`, which adds Docker-in-Docker so `wails3 task setup:docker` can
+  build the `wails-cross` image. `examples/workspaces/wails-example` is a
+  counter on the xfce variant (`backend/` Go, `frontend/` UI), so `just run`
+  opens the window. `+android` adds the SDK and NDK so
+  `wails3 task android:build` can emit an APK;
+  `examples/workspaces/wails-android-example` is that selection as an xfce booth
+  with the emulator and KVM, so `just run` installs the APK on an AVD.
+  iOS still needs a Mac with Xcode. WebKitGTK's
+  bubblewrap sandbox cannot create user namespaces in a booth, so the template
+  sets `WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1` (same class of workaround as
+  Chromium `--no-sandbox`). Pin with `wails:v3.0.0-beta.17`.
+
+- **`booth config --web` is a browser equivalent of the Config TUI.** It
+  serves the same template catalog and Config-tab fields at
+  `http://127.0.0.1:<booth-port>/` (loopback, one-shot token). Save writes
+  the same `.booth/` files as the TUI / `--no-tui`. The catalog is the
+  loaded `TemplateRegistry` — category tabs are not hard-coded. A taken
+  booth port is refused rather than stolen. See
+  [config Web UI](BOOTH_CONFIG_WEB.md).
+
+## 0.77.0
+
 - **Appwrite admin create retries a slow first boot.** The health probe
   no longer lets curl retry on its own (that stacked with the wait loop).
   Creating the first account now retries a few times after the server
@@ -3869,6 +3982,8 @@ This file contains a list of changes for each released version.
   `tests/setups/test--mojo-setup.sh`,
   `tests/complex/test-boothfile-mojo`.
 
+## 0.76.0
+
 - **Catalog version pins refreshed for 0.76.0.** Script defaults, template
   defaults, and GitHub-API fallbacks now agree on current stables, including
   the three script↔template drifts: Go `1.26.8` (N−1 of 1.27), Node.js `24`
@@ -3910,23 +4025,6 @@ This file contains a list of changes for each released version.
   `floci:0.2.1`. `examples/workspaces/floci-example` selects
   `aws-cli/floci+autostart+expose` and round-trips an S3 object with `just run`.
 
-- **Wails v3 is a catalog language (experimental).** `--select wails` installs the `wails3` CLI
-  (`go install github.com/wailsapp/wails/v3/cmd/wails3@…`) and the Linux compile
-  stack Wails v3 actually needs — GTK 4 and WebKitGTK 6.0 — and pulls in Go and
-  Node.js. `wails3 build` produces a Linux GUI binary. Windows is a free
-  cross-compile (`wails3 build GOOS=windows`); macOS and foreign-arch Linux
-  take `+cross`, which adds Docker-in-Docker so `wails3 task setup:docker` can
-  build the `wails-cross` image. `examples/workspaces/wails-example` is a
-  counter on the xfce variant (`backend/` Go, `frontend/` UI), so `just run`
-  opens the window. `+android` adds the SDK and NDK so
-  `wails3 task android:build` can emit an APK;
-  `examples/workspaces/wails-android-example` is that selection as an xfce booth
-  with the emulator and KVM, so `just run` installs the APK on an AVD.
-  iOS still needs a Mac with Xcode. WebKitGTK's
-  bubblewrap sandbox cannot create user namespaces in a booth, so the template
-  sets `WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1` (same class of workaround as
-  Chromium `--no-sandbox`). Pin with `wails:v3.0.0-beta.17`.
-
 - **Config TUI tab clicks land on the tab you clicked.** The tab bar styles pad
   one column on each side, but the click map measured the unpadded names, so
   later tabs drifted left under the pointer — clicking the **T** of Tools
@@ -3955,14 +4053,6 @@ This file contains a list of changes for each released version.
   `import turtle` works on booth Python. Try it with
   `booth example try turtle ./my-turtle` (once released) or
   `cd examples/workspaces/turtle-example && booth`.
-
-- **`booth config --web` is a browser equivalent of the Config TUI.** It
-  serves the same template catalog and Config-tab fields at
-  `http://127.0.0.1:<booth-port>/` (loopback, one-shot token). Save writes
-  the same `.booth/` files as the TUI / `--no-tui`. The catalog is the
-  loaded `TemplateRegistry` — category tabs are not hard-coded. A taken
-  booth port is refused rather than stolen. See
-  [config Web UI](BOOTH_CONFIG_WEB.md).
 
 - **Every booth now ships `lazygit`.** Installed into the base image by
   `variants/base/setups/lazygit--setup.sh`, so all variants inherit it — a
@@ -4026,6 +4116,8 @@ This file contains a list of changes for each released version.
   walk iframe history; a page-icon before the bar shows the document title on
   hover. Open-in-new-tab follows the current path. Reserved
   booth ports `10000–10007` still refuse.
+
+## 0.75.0
 
 - **`exec` / `shell --silence-build` hides the `--run` bring-up.** `booth exec --silence-build --run -- ./build.sh` used to fail with `flag provided but not defined: -silence-build`. The flag is now accepted (aliases: `--quiet`, `-q`) and quiets the whole auto-start: no "starting one with booth run", no port-selection banner, no daemon banner / visit URL / container id, no "Stopping booth" or `docker stop` name echo. The command's own output is what you see. A long first image build still draws the one-line `--silence-build` progress spinner; a failed build still dumps the log. Internally this forwards `booth run --quiet`, which implies `--silence-build --no-browser` so a command-only `--run` does not open a browser or wait on the UI. `booth --silence-build --daemon` is unchanged — it still prints the URL. Unit tests cover flag parse and argv forwarding; `tests/dryrun/test031--quiet-daemon.sh` locks the banner-free daemon dryrun. See `docs/BOOTH_CONNECT.md`.
 
