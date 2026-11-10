@@ -79,6 +79,12 @@ The full image reference is constructed as:
 | `--push ghcr.io/myteam --tag v1.0`    | `ghcr.io/myteam/myproject:v1.0`                      |
 | `--name my-env --tag latest`           | `my-env:latest`                                      |
 
+**A defaulted name is made a valid repository name.** Docker requires the repository part of a
+reference to be lowercase, so when `--name` is not given, the booth name (or the project folder
+name) is lowercased, and any character Docker does not allow becomes `-`. A folder `MyApp`
+builds `myapp:<hash>`, and `My App` builds `my-app:<hash>`. A `--name` you pass is used exactly as
+typed.
+
 ---
 
 ## Content-Based Tagging

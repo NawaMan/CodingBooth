@@ -75,3 +75,26 @@ func TestRegistryLoginCommand(t *testing.T) {
 		}
 	}
 }
+
+func TestSanitizeRepoName(t *testing.T) {
+	cases := map[string]string{
+		"myproject":          "myproject",
+		"NPQAA238":           "npqaa238",
+		"CodingBooth":        "codingbooth",
+		"my_app":             "my_app",
+		"my__app":            "my__app",
+		"my.app":             "my.app",
+		"my--app":            "my--app",
+		"My App":             "my-app",
+		"a___b":              "a-b",
+		"a._b":               "a-b",
+		"-Leading.Trailing_": "leading.trailing",
+		"日本":                 "booth",
+		"":                   "booth",
+	}
+	for in, want := range cases {
+		if got := SanitizeRepoName(in); got != want {
+			t.Errorf("SanitizeRepoName(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
