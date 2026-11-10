@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.3.0
+# cb-version: 0.3.1
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -20,7 +20,8 @@ Examples:
 
 Notes:
 - 3.2.48 to 3.2.57 come prebuilt (static, sha256-checked) from
-  https://github.com/NawaMan/Bash32Ubuntu/releases. Nothing is compiled.
+  https://github.com/NawaMan/Bash32Ubuntu/releases. Nothing is compiled,
+  unless that download fails: then the release is built from source.
 - Any other release is built from https://ftp.gnu.org/gnu/bash/ (or a mirror)
 - Installs under /opt/bash/bash-<version>
 - Links /usr/local/bin/bash-<major>.<minor> (and bash-<version> when that differs)
@@ -83,21 +84,27 @@ trap 'rm -rf "$TMP"' EXIT
 # NawaMan/Bash32Ubuntu, so the image needs no compiler. Each tarball has a
 # .sha256 beside it; a mismatch stops the setup rather than installing it.
 # Static, so the Ubuntu release in the asset name does not bind the image.
+# The download is only a shortcut: when GitHub cannot serve it (a 504 for half
+# a minute has failed a build), the release is built from source instead.
 PREBUILT_REPO="https://github.com/NawaMan/Bash32Ubuntu/releases/download"
 prebuilt_patch() {
   [[ "$VERSION" =~ ^3\.2\.([0-9]+)$ ]] || return 1
   (( 10#${BASH_REMATCH[1]} >= 48 && 10#${BASH_REMATCH[1]} <= 57 ))
 }
 
-install_prebuilt() {
+# Downloads the prebuilt tarball and its .sha256 into $TMP, naming it in
+# PREBUILT_NAME. Returns 1 when either download fails. It runs as an `if`
+# condition, where set -e is off, so it does nothing but fetch; checking and
+# unpacking are install_prebuilt's.
+fetch_prebuilt() {
   local arch
   case "$(uname -m)" in
     x86_64|amd64)  arch=x86_64 ;;
     aarch64|arm64) arch=arm64 ;;
     *) echo "❌ No prebuilt GNU Bash ${VERSION} for $(uname -m)" >&2; exit 1 ;;
   esac
-  local name="bash-${VERSION}-ubuntu26.04-${arch}-static.tar.gz"
-  local url="${PREBUILT_REPO}/bash-${VERSION}/${name}"
+  PREBUILT_NAME="bash-${VERSION}-ubuntu26.04-${arch}-static.tar.gz"
+  local url="${PREBUILT_REPO}/bash-${VERSION}/${PREBUILT_NAME}"
 
   if ! command -v curl >/dev/null 2>&1; then
     export DEBIAN_FRONTEND=noninteractive
@@ -107,10 +114,18 @@ install_prebuilt() {
   fi
 
   echo "⬇️  Downloading prebuilt GNU Bash ${VERSION} (${arch}) ..."
-  curl --connect-timeout 15 --retry 3 --retry-delay 3 --retry-all-errors \
-    -fsSL "$url" -o "$TMP/$name"
-  curl --connect-timeout 15 --retry 3 --retry-delay 3 --retry-all-errors \
-    -fsSL "${url}.sha256" -o "$TMP/${name}.sha256"
+  if curl --connect-timeout 15 --retry 5 --retry-delay 5 --retry-all-errors \
+       -fsSL "$url" -o "$TMP/$PREBUILT_NAME" &&
+     curl --connect-timeout 15 --retry 5 --retry-delay 5 --retry-all-errors \
+       -fsSL "${url}.sha256" -o "$TMP/${PREBUILT_NAME}.sha256"; then
+    return 0
+  fi
+  echo "⚠️  Could not download ${PREBUILT_NAME}; building GNU Bash ${VERSION} from source instead."
+  return 1
+}
+
+install_prebuilt() {
+  local name="$PREBUILT_NAME"
   local want got_sum
   want="$(awk '{print $1; exit}' "$TMP/${name}.sha256")"
   got_sum="$(sha256sum "$TMP/$name" | awk '{print $1}')"
@@ -203,7 +218,7 @@ build_from_source() {
   make install
 }
 
-if prebuilt_patch; then
+if prebuilt_patch && fetch_prebuilt; then
   install_prebuilt
 else
   build_from_source

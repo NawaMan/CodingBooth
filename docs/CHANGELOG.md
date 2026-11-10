@@ -4,6 +4,11 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`setup bash` survives a GitHub outage.** Bash 3.2.48–3.2.57 come prebuilt from a GitHub
+  release, and a 504 that outlasted curl's retries failed the image build. The download now retries
+  for about half a minute, and when it still cannot get the file it builds the release from a GNU
+  mirror instead (under a minute). A prebuilt whose sha256 does not match still stops the build.
+
 - **A `booth --worktree` right after the last worktree went no longer fails to start on macOS.**
   Git deletes `.git/worktrees/` with its last worktree, and Docker Desktop cannot mount under a
   folder recreated within about a minute, which a booth on a worktree does for git's pointer files.
