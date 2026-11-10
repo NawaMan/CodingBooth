@@ -5,6 +5,7 @@
 package booth
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/nawaman/codingbooth/src/pkg/docker"
@@ -18,6 +19,34 @@ func AssembleImageName(registry, name, tag string) string {
 		return name + ":" + tag
 	}
 	return strings.TrimRight(registry, "/") + "/" + name + ":" + tag
+}
+
+var (
+	repoNameInvalidChar = regexp.MustCompile(`[^a-z0-9._-]`)
+	repoNameSeparators  = regexp.MustCompile(`[._-]+`)
+)
+
+// SanitizeRepoName turns a name derived from the project (its folder or its configured
+// booth name) into a valid Docker repository path component: lowercase, and made only of
+// [a-z0-9] runs joined by one of ".", "_", "__" or "-+". A folder like "NPQAA238" or
+// "My App" would otherwise give a reference Docker refuses with "repository name must be
+// lowercase" before building anything. Names that are already valid come back unchanged.
+// Only defaulted names go through this; an explicit --name is used as typed.
+func SanitizeRepoName(name string) string {
+	s := repoNameInvalidChar.ReplaceAllString(strings.ToLower(name), "-")
+	s = repoNameSeparators.ReplaceAllStringFunc(s, func(sep string) string {
+		switch {
+		case sep == "." || sep == "_" || sep == "__" || strings.Trim(sep, "-") == "":
+			return sep
+		default:
+			return "-"
+		}
+	})
+	s = strings.Trim(s, "._-")
+	if s == "" {
+		return "booth"
+	}
+	return s
 }
 
 // ExtractRegistryHost extracts the hostname from a registry string.

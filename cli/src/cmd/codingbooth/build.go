@@ -200,6 +200,9 @@ func buildBooth(version string) {
 		if name == "" {
 			name = ctx.ProjectName()
 		}
+		// The default is used as the repository name, which Docker requires to be
+		// lowercase (unlike the run path, where the project name sits in the tag).
+		name = booth.SanitizeRepoName(name)
 	}
 
 	// Resolve tag

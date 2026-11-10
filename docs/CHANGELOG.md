@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth build` works in a folder whose name has capitals.** With no `--name`, build used the
+  folder name as the image's repository name, and Docker refused it before building anything
+  ("repository name must be lowercase"). The default name is now lowercased, and characters Docker
+  does not allow become `-`: `NPQAA238` builds `npqaa238:<hash>`. A `--name` you pass is used as
+  typed.
+
 ## 0.82.0
 
 - **`setup bash` survives a GitHub outage.** Bash 3.2.48–3.2.57 come prebuilt from a GitHub
