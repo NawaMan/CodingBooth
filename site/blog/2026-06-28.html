@@ -6,25 +6,25 @@
 		     its +layout.svelte, and a page from its pages.ts entry — last one wins. -->
 		<link rel="icon" href="./favicon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<link href="./_app/immutable/entry/start.CKikRaOD.js" rel="modulepreload">
-		<link href="./_app/immutable/chunks/DjjxivlZ.js" rel="modulepreload">
+		<link href="./_app/immutable/entry/start.B82pUKJ2.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/C4OquDx0.js" rel="modulepreload">
 		<link href="./_app/immutable/chunks/DAVScN9u.js" rel="modulepreload">
 		<link href="./_app/immutable/chunks/LyQrGG0k.js" rel="modulepreload">
-		<link href="./_app/immutable/entry/app.D-K-9xaG.js" rel="modulepreload">
+		<link href="./_app/immutable/entry/app.BrBElC17.js" rel="modulepreload">
 		<link href="./_app/immutable/chunks/C1FmrZbK.js" rel="modulepreload">
 		<link href="./_app/immutable/chunks/L3Qt-6zE.js" rel="modulepreload">
 		<link href="./_app/immutable/chunks/DFHCFwu9.js" rel="modulepreload">
 		<link href="./_app/immutable/chunks/CwhgXbg5.js" rel="modulepreload">
-		<link href="./_app/immutable/nodes/0.CQqgyOMc.js" rel="modulepreload">
+		<link href="./_app/immutable/nodes/0.T9NRPuhI.js" rel="modulepreload">
 		<link href="./_app/immutable/chunks/CCvYm5Kw.js" rel="modulepreload">
-		<link href="./_app/immutable/chunks/0yS4n2tz.js" rel="modulepreload">
-		<link href="./_app/immutable/nodes/5.WPiAsicR.js" rel="modulepreload">
-		<link href="./_app/immutable/chunks/DVnsOz-_.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/DbK5QRvb.js" rel="modulepreload">
+		<link href="./_app/immutable/nodes/5.D9bUJsU9.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/DRx9-1Mw.js" rel="modulepreload">
 		<link href="./_app/immutable/chunks/p4dfCQsS.js" rel="modulepreload">
-		<link href="./_app/immutable/chunks/cDHUsLIq.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/CjJDg0IU.js" rel="modulepreload">
 		<link href="./_app/immutable/nodes/10.Clpbg-MQ.js" rel="modulepreload">
 		<!--gsrl61--><!--[0--><meta name="description" content="Setting up a project fast is only half the job — setting it up right is the other half. Why onboarding shouldn't rely on luck or constant vigilance, and how a booth gets you in both quick and right."/><!--]--> <!--[-1--><!--]--> <meta property="og:title" content="Onboard Quick, Onboard Right"/> <!--[0--><meta property="og:description" content="Setting up a project fast is only half the job — setting it up right is the other half. Why onboarding shouldn't rely on luck or constant vigilance, and how a booth gets you in both quick and right."/><!--]--> <meta property="og:type" content="article"/> <meta property="og:site_name" content="CodingBooth Blog"/> <!--[0--><meta property="og:url" content="https://codingbooth.io/blog/2026-06-28.html"/><!--]--> <!--[0--><meta property="og:image" content="https://codingbooth.io/blog/og-default.png"/> <meta property="og:image:alt" content="The CodingBooth Blog — deep dives into reproducible, isolated development environments."/> <!--[0--><meta property="og:image:width" content="1200"/> <meta property="og:image:height" content="630"/><!--]--><!--]--> <meta name="twitter:card" content="summary_large_image"/> <meta name="twitter:title" content="Onboard Quick, Onboard Right"/> <!--[0--><meta name="twitter:description" content="Setting up a project fast is only half the job — setting it up right is the other half. Why onboarding shouldn't rely on luck or constant vigilance, and how a booth gets you in both quick and right."/><!--]--> <!--[0--><meta name="twitter:image" content="https://codingbooth.io/blog/og-default.png"/> <meta name="twitter:image:alt" content="The CodingBooth Blog — deep dives into reproducible, isolated development environments."/><!--]--> <!--[0--><link rel="canonical" href="https://codingbooth.io/blog/2026-06-28.html"/><!--]--><!----><title>Onboard Quick, Onboard Right</title>
-		<link href="./_app/immutable/assets/tooltip.CkawzYcf.css" rel="stylesheet">
+		<link href="./_app/immutable/assets/tooltip.H3FVL7WQ.css" rel="stylesheet">
 		<link href="./_app/immutable/assets/TextPage.vTwP5WIh.css" rel="stylesheet">
 		<link href="./_app/immutable/assets/FirebaseComments.3ricZNOu.css" rel="stylesheet">
 		<link href="./_app/immutable/assets/10.BtnX-piw.css" rel="stylesheet">
@@ -50,7 +50,7 @@
 	There also "multiple project" interferances like version conflict or worst "almost" conflict.
 	Depending on how that goes, you usually fall into one of three buckets:</p> <ul class="buckets svelte-omf9yw"><li class="svelte-omf9yw"><strong class="svelte-omf9yw">Really Lucky:</strong> Everything works perfectly, and you never have to think about your environment again.</li> <li class="svelte-omf9yw"><strong class="svelte-omf9yw">A Bit Lucky:</strong> The setup fails immediately. You hit a missing dependency or a hard version conflict right away. 
 		It is frustrating, but you are forced to resolve the roadblock before you can start working.
-		Fixing the problem might not always success so you can't proceed OR it can bring you to the next category "Unlucky".</li> <li class="svelte-omf9yw"><strong class="svelte-omf9yw">Unlucky:</strong> The setup appears to work so the development proceed while discrepancies are still there waiting to cause problem.</li></ul> <figure class="hero svelte-omf9yw"><img src="./_app/immutable/assets/HiddenCostsOfDevelopmentEnvironments.vHJz58CH.png" alt="The hidden costs of development environments: the Really Lucky, A Bit Lucky, and Unlucky onboarding paths, and the slow creeping tax of invisible discrepancies that the Unlucky path hides" class="svelte-omf9yw"/> <figcaption class="svelte-omf9yw">Three ways onboarding goes — and the creeping tax the “good enough” path hides.</figcaption></figure> <p class="svelte-omf9yw">For many developers, that “good enough” setup in the third bucket is where the process ends,
+		Fixing the problem might not always success so you can't proceed OR it can bring you to the next category "Unlucky".</li> <li class="svelte-omf9yw"><strong class="svelte-omf9yw">Unlucky:</strong> The setup appears to work so the development proceed while discrepancies are still there waiting to cause problem.</li></ul> <figure class="hero svelte-omf9yw"><img src="/_app/immutable/assets/HiddenCostsOfDevelopmentEnvironments.vHJz58CH.png" alt="The hidden costs of development environments: the Really Lucky, A Bit Lucky, and Unlucky onboarding paths, and the slow creeping tax of invisible discrepancies that the Unlucky path hides" class="svelte-omf9yw"/> <figcaption class="svelte-omf9yw">Three ways onboarding goes — and the creeping tax the “good enough” path hides.</figcaption></figure> <p class="svelte-omf9yw">For many developers, that “good enough” setup in the third bucket is where the process ends,
 	allowing them to push forward without much thought. But the real cost of environment management
 	isn't an upfront roadblock — it's the slow, creeping tax of invisible discrepancies.</p> <p class="svelte-omf9yw">A minor version difference in a compiler, a globally installed package that silently alters a
 	project's behavior, or a toolchain update that inexplicably breaks an older codebase months later.
@@ -113,7 +113,7 @@ K-means clustering (k=3) on income vs spending:
 	browser against real pages, not a mock:</p> <pre class="svelte-omf9yw"><code class="svelte-omf9yw">$ ./booth -- ./run-screenshot.sh
 Visiting https://news.ycombinator.com/ ...
 Page title: Hacker News
-Screenshot saved to screenshot.png</code></pre> <figure class="svelte-omf9yw"><img src="./_app/immutable/assets/screenshot.DqXB2XoN.png" alt="The Screenshot of Hacker News" class="svelte-omf9yw"/> <figcaption class="svelte-omf9yw">The Screenshot of Hacker News.</figcaption></figure> <h3 class="svelte-omf9yw">The system-library dance, done once — <code class="svelte-omf9yw">systemlib</code></h3> <p class="svelte-omf9yw">The hard part of C and C++ isn't the compiler — it's the libraries. You need the right <code class="svelte-omf9yw">libxxx-dev</code> packages so the headers <em class="svelte-omf9yw">and</em> the shared objects are present, you
+Screenshot saved to screenshot.png</code></pre> <figure class="svelte-omf9yw"><img src="/_app/immutable/assets/screenshot.DqXB2XoN.png" alt="The Screenshot of Hacker News" class="svelte-omf9yw"/> <figcaption class="svelte-omf9yw">The Screenshot of Hacker News.</figcaption></figure> <h3 class="svelte-omf9yw">The system-library dance, done once — <code class="svelte-omf9yw">systemlib</code></h3> <p class="svelte-omf9yw">The hard part of C and C++ isn't the compiler — it's the libraries. You need the right <code class="svelte-omf9yw">libxxx-dev</code> packages so the headers <em class="svelte-omf9yw">and</em> the shared objects are present, you
 	need the build to find and link them, and you need everyone on the <em class="svelte-omf9yw">same</em> versions or you
 	get an "undefined reference" on one machine and a subtly different bug on another. A booth bakes the
 	libraries in, pinned, so the build just resolves them:</p> <pre class="svelte-omf9yw"><code class="svelte-omf9yw">$ ./booth -- ./run-linkcheck.sh
@@ -146,22 +146,22 @@ kind-control-plane   Ready   control-plane   87s   v1.32.2</code></pre> <p class
 	is left exactly as clean as it started.</p> <h3 class="svelte-omf9yw">Batteries included, GUIs and all — <code class="svelte-omf9yw">data</code></h3> <p class="svelte-omf9yw">A data project is a pile of separate installs that all have to agree: a database, a SQL client,
 	Python with the right libraries, a notebook server. This booth bakes the whole workbench — <em class="svelte-omf9yw">PostgreSQL, DBeaver, JupyterLab, Python with matplotlib and psycopg2, and a small web
 	dashboard</em> — and wires every one of them to the <em class="svelte-omf9yw">same</em> seeded dataset. It's the <code class="svelte-omf9yw">kind-app</code> idea made graphical: instead of a cluster on the command line, one command opens
-	a full desktop in your browser with the tools already running.</p> <pre class="svelte-omf9yw"><code class="svelte-omf9yw">$ ./booth        # opens an XFCE desktop in your browser</code></pre> <figure class="svelte-omf9yw"><img src="./_app/immutable/assets/data-desktop.BKnjs7sC.jpg" alt="An XFCE desktop running in the browser, with DBeaver, JupyterLab, Visual Studio Code, Firefox and Chrome all sitting on the CodingBooth wallpaper" class="svelte-omf9yw"/> <figcaption class="svelte-omf9yw">One command, a whole desktop of tools — DBeaver, JupyterLab and VS Code, all in the browser.</figcaption></figure> <p class="svelte-omf9yw">DBeaver opens with its connection to the demo database <em class="svelte-omf9yw">already configured</em>; JupyterLab is up
+	a full desktop in your browser with the tools already running.</p> <pre class="svelte-omf9yw"><code class="svelte-omf9yw">$ ./booth        # opens an XFCE desktop in your browser</code></pre> <figure class="svelte-omf9yw"><img src="/_app/immutable/assets/data-desktop.BKnjs7sC.jpg" alt="An XFCE desktop running in the browser, with DBeaver, JupyterLab, Visual Studio Code, Firefox and Chrome all sitting on the CodingBooth wallpaper" class="svelte-omf9yw"/> <figcaption class="svelte-omf9yw">One command, a whole desktop of tools — DBeaver, JupyterLab and VS Code, all in the browser.</figcaption></figure> <p class="svelte-omf9yw">DBeaver opens with its connection to the demo database <em class="svelte-omf9yw">already configured</em>; JupyterLab is up
 	with a notebook that queries the data and charts it with matplotlib; and a Sales Explorer dashboard
-	is serving live rows straight from PostgreSQL. One dataset, seen through every lens at once:</p> <figure class="svelte-omf9yw"><img src="./_app/immutable/assets/data-dashboard.D0f43rs9.jpg" alt="The Sales Explorer web dashboard: filters, summary stat cards, and two bar charts of revenue and quantity by category, all drawn from the seeded PostgreSQL data" class="svelte-omf9yw"/> <figcaption class="svelte-omf9yw">The Sales Explorer dashboard — real rows from the booth's PostgreSQL, charted in the browser.</figcaption></figure> <p class="svelte-omf9yw">Stop the booth and the whole workbench — database, notebook, dashboard, every GUI — is gone, with
+	is serving live rows straight from PostgreSQL. One dataset, seen through every lens at once:</p> <figure class="svelte-omf9yw"><img src="/_app/immutable/assets/data-dashboard.D0f43rs9.jpg" alt="The Sales Explorer web dashboard: filters, summary stat cards, and two bar charts of revenue and quantity by category, all drawn from the seeded PostgreSQL data" class="svelte-omf9yw"/> <figcaption class="svelte-omf9yw">The Sales Explorer dashboard — real rows from the booth's PostgreSQL, charted in the browser.</figcaption></figure> <p class="svelte-omf9yw">Stop the booth and the whole workbench — database, notebook, dashboard, every GUI — is gone, with
 	nothing left installed on your host.</p> <p class="svelte-omf9yw">Installing CodingBooth is one command:</p> <pre class="svelte-omf9yw"><code class="svelte-omf9yw">curl -fsSL https://codingbooth.io/install.sh | bash</code></pre> <p class="svelte-omf9yw">Happy coding!<br/>Nawa Man</p> <hr class="svelte-omf9yw"/> <h2 class="svelte-omf9yw">Learn More</h2> <ul class="links svelte-omf9yw"><li class="svelte-omf9yw"><a href="https://codingbooth.io" class="svelte-omf9yw">codingbooth.io</a> — the website</li> <li class="svelte-omf9yw"><a href="https://codingbooth.io/more.html" class="svelte-omf9yw">Deep dive</a> — more about CodingBooth</li> <li class="svelte-omf9yw"><a href="https://github.com/NawaMan/CodingBooth" class="svelte-omf9yw">GitHub</a> — source &amp; issues</li></ul> <nav class="post-nav svelte-omf9yw"><a class="nav-prev svelte-omf9yw" href="./2026-06-18.html#four-promises-of-a-booth">← The Four Promises of a Booth</a> <a class="nav-home svelte-omf9yw" href="./">↑ back to the blog</a> <span class="nav-next svelte-omf9yw"></span></nav><!--]--><!--]--> <!--[-1--><!--]--><!----> <section class="comments svelte-ozqibp"><h2 class="svelte-ozqibp">Comments <!--[-1--><!--]--></h2> <!--[-1--><!--[-1--><!--]--> <ul class="thread svelte-ozqibp"><!--[--><!--]--></ul> <!--[-1--><!--]--> <!--[-1--><div class="signin svelte-ozqibp"><span>Sign in to comment:</span> <!--[--><button class="provider svelte-ozqibp">Google</button><button class="provider svelte-ozqibp">GitHub</button><!--]--></div><!--]--><!--]--></section><!----><!--]--></div></div> <!--[1--><div class="nav text gp-chrome no-print svelte-rhxhxr"><button class="svelte-ve8i7f chrome"><span class="text svelte-ve8i7f"><!--[-1-->TOP<!--]--></span> <span class="hover-text svelte-ve8i7f"><!--[-1--><!--]--></span></button><!----></div><!--]--><!----><!--]--><!--]--><!--]--><!--]--><!--]--> <!--[-1--><!--]--><!--]-->
 			
 			<script>
 				{
-					__sveltekit_16obncp = {
+					__sveltekit_1lb7izd = {
 						base: new URL(".", location).pathname.slice(0, -1)
 					};
 
 					const element = document.currentScript.parentElement;
 
 					Promise.all([
-						import("./_app/immutable/entry/start.CKikRaOD.js"),
-						import("./_app/immutable/entry/app.D-K-9xaG.js")
+						import("./_app/immutable/entry/start.B82pUKJ2.js"),
+						import("./_app/immutable/entry/app.BrBElC17.js")
 					]).then(([kit, app]) => {
 						kit.start(app, element, {
 							node_ids: [0, 5, 10],
