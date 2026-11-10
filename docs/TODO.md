@@ -248,6 +248,34 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
         template preimage. (Measured: ~99% of *generated* lines can be attributed back to a template
         segment, because the compiler emits segments verbatim. So a read-only "custom directives,
         preserved verbatim" panel would be feasible — if it is ever actually wanted.)
+- [ ] **A single-value change should not regenerate the whole `.booth/`** — `booth config
+      --apt-snapshot <id>` (and any change of one value) touches only the Boothfile line that holds it
+      plus the `.booth/.generated` fingerprint, instead of re-copying every template-owned file.
+      Why: moving projects to a new release's apt snapshot is a chore every release (the 0.82.0
+      images are built at `20261023`; an older pin can fail the image build because apt will not
+      downgrade). In the 0.82.0 rollout (2026-11-10) this was the risky step, not the version bump:
+      - **GeekPresent:** `--no-tui` refused (7 files exist), `--beside` gave the same prompt, and a
+        dry run of `--overwrite` would have dropped hand-added deny rules from
+        `home-seed/.claude/settings.json` (`curl|bash`, `wget|bash`, `chmod 777`), rewritten
+        `.booth/.gitignore`, changed the auto-accept startup, `config.toml` and two other Boothfile
+        lines — all to move one date.
+      - **NPQAA238:** hand edits in `config.toml` + Boothfile; the only safe path was hand-editing the
+        `env APT_SNAPSHOT=` line, which leaves the fingerprint stale.
+      - **CodeStructure** worked with `--overwrite` only because its uncommitted `.booth/` changes
+        happened to be pure config output; telling that apart needed a backup-and-diff by hand.
+      Approach: a narrow path in `cli/src/cmd/codingbooth/config.go` for flags that map to one
+      Boothfile line (`--apt-snapshot` first): find the `env APT_SNAPSHOT=` line, rewrite it, and if
+      the Boothfile still matched its fingerprint before the edit, re-stamp `.booth/.generated` so it
+      stays generated; skip every template-owned file. `examples/sync-apt-snapshot.sh` would get
+      simpler too (no "keep only Boothfile and .generated" diff review in the release skill's step 0d).
+      Open questions: what to do when the Boothfile is hand-written (edit the line and leave the
+      file hand-written? refuse?); whether other one-line values (`--variant`, `--version`) get the
+      same path or only the snapshot; whether `--set` for `config.toml` keys already avoids the
+      re-copy (check before generalising).
+      Side note: `booth config --help` says `--no-tui` "requires --select", but a re-run without
+      `--select` appears to reuse the header's selection (`sync-apt-snapshot.sh` runs
+      `config --no-tui --overwrite --apt-snapshot` with no `--select` every release) — verify, then
+      fix the help line (`config.go`, `--no-tui`) if it is stale.
 - [x] **Persist browser bookmarks & history** — largely done (see [BOOTH_SHARED.md](BOOTH_SHARED.md)).
       - Local full profiles: `+profile-cache` (cache; Chrome/Chromium → `~/.chrome-data`) and
         `--persist-home`.
