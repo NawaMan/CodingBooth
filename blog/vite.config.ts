@@ -1,37 +1,19 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
-import { adjustSavePlugin, sourceStampPlugin } from './src/lib/adjust/devSavePlugin';
+import { geekpresent } from './src/lib/vite';
+import site from './geekpresent.config';
 
-// Absolute site base URL for SEO/social metadata (og:url, og:image, canonical,
-// sitemap). Consistent with the other GEEKPRESENT_* build vars in svelte.config.js.
-//   - UNSET            -> the project's GitHub Pages URL (the default deploy target).
-//   - set but EMPTY (`GEEKPRESENT_SITE_URL=`) -> no base URL, so the SEO layer OMITS
-//     every absolute-only tag instead of emitting a broken/relative one.
-//   - set to a URL     -> use it verbatim (e.g. a custom domain).
-// In-page ASSET paths stay relative regardless — only metadata URLs use this.
-const DEFAULT_SITE_URL = 'https://nawaman.github.io/GeekPresent';
-const rawSiteUrl = process.env.GEEKPRESENT_SITE_URL;
-const SITE_URL = (rawSiteUrl === undefined ? DEFAULT_SITE_URL : rawSiteUrl)
-	.trim()
-	.replace(/\/+$/, ''); // trim a trailing slash for clean joins
+// The blog's settings live in geekpresent.config.ts. GEEKPRESENT_SITE_URL, when set,
+// still overrides its siteUrl per build ('' omits every absolute-only SEO tag).
 
 export default defineConfig({
 	plugins: [
-		// Dev-only: the stamp that lets ADJUST SAVE follow a Block into the component
-		// it lives in. FIRST, ahead of sveltekit(): the Svelte compiler is also an
-		// `enforce: 'pre'` plugin, and within one tier order wins — after it, this
-		// would see compiled JS instead of markup and stamp nothing.
-		sourceStampPlugin(),
-		sveltekit(),
-		// Dev-only: ADJUST SAVE (Block patches) and ViewSource SAVE (full +page.svelte).
-		adjustSavePlugin()
+		// Settings, the source stamp and the dev-only SAVE endpoints. FIRST, ahead of
+		// sveltekit(): the stamp must see markup before the Svelte compiler does (both
+		// are `enforce: 'pre'`, and within one tier order wins). See src/lib/vite.ts.
+		geekpresent(site),
+		sveltekit()
 	],
-	// Inject the base URL as a string literal into BOTH the SSR/prerender output and
-	// the client bundle, so prerendered pages carry absolute metadata with no
-	// runtime process.env. Read via $lib/seo/config.ts.
-	define: {
-		__GEEKPRESENT_SITE_URL__: JSON.stringify(SITE_URL)
-	},
 	server: {
 		host: '0.0.0.0',
 		// Don't recurse the file-watcher into pnpm's content-addressed store or the

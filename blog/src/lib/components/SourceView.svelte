@@ -73,7 +73,7 @@
 			route: location.pathname,
 			path: filePath,
 			source,
-			language: 'html',
+			language: 'svelte',
 			canSave: get(canSave)
 		});
 		if (!win) {

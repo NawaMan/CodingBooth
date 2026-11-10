@@ -17,9 +17,11 @@
   (from a tile → search, from search → the focused tile); Escape clears a query
   before it closes the overlay.
 
-  Phase 1 also offers EDIT DECK (dev only): add a slide (scaffold + pages.ts) or
-  unlist one. Static hosts show the control and refuse with NOT ALLOWED — same
-  bargain as ADJUST SAVE. See specs/DECK-EDIT-1.md.
+  It also offers EDIT DECK (dev only): add a slide (scaffold + pages.ts), and per
+  tile ✎ rename (title and/or path — links to it are rewritten), ⧉ duplicate, and
+  × remove (unlist, or delete the folder too). Static hosts show the control and
+  refuse with NOT ALLOWED — same bargain as ADJUST SAVE. See specs/DECK-EDIT-1.md
+  and specs/DECK-EDIT-2.md.
 
   The tiles are LIVE: each is the real prerendered slide in an <iframe> at `?clean`
   (chrome off), rendered at native canvas size and CSS-scaled to fit its box — the
@@ -52,7 +54,11 @@
 		canEditDeck,
 		overviewEditMode,
 		addPage,
-		removePage
+		removePage,
+		duplicatePage,
+		renamePage,
+		slideRefs,
+		type SlideRef
 	} from '$lib/stores/pageEdit';
 	import {
 		slugifyStem,
@@ -283,6 +289,13 @@
 
 	// ── EDIT DECK state ──────────────────────────────────────────────────────────
 	let showAddForm = false;
+	/** What the slide form is doing: a new slide, or renaming / copying `formSource`. */
+	let formMode: 'add' | 'rename' | 'duplicate' = 'add';
+	let formSource = '';
+	/** The tile × was pressed on — the remove dialog is open while this is set. */
+	let removeTarget: { path: string; title: string } | null = null;
+	let removeRefs: SlideRef[] = [];
+	let removeRefsLoading = false;
 	let addTitle = '';
 	let addPath = '';
 	let addTemplate: PageTemplate = 'content';
@@ -341,6 +354,7 @@
 
 	function close() {
 		showAddForm = false;
+		removeTarget = null;
 		overviewEditMode.set(false);
 		statusMsg = '';
 		pendingOpenPath = '';
@@ -350,6 +364,7 @@
 
 	function leaveEdit() {
 		showAddForm = false;
+		removeTarget = null;
 		statusMsg = '';
 		pendingOpenPath = '';
 		overviewEditMode.set(false);
@@ -383,6 +398,9 @@
 			return;
 		}
 		if (!$overviewEditMode) overviewEditMode.set(true);
+		formMode = 'add';
+		formSource = '';
+		removeTarget = null;
 		addTitle = '';
 		addPath = 'slide.html';
 		addTemplate = 'content';
@@ -394,33 +412,136 @@
 		statusMsg = '';
 	}
 
+	function openRenameForm(tilePath: string, tileTitle: string) {
+		if (!$canEditDeck) {
+			flashNotAllowed();
+			return;
+		}
+		formMode = 'rename';
+		formSource = tilePath;
+		removeTarget = null;
+		addTitle = tileTitle;
+		addPath = tilePath;
+		// Renaming the title must not quietly move the folder: the path changes only
+		// when the author types in it.
+		pathTouched = true;
+		pendingOpenPath = '';
+		showAddForm = true;
+		statusMsg = '';
+	}
+
+	function openDuplicateForm(tilePath: string, tileTitle: string) {
+		if (!$canEditDeck) {
+			flashNotAllowed();
+			return;
+		}
+		formMode = 'duplicate';
+		formSource = tilePath;
+		removeTarget = null;
+		addTitle = `${tileTitle} (copy)`;
+		addPath = `${slugifyStem(addTitle)}.html`;
+		pathTouched = false;
+		openAfterAdd = true;
+		pendingOpenPath = '';
+		showAddForm = true;
+		statusMsg = '';
+	}
+
+	function submitForm() {
+		if (formMode === 'rename') submitRename();
+		else if (formMode === 'duplicate') submitDuplicate();
+		else submitAdd();
+	}
+
+	/** Shared checks for every write: capability, deck, a usable path and title. */
+	function formInputs(): { path: string; title: string } | null {
+		if (!$canEditDeck) {
+			flashNotAllowed();
+			return null;
+		}
+		if (!deck) {
+			statusKind = 'error';
+			statusMsg = 'No deck name — cannot write pages.ts.';
+			return null;
+		}
+		const path = normalizeSlidePath(addPath);
+		if (!path) {
+			statusKind = 'error';
+			statusMsg = 'Path must look like my-slide.html (lowercase, hyphens).';
+			return null;
+		}
+		const title = addTitle.trim();
+		if (!title) {
+			statusKind = 'error';
+			statusMsg = 'Title is required.';
+			return null;
+		}
+		return { path, title };
+	}
+
+	async function submitRename() {
+		const inputs = formInputs();
+		if (!inputs) return;
+		const from = formSource;
+		busy = true;
+		statusKind = 'info';
+		statusMsg = 'Renaming…';
+		const res = await renamePage({ deck, path: from, newPath: inputs.path, title: inputs.title });
+		busy = false;
+		if (res.error) {
+			statusKind = 'error';
+			statusMsg = res.error;
+			return;
+		}
+		showAddForm = false;
+		// Standing on the slide whose folder just moved: its old URL is gone, so follow it.
+		if (inputs.path !== from && from === currentPath) {
+			jump(inputs.path, currentNumber);
+			return;
+		}
+		const n = res.updated?.length ?? 0;
+		statusKind = 'ok';
+		statusMsg =
+			inputs.path === from
+				? `Renamed ${from}`
+				: `Renamed ${from} → ${inputs.path}${n ? ` · links updated in ${n} file${n === 1 ? '' : 's'}` : ''}`;
+	}
+
+	async function submitDuplicate() {
+		const inputs = formInputs();
+		if (!inputs) return;
+		const goOpen = openAfterAdd;
+		const from = formSource;
+		busy = true;
+		statusKind = 'info';
+		statusMsg = 'Duplicating…';
+		const res = await duplicatePage({ deck, path: from, newPath: inputs.path, title: inputs.title });
+		busy = false;
+		if (res.error) {
+			statusKind = 'error';
+			statusMsg = res.error;
+			return;
+		}
+		showAddForm = false;
+		const number = (allTiles.find((t) => t.path === from)?.number ?? currentNumber) + 1;
+		if (goOpen) {
+			jump(inputs.path, number);
+			return;
+		}
+		statusKind = 'ok';
+		statusMsg = `Duplicated ${from} → ${inputs.path}`;
+		pendingOpenPath = inputs.path;
+	}
+
 	function cancelAddForm() {
 		showAddForm = false;
 		statusMsg = '';
 	}
 
 	async function submitAdd() {
-		if (!$canEditDeck) {
-			flashNotAllowed();
-			return;
-		}
-		if (!deck) {
-			statusKind = 'error';
-			statusMsg = 'No deck name — cannot write pages.ts.';
-			return;
-		}
-		const path = normalizeSlidePath(addPath);
-		if (!path) {
-			statusKind = 'error';
-			statusMsg = 'Path must look like my-slide.html (lowercase, hyphens).';
-			return;
-		}
-		const title = addTitle.trim();
-		if (!title) {
-			statusKind = 'error';
-			statusMsg = 'Title is required.';
-			return;
-		}
+		const inputs = formInputs();
+		if (!inputs) return;
+		const { path, title } = inputs;
 		const goOpen = openAfterAdd;
 		busy = true;
 		statusKind = 'info';
@@ -457,6 +578,8 @@
 		jump(path, currentNumber + 1);
 	}
 
+	/** × on a tile: open the remove dialog (Unlist / Delete files / Cancel) and look
+	    up which slides link here, so a delete is never a surprise. */
 	async function confirmRemove(tilePath: string, tileTitle: string) {
 		if (!$canEditDeck) {
 			flashNotAllowed();
@@ -467,25 +590,49 @@
 			statusMsg = 'No deck name — cannot write pages.ts.';
 			return;
 		}
-		const ok = browser
-			? window.confirm(
-					`Remove “${tileTitle}” (${tilePath}) from the deck?\n\n` +
-						`This unlists it from pages.ts only — the slide folder stays on disk.`
-				)
-			: false;
-		if (!ok) return;
+		showAddForm = false;
+		statusMsg = '';
+		removeTarget = { path: tilePath, title: tileTitle };
+		removeRefs = [];
+		removeRefsLoading = true;
+		const refs = await slideRefs(deck, tilePath);
+		// The dialog may have moved on (cancelled, or another ×) while this was in flight.
+		if (removeTarget?.path !== tilePath) return;
+		removeRefs = refs;
+		removeRefsLoading = false;
+	}
+
+	function cancelRemove() {
+		removeTarget = null;
+	}
+
+	async function doRemove(deleteFiles: boolean) {
+		if (!removeTarget) return;
+		const { path: tilePath } = removeTarget;
 		busy = true;
 		statusKind = 'info';
-		statusMsg = 'Removing…';
-		const res = await removePage({ deck, path: tilePath });
+		statusMsg = deleteFiles ? 'Deleting…' : 'Removing…';
+		const res = await removePage({ deck, path: tilePath, deleteFiles });
 		busy = false;
 		if (res.error) {
 			statusKind = 'error';
 			statusMsg = res.error;
 			return;
 		}
+		removeTarget = null;
+		// A deleted slide you are standing on has no page left: step to a neighbour.
+		if (deleteFiles && tilePath === currentPath) {
+			const i = allTiles.findIndex((t) => t.path === tilePath);
+			const next = allTiles[i + 1] ?? allTiles[i - 1];
+			if (next) {
+				jump(next.path, next.number);
+				return;
+			}
+		}
 		statusKind = 'ok';
-		statusMsg = `Removed ${tilePath} from the deck — waiting for reload…`;
+		statusMsg = deleteFiles
+			? `Deleted ${tilePath} — waiting for reload…`
+			: `Removed ${tilePath} from the deck — waiting for reload…`;
 	}
 
 	function jump(path: string, number: number) {
@@ -493,6 +640,7 @@
 		overviewOpen.set(false);
 		overviewEditMode.set(false);
 		showAddForm = false;
+		removeTarget = null;
 		const direction = currentNumber > 0 && number < currentNumber ? 'back' : 'forward';
 		// In the presenter console, keep `?present` so the pick lands back in the
 		// console. The AUDIENCE window is never touched by opening/browsing this grid
@@ -516,6 +664,11 @@
 			if (showAddForm) {
 				event.preventDefault();
 				cancelAddForm();
+				return;
+			}
+			if (removeTarget) {
+				event.preventDefault();
+				cancelRemove();
 				return;
 			}
 			if ($overviewEditMode) {
@@ -578,6 +731,7 @@
 	$: if (browser && !$overviewOpen) {
 		overviewEditMode.set(false);
 		showAddForm = false;
+		removeTarget = null;
 		focusedNumber = 0;
 		query = '';
 	}
@@ -719,7 +873,7 @@
 					class:flash={!!editFlash}
 					on:click|stopPropagation={toggleEdit}
 					title={editFlashTip || ($canEditDeck
-						? ($overviewEditMode ? 'Leave edit mode (E)' : 'Add or remove slides (E)')
+						? ($overviewEditMode ? 'Leave edit mode (E)' : 'Add, rename, duplicate or remove slides (E)')
 						: 'Edit deck only works in vite dev')}
 					aria-pressed={$overviewEditMode}
 					aria-keyshortcuts="e"
@@ -731,7 +885,7 @@
 				</button>
 				<span class="head-hint">
 					{#if $overviewEditMode}
-						ADD · + between · × unlist · <kbd>E</kbd> done · <kbd>Esc</kbd>
+						ADD · + between · ✎ rename · ⧉ duplicate · × remove · <kbd>E</kbd> done · <kbd>Esc</kbd>
 					{:else}
 						arrows move · <kbd>Tab</kbd> filter · <kbd>↵</kbd> select · <kbd>Space</kbd> current · <kbd>Esc</kbd>
 					{/if}
@@ -745,9 +899,11 @@
 			<div class="add-form-wrap" on:click|stopPropagation on:keydown|stopPropagation>
 			<form
 				class="add-form"
-				on:submit|preventDefault={submitAdd}
+				on:submit|preventDefault={submitForm}
 			>
-				<div class="add-form-title">Add slide</div>
+				<div class="add-form-title">
+					{#if formMode === 'rename'}Rename {formSource}{:else if formMode === 'duplicate'}Duplicate {formSource}{:else}Add slide{/if}
+				</div>
 				<label>
 					<span>Title</span>
 					<input
@@ -771,6 +927,7 @@
 						spellcheck="false"
 					/>
 				</label>
+				{#if formMode === 'add'}
 				<label>
 					<span>Template</span>
 					<select bind:value={addTemplate} disabled={busy}>
@@ -787,17 +944,63 @@
 						{/each}
 					</select>
 				</label>
+				{/if}
+				{#if formMode === 'rename'}
+				<p class="add-form-note">
+					A new path moves the folder and rewrites links to it under <code>src/routes</code>.
+				</p>
+				{:else}
 				<label class="add-form-check">
 					<input type="checkbox" bind:checked={openAfterAdd} disabled={busy} />
-					<span>Open after adding</span>
+					<span>Open after {formMode === 'duplicate' ? 'duplicating' : 'adding'}</span>
 				</label>
+				{/if}
 				<div class="add-form-actions">
 					<button type="button" class="form-btn ghost" on:click={cancelAddForm} disabled={busy}>
 						Cancel
 					</button>
-					<button type="submit" class="form-btn" disabled={busy}>Add</button>
+					<button type="submit" class="form-btn" disabled={busy}>
+						{formMode === 'rename' ? 'Rename' : formMode === 'duplicate' ? 'Duplicate' : 'Add'}
+					</button>
 				</div>
 			</form>
+			</div>
+		{/if}
+
+		{#if removeTarget}
+			<!-- svelte-ignore a11y_no_static_element_interactions — stopPropagation keeps a
+			     click inside from closing the scrim; Esc / the buttons are the keyboard path. -->
+			<div class="add-form-wrap" on:click|stopPropagation on:keydown|stopPropagation>
+			<div class="add-form remove-dialog" role="alertdialog" aria-label="Remove {removeTarget.title}">
+				<div class="add-form-title">Remove “{removeTarget.title}” ({removeTarget.path})?</div>
+				<p class="add-form-note">
+					<b>Unlist</b> drops it from <code>pages.ts</code> and keeps the folder.
+					<b>Delete files</b> also removes the folder and everything in it — files git
+					does not track cannot be recovered.
+				</p>
+				<p class="add-form-note refs">
+					{#if removeRefsLoading}
+						Checking for links to it…
+					{:else if removeRefs.length}
+						Still linked from:
+						{#each removeRefs as r, i}{i ? ', ' : ' '}<code>{r.file}</code>{/each}
+						— those links will break.
+					{:else}
+						No other slide links to it.
+					{/if}
+				</p>
+				<div class="add-form-actions">
+					<button type="button" class="form-btn ghost" on:click={cancelRemove} disabled={busy}>
+						Cancel
+					</button>
+					<button type="button" class="form-btn" on:click={() => doRemove(false)} disabled={busy}>
+						Unlist
+					</button>
+					<button type="button" class="form-btn danger" on:click={() => doRemove(true)} disabled={busy}>
+						Delete files
+					</button>
+				</div>
+			</div>
 			</div>
 		{/if}
 
@@ -854,16 +1057,32 @@
 						{/if}
 					</button>
 					{#if $overviewEditMode}
-						<button
-							type="button"
-							class="tile-remove"
-							title="Remove from deck (unlist)"
-							aria-label="Remove {tile.title} from deck"
-							disabled={busy}
-							on:click|stopPropagation={() => confirmRemove(tile.path, tile.title)}
-						>
-							×
-						</button>
+						<span class="tile-tools">
+							<button
+								type="button"
+								class="tile-tool tile-rename"
+								title="Rename (title and/or path)"
+								aria-label="Rename {tile.title}"
+								disabled={busy}
+								on:click|stopPropagation={() => openRenameForm(tile.path, tile.title)}
+							>✎</button>
+							<button
+								type="button"
+								class="tile-tool tile-duplicate"
+								title="Duplicate"
+								aria-label="Duplicate {tile.title}"
+								disabled={busy}
+								on:click|stopPropagation={() => openDuplicateForm(tile.path, tile.title)}
+							>⧉</button>
+							<button
+								type="button"
+								class="tile-tool tile-remove"
+								title="Remove (unlist or delete)"
+								aria-label="Remove {tile.title} from deck"
+								disabled={busy}
+								on:click|stopPropagation={() => confirmRemove(tile.path, tile.title)}
+							>×</button>
+						</span>
 						<!-- Insert gutter: sits in the gap AFTER this tile (between pages). -->
 						<button
 							type="button"
@@ -1189,6 +1408,18 @@
 		color: var(--overview-page-dim-fg, #8A99A8);
 		border: 1px solid var(--overview-page-tile-border, #2B3440);
 	}
+	.form-btn.danger {
+		/* cosmetic */
+		background: #c0392b;
+	}
+	.add-form-note {
+		/* functional */
+		grid-column: 1 / -1;
+		margin: 0;
+		/* cosmetic */
+		color: var(--overview-page-dim-fg, #8A99A8);
+		font-size: 0.9em;
+	}
 	.form-btn:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
@@ -1320,12 +1551,17 @@
 		color: var(--overview-page-current-border, #00B356);
 	}
 
-	.tile-remove {
+	.tile-tools {
 		/* functional */
 		position: absolute;
 		top: 0.35em;
 		right: 0.35em;
 		z-index: 2;
+		display: flex;
+		gap: 0.3em;
+	}
+	.tile-tool {
+		/* functional */
 		cursor: pointer;
 		/* cosmetic */
 		width: 1.7em;
@@ -1342,9 +1578,19 @@
 		justify-content: center;
 		padding: 0;
 	}
-	.tile-remove:hover {
+	.tile-tool:hover,
+	.tile-tool:focus-visible {
+		border-color: var(--overview-page-tile-hover-border, #2980B9);
+		color: var(--overview-page-tile-hover-border, #2980B9);
+	}
+	.tile-remove:hover,
+	.tile-remove:focus-visible {
 		border-color: #c0392b;
 		color: #e74c3c;
+	}
+	.tile-tool:disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
 	}
 
 	/* Between-page insert: a small + in the column gap after each tile. */

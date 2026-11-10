@@ -93,6 +93,10 @@ export interface LayoutChange {
 	    slide's existing draw import, or added as a new one — without this, an
 	    inserted <Polyline> is a build error rather than a shape. */
 	insertImports?: string[];
+	/** The module those names come from, as a slide spells it — '$lib/draw' here,
+	    '@geekpresent/core/draw' in a project using the package (the browser sends its
+	    own setting, $lib/config/site). Omitted means '$lib/draw'. */
+	importFrom?: string;
 	/** Delete the matched element outright (mode 5). Needs `before` (and `name`
 	    when it has one) to find it; `after` is ignored. */
 	remove?: boolean;
@@ -666,15 +670,19 @@ function markupEnd(source: string): number {
 	return m ? m.index : source.length;
 }
 
-/** Merge the names an inserted shape needs into the slide's `$lib/draw` import,
+/** Merge the names an inserted shape needs into the slide's draw import (`from`),
     adding the import (and, if need be, the whole `<script>` block) when it has none.
     Names already imported are left alone, and the merged list is sorted so repeated
     freezes converge on one stable line rather than churning the import on every save. */
-function ensureDrawImports(source: string, names: string[]): string {
+function ensureDrawImports(source: string, names: string[], from: string = '$lib/draw'): string {
 	const want = names.filter((n) => n);
 	if (want.length === 0) return source;
+	// It arrives in a request and is written into the slide, so only a plain module
+	// specifier gets through; anything else falls back rather than breaking the file.
+	if (!/^[\w$@][\w$@./-]*$/.test(from)) from = '$lib/draw';
 
-	const existing = /import\s*\{([^}]*)\}\s*from\s*(['"])\$lib\/draw\2\s*;?/.exec(source);
+	const mod =from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	const existing = new RegExp(`import\\s*\\{([^}]*)\\}\\s*from\\s*(['"])${mod}\\2\\s*;?`).exec(source);
 	if (existing) {
 		const have = existing[1]
 			.split(',')
@@ -683,11 +691,11 @@ function ensureDrawImports(source: string, names: string[]): string {
 		const missing = want.filter((n) => !have.includes(n));
 		if (missing.length === 0) return source;
 		const merged = [...have, ...missing].sort().join(', ');
-		const line = `import { ${merged} } from '$lib/draw';`;
+		const line = `import { ${merged} } from '${from}';`;
 		return source.slice(0, existing.index) + line + source.slice(existing.index + existing[0].length);
 	}
 
-	const line = `import { ${[...want].sort().join(', ')} } from '$lib/draw';`;
+	const line = `import { ${[...want].sort().join(', ')} } from '${from}';`;
 	const scriptClose = source.indexOf('</script>');
 	if (scriptClose !== -1) {
 		// Last line inside the script block, indented like whatever is already there.
@@ -713,7 +721,7 @@ function applyInsert(source: string, change: LayoutChange): InsertResult {
 		.filter(Boolean);
 	if (tags.length === 0) return { ok: false, reason: 'not-found' }; // nothing to add
 
-	const withImports = ensureDrawImports(source, change.insertImports ?? []);
+	const withImports = ensureDrawImports(source, change.insertImports ?? [], change.importFrom);
 	const closes = drawCloseTags(withImports);
 	if (closes.length > 1) return { ok: false, reason: 'ambiguous' };
 

@@ -68,6 +68,24 @@ export async function highlightToHtml(code: string, lang = 'css'): Promise<strin
 	return highlighter.codeToHtml(code, { lang: useLang, theme: THEME });
 }
 
+/**
+ * The TextMate grammar for `lang` and the colour map its tokens index into — what a
+ * LINE tokenizer needs (Monaco's, see monacoShiki.ts). Rejects when `lang` can't load.
+ *
+ * `setTheme` is marked internal in Shiki's types; it is the only way to get the
+ * colour map, and it is what `codeToTokens` itself calls first. With one theme in
+ * this app, every caller sets the same one, so the indices never move.
+ */
+export async function grammarFor(lang: string) {
+	const highlighter = await getHighlighter();
+	await ensureLang(highlighter, lang);
+	if (!highlighter.getLoadedLanguages().includes(lang)) {
+		throw new Error(`no Shiki grammar for "${lang}"`);
+	}
+	const { colorMap } = highlighter.setTheme(THEME);
+	return { grammar: highlighter.getLanguage(lang), colorMap };
+}
+
 /** One themed token: the text run and the colour Shiki assigned it. `bold`/`italic`
     are decoded from Shiki's `fontStyle` bitmask so a caller can render them without
     importing Shiki's own types. */

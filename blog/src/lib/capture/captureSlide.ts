@@ -126,8 +126,8 @@ async function serializeSheet(sheet: CSSStyleSheet, depth: number): Promise<stri
 
 /** Rewrite every `url(...)` in the CSS to a `data:` URI — fonts above all.
 
-    The deck's own faces are same-origin (`/fonts/*.woff`) and Google's are on `fonts.gstatic.com`
-    (which serves CORS headers), so both are fetchable. This is the step that decides whether
+    The deck's own faces are same-origin (bundled from `styles/fonts/`) and Google's are on
+    `fonts.gstatic.com` (which serves CORS headers), so both are fetchable. This is the step that decides whether
     the PNG is typeset in the deck's fonts or in the browser's default serif. */
 async function inlineCssUrls(css: string): Promise<string> {
 	const urls = new Set<string>();

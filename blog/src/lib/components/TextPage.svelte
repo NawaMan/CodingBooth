@@ -50,10 +50,10 @@
 	let klass: string = '';
 	export { klass as class };
 
-	/** Ask search engines not to index this Text. Set on an UNPUBLISHED post: the
-	    route still prerenders and is reachable at its exact URL, but it is absent
-	    from the sitemap and every link list, so noindex is the last piece that
-	    keeps a draft out of search results. Dropped when the post is published. */
+	/** Ask search engines not to index this Text. Set on an UNPUBLISHED page: the route still
+	    prerenders and is reachable at its exact URL, but left out of `textRoutes` and every link
+	    list it is absent from the sitemap, so noindex is the last piece that keeps a draft out of
+	    search results. Drop it when the page is published. */
 	export let noindex = false;
 </script>
 

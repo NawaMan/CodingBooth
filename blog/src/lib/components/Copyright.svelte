@@ -1,6 +1,9 @@
 <script lang="ts">
-    export let name    = 'GeekPresent';
-    export let url     = 'https://nawaman.net/projects#geekpresent';
+    import { SITE } from '$lib/config/site';
+
+    // Defaults are the project's `copyright` setting (geekpresent.config.ts).
+    export let name    = SITE.copyright.name;
+    export let url     = SITE.copyright.url;
     export let year    = new Date().getFullYear().toString();
 </script>
 

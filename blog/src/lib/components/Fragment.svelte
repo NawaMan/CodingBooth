@@ -23,14 +23,9 @@
   gracefully (and prerenders) when there's no build to drive it.
 -->
 <script lang="ts">
-	import { getContext } from 'svelte';
-	import { writable, type Readable } from 'svelte/store';
-
-	type Ctx = {
-		register: () => number;
-		revealed: Readable<number>;
-		defaults: Readable<{ transition: string; duration: number }>;
-	};
+	import { onDestroy, onMount } from 'svelte';
+	import { writable } from 'svelte/store';
+	import { getStepsContext } from '$lib/utils/stepsContext';
 
 	/** Element to render. Match the surrounding markup (li/p/span/…). */
 	export let tag: string = 'div';
@@ -50,7 +45,7 @@
 
 	// May be used standalone (no Steps): fall back to a permanently-shown stub so
 	// the content still renders and prerenders.
-	const ctx = getContext<Ctx>('steps');
+	const ctx = getStepsContext();
 
 	const index = ctx ? ctx.register() : 0;
 	const revealed = ctx ? ctx.revealed : writable(Infinity);
@@ -59,6 +54,35 @@
 	$: mode = transition ?? ($defaults?.transition ?? 'fade');
 	$: dur = duration ?? ($defaults?.duration ?? 0.35);
 	$: shown = $revealed > index;
+
+	// Busy while it fades IN, so <StepDots> cues the next Space only once it has landed.
+	// Not on the first render (a build opening part-way, or spent, shows at once), and
+	// not on the way out — a peeled Fragment is not a step still playing.
+	const token = {};
+	let mounted = false;
+	let busyTimer: ReturnType<typeof setTimeout> | undefined;
+	let was: boolean | undefined;
+	$: if (mounted && ctx) onShown(shown);
+	function onShown(now: boolean) {
+		if (was === now) return;
+		const appearing = was === false && now;
+		was = now;
+		clearTimeout(busyTimer);
+		if (appearing && mode !== 'none' && dur > 0) {
+			ctx!.setBusy(token, true);
+			busyTimer = setTimeout(() => ctx!.setBusy(token, false), dur * 1000);
+		} else {
+			ctx!.setBusy(token, false);
+		}
+	}
+	onMount(() => {
+		was = shown;
+		mounted = true;
+	});
+	onDestroy(() => {
+		clearTimeout(busyTimer);
+		ctx?.setBusy(token, false);
+	});
 </script>
 
 <svelte:element

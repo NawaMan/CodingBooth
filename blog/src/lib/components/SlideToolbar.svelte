@@ -32,6 +32,7 @@
 	import { chromeArmed, moreMenuOpen, closeMoreMenu, toggleMoreMenu } from '$lib/stores/chromeArm';
 	import { overviewOpen } from '$lib/stores/overviewOpen';
 	import SizeMode from './SizeMode.svelte';
+	import { GEEKPRESENT_VERSION } from '$lib/version';
 	import type { Snippet } from 'svelte';
 
 	interface Props {
@@ -52,6 +53,8 @@
 		kioskItem?: Snippet;
 		/** Hide / show both bars (bare chrome) menu row. */
 		barsItem?: Snippet;
+		/** Draw / hide the live pointer menu row. */
+		pointerItem?: Snippet;
 	}
 
 	let {
@@ -64,7 +67,8 @@
 		printBtn,
 		sourceItem,
 		kioskItem,
-		barsItem
+		barsItem,
+		pointerItem
 	}: Props = $props();
 
 	/** The menu root — so an outside click can tell "in the drop" from "elsewhere". */
@@ -235,7 +239,7 @@
 				aria-haspopup="menu"
 				aria-expanded={$moreMenuOpen}
 				aria-label="More tools (M)"
-				title="More — Overview, Kiosk, Bars, Capture, Print, Source, Edit"
+				title="More — Overview, Kiosk, Bars, Pointer, Capture, Print, Source, Edit · GeekPresent {GEEKPRESENT_VERSION}"
 				onclick={() => toggleMoreMenu()}>☰ (M)</button
 			>
 			<!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -258,11 +262,17 @@
 				{@render overviewBtn?.()}
 				{@render kioskItem?.()}
 				{@render barsItem?.()}
+				{@render pointerItem?.()}
 				<div class="menu-sep" role="separator"></div>
 				{@render captureItem?.()}
 				{@render printBtn?.()}
 				<div class="menu-sep" role="separator"></div>
 				{@render sourceItem?.()}
+				<!-- The quiet "about": which GeekPresent this is. Plain text, not a row — the
+				     arrow-key roving walks button.annot-tool only, so it is skipped, and a click on
+				     it only puts the menu away. Version from $lib/version (stamped when packed). -->
+				<div class="menu-sep" role="separator"></div>
+				<div class="menu-about" role="none">GeekPresent {GEEKPRESENT_VERSION}</div>
 			</div>
 		</div>
 	</div>
@@ -462,6 +472,18 @@
 		margin: 0.3em 0.45em;
 		background: var(--annot-bar-edge, rgba(255, 255, 255, 0.16));
 		flex: none;
+	}
+
+	/* The version footer: small and dim, so it is there when looked for and nothing more. */
+	.menu-about {
+		padding: 0.15em 0.9em 0.3em;
+		font-size: 0.72em;
+		letter-spacing: 0.02em;
+		color: var(--annot-bar-fg, #fff);
+		opacity: 0.45;
+		white-space: nowrap;
+		user-select: text;
+		cursor: default;
 	}
 
 	/* Dropdown rows: icon · label (mnemonic underline) · trail (kbd / chevron / external).

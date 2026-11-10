@@ -85,6 +85,7 @@
 	export let minSize = 24;
 	/** Dev-only source stamp (see Block) — forwarded so SAVE finds this tag in the file that wrote it. */
 	export let __file = '';
+	export let __line = 0;
 	export let bounds: 'canvas' | 'none' = 'canvas';
 
 	/** Inline style for the root element, applied last so it wins. */
@@ -110,7 +111,7 @@
 
 <Block
 	{x} {y} {width} {height} {name} {z} {grid} {aspect} {canvasWidth} {canvasHeight} {minSize} {bounds}
-	{style} {id} class={klass} {__file}
+	{style} {id} class={klass} {__file} {__line}
 	tag="ImageBlock"
 	attrs={snippetAttrs(alt, fit, live)}
 	selfClose

@@ -9,7 +9,6 @@ import {
 	isStaleInk,
 	INK_STALE_AFTER_MS,
 	type AnnotateMode,
-	type AnnotateTool,
 	type BarPos,
 	type InkBook,
 	type SlideInk,
@@ -103,17 +102,16 @@ export const slideInk = derived([inkBook, inkPath], ([$book, $path]) => $book[$p
     be surprised by what the next gesture does. */
 export const annotateTool = writable<AnnotateMode>('pen');
 
-/** The colour the next stroke uses, per tool. `null` means "whatever the theme says" —
-    the `--annot-*` role token — which is the default, so ink follows a re-theme instead
-    of freezing today's hex into every mark. Only an explicit pick overrides it. */
-export const annotateColor = writable<Record<AnnotateTool, string | null>>({
-	pen: null,
-	line: null,
-	arrow: null,
-	rectangle: null,
-	highlighter: null,
-	text: null
-});
+/** The colour the next mark uses — ONE colour, shared by every tool, chosen independently of
+    the tool: pick red and the pen, line, arrow, rectangle, highlighter and text all draw red
+    until another swatch is picked. (It used to be remembered per tool, so changing tool
+    silently changed the colour — not how a speaker thinks of a palette.)
+
+    `null` means "whatever the theme says", and is the default: each tool then paints with its
+    OWN `--annot-*` role token — the pen's orange, the highlighter's yellow — so ink follows a
+    re-theme instead of freezing today's hex into every mark. Only an explicit pick overrides
+    it, and an explicit pick overrides it for every tool. */
+export const annotateColor = writable<string | null>(null);
 
 /** Where the speaker parked the pen's bar, in canvas px — `null` until they drag it, so an
     un-dragged bar stores no coordinates and a deck is free to move the default later.
