@@ -700,7 +700,7 @@ absent from `main` is `variants/base/setups/libs/git-on-token.sh`, deleted on pu
 
 ---
 
-## Data modes (0.82.0 line)
+## Data modes (0.83.0 line)
 
 One extension per data item (`+config`, `+history`, `+bookmarks`, `+pkg-cache`, `+data`, …), with
 where it lives — bind / seed / cache / shared / volume — chosen as its value (`neovim+config:shared`).
