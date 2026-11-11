@@ -251,10 +251,13 @@ func addNeutralGitMounts(builder *appctx.AppContextBuilder, codePath string, dry
 	if !ok {
 		return true
 	}
-	dir, err := gitPointerDir(codePath)
+	dir, inBooth, err := gitPointerDir(codePath, builder.BoothDir)
 	var files []string
 	if err == nil {
 		files, err = writeGitPointers(dir, plan.pointers)
+	}
+	if !dryrun {
+		pruneGitPointerCache(codePath)
 	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Warning: could not write git's pointer files for the booth (%v); "+
@@ -270,6 +273,11 @@ func addNeutralGitMounts(builder *appctx.AppContextBuilder, codePath string, dry
 	}
 	for i, p := range plan.pointers {
 		builder.CommonArgs.Append(ilist.NewList[string]("-v", files[i]+":"+p.containerPath+":ro"))
+	}
+	if inBooth {
+		// The folder is inside the workspace mount, writable there; an edit in place would change
+		// what git reads through the bind mounts above.
+		builder.CommonArgs.Append(ilist.NewList[string]("-v", dir+":"+gitPointersContainerDir+":ro"))
 	}
 	if plan.hasWorktrees {
 		for _, env := range gitWorktreeEnv {
@@ -303,10 +311,40 @@ func reportHealedAdds(files []string, err error) {
 	}
 }
 
-// gitPointerDir is where the generated pointer files for a booth on codePath are kept:
-// <cache>/codingbooth/git-pointers/<hash of codePath>/, <cache> being $XDG_CACHE_HOME, else
-// ~/.cache. They stay there, because a booth restarted later mounts them again.
-func gitPointerDir(codePath string) (string, error) {
+// GitPointersTmpName is the folder, in .booth/.tmp/, that holds the generated pointer files. It is
+// kept when .booth/.tmp/ is emptied: a booth mounts these files, and one already running on the
+// same folder, or restarted later, still needs them.
+const GitPointersTmpName = "git-pointers"
+
+// gitPointersContainerDir is where a booth sees .booth/.tmp/git-pointers/ (read-only).
+const gitPointersContainerDir = containerCodePath + "/.booth/.tmp/" + GitPointersTmpName
+
+// gitPointersCodePathFile, in a cache folder, names the folder it is for, so that
+// pruneGitPointerCache can remove it once that folder is gone.
+const gitPointersCodePathFile = ".code-path"
+
+// gitPointerDir is where the generated pointer files for a booth on codePath are kept. They stay
+// there, because a booth restarted later mounts them again.
+//
+// When the workspace has its own .booth/ (and boothDir, the booth folder in use, is not another
+// one), that is .booth/.tmp/git-pointers/, and inBooth is true: the files go when the folder does.
+// Otherwise -- booth never makes a .booth/ -- it is <cache>/codingbooth/git-pointers/<hash of
+// codePath>/, <cache> being $XDG_CACHE_HOME, else ~/.cache.
+func gitPointerDir(codePath, boothDir string) (dir string, inBooth bool, err error) {
+	local := filepath.Join(codePath, ".booth")
+	if isDir(local) && (boothDir == "" || samePath(boothDir, local)) {
+		return filepath.Join(local, ".tmp", GitPointersTmpName), true, nil
+	}
+	root, err := gitPointerCacheRoot()
+	if err != nil {
+		return "", false, err
+	}
+	sum := sha256.Sum256([]byte(codePath))
+	return filepath.Join(root, hex.EncodeToString(sum[:8])), false, nil
+}
+
+// gitPointerCacheRoot is <cache>/codingbooth/git-pointers.
+func gitPointerCacheRoot() (string, error) {
 	cacheHome := os.Getenv("XDG_CACHE_HOME")
 	if cacheHome == "" {
 		home, err := os.UserHomeDir()
@@ -315,8 +353,43 @@ func gitPointerDir(codePath string) (string, error) {
 		}
 		cacheHome = filepath.Join(home, ".cache")
 	}
+	return filepath.Join(cacheHome, "codingbooth", "git-pointers"), nil
+}
+
+// pruneGitPointerCache removes the cache folders whose workspace folder no longer exists. No booth
+// can need them: a stopped one cannot start without its folder, and a running one keeps the files
+// it mounted. A folder that predates gitPointersCodePathFile is left alone, except the one for
+// codePath, which is labelled here so that it goes once codePath does.
+func pruneGitPointerCache(codePath string) {
+	root, err := gitPointerCacheRoot()
+	if err != nil {
+		return
+	}
 	sum := sha256.Sum256([]byte(codePath))
-	return filepath.Join(cacheHome, "codingbooth", "git-pointers", hex.EncodeToString(sum[:8])), nil
+	if own := filepath.Join(root, hex.EncodeToString(sum[:8])); isDir(own) {
+		_ = writeIfChanged(filepath.Join(own, gitPointersCodePathFile), codePath+"\n")
+	}
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		return
+	}
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		dir := filepath.Join(root, entry.Name())
+		data, err := os.ReadFile(filepath.Join(dir, gitPointersCodePathFile))
+		if err != nil {
+			continue
+		}
+		folder := strings.TrimSpace(firstLine(string(data)))
+		if folder == "" || !filepath.IsAbs(folder) {
+			continue
+		}
+		if _, err := os.Lstat(folder); os.IsNotExist(err) {
+			_ = os.RemoveAll(dir)
+		}
+	}
 }
 
 // writeGitPointers writes each pointer's content into dir and returns the host file for each, in

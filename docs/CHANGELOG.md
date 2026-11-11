@@ -10,6 +10,15 @@ This file contains a list of changes for each released version.
   does not allow become `-`: `NPQAA238` builds `npqaa238:<hash>`. A `--name` you pass is used as
   typed.
 
+- **git's pointer files for a worktree booth live in the workspace's `.booth/`.** A booth on a
+  repository with worktrees generates small read-only files that point git at paths inside the
+  booth. They were kept in `~/.cache/codingbooth/git-pointers/`, one folder per workspace, and never
+  removed. A workspace with a `.booth/` now keeps them in `.booth/.tmp/git-pointers/` (kept when
+  `.booth/.tmp/` is emptied, read-only in the booth), so they go when the folder does. One without
+  a `.booth/` still uses the cache, and a cache folder is now removed once its workspace folder is
+  gone. Cache folders written by older versions are only cleaned up after a booth starts on their
+  folder again; with no booth running, `~/.cache/codingbooth/git-pointers/` is safe to delete.
+
 ## 0.82.0
 
 - **`setup bash` survives a GitHub outage.** Bash 3.2.48–3.2.57 come prebuilt from a GitHub
