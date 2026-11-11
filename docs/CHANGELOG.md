@@ -4,6 +4,15 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth dash`: a live table of every booth, with actions.** `booth list` that refreshes itself
+  and that you can act on: pick a row, then `enter` opens a shell (exiting it comes back to the
+  table), `s` starts, `x` stops, `r` restarts and `d` removes. Stop, restart and remove ask first,
+  since the table holds other sessions' booths too. See
+  [booth lifecycle → dash](BOOTH_LIFECYCLE.md#dash).
+- **Listing booths takes one engine call, not one per booth.** `booth list` and every command that
+  finds a booth by name inspected each booth separately; they now inspect all of them at once, and
+  fall back to one at a time only when a booth disappears mid-listing.
+
 - **`booth build` works in a folder whose name has capitals.** With no `--name`, build used the
   folder name as the image's repository name, and Docker refused it before building anything
   ("repository name must be lowercase"). The default name is now lowercased, and characters Docker

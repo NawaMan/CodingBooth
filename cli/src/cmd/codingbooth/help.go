@@ -90,6 +90,7 @@ USAGE:
   %s express [options] [-- command ...]        (run from arguments; ignore the project's .booth)
   %s [options] [--] [command ...]              (default action: run)
   %s list [--running|--stopped] [--json|--name-only]  (list booth-managed containers)
+  %s dash [--engine <e>] [--interval <d>]      (live table of every booth; start/stop/shell from a row)
   %s start [--name <n>|--code <path>] [-d]     (start a stopped keep-alive booth)
   %s stop [--name <n>] [-f] [--timeout <n>]       (stop a running booth)
   %s restart [--name <n>] [--timeout <n>]         (restart a running booth)
@@ -338,7 +339,7 @@ EXAMPLES:
   %s --env-file none --variant notebook
 `,
 		s, version,
-		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
+		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
 		s, s, s, s, s, s,
 		s,
 		s, s, s, s, s,
@@ -568,6 +569,30 @@ OPTIONS:
   --json          Print a JSON array, including [] for no matches
   --engine <docker|podman|apple>  Select the engine explicitly
 `, s, s)
+}
+
+func showHelpDash() {
+	s := scriptName()
+	fmt.Printf(`%s dash — a live table of every booth on this machine
+
+USAGE:  %s dash [options]
+
+Lists the booths of every engine (as %s list does), refreshed every couple of
+seconds. Every booth is shown, including ones other sessions started, so stop,
+restart and remove ask first.
+
+KEYS:
+  ↑/↓ (j/k)  Select a booth          enter  Open a shell in it (back here on exit)
+  s          Start it                x      Stop it
+  r          Restart it              d      Remove it (and its home volume)
+  R          Refresh now             q      Quit
+
+OPTIONS:
+  --engine <docker|podman|apple>  Show only this engine's booths
+  --interval <duration>           Time between refreshes (default 2s, e.g. 5s)
+
+Needs a terminal; for scripts use %s list --json.
+`, s, s, s, s)
 }
 
 func showHelpWorktree() {
@@ -1042,6 +1067,8 @@ func dispatchHelp(args []string, version string) {
 			showHelpExpress()
 		case "list":
 			showHelpList()
+		case "dash":
+			showHelpDash()
 		case "worktree":
 			showHelpWorktree()
 		case "start":
