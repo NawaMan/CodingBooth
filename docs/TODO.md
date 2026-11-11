@@ -276,6 +276,27 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
       `--select` appears to reuse the header's selection (`sync-apt-snapshot.sh` runs
       `config --no-tui --overwrite --apt-snapshot` with no `--select` every release) — verify, then
       fix the help line (`config.go`, `--no-tui`) if it is stale.
+- [ ] **`booth config` writes a header it then refuses: `${VAR}` on the container side of a publish.**
+      Found in the Todos project with 0.82.0 (2026-11-10). It publishes each checkout's own port
+      at the same number inside and out: `--publish 127.0.0.1:${TODOS_PORT:-8090}:${TODOS_PORT:-8090}`.
+      - `--expose` with that value is refused: `container port must be a number (only the host side
+        may use ${NAME:-…})` (`validateExposeEnvHost`, `cli/src/cmd/codingbooth/init.go`).
+      - The same tokens given as `--set run-args=--publish --set run-args=…` are accepted. The next
+        run reads the long-form `--publish` back from `config.toml` as
+        `--expose 127.0.0.1:${TODOS_PORT:-8090}:${TODOS_PORT:-8090}` and writes it into the
+        `# Configured by:` header. The run after that parses the header and stops on the same
+        error. So the booth is configurable twice, then never again.
+      Todos worked around it with a fixed container port (`127.0.0.1:${TODOS_PORT:-8090}:8090`) and
+      a justfile change. Its own `booth config` now round-trips.
+      Approach (pick one, make reading and validating agree):
+      - allow `${NAME:-digits}` on the container side, at least when it is the same expression as
+        the host side (docker expands both the same way at start); or
+      - keep refusing it, but make the read-back keep such a run-arg as a `--set run-args` token
+        instead of turning it into an `--expose` that cannot be parsed.
+      Test: a round trip on a `config.toml` that holds the publish above, run three times; the third
+      run must succeed and change nothing.
+      Side note for the item above: a `--no-tui` re-run without `--select` does reuse the header's
+      selection (confirmed in this run), so the `--no-tui` "requires --select" help line is stale.
 - [x] **Persist browser bookmarks & history** — largely done (see [BOOTH_SHARED.md](BOOTH_SHARED.md)).
       - Local full profiles: `+profile-cache` (cache; Chrome/Chromium → `~/.chrome-data`) and
         `--persist-home`.
