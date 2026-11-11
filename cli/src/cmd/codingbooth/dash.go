@@ -69,8 +69,11 @@ func runDash(_ string) {
 			out, err := exec.Command(self, args...).CombinedOutput()
 			return string(out), err
 		},
-		Command:  func(args []string) *exec.Cmd { return exec.Command(self, args...) },
-		Open:     booth.OpenURLInBrowser,
+		Command: func(args []string) *exec.Cmd { return exec.Command(self, args...) },
+		Open:    booth.OpenURLInBrowser,
+		Ports: func(b lifecycle.Booth) ([]lifecycle.ExposedPort, error) {
+			return lifecycle.ExposedPorts(b.Name, b.Engine)
+		},
 		Interval: *interval,
 		Home:     home,
 	}

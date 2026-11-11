@@ -27,6 +27,7 @@ const (
 	keyRemove  = "d"
 	keyShell   = "enter"
 	keyOpen    = "o"
+	keyPorts   = "p"
 	keyRefresh = "R"
 )
 
@@ -40,6 +41,8 @@ type Deps struct {
 	Command func(args []string) *exec.Cmd
 	// Open opens a URL in the host's browser.
 	Open func(url string) error
+	// Ports lists a running booth's exposed ports (`booth expose list`).
+	Ports func(booth lifecycle.Booth) ([]lifecycle.ExposedPort, error)
 	// Interval between refreshes.
 	Interval time.Duration
 	// Home is shortened to ~ in code paths ("" leaves paths as they are).
@@ -68,8 +71,18 @@ type model struct {
 	status    string
 	statusErr bool
 	confirm   *pendingConfirm
+	picker    *portPicker
 
 	width, height int
+}
+
+// portPicker is the list of a booth's exposed ports shown by p, to open one.
+type portPicker struct {
+	booth   lifecycle.Booth
+	ports   []lifecycle.ExposedPort // TCP ports with a host binding
+	cursor  int
+	loading bool
+	err     error
 }
 
 type pendingConfirm struct {
@@ -95,6 +108,11 @@ type (
 		name string
 		plan plan
 		err  error
+	}
+	portsMsg struct {
+		key   string
+		ports []lifecycle.ExposedPort
+		err   error
 	}
 	openDoneMsg struct {
 		name string
@@ -181,6 +199,22 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m.refresh(true)
 
+	case portsMsg:
+		if m.picker == nil || boothKey(m.picker.booth) != msg.key {
+			return m, nil // closed, or opened again for another booth
+		}
+		picker := *m.picker
+		picker.loading = false
+		picker.err = msg.err
+		picker.ports = nil
+		for _, port := range msg.ports {
+			if port.URL() != "" {
+				picker.ports = append(picker.ports, port)
+			}
+		}
+		m.picker = &picker
+		return m, nil
+
 	case openDoneMsg:
 		if msg.err != nil {
 			m.setStatus(msg.err.Error(), true)
@@ -204,6 +238,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
+	if m.picker != nil {
+		return m.handlePickerKey(key)
+	}
 	if m.confirm != nil {
 		pending := *m.confirm
 		m.confirm = nil
@@ -232,6 +269,22 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 	case keyRefresh:
 		m.setStatus("", false)
 		return m.refresh(true)
+	case keyPorts:
+		booth, ok := m.current()
+		if !ok {
+			return m, nil
+		}
+		if !booth.Running() {
+			m.setStatus(booth.Name+" is not running; use s to start it.", false)
+			return m, nil
+		}
+		m.setStatus("", false)
+		m.picker = &portPicker{booth: booth, loading: true}
+		ports, key := m.deps.Ports, boothKey(booth)
+		return m, func() tea.Msg {
+			list, err := ports(booth)
+			return portsMsg{key: key, ports: list, err: err}
+		}
 	case keyStart, keyStop, keyRestart, keyRemove, keyShell, keyOpen:
 		booth, ok := m.current()
 		if !ok {
@@ -278,6 +331,30 @@ func (m model) execute(booth lifecycle.Booth, p plan) (tea.Model, tea.Cmd) {
 		output, err := run(p.Args)
 		return actionDoneMsg{key: key, name: name, plan: p, output: output, err: err}
 	}
+}
+
+func (m model) handlePickerKey(key string) (tea.Model, tea.Cmd) {
+	picker := *m.picker
+	switch key {
+	case "esc", "q", keyPorts:
+		m.picker = nil
+		return m, nil
+	case "ctrl+c":
+		return m, tea.Quit
+	case "up", "k":
+		picker.cursor = max(0, picker.cursor-1)
+	case "down", "j":
+		picker.cursor = max(0, min(len(picker.ports)-1, picker.cursor+1))
+	case "enter", keyOpen:
+		if picker.cursor >= len(picker.ports) {
+			return m, nil
+		}
+		url := picker.ports[picker.cursor].URL()
+		m.picker = nil
+		return m.execute(picker.booth, plan{Verb: "open", URL: url, Done: "Opened " + url + " in your browser."})
+	}
+	m.picker = &picker
+	return m, nil
 }
 
 func (m *model) setStatus(status string, isErr bool) {

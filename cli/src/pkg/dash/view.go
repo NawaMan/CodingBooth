@@ -26,7 +26,9 @@ var (
 	warnStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("220"))
 )
 
-const helpLine = "↑/↓ move · enter shell · o open · s start · x stop · r restart · d remove · R refresh · q quit"
+const pickerHelpLine = "↑/↓ select · enter open · esc back"
+
+const helpLine = "↑/↓ move · enter shell · o open · p ports · s start · x stop · r restart · d remove · R refresh · q quit"
 
 // chromeLines is everything but the table rows: title, blank, header, and
 // below the table a blank, the status line and the help line.
@@ -57,6 +59,14 @@ func (m model) View() string {
 	var b strings.Builder
 	b.WriteString(m.titleLine())
 	b.WriteString("\n\n")
+
+	if m.picker != nil {
+		b.WriteString(m.pickerView())
+		b.WriteString("\n")
+		b.WriteString(m.statusLine() + "\n")
+		b.WriteString(dimStyle.Render(m.fit(pickerHelpLine)))
+		return b.String()
+	}
 
 	switch {
 	case !m.loaded && m.listErr != nil:
@@ -109,6 +119,59 @@ func (m model) statusLine() string {
 		return errorStyle.Render(m.fit(m.status))
 	}
 	return m.fit(m.status)
+}
+
+// pickerView lists the ports p offers to open.
+func (m model) pickerView() string {
+	p := m.picker
+	var b strings.Builder
+	b.WriteString(headerStyle.Render("Ports of "+p.booth.Name) + "\n")
+	switch {
+	case p.loading:
+		b.WriteString(dimStyle.Render("Reading ports…") + "\n")
+		return b.String()
+	case p.err != nil:
+		b.WriteString(errorStyle.Render(m.fit("Could not read ports: "+p.err.Error())) + "\n")
+		return b.String()
+	case len(p.ports) == 0:
+		b.WriteString(dimStyle.Render(p.booth.Name+" publishes no TCP port.") + "\n")
+		return b.String()
+	}
+
+	cells := make([][]string, 0, len(p.ports)+1)
+	cells = append(cells, []string{"CONTAINER", "URL", "KIND", "SOURCE"})
+	for _, port := range p.ports {
+		kind := port.Kind
+		if !port.Live {
+			kind += " (not bound)"
+		}
+		cells = append(cells, []string{fmt.Sprint(port.ContainerPort), port.URL(), kind, port.Source})
+	}
+	widths := make([]int, 4)
+	for _, row := range cells {
+		for i, cell := range row {
+			widths[i] = max(widths[i], lipgloss.Width(cell))
+		}
+	}
+	line := func(row []string) string {
+		parts := make([]string, len(row))
+		for i, cell := range row {
+			parts[i] = cell + strings.Repeat(" ", widths[i]-lipgloss.Width(cell))
+		}
+		return m.fit(strings.TrimRight(strings.Join(parts, "  "), " "))
+	}
+	b.WriteString("  " + headerStyle.Render(line(cells[0])) + "\n")
+	for i, row := range cells[1:] {
+		switch {
+		case i == p.cursor:
+			b.WriteString(cursorStyle.Render("› "+line(row)) + "\n")
+		case !p.ports[i].Live:
+			b.WriteString("  " + dimStyle.Render(line(row)) + "\n")
+		default:
+			b.WriteString("  " + line(row) + "\n")
+		}
+	}
+	return b.String()
 }
 
 // column is one table column: its header and each booth's cell.
