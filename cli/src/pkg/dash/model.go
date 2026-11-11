@@ -10,6 +10,7 @@
 package dash
 
 import (
+	"context"
 	"os/exec"
 	"strings"
 	"time"
@@ -28,6 +29,7 @@ const (
 	keyShell   = "enter"
 	keyOpen    = "o"
 	keyPorts   = "p"
+	keyMessage = "m"
 	keyRefresh = "R"
 )
 
@@ -39,6 +41,10 @@ type Deps struct {
 	Run func(args []string) (string, error)
 	// Command builds the booth binary command for an interactive action.
 	Command func(args []string) *exec.Cmd
+	// Message runs `booth message send` with args, capturing its output. A
+	// question waits for the booth user's answer, so it can run for minutes;
+	// ctx is cancelled when the dashboard exits, to not leave it behind.
+	Message func(ctx context.Context, args []string) (string, error)
 	// Open opens a URL in the host's browser.
 	Open func(url string) error
 	// Ports lists a running booth's exposed ports (`booth expose list`).
@@ -59,6 +65,7 @@ type model struct {
 	offset   int    // first row shown when the table is taller than the screen
 	selected string // key of the selected booth, kept across refreshes
 	busy     map[string]string
+	asking   map[string]int // questions sent and not yet answered, per booth
 
 	loading     bool // a snapshot is in flight
 	fetchSeq    int  // the latest snapshot asked for
@@ -72,6 +79,11 @@ type model struct {
 	statusErr bool
 	confirm   *pendingConfirm
 	picker    *portPicker
+	compose   *compose
+
+	// ctx ends with the dashboard; questions still waiting are cancelled.
+	ctx    context.Context
+	cancel context.CancelFunc
 
 	width, height int
 }
@@ -114,6 +126,12 @@ type (
 		ports []lifecycle.ExposedPort
 		err   error
 	}
+	messageDoneMsg struct {
+		key, name string
+		kind      messageKind
+		output    string
+		err       error
+	}
 	openDoneMsg struct {
 		name string
 		plan plan
@@ -130,7 +148,9 @@ func newModel(deps Deps) model {
 	if deps.Now == nil {
 		deps.Now = time.Now
 	}
-	return model{deps: deps, busy: map[string]string{}, loading: true, fetchSeq: 1}
+	ctx, cancel := context.WithCancel(context.Background())
+	return model{deps: deps, busy: map[string]string{}, asking: map[string]int{},
+		loading: true, fetchSeq: 1, ctx: ctx, cancel: cancel}
 }
 
 func (m model) Init() tea.Cmd {
@@ -215,6 +235,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.picker = &picker
 		return m, nil
 
+	case messageDoneMsg:
+		return m.messageDone(msg)
+
 	case openDoneMsg:
 		if msg.err != nil {
 			m.setStatus(msg.err.Error(), true)
@@ -232,6 +255,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.refresh(true)
 
 	case tea.KeyMsg:
+		if m.compose != nil {
+			return m.handleComposeKey(msg)
+		}
 		return m.handleKey(msg.String())
 	}
 	return m, nil
@@ -285,6 +311,19 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 			list, err := ports(booth)
 			return portsMsg{key: key, ports: list, err: err}
 		}
+	case keyMessage:
+		booth, ok := m.current()
+		if !ok {
+			return m, nil
+		}
+		if !booth.Running() {
+			m.setStatus(booth.Name+" is not running; use s to start it.", false)
+			return m, nil
+		}
+		m.setStatus("", false)
+		m.compose = &compose{booth: booth}
+		m.clampOffset()
+		return m, nil
 	case keyStart, keyStop, keyRestart, keyRemove, keyShell, keyOpen:
 		booth, ok := m.current()
 		if !ok {

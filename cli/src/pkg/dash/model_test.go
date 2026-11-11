@@ -5,6 +5,7 @@
 package dash
 
 import (
+	"context"
 	"errors"
 	"os/exec"
 	"reflect"
@@ -42,6 +43,10 @@ type fakeDeps struct {
 	runErr   error
 	runOut   string
 	snapshot []lifecycle.Booth
+
+	messaged   [][]string
+	messageOut string
+	messageErr error
 }
 
 func (f *fakeDeps) deps() Deps {
@@ -54,6 +59,10 @@ func (f *fakeDeps) deps() Deps {
 		Command: func(args []string) *exec.Cmd {
 			f.execed = append(f.execed, args)
 			return exec.Command("true")
+		},
+		Message: func(_ context.Context, args []string) (string, error) {
+			f.messaged = append(f.messaged, args)
+			return f.messageOut, f.messageErr
 		},
 		Open: func(url string) error {
 			f.opened = append(f.opened, url)
@@ -96,6 +105,24 @@ func keyMsg(key string) tea.KeyMsg {
 		return tea.KeyMsg{Type: tea.KeyUp}
 	case "esc":
 		return tea.KeyMsg{Type: tea.KeyEsc}
+	case "tab":
+		return tea.KeyMsg{Type: tea.KeyTab}
+	case "shift+tab":
+		return tea.KeyMsg{Type: tea.KeyShiftTab}
+	case "left":
+		return tea.KeyMsg{Type: tea.KeyLeft}
+	case "right":
+		return tea.KeyMsg{Type: tea.KeyRight}
+	case "backspace":
+		return tea.KeyMsg{Type: tea.KeyBackspace}
+	case "home":
+		return tea.KeyMsg{Type: tea.KeyHome}
+	case "ctrl+s":
+		return tea.KeyMsg{Type: tea.KeyCtrlS}
+	case "ctrl+u":
+		return tea.KeyMsg{Type: tea.KeyCtrlU}
+	case " ":
+		return tea.KeyMsg{Type: tea.KeySpace, Runes: []rune{' '}}
 	}
 	return tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(key)}
 }

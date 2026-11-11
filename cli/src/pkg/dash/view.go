@@ -28,7 +28,7 @@ var (
 
 const pickerHelpLine = "↑/↓ select · enter open · esc back"
 
-const helpLine = "↑/↓ move · enter shell · o open · p ports · s start · x stop · r restart · d remove · R refresh · q quit"
+const helpLine = "↑/↓ move · enter shell · o open · p ports · m message · s start · x stop · r restart · d remove · R refresh · q quit"
 
 // chromeLines is everything but the table rows: title, blank, header, and
 // below the table a blank, the status line and the help line.
@@ -40,7 +40,11 @@ func (m model) tableRows() int {
 	if m.height <= 0 {
 		return max(1, len(m.booths))
 	}
-	return max(1, m.height-chromeLines-len(m.warnings))
+	rows := m.height - chromeLines - len(m.warnings)
+	if m.compose != nil {
+		rows -= composeLines
+	}
+	return max(1, rows)
 }
 
 // clampOffset scrolls just enough to keep the cursor on screen.
@@ -82,9 +86,15 @@ func (m model) View() string {
 	for _, warning := range m.warnings {
 		b.WriteString(warnStyle.Render(m.fit(warning)) + "\n")
 	}
+	help := helpLine
+	if m.compose != nil {
+		b.WriteString("\n")
+		b.WriteString(m.composeView())
+		help = composeHelpLine
+	}
 	b.WriteString("\n")
 	b.WriteString(m.statusLine() + "\n")
-	b.WriteString(dimStyle.Render(m.fit(helpLine)))
+	b.WriteString(dimStyle.Render(m.fit(help)))
 	return b.String()
 }
 
@@ -111,6 +121,9 @@ func (m model) titleLine() string {
 func (m model) statusLine() string {
 	if m.confirm != nil {
 		return confirmStyle.Render(m.fit(m.confirm.plan.Confirm + " [y/N]"))
+	}
+	if m.compose != nil && m.compose.err != "" {
+		return errorStyle.Render(m.fit(m.compose.err))
 	}
 	if m.status == "" {
 		return ""
@@ -207,13 +220,17 @@ func (m model) multiEngine() bool {
 }
 
 func (m model) statusCell(b lifecycle.Booth) string {
-	if state, ok := m.busy[boothKey(b)]; ok {
-		return state
+	state := "Stopped"
+	if busy, ok := m.busy[boothKey(b)]; ok {
+		state = busy
+	} else if b.Running() {
+		state = "Running"
 	}
-	if b.Running() {
-		return "Running"
+	// A question waiting for the booth user's answer.
+	if m.asking[boothKey(b)] > 0 {
+		state += " ?"
 	}
-	return "Stopped"
+	return state
 }
 
 func (m model) table() string {
