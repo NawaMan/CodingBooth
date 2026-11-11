@@ -108,6 +108,7 @@ seconds (`--interval 5s` to change that) and takes `--engine` like the other com
 | --- | --- |
 | `↑`/`↓` (`j`/`k`), `g`/`G` | Select a booth |
 | `enter` | Open a shell in it (`booth shell`); exiting the shell comes back to the dashboard |
+| `o` | Open its page in the browser (`http://localhost:<port>`, `https` for a `--public` booth) |
 | `s` | Start it — a daemon booth in the background, an interactive one attached (as `booth start` does) |
 | `x` | Stop it |
 | `r` | Restart it |

@@ -26,7 +26,7 @@ var (
 	warnStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("220"))
 )
 
-const helpLine = "↑/↓ move · enter shell · s start · x stop · r restart · d remove · R refresh · q quit"
+const helpLine = "↑/↓ move · enter shell · o open · s start · x stop · r restart · d remove · R refresh · q quit"
 
 // chromeLines is everything but the table rows: title, blank, header, and
 // below the table a blank, the status line and the help line.

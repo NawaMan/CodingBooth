@@ -6,7 +6,7 @@ This file contains a list of changes for each released version.
 
 - **`booth dash`: a live table of every booth, with actions.** `booth list` that refreshes itself
   and that you can act on: pick a row, then `enter` opens a shell (exiting it comes back to the
-  table), `s` starts, `x` stops, `r` restarts and `d` removes. Stop, restart and remove ask first,
+  table), `o` opens its page in the browser, `s` starts, `x` stops, `r` restarts and `d` removes. Stop, restart and remove ask first,
   since the table holds other sessions' booths too. See
   [booth lifecycle → dash](BOOTH_LIFECYCLE.md#dash).
 - **Listing booths takes one engine call, not one per booth.** `booth list` and every command that
