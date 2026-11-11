@@ -584,6 +584,7 @@ restart and remove ask first.
 KEYS:
   ↑/↓ (j/k)  Select a booth          enter  Open a shell in it (back here on exit)
   o          Open its page in the browser
+  p          Pick one of its exposed ports (as expose list shows) to open
   s          Start it                x      Stop it
   r          Restart it              d      Remove it (and its home volume)
   R          Refresh now             q      Quit

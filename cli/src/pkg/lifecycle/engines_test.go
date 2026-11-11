@@ -732,3 +732,23 @@ func TestBoothPortFromInspectMarksTLS(t *testing.T) {
 		t.Errorf("port %q tls %v, want 11000 plain", port, tls)
 	}
 }
+
+func TestExposedPortURL(t *testing.T) {
+	for _, c := range []struct {
+		port ExposedPort
+		want string
+	}{
+		{ExposedPort{HostIP: "0.0.0.0", HostPort: 11000, Proto: "tcp", Kind: "front door", ContainerPort: 10000}, "http://localhost:11000"},
+		{ExposedPort{HostIP: "", HostPort: 12443, Proto: "tcp", Kind: "front door", ContainerPort: 10443}, "https://localhost:12443"},
+		{ExposedPort{HostIP: "127.0.0.1", HostPort: 18080, Proto: "tcp", Kind: "tunnel", ContainerPort: 8080}, "http://127.0.0.1:18080"},
+		{ExposedPort{HostIP: "::1", HostPort: 3000, Proto: "tcp"}, "http://[::1]:3000"},
+		{ExposedPort{HostIP: "[::]", HostPort: 3000, Proto: "tcp"}, "http://localhost:3000"},
+		{ExposedPort{HostPort: 10443, Proto: "tcp", Kind: "published", ContainerPort: 10443}, "http://localhost:10443"},
+		{ExposedPort{HostPort: 5353, Proto: "udp"}, ""},
+		{ExposedPort{Proto: "tcp"}, ""},
+	} {
+		if got := c.port.URL(); got != c.want {
+			t.Errorf("%+v: URL = %q, want %q", c.port, got, c.want)
+		}
+	}
+}

@@ -36,6 +36,9 @@ type fakeDeps struct {
 	execed   [][]string
 	opened   []string
 	openErr  error
+	ports    []lifecycle.ExposedPort
+	portsErr error
+	portsFor []string
 	runErr   error
 	runOut   string
 	snapshot []lifecycle.Booth
@@ -55,6 +58,10 @@ func (f *fakeDeps) deps() Deps {
 		Open: func(url string) error {
 			f.opened = append(f.opened, url)
 			return f.openErr
+		},
+		Ports: func(b lifecycle.Booth) ([]lifecycle.ExposedPort, error) {
+			f.portsFor = append(f.portsFor, b.Name+"@"+b.Engine)
+			return f.ports, f.portsErr
 		},
 		Home: "/home/u",
 		Now:  func() time.Time { return testNow },
@@ -87,6 +94,8 @@ func keyMsg(key string) tea.KeyMsg {
 		return tea.KeyMsg{Type: tea.KeyDown}
 	case "up":
 		return tea.KeyMsg{Type: tea.KeyUp}
+	case "esc":
+		return tea.KeyMsg{Type: tea.KeyEsc}
 	}
 	return tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(key)}
 }
@@ -427,4 +436,115 @@ func stripANSI(s string) string {
 		b.WriteByte(s[i])
 	}
 	return b.String()
+}
+
+func TestPortPickerOpensChosenPort(t *testing.T) {
+	f := &fakeDeps{ports: []lifecycle.ExposedPort{
+		{ContainerPort: 10000, HostIP: "0.0.0.0", HostPort: 10000, Proto: "tcp", Kind: "front door", Live: true, Source: "booth front door"},
+		{ContainerPort: 5353, HostPort: 5353, Proto: "udp", Kind: "published", Live: true},
+		{ContainerPort: 8080, HostIP: "127.0.0.1", HostPort: 18080, Proto: "tcp", Kind: "tunnel", Live: true, Source: "booth--expose"},
+	}}
+	m := loaded(f, running("web"))
+
+	m, cmd := press(t, m, "p")
+	if m.picker == nil || !m.picker.loading || cmd == nil {
+		t.Fatalf("p must open a loading picker (picker %+v, cmd %v)", m.picker, cmd != nil)
+	}
+	if !strings.Contains(m.View(), "Reading ports") {
+		t.Errorf("loading not shown:\n%s", m.View())
+	}
+	next, _ := m.Update(cmd())
+	m = next.(model)
+	if !reflect.DeepEqual(f.portsFor, []string{"web@docker"}) {
+		t.Errorf("ports asked for %v", f.portsFor)
+	}
+	if len(m.picker.ports) != 2 {
+		t.Fatalf("picker ports = %+v, want the two TCP ports (UDP has no URL)", m.picker.ports)
+	}
+	view := m.View()
+	for _, want := range []string{"Ports of web", "http://localhost:10000", "http://127.0.0.1:18080", "tunnel", "esc back"} {
+		if !strings.Contains(view, want) {
+			t.Errorf("picker lacks %q:\n%s", want, view)
+		}
+	}
+	if strings.Contains(view, "5353") {
+		t.Errorf("UDP port offered:\n%s", view)
+	}
+
+	m, cmd = press(t, m, "down", "enter")
+	if m.picker != nil || cmd == nil {
+		t.Fatalf("enter must close the picker and open (picker %v)", m.picker != nil)
+	}
+	next, _ = m.Update(cmd())
+	m = next.(model)
+	if !reflect.DeepEqual(f.opened, []string{"http://127.0.0.1:18080"}) {
+		t.Errorf("opened = %v", f.opened)
+	}
+	if m.status != "Opened http://127.0.0.1:18080 in your browser." {
+		t.Errorf("status = %q", m.status)
+	}
+}
+
+func TestPortPickerEscGoesBackWithoutOpening(t *testing.T) {
+	f := &fakeDeps{ports: []lifecycle.ExposedPort{{HostPort: 10000, Proto: "tcp", Live: true}}}
+	m := loaded(f, running("web"))
+	m, cmd := press(t, m, "p")
+	next, _ := m.Update(cmd())
+	m = next.(model)
+
+	// Keys that act on booths do nothing while the picker is up.
+	m, cmd = press(t, m, "x")
+	if m.confirm != nil || cmd != nil || m.picker == nil {
+		t.Errorf("x inside the picker acted (confirm %v, cmd %v, picker %v)", m.confirm, cmd != nil, m.picker != nil)
+	}
+	m, _ = press(t, m, "esc")
+	if m.picker != nil || len(f.opened) != 0 {
+		t.Errorf("esc: picker %v, opened %v", m.picker != nil, f.opened)
+	}
+	if !strings.Contains(m.View(), "NAME") {
+		t.Errorf("table not back:\n%s", m.View())
+	}
+}
+
+func TestPortPickerShowsErrorsAndEmpty(t *testing.T) {
+	f := &fakeDeps{portsErr: errors.New("boom")}
+	m := loaded(f, running("web"))
+	m, cmd := press(t, m, "p")
+	next, _ := m.Update(cmd())
+	if !strings.Contains(next.(model).View(), "Could not read ports: boom") {
+		t.Errorf("view:\n%s", next.(model).View())
+	}
+
+	f = &fakeDeps{}
+	m = loaded(f, running("web"))
+	m, cmd = press(t, m, "p")
+	next, _ = m.Update(cmd())
+	m = next.(model)
+	if !strings.Contains(m.View(), "publishes no TCP port") {
+		t.Errorf("view:\n%s", m.View())
+	}
+	if _, cmd = press(t, m, "enter"); cmd != nil {
+		t.Error("enter on an empty picker did something")
+	}
+}
+
+func TestPortPickerRefusesStoppedBooth(t *testing.T) {
+	f := &fakeDeps{}
+	m := loaded(f, stopped("web"))
+	m, cmd := press(t, m, "p")
+	if m.picker != nil || cmd != nil || !strings.Contains(m.status, "not running") {
+		t.Errorf("picker %v, cmd %v, status %q", m.picker != nil, cmd != nil, m.status)
+	}
+}
+
+// A picker closed before its ports arrive ignores them.
+func TestPortPickerIgnoresLateAnswer(t *testing.T) {
+	f := &fakeDeps{ports: []lifecycle.ExposedPort{{HostPort: 10000, Proto: "tcp"}}}
+	m := loaded(f, running("web"))
+	m, cmd := press(t, m, "p")
+	m, _ = press(t, m, "esc")
+	next, _ := m.Update(cmd())
+	if next.(model).picker != nil {
+		t.Error("a late ports answer reopened the picker")
+	}
 }
