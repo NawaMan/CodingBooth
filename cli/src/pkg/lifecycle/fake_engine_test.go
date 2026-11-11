@@ -60,15 +60,6 @@ func appendCall(env, line string) {
 	file.WriteString(line)
 }
 
-// lastArg is the name an `inspect` call ends with — the shell's `for last; do
-// :; done`.
-func lastArg(args []string) string {
-	if len(args) == 0 {
-		return ""
-	}
-	return args[len(args)-1]
-}
-
 func joinCall(name string, args []string) string {
 	return strings.TrimRight(name+" "+strings.Join(args, " "), " ") + "\n"
 }

@@ -267,6 +267,17 @@ func headlessReason(goos string, wsl bool, display, waylandDisplay string) strin
 	return "this host has no graphical session (DISPLAY and WAYLAND_DISPLAY are unset)"
 }
 
+// OpenURLInBrowser opens url in the host's browser for a caller that is not a
+// booth run (booth dash). It refuses with the reason on a host with no
+// graphical session, as a run does, rather than start a text browser in the
+// caller's terminal.
+func OpenURLInBrowser(url string) error {
+	if reason := browserUnavailable(); reason != "" {
+		return fmt.Errorf("not opening a browser: %s; open %s yourself", reason, url)
+	}
+	return openURL(url)
+}
+
 // openURL hands a URL to whatever opens links on this host.
 //
 // The candidates are tried in order and the first one present on PATH wins, so

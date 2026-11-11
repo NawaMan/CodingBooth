@@ -61,6 +61,8 @@ type managedContainer struct {
 	KeepAlive bool
 	Daemon    bool
 	Port      string
+	// PortTLS: Port is the public TLS front door (container 10443), served over HTTPS.
+	PortTLS bool
 
 	// AppleLowPorts: created with --apple-low-ports (cb.apple-low-ports), so
 	// shell/exec sessions start through booth--as-coder; see coderCommand.
@@ -70,6 +72,9 @@ type managedContainer struct {
 	// it was created by. See staleImageWarning.
 	ImageID  string
 	ImageRef string
+
+	// Version is cb.version: the CodingBooth version that created the booth.
+	Version string
 
 	// SecurityWarning: the settings that let code in the booth reach the host, as recorded when
 	// it was created (hostescape.LabelKey). Printed again whenever the booth is started.
@@ -577,6 +582,16 @@ func managedContainers(engine string, verbose bool) ([]managedContainer, error) 
 
 	names := nonEmptyLines(out)
 	containers := make([]managedContainer, 0, len(names))
+	if batch, ok := inspectManagedContainersBatch(names, flags); ok {
+		for _, container := range batch {
+			container.Engine = engine
+			containers = append(containers, container)
+		}
+		sort.Slice(containers, func(i, j int) bool {
+			return containers[i].Name < containers[j].Name
+		})
+		return containers, nil
+	}
 	for _, name := range names {
 		container, inspectErr := inspectManagedContainer(name, flags)
 		if inspectErr != nil {
@@ -597,6 +612,52 @@ func managedContainers(engine string, verbose bool) ([]managedContainer, error) 
 		return containers[i].Name < containers[j].Name
 	})
 	return containers, nil
+}
+
+// inspectManagedContainersBatch inspects every name in one engine call instead
+// of one call per booth, which is what a dashboard polling every few seconds
+// needs. ok is false when the batch cannot be trusted: the call failed (a booth
+// removed since the listing makes the whole call fail), or the output does not
+// hold exactly one document per name. The caller then inspects one by one,
+// which tells a vanished booth from a real error.
+func inspectManagedContainersBatch(names []string, flags docker.DockerFlags) ([]managedContainer, bool) {
+	if len(names) < 2 {
+		return nil, false
+	}
+	out, err := docker.DockerOutput(flags, "inspect", ilist.NewList(
+		ilist.NewList("--format", "{{json .}}"),
+		ilist.NewList(names...),
+	))
+	if err != nil {
+		return nil, false
+	}
+	return parseInspectBatch(out, names)
+}
+
+// parseInspectBatch is inspectManagedContainersBatch's parsing. Pure for unit tests.
+func parseInspectBatch(out string, names []string) ([]managedContainer, bool) {
+	lines := nonEmptyLines(out)
+	if len(lines) != len(names) {
+		return nil, false
+	}
+	want := make(map[string]bool, len(names))
+	for _, name := range names {
+		want[name] = true
+	}
+	containers := make([]managedContainer, 0, len(lines))
+	for _, line := range lines {
+		var data inspectData
+		if err := json.Unmarshal([]byte(line), &data); err != nil {
+			return nil, false
+		}
+		name := strings.TrimPrefix(data.Name, "/")
+		if !want[name] {
+			return nil, false
+		}
+		delete(want, name)
+		containers = append(containers, containerFromInspect(data, name))
+	}
+	return containers, true
 }
 
 // managedContainersAcross lists the booths of every engine in engines, each
@@ -673,13 +734,19 @@ func inspectManagedContainer(name string, flags docker.DockerFlags) (managedCont
 	if err := json.Unmarshal([]byte(strings.TrimSpace(out)), &data); err != nil {
 		return managedContainer{}, fmt.Errorf("failed to parse docker inspect output for %q: %w", name, err)
 	}
+	return containerFromInspect(data, name), nil
+}
 
+// containerFromInspect reads a booth from one inspect document. fallbackName
+// is used when the document carries no name.
+func containerFromInspect(data inspectData, fallbackName string) managedContainer {
+	name := fallbackName
 	labels := data.Config.Labels
 	if labels == nil {
 		labels = map[string]string{}
 	}
 
-	port := hostPortFromInspect(data)
+	port, tls := boothPortFromInspect(data)
 
 	containerName := strings.TrimPrefix(data.Name, "/")
 	if containerName == "" {
@@ -701,13 +768,15 @@ func inspectManagedContainer(name string, flags docker.DockerFlags) (managedCont
 		KeepAlive: strings.EqualFold(labels["cb.keep-alive"], "true"),
 		Daemon:    strings.EqualFold(labels["cb.daemon"], "true"),
 		Port:      port,
+		PortTLS:   tls,
 
 		AppleLowPorts: strings.EqualFold(labels["cb.apple-low-ports"], "true"),
 		ImageID:       data.Image,
 		ImageRef:      data.Config.Image,
+		Version:       labels["cb.version"],
 
 		SecurityWarning: hostescape.DecodeLabel(labels[hostescape.LabelKey]),
-	}, nil
+	}
 }
 
 // hostBoothDir is the .booth directory this container reads. Express records
@@ -727,21 +796,28 @@ func (container managedContainer) hostBoothDir() string {
 // port. Prefers live NetworkSettings, then HostConfig bindings (works for
 // stopped containers). Checks both 10000/tcp (default) and 10443/tcp (public TLS).
 func hostPortFromInspect(data inspectData) string {
+	port, _ := boothPortFromInspect(data)
+	return port
+}
+
+// boothPortFromInspect is hostPortFromInspect, plus whether the port is the
+// public TLS front door (10443), which is served over HTTPS.
+func boothPortFromInspect(data inspectData) (port string, tls bool) {
 	for _, containerPort := range []string{"10000/tcp", "10443/tcp"} {
 		if bindings, found := data.NetworkSettings.Ports[containerPort]; found && len(bindings) > 0 {
 			if p := strings.TrimSpace(bindings[0].HostPort); p != "" {
-				return p
+				return p, containerPort == "10443/tcp"
 			}
 		}
 	}
 	for _, containerPort := range []string{"10000/tcp", "10443/tcp"} {
 		if bindings, found := data.HostConfig.PortBindings[containerPort]; found && len(bindings) > 0 {
 			if p := strings.TrimSpace(bindings[0].HostPort); p != "" {
-				return p
+				return p, containerPort == "10443/tcp"
 			}
 		}
 	}
-	return ""
+	return "", false
 }
 
 func filterByState(containers []managedContainer, runningOnly bool, stoppedOnly bool) []managedContainer {
