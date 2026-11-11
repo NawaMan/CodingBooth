@@ -194,6 +194,7 @@ func TestCompletionSpecMatchesFlagSets(t *testing.T) {
 	for _, cmd := range []string{"shell", "exec"} {
 		checkGroup(t, "connect.go", []string{cmd}, byName("connect", cmd), nil)
 	}
+	checkGroup(t, "dash.go", []string{"dash"}, flagSetFlags(t, "dash.go")["dash"], nil)
 	checkGroup(t, "copy.go", []string{"cp"}, byName("copy", "cp"), nil)
 	checkGroup(t, "logs.go", []string{"logs"}, byName("logs", "logs"), nil)
 	checkGroup(t, "expose.go", []string{"expose list"}, byName("expose", "expose list"), nil)
