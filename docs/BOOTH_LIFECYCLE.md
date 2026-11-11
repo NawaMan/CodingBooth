@@ -95,6 +95,33 @@ Show all booth-managed containers.
 
 Output includes: name, status, variant, port, code path, daemon, keep-alive, and creation time.
 
+### `dash`
+
+A live, full-screen table of every booth — `booth list` you can act on. It refreshes every 2
+seconds (`--interval 5s` to change that) and takes `--engine` like the other commands.
+
+```bash
+./booth dash
+```
+
+| Key | Does |
+| --- | --- |
+| `↑`/`↓` (`j`/`k`), `g`/`G` | Select a booth |
+| `enter` | Open a shell in it (`booth shell`); exiting the shell comes back to the dashboard |
+| `s` | Start it — a daemon booth in the background, an interactive one attached (as `booth start` does) |
+| `x` | Stop it |
+| `r` | Restart it |
+| `d` | Remove it and its home volume (`--force` when it is running) |
+| `R` | Refresh now |
+| `q` | Quit |
+
+It shows every booth on the machine, including ones other sessions started, so stop, restart and
+remove ask `[y/N]` first — and the question says when a stop also removes the container (a booth
+that is not keep-alive). Each action runs the same `booth` command you would type, naming the booth
+and its engine, so it behaves exactly as it does from the command line. An engine that cannot answer
+shows as a warning line, and the rest of the table stays. `booth dash` needs a terminal; scripts use
+`booth list --json`.
+
 ### `start`
 
 Resume a stopped booth container.
