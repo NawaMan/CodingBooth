@@ -96,3 +96,9 @@ func planFor(key string, booth lifecycle.Booth) (plan, string) {
 	}
 	return plan{}, ""
 }
+
+// messageArgs is `booth message send` for a message to booth.
+func messageArgs(booth lifecycle.Booth, kind messageKind, title, body string) []string {
+	return []string{"message", "send", "--name", booth.Name, "--engine", booth.Engine,
+		"--type", kind.Type, "--title", title, "--body", body}
+}

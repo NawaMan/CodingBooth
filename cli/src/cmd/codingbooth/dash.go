@@ -5,6 +5,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -70,7 +71,11 @@ func runDash(_ string) {
 			return string(out), err
 		},
 		Command: func(args []string) *exec.Cmd { return exec.Command(self, args...) },
-		Open:    booth.OpenURLInBrowser,
+		Message: func(ctx context.Context, args []string) (string, error) {
+			out, err := exec.CommandContext(ctx, self, args...).CombinedOutput()
+			return string(out), err
+		},
+		Open: booth.OpenURLInBrowser,
 		Ports: func(b lifecycle.Booth) ([]lifecycle.ExposedPort, error) {
 			return lifecycle.ExposedPorts(b.Name, b.Engine)
 		},

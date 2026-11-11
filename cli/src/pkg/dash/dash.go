@@ -10,7 +10,10 @@ import (
 
 // Run shows the dashboard until the user quits.
 func Run(deps Deps) error {
-	program := tea.NewProgram(newModel(deps), tea.WithAltScreen())
+	m := newModel(deps)
+	// Questions still waiting for an answer end with the dashboard.
+	defer m.cancel()
+	program := tea.NewProgram(m, tea.WithAltScreen())
 	_, err := program.Run()
 	return err
 }
