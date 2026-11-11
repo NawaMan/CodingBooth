@@ -96,7 +96,12 @@ func fakeEnginesMain(name string, args []string) int {
 			}
 			fmt.Println("[" + strings.Join(docs, ",") + "]")
 		case "inspect":
-			fmt.Println("[" + document(lastArg(args)) + "]")
+			targets := inspectTargets(args)
+			docs := make([]string, 0, len(targets))
+			for _, booth := range targets {
+				docs = append(docs, document(booth))
+			}
+			fmt.Println("[" + strings.Join(docs, ",") + "]")
 		}
 		return 0
 	}
@@ -124,13 +129,35 @@ func fakeEnginesMain(name string, args []string) int {
 		// `printf '%s\n'` with no arguments printed.
 		fmt.Println(strings.Join(append(append([]string{}, engine.Booths...), engine.Vanished...), "\n"))
 	case "inspect":
-		if vanished(lastArg(args)) {
-			fmt.Fprintf(os.Stderr, "Error: No such object: %s\n", lastArg(args))
-			return 1
+		// Like docker: print every booth that exists, and exit 1 if any does not.
+		status := 0
+		for _, booth := range inspectTargets(args) {
+			if vanished(booth) {
+				fmt.Fprintf(os.Stderr, "Error: No such object: %s\n", booth)
+				status = 1
+				continue
+			}
+			fmt.Printf(`{"Name":"/%s","State":{"Status":"running"},"Config":{"Labels":{"cb.managed":"true","cb.variant":"base","cb.version":"1.2.3"}}}`+"\n", booth)
 		}
-		fmt.Printf(`{"Name":"/%s","State":{"Status":"running"},"Config":{"Labels":{"cb.managed":"true","cb.variant":"base"}}}`+"\n", lastArg(args))
+		return status
 	}
 	return 0
+}
+
+// inspectTargets is the container names of an `inspect` call: every argument
+// after the subcommand that is not a --format flag or its value.
+func inspectTargets(args []string) []string {
+	var targets []string
+	for i := 1; i < len(args); i++ {
+		switch {
+		case args[i] == "--format" || args[i] == "-f":
+			i++
+		case strings.HasPrefix(args[i], "--format="):
+		default:
+			targets = append(targets, args[i])
+		}
+	}
+	return targets
 }
 
 func readLog(t *testing.T, log string) string {
@@ -181,6 +208,75 @@ func TestManagedContainersSkipsBoothRemovedDuringListing(t *testing.T) {
 	}
 	if len(got) != 1 || got[0].Name != "web" {
 		t.Errorf("containers = %+v, want only web", got)
+	}
+}
+
+// Every booth is inspected in one engine call, not one call per booth: a
+// dashboard polls this every few seconds.
+func TestManagedContainersInspectsAllBoothsInOneCall(t *testing.T) {
+	log := installFakeEngines(t, map[string]fakeEngine{
+		"docker": {Booths: []string{"web", "api", "lab"}},
+	})
+
+	got, err := managedContainers("docker", false)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	var names []string
+	for _, container := range got {
+		names = append(names, container.Name)
+		if container.Version != "1.2.3" {
+			t.Errorf("%s: Version = %q, want cb.version 1.2.3", container.Name, container.Version)
+		}
+	}
+	if strings.Join(names, ",") != "api,lab,web" {
+		t.Errorf("containers = %v, want api,lab,web", names)
+	}
+	inspects := 0
+	for _, line := range strings.Split(readLog(t, log), "\n") {
+		if strings.HasPrefix(line, "docker inspect") {
+			inspects++
+		}
+	}
+	if inspects != 1 {
+		t.Errorf("inspect calls = %d, want 1\n%s", inspects, readLog(t, log))
+	}
+}
+
+// A vanished booth fails the batched inspect; the one-by-one fallback still
+// returns the others.
+func TestManagedContainersBatchFallsBackWhenBoothVanished(t *testing.T) {
+	installFakeEngines(t, map[string]fakeEngine{
+		"docker": {Booths: []string{"web", "api"}, Vanished: []string{"tmp-gone"}},
+	})
+
+	got, err := managedContainers("docker", false)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(got) != 2 || got[0].Name != "api" || got[1].Name != "web" {
+		t.Errorf("containers = %+v, want api and web", got)
+	}
+}
+
+func TestParseInspectBatch(t *testing.T) {
+	doc := func(name string) string {
+		return `{"Name":"/` + name + `","State":{"Status":"exited"},"Config":{"Labels":{"cb.code-path":"/c/` + name + `"}}}`
+	}
+	got, ok := parseInspectBatch(doc("a")+"\n"+doc("b")+"\n", []string{"a", "b"})
+	if !ok || len(got) != 2 || got[0].Name != "a" || got[1].CodePath != "/c/b" || got[1].State != "exited" {
+		t.Errorf("parseInspectBatch = %+v, %v", got, ok)
+	}
+	for label, out := range map[string]string{
+		"missing document":  doc("a"),
+		"unexpected name":   doc("a") + "\n" + doc("c"),
+		"duplicate name":    doc("a") + "\n" + doc("a"),
+		"not JSON":          doc("a") + "\nnot json",
+		"one line, a table": "a b",
+	} {
+		if _, ok := parseInspectBatch(out, []string{"a", "b"}); ok {
+			t.Errorf("%s: accepted %q", label, out)
+		}
 	}
 }
 
@@ -584,5 +680,24 @@ func TestExecInAPlainBoothStaysCoder(t *testing.T) {
 	calls := readLog(t, log)
 	if !strings.Contains(calls, "container exec -u coder") || strings.Contains(calls, "booth--as-coder") {
 		t.Errorf("a booth without the flag must exec as coder directly:\n%s", calls)
+	}
+}
+
+// Snapshot returns a failing engine's warning as a value, never on stderr.
+func TestSnapshotReturnsWarningsInsteadOfPrinting(t *testing.T) {
+	installFakeEngines(t, map[string]fakeEngine{
+		"docker": {Fail: true},
+		"podman": {Booths: []string{"lab"}},
+	})
+
+	booths, warnings, err := Snapshot("")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(booths) != 1 || booths[0].Name != "lab" || booths[0].Engine != "podman" || !booths[0].Running() {
+		t.Errorf("booths = %+v, want running lab@podman", booths)
+	}
+	if len(warnings) != 1 || !strings.Contains(warnings[0], "could not list docker booths") {
+		t.Errorf("warnings = %q, want one docker warning", warnings)
 	}
 }
