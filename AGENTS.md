@@ -475,7 +475,7 @@ half they all point at — port picking, the `set -euo pipefail` traps, cleanup.
 - **Examples:** `examples/workspaces/` — Boothfile + README, plus a `Justfile` when the sample
   has in-booth commands (`just --list` / `just run`).
 - **Product TODOs:** `docs/TODO.md` plus specialized lists (`docs/TODO-BINARY_COMPANIONS.md`,
-  `docs/TODO-BOOTH-CONFIG.md`, …).
+  `docs/TODO-data.md`, …).
 - **Site / blog:** `site/`, `blog/` (GeekPresent static blog).
 
 When unsure where a feature lives, search setups + templates + `cli/src/pkg` before inventing a new

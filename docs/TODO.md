@@ -204,7 +204,7 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
 - [x] Add Kubernetes (K8s) support.
 - [~] Support non-X11 environments (e.g., Unity, Omarchy, Wayland). -- `desktop-wayland` variant adds a Wayland-native labwc desktop (wlroots) over wayvnc+noVNC. (Real GNOME-on-Wayland attempted via WebRTC but blocked by headless mutter frame emission; parked on branch wip/desktop-gnome-webrtc.)
 - [-] Rename “variant” to “interface” for clarity: -- NOTE: `variant` is good.
-- [ ] Add desktop icons for IDEs (e.g., VS Code, JetBrains IDEs).
+- [x] Add desktop icons for IDEs (e.g., VS Code, JetBrains IDEs).
 - [-] Simplify adding Jupyter Notebooks to desktop environments (auto-add like VS Code).
 - [ ] Evaluate using host disk or tmpfs (RAM) for `$HOME` to improve I/O performance.
 - [ ] Improve container startup speed — some setup tasks run too early (in `STARTUP`).
@@ -219,9 +219,9 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
       `{}` (firebase-tools' unauthenticated stub). Real in-container logins are left
       alone. Credential extension remains a single-file seed mount; no new global
       home-seed mode.
-- [ ] Report container with the same name exists better. Also suggest how to remove the container.
+- [x] Report container with the same name exists better. Also suggest how to remove the container.
 - [ ] SAVE (--keep-alive)/LOAD (continue)/EXPORT (save to file)/IMPORT (load from file) 
-- [ ] Add more tip to 99z-cb-profile.sh - Like those functions after setups (python-info, start-xfce and etc.)
+- [ ] Add more tip to 99z-cb--profile.sh - Like those functions after setups (python-info, start-xfce and etc.)
 - [ ] Consider using ubuntu-keyring instead of debian-archive-keyring.
 - [ ] Add `booth-help` command inside the container to show available tools and commands.
 - [ ] Polish the `booth config` hand-off for hand-written files. The feature itself is **done** and is
@@ -366,8 +366,8 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
       whenever a sibling `templates/` exists? The second is friendlier but means a repo checkout silently
       ignores the released bundle — probably right for this repo, and worth a one-line "using local
       templates from …" notice either way.
-- [ ] **A Rust desktop-app recipe (`@rust-desktop`) and a Rust-aware `booth just-init`** — from P6 in
-      `docs/TODO-0.80.0.md`. Nine Rust desktop-app projects each assembled the same selection and the same
+- [ ] **A Rust desktop-app recipe (`@rust-desktop`) and a Rust-aware `booth just-init`** — from P6 of the 0.80.0
+      proposal. Nine Rust desktop-app projects each assembled the same selection and the same
       Justfile by hand. Recipes as a feature need more design first (2026-10-11), so this is parked until
       then.
       Approach:
@@ -395,8 +395,8 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
         `DISPLAY=${DISPLAY:-:1}` wrapper.
       Open questions: what built-in recipes look like in general (location, listing, versioning) before
       adding the first one; how a recipe chooses a variant; whether P5 lands first.
-- [?] **Support setup scripts copied from a newer CodingBooth (`booth vendor`)**, from P7 in
-      `docs/TODO-0.80.0.md`. Low priority: it matters once many projects pin older versions. Projects
+- [?] **Support setup scripts copied from a newer CodingBooth (`booth vendor`)**, from P7 of the 0.80.0
+      proposal. Low priority: it matters once many projects pin older versions. Projects
       pinned to 0.79.0 needed newer setup scripts, so three were copied into `.booth/setups/` by hand.
       Nothing records where they came from. Once a release catches up they keep overriding the image's
       own scripts without a word, because `.booth/setups/` comes first on `PATH`
@@ -426,6 +426,15 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
       Open questions: whether `booth vendor` also copies whole template folders (so newer extensions
       become selectable) or only scripts; an exact "added in X" would need a `since` column in the
       manifest rather than only "latest has it". Suggested worktree: `worktree/vendor-scripts`.
+- [ ] **GUI apps from `booth exec` on desktop variants** — from P5 of the 0.80.0 proposal. `exec` has
+      no `DISPLAY`, and `exec --run` returns before the X server is up, so every GUI recipe needed a
+      wait loop. Approach: desktop variants set `DISPLAY=:1` in the image environment, and
+      `exec --run` waits for the desktop health check before running the command. The
+      `@rust-desktop` item above depends on it.
+- [ ] **Treat "removal already in progress" as success when tearing down after `exec --run`** — from
+      P9 of the 0.80.0 proposal. It prints a scary-looking warning on almost every run.
+- [ ] **Consider `port = "NEXT"` as the default for desktop variants** — from P9 of the 0.80.0
+      proposal. A fixed 10000 collides as soon as two booths run.
 - [ ] ...
 
 - [x] **i3 on KDE.** `i3--setup.sh` covers XFCE and LXQt; Plasma 5.27 can run another window
@@ -698,7 +707,7 @@ where it lives — bind / seed / cache / shared / volume — chosen as its value
 
 Plan, inventory and phases: **[TODO-data.md](TODO-data.md)**.
 
-- [ ] Implement (0.81.0 is out — ready to start)
+- [ ] Implement (0.82.0 is out; nothing built yet — ready to start)
 
 ---
 
@@ -724,42 +733,42 @@ Add or improve support for these developer tools and environments:
 - [x] `aws-cli`
 - [x] `az-cli` (azure-cli)
 - [x] `bun`
-- [ ] `clang`
-- [ ] `cmake`
+- [x] `clang`
+- [x] `cmake`
 - [x] `conda`
 - [x] `deno`
 - [x] `docker` (dind)
 - [x] `dotnet`
 - [x] `elixir`
 - [x] `erlang`
-- [ ] `gcc`
+- [x] `gcc`
 - [x] `gcloud`
 - [x] `go`
 - [x] `haskell`
-- [ ] `julia`
+- [x] `julia`
 - [x] `k3d`
 - [x] `k9s`
-- [ ] `kafka`
+- [x] `kafka`
 - [x] `kind`
 - [x] `kotlin`
 - [x] `kubectl`
 - [x] `kubectx` + `kubens`
 - [x] `lua`
-- [ ] `make`
-- [ ] `mongodb`
+- [x] `make`
+- [x] `mongodb`
 - [x] `mysql`
 - [x] `nodejs`
-- [ ] `ocaml` — experimental: prebuilt compiler and tools ship; `ocaml-example` exercises them, no `tests/` suite; local source builds are never automatic.
+- [x] `ocaml` — experimental: prebuilt compiler and tools ship; `ocaml-example` exercises them, no `tests/` suite; local source builds are never automatic.
 - [x] `php`
 - [x] `postgres`
-- [ ] `rabbitmq`
-- [ ] `roc`
+- [x] `rabbitmq`
+- [x] `roc`
 - [x] `r-rscript`
 - [x] `ruby`
 - [x] `rust`
-- [ ] `sbt`
+- [x] `sbt`
 - [x] `scala`
-- [ ] `swift`
+- [x] `swift`
 - [x] `zig`
 - [x] `terraform`
 - [x] `helm`
@@ -872,14 +881,14 @@ Add or expand support for additional Jupyter Notebook kernels:
 
 - [ ] **PySpark** – Run Python code interacting with Apache Spark.
 - [ ] **TensorFlow / PyTorch kernels** – Preloaded for machine learning frameworks.
-- [ ] **IRkernel** – R language kernel, popular for data analysis and statistics.
+- [x] **IRkernel** – R language kernel, popular for data analysis and statistics.
 - [ ] **Julia (IJulia)** – High-performance computing and numerical analysis.
 - [ ] **SageMath** – Symbolic mathematics with the SageMath system.
-- [ ] **Octave** – MATLAB-like numerical computing.
-- [ ] **IHaskell** – Interactive Haskell programming.
-- [ ] **C++ (xeus-cling)** – Interactive C++ kernel.
-- [ ] **Node.js (IJavascript)** – Run JavaScript in Jupyter.
-- [ ] **Ruby (IRuby)** – Enable Ruby scripting.
+- [x] **Octave** – MATLAB-like numerical computing.
+- [x] **IHaskell** – Interactive Haskell programming.
+- [x] **C++ (xeus-cling)** – Interactive C++ kernel.
+- [x] **Node.js (IJavascript)** – Run JavaScript in Jupyter.
+- [x] **Ruby (IRuby)** – Enable Ruby scripting.
 - [ ] **SQL** – Execute SQL queries directly within notebooks.
 - [ ] **MATLAB** – Integrate MATLAB code execution.
 - [ ] **Fortran** – Support for scientific computing with Fortran.
