@@ -174,7 +174,7 @@ New items after the stamp start at `0.1.0` and move to `1.0.0` when the author s
 - [x] Attach the manifest to each GitHub release.
 - [x] Docs: `BOOTH_SETUP.md`, `AGENT_TEMPLATE.md` and the `setup-work` skill tell authors to bump
       `cb-version`.
-- [ ] First real run: the 0.80.0 release validates only (0.79.0 has no manifest); the release after
+- [x] First real run: the 0.80.0 release validates only (0.79.0 has no manifest); the release after
       it is the first to compare. Watch that one.
 
 ### Integrity (next, uses the sha256)

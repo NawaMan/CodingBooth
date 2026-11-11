@@ -28,7 +28,6 @@ Only after the user green-lights that proposal do you enter step 6 (build).
 Primary backlog: **`docs/TODO.md`**. Specialized lists may also have open work:
 
 - `docs/TODO-BINARY_COMPANIONS.md`
-- `docs/TODO-BOOTH-CONFIG.md` (often fully closed — still check)
 - Other `docs/TODO-*.md` if present
 
 Don't read every file top to bottom — open items are the `- [ ]` boxes:
