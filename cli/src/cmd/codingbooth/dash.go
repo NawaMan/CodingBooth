@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -79,6 +80,17 @@ func runDash(_ string) {
 		Ports: func(b lifecycle.Booth) ([]lifecycle.ExposedPort, error) {
 			return lifecycle.ExposedPorts(b.Name, b.Engine)
 		},
+		Stats:   lifecycle.Stats,
+		State:   lifecycle.State,
+		Pending: lifecycle.PendingMessages,
+		Logs: func(b lifecycle.Booth, lines int) (string, error) {
+			out, err := exec.Command(self, "logs", "--name", b.Name, "--engine", b.Engine,
+				"-n", strconv.Itoa(lines)).CombinedOutput()
+			if err != nil {
+				return "", fmt.Errorf("%s", lastLine(string(out), err))
+			}
+			return string(out), nil
+		},
 		Interval: *interval,
 		Home:     home,
 	}
@@ -86,4 +98,13 @@ func runDash(_ string) {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+// lastLine is a failed command's last line of output, or err when it printed none.
+func lastLine(out string, err error) string {
+	lines := strings.Split(strings.TrimSpace(out), "\n")
+	if last := strings.TrimSpace(lines[len(lines)-1]); last != "" {
+		return last
+	}
+	return err.Error()
 }

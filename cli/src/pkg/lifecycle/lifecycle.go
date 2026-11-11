@@ -58,9 +58,13 @@ type managedContainer struct {
 	// Empty means <CodePath>/.booth.
 	BoothDir  string
 	CreatedAt string
-	KeepAlive bool
-	Daemon    bool
-	Port      string
+	// StartedAt and FinishedAt are the engine's State times (RFC 3339; Docker
+	// reports 0001-01-01 for "never"). Apple container reports neither.
+	StartedAt  string
+	FinishedAt string
+	KeepAlive  bool
+	Daemon     bool
+	Port       string
 	// PortTLS: Port is the public TLS front door (container 10443), served over HTTPS.
 	PortTLS bool
 
@@ -127,7 +131,9 @@ type inspectData struct {
 	// its digest), Config.Image the name it was created by.
 	Image string `json:"Image"`
 	State struct {
-		Status string `json:"Status"`
+		Status     string `json:"Status"`
+		StartedAt  string `json:"StartedAt"`
+		FinishedAt string `json:"FinishedAt"`
 	} `json:"State"`
 	Config struct {
 		Image  string            `json:"Image"`
@@ -759,16 +765,18 @@ func containerFromInspect(data inspectData, fallbackName string) managedContaine
 	}
 
 	return managedContainer{
-		Name:      containerName,
-		State:     data.State.Status,
-		Variant:   labels["cb.variant"],
-		CodePath:  labels["cb.code-path"],
-		BoothDir:  labels["cb.booth-dir"],
-		CreatedAt: createdAt,
-		KeepAlive: strings.EqualFold(labels["cb.keep-alive"], "true"),
-		Daemon:    strings.EqualFold(labels["cb.daemon"], "true"),
-		Port:      port,
-		PortTLS:   tls,
+		Name:       containerName,
+		State:      data.State.Status,
+		Variant:    labels["cb.variant"],
+		CodePath:   labels["cb.code-path"],
+		BoothDir:   labels["cb.booth-dir"],
+		CreatedAt:  createdAt,
+		StartedAt:  data.State.StartedAt,
+		FinishedAt: data.State.FinishedAt,
+		KeepAlive:  strings.EqualFold(labels["cb.keep-alive"], "true"),
+		Daemon:     strings.EqualFold(labels["cb.daemon"], "true"),
+		Port:       port,
+		PortTLS:    tls,
 
 		AppleLowPorts: strings.EqualFold(labels["cb.apple-low-ports"], "true"),
 		ImageID:       data.Image,
