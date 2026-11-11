@@ -583,6 +583,7 @@ restart and remove ask first.
 
 KEYS:
   ↑/↓ (j/k)  Select a booth          enter  Open a shell in it (back here on exit)
+  o          Open its page in the browser
   s          Start it                x      Stop it
   r          Restart it              d      Remove it (and its home volume)
   R          Refresh now             q      Quit

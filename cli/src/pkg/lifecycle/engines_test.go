@@ -701,3 +701,34 @@ func TestSnapshotReturnsWarningsInsteadOfPrinting(t *testing.T) {
 		t.Errorf("warnings = %q, want one docker warning", warnings)
 	}
 }
+
+func TestBoothURL(t *testing.T) {
+	for _, c := range []struct {
+		booth Booth
+		want  string
+	}{
+		{Booth{Port: "10000"}, "http://localhost:10000"},
+		{Booth{Port: "10443", PortTLS: true}, "https://localhost:10443"},
+		{Booth{}, ""},
+	} {
+		if got := c.booth.URL(); got != c.want {
+			t.Errorf("%+v: URL = %q, want %q", c.booth, got, c.want)
+		}
+	}
+}
+
+func TestBoothPortFromInspectMarksTLS(t *testing.T) {
+	var data inspectData
+	if err := json.Unmarshal([]byte(`{"HostConfig":{"PortBindings":{"10443/tcp":[{"HostPort":"12443"}]}}}`), &data); err != nil {
+		t.Fatal(err)
+	}
+	if port, tls := boothPortFromInspect(data); port != "12443" || !tls {
+		t.Errorf("port %q tls %v, want 12443 over TLS", port, tls)
+	}
+	if err := json.Unmarshal([]byte(`{"NetworkSettings":{"Ports":{"10000/tcp":[{"HostPort":"11000"}]}}}`), &data); err != nil {
+		t.Fatal(err)
+	}
+	if port, tls := boothPortFromInspect(data); port != "11000" || tls {
+		t.Errorf("port %q tls %v, want 11000 plain", port, tls)
+	}
+}

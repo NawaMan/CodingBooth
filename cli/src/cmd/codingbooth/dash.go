@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nawaman/codingbooth/src/pkg/booth"
 	"github.com/nawaman/codingbooth/src/pkg/dash"
 	"github.com/nawaman/codingbooth/src/pkg/docker"
 	"github.com/nawaman/codingbooth/src/pkg/lifecycle"
@@ -69,6 +70,7 @@ func runDash(_ string) {
 			return string(out), err
 		},
 		Command:  func(args []string) *exec.Cmd { return exec.Command(self, args...) },
+		Open:     booth.OpenURLInBrowser,
 		Interval: *interval,
 		Home:     home,
 	}

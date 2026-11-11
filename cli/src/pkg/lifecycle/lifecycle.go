@@ -61,6 +61,8 @@ type managedContainer struct {
 	KeepAlive bool
 	Daemon    bool
 	Port      string
+	// PortTLS: Port is the public TLS front door (container 10443), served over HTTPS.
+	PortTLS bool
 
 	// AppleLowPorts: created with --apple-low-ports (cb.apple-low-ports), so
 	// shell/exec sessions start through booth--as-coder; see coderCommand.
@@ -744,7 +746,7 @@ func containerFromInspect(data inspectData, fallbackName string) managedContaine
 		labels = map[string]string{}
 	}
 
-	port := hostPortFromInspect(data)
+	port, tls := boothPortFromInspect(data)
 
 	containerName := strings.TrimPrefix(data.Name, "/")
 	if containerName == "" {
@@ -766,6 +768,7 @@ func containerFromInspect(data inspectData, fallbackName string) managedContaine
 		KeepAlive: strings.EqualFold(labels["cb.keep-alive"], "true"),
 		Daemon:    strings.EqualFold(labels["cb.daemon"], "true"),
 		Port:      port,
+		PortTLS:   tls,
 
 		AppleLowPorts: strings.EqualFold(labels["cb.apple-low-ports"], "true"),
 		ImageID:       data.Image,
@@ -793,21 +796,28 @@ func (container managedContainer) hostBoothDir() string {
 // port. Prefers live NetworkSettings, then HostConfig bindings (works for
 // stopped containers). Checks both 10000/tcp (default) and 10443/tcp (public TLS).
 func hostPortFromInspect(data inspectData) string {
+	port, _ := boothPortFromInspect(data)
+	return port
+}
+
+// boothPortFromInspect is hostPortFromInspect, plus whether the port is the
+// public TLS front door (10443), which is served over HTTPS.
+func boothPortFromInspect(data inspectData) (port string, tls bool) {
 	for _, containerPort := range []string{"10000/tcp", "10443/tcp"} {
 		if bindings, found := data.NetworkSettings.Ports[containerPort]; found && len(bindings) > 0 {
 			if p := strings.TrimSpace(bindings[0].HostPort); p != "" {
-				return p
+				return p, containerPort == "10443/tcp"
 			}
 		}
 	}
 	for _, containerPort := range []string{"10000/tcp", "10443/tcp"} {
 		if bindings, found := data.HostConfig.PortBindings[containerPort]; found && len(bindings) > 0 {
 			if p := strings.TrimSpace(bindings[0].HostPort); p != "" {
-				return p
+				return p, containerPort == "10443/tcp"
 			}
 		}
 	}
-	return ""
+	return "", false
 }
 
 func filterByState(containers []managedContainer, runningOnly bool, stoppedOnly bool) []managedContainer {

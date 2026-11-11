@@ -388,3 +388,17 @@ func TestRawSafe(t *testing.T) {
 		}
 	}
 }
+
+func TestOpenURLInBrowserRefusesHeadless(t *testing.T) {
+	if browserUnavailable() == "" {
+		t.Setenv("DISPLAY", "")
+		t.Setenv("WAYLAND_DISPLAY", "")
+		if browserUnavailable() == "" {
+			t.Skip("this host always has a browser (not Linux, or WSL)")
+		}
+	}
+	err := OpenURLInBrowser("http://localhost:10000")
+	if err == nil || !strings.Contains(err.Error(), "open http://localhost:10000 yourself") {
+		t.Errorf("err = %v, want a refusal naming the URL", err)
+	}
+}

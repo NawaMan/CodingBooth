@@ -15,6 +15,7 @@ type Booth struct {
 	Variant   string
 	CodePath  string
 	Port      string
+	PortTLS   bool // Port serves HTTPS (a --public booth)
 	CreatedAt string
 	Version   string
 	Daemon    bool
@@ -23,6 +24,18 @@ type Booth struct {
 
 // Running reports whether the engine says the booth is running.
 func (b Booth) Running() bool { return b.State == "running" }
+
+// URL is the booth's page on this host, or "" when it publishes no port.
+func (b Booth) URL() string {
+	if b.Port == "" {
+		return ""
+	}
+	scheme := "http"
+	if b.PortTLS {
+		scheme = "https"
+	}
+	return scheme + "://localhost:" + b.Port
+}
 
 // Snapshot lists the booths of engine (or, when engine is "", of every engine
 // `booth list` would ask). It writes nothing: an engine that could not answer
@@ -43,7 +56,7 @@ func boothsFrom(containers []managedContainer) []Booth {
 	for _, c := range containers {
 		booths = append(booths, Booth{
 			Name: c.Name, Engine: c.Engine, State: c.State, Variant: c.Variant,
-			CodePath: c.CodePath, Port: c.Port, CreatedAt: c.CreatedAt, Version: c.Version,
+			CodePath: c.CodePath, Port: c.Port, PortTLS: c.PortTLS, CreatedAt: c.CreatedAt, Version: c.Version,
 			Daemon: c.Daemon, KeepAlive: c.KeepAlive,
 		})
 	}

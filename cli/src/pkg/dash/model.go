@@ -26,6 +26,7 @@ const (
 	keyRestart = "r"
 	keyRemove  = "d"
 	keyShell   = "enter"
+	keyOpen    = "o"
 	keyRefresh = "R"
 )
 
@@ -37,6 +38,8 @@ type Deps struct {
 	Run func(args []string) (string, error)
 	// Command builds the booth binary command for an interactive action.
 	Command func(args []string) *exec.Cmd
+	// Open opens a URL in the host's browser.
+	Open func(url string) error
 	// Interval between refreshes.
 	Interval time.Duration
 	// Home is shortened to ~ in code paths ("" leaves paths as they are).
@@ -89,6 +92,11 @@ type (
 		err       error
 	}
 	execDoneMsg struct {
+		name string
+		plan plan
+		err  error
+	}
+	openDoneMsg struct {
 		name string
 		plan plan
 		err  error
@@ -173,6 +181,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m.refresh(true)
 
+	case openDoneMsg:
+		if msg.err != nil {
+			m.setStatus(msg.err.Error(), true)
+		} else {
+			m.setStatus(msg.plan.Done, false)
+		}
+		return m, nil
+
 	case execDoneMsg:
 		if msg.err != nil {
 			m.setStatus(failure(msg.plan.Verb, msg.name, "", msg.err), true)
@@ -216,7 +232,7 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 	case keyRefresh:
 		m.setStatus("", false)
 		return m.refresh(true)
-	case keyStart, keyStop, keyRestart, keyRemove, keyShell:
+	case keyStart, keyStop, keyRestart, keyRemove, keyShell, keyOpen:
 		booth, ok := m.current()
 		if !ok {
 			return m, nil
@@ -240,6 +256,12 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 }
 
 func (m model) execute(booth lifecycle.Booth, p plan) (tea.Model, tea.Cmd) {
+	if p.URL != "" {
+		// Opening a page changes nothing about the booth: no busy row, no refresh.
+		m.setStatus("", false)
+		open, url, name := m.deps.Open, p.URL, booth.Name
+		return m, func() tea.Msg { return openDoneMsg{name: name, plan: p, err: open(url)} }
+	}
 	if p.Interactive {
 		m.setStatus("", false)
 		name := booth.Name

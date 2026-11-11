@@ -34,6 +34,8 @@ func stopped(name string) lifecycle.Booth {
 type fakeDeps struct {
 	ran      [][]string
 	execed   [][]string
+	opened   []string
+	openErr  error
 	runErr   error
 	runOut   string
 	snapshot []lifecycle.Booth
@@ -49,6 +51,10 @@ func (f *fakeDeps) deps() Deps {
 		Command: func(args []string) *exec.Cmd {
 			f.execed = append(f.execed, args)
 			return exec.Command("true")
+		},
+		Open: func(url string) error {
+			f.opened = append(f.opened, url)
+			return f.openErr
 		},
 		Home: "/home/u",
 		Now:  func() time.Time { return testNow },
@@ -103,6 +109,8 @@ func TestPlanForRules(t *testing.T) {
 	notKept.KeepAlive = false
 	daemon := stopped("svc")
 	daemon.Daemon = true
+	noPort := running("cli")
+	noPort.Port = ""
 
 	cases := []struct {
 		label       string
@@ -123,6 +131,8 @@ func TestPlanForRules(t *testing.T) {
 		{label: "restart a stopped booth", key: keyRestart, booth: stopped("web"), refused: true},
 		{label: "remove a stopped booth", key: keyRemove, booth: stopped("web"), args: "remove --name web --engine docker", confirm: "home volume"},
 		{label: "remove a running booth forces, and says so", key: keyRemove, booth: running("web"), args: "remove --name web --engine docker --force", confirm: "Force-remove"},
+		{label: "open a stopped booth", key: keyOpen, booth: stopped("web"), refused: true},
+		{label: "open a booth with no port", key: keyOpen, booth: noPort, refused: true},
 		{label: "shell", key: keyShell, booth: running("web"), args: "shell --name web --engine docker", interactive: true},
 		{label: "shell into a stopped booth", key: keyShell, booth: stopped("web"), refused: true},
 	}
@@ -234,6 +244,41 @@ func TestShellTakesTheTerminal(t *testing.T) {
 	}
 	if len(f.ran) != 0 {
 		t.Errorf("a shell must not run in the background: %v", f.ran)
+	}
+}
+
+func TestOpenOpensTheBoothPage(t *testing.T) {
+	f := &fakeDeps{}
+	m := loaded(f, running("web"))
+
+	m, cmd := press(t, m, "o")
+	if cmd == nil || m.confirm != nil {
+		t.Fatalf("o must open at once (cmd %v, confirm %v)", cmd != nil, m.confirm)
+	}
+	if len(m.busy) != 0 {
+		t.Errorf("opening a page marked the booth busy: %v", m.busy)
+	}
+	next, after := m.Update(cmd())
+	m = next.(model)
+	if !reflect.DeepEqual(f.opened, []string{"http://localhost:10000"}) {
+		t.Errorf("opened = %v", f.opened)
+	}
+	if m.status != "Opened http://localhost:10000 in your browser." || after != nil {
+		t.Errorf("status = %q, follow-up cmd %v", m.status, after != nil)
+	}
+	if len(f.ran)+len(f.execed) != 0 {
+		t.Errorf("opening a page ran a command: %v %v", f.ran, f.execed)
+	}
+}
+
+func TestOpenFailureShowsReason(t *testing.T) {
+	f := &fakeDeps{openErr: errors.New("not opening a browser: no graphical session; open http://localhost:10000 yourself")}
+	m := loaded(f, running("web"))
+	m, cmd := press(t, m, "o")
+	next, _ := m.Update(cmd())
+	m = next.(model)
+	if !m.statusErr || !strings.Contains(m.status, "open http://localhost:10000 yourself") {
+		t.Errorf("status = %q (err %v)", m.status, m.statusErr)
 	}
 }
 

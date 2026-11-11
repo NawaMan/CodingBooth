@@ -26,6 +26,8 @@ type plan struct {
 	Busy string
 	// Done is the status line once it succeeded.
 	Done string
+	// URL, when set, is opened in the browser instead of running a command.
+	URL string
 }
 
 // planFor decides what key does to booth. A key that does not apply to the
@@ -75,6 +77,16 @@ func planFor(key string, booth lifecycle.Booth) (plan, string) {
 		return plan{Verb: "remove", Args: with("remove"),
 			Confirm: fmt.Sprintf("Remove %s and its home volume?", booth.Name),
 			Busy:    "removing…", Done: "Removed " + booth.Name + "."}, ""
+
+	case keyOpen:
+		if !booth.Running() {
+			return plan{}, fmt.Sprintf("%s is not running; use s to start it.", booth.Name)
+		}
+		url := booth.URL()
+		if url == "" {
+			return plan{}, fmt.Sprintf("%s publishes no port to open.", booth.Name)
+		}
+		return plan{Verb: "open", URL: url, Done: "Opened " + url + " in your browser."}, ""
 
 	case keyShell:
 		if !booth.Running() {
