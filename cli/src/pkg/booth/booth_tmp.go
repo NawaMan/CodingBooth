@@ -40,10 +40,11 @@ func PrepareBoothTmp(ctx appctx.AppContext) appctx.AppContext {
 
 	// Empty contents unless --keep-tmp-on-start is set. The lifecycle log is
 	// kept: it is how a booth that stopped or restarted can be traced afterwards.
+	// So are the git pointer files, which another booth on this folder mounts.
 	if !ctx.KeepTmpOnStart() {
 		if entries, err := os.ReadDir(tmpDir); err == nil {
 			for _, entry := range entries {
-				if lifecyclelog.Keep(entry.Name()) {
+				if keepTmpEntry(entry.Name()) {
 					continue
 				}
 				os.RemoveAll(filepath.Join(tmpDir, entry.Name()))
@@ -75,6 +76,12 @@ func PrepareBoothTmp(ctx appctx.AppContext) appctx.AppContext {
 	return ctx
 }
 
+// keepTmpEntry is true for what emptying .booth/.tmp/ leaves: the lifecycle log, and the git
+// pointer files booths mount (GitPointersTmpName).
+func keepTmpEntry(name string) bool {
+	return lifecyclelog.Keep(name) || name == GitPointersTmpName
+}
+
 // cleanupBoothTmp empties .booth/.tmp/ on exit unless --leave-tmp-on-exit is set.
 // The lifecycle log stays, so the booth's end can still be read after it.
 func cleanupBoothTmp(ctx appctx.AppContext) {
@@ -91,7 +98,7 @@ func cleanupBoothTmp(ctx appctx.AppContext) {
 		return
 	}
 	for _, entry := range entries {
-		if lifecyclelog.Keep(entry.Name()) {
+		if keepTmpEntry(entry.Name()) {
 			continue
 		}
 		os.RemoveAll(filepath.Join(tmpDir, entry.Name()))

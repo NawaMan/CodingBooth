@@ -12,6 +12,8 @@ import (
 	"testing"
 
 	"github.com/nawaman/codingbooth/src/internal/hostskip"
+	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
 func pointerMap(plan neutralGitPlan) map[string]string {
@@ -263,11 +265,11 @@ func TestHealBoothAddedWorktrees_MainCloneRelative(t *testing.T) {
 // so a booth already running on it keeps seeing it.
 func TestWriteGitPointers(t *testing.T) {
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
-	dir, err := gitPointerDir("/some/project")
-	if err != nil {
-		t.Fatal(err)
+	dir, inBooth, err := gitPointerDir("/some/project", "")
+	if err != nil || inBooth {
+		t.Fatalf("dir %s inBooth=%v err=%v, want the cache", dir, inBooth, err)
 	}
-	if other, _ := gitPointerDir("/other/project"); other == dir {
+	if other, _, _ := gitPointerDir("/other/project", ""); other == dir {
 		t.Error("two folders share a pointer dir")
 	}
 	pointers := []gitPointer{{"/home/coder/code/.git", "gitdir: x\n"}, {"/opt/y", "z\n"}}
@@ -283,5 +285,114 @@ func TestWriteGitPointers(t *testing.T) {
 	}
 	if data, _ := os.ReadFile(files[1]); string(data) != "z\n" {
 		t.Errorf("content = %q", data)
+	}
+}
+
+// A workspace with its own .booth/ keeps the pointers there, so they go with the folder; one
+// whose booth folder is elsewhere (--booth-dir), or that has none, uses the cache.
+func TestGitPointerDir_InBooth(t *testing.T) {
+	cache := t.TempDir()
+	t.Setenv("XDG_CACHE_HOME", cache)
+	code := t.TempDir()
+	if _, inBooth, _ := gitPointerDir(code, ""); inBooth {
+		t.Error("no .booth/: want the cache")
+	}
+	if err := os.Mkdir(filepath.Join(code, ".booth"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	dir, inBooth, err := gitPointerDir(code, "")
+	if want := filepath.Join(code, ".booth", ".tmp", GitPointersTmpName); err != nil || !inBooth || dir != want {
+		t.Errorf("dir %s inBooth=%v err=%v, want %s", dir, inBooth, err, want)
+	}
+	if _, inBooth, _ := gitPointerDir(code, filepath.Join(code, ".booth")); !inBooth {
+		t.Error("--booth-dir naming the workspace's own .booth/: want it")
+	}
+	if dir, inBooth, _ := gitPointerDir(code, t.TempDir()); inBooth || !strings.HasPrefix(dir, cache) {
+		t.Errorf("another booth folder: dir %s inBooth=%v, want the cache", dir, inBooth)
+	}
+}
+
+// A booth on a worktree with .booth/ mounts pointers from .booth/.tmp/git-pointers/, covers that
+// folder read-only, and leaves the cache untouched.
+func TestAddNeutralGitMounts_InBooth(t *testing.T) {
+	if !hostskip.UnixPaths() {
+		t.Skip("the neutral layout is not used on a Windows host")
+	}
+	cache := t.TempDir()
+	t.Setenv("XDG_CACHE_HOME", cache)
+	root, _ := mainWithWorktrees(t)
+	code := filepath.Join(root, "a")
+	if err := os.Mkdir(filepath.Join(code, ".booth"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	builder := &appctx.AppContextBuilder{CommonArgs: ilist.NewAppendableList[ilist.List[string]]()}
+	if !addNeutralGitMounts(builder, code, false) {
+		t.Fatal("addNeutralGitMounts returned false")
+	}
+	args := builder.CommonArgs.String()
+	dir := filepath.Join(code, ".booth", ".tmp", GitPointersTmpName)
+	if !strings.Contains(args, dir+":"+gitPointersContainerDir+":ro") {
+		t.Errorf("no read-only cover of %s in %s", dir, args)
+	}
+	if !strings.Contains(args, dir+"/") {
+		t.Errorf("pointers not mounted from %s: %s", dir, args)
+	}
+	if entries, _ := os.ReadDir(filepath.Join(cache, "codingbooth", "git-pointers")); len(entries) != 0 {
+		t.Errorf("cache written: %v", entries)
+	}
+}
+
+// Emptying .booth/.tmp/ keeps the pointer folder: another booth on the folder mounts it.
+func TestBoothTmpCleanup_KeepsGitPointers(t *testing.T) {
+	code := t.TempDir()
+	pointers := filepath.Join(code, ".booth", ".tmp", GitPointersTmpName)
+	other := filepath.Join(code, ".booth", ".tmp", "other.txt")
+	if err := os.MkdirAll(pointers, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	os.WriteFile(filepath.Join(pointers, "p"), []byte("x\n"), 0o644)
+	os.WriteFile(other, []byte("x\n"), 0o644)
+
+	PrepareBoothTmp(buildTmpCtx(code, false, false, false))
+	if _, err := os.Stat(other); !os.IsNotExist(err) {
+		t.Error("start did not empty .booth/.tmp/")
+	}
+	if _, err := os.Stat(filepath.Join(pointers, "p")); err != nil {
+		t.Errorf("start removed the pointers: %v", err)
+	}
+	cleanupBoothTmp(buildTmpCtx(code, false, false, false))
+	if _, err := os.Stat(filepath.Join(pointers, "p")); err != nil {
+		t.Errorf("exit removed the pointers: %v", err)
+	}
+}
+
+// A cache folder goes once the folder it names is gone; one whose folder exists, or that names
+// none (written before the label), stays -- except the current folder's, which gets labelled.
+func TestPruneGitPointerCache(t *testing.T) {
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+	root, _ := gitPointerCacheRoot()
+	alive, gone, current := t.TempDir(), filepath.Join(t.TempDir(), "gone"), t.TempDir()
+	label := func(codePath string) string {
+		dir, _, _ := gitPointerDir(codePath, "")
+		if _, err := writeGitPointers(dir, []gitPointer{{"/x", "y\n"}}); err != nil {
+			t.Fatal(err)
+		}
+		os.WriteFile(filepath.Join(dir, gitPointersCodePathFile), []byte(codePath+"\n"), 0o644)
+		return dir
+	}
+	aliveDir, goneDir := label(alive), label(gone)
+	legacy := filepath.Join(root, "0123456789abcdef")
+	os.MkdirAll(legacy, 0o755)
+	currentDir, _, _ := gitPointerDir(current, "")
+	os.MkdirAll(currentDir, 0o755)
+
+	pruneGitPointerCache(current)
+	for dir, want := range map[string]bool{aliveDir: true, goneDir: false, legacy: true, currentDir: true} {
+		if got := isDir(dir); got != want {
+			t.Errorf("%s exists = %v, want %v", dir, got, want)
+		}
+	}
+	if data, _ := os.ReadFile(filepath.Join(currentDir, gitPointersCodePathFile)); string(data) != current+"\n" {
+		t.Errorf("current folder's label = %q", data)
 	}
 }

@@ -259,8 +259,10 @@ file, and each record's `.git/worktrees/<id>/gitdir`. Booth covers each of them 
 with a generated read-only file that points within the booth, so no host path appears there —
 not even the empty folders leading to the repository, which would look like your home directory.
 `/opt/codingbooth/git` itself is a read-only tmpfs, so even root in the booth cannot write there.
-The host's own pointer files do not change. The generated ones are kept in
-`~/.cache/codingbooth/git-pointers/` (or under `$XDG_CACHE_HOME`).
+The host's own pointer files do not change. The generated ones are kept in the workspace's
+`.booth/.tmp/git-pointers/` when it has a `.booth/`, mounted read-only over itself in the booth so
+code there cannot edit them in place; otherwise in `~/.cache/codingbooth/git-pointers/` (or under
+`$XDG_CACHE_HOME`), whose folders are removed once their workspace folder is gone.
 
 In a booth on any repository that has worktrees, the main clone too, each other worktree gets a
 read-only one-line `.git` file under `/opt/codingbooth/git/<repo>/worktrees/<id>/` (just that file,

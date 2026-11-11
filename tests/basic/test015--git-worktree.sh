@@ -185,3 +185,24 @@ else
   echo ".git:   $(cat "$ADDED_GIT" 2>&1)"
   exit 1
 fi
+
+# --- With its own .booth/, the pointers live there, read-only in the booth -------
+# A workspace that has a .booth/ keeps git's pointer files in .booth/.tmp/git-pointers/,
+# so they go with the folder. That folder is inside the writable workspace mount, so booth
+# covers it read-only: an edit in place would change what git reads.
+mkdir -p "$WORK_DIR/worktree/.booth"
+ACTUAL=$("$BOOTH_BIN" --variant base -- bash -c '
+  echo "BRANCH=$(git rev-parse --abbrev-ref HEAD)"
+  f=$(ls /home/coder/code/.booth/.tmp/git-pointers/* | head -1)
+  if [ -n "$f" ] && ! sudo -n sh -c "echo x > $f" 2>/dev/null; then echo POINTERS-READ-ONLY; else echo POINTERS-WRITABLE; fi
+' 2>&1) || true
+POINTERS="$WORK_DIR/worktree/.booth/.tmp/git-pointers"
+if [[ "$ACTUAL" == *"BRANCH=wt-test"* && "$ACTUAL" == *POINTERS-READ-ONLY* ]] &&
+   [[ -n "$(ls -A "$POINTERS" 2>/dev/null)" ]]; then
+  print_test_result "true" "$SCRIPT_PATH" "9" "With .booth/, the pointers are kept in .booth/.tmp/git-pointers/ (read-only in the booth, kept after exit)"
+else
+  print_test_result "false" "$SCRIPT_PATH" "9" "With .booth/, the pointers are not in .booth/.tmp/git-pointers/, or are writable in the booth"
+  echo "$ACTUAL"
+  echo "on the host: $(ls -A "$POINTERS" 2>&1)"
+  exit 1
+fi
