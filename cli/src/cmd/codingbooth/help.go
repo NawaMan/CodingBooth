@@ -583,6 +583,8 @@ restart and remove ask first.
 
 KEYS:
   ↑/↓ (j/k)  Select a booth          enter  Open a shell in it (back here on exit)
+  i          Show or hide its details below the table: uptime, CPU and memory,
+             viewers, idle shutdown, ports, unanswered messages, last log lines
   o          Open its page in the browser
   p          Pick one of its exposed ports (as expose list shows) to open
   m          Send its user a message: toast, banner, or a question whose
