@@ -273,7 +273,9 @@ func (m model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case actionDoneMsg:
 		delete(m.busy, msg.key)
-		if msg.err != nil {
+		if msg.err != nil && msg.plan.Verb == "remove worktree" {
+			m.setStatus(keptWorktree(msg.name, msg.output, msg.err), true)
+		} else if msg.err != nil {
 			m.setStatus(failure(msg.plan.Verb, msg.name, msg.output, msg.err), true)
 		} else {
 			m.setStatus(msg.plan.Done, false)
@@ -575,6 +577,21 @@ func (m *model) reselect() {
 		m.selected = ""
 	}
 	m.clampOffset()
+}
+
+// keptWorktree is the status line when `booth worktree remove` refused: what
+// is in the way (its "  - " lines), not only its closing advice.
+func keptWorktree(name, output string, err error) string {
+	var why []string
+	for _, line := range strings.Split(output, "\n") {
+		if reason, ok := strings.CutPrefix(line, "  - "); ok {
+			why = append(why, strings.TrimSpace(reason))
+		}
+	}
+	if len(why) == 0 {
+		return failure("remove worktree", name, output, err)
+	}
+	return "Kept worktree " + name + ": " + strings.Join(why, "; ") + ". Nothing was removed."
 }
 
 // failure is the status line for a failed action: the command's own last

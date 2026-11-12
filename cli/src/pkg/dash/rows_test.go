@@ -269,3 +269,18 @@ func TestHoldOnFailureWaitsForEnter(t *testing.T) {
 		t.Errorf("success must return at once: err %v out %q", err, out.String())
 	}
 }
+
+func TestRefusedWorktreeRemovalSaysWhatIsInTheWay(t *testing.T) {
+	f := &fakeDeps{repos: testRepos()}
+	m := loaded(f)
+	out := "Kept worktree /home/u/dev/proj/worktree/fix:\n" +
+		"  - it has 2 uncommitted or untracked file(s): docs/MUSIC-ONBOARDING.md, tools/a.sh\n" +
+		"Commit or stop what you want to keep, or remove it anyway with --force.\n"
+	next, _ := m.Update(actionDoneMsg{key: "worktree:/home/u/dev/proj/worktree/fix", name: "fix",
+		plan: plan{Verb: "remove worktree"}, output: out, err: errors.New("exit status 1")})
+	got := next.(model)
+	want := "Kept worktree fix: it has 2 uncommitted or untracked file(s): docs/MUSIC-ONBOARDING.md, tools/a.sh. Nothing was removed."
+	if got.status != want || !got.statusErr {
+		t.Errorf("status = %q (err %v)\nwant %q", got.status, got.statusErr, want)
+	}
+}
