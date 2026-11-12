@@ -114,13 +114,18 @@ seconds (`--interval 5s` to change that) and takes `--engine` like the other com
 | `m` | Send its user a message (`booth message send`): pick the type with `←`/`→` — toast, banner, a yes/no question, ok, or text — then type the title and body; `enter` on the body sends, `esc` cancels |
 | `e` | Open its folder in your editor (`$VISUAL`, else `$EDITOR`, else `code`) |
 | `K` | Open its folder in GitKraken |
-| `s` | Start it — a daemon booth in the background, an interactive one attached (as `booth start` does). On a worktree with no booth: start one there (`booth --worktree <name> --daemon`) |
+| `s` | Start it, as `booth start` does: a daemon booth's start, and an interactive booth's session, take the terminal and come back to the dashboard. On a worktree with no booth: start one there (`booth --worktree <name> --daemon`) |
 | `x` | Stop it |
 | `r` | Restart it |
 | `d` | Remove it and its home volume (`--force` when it is running). On a worktree with no booth: remove the worktree (`booth worktree remove <name>`, never `--force`) |
 | `n` | New worktree in the selected row's repository: type a name (the new branch, from the repository's current commit); booth creates it and starts its booth (`booth --worktree <name> --daemon --worktree-keep`) |
 | `R` | Refresh now |
 | `q` | Quit |
+
+Starting takes the terminal, because booth may build an image, and asks before starting a booth
+that could reach the host (`--dind`, `--privileged`, …); when a start fails, the dashboard waits for
+Enter so its reason stays readable. Everything else runs in the background, with no terminal it
+could read your keys from.
 
 It shows every booth on the machine, including ones other sessions started, so stop, restart and
 remove ask `[y/N]` first — and the question says when a stop also removes the container (a booth

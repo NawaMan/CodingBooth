@@ -69,7 +69,7 @@ func runDash(_ string) {
 		Run: func(dir string, args []string) (string, error) {
 			// No stdin: a command that would prompt fails instead of hanging
 			// behind the dashboard.
-			cmd := exec.Command(self, args...)
+			cmd := detach(exec.Command(self, args...))
 			cmd.Dir = dir
 			out, err := cmd.CombinedOutput()
 			return string(out), err
@@ -77,11 +77,14 @@ func runDash(_ string) {
 		Repos: func(booths []lifecycle.Booth) []lifecycle.Repo {
 			return lifecycle.Repos(booths, cwd)
 		},
-		Editor:    editorCommand,
-		GitKraken: openGitKraken,
-		Command:   func(args []string) *exec.Cmd { return exec.Command(self, args...) },
+		Editor: editorCommand,
+		Command: func(dir string, args []string) *exec.Cmd {
+			cmd := exec.Command(self, args...)
+			cmd.Dir = dir
+			return cmd
+		},
 		Message: func(ctx context.Context, args []string) (string, error) {
-			out, err := exec.CommandContext(ctx, self, args...).CombinedOutput()
+			out, err := detach(exec.CommandContext(ctx, self, args...)).CombinedOutput()
 			return string(out), err
 		},
 		Open: booth.OpenURLInBrowser,
@@ -92,8 +95,8 @@ func runDash(_ string) {
 		State:   lifecycle.State,
 		Pending: lifecycle.PendingMessages,
 		Logs: func(b lifecycle.Booth, lines int) (string, error) {
-			out, err := exec.Command(self, "logs", "--name", b.Name, "--engine", b.Engine,
-				"-n", strconv.Itoa(lines)).CombinedOutput()
+			out, err := detach(exec.Command(self, "logs", "--name", b.Name, "--engine", b.Engine,
+				"-n", strconv.Itoa(lines))).CombinedOutput()
 			if err != nil {
 				return "", fmt.Errorf("%s", lastLine(string(out), err))
 			}
@@ -101,6 +104,10 @@ func runDash(_ string) {
 		},
 		Interval: *interval,
 		Home:     home,
+	}
+	// K and its hint only for those who have GitKraken.
+	if _, err := exec.LookPath("gitkraken"); err == nil {
+		deps.GitKraken = openGitKraken
 	}
 	if err := dash.Run(deps); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)

@@ -598,7 +598,9 @@ KEYS:
 
 Booths are grouped under their git repository, with each worktree listed even
 without a booth. On such a row, s starts a booth there and d removes the
-worktree (as worktree remove does: never what would be lost).
+worktree (as worktree remove does: never what would be lost). Starting a booth
+takes the terminal (booth may build, or ask before starting a booth that can
+reach the host) and comes back here when it is done.
 
 OPTIONS:
   --engine <docker|podman|apple>  Show only this engine's booths

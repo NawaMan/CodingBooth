@@ -36,6 +36,7 @@ type fakeDeps struct {
 	ran      [][]string
 	ranIn    []string
 	execed   [][]string
+	execedIn []string
 	opened   []string
 	openErr  error
 	ports    []lifecycle.ExposedPort
@@ -71,8 +72,9 @@ func (f *fakeDeps) deps() Deps {
 			f.ranIn = append(f.ranIn, dir)
 			return f.runOut, f.runErr
 		},
-		Command: func(args []string) *exec.Cmd {
+		Command: func(dir string, args []string) *exec.Cmd {
 			f.execed = append(f.execed, args)
+			f.execedIn = append(f.execedIn, dir)
 			return exec.Command("true")
 		},
 		Message: func(_ context.Context, args []string) (string, error) {
@@ -203,7 +205,7 @@ func TestPlanForRules(t *testing.T) {
 	}{
 		{label: "start a running booth", key: keyStart, booth: running("web"), refused: true},
 		{label: "start an interactive booth attaches", key: keyStart, booth: stopped("web"), args: "start --name web --engine docker", interactive: true},
-		{label: "start a daemon booth detached", key: keyStart, booth: daemon, args: "start --name svc --engine docker --daemon"},
+		{label: "start a daemon booth in the foreground", key: keyStart, booth: daemon, args: "start --name svc --engine docker --daemon", interactive: true},
 		{label: "stop asks", key: keyStop, booth: running("web"), args: "stop --name web --engine docker", confirm: "Stop web?"},
 		{label: "stop says a non-keep-alive container goes", key: keyStop, booth: notKept, confirm: "container is removed"},
 		{label: "stop a stopped booth", key: keyStop, booth: stopped("web"), refused: true},

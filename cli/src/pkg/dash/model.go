@@ -52,8 +52,9 @@ type Deps struct {
 	Editor func(path string) (*exec.Cmd, error)
 	// GitKraken opens path in GitKraken, and returns once it is launched.
 	GitKraken func(path string) error
-	// Command builds the booth binary command for an interactive action.
-	Command func(args []string) *exec.Cmd
+	// Command builds the booth binary command for an interactive action, to
+	// run in dir ("" = the dashboard's own).
+	Command func(dir string, args []string) *exec.Cmd
 	// Message runs `booth message send` with args, capturing its output. A
 	// question waits for the booth user's answer, so it can run for minutes;
 	// ctx is cancelled when the dashboard exits, to not leave it behind.
@@ -310,7 +311,7 @@ func (m model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err != nil {
 			m.setStatus(failure(msg.plan.Verb, msg.name, "", msg.err), true)
 		} else {
-			m.setStatus("", false)
+			m.setStatus(msg.plan.Done, false)
 		}
 		return m.refresh(true)
 
@@ -456,9 +457,12 @@ func (m model) execute(key, name string, p plan) (tea.Model, tea.Cmd) {
 	}
 	if p.Interactive {
 		m.setStatus("", false)
-		return m, tea.ExecProcess(m.deps.Command(p.Args), func(err error) tea.Msg {
-			return execDoneMsg{name: name, plan: p, err: err}
-		})
+		done := func(err error) tea.Msg { return execDoneMsg{name: name, plan: p, err: err} }
+		cmd := m.deps.Command(p.Dir, p.Args)
+		if p.Hold {
+			return m, tea.Exec(&holdOnFailure{cmd: cmd, what: p.Verb + " " + name}, done)
+		}
+		return m, tea.ExecProcess(cmd, done)
 	}
 	if p.Busy != "" {
 		m.busy[key] = p.Busy
