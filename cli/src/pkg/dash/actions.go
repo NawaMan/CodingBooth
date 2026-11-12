@@ -28,6 +28,9 @@ type plan struct {
 	Done string
 	// URL, when set, is opened in the browser instead of running a command.
 	URL string
+	// Hold: when an interactive command fails, wait for Enter before the
+	// dashboard comes back, so its last words can be read.
+	Hold bool
 	// Dir is where the command runs ("" = where the dashboard runs): worktree
 	// commands name the worktree within the repository they run in.
 	Dir string
@@ -47,8 +50,12 @@ func planFor(key string, booth lifecycle.Booth) (plan, string) {
 		if booth.Running() {
 			return plan{}, fmt.Sprintf("%s is already running.", booth.Name)
 		}
+		// A start takes the terminal: booth may build an image, and may ask
+		// before starting a booth that can reach the host (a question it asks
+		// on the terminal, which a background command must not have).
 		if booth.Daemon {
-			return plan{Verb: "start", Args: with("start", "--daemon"), Busy: "starting…", Done: "Started " + booth.Name + "."}, ""
+			return plan{Verb: "start", Args: with("start", "--daemon"), Interactive: true, Hold: true,
+				Done: "Started " + booth.Name + "."}, ""
 		}
 		// An interactive booth starts the way `booth start` does: attached, and
 		// back to the dashboard when its session ends.
