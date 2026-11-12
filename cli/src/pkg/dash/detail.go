@@ -236,9 +236,9 @@ func (m model) detailView() string {
 		if len(lines) == 0 {
 			row("Logs", "(empty)")
 		} else if len(lines) == 1 {
-			row("Logs", "last line")
+			row("Logs", "last line · l shows the whole log")
 		} else {
-			row("Logs", fmt.Sprintf("last %d lines", len(lines)))
+			row("Logs", fmt.Sprintf("last %d lines · l shows the whole log", len(lines)))
 		}
 		for _, line := range lines {
 			out.WriteString("    " + dimStyle.Render(m.fitTo(line, 4)) + "\n")

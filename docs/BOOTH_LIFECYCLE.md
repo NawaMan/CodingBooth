@@ -109,6 +109,7 @@ seconds (`--interval 5s` to change that) and takes `--engine` like the other com
 | `↑`/`↓` (`j`/`k`), `g`/`G` | Select a booth |
 | `enter` | Open a shell in it (`booth shell`); exiting the shell comes back to the dashboard |
 | `i` | Show or hide its details below the table (see below) |
+| `l` | Show its whole log, following it while it runs: piped into `less +F` (`ctrl+c` pauses to scroll or search with `/`, `F` follows again, `q` comes back); without `less`, `booth logs -f`, which `ctrl+c` ends |
 | `t` | Open a shell on the host (`$SHELL`) in its folder — the booth's code path, or the worktree; `exit` comes back to the dashboard |
 | `o` | Open its page in the browser (`http://localhost:<port>`, `https` for a `--public` booth) |
 | `p` | Pick one of its TCP ports — what `booth expose list` shows: front door, published ports, `booth--expose` tunnels — and open it (`enter`; `esc` goes back) |

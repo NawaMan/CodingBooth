@@ -32,11 +32,11 @@ const pickerHelpLine = "↑/↓ select · enter open · esc back"
 // helpLines: what to look at or into, then what changes the booth. K shows
 // only when GitKraken is there to open.
 func (m model) helpLines() []string {
-	look := "↑/↓ move · i info · enter shell · t terminal · o open · p ports · m message · e editor"
+	look := "i info · l log · enter shell · t terminal · o open · p ports · m message · e editor"
 	if m.deps.GitKraken != nil {
 		look += " · K GitKraken"
 	}
-	return []string{look, "s start · x stop · r restart · d remove · n new worktree · R refresh · q quit"}
+	return []string{look, "↑/↓ move · s start · x stop · r restart · d remove · n new worktree · R refresh · q quit"}
 }
 
 // chromeLines is everything but the table rows: title, blank, header, and

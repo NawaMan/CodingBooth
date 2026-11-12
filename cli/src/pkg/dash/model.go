@@ -34,6 +34,7 @@ const (
 	keyNew     = "n"
 	keyEditor  = "e"
 	keyTerm    = "t"
+	keyLog     = "l"
 	// GitKraken is K: g already jumps to the top.
 	keyGitKraken = "K"
 	keyRefresh   = "R"
@@ -51,6 +52,9 @@ type Deps struct {
 	// Editor is the command that opens path in the user's editor; it gets the
 	// terminal, so a terminal editor works too.
 	Editor func(path string) (*exec.Cmd, error)
+	// LogView is how l shows a booth's log: the log command, and the pager
+	// it is piped into (nil: the log command takes the terminal itself).
+	LogView func(booth lifecycle.Booth) (logs, pager *exec.Cmd)
 	// HostShell is a shell on the host, to run in path (t).
 	HostShell func(path string) *exec.Cmd
 	// GitKraken opens path in GitKraken, and returns once it is launched.
@@ -434,6 +438,16 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 			list, err := ports(booth)
 			return portsMsg{key: key, ports: list, err: err}
 		}
+	case keyLog:
+		if m.deps.LogView == nil {
+			return m, nil
+		}
+		m.setStatus("", false)
+		logs, pager := m.deps.LogView(booth)
+		name := booth.Name
+		return m, tea.Exec(&logView{logs: logs, pager: pager}, func(err error) tea.Msg {
+			return execDoneMsg{name: name, plan: plan{Verb: "show the log of"}, err: err}
+		})
 	case keyMessage:
 		if !booth.Running() {
 			m.setStatus(booth.Name+" is not running; use s to start it.", false)
