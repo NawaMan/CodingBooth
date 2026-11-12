@@ -77,6 +77,7 @@ The shell launched is the default shell configured for the `coder` user inside t
 | `--run`                      | Run the booth first if it is not already running                            |
 | `--keep-alive`               | With `--run`, leave the booth running after you disconnect                  |
 | `--port <n\|NEXT\|RANDOM>`   | Host port when **creating** a missing booth; asserted against existing ones |
+| `--variant <variant>`        | With `--run`: variant of a booth it **creates** — default `base`, not the project's own (see [below](#run-the-booth-if-it-is-not-running)) |
 | `--accept-existing`          | Connect even if create flags (e.g. `--port`) do not match the booth         |
 | `--dind-allowed`             | With `--run`: start a `--dind` booth without asking; the warning still prints ([why](BOOTH_SECURITY.md)) |
 | `--privileged-allowed`       | With `--run`: allow `--privileged`-like run-args without asking; the warning still prints |
@@ -256,6 +257,8 @@ When `--run` is given, the booth is made available in whatever way is needed:
 | **Does not exist** | Created from the current workspace with `booth run --daemon` (or from `--code`, if given) |
 
 On create, create-time flags such as **`--port`** and **`--name`** are forwarded to that run (along with **`--keep-alive`** when set), so the booth matches an equivalent `booth run` invocation.
+
+**`shell --run` creates a terminal booth.** A shell needs nothing more than the base image, so a booth `shell --run` creates is `--variant base`, whatever variant the project's `config.toml` names — no desktop or IDE image is built just to open a shell. Pass **`--variant <variant>`** to create another one (`--variant terminal` also means base: `shell` brings its own terminal). It applies only on create: a stopped booth is started as it is, and a running one is used as it is, whatever their variant. `exec --run` creates the project's own variant, since its command may need what that variant brings.
 
 **No browser tab.** A booth `--run` creates does not open its page in a browser, whatever `browser` / `CB_BROWSER` say: `shell` and `exec` are terminal commands, and a `just` recipe that runs `exec --run` on every call would otherwise open a fresh tab each time. Pass **`--browser`** to open it anyway. `booth run` itself still opens the browser as before.
 

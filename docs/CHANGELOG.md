@@ -4,6 +4,13 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth shell --run` creates a terminal (base) booth; `--variant` picks another.** A booth
+  `shell --run` has to create used to take the project's own variant, so a desktop project built and
+  started a desktop just to open a shell. It is now `--variant base`; `shell --run --variant <v>`
+  creates another (`terminal` also means base). A stopped or running booth is used as it is, and
+  `exec --run` still creates the project's own variant. See
+  [booth connect → --run](BOOTH_CONNECT.md#run-the-booth-if-it-is-not-running).
+
 - **`booth --worktree` keeps the worktree it creates; `--worktree-remove` removes it.** A worktree
   `booth --worktree <name>` created used to be removed again when the booth exited, unless
   `--worktree-keep` was given. It now stays, with its branch, and booth prints how to resume or
