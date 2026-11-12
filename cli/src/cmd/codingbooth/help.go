@@ -582,7 +582,8 @@ seconds. Every booth is shown, including ones other sessions started, so stop,
 restart and remove ask first.
 
 KEYS:
-  ↑/↓ (j/k)  Select a booth          enter  Open a shell in it (back here on exit)
+  ↑/↓ (j/k)  Select a booth          enter  Open a shell in it (back here on exit);
+             not running: ask, then start it just for the shell (shell --run)
   i          Show or hide its details below the table: uptime, CPU and memory,
              viewers, idle shutdown, ports, unanswered messages, last log lines
   o          Open its page in the browser
@@ -823,6 +824,8 @@ OPTIONS:
   --keep-alive         With --run, leave the booth running afterwards
   --port <n|NEXT|RANDOM>
                        With --run, host port when creating a missing booth
+  --variant <v>        With --run, variant of a booth it creates (default: base,
+                       not the project's own; terminal also means base)
   --accept-existing    Connect even if create flags (e.g. --port) do not match
   --dind-allowed       With --run, start a --dind booth without asking
   --privileged-allowed
@@ -837,7 +840,8 @@ OPTIONS:
 A booth brought up by --run is stopped again when you disconnect, unless
 --keep-alive is given. A booth that was already running is never stopped.
 Create-intent flags like --port apply only when a booth is created; against an
-existing booth a mismatch fails unless --accept-existing is set.
+existing booth a mismatch fails unless --accept-existing is set. --variant is
+create-only too, but not checked: a stopped or running booth is used as it is.
 
 EXAMPLES:
   %s shell myproject
@@ -847,9 +851,10 @@ EXAMPLES:
   %s shell myproject --run
   %s shell myproject --run --keep-alive
   %s shell myproject --run --port 9000
+  %s shell myproject --run --variant desktop
   %s shell myproject --port 9000 --accept-existing
   %s shell --silence-build --run
-`, s, s, s, s, s, s, s, s, s, s, s)
+`, s, s, s, s, s, s, s, s, s, s, s, s)
 }
 
 func showHelpExec() {

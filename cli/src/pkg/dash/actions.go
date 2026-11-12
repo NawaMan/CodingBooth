@@ -100,7 +100,12 @@ func planFor(key string, booth lifecycle.Booth) (plan, string) {
 
 	case keyShell:
 		if !booth.Running() {
-			return plan{}, fmt.Sprintf("%s is not running; use s to start it.", booth.Name)
+			// `shell --run` starts the container as it is (its own variant) and
+			// stops it again when the shell ends, so the row is left as found.
+			// Held on failure, so a start that fails can be read; a shell that
+			// ends on a failed command is held too, which is the lesser cost.
+			return plan{Verb: "open a shell in", Args: with("shell", "--run"), Interactive: true, Hold: true,
+				Confirm: fmt.Sprintf("%s is not running. Start it for a shell? It stops again when the shell ends.", booth.Name)}, ""
 		}
 		return plan{Verb: "shell", Args: with("shell"), Interactive: true}, ""
 	}

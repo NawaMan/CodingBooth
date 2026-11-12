@@ -4,6 +4,13 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth shell --run` creates a terminal (base) booth; `--variant` picks another.** A booth
+  `shell --run` has to create used to take the project's own variant, so a desktop project built and
+  started a desktop just to open a shell. It is now `--variant base`; `shell --run --variant <v>`
+  creates another (`terminal` also means base). A stopped or running booth is used as it is, and
+  `exec --run` still creates the project's own variant. See
+  [booth connect → --run](BOOTH_CONNECT.md#run-the-booth-if-it-is-not-running).
+
 - **`booth --worktree` keeps the worktree it creates; `--worktree-remove` removes it.** A worktree
   `booth --worktree <name>` created used to be removed again when the booth exited, unless
   `--worktree-keep` was given. It now stays, with its branch, and booth prints how to resume or
@@ -16,7 +23,8 @@ This file contains a list of changes for each released version.
 
 - **`booth dashboard`: a live table of every booth, with actions.** `booth list` that refreshes itself
   and that you can act on: pick a row, then `enter` opens a shell (exiting it comes back to the
-  table), `i` shows its details below the table (uptime, CPU and memory, viewers, idle shutdown,
+  table; on a booth that is not running, or a worktree with none, it asks, then brings one up for
+  the shell with `booth shell --run` and takes it down again afterwards), `i` shows its details below the table (uptime, CPU and memory, viewers, idle shutdown,
   ports, unanswered messages, last log lines), `o` opens its page in the browser, `p` picks one of its exposed ports to open, `m` sends its
   user a message (a toast, a banner, or a question whose answer comes back to the table), `s`
   starts, `x` stops, `r` restarts and `d` removes. Stop, restart and remove ask first, since the

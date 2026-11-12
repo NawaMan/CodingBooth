@@ -141,7 +141,7 @@ func TestRemoveWorktreeAsksAndNeverForces(t *testing.T) {
 func TestBoothKeysOnBareWorktreeExplain(t *testing.T) {
 	f := &fakeDeps{repos: testRepos()}
 	m := loaded(f)
-	for _, key := range []string{"x", "r", "enter", "o", "p", "m"} {
+	for _, key := range []string{"x", "r", "o", "p", "m"} {
 		m2, cmd := press(t, m, key)
 		if cmd != nil || m2.compose != nil || m2.picker != nil || !strings.Contains(m2.status, "No booth on main; s starts one.") {
 			t.Errorf("%s on a worktree without a booth: status %q", key, m2.status)
@@ -323,5 +323,26 @@ func TestHostShellBannerAndExitStatus(t *testing.T) {
 	missing := &holdOnFailure{cmd: exec.Command("/no/such/shell"), banner: "x"}
 	if err := missing.Run(); err == nil {
 		t.Error("a shell that cannot start is a failure")
+	}
+}
+
+func TestEnterOnBareWorktreeOffersATerminalBooth(t *testing.T) {
+	f := &fakeDeps{repos: testRepos()}
+	m := loaded(f)
+	m, cmd := press(t, m, "down", "enter")
+	if cmd != nil || m.confirm == nil || !strings.Contains(m.confirm.plan.Confirm, "No booth on fix. Start a terminal booth") {
+		t.Fatalf("enter on a worktree without a booth must ask: confirm %+v status %q", m.confirm, m.status)
+	}
+	m, cmd = press(t, m, "n")
+	if cmd != nil || len(f.execed) != 0 || m.status != "Cancelled." {
+		t.Fatalf("n must cancel: execed %v status %q", f.execed, m.status)
+	}
+	m, _ = press(t, m, "enter")
+	if _, cmd = press(t, m, "y"); cmd == nil {
+		t.Fatal("y must open the shell")
+	}
+	want := []string{"shell", "--run", "--code", "/home/u/dev/proj/worktree/fix"}
+	if len(f.execed) != 1 || !reflect.DeepEqual(f.execed[0], want) || f.execedIn[0] != "/home/u/dev/proj/worktree/fix" {
+		t.Fatalf("execed %v in %v, want %v in the worktree", f.execed, f.execedIn, want)
 	}
 }
