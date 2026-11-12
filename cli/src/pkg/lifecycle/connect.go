@@ -45,6 +45,27 @@ type connectCreateOpts struct {
 	dindAllowed       bool   // --dind-allowed: forwarded so a --run create need not ask
 	privilegedAllowed bool   // --privileged-allowed: forwarded likewise
 	browser           bool   // --browser: open the booth's page, which a --run create does not by default
+	// variant is the --variant a --run create is given ("" = the project's own).
+	// Create-only: an existing booth is used whatever its variant, so it is not
+	// asserted the way --port is.
+	variant string
+}
+
+// shellRunVariant is the variant `shell --run` creates a missing booth in: a
+// shell needs nothing more than the base image, and building a desktop or IDE
+// image just to open one is slow. --variant overrides it; exec keeps the
+// project's own, since its command may need what that variant brings.
+const shellRunVariant = "base"
+
+// shellCreateVariant is the --variant a `shell --run` create passes on. The
+// terminal alias is base plus a `bash` command, and that command, run under
+// --run's --daemon with no TTY, would exit at once and take the booth with it:
+// shell brings its own terminal, so terminal means plain base here.
+func shellCreateVariant(variant string) string {
+	if variant == "terminal" {
+		return shellRunVariant
+	}
+	return variant
 }
 
 // Shell opens a new interactive shell inside a running booth container.
@@ -66,6 +87,7 @@ func Shell(args []string, stderr io.Writer) error {
 	privilegedAllowed := flagSet.Bool("privileged-allowed", false, "With --run: allow --privileged-like run-args without asking")
 	silenceBuild := flagSet.Bool("silence-build", false, "Hide --run bring-up and teardown; command/shell only")
 	browser := flagSet.Bool("browser", false, "With --run: open the booth's page in a browser when creating it")
+	variant := flagSet.String("variant", shellRunVariant, "With --run, variant of a newly created booth (default: base)")
 	flagSet.BoolVar(silenceBuild, "quiet", false, "Alias for --silence-build")
 	flagSet.BoolVar(silenceBuild, "q", false, "Alias for --silence-build")
 	var envVars stringSliceFlag
@@ -80,7 +102,7 @@ func Shell(args []string, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	create := connectCreateOpts{engine: *engineChoice, port: *port, acceptExisting: *acceptExisting, dindAllowed: *dindAllowed, privilegedAllowed: *privilegedAllowed, browser: *browser}
+	create := connectCreateOpts{engine: *engineChoice, port: *port, acceptExisting: *acceptExisting, dindAllowed: *dindAllowed, privilegedAllowed: *privilegedAllowed, browser: *browser, variant: shellCreateVariant(*variant)}
 	target, cleanup, err := resolveConnectTarget(*name, positional, codePath, *run, *keepAlive, *silenceBuild, create, stderr)
 	if err != nil {
 		return err
@@ -927,6 +949,9 @@ func buildConnectRunArgs(explicitName string, keepAlive bool, create connectCrea
 	if create.port != "" {
 		runArgs = append(runArgs, "--port", create.port)
 	}
+	if create.variant != "" {
+		runArgs = append(runArgs, "--variant", create.variant)
+	}
 	if create.dindAllowed {
 		runArgs = append(runArgs, "--dind-allowed")
 	}
@@ -944,7 +969,7 @@ func buildConnectRunArgs(explicitName string, keepAlive bool, create connectCrea
 func extractPositionalAndFlags(args []string) (positional []string, flags []string) {
 	knownValueFlags := map[string]bool{
 		"-e": true, "--name": true, "--shell": true, "--engine": true, "-engine": true,
-		"--dir": true, "--envfile": true, "--port": true, "--code": true,
+		"--dir": true, "--envfile": true, "--port": true, "--code": true, "--variant": true,
 	}
 
 	for i := 0; i < len(args); i++ {

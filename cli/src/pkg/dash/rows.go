@@ -148,7 +148,18 @@ func planForWorktree(key string, r row) (plan, string) {
 				"a branch with commits found nowhere else is kept.", w.Name()),
 			Busy: "removing…", Done: "Removed worktree " + w.Name() + "."}, ""
 
-	case keyStop, keyRestart, keyShell, keyOpen, keyPorts, keyMessage, keyLog:
+	case keyShell:
+		if w.Prunable {
+			return plan{}, fmt.Sprintf("%s's folder is gone; d removes the worktree record.", w.Name())
+		}
+		// `shell --run` creates a terminal (base) booth on the worktree and
+		// removes it again when the shell ends; s starts the project's own.
+		return plan{Verb: "open a shell in", Args: []string{"shell", "--run", "--code", w.Path}, Dir: w.Path,
+			Interactive: true, Hold: true,
+			Confirm: fmt.Sprintf("No booth on %s. Start a terminal booth for a shell? It is removed when the shell ends.",
+				branchText(w))}, ""
+
+	case keyStop, keyRestart, keyOpen, keyPorts, keyMessage, keyLog:
 		return plan{}, fmt.Sprintf("No booth on %s; s starts one.", w.Name())
 	}
 	return plan{}, ""

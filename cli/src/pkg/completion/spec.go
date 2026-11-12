@@ -363,7 +363,7 @@ func Spec() *Command {
 			{Name: "home-volume-import", Desc: "Import a tar.gz into a home volume",
 				Flags: []Flag{engineFlag}, Args: []Kind{Text, File}},
 			{Name: "shell", Desc: "Open a shell in a booth",
-				Flags: join(connectFlags, []Flag{flag(Text, "--shell")})},
+				Flags: join(connectFlags, []Flag{flag(Text, "--shell"), {Names: []string{"--variant"}, Kind: Enum, Values: variantValues}})},
 			{Name: "exec", Desc: "Run a command in a booth",
 				Flags: join(connectFlags, []Flag{boolFlag("--daemon", "-d"), boolFlag("-it")})},
 			{Name: "cp", Desc: "Copy files between host and booth",
