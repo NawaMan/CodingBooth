@@ -62,16 +62,24 @@ func runDash(_ string) {
 		os.Exit(1)
 	}
 	home, _ := os.UserHomeDir()
+	cwd, _ := os.Getwd()
 
 	deps := dash.Deps{
 		Snapshot: func() ([]lifecycle.Booth, []string, error) { return lifecycle.Snapshot(engine) },
-		Run: func(args []string) (string, error) {
+		Run: func(dir string, args []string) (string, error) {
 			// No stdin: a command that would prompt fails instead of hanging
 			// behind the dashboard.
-			out, err := exec.Command(self, args...).CombinedOutput()
+			cmd := exec.Command(self, args...)
+			cmd.Dir = dir
+			out, err := cmd.CombinedOutput()
 			return string(out), err
 		},
-		Command: func(args []string) *exec.Cmd { return exec.Command(self, args...) },
+		Repos: func(booths []lifecycle.Booth) []lifecycle.Repo {
+			return lifecycle.Repos(booths, cwd)
+		},
+		Editor:    editorCommand,
+		GitKraken: openGitKraken,
+		Command:   func(args []string) *exec.Cmd { return exec.Command(self, args...) },
 		Message: func(ctx context.Context, args []string) (string, error) {
 			out, err := exec.CommandContext(ctx, self, args...).CombinedOutput()
 			return string(out), err
@@ -107,4 +115,40 @@ func lastLine(out string, err error) string {
 		return last
 	}
 	return err.Error()
+}
+
+// editorCommand opens path in $VISUAL, else $EDITOR, else VS Code (code). The
+// dashboard hands it the terminal, so a terminal editor works as well as a
+// window that returns at once.
+func editorCommand(path string) (*exec.Cmd, error) {
+	editor := strings.TrimSpace(os.Getenv("VISUAL"))
+	if editor == "" {
+		editor = strings.TrimSpace(os.Getenv("EDITOR"))
+	}
+	if editor == "" {
+		editor = "code"
+	}
+	fields := strings.Fields(editor)
+	bin, err := exec.LookPath(fields[0])
+	if err != nil {
+		if os.Getenv("VISUAL") == "" && os.Getenv("EDITOR") == "" {
+			return nil, fmt.Errorf("no editor: set $VISUAL (code is not installed)")
+		}
+		return nil, fmt.Errorf("editor %q is not installed", fields[0])
+	}
+	return exec.Command(bin, append(fields[1:], path)...), nil
+}
+
+// openGitKraken starts GitKraken on path and leaves it running.
+func openGitKraken(path string) error {
+	bin, err := exec.LookPath("gitkraken")
+	if err != nil {
+		return fmt.Errorf("GitKraken is not installed (no gitkraken on PATH)")
+	}
+	cmd := exec.Command(bin, "-p", path)
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("cannot start GitKraken: %v", err)
+	}
+	go cmd.Wait() //nolint:errcheck // reaped, not waited for
+	return nil
 }

@@ -589,9 +589,16 @@ KEYS:
   p          Pick one of its exposed ports (as expose list shows) to open
   m          Send its user a message: toast, banner, or a question whose
              answer comes back here (as message send does)
+  e          Open its folder in $VISUAL ($EDITOR, else code)
+  K          Open its folder in GitKraken
   s          Start it                x      Stop it
   r          Restart it              d      Remove it (and its home volume)
+  n          New worktree in this repository, with its booth started
   R          Refresh now             q      Quit
+
+Booths are grouped under their git repository, with each worktree listed even
+without a booth. On such a row, s starts a booth there and d removes the
+worktree (as worktree remove does: never what would be lost).
 
 OPTIONS:
   --engine <docker|podman|apple>  Show only this engine's booths

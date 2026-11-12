@@ -24,14 +24,15 @@ var (
 	errorStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("203"))
 	confirmStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("220"))
 	warnStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("220"))
+	groupStyle   = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("75"))
 )
 
 const pickerHelpLine = "↑/↓ select · enter open · esc back"
 
 // helpLines: what to look at or into, then what changes the booth.
 var helpLines = []string{
-	"↑/↓ move · i info · enter shell · o open · p ports · m message",
-	"s start · x stop · r restart · d remove · R refresh · q quit",
+	"↑/↓ move · i info · enter shell · o open · p ports · m message · e editor · K GitKraken",
+	"s start · x stop · r restart · d remove · n new worktree · R refresh · q quit",
 }
 
 // chromeLines is everything but the table rows: title, blank, header, and
@@ -42,7 +43,7 @@ const chromeLines = 7
 // first WindowSizeMsg).
 func (m model) tableRows() int {
 	if m.height <= 0 {
-		return max(1, len(m.booths))
+		return max(1, len(m.rows))
 	}
 	rows := m.height - chromeLines - len(m.warnings)
 	if m.compose != nil {
@@ -61,7 +62,11 @@ func (m *model) clampOffset() {
 	if m.cursor >= m.offset+rows {
 		m.offset = m.cursor - rows + 1
 	}
-	m.offset = max(0, min(m.offset, max(0, len(m.booths)-rows)))
+	m.offset = max(0, min(m.offset, max(0, len(m.rows)-rows)))
+	// Show the header of the cursor's group when the cursor is its first row.
+	if m.offset > 0 && m.offset == m.cursor && rows > 1 && m.rows[m.offset-1].header {
+		m.offset--
+	}
 }
 
 func (m model) View() string {
@@ -82,7 +87,7 @@ func (m model) View() string {
 		b.WriteString(errorStyle.Render("Could not list booths: "+m.listErr.Error()) + "\n")
 	case !m.loaded:
 		b.WriteString(dimStyle.Render("Loading booths…") + "\n")
-	case len(m.booths) == 0:
+	case len(m.rows) == 0:
 		b.WriteString(dimStyle.Render("No booths. Run `booth` in a project folder to start one.") + "\n")
 	default:
 		b.WriteString(m.table())
@@ -92,6 +97,9 @@ func (m model) View() string {
 		b.WriteString(warnStyle.Render(m.fit(warning)) + "\n")
 	}
 	help := helpLines
+	if m.prompt != nil {
+		help = promptHelpLines
+	}
 	if m.compose != nil {
 		b.WriteString("\n")
 		b.WriteString(m.composeView())
@@ -132,6 +140,9 @@ func (m model) titleLine() string {
 }
 
 func (m model) statusLine() string {
+	if m.prompt != nil {
+		return m.promptLine()
+	}
 	if m.confirm != nil {
 		return confirmStyle.Render(m.fit(m.confirm.plan.Confirm + " [y/N]"))
 	}
@@ -200,25 +211,36 @@ func (m model) pickerView() string {
 	return b.String()
 }
 
-// column is one table column: its header and each booth's cell.
+// column is one table column: its header and each row's cell.
 type column struct {
 	header string
-	cell   func(lifecycle.Booth) string
+	cell   func(row) string
 	max    int  // widest it may grow; 0 = no limit
 	flex   bool // takes the width left over (the code path)
 }
 
 func (m model) columns() []column {
-	cols := []column{{header: "NAME", cell: func(b lifecycle.Booth) string { return b.Name }, max: 32}}
+	boothCell := func(f func(lifecycle.Booth) string) func(row) string {
+		return func(r row) string {
+			if r.booth == nil {
+				return "-"
+			}
+			return f(*r.booth)
+		}
+	}
+	cols := []column{{header: "NAME", cell: boothCell(func(b lifecycle.Booth) string { return b.Name }), max: 32}}
 	if m.multiEngine() {
-		cols = append(cols, column{header: "ENGINE", cell: func(b lifecycle.Booth) string { return b.Engine }})
+		cols = append(cols, column{header: "ENGINE", cell: boothCell(func(b lifecycle.Booth) string { return b.Engine })})
+	}
+	cols = append(cols, column{header: "STATUS", cell: m.statusCell})
+	if len(m.repos) > 0 {
+		cols = append(cols, column{header: "WORKTREE", cell: func(r row) string { return branchText(r.worktree) }, max: 32})
 	}
 	cols = append(cols,
-		column{header: "STATUS", cell: m.statusCell},
-		column{header: "VARIANT", cell: func(b lifecycle.Booth) string { return dashIfEmpty(b.Variant) }, max: 16},
-		column{header: "PORT", cell: func(b lifecycle.Booth) string { return dashIfEmpty(b.Port) }},
-		column{header: "AGE", cell: func(b lifecycle.Booth) string { return age(b.CreatedAt, m.deps.Now()) }},
-		column{header: "CODE PATH", cell: func(b lifecycle.Booth) string { return m.shortPath(b.CodePath) }, flex: true},
+		column{header: "VARIANT", cell: boothCell(func(b lifecycle.Booth) string { return dashIfEmpty(b.Variant) }), max: 16},
+		column{header: "PORT", cell: boothCell(func(b lifecycle.Booth) string { return dashIfEmpty(b.Port) })},
+		column{header: "AGE", cell: boothCell(func(b lifecycle.Booth) string { return age(b.CreatedAt, m.deps.Now()) })},
+		column{header: "CODE PATH", cell: func(r row) string { return m.shortPath(r.path()) }, flex: true},
 	)
 	return cols
 }
@@ -232,7 +254,17 @@ func (m model) multiEngine() bool {
 	return false
 }
 
-func (m model) statusCell(b lifecycle.Booth) string {
+func (m model) statusCell(r row) string {
+	if r.booth == nil {
+		if busy, ok := m.busy[r.key()]; ok {
+			return busy
+		}
+		if r.worktree != nil && r.worktree.Prunable {
+			return "folder gone"
+		}
+		return "no booth"
+	}
+	b := *r.booth
 	state := "Stopped"
 	if busy, ok := m.busy[boothKey(b)]; ok {
 		state = busy
@@ -251,8 +283,10 @@ func (m model) table() string {
 	widths := make([]int, len(cols))
 	for i, col := range cols {
 		widths[i] = lipgloss.Width(col.header)
-		for _, booth := range m.booths {
-			widths[i] = max(widths[i], lipgloss.Width(col.cell(booth)))
+		for _, r := range m.rows {
+			if !r.header {
+				widths[i] = max(widths[i], lipgloss.Width(col.cell(r)))
+			}
 		}
 		if col.max > 0 {
 			widths[i] = min(widths[i], col.max)
@@ -294,20 +328,26 @@ func (m model) table() string {
 	b.WriteString("  " + headerStyle.Render(render(headers)) + "\n")
 
 	rows := m.tableRows()
-	end := min(len(m.booths), m.offset+rows)
+	end := min(len(m.rows), m.offset+rows)
 	for i := m.offset; i < end; i++ {
-		booth := m.booths[i]
+		r := m.rows[i]
+		if r.header {
+			b.WriteString(m.groupHeader(*r.repo) + "\n")
+			continue
+		}
 		cells := make([]string, len(cols))
 		for c, col := range cols {
-			cells[c] = col.cell(booth)
+			cells[c] = col.cell(r)
 		}
 		line := render(cells)
 		switch {
 		case i == m.cursor:
 			b.WriteString(cursorStyle.Render("› " + line))
-		case m.busy[boothKey(booth)] != "":
+		case m.busy[r.key()] != "":
 			b.WriteString("  " + busyStyle.Render(line))
-		case booth.Running():
+		case r.booth == nil:
+			b.WriteString("  " + dimStyle.Render(line))
+		case r.booth.Running():
 			b.WriteString("  " + runningStyle.Render(line))
 		default:
 			b.WriteString("  " + line)
@@ -315,6 +355,19 @@ func (m model) table() string {
 		b.WriteString("\n")
 	}
 	return b.String()
+}
+
+// groupHeader is a repository's line: its name, then where it is.
+func (m model) groupHeader(repo lifecycle.Repo) string {
+	name := repo.Name
+	if repo.Here {
+		name += " (here)"
+	}
+	line := groupStyle.Render(name)
+	if repo.Root != "" {
+		line += dimStyle.Render("  " + m.shortPath(repo.Root))
+	}
+	return line
 }
 
 // fit cuts a line to the screen width.

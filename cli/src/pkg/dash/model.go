@@ -31,15 +31,27 @@ const (
 	keyPorts   = "p"
 	keyMessage = "m"
 	keyDetail  = "i"
-	keyRefresh = "R"
+	keyNew     = "n"
+	keyEditor  = "e"
+	// GitKraken is K: g already jumps to the top.
+	keyGitKraken = "K"
+	keyRefresh   = "R"
 )
 
 // Deps is everything the dashboard does outside itself; tests replace it.
 type Deps struct {
 	// Snapshot lists the booths, plus warnings from engines that could not answer.
 	Snapshot func() ([]lifecycle.Booth, []string, error)
-	// Run runs the booth binary with args, capturing its output.
-	Run func(args []string) (string, error)
+	// Run runs the booth binary with args in dir ("" = the dashboard's own),
+	// capturing its output.
+	Run func(dir string, args []string) (string, error)
+	// Repos finds the repositories to group booths under; nil shows a flat list.
+	Repos func(booths []lifecycle.Booth) []lifecycle.Repo
+	// Editor is the command that opens path in the user's editor; it gets the
+	// terminal, so a terminal editor works too.
+	Editor func(path string) (*exec.Cmd, error)
+	// GitKraken opens path in GitKraken, and returns once it is launched.
+	GitKraken func(path string) error
 	// Command builds the booth binary command for an interactive action.
 	Command func(args []string) *exec.Cmd
 	// Message runs `booth message send` with args, capturing its output. A
@@ -70,9 +82,11 @@ type model struct {
 	deps Deps
 
 	booths   []lifecycle.Booth
-	cursor   int
+	repos    []lifecycle.Repo
+	rows     []row  // what the table shows: headers, booths, bare worktrees
+	cursor   int    // index in rows; never a header once there is a row
 	offset   int    // first row shown when the table is taller than the screen
-	selected string // key of the selected booth, kept across refreshes
+	selected string // key of the selected row, kept across refreshes
 	busy     map[string]string
 	asking   map[string]int // questions sent and not yet answered, per booth
 
@@ -89,6 +103,7 @@ type model struct {
 	confirm   *pendingConfirm
 	picker    *portPicker
 	compose   *compose
+	prompt    *namePrompt
 
 	detailOpen bool
 	detail     *detailPane
@@ -112,14 +127,15 @@ type portPicker struct {
 }
 
 type pendingConfirm struct {
-	plan  plan
-	booth lifecycle.Booth
+	plan      plan
+	key, name string
 }
 
 type (
 	snapshotMsg struct {
 		seq      int
 		booths   []lifecycle.Booth
+		repos    []lifecycle.Repo
 		warnings []string
 		err      error
 	}
@@ -175,10 +191,14 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) fetch(seq int) tea.Cmd {
-	snapshot := m.deps.Snapshot
+	snapshot, findRepos := m.deps.Snapshot, m.deps.Repos
 	return func() tea.Msg {
 		booths, warnings, err := snapshot()
-		return snapshotMsg{seq: seq, booths: booths, warnings: warnings, err: err}
+		var repos []lifecycle.Repo
+		if err == nil && findRepos != nil {
+			repos = findRepos(booths)
+		}
+		return snapshotMsg{seq: seq, booths: booths, repos: repos, warnings: warnings, err: err}
 	}
 }
 
@@ -243,6 +263,8 @@ func (m model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err == nil {
 			m.loaded = true
 			m.booths = msg.booths
+			m.repos = msg.repos
+			m.rows = buildRows(m.booths, m.repos)
 			m.refreshedAt = m.deps.Now()
 			m.reselect()
 		}
@@ -296,6 +318,9 @@ func (m model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.compose != nil {
 			return m.handleComposeKey(msg)
 		}
+		if m.prompt != nil {
+			return m.handlePromptKey(msg)
+		}
 		return m.handleKey(msg.String())
 	}
 	return m, nil
@@ -309,7 +334,7 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 		pending := *m.confirm
 		m.confirm = nil
 		if key == "y" || key == "Y" {
-			return m.execute(pending.booth, pending.plan)
+			return m.execute(pending.key, pending.name, pending.plan)
 		}
 		m.setStatus("Cancelled.", false)
 		return m, nil
@@ -323,9 +348,9 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 	case "down", "j":
 		m.move(1)
 	case "home", "g":
-		m.move(-len(m.booths))
+		m.move(-len(m.rows))
 	case "end", "G":
-		m.move(len(m.booths))
+		m.move(len(m.rows))
 	case "pgup":
 		m.move(-m.tableRows())
 	case "pgdown":
@@ -333,11 +358,49 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 	case keyRefresh:
 		m.setStatus("", false)
 		return m.refresh(true)
-	case keyPorts:
-		booth, ok := m.current()
-		if !ok {
+	case keyDetail:
+		return m.toggleDetail()
+	case keyNew:
+		r, ok := m.currentRow()
+		if !ok || r.repo == nil || r.repo == otherBooths {
+			m.setStatus("Select a row of a repository to add a worktree to it.", false)
 			return m, nil
 		}
+		m.setStatus("", false)
+		m.prompt = &namePrompt{repo: r.repo}
+		return m, nil
+	case keyEditor, keyGitKraken:
+		r, ok := m.currentRow()
+		if !ok || r.path() == "" {
+			return m, nil
+		}
+		return m.openIn(key, r.path())
+	}
+
+	r, ok := m.currentRow()
+	if !ok {
+		return m, nil
+	}
+	if r.booth == nil {
+		// A worktree without a booth.
+		if state, busy := m.busy[r.key()]; busy {
+			m.setStatus(r.worktree.Name()+" is "+strings.TrimSuffix(state, "…")+"; wait for it to finish.", false)
+			return m, nil
+		}
+		p, reason := planForWorktree(key, r)
+		if reason != "" {
+			m.setStatus(reason, false)
+			return m, nil
+		}
+		if p.Verb == "" {
+			return m, nil
+		}
+		return m.run(r.key(), r.worktree.Name(), p)
+	}
+
+	booth := *r.booth
+	switch key {
+	case keyPorts:
 		if !booth.Running() {
 			m.setStatus(booth.Name+" is not running; use s to start it.", false)
 			return m, nil
@@ -349,13 +412,7 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 			list, err := ports(booth)
 			return portsMsg{key: key, ports: list, err: err}
 		}
-	case keyDetail:
-		return m.toggleDetail()
 	case keyMessage:
-		booth, ok := m.current()
-		if !ok {
-			return m, nil
-		}
 		if !booth.Running() {
 			m.setStatus(booth.Name+" is not running; use s to start it.", false)
 			return m, nil
@@ -365,10 +422,6 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 		m.clampOffset()
 		return m, nil
 	case keyStart, keyStop, keyRestart, keyRemove, keyShell, keyOpen:
-		booth, ok := m.current()
-		if !ok {
-			return m, nil
-		}
 		if state, busy := m.busy[boothKey(booth)]; busy {
 			m.setStatus(booth.Name+" is "+strings.TrimSuffix(state, "…")+"; wait for it to finish.", false)
 			return m, nil
@@ -378,36 +431,42 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 			m.setStatus(reason, false)
 			return m, nil
 		}
-		if p.Confirm != "" {
-			m.confirm = &pendingConfirm{plan: p, booth: booth}
-			return m, nil
-		}
-		return m.execute(booth, p)
+		return m.run(boothKey(booth), booth.Name, p)
 	}
 	return m, nil
 }
 
-func (m model) execute(booth lifecycle.Booth, p plan) (tea.Model, tea.Cmd) {
+// run asks first when the plan says so, else executes it.
+func (m model) run(key, name string, p plan) (tea.Model, tea.Cmd) {
+	if p.Confirm != "" {
+		m.confirm = &pendingConfirm{plan: p, key: key, name: name}
+		return m, nil
+	}
+	return m.execute(key, name, p)
+}
+
+// execute carries out p for the row named key (its busy state) and name (in
+// messages).
+func (m model) execute(key, name string, p plan) (tea.Model, tea.Cmd) {
 	if p.URL != "" {
 		// Opening a page changes nothing about the booth: no busy row, no refresh.
 		m.setStatus("", false)
-		open, url, name := m.deps.Open, p.URL, booth.Name
+		open, url := m.deps.Open, p.URL
 		return m, func() tea.Msg { return openDoneMsg{name: name, plan: p, err: open(url)} }
 	}
 	if p.Interactive {
 		m.setStatus("", false)
-		name := booth.Name
 		return m, tea.ExecProcess(m.deps.Command(p.Args), func(err error) tea.Msg {
 			return execDoneMsg{name: name, plan: p, err: err}
 		})
 	}
-	key := boothKey(booth)
-	m.busy[key] = p.Busy
-	m.setStatus("", false)
+	if p.Busy != "" {
+		m.busy[key] = p.Busy
+		m.setStatus("", false)
+	}
 	run := m.deps.Run
-	name := booth.Name
 	return m, func() tea.Msg {
-		output, err := run(p.Args)
+		output, err := run(p.Dir, p.Args)
 		return actionDoneMsg{key: key, name: name, plan: p, output: output, err: err}
 	}
 }
@@ -430,7 +489,7 @@ func (m model) handlePickerKey(key string) (tea.Model, tea.Cmd) {
 		}
 		url := picker.ports[picker.cursor].URL()
 		m.picker = nil
-		return m.execute(picker.booth, plan{Verb: "open", URL: url, Done: "Opened " + url + " in your browser."})
+		return m.execute(boothKey(picker.booth), picker.booth.Name, plan{Verb: "open", URL: url, Done: "Opened " + url + " in your browser."})
 	}
 	m.picker = &picker
 	return m, nil
@@ -440,39 +499,77 @@ func (m *model) setStatus(status string, isErr bool) {
 	m.status, m.statusErr = status, isErr
 }
 
-func (m model) current() (lifecycle.Booth, bool) {
-	if m.cursor < 0 || m.cursor >= len(m.booths) {
-		return lifecycle.Booth{}, false
+// currentRow is the selected row (never a header).
+func (m model) currentRow() (row, bool) {
+	if m.cursor < 0 || m.cursor >= len(m.rows) || m.rows[m.cursor].header {
+		return row{}, false
 	}
-	return m.booths[m.cursor], true
+	return m.rows[m.cursor], true
 }
 
+// current is the selected booth, when the selected row has one.
+func (m model) current() (lifecycle.Booth, bool) {
+	r, ok := m.currentRow()
+	if !ok || r.booth == nil {
+		return lifecycle.Booth{}, false
+	}
+	return *r.booth, true
+}
+
+// move steps the cursor delta selectable rows, skipping headers.
 func (m *model) move(delta int) {
-	if len(m.booths) == 0 {
+	var selectable []int
+	at := 0
+	for i, r := range m.rows {
+		if r.header {
+			continue
+		}
+		if i <= m.cursor {
+			at = len(selectable)
+		}
+		selectable = append(selectable, i)
+	}
+	if len(selectable) == 0 {
 		return
 	}
-	m.cursor = max(0, min(len(m.booths)-1, m.cursor+delta))
-	m.selected = boothKey(m.booths[m.cursor])
+	m.cursor = selectable[max(0, min(len(selectable)-1, at+delta))]
+	m.selected = m.rows[m.cursor].key()
 	m.clampOffset()
 }
 
-// reselect keeps the cursor on the same booth after a refresh; when that booth
-// is gone, it stays at the same row number.
+// reselect keeps the cursor on the same row after a refresh. A worktree that
+// gained a booth keeps the cursor on that booth; a row that is gone leaves it
+// at the same place.
 func (m *model) reselect() {
-	if len(m.booths) == 0 {
-		m.cursor, m.selected = 0, ""
-		m.clampOffset()
-		return
-	}
-	for i, booth := range m.booths {
-		if boothKey(booth) == m.selected {
+	for i, r := range m.rows {
+		if !r.header && r.key() == m.selected {
 			m.cursor = i
 			m.clampOffset()
 			return
 		}
 	}
-	m.cursor = max(0, min(len(m.booths)-1, m.cursor))
-	m.selected = boothKey(m.booths[m.cursor])
+	if strings.HasPrefix(m.selected, "worktree:") {
+		path := strings.TrimPrefix(m.selected, "worktree:")
+		for i, r := range m.rows {
+			if !r.header && r.worktree != nil && r.worktree.Path == path {
+				m.cursor = i
+				m.selected = r.key()
+				m.clampOffset()
+				return
+			}
+		}
+	}
+	m.cursor = max(0, min(len(m.rows)-1, m.cursor))
+	// Land on a selectable row: the next one, else the one before.
+	m.move(0)
+	if _, ok := m.currentRow(); !ok {
+		m.move(1)
+	}
+	if r, ok := m.currentRow(); ok {
+		m.selected = r.key()
+	} else {
+		m.selected = ""
+	}
 	m.clampOffset()
 }
 
