@@ -49,9 +49,6 @@ func (m model) handlePromptKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		m.prompt = nil
-		m.setStatus("Creating worktree "+name+" in "+p.repo.Name+" and starting its booth…", false)
-		// The worktree has no row until it exists; the next refresh shows it.
-		m.selected = ""
 		return m.execute("new:"+p.repo.Root+":"+name, name, newWorktreePlan(p.repo, name))
 	default:
 		p.field.update(msg)

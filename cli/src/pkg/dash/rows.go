@@ -131,12 +131,13 @@ func planForWorktree(key string, r row) (plan, string) {
 		}
 		// The main checkout runs booth as it is; another worktree by name. It
 		// already exists, so booth leaves it in place when the booth ends.
+		// In the foreground, as every start is (see planFor).
 		if w.Main {
-			return plan{Verb: "start", Args: []string{"--daemon"}, Dir: w.Path,
-				Busy: "starting…", Done: "Started a booth on " + branchText(w) + "."}, ""
+			return plan{Verb: "start", Args: []string{"--daemon"}, Dir: w.Path, Interactive: true, Hold: true,
+				Done: "Started a booth on " + branchText(w) + "."}, ""
 		}
 		return plan{Verb: "start", Args: []string{"--worktree", w.Name(), "--daemon"}, Dir: r.repo.Root,
-			Busy: "starting…", Done: "Started a booth on " + w.Name() + "."}, ""
+			Interactive: true, Hold: true, Done: "Started a booth on " + w.Name() + "."}, ""
 
 	case keyRemove:
 		if w.Main {
@@ -158,5 +159,5 @@ func planForWorktree(key string, r row) (plan, string) {
 // nothing would be left to remove a worktree booth created.
 func newWorktreePlan(repo *lifecycle.Repo, name string) plan {
 	return plan{Verb: "create worktree", Args: []string{"--worktree", name, "--daemon", "--worktree-keep"},
-		Dir: repo.Root, Done: "Created worktree " + name + " and started its booth."}
+		Dir: repo.Root, Interactive: true, Hold: true, Done: "Created worktree " + name + " and started its booth."}
 }
