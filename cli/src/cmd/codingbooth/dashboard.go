@@ -81,6 +81,7 @@ func runDashboard(version string) {
 		Repos: func(booths []lifecycle.Booth) []lifecycle.Repo {
 			return lifecycle.Repos(booths, cwd)
 		},
+		GitStatus: lifecycle.GitStatus,
 		Editor:    editorCommand,
 		HostShell: hostShell,
 		LogView: func(b lifecycle.Booth) (*exec.Cmd, *exec.Cmd) {

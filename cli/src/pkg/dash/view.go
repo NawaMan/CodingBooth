@@ -242,6 +242,9 @@ func (m model) columns() []column {
 	if len(m.repos) > 0 {
 		cols = append(cols, column{header: "WORKTREE", cell: func(r row) string { return branchText(r.worktree) }, max: 32})
 	}
+	if m.gitShown() {
+		cols = append(cols, column{header: "GIT", cell: m.gitCell, max: 20, warn: m.gitDirty})
+	}
 	cols = append(cols,
 		column{header: "VARIANT", cell: boothCell(func(b lifecycle.Booth) string { return dashIfEmpty(b.Variant) }), max: 16},
 		column{header: "PORT", cell: boothCell(func(b lifecycle.Booth) string { return dashIfEmpty(b.Port) })},

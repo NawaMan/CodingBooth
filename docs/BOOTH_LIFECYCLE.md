@@ -145,6 +145,16 @@ nothing would be lost, as [`booth worktree remove`](BOOTH_WORKTREE.md#removing-a
 and refuses while a booth runs on it; the main checkout is never removed. There is no landing or
 merging here: open the worktree in your editor or GitKraken for that.
 
+**GIT** is each worktree's status: `*3` files changed (uncommitted or untracked; booth's own
+`.booth/.tmp/` is not counted), `↑2` commits ahead and `↓5` behind, or `clean`. A worktree counts
+against the main checkout's branch, and shows `merged` once its branch has landed there: nothing
+ahead, and it has had commits of its own (read from the branch's reflog, so a branch that never had
+a commit shows only `↓n`). The main checkout counts against its upstream — unpushed (`↑`) and
+unpulled (`↓`) commits — and shows only changed files when it has none. Nothing is fetched: it is
+what this clone last saw. A worktree with changes is drawn in the warning colour. Git status is read
+only for the rows on screen, a few at a time, and kept for 10 seconds; `R`, an action, or coming
+back from a shell, terminal or editor reads it again.
+
 **VERSION** is the CodingBooth version that built each booth. It turns the warning colour when the
 booth has fallen behind what `booth` would build for it now:
 
