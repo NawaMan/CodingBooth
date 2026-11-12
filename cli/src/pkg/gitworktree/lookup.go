@@ -45,6 +45,14 @@ func IsNotFound(err error) bool {
 // git runs git with dir as its working directory and returns stdout, trimmed. The error carries
 // git's own message.
 func git(dir string, args ...string) (string, error) {
+	out, err := gitRaw(dir, args...)
+	return strings.TrimSpace(out), err
+}
+
+// gitRaw is git without the trim. `git status --porcelain` needs it: a line's
+// leading space is its status (" M path"), and trimming the output takes it
+// from the first line.
+func gitRaw(dir string, args ...string) (string, error) {
 	gitPath, err := exec.LookPath("git")
 	if err != nil {
 		return "", fmt.Errorf("--worktree needs git, and git is not installed")
@@ -59,7 +67,7 @@ func git(dir string, args ...string) (string, error) {
 		}
 		return "", fmt.Errorf("git %s: %w", strings.Join(args, " "), err)
 	}
-	return strings.TrimSpace(string(out)), nil
+	return string(out), nil
 }
 
 // List returns the worktrees of the repository holding dir, the main worktree first.
