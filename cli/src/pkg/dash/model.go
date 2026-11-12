@@ -30,6 +30,7 @@ const (
 	keyOpen    = "o"
 	keyPorts   = "p"
 	keyMessage = "m"
+	keyDetail  = "i"
 	keyRefresh = "R"
 )
 
@@ -49,8 +50,16 @@ type Deps struct {
 	Open func(url string) error
 	// Ports lists a running booth's exposed ports (`booth expose list`).
 	Ports func(booth lifecycle.Booth) ([]lifecycle.ExposedPort, error)
+	// The detail pane's parts (i), for one booth.
+	Stats   func(booth lifecycle.Booth) (lifecycle.BoothStats, error)
+	State   func(booth lifecycle.Booth) (lifecycle.BoothState, error)
+	Pending func(booth lifecycle.Booth) ([]lifecycle.PendingMessage, error)
+	Logs    func(booth lifecycle.Booth, lines int) (string, error)
 	// Interval between refreshes.
 	Interval time.Duration
+	// DetailInterval between reloads of the detail pane (default 5s): it
+	// costs an exec and a stats sample, so it is slower than the table.
+	DetailInterval time.Duration
 	// Home is shortened to ~ in code paths ("" leaves paths as they are).
 	Home string
 	// Now is the clock (ages, the refresh time).
@@ -80,6 +89,11 @@ type model struct {
 	confirm   *pendingConfirm
 	picker    *portPicker
 	compose   *compose
+
+	detailOpen bool
+	detail     *detailPane
+	detailGen  int // bumped for each booth the pane loads
+	detailSeq  int // bumped each time the pane opens; ends the old tick chain
 
 	// ctx ends with the dashboard; questions still waiting are cancelled.
 	ctx    context.Context
@@ -148,6 +162,9 @@ func newModel(deps Deps) model {
 	if deps.Now == nil {
 		deps.Now = time.Now
 	}
+	if deps.DetailInterval <= 0 {
+		deps.DetailInterval = 5 * time.Second
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	return model{deps: deps, busy: map[string]string{}, asking: map[string]int{},
 		loading: true, fetchSeq: 1, ctx: ctx, cancel: cancel}
@@ -181,8 +198,29 @@ func (m model) refresh(force bool) (model, tea.Cmd) {
 	return m, m.fetch(m.fetchSeq)
 }
 
+// Update handles msg, then keeps the detail pane on the selected booth.
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	next, cmd := m.update(msg)
+	m, ok := next.(model)
+	if !ok {
+		return next, cmd
+	}
+	m, load := m.syncDetail()
+	return m, tea.Batch(cmd, load)
+}
+
+func (m model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case detailMsg:
+		return m.applyDetail(msg), nil
+
+	case detailTickMsg:
+		if !m.detailOpen || msg.seq != m.detailSeq {
+			return m, nil
+		}
+		m, load := m.loadDetail()
+		return m, tea.Batch(load, m.detailTick())
+
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
 		m.clampOffset()
@@ -311,6 +349,8 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 			list, err := ports(booth)
 			return portsMsg{key: key, ports: list, err: err}
 		}
+	case keyDetail:
+		return m.toggleDetail()
 	case keyMessage:
 		booth, ok := m.current()
 		if !ok {
