@@ -168,7 +168,7 @@ func TestNewWorktreePromptCreatesAndStarts(t *testing.T) {
 	if m.prompt != nil || cmd == nil {
 		t.Fatalf("enter: prompt %+v cmd %v", m.prompt, cmd != nil)
 	}
-	want := []string{"--worktree", "feature/x", "--daemon", "--worktree-keep"}
+	want := []string{"--worktree", "feature/x", "--daemon"}
 	if len(f.execed) != 1 || !reflect.DeepEqual(f.execed[0], want) || f.execedIn[0] != "/home/u/dev/proj" {
 		t.Fatalf("execed %v in %v, want %v in the repository", f.execed, f.execedIn, want)
 	}

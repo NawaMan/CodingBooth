@@ -25,7 +25,7 @@ func TestFinish_LastWorktreeKeepsGitWorktreesDir(t *testing.T) {
 	if exists(filepath.Join(worktrees, worktreesKeepFile)) {
 		t.Fatal("expected git's prune to drop the keep file")
 	}
-	if out := Finish(main, p, FinishOptions{}); !out.Removed {
+	if out := Finish(main, p, FinishOptions{Remove: true}); !out.Removed {
 		t.Fatalf("want the worktree removed: %+v", out)
 	}
 	if !isDir(worktrees) || !exists(filepath.Join(worktrees, worktreesKeepFile)) {

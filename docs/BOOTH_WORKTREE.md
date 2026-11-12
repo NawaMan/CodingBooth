@@ -1,7 +1,7 @@
 # Booth on a Git Worktree
 
 > Run a booth on a git worktree by name: `booth --worktree <name>`. booth finds the worktree, or
-> creates it, and leaves the repository the way it found it when the booth exits.
+> creates it, and keeps it when the booth exits. `--worktree-remove` removes one it created.
 
 Back to [README](../README.md) · [booth run](BOOTH_RUN.md)
 
@@ -16,33 +16,32 @@ booth --worktree fix-123 -- claude -p "fix issue 123"
 1. No worktree `fix-123` yet, so booth creates one on a new branch `fix-123`, starting at your
    current commit, in `../<project>.worktrees/fix-123`.
 2. The booth runs there: `/home/coder/code` is the worktree, with a working git.
-3. When the booth exits, booth removes the worktree again, if nothing would be lost. Commits stay
-   on the branch `fix-123`.
+3. When the booth exits, the worktree and its branch stay. booth prints the path:
+   `booth --worktree fix-123` resumes it, and `booth worktree remove fix-123` ends it.
 
-On a worktree that already exists, `booth --worktree <name>` just opens it, and leaves it in place.
+On a worktree that already exists, `booth --worktree <name>` just opens it.
 
-Add `--worktree-push` to push the branch when the run succeeds; then only the pushed branch remains:
+Add `--worktree-remove` for a throwaway run: the worktree goes again when the booth exits, if
+nothing would be lost. Add `--worktree-push` to push the branch when the run succeeds. Together,
+only the pushed branch remains:
 
 ```bash
-booth --worktree fix-123 --worktree-push -- claude -p "fix issue 123, and commit the fix"
+booth --worktree fix-123 --worktree-push --worktree-remove -- claude -p "fix issue 123, and commit the fix"
 ```
 
-## The rule: booth leaves things the way it found them
-
-The same as booth's own container, which is removed at exit unless `--keep-alive`:
+## The rule: a worktree is kept
 
 | At start | At exit |
 | --- | --- |
-| The worktree was **created by this run** | Removed, when nothing would be lost. `--worktree-keep` keeps it |
-| The worktree **already existed**: yours, another tool's, or kept by an earlier run | Left in place. Remove it with `booth worktree remove <name>` |
+| The worktree was **created by this run** | Kept. `--worktree-remove` removes it, when nothing would be lost |
+| The worktree **already existed**: yours, another tool's, or kept by an earlier run | Left in place, even with `--worktree-remove` |
 
-The branch follows the same rule: booth deletes only a branch this run created, and only when it
-has no new commits.
+Either way, [`booth worktree remove <name>`](#removing-a-worktree) ends it later.
 
-### When a created worktree is kept
+### `--worktree-remove`: when a created worktree goes
 
 booth removes a worktree only with `git worktree remove` and `git branch -d`, never `--force`, and
-checks first. It keeps the worktree, and prints its path and the reason, when:
+checks first. With `--worktree-remove`, at exit:
 
 | At exit | What happens |
 | --- | --- |
@@ -51,15 +50,15 @@ checks first. It keeps the worktree, and prints its path and the reason, when:
 | Uncommitted changes or untracked files | Worktree kept |
 | The booth exited non-zero | Worktree kept |
 | No longer on its branch (switched inside the booth) | Worktree kept |
-| `--worktree-keep` | Worktree kept |
 
+It deletes only a branch this run created. Anything kept is printed with its path and the reason.
 With `--worktree-push`, the push happens first, and only on success: the local branch then
 matches the remote, so it is deleted too (see [Pushing the branch](#pushing-the-branch)).
 
 **A restart is not an exit.** The Restart button or `booth--restart` starts a fresh container on the
 same worktree; cleanup happens only when the booth really exits.
 
-A kept worktree already exists on the next run, so from then on it is left in place:
+A worktree that was kept already exists on the next run, so from then on it is left in place:
 `booth --worktree <name>` resumes it, and [`booth worktree remove <name>`](#removing-a-worktree)
 ends it.
 
@@ -79,9 +78,9 @@ your push credentials. There is no prompt.
   (`git push --set-upstream origin <name>`). With neither, nothing is pushed.
 - **When:** only if the run succeeded: the booth exited 0, nothing is uncommitted, and the worktree
   is still on its branch. Otherwise booth says why it did not push, and keeps the worktree.
-- **Then:** a worktree this run created is removed as usual, and its new branch is deleted (`git
-  branch -d`), since the remote has it. A new branch with no commits is not pushed at all.
-- **Existing worktree, or `--worktree-keep`:** booth pushes, and leaves the worktree in place.
+- **Then:** the worktree stays. With `--worktree-remove`, a worktree this run created is removed
+  as usual, and its new branch is deleted (`git branch -d`), since the remote has it. A new branch
+  with no commits is not pushed at all.
 - **Exit code:** when `--worktree-push` was given and booth did not push (uncommitted work, a
   rejected push, no remote), booth exits 1 even though the booth exited 0. A script can tell. A
   branch with nothing new is not a failure.
@@ -129,7 +128,7 @@ booth prints the path it created. A root inside the repository is added to `.git
 (local, never committed), so it does not show in `git status`. booth never edits `.gitignore`.
 
 **`--daemon` and `--keep-alive`** outlive the command, so nothing would be left to remove the
-worktree: on a worktree booth would create, they need `--worktree-keep`.
+worktree: they do not combine with `--worktree-remove` on a worktree booth would create.
 
 **`--dryrun`** prints where the worktree would go and stops; it creates nothing.
 
@@ -146,14 +145,15 @@ its folder. A `name` in `config.toml`, or `--name`, still wins.
 | `--worktree <name>` | The worktree to run on: found by branch or folder, else created |
 | `--worktree-root <dir>` | Where a new worktree goes |
 | `--worktree-from <ref>` | Where a new branch starts (default `HEAD`) |
-| `--worktree-keep` | Keep the worktree this run creates |
+| `--worktree-remove` | Remove the worktree this run creates when the booth exits, if nothing would be lost |
 | `--worktree-push` | Push the branch when the run succeeds (to its upstream, else `origin`) |
 
 Commands: `booth worktree list` ([Listing worktrees](#listing-worktrees)) and `booth worktree
 remove <name>` ([Removing a worktree](#removing-a-worktree)).
 
-`--worktree-keep` and `--worktree-push` were `--keep-worktree` and `--push` in 0.81.0. The old
-names still work for now, with a warning naming the new one.
+`--worktree-push` was `--push` in 0.81.0; the old name still works for now, with a warning.
+`--worktree-keep` (`--keep-worktree` in 0.81.0) is gone since keeping became the default: booth
+refuses it, and says so.
 
 They are bootstrap options, read before the config file, like `--code`. `booth express` does not
 take them.
@@ -175,8 +175,8 @@ workspace exists only in the container.
 
 - **Untracked local files**, such as `.booth/.env`, are not in a new worktree: `git worktree add`
   brings only committed files. A booth on a new worktree starts without them.
-- **Volumes** the booth used (`booth-pgdata-{name}`) are not removed when booth removes a worktree
-  at exit; `booth worktree remove --force` removes them.
+- **Volumes** the booth used (`booth-pgdata-{name}`) are not removed when `--worktree-remove`
+  removes a worktree at exit; `booth worktree remove --force` removes them.
 
 ## Listing worktrees
 

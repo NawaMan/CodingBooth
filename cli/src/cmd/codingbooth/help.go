@@ -139,16 +139,16 @@ BOOTSTRAP OPTIONS (CLI or defaults; evaluated before env and config file):
                          (default: current directory)
   --worktree <name>      Use the git worktree whose branch, or else folder, is
                          <name> as the code path, found with git worktree list.
-                         None yet: create it on branch <name> (new, or existing),
-                         and remove it when the booth exits, if nothing would be
-                         lost. Not combinable with --code. See docs/BOOTH_WORKTREE.md.
+                         None yet: create it on branch <name> (new, or existing).
+                         It is kept when the booth exits. Not combinable with
+                         --code. See docs/BOOTH_WORKTREE.md.
   --worktree-root <dir>  Where a new worktree goes (default: the folder the other
                          worktrees share, else ../<project>.worktrees)
   --worktree-from <ref>  Start a new branch at <ref> (default: HEAD)
-  --worktree-keep        Keep the worktree this run creates
+  --worktree-remove      Remove the worktree this run creates when the booth
+                         exits, if nothing would be lost
   --worktree-push        With --worktree: when the booth exits 0 with a clean
                          tree, push the branch (to its upstream, else origin)
-                         before removing the worktree
   --config <file>        Path to the config file to load
                          (default: <code>/.booth/config.toml)
   --profile <a[,b]>      Overlay .booth/<name>--config.toml and .booth/.<name>--env

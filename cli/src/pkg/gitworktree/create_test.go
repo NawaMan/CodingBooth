@@ -142,6 +142,35 @@ func TestPlanCreate_Refusals(t *testing.T) {
 	}
 }
 
+func TestFinish_KeepsByDefault(t *testing.T) {
+	_, main := repo(t)
+	p := plan(t, main, CreateOptions{Name: "w"})
+	if err := Create(main, p); err != nil {
+		t.Fatal(err)
+	}
+	out := Finish(main, p, FinishOptions{})
+	if out.Removed || out.BranchDeleted || !exists(p.Path) {
+		t.Fatalf("want the worktree and its branch kept: %+v", out)
+	}
+	if _, err := git(main, "rev-parse", "--verify", "--quiet", "refs/heads/w"); err != nil {
+		t.Error("branch w should still exist")
+	}
+	want := "Kept worktree " + p.Path + ". `booth --worktree w` resumes it, `booth worktree remove w` removes it."
+	if len(out.Messages) != 1 || out.Messages[0] != want {
+		t.Errorf("want %q, got %q", want, out.Messages)
+	}
+}
+
+func TestFinish_ExistingWorktreeIsKeptSilently(t *testing.T) {
+	root, main := repo(t)
+	path := filepath.Join(root, "mine")
+	run(t, main, "worktree", "add", "-q", path, "-b", "mine")
+	out := Finish(main, Plan{Path: path, Branch: "mine"}, FinishOptions{Existing: true, Remove: true})
+	if out.Removed || !exists(path) || len(out.Messages) != 0 {
+		t.Fatalf("an existing worktree is never removed, even with Remove, and needs no message: %+v", out)
+	}
+}
+
 func TestCreateAndFinish_CleanRunRemovesEverything(t *testing.T) {
 	root, main := repo(t)
 	p := plan(t, main, CreateOptions{Name: "feature/x"})
@@ -152,7 +181,7 @@ func TestCreateAndFinish_CleanRunRemovesEverything(t *testing.T) {
 		t.Fatalf("the new worktree is found: %+v %v", e, err)
 	}
 
-	out := Finish(main, p, FinishOptions{})
+	out := Finish(main, p, FinishOptions{Remove: true})
 	if !out.Removed || !out.BranchDeleted {
 		t.Fatalf("want worktree and branch removed: %+v", out)
 	}
@@ -185,7 +214,7 @@ func TestFinish_KeepsWhatWouldBeLost(t *testing.T) {
 				t.Fatal(err)
 			}
 			c.change(t, p.Path)
-			out := Finish(main, p, FinishOptions{ExitCode: c.exitCode})
+			out := Finish(main, p, FinishOptions{ExitCode: c.exitCode, Remove: true})
 			if out.Removed || !exists(p.Path) {
 				t.Fatalf("want the worktree kept: %+v", out)
 			}
@@ -203,7 +232,7 @@ func TestFinish_CommitsKeepTheBranch(t *testing.T) {
 		t.Fatal(err)
 	}
 	commit(t, p.Path, "work")
-	out := Finish(main, p, FinishOptions{})
+	out := Finish(main, p, FinishOptions{Remove: true})
 	if !out.Removed || out.BranchDeleted {
 		t.Fatalf("want the worktree removed and the branch with its commit kept: %+v", out)
 	}
@@ -219,7 +248,7 @@ func TestFinish_ExistingBranchIsNeverDeleted(t *testing.T) {
 	if err := Create(main, p); err != nil {
 		t.Fatal(err)
 	}
-	out := Finish(main, p, FinishOptions{})
+	out := Finish(main, p, FinishOptions{Remove: true})
 	if !out.Removed || out.BranchDeleted {
 		t.Fatalf("want the worktree removed, the existing branch kept: %+v", out)
 	}
@@ -239,7 +268,7 @@ func TestFinish_IgnoredFilesDoNotBlock(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(p.Path, "build"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if out := Finish(main, p, FinishOptions{}); !out.Removed {
+	if out := Finish(main, p, FinishOptions{Remove: true}); !out.Removed {
 		t.Fatalf("ignored files are not work in progress; git removes them: %+v", out)
 	}
 }
@@ -312,7 +341,7 @@ func TestFinish_BoothRuntimeFilesAreNotWork(t *testing.T) {
 	if err := os.WriteFile(log, []byte("x"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if out := Finish(main, p, FinishOptions{}); !out.Removed {
+	if out := Finish(main, p, FinishOptions{Remove: true}); !out.Removed {
 		t.Fatalf("booth's own .booth/.tmp files should not keep the worktree: %+v", out)
 	}
 }
@@ -332,7 +361,7 @@ func TestFinish_RuntimeFilesBesideWorkStillKeep(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if out := Finish(main, p, FinishOptions{}); out.Removed {
+	if out := Finish(main, p, FinishOptions{Remove: true}); out.Removed {
 		t.Fatal("notes.txt is work: the worktree should be kept")
 	}
 	if !exists(filepath.Join(p.Path, ".booth", ".tmp", "lifecycle.log")) {
@@ -368,7 +397,7 @@ func TestFinish_PushThenRemoveEverything(t *testing.T) {
 	commit(t, p.Path, "work")
 	head := run(t, p.Path, "rev-parse", "HEAD")
 
-	out := Finish(main, p, FinishOptions{Push: true})
+	out := Finish(main, p, FinishOptions{Push: true, Remove: true})
 	if !out.Pushed || !out.Removed || !out.BranchDeleted || out.NotPushed {
 		t.Fatalf("want pushed, worktree removed, local branch deleted: %+v", out)
 	}
@@ -430,7 +459,7 @@ func TestFinish_NoPushWhenTheRunDidNotSucceed(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(p.Path, "draft.txt"), []byte("x"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	for _, opts := range []FinishOptions{{Push: true, ExitCode: 2}, {Push: true}} {
+	for _, opts := range []FinishOptions{{Push: true, ExitCode: 2, Remove: true}, {Push: true, Remove: true}} {
 		out := Finish(main, p, opts)
 		if out.Pushed || !out.NotPushed || out.Removed {
 			t.Fatalf("%+v: want not pushed, and kept: %+v", opts, out)
@@ -451,7 +480,7 @@ func TestFinish_PushRejectedKeepsEverything(t *testing.T) {
 		t.Fatal(err)
 	}
 	commit(t, p.Path, "work")
-	out := Finish(main, p, FinishOptions{Push: true})
+	out := Finish(main, p, FinishOptions{Push: true, Remove: true})
 	if out.Pushed || !out.NotPushed || out.Removed || !exists(p.Path) {
 		t.Fatalf("want not pushed and the worktree kept: %+v", out)
 	}
@@ -467,7 +496,7 @@ func TestFinish_PushNothingNew(t *testing.T) {
 	if err := Create(main, p); err != nil {
 		t.Fatal(err)
 	}
-	out := Finish(main, p, FinishOptions{Push: true})
+	out := Finish(main, p, FinishOptions{Push: true, Remove: true})
 	if out.Pushed || out.NotPushed || !out.Removed || !out.BranchDeleted {
 		t.Fatalf("no new commits: nothing to push, and all removed: %+v", out)
 	}
@@ -476,7 +505,7 @@ func TestFinish_PushNothingNew(t *testing.T) {
 	}
 }
 
-func TestFinish_PushWithKeepWorktree(t *testing.T) {
+func TestFinish_PushKeepsByDefault(t *testing.T) {
 	root, main := repo(t)
 	bare := withOrigin(t, root, main)
 	p := plan(t, main, CreateOptions{Name: "w"})
@@ -484,7 +513,7 @@ func TestFinish_PushWithKeepWorktree(t *testing.T) {
 		t.Fatal(err)
 	}
 	commit(t, p.Path, "work")
-	out := Finish(main, p, FinishOptions{Push: true, KeepWorktree: true})
+	out := Finish(main, p, FinishOptions{Push: true})
 	if !out.Pushed || out.Removed || !exists(p.Path) || onRemote(t, bare, "w") == "" {
 		t.Fatalf("want pushed and kept: %+v", out)
 	}

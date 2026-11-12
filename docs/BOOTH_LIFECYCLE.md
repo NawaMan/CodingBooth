@@ -120,7 +120,7 @@ seconds (`--interval 5s` to change that) and takes `--engine` like the other com
 | `x` | Stop it |
 | `r` | Restart it |
 | `d` | Remove it and its home volume (`--force` when it is running). On a worktree with no booth: remove the worktree (`booth worktree remove <name>`, never `--force`) |
-| `n` | New worktree in the selected row's repository: type a name (the new branch, from the repository's current commit); booth creates it and starts its booth (`booth --worktree <name> --daemon --worktree-keep`) |
+| `n` | New worktree in the selected row's repository: type a name (the new branch, from the repository's current commit); booth creates it and starts its booth (`booth --worktree <name> --daemon`) |
 | `R` | Refresh now |
 | `q` | Quit |
 

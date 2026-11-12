@@ -4,23 +4,24 @@
 # you may not use this file except in compliance with the License.
 
 # -----------------------------------------------------------------------------
-# Test: `booth --worktree <name> -- cmd` leaves the repository the way it found it
+# Test: `booth --worktree <name> -- cmd` and what is left when the booth exits
 #
-# A worktree this run creates is removed when the booth exits, unless that
-# would lose something; a worktree that already existed is never touched.
-# Each step is a real one-shot booth on a scratch repository:
+# A worktree is kept by default. With --worktree-remove, one this run creates is
+# removed when the booth exits, unless that would lose something; a worktree that
+# already existed is never touched. Each step is a real one-shot booth on a
+# scratch repository:
 #
-# 1) A clean run removes the worktree, its folders, and the new branch; the root stays
-#    (Docker Desktop cannot mount under a just-recreated folder).
-# 2) A run that commits removes the worktree but keeps the branch.
-# 3) A run that leaves an uncommitted file keeps the worktree.
+# 1) --worktree-remove: a clean run removes the worktree, its folders, and the new
+#    branch; the root stays (Docker Desktop cannot mount under a just-recreated folder).
+# 2) --worktree-remove: a run that commits removes the worktree but keeps the branch.
+# 3) --worktree-remove: a run that leaves an uncommitted file keeps the worktree.
 # 4) Running on that kept worktree again leaves it in place (it existed).
-# 5) --worktree-keep keeps a clean worktree.
+# 5) Without --worktree-remove, a clean worktree and its new branch are kept.
 # 6) The booth is named after the branch, "/" turned into "-".
 # 7) A restart (booth--restart) is not an exit: the restarted booth runs in the
-#    same worktree, and only the real exit after it cleans up.
-# 8) --worktree-push pushes the new commits to origin, then removes the worktree and the
-#    local branch: only the pushed branch remains.
+#    same worktree, and only the real exit after it cleans up (--worktree-remove).
+# 8) --worktree-push --worktree-remove pushes the new commits to origin, then removes
+#    the worktree and the local branch: only the pushed branch remains.
 # 9) --worktree-push with uncommitted work pushes nothing, keeps the worktree, exits 1.
 # 10) --worktree-push on a worktree that already existed pushes it, and leaves it.
 # 11) `booth worktree list` shows a daemon booth running on its worktree.
@@ -80,19 +81,19 @@ git_in_booth() { # number, description [, number, description...]; false (after 
   return 1
 }
 
-OUT="$(booth_wt --worktree feature/clean -- 'echo ran')"
+OUT="$(booth_wt --worktree feature/clean --worktree-remove -- 'echo ran')"
 ok=false
 [[ -d "$ROOT" && ! -e "$ROOT/feature" ]] && ! has_branch feature/clean && echo "$OUT" | grep -q "^Removed worktree" && ok=true
 check 1 "A clean run removes the worktree, its folders and its new branch; the root stays" "$ok" "$OUT"
 
 if git_in_booth 2 "A run that commits removes the worktree and keeps the branch"; then
-OUT="$(booth_wt --worktree committed -- 'git -c user.email=t@t -c user.name=t commit -q --allow-empty -m w')"
+OUT="$(booth_wt --worktree committed --worktree-remove -- 'git -c user.email=t@t -c user.name=t commit -q --allow-empty -m w')"
 ok=false
 [[ ! -e "$ROOT/committed" ]] && has_branch committed && echo "$OUT" | grep -q "^Kept branch committed" && ok=true
 check 2 "A run that commits removes the worktree and keeps the branch" "$ok" "$OUT"
 fi
 
-OUT="$(booth_wt --worktree dirty -- 'touch notes.txt')"
+OUT="$(booth_wt --worktree dirty --worktree-remove -- 'touch notes.txt')"
 ok=false
 [[ -f "$ROOT/dirty/notes.txt" ]] && echo "$OUT" | grep -q "^Kept worktree $HOST_ROOT/dirty: it has uncommitted changes" && ok=true
 check 3 "A run with an uncommitted file keeps the worktree, and says why" "$ok" "$OUT"
@@ -102,10 +103,11 @@ ok=false
 [[ -d "$ROOT/dirty" ]] && ! echo "$OUT" | grep -q "^Removed worktree" && ok=true
 check 4 "A worktree that already existed is left in place, even when clean" "$ok" "$OUT"
 
-OUT="$(booth_wt --worktree kept --worktree-keep -- 'echo ran')"
+OUT="$(booth_wt --worktree kept -- 'echo ran')"
 ok=false
-[[ -d "$ROOT/kept" ]] && echo "$OUT" | grep -q "^Kept worktree $HOST_ROOT/kept (--worktree-keep)" && ok=true
-check 5 "--worktree-keep keeps a clean worktree" "$ok" "$OUT"
+[[ -d "$ROOT/kept" ]] && has_branch kept &&
+  echo "$OUT" | grep -qF "Kept worktree $HOST_ROOT/kept. \`booth --worktree kept\` resumes it" && ok=true
+check 5 "By default a clean worktree and its new branch are kept" "$ok" "$OUT"
 
 OUT="$(booth_wt --worktree team/named -- 'echo "NAME=$BOOTH_CONTAINER_NAME"')"
 ok=false
@@ -121,7 +123,7 @@ else
   echo "RUN2 branch=$(git branch --show-current)"
 fi'
 if git_in_booth 7 "A restart keeps the worktree; only the real exit after it cleans up"; then
-OUT="$(booth_wt --worktree restarts -- "$RESTART_CMD")"
+OUT="$(booth_wt --worktree restarts --worktree-remove -- "$RESTART_CMD")"
 ok=false
 echo "$OUT" | grep -q "^RUN2 branch=restarts" && echo "$OUT" | grep -q "^Kept branch restarts: it has 1 new commit" &&
   [[ ! -e "$ROOT/restarts" ]] && [[ "$(echo "$OUT" | grep -c '^Removed worktree')" == 1 ]] && ok=true
@@ -137,14 +139,14 @@ on_origin() { git -C "$WORK/origin.git" rev-parse --verify --quiet "refs/heads/$
 COMMIT='git -c user.email=t@t -c user.name=t commit -q --allow-empty -m "w on $(git branch --show-current)"'
 
 # 8-10 commit inside the booth; 13 needs 10's push, and 14-15 the branch "half" 9 commits to.
-if git_in_booth 8 "--worktree-push pushes, then removes the worktree and the local branch" \
+if git_in_booth 8 "--worktree-push --worktree-remove pushes, then removes the worktree and the local branch" \
                 9 "--worktree-push with uncommitted work: not pushed, worktree kept, exit 1" \
                 10 "--worktree-push on an existing worktree pushes it and leaves it in place"; then
-OUT="$(booth_wt --worktree feature/pushed --worktree-push -- "$COMMIT")"
+OUT="$(booth_wt --worktree feature/pushed --worktree-push --worktree-remove -- "$COMMIT")"
 ok=false
 on_origin feature/pushed > /dev/null && [[ ! -e "$ROOT/feature" ]] && ! has_branch feature/pushed &&
   echo "$OUT" | grep -q "^Pushed branch feature/pushed to origin" && echo "$OUT" | grep -q "^EXIT=0" && ok=true
-check 8 "--worktree-push pushes, then removes the worktree and the local branch" "$ok" "$OUT"
+check 8 "--worktree-push --worktree-remove pushes, then removes the worktree and the local branch" "$ok" "$OUT"
 
 OUT="$(booth_wt --worktree half --worktree-push -- "$COMMIT && touch draft.txt")"
 ok=false
@@ -159,7 +161,7 @@ on_origin dirty > /dev/null && [[ -d "$ROOT/dirty" ]] && echo "$OUT" | grep -q "
 check 10 "--worktree-push on an existing worktree pushes it and leaves it in place" "$ok" "$OUT"
 fi
 
-# An existing worktree, so --daemon needs no --worktree-keep; --keep-alive keeps it once stopped
+# An existing worktree, kept anyway; --keep-alive keeps the booth once stopped
 # (step 13). Name it per run: never clash.
 DAEMON="wt-list-$$"
 booth_wt --worktree dirty --daemon --keep-alive --name "$DAEMON" > /dev/null

@@ -133,8 +133,8 @@ var runFlags = []Flag{
 	flag(Worktree, "--worktree"),
 	flag(Dir, "--worktree-root"),
 	flag(Text, "--worktree-from"),
-	renamedFrom(boolFlag("--worktree-keep"), "--keep-worktree"), // renamed after 0.81.0
-	renamedFrom(boolFlag("--worktree-push"), "--push"),
+	boolFlag("--worktree-remove"),
+	renamedFrom(boolFlag("--worktree-push"), "--push"), // renamed after 0.81.0
 	flag(File, "--config"),
 	flag(Dir, "--booth-dir"),
 	flag(Profile, "--profile"),
@@ -212,7 +212,7 @@ var expressOwnFlags = []Flag{
 // cmd/codingbooth/express.go), so its completion does not offer them.
 var expressRefusedRunFlags = []string{
 	"--config", "--profile", "--booth-dir",
-	"--worktree", "--worktree-root", "--worktree-from", "--worktree-keep", "--worktree-push",
+	"--worktree", "--worktree-root", "--worktree-from", "--worktree-remove", "--worktree-push",
 	"--writable-booth", "--no-writable-booth", "--console-spec",
 	"--keep-tmp-on-start", "--leave-tmp-on-exit",
 }
