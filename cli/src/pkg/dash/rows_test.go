@@ -228,3 +228,18 @@ func TestScrollingKeepsGroupHeaderInView(t *testing.T) {
 		t.Errorf("the header of the cursor's group must show:\n%s", view)
 	}
 }
+
+func TestGitKrakenKeyOnlyWhenInstalled(t *testing.T) {
+	f := &fakeDeps{repos: testRepos()}
+	m := loaded(f)
+	if !strings.Contains(stripANSI(m.View()), "K GitKraken") {
+		t.Errorf("with GitKraken, the hint must offer K:\n%s", stripANSI(m.View()))
+	}
+	m.deps.GitKraken = nil
+	if strings.Contains(stripANSI(m.View()), "GitKraken") {
+		t.Errorf("without GitKraken, no K hint:\n%s", stripANSI(m.View()))
+	}
+	if _, cmd := press(t, m, "K"); cmd != nil || len(f.krakened) != 0 {
+		t.Error("K must do nothing without GitKraken")
+	}
+}
