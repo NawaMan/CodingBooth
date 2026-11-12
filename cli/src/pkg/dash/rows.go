@@ -148,7 +148,7 @@ func planForWorktree(key string, r row) (plan, string) {
 				"a branch with commits found nowhere else is kept.", w.Name()),
 			Busy: "removing…", Done: "Removed worktree " + w.Name() + "."}, ""
 
-	case keyStop, keyRestart, keyShell, keyOpen, keyPorts, keyMessage:
+	case keyStop, keyRestart, keyShell, keyOpen, keyPorts, keyMessage, keyLog:
 		return plan{}, fmt.Sprintf("No booth on %s; s starts one.", w.Name())
 	}
 	return plan{}, ""

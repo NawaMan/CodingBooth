@@ -63,6 +63,7 @@ type fakeDeps struct {
 	editorErr error
 	krakened  []string
 	shelled   []string
+	logViewed []string
 }
 
 func (f *fakeDeps) deps() Deps {
@@ -111,6 +112,10 @@ func (f *fakeDeps) deps() Deps {
 			if f.editorErr != nil {
 				return nil, f.editorErr
 			}
+			return exec.Command("true"), nil
+		},
+		LogView: func(b lifecycle.Booth) (*exec.Cmd, *exec.Cmd) {
+			f.logViewed = append(f.logViewed, b.Name)
 			return exec.Command("true"), nil
 		},
 		HostShell: func(path string) *exec.Cmd {

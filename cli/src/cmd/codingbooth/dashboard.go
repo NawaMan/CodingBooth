@@ -80,6 +80,9 @@ func runDashboard(_ string) {
 		},
 		Editor:    editorCommand,
 		HostShell: hostShell,
+		LogView: func(b lifecycle.Booth) (*exec.Cmd, *exec.Cmd) {
+			return logView(self, b)
+		},
 		Command: func(dir string, args []string) *exec.Cmd {
 			cmd := exec.Command(self, args...)
 			cmd.Dir = dir
@@ -178,4 +181,23 @@ func hostShell(path string) *exec.Cmd {
 	cmd := exec.Command(shell)
 	cmd.Dir = path
 	return cmd
+}
+
+// logView is l's log command and pager. With less: the log (following a
+// running booth) piped into `less -R +F`, or opened at its end for a stopped
+// one; the log command is detached so ctrl+c pauses less without ending it.
+// Without less (Windows, usually): `booth logs -f` alone, which ctrl+c ends.
+func logView(self string, b lifecycle.Booth) (logs, pager *exec.Cmd) {
+	args := []string{"logs", "--name", b.Name, "--engine", b.Engine}
+	if b.Running() {
+		args = append(args, "-f")
+	}
+	if less, err := exec.LookPath("less"); err == nil {
+		start := "+G"
+		if b.Running() {
+			start = "+F"
+		}
+		return detach(exec.Command(self, append(args, "-n", "5000")...)), exec.Command(less, "-R", start)
+	}
+	return exec.Command(self, append(args, "-n", "200")...), nil
 }
