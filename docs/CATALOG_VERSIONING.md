@@ -179,23 +179,15 @@ New items after the stamp start at `0.1.0` and move to `1.0.0` when the author s
 
 ### Integrity (next, uses the sha256)
 
-- [ ] Publish `templates.zip` with a manifest / `.sha256`; the CLI verifies before extracting and
-      when reading from its cache (today it is a plain `http.Get`, unchecked).
-- [ ] Sign the manifest (minisign or cosign); embed the public key in the CLI binary.
-- [ ] Record the catalog hash beside `templates-version` in `.booth/.generated`; refuse a different
-      download under the same tag.
-- [ ] Separately: a `verify_sha256` helper in `libs/` for upstream downloads, plus a guard that
-      warns when a setup downloads without verifying (13 of 293 verify today).
+Tracked on the todos board: #196 (verify `templates.zip`, sign the manifest, record the catalog
+hash in `.booth/.generated`) and #197 (a `verify_sha256` helper for setup downloads, plus a guard).
 
 ### Tested database (later — keep it possible)
 
 Record which catalog items were sanity-tested with which release, starting with the
 `tests/complex/` suite only.
 
-- [ ] Each complex test's covered items are derived from its `.booth/Boothfile` (`setup` /
-      `install` lines) and `config.toml` — no hand-kept list.
-- [ ] A release run records rows of `release · test · result · item · cb-version · sha256`.
-- [ ] Publish it per release (alongside the manifest) and surface it in `booth template show`.
+Tracked on the todos board as #211 (subtasks #258–#260).
 
 **Nothing in the versioning work may block this.** Concretely: manifest names must match what a
 Boothfile or `--select` writes; the manifest must stay machine-readable and be kept per release;

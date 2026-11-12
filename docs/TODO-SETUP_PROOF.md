@@ -55,27 +55,9 @@ coverage came from the C/C++ toolchain tests and the `install <manager>` tests t
 
 ## Worth fixing first
 
-**Languages that install a compiler or runtime nobody ever runs.** This is the case that
-started the audit. Each already has a test and a booth image — the gap is one compile-and-run
-assertion, modelled on `test-boothfile-gcc`:
-
-> `crystal`, `dotnet`, `elixir`, `elm`, `go`, `haskell`, `jdk`, `julia`, `lua`, `nim`, `php`,
-> `rescript`, `roc`, `ruby`, `swift`
-
-**Languages with no runtime test at all** — these need the fixture too, not just the assertion:
-
-> `clojure`, `erlang`, `fpc`, `kotlin`, `octave`, `r-rscript`, `scala`, `zig`
-
-**Databases and servers, where "it starts" is the whole promise.** None of the seven is
-exercised: start it, connect, write a row, read it back. `nginx` and `apache` are the same
-shape — serve a file and `curl` it. `test-nginx-expose` already proves the plumbing, so the
-pattern exists to copy.
-
-> presence-only: `kafka`, `mongodb`, `rabbitmq`, `redis` · untested: `mysql`, `postgresql`, `sqlite`
-
-**Tools whose subcommands are the product.** `terraform`, `helm`, `kubectl`, `ansible`,
-`conda`, `gradle`, `sbt` stop at `--version` or `help`. A plan/render/dry-run against a tiny
-fixture would prove far more and still needs no network.
+Tracked on the todos board as #212, one subtask per group, each with the list that was here:
+#261 compile-and-run for languages that only check `--version` · #262 runtime tests for languages
+with none · #263 databases and servers · #264 tools whose subcommands are the product.
 
 ## What cannot be fully proven, and why that is fine
 
