@@ -47,6 +47,9 @@ type Deps struct {
 	// Run runs the booth binary with args in dir ("" = the dashboard's own),
 	// capturing its output.
 	Run func(dir string, args []string) (string, error)
+	// Freshness says which booths are behind what `booth` would build now
+	// (keyed name@engine); nil marks none.
+	Freshness func(booths []lifecycle.Booth) map[string]lifecycle.Fresh
 	// Repos finds the repositories to group booths under; nil shows a flat list.
 	Repos func(booths []lifecycle.Booth) []lifecycle.Repo
 	// Editor is the command that opens path in the user's editor; it gets the
@@ -91,6 +94,7 @@ type model struct {
 
 	booths   []lifecycle.Booth
 	repos    []lifecycle.Repo
+	fresh    map[string]lifecycle.Fresh
 	rows     []row  // what the table shows: headers, booths, bare worktrees
 	cursor   int    // index in rows; never a header once there is a row
 	offset   int    // first row shown when the table is taller than the screen
@@ -144,6 +148,7 @@ type (
 		seq      int
 		booths   []lifecycle.Booth
 		repos    []lifecycle.Repo
+		fresh    map[string]lifecycle.Fresh
 		warnings []string
 		err      error
 	}
@@ -199,14 +204,18 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) fetch(seq int) tea.Cmd {
-	snapshot, findRepos := m.deps.Snapshot, m.deps.Repos
+	snapshot, findRepos, freshness := m.deps.Snapshot, m.deps.Repos, m.deps.Freshness
 	return func() tea.Msg {
 		booths, warnings, err := snapshot()
 		var repos []lifecycle.Repo
+		var fresh map[string]lifecycle.Fresh
 		if err == nil && findRepos != nil {
 			repos = findRepos(booths)
 		}
-		return snapshotMsg{seq: seq, booths: booths, repos: repos, warnings: warnings, err: err}
+		if err == nil && freshness != nil {
+			fresh = freshness(booths)
+		}
+		return snapshotMsg{seq: seq, booths: booths, repos: repos, fresh: fresh, warnings: warnings, err: err}
 	}
 }
 
@@ -272,6 +281,7 @@ func (m model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.loaded = true
 			m.booths = msg.booths
 			m.repos = msg.repos
+			m.fresh = msg.fresh
 			m.rows = buildRows(m.booths, m.repos)
 			m.refreshedAt = m.deps.Now()
 			m.reselect()

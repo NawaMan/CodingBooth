@@ -53,9 +53,9 @@ type (
 // them as fit.
 const logLinesWanted = 20
 
-// detailFixedLines: a blank, the header, the Viewers, Idle, Ports and
+// detailFixedLines: a blank, the header, the Image, Viewers, Idle, Ports and
 // Messages rows, and the Logs row.
-const detailFixedLines = 7
+const detailFixedLines = 8
 
 func (m model) toggleDetail() (model, tea.Cmd) {
 	if m.detailOpen {
@@ -215,6 +215,7 @@ func (m model) detailView() string {
 		label := "  " + name + strings.Repeat(" ", 10-len(name))
 		out.WriteString(dimStyle.Render(label) + m.fitTo(value, len(label)) + "\n")
 	}
+	row("Image", m.imageText(b))
 	if b.Running() {
 		row("Viewers", partText(p.state, func(s lifecycle.BoothState) string { return viewersText(s.Presence) }))
 		row("Idle", partText(p.state, func(s lifecycle.BoothState) string { return idleText(s.Idle, now) }))
@@ -358,4 +359,25 @@ func logTail(log string, n int) []string {
 		lines = lines[len(lines)-n:]
 	}
 	return lines
+}
+
+// imageText is the Image row: whether the booth is what `booth` would build
+// for it now, and if not, why and how to bring it up to date.
+func (m model) imageText(b lifecycle.Booth) string {
+	f := m.fresh[boothKey(b)]
+	var why []string
+	if f.Older {
+		why = append(why, "built with "+dashIfEmpty(b.Version)+"; its project now builds "+f.Want)
+	}
+	if f.Rebuilt {
+		why = append(why, "its image "+b.ImageRef+" was rebuilt since")
+	}
+	if len(why) == 0 {
+		if b.Version == "" {
+			return "-"
+		}
+		return "up to date (" + b.Version + ")"
+	}
+	return strings.Join(why, "; ") + ". To update: booth remove --force --name " + b.Name +
+		" (a persisted home goes with it), then run booth in its folder"
 }

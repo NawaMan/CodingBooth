@@ -22,7 +22,7 @@ import (
 )
 
 // runDashboard is `booth dashboard`.
-func runDashboard(_ string) {
+func runDashboard(version string) {
 	flagSet := flag.NewFlagSet("dashboard", flag.ContinueOnError)
 	var engine string
 	flagSet.Func("engine", "Container engine: docker, podman, apple", func(value string) error {
@@ -74,6 +74,9 @@ func runDashboard(_ string) {
 			cmd.Dir = dir
 			out, err := cmd.CombinedOutput()
 			return string(out), err
+		},
+		Freshness: func(booths []lifecycle.Booth) map[string]lifecycle.Fresh {
+			return lifecycle.Freshness(booths, version)
 		},
 		Repos: func(booths []lifecycle.Booth) []lifecycle.Repo {
 			return lifecycle.Repos(booths, cwd)
