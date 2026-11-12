@@ -29,7 +29,7 @@ func (l Loss) Worktree() bool { return len(l.Changes) > 0 || l.HeadOnly > 0 }
 // (.booth/.tmp/) are not work, as at exit.
 func Assess(dir string, e Entry) (Loss, error) {
 	var loss Loss
-	status, err := git(e.Path, "status", "--porcelain", "--untracked-files=all")
+	status, err := gitRaw(e.Path, "status", "--porcelain", "--untracked-files=all")
 	if err != nil {
 		return loss, err
 	}
