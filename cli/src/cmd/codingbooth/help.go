@@ -599,6 +599,10 @@ KEYS:
   n          New worktree in this repository, with its booth started
   R          Refresh now             q      Quit
 
+VERSION shows the CodingBooth version that built each booth, in the warning
+colour when it is older than what booth would build in its project now or its
+image was rebuilt since; i says which, and how to update it.
+
 Booths are grouped under their git repository, with each worktree listed even
 without a booth. On such a row, s starts a booth there and d removes the
 worktree (as worktree remove does: never what would be lost). Starting a booth

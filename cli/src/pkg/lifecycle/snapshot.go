@@ -22,8 +22,12 @@ type Booth struct {
 	StartedAt  string
 	FinishedAt string
 	// BoothDir is the .booth directory the booth reads; "" means <CodePath>/.booth.
-	BoothDir  string
-	Version   string
+	BoothDir string
+	Version  string
+	// ImageRef is the image name the booth was created by, ImageID the image
+	// it was created from (Freshness compares it with what the name is now).
+	ImageRef  string
+	ImageID   string
 	Daemon    bool
 	KeepAlive bool
 }
@@ -64,6 +68,7 @@ func boothsFrom(containers []managedContainer) []Booth {
 			Name: c.Name, Engine: c.Engine, State: c.State, Variant: c.Variant,
 			CodePath: c.CodePath, Port: c.Port, PortTLS: c.PortTLS, CreatedAt: c.CreatedAt, Version: c.Version,
 			StartedAt: c.StartedAt, FinishedAt: c.FinishedAt, BoothDir: c.BoothDir,
+			ImageRef: c.ImageRef, ImageID: c.ImageID,
 			Daemon: c.Daemon, KeepAlive: c.KeepAlive,
 		})
 	}
