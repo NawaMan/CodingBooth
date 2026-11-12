@@ -28,6 +28,9 @@ type plan struct {
 	Done string
 	// URL, when set, is opened in the browser instead of running a command.
 	URL string
+	// Dir is where the command runs ("" = where the dashboard runs): worktree
+	// commands name the worktree within the repository they run in.
+	Dir string
 }
 
 // planFor decides what key does to booth. A key that does not apply to the

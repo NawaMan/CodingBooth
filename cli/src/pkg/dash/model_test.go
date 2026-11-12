@@ -34,6 +34,7 @@ func stopped(name string) lifecycle.Booth {
 // fakeDeps records what the dashboard runs.
 type fakeDeps struct {
 	ran      [][]string
+	ranIn    []string
 	execed   [][]string
 	opened   []string
 	openErr  error
@@ -55,13 +56,19 @@ type fakeDeps struct {
 	pending  []lifecycle.PendingMessage
 	logs     string
 	detailed []string // "part:booth" for each detail part asked for
+
+	repos     []lifecycle.Repo
+	edited    []string
+	editorErr error
+	krakened  []string
 }
 
 func (f *fakeDeps) deps() Deps {
 	return Deps{
 		Snapshot: func() ([]lifecycle.Booth, []string, error) { return f.snapshot, nil, nil },
-		Run: func(args []string) (string, error) {
+		Run: func(dir string, args []string) (string, error) {
 			f.ran = append(f.ran, args)
+			f.ranIn = append(f.ranIn, dir)
 			return f.runOut, f.runErr
 		},
 		Command: func(args []string) *exec.Cmd {
@@ -96,6 +103,17 @@ func (f *fakeDeps) deps() Deps {
 			f.detailed = append(f.detailed, "logs:"+b.Name)
 			return f.logs, nil
 		},
+		Editor: func(path string) (*exec.Cmd, error) {
+			f.edited = append(f.edited, path)
+			if f.editorErr != nil {
+				return nil, f.editorErr
+			}
+			return exec.Command("true"), nil
+		},
+		GitKraken: func(path string) error {
+			f.krakened = append(f.krakened, path)
+			return nil
+		},
 		Home: "/home/u",
 		Now:  func() time.Time { return testNow },
 	}
@@ -104,7 +122,7 @@ func (f *fakeDeps) deps() Deps {
 // loaded is a model that has shown booths once.
 func loaded(f *fakeDeps, booths ...lifecycle.Booth) model {
 	m := newModel(f.deps())
-	next, _ := m.Update(snapshotMsg{seq: 1, booths: booths})
+	next, _ := m.Update(snapshotMsg{seq: 1, booths: booths, repos: f.repos})
 	return next.(model)
 }
 
@@ -145,6 +163,8 @@ func keyMsg(key string) tea.KeyMsg {
 		return tea.KeyMsg{Type: tea.KeyCtrlS}
 	case "ctrl+u":
 		return tea.KeyMsg{Type: tea.KeyCtrlU}
+	case "end":
+		return tea.KeyMsg{Type: tea.KeyEnd}
 	case " ":
 		return tea.KeyMsg{Type: tea.KeySpace, Runes: []rune{' '}}
 	}

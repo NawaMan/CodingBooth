@@ -10,7 +10,10 @@ This file contains a list of changes for each released version.
   ports, unanswered messages, last log lines), `o` opens its page in the browser, `p` picks one of its exposed ports to open, `m` sends its
   user a message (a toast, a banner, or a question whose answer comes back to the table), `s`
   starts, `x` stops, `r` restarts and `d` removes. Stop, restart and remove ask first, since the
-  table holds other sessions' booths too. See [booth lifecycle → dash](BOOTH_LIFECYCLE.md#dash).
+  table holds other sessions' booths too. Booths are grouped by git repository, each worktree
+  listed even without a booth: `s` starts one there, `d` removes the worktree (never `--force`),
+  `n` creates a new worktree with its booth, and `e` / `K` open the folder in your editor or
+  GitKraken. See [booth lifecycle → dash](BOOTH_LIFECYCLE.md#dash).
 - **Listing booths takes one engine call, not one per booth.** `booth list` and every command that
   finds a booth by name inspected each booth separately; they now inspect all of them at once, and
   fall back to one at a time only when a booth disappears mid-listing.

@@ -112,10 +112,13 @@ seconds (`--interval 5s` to change that) and takes `--engine` like the other com
 | `o` | Open its page in the browser (`http://localhost:<port>`, `https` for a `--public` booth) |
 | `p` | Pick one of its TCP ports — what `booth expose list` shows: front door, published ports, `booth--expose` tunnels — and open it (`enter`; `esc` goes back) |
 | `m` | Send its user a message (`booth message send`): pick the type with `←`/`→` — toast, banner, a yes/no question, ok, or text — then type the title and body; `enter` on the body sends, `esc` cancels |
-| `s` | Start it — a daemon booth in the background, an interactive one attached (as `booth start` does) |
+| `e` | Open its folder in your editor (`$VISUAL`, else `$EDITOR`, else `code`) |
+| `K` | Open its folder in GitKraken |
+| `s` | Start it — a daemon booth in the background, an interactive one attached (as `booth start` does). On a worktree with no booth: start one there (`booth --worktree <name> --daemon`) |
 | `x` | Stop it |
 | `r` | Restart it |
-| `d` | Remove it and its home volume (`--force` when it is running) |
+| `d` | Remove it and its home volume (`--force` when it is running). On a worktree with no booth: remove the worktree (`booth worktree remove <name>`, never `--force`) |
+| `n` | New worktree in the selected row's repository: type a name (the new branch, from the repository's current commit); booth creates it and starts its booth (`booth --worktree <name> --daemon --worktree-keep`) |
 | `R` | Refresh now |
 | `q` | Quit |
 
@@ -125,6 +128,15 @@ that is not keep-alive). Each action runs the same `booth` command you would typ
 and its engine, so it behaves exactly as it does from the command line. An engine that cannot answer
 shows as a warning line, and the rest of the table stays. `booth dash` needs a terminal; scripts use
 `booth list --json`.
+
+**Grouped by repository.** Booths are listed under the git repository their code is in: the
+repository `booth dash` runs in first, marked `(here)`, then the others that have a booth, by name.
+Under each, every worktree shows (the WORKTREE column), with its booths, or as a `no booth` row of
+its own, so a worktree that has no booth yet is still one key away from one. A booth whose code is
+in no repository is listed last, under "Other booths". `d` on a worktree row removes it only when
+nothing would be lost, as [`booth worktree remove`](BOOTH_WORKTREE.md#removing-a-worktree) does,
+and refuses while a booth runs on it; the main checkout is never removed. There is no landing or
+merging here: open the worktree in your editor or GitKraken for that.
 
 A toast or banner is sent at once. A question (yes/no, ok, text) waits for the booth user's answer
 in the background: its row shows `?` meanwhile, every key stays usable, and the answer comes back
