@@ -245,7 +245,7 @@ func (m model) columns() []column {
 	cols = append(cols,
 		column{header: "VARIANT", cell: boothCell(func(b lifecycle.Booth) string { return dashIfEmpty(b.Variant) }), max: 16},
 		column{header: "PORT", cell: boothCell(func(b lifecycle.Booth) string { return dashIfEmpty(b.Port) })},
-		column{header: "VERSION", cell: boothCell(m.versionText), max: 28, warn: m.behind},
+		column{header: "VERSION", cell: boothCell(m.versionText), max: 20, warn: m.behind},
 		column{header: "AGE", cell: boothCell(func(b lifecycle.Booth) string { return age(b.CreatedAt, m.deps.Now()) })},
 		column{header: "CODE PATH", cell: func(r row) string { return m.shortPath(r.path()) }, flex: true},
 	)
@@ -380,19 +380,11 @@ func (m model) table() string {
 	return b.String()
 }
 
-// versionText is the VERSION cell: the version that built the booth, then
-// what `booth` would build now when that is newer, and "(rebuilt)" when its
-// image has been rebuilt since.
+// versionText is the VERSION cell: the version that built the booth. A booth
+// that fell behind keeps this text and is drawn in the warning colour (see
+// behind); the details pane says what it is behind.
 func (m model) versionText(b lifecycle.Booth) string {
-	text := dashIfEmpty(b.Version)
-	f := m.fresh[boothKey(b)]
-	if f.Older {
-		text += " → " + f.Want
-	}
-	if f.Rebuilt {
-		text += " (rebuilt)"
-	}
-	return text
+	return dashIfEmpty(b.Version)
 }
 
 // behind: the booth is older than what `booth` would build for it now.

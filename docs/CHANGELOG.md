@@ -13,8 +13,9 @@ This file contains a list of changes for each released version.
   table holds other sessions' booths too. Booths are grouped by git repository, each worktree
   listed even without a booth: `s` starts one there, `d` removes the worktree (never `--force`),
   `n` creates a new worktree with its booth, `l` shows a booth's whole log and follows it (in
-  `less +F` when installed), `t` opens a host shell in the folder, a VERSION column flags a booth built with an older
-  version than its project now uses or whose image was rebuilt since, and `e` / `K`
+  `less +F` when installed), `t` opens a host shell in the folder, a VERSION column shows the version that built each
+  booth, in the warning colour when it is older than its project now uses or its image was
+  rebuilt since, and `e` / `K`
   open it in your editor or GitKraken. See [booth lifecycle → dashboard](BOOTH_LIFECYCLE.md#dashboard).
 - **`booth worktree remove` names the files in the way.** Refusing a worktree with uncommitted or
   untracked work said only how many files; it now names the first three (`… and 2 more`), and
