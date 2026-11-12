@@ -51,7 +51,7 @@ type (
 
 // logLinesWanted is how many log lines the pane asks for; it shows as many of
 // them as fit.
-const logLinesWanted = 10
+const logLinesWanted = 20
 
 // detailFixedLines: a blank, the header, the Viewers, Idle, Ports and
 // Messages rows, and the Logs row.
