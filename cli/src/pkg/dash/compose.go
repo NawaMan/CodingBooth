@@ -42,7 +42,10 @@ const (
 // a blank, its header, and one line per field.
 const composeLines = 2 + focusCount
 
-const composeHelpLine = "tab next field · ←/→ change type · enter send · esc cancel"
+var composeHelpLines = []string{
+	"tab next field · ←/→ change type",
+	"enter send · esc cancel",
+}
 
 // compose is the message being written to a booth with m.
 type compose struct {

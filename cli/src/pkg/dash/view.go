@@ -28,11 +28,15 @@ var (
 
 const pickerHelpLine = "↑/↓ select · enter open · esc back"
 
-const helpLine = "↑/↓ move · enter shell · o open · p ports · m message · s start · x stop · r restart · d remove · R refresh · q quit"
+// helpLines: what to look at or into, then what changes the booth.
+var helpLines = []string{
+	"↑/↓ move · i info · enter shell · o open · p ports · m message",
+	"s start · x stop · r restart · d remove · R refresh · q quit",
+}
 
 // chromeLines is everything but the table rows: title, blank, header, and
-// below the table a blank, the status line and the help line.
-const chromeLines = 6
+// below the table a blank, the status line and the two help lines.
+const chromeLines = 7
 
 // tableRows is how many booth rows fit on screen (all of them before the
 // first WindowSizeMsg).
@@ -44,6 +48,7 @@ func (m model) tableRows() int {
 	if m.compose != nil {
 		rows -= composeLines
 	}
+	rows -= m.detailLines()
 	return max(1, rows)
 }
 
@@ -86,15 +91,23 @@ func (m model) View() string {
 	for _, warning := range m.warnings {
 		b.WriteString(warnStyle.Render(m.fit(warning)) + "\n")
 	}
-	help := helpLine
+	help := helpLines
 	if m.compose != nil {
 		b.WriteString("\n")
 		b.WriteString(m.composeView())
-		help = composeHelpLine
+		help = composeHelpLines
+	} else if m.detailShown() {
+		b.WriteString("\n")
+		b.WriteString(m.detailView())
 	}
 	b.WriteString("\n")
 	b.WriteString(m.statusLine() + "\n")
-	b.WriteString(dimStyle.Render(m.fit(help)))
+	for i, line := range help {
+		if i > 0 {
+			b.WriteString("\n")
+		}
+		b.WriteString(dimStyle.Render(m.fit(line)))
+	}
 	return b.String()
 }
 

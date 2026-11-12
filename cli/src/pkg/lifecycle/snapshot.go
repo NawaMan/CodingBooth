@@ -17,6 +17,12 @@ type Booth struct {
 	Port      string
 	PortTLS   bool // Port serves HTTPS (a --public booth)
 	CreatedAt string
+	// StartedAt / FinishedAt: when the engine last started / stopped it
+	// (RFC 3339), "" when it does not say.
+	StartedAt  string
+	FinishedAt string
+	// BoothDir is the .booth directory the booth reads; "" means <CodePath>/.booth.
+	BoothDir  string
 	Version   string
 	Daemon    bool
 	KeepAlive bool
@@ -57,6 +63,7 @@ func boothsFrom(containers []managedContainer) []Booth {
 		booths = append(booths, Booth{
 			Name: c.Name, Engine: c.Engine, State: c.State, Variant: c.Variant,
 			CodePath: c.CodePath, Port: c.Port, PortTLS: c.PortTLS, CreatedAt: c.CreatedAt, Version: c.Version,
+			StartedAt: c.StartedAt, FinishedAt: c.FinishedAt, BoothDir: c.BoothDir,
 			Daemon: c.Daemon, KeepAlive: c.KeepAlive,
 		})
 	}

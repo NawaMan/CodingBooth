@@ -47,6 +47,14 @@ type fakeDeps struct {
 	messaged   [][]string
 	messageOut string
 	messageErr error
+
+	stats    lifecycle.BoothStats
+	statsErr error
+	state    lifecycle.BoothState
+	stateErr error
+	pending  []lifecycle.PendingMessage
+	logs     string
+	detailed []string // "part:booth" for each detail part asked for
 }
 
 func (f *fakeDeps) deps() Deps {
@@ -71,6 +79,22 @@ func (f *fakeDeps) deps() Deps {
 		Ports: func(b lifecycle.Booth) ([]lifecycle.ExposedPort, error) {
 			f.portsFor = append(f.portsFor, b.Name+"@"+b.Engine)
 			return f.ports, f.portsErr
+		},
+		Stats: func(b lifecycle.Booth) (lifecycle.BoothStats, error) {
+			f.detailed = append(f.detailed, "stats:"+b.Name)
+			return f.stats, f.statsErr
+		},
+		State: func(b lifecycle.Booth) (lifecycle.BoothState, error) {
+			f.detailed = append(f.detailed, "state:"+b.Name)
+			return f.state, f.stateErr
+		},
+		Pending: func(b lifecycle.Booth) ([]lifecycle.PendingMessage, error) {
+			f.detailed = append(f.detailed, "pending:"+b.Name)
+			return f.pending, nil
+		},
+		Logs: func(b lifecycle.Booth, lines int) (string, error) {
+			f.detailed = append(f.detailed, "logs:"+b.Name)
+			return f.logs, nil
 		},
 		Home: "/home/u",
 		Now:  func() time.Time { return testNow },

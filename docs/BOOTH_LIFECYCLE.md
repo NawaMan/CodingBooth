@@ -108,6 +108,7 @@ seconds (`--interval 5s` to change that) and takes `--engine` like the other com
 | --- | --- |
 | `↑`/`↓` (`j`/`k`), `g`/`G` | Select a booth |
 | `enter` | Open a shell in it (`booth shell`); exiting the shell comes back to the dashboard |
+| `i` | Show or hide its details below the table (see below) |
 | `o` | Open its page in the browser (`http://localhost:<port>`, `https` for a `--public` booth) |
 | `p` | Pick one of its TCP ports — what `booth expose list` shows: front door, published ports, `booth--expose` tunnels — and open it (`enter`; `esc` goes back) |
 | `m` | Send its user a message (`booth message send`): pick the type with `←`/`→` — toast, banner, a yes/no question, ok, or text — then type the title and body; `enter` on the body sends, `esc` cancels |
@@ -129,6 +130,20 @@ A toast or banner is sent at once. A question (yes/no, ok, text) waits for the b
 in the background: its row shows `?` meanwhile, every key stays usable, and the answer comes back
 on the status line (`web answered: yes`, or `no answer (timed out)` after 10 minutes). Quitting the
 dashboard stops waiting; the question stays on the booth's screen until it is answered or expires.
+
+`i` opens a pane below the table about the selected booth, and it follows the cursor:
+
+- how long it has been up (or since it stopped), and its CPU and memory (`booth stats`; not on
+  engine `apple`)
+- how many browser pages are viewing it, and its idle shutdown — off, paused until a time, or after
+  how long — both asked of the booth's own message API from inside it, so a password-protected
+  booth answers too
+- its ports, as `p` lists them
+- the messages its user has not answered yet
+- its last log lines (`booth logs`), as many as fit
+
+The pane reloads every 5 seconds, for the selected booth only. A part that cannot load says why,
+and the others still show; a stopped booth shows only its stop time, messages and logs.
 
 ### `start`
 
