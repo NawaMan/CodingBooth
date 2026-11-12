@@ -32,7 +32,7 @@ const pickerHelpLine = "↑/↓ select · enter open · esc back"
 // helpLines: what to look at or into, then what changes the booth. K shows
 // only when GitKraken is there to open.
 func (m model) helpLines() []string {
-	look := "↑/↓ move · i info · enter shell · o open · p ports · m message · e editor"
+	look := "↑/↓ move · i info · enter shell · t terminal · o open · p ports · m message · e editor"
 	if m.deps.GitKraken != nil {
 		look += " · K GitKraken"
 	}

@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -77,7 +78,8 @@ func runDash(_ string) {
 		Repos: func(booths []lifecycle.Booth) []lifecycle.Repo {
 			return lifecycle.Repos(booths, cwd)
 		},
-		Editor: editorCommand,
+		Editor:    editorCommand,
+		HostShell: hostShell,
 		Command: func(dir string, args []string) *exec.Cmd {
 			cmd := exec.Command(self, args...)
 			cmd.Dir = dir
@@ -158,4 +160,22 @@ func openGitKraken(path string) error {
 	}
 	go cmd.Wait() //nolint:errcheck // reaped, not waited for
 	return nil
+}
+
+// hostShell is the user's login shell ($SHELL; on Windows %COMSPEC%) on the
+// host, in path.
+func hostShell(path string) *exec.Cmd {
+	shell := os.Getenv("SHELL")
+	if runtime.GOOS == "windows" {
+		shell = os.Getenv("COMSPEC")
+		if shell == "" {
+			shell = "cmd.exe"
+		}
+	}
+	if shell == "" {
+		shell = "/bin/sh"
+	}
+	cmd := exec.Command(shell)
+	cmd.Dir = path
+	return cmd
 }
