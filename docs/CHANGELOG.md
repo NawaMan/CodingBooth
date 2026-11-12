@@ -4,7 +4,7 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
-- **`booth dash`: a live table of every booth, with actions.** `booth list` that refreshes itself
+- **`booth dashboard`: a live table of every booth, with actions.** `booth list` that refreshes itself
   and that you can act on: pick a row, then `enter` opens a shell (exiting it comes back to the
   table), `i` shows its details below the table (uptime, CPU and memory, viewers, idle shutdown,
   ports, unanswered messages, last log lines), `o` opens its page in the browser, `p` picks one of its exposed ports to open, `m` sends its
@@ -13,10 +13,10 @@ This file contains a list of changes for each released version.
   table holds other sessions' booths too. Booths are grouped by git repository, each worktree
   listed even without a booth: `s` starts one there, `d` removes the worktree (never `--force`),
   `n` creates a new worktree with its booth, `t` opens a host shell in the folder, and `e` / `K`
-  open it in your editor or GitKraken. See [booth lifecycle → dash](BOOTH_LIFECYCLE.md#dash).
+  open it in your editor or GitKraken. See [booth lifecycle → dashboard](BOOTH_LIFECYCLE.md#dashboard).
 - **`booth worktree remove` names the files in the way.** Refusing a worktree with uncommitted or
   untracked work said only how many files; it now names the first three (`… and 2 more`), and
-  `booth dash` shows that reason on its status line instead of just the advice to commit.
+  `booth dashboard` shows that reason on its status line instead of just the advice to commit.
 - **Listing booths takes one engine call, not one per booth.** `booth list` and every command that
   finds a booth by name inspected each booth separately; they now inspect all of them at once, and
   fall back to one at a time only when a booth disappears mid-listing.

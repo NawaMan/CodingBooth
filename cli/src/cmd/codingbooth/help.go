@@ -90,7 +90,7 @@ USAGE:
   %s express [options] [-- command ...]        (run from arguments; ignore the project's .booth)
   %s [options] [--] [command ...]              (default action: run)
   %s list [--running|--stopped] [--json|--name-only]  (list booth-managed containers)
-  %s dash [--engine <e>] [--interval <d>]      (live table of every booth; start/stop/shell from a row)
+  %s dashboard [--engine <e>] [--interval <d>] (live table of every booth; start/stop/shell from a row)
   %s start [--name <n>|--code <path>] [-d]     (start a stopped keep-alive booth)
   %s stop [--name <n>] [-f] [--timeout <n>]       (stop a running booth)
   %s restart [--name <n>] [--timeout <n>]         (restart a running booth)
@@ -571,11 +571,11 @@ OPTIONS:
 `, s, s)
 }
 
-func showHelpDash() {
+func showHelpDashboard() {
 	s := scriptName()
-	fmt.Printf(`%s dash — a live table of every booth on this machine
+	fmt.Printf(`%s dashboard — a live table of every booth on this machine
 
-USAGE:  %s dash [options]
+USAGE:  %s dashboard [options]
 
 Lists the booths of every engine (as %s list does), refreshed every couple of
 seconds. Every booth is shown, including ones other sessions started, so stop,
@@ -1083,8 +1083,8 @@ func dispatchHelp(args []string, version string) {
 			showHelpExpress()
 		case "list":
 			showHelpList()
-		case "dash":
-			showHelpDash()
+		case "dashboard":
+			showHelpDashboard()
 		case "worktree":
 			showHelpWorktree()
 		case "start":

@@ -95,13 +95,13 @@ Show all booth-managed containers.
 
 Output includes: name, status, variant, port, code path, daemon, keep-alive, and creation time.
 
-### `dash`
+### `dashboard`
 
 A live, full-screen table of every booth — `booth list` you can act on. It refreshes every 2
 seconds (`--interval 5s` to change that) and takes `--engine` like the other commands.
 
 ```bash
-./booth dash
+./booth dashboard
 ```
 
 | Key | Does |
@@ -132,11 +132,11 @@ It shows every booth on the machine, including ones other sessions started, so s
 remove ask `[y/N]` first — and the question says when a stop also removes the container (a booth
 that is not keep-alive). Each action runs the same `booth` command you would type, naming the booth
 and its engine, so it behaves exactly as it does from the command line. An engine that cannot answer
-shows as a warning line, and the rest of the table stays. `booth dash` needs a terminal; scripts use
+shows as a warning line, and the rest of the table stays. `booth dashboard` needs a terminal; scripts use
 `booth list --json`.
 
 **Grouped by repository.** Booths are listed under the git repository their code is in: the
-repository `booth dash` runs in first, marked `(here)`, then the others that have a booth, by name.
+repository `booth dashboard` runs in first, marked `(here)`, then the others that have a booth, by name.
 Under each, every worktree shows (the WORKTREE column), with its booths, or as a `no booth` row of
 its own, so a worktree that has no booth yet is still one key away from one. A booth whose code is
 in no repository is listed last, under "Other booths". `d` on a worktree row removes it only when

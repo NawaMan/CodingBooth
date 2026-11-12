@@ -191,9 +191,9 @@ feature/x  feature-x  Running  11000  /home/me/proj.worktrees/feature/x
 fix-123    -          -        -      /home/me/proj.worktrees/fix-123
 ```
 
-`booth dash` shows the same, live, and acts on it: start a booth on a worktree, create one
+`booth dashboard` shows the same, live, and acts on it: start a booth on a worktree, create one
 with its booth, remove one, or open it in your editor or GitKraken
-([booth dash](BOOTH_LIFECYCLE.md#dash)).
+([booth dashboard](BOOTH_LIFECYCLE.md#dashboard)).
 
 A booth belongs to a worktree when its code path is that worktree's folder. `--json` prints the
 same as an array, each worktree with its `booths`. Shell completion offers the names `--worktree`

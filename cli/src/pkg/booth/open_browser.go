@@ -268,7 +268,7 @@ func headlessReason(goos string, wsl bool, display, waylandDisplay string) strin
 }
 
 // OpenURLInBrowser opens url in the host's browser for a caller that is not a
-// booth run (booth dash). It refuses with the reason on a host with no
+// booth run (booth dashboard). It refuses with the reason on a host with no
 // graphical session, as a run does, rather than start a text browser in the
 // caller's terminal.
 func OpenURLInBrowser(url string) error {

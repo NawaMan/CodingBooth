@@ -34,11 +34,11 @@ func (w Worktree) Name() string {
 type Repo struct {
 	Name      string // the main checkout's folder name
 	Root      string // the main checkout
-	Here      bool   // holds the folder booth dash runs in
+	Here      bool   // holds the folder booth dashboard runs in
 	Worktrees []Worktree
 }
 
-// Repos finds the repositories booth dash groups booths under: the one holding
+// Repos finds the repositories booth dashboard groups booths under: the one holding
 // cwd, then those holding a booth's code path, by name. A folder in no
 // repository (or no git on the host) adds none.
 func Repos(booths []Booth, cwd string) []Repo {

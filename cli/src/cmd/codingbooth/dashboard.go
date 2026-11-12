@@ -21,9 +21,9 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/lifecycle"
 )
 
-// runDash is `booth dash`.
-func runDash(_ string) {
-	flagSet := flag.NewFlagSet("dash", flag.ContinueOnError)
+// runDashboard is `booth dashboard`.
+func runDashboard(_ string) {
+	flagSet := flag.NewFlagSet("dashboard", flag.ContinueOnError)
 	var engine string
 	flagSet.Func("engine", "Container engine: docker, podman, apple", func(value string) error {
 		value = strings.ToLower(strings.TrimSpace(value))
@@ -35,7 +35,7 @@ func runDash(_ string) {
 		return fmt.Errorf("invalid engine %q (supported: docker, podman, apple)", value)
 	})
 	interval := flagSet.Duration("interval", 2*time.Second, "Time between refreshes")
-	flagSet.Usage = showHelpDash
+	flagSet.Usage = showHelpDashboard
 	if err := flagSet.Parse(os.Args[2:]); err != nil {
 		if err == flag.ErrHelp {
 			return
@@ -43,7 +43,7 @@ func runDash(_ string) {
 		os.Exit(2)
 	}
 	if flagSet.NArg() != 0 {
-		fmt.Fprintln(os.Stderr, "Error: booth dash takes no positional arguments.")
+		fmt.Fprintln(os.Stderr, "Error: booth dashboard takes no positional arguments.")
 		os.Exit(2)
 	}
 	if *interval < 500*time.Millisecond {
@@ -51,7 +51,7 @@ func runDash(_ string) {
 		os.Exit(2)
 	}
 	if !docker.IsStdinTTY() || !docker.IsStdoutTTY() {
-		fmt.Fprintln(os.Stderr, "Error: booth dash needs a terminal. For scripts, use: booth list --json")
+		fmt.Fprintln(os.Stderr, "Error: booth dashboard needs a terminal. For scripts, use: booth list --json")
 		os.Exit(1)
 	}
 

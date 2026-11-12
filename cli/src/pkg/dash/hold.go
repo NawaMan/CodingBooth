@@ -58,7 +58,7 @@ func (h *holdOnFailure) Run() error {
 	}
 	err := h.cmd.Run()
 	if err != nil && h.in != nil && h.out != nil {
-		fmt.Fprintf(h.out, "\nCould not %s (%v). Press Enter to return to booth dash.", h.what, err)
+		fmt.Fprintf(h.out, "\nCould not %s (%v). Press Enter to return to booth dashboard.", h.what, err)
 		_, _ = bufio.NewReader(h.in).ReadString('\n')
 	}
 	return err

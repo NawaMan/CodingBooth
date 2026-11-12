@@ -331,7 +331,7 @@ func Spec() *Command {
 			{Name: "express", Desc: "Run from arguments, ignoring .booth/", Flags: join(expressOwnFlags, without(runFlags, expressRefusedRunFlags...))},
 			{Name: "list", Desc: "List booth containers",
 				Flags: []Flag{engineFlag, boolFlag("--running"), boolFlag("--stopped"), boolFlag("--name-only"), boolFlag("--json")}},
-			{Name: "dash", Desc: "Live table of every booth, with actions",
+			{Name: "dashboard", Desc: "Live table of every booth, with actions",
 				Flags: []Flag{engineFlag, flag(Text, "--interval")}},
 			{Name: "worktree", Desc: "List and remove git worktrees",
 				Subs: []*Command{
