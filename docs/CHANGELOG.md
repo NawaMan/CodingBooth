@@ -15,7 +15,8 @@ This file contains a list of changes for each released version.
   `n` creates a new worktree with its booth, `l` shows a booth's whole log and follows it (in
   `less +F` when installed), `t` opens a host shell in the folder, a VERSION column shows the version that built each
   booth, in the warning colour when it is older than its project now uses or its image was
-  rebuilt since, and `e` / `K`
+  rebuilt since, a GIT column shows each worktree's changed files, commits ahead/behind main
+  (the main checkout: its upstream) and whether its branch has been merged, and `e` / `K`
   open it in your editor or GitKraken. See [booth lifecycle → dashboard](BOOTH_LIFECYCLE.md#dashboard).
 - **`booth worktree remove` names the files in the way.** Refusing a worktree with uncommitted or
   untracked work said only how many files; it now names the first three (`… and 2 more`), and

@@ -101,3 +101,26 @@ func Within(path, dir string) bool {
 	path, dir = filepath.Clean(path), filepath.Clean(dir)
 	return path == dir || strings.HasPrefix(path, dir+string(filepath.Separator))
 }
+
+// GitState is a worktree's git status (see gitworktree.State).
+type GitState = gitworktree.State
+
+// GitStatus reads w's git status for booth dashboard. A worktree counts ahead/behind against the
+// main checkout's branch; the main checkout against its upstream (unpushed and unpulled commits),
+// and only "dirty" when it has none. The main checkout is never "merged".
+func GitStatus(repo Repo, w Worktree) (GitState, error) {
+	base := ""
+	switch {
+	case w.Main:
+		if w.Branch != "" {
+			base = gitworktree.Upstream(w.Path, w.Branch)
+		}
+	case len(repo.Worktrees) > 0 && repo.Worktrees[0].Main:
+		base = repo.Worktrees[0].Branch
+	}
+	state, err := gitworktree.Status(w.Path, w.Branch, base)
+	if w.Main {
+		state.Merged = false
+	}
+	return state, err
+}

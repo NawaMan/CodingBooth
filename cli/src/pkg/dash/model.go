@@ -78,6 +78,10 @@ type Deps struct {
 	State   func(booth lifecycle.Booth) (lifecycle.BoothState, error)
 	Pending func(booth lifecycle.Booth) ([]lifecycle.PendingMessage, error)
 	Logs    func(booth lifecycle.Booth, lines int) (string, error)
+	// GitStatus reads a worktree's git status for the GIT column; nil hides it.
+	GitStatus func(repo lifecycle.Repo, w lifecycle.Worktree) (lifecycle.GitState, error)
+	// GitInterval is how long a worktree's git status is kept (default 10s).
+	GitInterval time.Duration
 	// Interval between refreshes.
 	Interval time.Duration
 	// DetailInterval between reloads of the detail pane (default 5s): it
@@ -100,7 +104,8 @@ type model struct {
 	offset   int    // first row shown when the table is taller than the screen
 	selected string // key of the selected row, kept across refreshes
 	busy     map[string]string
-	asking   map[string]int // questions sent and not yet answered, per booth
+	asking   map[string]int      // questions sent and not yet answered, per booth
+	git      map[string]gitEntry // each worktree's git status, by path (see gitstatus.go)
 
 	loading     bool // a snapshot is in flight
 	fetchSeq    int  // the latest snapshot asked for
@@ -194,8 +199,12 @@ func newModel(deps Deps) model {
 	if deps.DetailInterval <= 0 {
 		deps.DetailInterval = 5 * time.Second
 	}
+	if deps.GitInterval <= 0 {
+		deps.GitInterval = 10 * time.Second
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	return model{deps: deps, busy: map[string]string{}, asking: map[string]int{},
+		git:     map[string]gitEntry{},
 		loading: true, fetchSeq: 1, ctx: ctx, cancel: cancel}
 }
 
@@ -243,13 +252,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return next, cmd
 	}
 	m, load := m.syncDetail()
-	return m, tea.Batch(cmd, load)
+	m, git := m.syncGit()
+	return m, tea.Batch(cmd, load, git)
 }
 
 func (m model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case detailMsg:
 		return m.applyDetail(msg), nil
+
+	case gitMsg:
+		return m.applyGit(msg), nil
 
 	case detailTickMsg:
 		if !m.detailOpen || msg.seq != m.detailSeq {
@@ -290,6 +303,7 @@ func (m model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case actionDoneMsg:
 		delete(m.busy, msg.key)
+		m.staleGit()
 		if msg.err != nil && msg.plan.Verb == "remove worktree" {
 			m.setStatus(keptWorktree(msg.name, msg.output, msg.err), true)
 		} else if msg.err != nil {
@@ -327,6 +341,8 @@ func (m model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case execDoneMsg:
+		// A shell, a host terminal or an editor may have changed any worktree.
+		m.staleGit()
 		if msg.err != nil {
 			m.setStatus(failure(msg.plan.Verb, msg.name, "", msg.err), true)
 		} else {
@@ -377,6 +393,7 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 		m.move(m.tableRows())
 	case keyRefresh:
 		m.setStatus("", false)
+		m.staleGit()
 		return m.refresh(true)
 	case keyDetail:
 		return m.toggleDetail()
