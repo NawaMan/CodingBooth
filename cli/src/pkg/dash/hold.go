@@ -17,8 +17,11 @@ import (
 type holdOnFailure struct {
 	cmd  *exec.Cmd
 	what string // "start web", for the closing line
-	in   io.Reader
-	out  io.Writer
+	// banner, when set, is printed before the command runs, and no failure is
+	// held: a shell's exit status is its last command's, not a failure.
+	banner string
+	in     io.Reader
+	out    io.Writer
 }
 
 func (h *holdOnFailure) SetStdin(r io.Reader) {
@@ -42,6 +45,17 @@ func (h *holdOnFailure) SetStderr(w io.Writer) {
 }
 
 func (h *holdOnFailure) Run() error {
+	if h.banner != "" {
+		if h.out != nil {
+			fmt.Fprintln(h.out, h.banner)
+		}
+		if err := h.cmd.Run(); err != nil {
+			if _, exited := err.(*exec.ExitError); !exited {
+				return err
+			}
+		}
+		return nil
+	}
 	err := h.cmd.Run()
 	if err != nil && h.in != nil && h.out != nil {
 		fmt.Fprintf(h.out, "\nCould not %s (%v). Press Enter to return to booth dash.", h.what, err)

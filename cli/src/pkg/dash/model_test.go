@@ -62,6 +62,7 @@ type fakeDeps struct {
 	edited    []string
 	editorErr error
 	krakened  []string
+	shelled   []string
 }
 
 func (f *fakeDeps) deps() Deps {
@@ -111,6 +112,10 @@ func (f *fakeDeps) deps() Deps {
 				return nil, f.editorErr
 			}
 			return exec.Command("true"), nil
+		},
+		HostShell: func(path string) *exec.Cmd {
+			f.shelled = append(f.shelled, path)
+			return exec.Command("true")
 		},
 		GitKraken: func(path string) error {
 			f.krakened = append(f.krakened, path)

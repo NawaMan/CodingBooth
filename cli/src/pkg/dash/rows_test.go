@@ -284,3 +284,44 @@ func TestRefusedWorktreeRemovalSaysWhatIsInTheWay(t *testing.T) {
 		t.Errorf("status = %q (err %v)\nwant %q", got.status, got.statusErr, want)
 	}
 }
+
+func TestHostTerminalOpensInRowFolder(t *testing.T) {
+	f := &fakeDeps{repos: testRepos()}
+	m := loaded(f, boothAt("fixer", "/home/u/dev/proj/worktree/fix"))
+	if _, cmd := press(t, m, "t"); cmd == nil {
+		t.Fatal("t must open a host shell")
+	}
+	m, _ = press(t, m, "down")
+	press(t, m, "t")
+	if want := []string{"/home/u/dev/proj", "/home/u/dev/proj/worktree/fix"}; !reflect.DeepEqual(f.shelled, want) {
+		t.Errorf("shells in %v, want %v", f.shelled, want)
+	}
+	if !strings.Contains(stripANSI(m.View()), "t terminal") {
+		t.Errorf("hint lacks t:\n%s", stripANSI(m.View()))
+	}
+
+	gone := []lifecycle.Repo{{Name: "p", Root: "/p", Worktrees: []lifecycle.Worktree{{Path: "/p", Main: true}, {Path: "/p/w", Branch: "w", Prunable: true}}}}
+	g := &fakeDeps{repos: gone}
+	m2 := loaded(g)
+	m2, cmd := press(t, m2, "down", "t")
+	if cmd != nil || len(g.shelled) != 0 || !strings.Contains(m2.status, "folder is gone") {
+		t.Errorf("t on a gone folder: cmd %v status %q", cmd != nil, m2.status)
+	}
+}
+
+func TestHostShellBannerAndExitStatus(t *testing.T) {
+	var out strings.Builder
+	h := &holdOnFailure{cmd: exec.Command("false"), banner: "Host shell in ~/x (not in a booth). exit returns to booth dash."}
+	h.SetStdin(strings.NewReader(""))
+	h.SetStdout(&out)
+	if err := h.Run(); err != nil {
+		t.Errorf("a shell's last exit status is not a failure: %v", err)
+	}
+	if out.String() != "Host shell in ~/x (not in a booth). exit returns to booth dash.\n" {
+		t.Errorf("out = %q", out.String())
+	}
+	missing := &holdOnFailure{cmd: exec.Command("/no/such/shell"), banner: "x"}
+	if err := missing.Run(); err == nil {
+		t.Error("a shell that cannot start is a failure")
+	}
+}

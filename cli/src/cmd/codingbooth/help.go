@@ -589,6 +589,7 @@ KEYS:
   p          Pick one of its exposed ports (as expose list shows) to open
   m          Send its user a message: toast, banner, or a question whose
              answer comes back here (as message send does)
+  t          Open a host shell ($SHELL) in its folder (back here on exit)
   e          Open its folder in $VISUAL ($EDITOR, else code)
   K          Open its folder in GitKraken
   s          Start it                x      Stop it

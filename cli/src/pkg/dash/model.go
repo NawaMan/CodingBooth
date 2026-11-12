@@ -33,6 +33,7 @@ const (
 	keyDetail  = "i"
 	keyNew     = "n"
 	keyEditor  = "e"
+	keyTerm    = "t"
 	// GitKraken is K: g already jumps to the top.
 	keyGitKraken = "K"
 	keyRefresh   = "R"
@@ -50,6 +51,8 @@ type Deps struct {
 	// Editor is the command that opens path in the user's editor; it gets the
 	// terminal, so a terminal editor works too.
 	Editor func(path string) (*exec.Cmd, error)
+	// HostShell is a shell on the host, to run in path (t).
+	HostShell func(path string) *exec.Cmd
 	// GitKraken opens path in GitKraken, and returns once it is launched.
 	GitKraken func(path string) error
 	// Command builds the booth binary command for an interactive action, to
@@ -372,6 +375,22 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 		m.setStatus("", false)
 		m.prompt = &namePrompt{repo: r.repo}
 		return m, nil
+	case keyTerm:
+		r, ok := m.currentRow()
+		if !ok || r.path() == "" || m.deps.HostShell == nil {
+			return m, nil
+		}
+		if r.worktree != nil && r.worktree.Prunable {
+			m.setStatus(r.worktree.Name()+"'s folder is gone.", false)
+			return m, nil
+		}
+		path := r.path()
+		m.setStatus("", false)
+		shell := &holdOnFailure{cmd: m.deps.HostShell(path),
+			banner: "Host shell in " + m.shortPath(path) + " (not in a booth). exit returns to booth dash."}
+		return m, tea.Exec(shell, func(err error) tea.Msg {
+			return execDoneMsg{name: path, plan: plan{Verb: "open a host shell in"}, err: err}
+		})
 	case keyEditor, keyGitKraken:
 		r, ok := m.currentRow()
 		if !ok || r.path() == "" {
