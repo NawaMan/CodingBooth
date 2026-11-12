@@ -4,4 +4,3 @@
 # as hand-written (booth config will then refuse to clobber them).
 Boothfile=sha256:92212bb06d705f836bc54f85d263bd095b3f2255712c585d3e35840c0b073882
 config.toml=sha256:fd3315912c70f2e0b3cbac1ad7b7b48683d25047e2db92fb7848a61f0ac2aae1
-templates=0.83.0--rc1

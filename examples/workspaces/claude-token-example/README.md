@@ -70,7 +70,7 @@ them. Quote the prompt twice:
 ```console
 $ ./booth -- claude -p "'What day is after Monday?'"
 Info: compiling Boothfile '.../claude-token-example/.booth/Boothfile'...
-Info: image 'codingbooth-local:claude-token-example-base-0.83.0--rc1' is up to date, skipping the build.
+Info: image 'codingbooth-local:claude-token-example-base-<version>' is up to date, skipping the build.
 Tuesday comes after Monday.
 ```
 
