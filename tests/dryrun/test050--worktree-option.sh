@@ -16,12 +16,15 @@
 # Test 5: unknown name                        -> would create it; creates nothing
 # Test 6: the main clone's branch             -> error, non-zero exit
 # Test 7: --worktree with --code              -> error, non-zero exit
-# Test 8: --worktree-keep without --worktree  -> error, non-zero exit
+# Test 8: --worktree-remove without --worktree -> error, non-zero exit
 # Test 9: --worktree-push, new worktree       -> says it would push; creates nothing
 # Test 10: --worktree-push without --worktree -> error, non-zero exit
 # Test 11: --worktree-push with --keep-alive  -> error, non-zero exit
 # Test 12: old name --push (0.81.0)           -> still pushes, warns of the new name
-# Test 13: old name --keep-worktree (0.81.0)  -> still taken, warns of the new name
+# Test 13: new worktree with --keep-alive     -> allowed: it is kept by default
+# Test 14: --worktree-remove, new worktree    -> says it would remove; creates nothing
+# Test 15: --worktree-remove with --keep-alive -> error: nothing would remove it
+# Test 16: --worktree-keep / --keep-worktree  -> error: gone, keeping is the default
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -102,8 +105,8 @@ expect_error 6 "The main clone's branch: error" "is the main checkout" \
     "$WORK/main" --worktree main
 expect_error 7 "--worktree with --code: error" "give one of them" \
     "$WORK/main" --worktree alpha --code "$WORK/main"
-expect_error 8 "--worktree-keep without --worktree: error" "need --worktree" \
-    "$WORK/main" --worktree-keep
+expect_error 8 "--worktree-remove without --worktree: error" "need --worktree" \
+    "$WORK/main" --worktree-remove
 
 ACTUAL="$(booth_in "$WORK/main" --worktree pushed --worktree-push || true)"
 ok=false
@@ -121,10 +124,25 @@ echo "$ACTUAL" | grep -qF "Warning: --push is now --worktree-push" &&
     echo "$ACTUAL" | grep -qF "Dryrun: would push branch pushed when the booth exits cleanly." && ok=true
 pass_fail 12 "Old name --push: still pushes, and warns of --worktree-push" "$ok" "$ACTUAL"
 
-ACTUAL="$(booth_in "$WORK/main" --worktree kept --keep-worktree --keep-alive || true)"
+ACTUAL="$(booth_in "$WORK/main" --worktree kept --keep-alive || true)"
 ok=false
-echo "$ACTUAL" | grep -qF "Warning: --keep-worktree is now --worktree-keep" &&
-    echo "$ACTUAL" | grep -qF "Dryrun: would create worktree" && ok=true
-pass_fail 13 "Old name --keep-worktree: still taken (--keep-alive allowed), and warns" "$ok" "$ACTUAL"
+echo "$ACTUAL" | grep -qF "Dryrun: would create worktree" &&
+    ! echo "$ACTUAL" | grep -qF "would remove" && ok=true
+pass_fail 13 "New worktree with --keep-alive: allowed, since it is kept by default" "$ok" "$ACTUAL"
+
+ACTUAL="$(booth_in "$WORK/main" --worktree gone --worktree-remove || true)"
+ok=false
+echo "$ACTUAL" | grep -qF "Dryrun: would remove the worktree when the booth exits cleanly." &&
+    ! git -C "$WORK/main" rev-parse --verify --quiet refs/heads/gone > /dev/null && ok=true
+pass_fail 14 "--worktree-remove on a new worktree: dryrun says it would remove, and creates nothing" "$ok" "$ACTUAL"
+expect_error 15 "--worktree-remove with --keep-alive: error" "drop --worktree-remove" \
+    "$WORK/main" --worktree gone --worktree-remove --keep-alive
+
+ok=true; detail=""
+for old in --worktree-keep --keep-worktree; do
+    out="$(booth_in "$WORK/main" --worktree kept "$old")" && { ok=false; detail+="$old: exit 0; "; continue; }
+    echo "$out" | grep -qF -- "$old is gone: a worktree is kept by default now" || { ok=false; detail+="$old: $out; "; }
+done
+pass_fail 16 "--worktree-keep and --keep-worktree: refused, keeping is the default" "$ok" "$detail"
 
 exit $FAILED

@@ -212,7 +212,7 @@ func TestLiveWorktrees(t *testing.T) {
 func TestRenamedFlagIsNotOffered(t *testing.T) {
 	run := Spec().Sub("run")
 	for _, it := range flagItems(run, "--") {
-		if it.Value == "--push" || it.Value == "--keep-worktree" {
+		if it.Value == "--push" {
 			t.Errorf("completion offers the old name %s", it.Value)
 		}
 	}
@@ -223,7 +223,7 @@ func TestRenamedFlagIsNotOffered(t *testing.T) {
 	for _, it := range flagItems(run, "--worktree-") {
 		offered[it.Value] = true
 	}
-	if !offered["--worktree-push"] || !offered["--worktree-keep"] {
-		t.Errorf("completion should offer --worktree-push and --worktree-keep, got %v", offered)
+	if !offered["--worktree-push"] || !offered["--worktree-remove"] || offered["--worktree-keep"] {
+		t.Errorf("completion should offer --worktree-push and --worktree-remove (not --worktree-keep), got %v", offered)
 	}
 }

@@ -155,9 +155,9 @@ func planForWorktree(key string, r row) (plan, string) {
 }
 
 // newWorktreePlan creates worktree name in repo, from its current HEAD, and
-// starts its booth. --worktree-keep: a daemon booth outlives the command, so
-// nothing would be left to remove a worktree booth created.
+// starts its booth as a daemon. The worktree stays when the booth stops; d
+// removes it.
 func newWorktreePlan(repo *lifecycle.Repo, name string) plan {
-	return plan{Verb: "create worktree", Args: []string{"--worktree", name, "--daemon", "--worktree-keep"},
+	return plan{Verb: "create worktree", Args: []string{"--worktree", name, "--daemon"},
 		Dir: repo.Root, Interactive: true, Hold: true, Done: "Created worktree " + name + " and started its booth."}
 }

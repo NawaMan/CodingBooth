@@ -445,7 +445,7 @@ User-facing guides:
 - **[Security](docs/BOOTH_SECURITY.md)** — What the booth isolates, what it does not, and when booth asks before starting
 - **[Container engines](docs/BOOTH_ENGINES.md)** — Docker, Podman, and Apple container: what each supports, and where a way out of the booth lands
 - **[Compatibility](docs/COMPATIBLE.md)** — Setups, templates and features that do not work, or only partly work, on arm64, Windows, macOS, or some engines
-- **[booth on a git worktree](docs/BOOTH_WORKTREE.md)** — `booth --worktree <name>`: run on a worktree, created and removed again when needed
+- **[booth on a git worktree](docs/BOOTH_WORKTREE.md)** — `booth --worktree <name>`: run on a worktree, created when needed
 - **[booth profiles](docs/BOOTH_PROFILES.md)** — Named `config.toml` / `.env` overlays (`--profile dev`): layout, selection, merge rules
 - **[booth config](docs/BOOTH_CONFIG.md)** — Template-driven project scaffolding
 - **[booth build](docs/BOOTH_BUILD.md)** — Build and publish booth images to a container registry

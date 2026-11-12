@@ -4,6 +4,16 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth --worktree` keeps the worktree it creates; `--worktree-remove` removes it.** A worktree
+  `booth --worktree <name>` created used to be removed again when the booth exited, unless
+  `--worktree-keep` was given. It now stays, with its branch, and booth prints how to resume or
+  remove it. `--worktree-remove` asks for the old clean-up, with the same rules: only a worktree
+  this run created, only when nothing would be lost. **Breaking:** `--worktree-keep` (and its
+  0.81.0 name `--keep-worktree`) is gone, and booth refuses it with a note to drop it. `--daemon`
+  and `--keep-alive` no longer need it; they refuse `--worktree-remove` on a new worktree instead.
+  A script that relied on the removal adds `--worktree-remove`. See
+  [Booth on a Git Worktree](BOOTH_WORKTREE.md).
+
 - **`booth dashboard`: a live table of every booth, with actions.** `booth list` that refreshes itself
   and that you can act on: pick a row, then `enter` opens a shell (exiting it comes back to the
   table), `i` shows its details below the table (uptime, CPU and memory, viewers, idle shutdown,

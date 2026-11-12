@@ -14,17 +14,17 @@ import (
 	"strings"
 )
 
-// booth leaves things the way it found them: a worktree this run created is removed when the booth
-// exits, and one that already existed is never touched. Removal happens only when nothing would
-// be lost, and goes through `git worktree remove` / `git branch -d` without --force, so git's own
+// A worktree is kept when the booth exits. With --worktree-remove, one this run created is removed
+// again; one that already existed is never touched. Removal happens only when nothing would be
+// lost, and goes through `git worktree remove` / `git branch -d` without --force, so git's own
 // refusal is the last guard. Anything kept is reported with its path and the reason.
 
 // FinishOptions says how a session ends, besides the booth's exit code.
 type FinishOptions struct {
-	ExitCode     int
-	Push         bool // --worktree-push: push the branch when the run succeeded
-	KeepWorktree bool // --worktree-keep: keep the worktree this run created
-	Existing     bool // the worktree existed before this run: never removed
+	ExitCode int
+	Push     bool // --worktree-push: push the branch when the run succeeded
+	Remove   bool // --worktree-remove: remove the worktree this run created
+	Existing bool // the worktree existed before this run: never removed
 }
 
 // Outcome is what Finish did with a session's worktree.
@@ -47,9 +47,11 @@ func Finish(dir string, plan Plan, opts FinishOptions) Outcome {
 	say := func(format string, args ...any) {
 		out.Messages = append(out.Messages, fmt.Sprintf(format, args...))
 	}
+	keep := opts.Existing || !opts.Remove
 	kept := func() Outcome {
-		if opts.KeepWorktree && !opts.Existing {
-			say("Kept worktree %s (--worktree-keep).", plan.Path)
+		if !opts.Existing {
+			say("Kept worktree %s. `booth --worktree %s` resumes it, `booth worktree remove %s` removes it.",
+				plan.Path, plan.Branch, plan.Branch)
 		}
 		return out
 	}
@@ -58,7 +60,7 @@ func Finish(dir string, plan Plan, opts FinishOptions) Outcome {
 			out.NotPushed = true
 			say("Did not push branch %s: %s.", plan.Branch, reason)
 		}
-		if opts.Existing || opts.KeepWorktree {
+		if keep {
 			return kept()
 		}
 		say("Kept worktree %s: %s.%s", plan.Path, reason, resume)
@@ -69,7 +71,7 @@ func Finish(dir string, plan Plan, opts FinishOptions) Outcome {
 	if _, err := os.Stat(plan.Path); err != nil {
 		return out // already gone
 	}
-	if !opts.Push && (opts.Existing || opts.KeepWorktree) {
+	if !opts.Push && keep {
 		return kept() // nothing to push, nothing to remove
 	}
 	if opts.ExitCode != 0 {
@@ -104,7 +106,7 @@ func Finish(dir string, plan Plan, opts FinishOptions) Outcome {
 		}
 	}
 
-	if opts.Existing || opts.KeepWorktree {
+	if keep {
 		return kept()
 	}
 	if boothOwn {

@@ -63,9 +63,8 @@ var expressRefused = map[string]string{
 	"--worktree":          "express takes the code path from --code",
 	"--worktree-root":     "express takes the code path from --code",
 	"--worktree-from":     "express takes the code path from --code",
-	"--worktree-keep":     "express takes the code path from --code",
+	"--worktree-remove":   "express takes the code path from --code",
 	"--worktree-push":     "express takes the code path from --code",
-	"--keep-worktree":     "express takes the code path from --code", // old name of --worktree-keep
 	"--push":              "express takes the code path from --code", // old name of --worktree-push
 }
 

@@ -13,13 +13,14 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/gitworktree"
 )
 
-// worktreeRun is a run's `--worktree` session: what happens when the booth exits. A worktree this
-// run created is removed again; with --worktree-push, the branch is pushed first. A worktree that already
-// existed, without --worktree-push, needs no session; init finds it.
+// worktreeRun is a run's `--worktree` session: what happens when the booth exits. A worktree is
+// kept by default; with --worktree-remove, one this run created is removed again. With
+// --worktree-push, the branch is pushed first. A worktree that already existed, without
+// --worktree-push, needs no session; init finds it.
 type worktreeRun struct {
 	dir      string // where booth started; git runs from here
 	plan     gitworktree.Plan
-	keep     bool // --worktree-keep
+	remove   bool // --worktree-remove
 	push     bool // --worktree-push
 	existing bool // the worktree existed before this run
 	checked  bool // the first init has been checked against the session
@@ -27,8 +28,8 @@ type worktreeRun struct {
 
 // worktreeFlags is what a run's arguments say about --worktree, before the `--` command.
 type worktreeFlags struct {
-	name, root, from               string
-	keep, push, dryrun, background bool // background: --daemon or --keep-alive
+	name, root, from                 string
+	remove, push, dryrun, background bool // background: --daemon or --keep-alive
 }
 
 func readWorktreeFlags(args []string) worktreeFlags {
@@ -52,15 +53,15 @@ func readWorktreeFlags(args []string) worktreeFlags {
 		case "--worktree-from":
 			f.from = value(i)
 			i++
-		case "--worktree-keep":
-			f.keep = true
+		case "--worktree-remove":
+			f.remove = true
+		case "--worktree-keep", "--keep-worktree": // removed: keeping is the default now
+			worktreeFail("%s is gone: a worktree is kept by default now; drop it "+
+				"(--worktree-remove removes the worktree this run creates)", args[i])
 		case "--worktree-push":
 			f.push = true
-		// The names 0.81.0 shipped, still taken for now. init skips them too
-		// (initialize_app_context.go), and express refuses them.
-		case "--keep-worktree":
-			warnRenamedFlag("--keep-worktree", "--worktree-keep")
-			f.keep = true
+		// The name 0.81.0 shipped, still taken for now. init skips it too
+		// (initialize_app_context.go), and express refuses it.
 		case "--push":
 			warnRenamedFlag("--push", "--worktree-push")
 			f.push = true
@@ -78,8 +79,8 @@ func readWorktreeFlags(args []string) worktreeFlags {
 func prepareWorktree(args []string) *worktreeRun {
 	f := readWorktreeFlags(args)
 	if f.name == "" {
-		if f.root != "" || f.from != "" || f.keep || f.push {
-			worktreeFail("--worktree-root, --worktree-from, --worktree-keep and --worktree-push need --worktree")
+		if f.root != "" || f.from != "" || f.remove || f.push {
+			worktreeFail("--worktree-root, --worktree-from, --worktree-remove and --worktree-push need --worktree")
 		}
 		return nil
 	}
@@ -108,14 +109,14 @@ func prepareWorktree(args []string) *worktreeRun {
 		}
 		// It existed before this run, so it stays; the session only pushes.
 		return &worktreeRun{dir: dir, plan: gitworktree.Plan{Path: entry.Path, Branch: entry.Branch},
-			keep: f.keep, push: true, existing: true}
+			push: true, existing: true}
 	} else if !gitworktree.IsNotFound(err) {
 		worktreeFail("%v", err)
 	}
 
-	if f.background && !f.keep {
+	if f.background && f.remove {
 		worktreeFail("a --daemon or --keep-alive booth outlives this command, so nothing would remove " +
-			"the worktree it creates; add --worktree-keep")
+			"the worktree it creates; drop --worktree-remove, and remove it with `booth worktree remove`")
 	}
 	plan, err := gitworktree.PlanCreate(dir, entries, gitworktree.CreateOptions{Name: f.name, Root: f.root, From: f.from})
 	if err != nil {
@@ -126,17 +127,21 @@ func prepareWorktree(args []string) *worktreeRun {
 		if f.push {
 			fmt.Printf("Dryrun: would push branch %s when the booth exits cleanly.\n", plan.Branch)
 		}
+		if f.remove {
+			fmt.Printf("Dryrun: would remove the worktree when the booth exits cleanly.\n")
+		}
 		os.Exit(0)
 	}
 	if err := gitworktree.Create(dir, plan); err != nil {
 		worktreeFail("%v", err)
 	}
 	fmt.Fprintf(os.Stderr, "Created worktree %s on %s, starting at %s.\n", plan.Path, branchDesc(plan), short(plan.Base))
-	return &worktreeRun{dir: dir, plan: plan, keep: f.keep, push: f.push}
+	return &worktreeRun{dir: dir, plan: plan, remove: f.remove, push: f.push}
 }
 
 // check runs once, on the first init: a keep-alive or daemon booth set in config.toml outlives
-// this command just as the flags do, so the worktree just created is removed again.
+// this command just as the flags do, so --worktree-push and --worktree-remove cannot work. A
+// worktree --worktree-remove just created is removed again.
 func (w *worktreeRun) check(ctx appctx.AppContext) {
 	if w == nil || w.checked {
 		return
@@ -147,26 +152,26 @@ func (w *worktreeRun) check(ctx appctx.AppContext) {
 	}
 	if w.push {
 		w.push = false // nothing was done yet: do not push
-		w.finish(0)
+		w.finish(0)    // removes the worktree only with --worktree-remove
 		worktreeFail("this booth is keep-alive or daemon (config.toml), and --worktree-push pushes when the " +
 			"booth exits; push from the host when you are done")
 	}
-	if !w.keep && !w.existing {
+	if w.remove && !w.existing {
 		w.finish(0)
 		worktreeFail("this booth is keep-alive or daemon (config.toml), so nothing would remove " +
-			"the worktree it creates; add --worktree-keep")
+			"the worktree it creates; drop --worktree-remove")
 	}
 }
 
-// finish ends the session: it pushes (--worktree-push) and removes the worktree this run created, when
-// the run succeeded, and reports what happened. It returns the code booth exits with: a push that
+// finish ends the session: it pushes (--worktree-push) and removes the worktree this run created
+// (--worktree-remove), when the run succeeded, and reports what happened. It returns the code booth exits with: a push that
 // was asked for and did not happen turns a 0 into 1, so a script can tell.
 func (w *worktreeRun) finish(exitCode int) int {
 	if w == nil {
 		return exitCode
 	}
 	out := gitworktree.Finish(w.dir, w.plan, gitworktree.FinishOptions{
-		ExitCode: exitCode, Push: w.push, KeepWorktree: w.keep, Existing: w.existing})
+		ExitCode: exitCode, Push: w.push, Remove: w.remove, Existing: w.existing})
 	for _, line := range out.Messages {
 		fmt.Fprintln(os.Stderr, line)
 	}
