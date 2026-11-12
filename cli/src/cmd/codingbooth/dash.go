@@ -77,8 +77,12 @@ func runDash(_ string) {
 		Repos: func(booths []lifecycle.Booth) []lifecycle.Repo {
 			return lifecycle.Repos(booths, cwd)
 		},
-		Editor:  editorCommand,
-		Command: func(args []string) *exec.Cmd { return exec.Command(self, args...) },
+		Editor: editorCommand,
+		Command: func(dir string, args []string) *exec.Cmd {
+			cmd := exec.Command(self, args...)
+			cmd.Dir = dir
+			return cmd
+		},
 		Message: func(ctx context.Context, args []string) (string, error) {
 			out, err := detach(exec.CommandContext(ctx, self, args...)).CombinedOutput()
 			return string(out), err

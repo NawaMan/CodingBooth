@@ -6,6 +6,7 @@ package dash
 
 import (
 	"errors"
+	"os/exec"
 	"reflect"
 	"strings"
 	"testing"
@@ -90,12 +91,16 @@ func TestStartBoothOnWorktree(t *testing.T) {
 	m := loaded(f)
 	m, _ = press(t, m, "down", "down") // main → fix → idea
 	m, cmd := press(t, m, "s")
-	if cmd == nil || m.busy["worktree:/home/u/dev/proj.worktrees/idea"] != "starting…" {
-		t.Fatalf("s on a worktree: cmd %v busy %v", cmd != nil, m.busy)
+	// In the foreground: booth may build, and may ask before starting.
+	if cmd == nil || len(f.ran) != 0 {
+		t.Fatalf("s on a worktree: cmd %v ran in background %v", cmd != nil, f.ran)
 	}
-	cmd()
-	if want := []string{"--worktree", "idea", "--daemon"}; !reflect.DeepEqual(f.ran[0], want) || f.ranIn[0] != "/home/u/dev/proj" {
-		t.Fatalf("ran %v in %q, want %v in the repository", f.ran[0], f.ranIn[0], want)
+	if want := []string{"--worktree", "idea", "--daemon"}; len(f.execed) != 1 || !reflect.DeepEqual(f.execed[0], want) || f.execedIn[0] != "/home/u/dev/proj" {
+		t.Fatalf("execed %v in %v, want %v in the repository", f.execed, f.execedIn, want)
+	}
+	next0, _ := m.Update(execDoneMsg{name: "idea", plan: plan{Done: "Started a booth on idea."}})
+	if got := next0.(model).status; got != "Started a booth on idea." {
+		t.Errorf("status after the start = %q", got)
 	}
 
 	// Once the booth shows up, the cursor stays on that worktree, now its booth.
@@ -109,10 +114,9 @@ func TestStartBoothOnWorktree(t *testing.T) {
 func TestStartBoothOnMainCheckout(t *testing.T) {
 	f := &fakeDeps{repos: testRepos()}
 	m := loaded(f)
-	_, cmd := press(t, m, "s")
-	cmd()
-	if want := []string{"--daemon"}; !reflect.DeepEqual(f.ran[0], want) || f.ranIn[0] != "/home/u/dev/proj" {
-		t.Fatalf("ran %v in %q, want %v in the main checkout", f.ran[0], f.ranIn[0], want)
+	press(t, m, "s")
+	if want := []string{"--daemon"}; len(f.execed) != 1 || !reflect.DeepEqual(f.execed[0], want) || f.execedIn[0] != "/home/u/dev/proj" {
+		t.Fatalf("execed %v in %v, want %v in the main checkout", f.execed, f.execedIn, want)
 	}
 }
 
@@ -161,15 +165,15 @@ func TestNewWorktreePromptCreatesAndStarts(t *testing.T) {
 	m, _ = press(t, m, "ctrl+u")
 	m = typeText(t, m, "feature/x")
 	m, cmd = press(t, m, "enter")
-	if m.prompt != nil || cmd == nil || !strings.Contains(m.status, "Creating worktree feature/x") {
-		t.Fatalf("enter: prompt %+v status %q", m.prompt, m.status)
+	if m.prompt != nil || cmd == nil {
+		t.Fatalf("enter: prompt %+v cmd %v", m.prompt, cmd != nil)
 	}
-	next, _ := m.Update(cmd())
-	m = next.(model)
 	want := []string{"--worktree", "feature/x", "--daemon", "--worktree-keep"}
-	if !reflect.DeepEqual(f.ran[0], want) || f.ranIn[0] != "/home/u/dev/proj" {
-		t.Fatalf("ran %v in %q, want %v in the repository", f.ran[0], f.ranIn[0], want)
+	if len(f.execed) != 1 || !reflect.DeepEqual(f.execed[0], want) || f.execedIn[0] != "/home/u/dev/proj" {
+		t.Fatalf("execed %v in %v, want %v in the repository", f.execed, f.execedIn, want)
 	}
+	next, _ := m.Update(execDoneMsg{name: "feature/x", plan: newWorktreePlan(&f.repos[0], "feature/x")})
+	m = next.(model)
 	if m.status != "Created worktree feature/x and started its booth." {
 		t.Errorf("status = %q", m.status)
 	}
@@ -241,5 +245,27 @@ func TestGitKrakenKeyOnlyWhenInstalled(t *testing.T) {
 	}
 	if _, cmd := press(t, m, "K"); cmd != nil || len(f.krakened) != 0 {
 		t.Error("K must do nothing without GitKraken")
+	}
+}
+
+func TestHoldOnFailureWaitsForEnter(t *testing.T) {
+	var out strings.Builder
+	h := &holdOnFailure{cmd: exec.Command("false"), what: "start web"}
+	h.SetStdin(strings.NewReader("\n"))
+	h.SetStdout(&out)
+	h.SetStderr(&out)
+	if err := h.Run(); err == nil {
+		t.Fatal("false must fail")
+	}
+	if !strings.Contains(out.String(), "Could not start web (exit status 1). Press Enter to return to booth dash.") {
+		t.Errorf("out = %q", out.String())
+	}
+
+	out.Reset()
+	ok := &holdOnFailure{cmd: exec.Command("true"), what: "start web"}
+	ok.SetStdin(strings.NewReader(""))
+	ok.SetStdout(&out)
+	if err := ok.Run(); err != nil || out.Len() != 0 {
+		t.Errorf("success must return at once: err %v out %q", err, out.String())
 	}
 }
