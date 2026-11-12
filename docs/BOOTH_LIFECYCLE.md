@@ -145,6 +145,19 @@ nothing would be lost, as [`booth worktree remove`](BOOTH_WORKTREE.md#removing-a
 and refuses while a booth runs on it; the main checkout is never removed. There is no landing or
 merging here: open the worktree in your editor or GitKraken for that.
 
+**VERSION** is the CodingBooth version that built each booth. A booth that has fallen behind shows
+it in the warning colour:
+
+- `0.77.0 → 0.82.0` — built with an older version than `booth` would use in its project now (the
+  project's `.booth/tools/codingbooth.lock`, else the dashboard's own version). Only the numbers count,
+  so a `--rc1` or session suffix does not.
+- `(rebuilt)` — its image name now points to a newer build (the Boothfile or a setup changed since),
+  which a kept booth does not pick up.
+
+The details pane (`i`) says which, and how to update: `booth remove --force --name <booth>`, then
+`booth` in its folder. The dashboard does not do this for you, since removing a booth also removes
+its persisted home (`--persist-home`).
+
 A toast or banner is sent at once. A question (yes/no, ok, text) waits for the booth user's answer
 in the background: its row shows `?` meanwhile, every key stays usable, and the answer comes back
 on the status line (`web answered: yes`, or `no answer (timed out)` after 10 minutes). Quitting the

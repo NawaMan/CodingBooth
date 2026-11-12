@@ -221,6 +221,8 @@ type column struct {
 	cell   func(row) string
 	max    int  // widest it may grow; 0 = no limit
 	flex   bool // takes the width left over (the code path)
+	// warn, when it says so, draws the cell in the warning colour.
+	warn func(row) bool
 }
 
 func (m model) columns() []column {
@@ -243,6 +245,7 @@ func (m model) columns() []column {
 	cols = append(cols,
 		column{header: "VARIANT", cell: boothCell(func(b lifecycle.Booth) string { return dashIfEmpty(b.Variant) }), max: 16},
 		column{header: "PORT", cell: boothCell(func(b lifecycle.Booth) string { return dashIfEmpty(b.Port) })},
+		column{header: "VERSION", cell: boothCell(m.versionText), max: 28, warn: m.behind},
 		column{header: "AGE", cell: boothCell(func(b lifecycle.Booth) string { return age(b.CreatedAt, m.deps.Now()) })},
 		column{header: "CODE PATH", cell: func(r row) string { return m.shortPath(r.path()) }, flex: true},
 	)
@@ -311,17 +314,30 @@ func (m model) table() string {
 		}
 	}
 
-	render := func(cells []string) string {
-		parts := make([]string, len(cells))
+	// render lays the cells out. Each cell is styled on its own (the row's
+	// style, or the warning colour), so one cell's colour cannot end another's.
+	render := func(r *row, cells []string, style lipgloss.Style) string {
+		var line strings.Builder
 		for i, cell := range cells {
 			if cols[i].flex {
 				cell = truncateLeft(cell, widths[i])
 			} else {
 				cell = truncateRight(cell, widths[i])
 			}
-			parts[i] = cell + strings.Repeat(" ", widths[i]-lipgloss.Width(cell))
+			padded := cell + strings.Repeat(" ", widths[i]-lipgloss.Width(cell))
+			if i == len(cells)-1 {
+				padded = strings.TrimRight(padded, " ")
+			}
+			cellStyle := style
+			if r != nil && cols[i].warn != nil && cols[i].warn(*r) {
+				cellStyle = style.Foreground(busyStyle.GetForeground())
+			}
+			if i > 0 {
+				line.WriteString(style.Render("  "))
+			}
+			line.WriteString(cellStyle.Render(padded))
 		}
-		return strings.TrimRight(strings.Join(parts, "  "), " ")
+		return line.String()
 	}
 
 	var b strings.Builder
@@ -329,7 +345,7 @@ func (m model) table() string {
 	for i, col := range cols {
 		headers[i] = col.header
 	}
-	b.WriteString("  " + headerStyle.Render(render(headers)) + "\n")
+	b.WriteString("  " + render(nil, headers, headerStyle) + "\n")
 
 	rows := m.tableRows()
 	end := min(len(m.rows), m.offset+rows)
@@ -343,22 +359,49 @@ func (m model) table() string {
 		for c, col := range cols {
 			cells[c] = col.cell(r)
 		}
-		line := render(cells)
+		style := lipgloss.NewStyle()
 		switch {
 		case i == m.cursor:
-			b.WriteString(cursorStyle.Render("› " + line))
+			style = cursorStyle
 		case m.busy[r.key()] != "":
-			b.WriteString("  " + busyStyle.Render(line))
+			style = busyStyle
 		case r.booth == nil:
-			b.WriteString("  " + dimStyle.Render(line))
+			style = dimStyle
 		case r.booth.Running():
-			b.WriteString("  " + runningStyle.Render(line))
-		default:
-			b.WriteString("  " + line)
+			style = runningStyle
 		}
+		gutter := "  "
+		if i == m.cursor {
+			gutter = "› "
+		}
+		b.WriteString(style.Render(gutter) + render(&r, cells, style))
 		b.WriteString("\n")
 	}
 	return b.String()
+}
+
+// versionText is the VERSION cell: the version that built the booth, then
+// what `booth` would build now when that is newer, and "(rebuilt)" when its
+// image has been rebuilt since.
+func (m model) versionText(b lifecycle.Booth) string {
+	text := dashIfEmpty(b.Version)
+	f := m.fresh[boothKey(b)]
+	if f.Older {
+		text += " → " + f.Want
+	}
+	if f.Rebuilt {
+		text += " (rebuilt)"
+	}
+	return text
+}
+
+// behind: the booth is older than what `booth` would build for it now.
+func (m model) behind(r row) bool {
+	if r.booth == nil {
+		return false
+	}
+	f := m.fresh[boothKey(*r.booth)]
+	return f.Older || f.Rebuilt
 }
 
 // groupHeader is a repository's line: its name, then where it is.
