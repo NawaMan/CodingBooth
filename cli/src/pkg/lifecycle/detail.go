@@ -17,7 +17,7 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/docker"
 )
 
-// What booth dash's detail pane reads about one booth, beyond `booth list`.
+// What booth dashboard's detail pane reads about one booth, beyond `booth list`.
 
 // BoothStats is one sample of a running booth's resource use, as the engine
 // prints it ("1.25%", "312MiB / 15.5GiB", "2.0%").

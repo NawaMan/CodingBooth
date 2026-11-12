@@ -6,7 +6,7 @@ package lifecycle
 
 import "bytes"
 
-// Booth is one booth as `booth dash` shows it: the fields of `booth list`, plus
+// Booth is one booth as `booth dashboard` shows it: the fields of `booth list`, plus
 // the CodingBooth version that created it.
 type Booth struct {
 	Name      string

@@ -2,7 +2,7 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 
-// Package dash is `booth dash`: a full-screen table of every booth on the
+// Package dash is `booth dashboard`: a full-screen table of every booth on the
 // machine, refreshed by polling, where each row is the anchor for actions on
 // that booth. It reads booths through lifecycle.Snapshot and acts by running
 // the booth binary itself (`booth stop --name … --engine …`), so every action
@@ -387,7 +387,7 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 		path := r.path()
 		m.setStatus("", false)
 		shell := &holdOnFailure{cmd: m.deps.HostShell(path),
-			banner: "Host shell in " + m.shortPath(path) + " (not in a booth). exit returns to booth dash."}
+			banner: "Host shell in " + m.shortPath(path) + " (not in a booth). exit returns to booth dashboard."}
 		return m, tea.Exec(shell, func(err error) tea.Msg {
 			return execDoneMsg{name: path, plan: plan{Verb: "open a host shell in"}, err: err}
 		})

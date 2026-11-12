@@ -257,7 +257,7 @@ func TestHoldOnFailureWaitsForEnter(t *testing.T) {
 	if err := h.Run(); err == nil {
 		t.Fatal("false must fail")
 	}
-	if !strings.Contains(out.String(), "Could not start web (exit status 1). Press Enter to return to booth dash.") {
+	if !strings.Contains(out.String(), "Could not start web (exit status 1). Press Enter to return to booth dashboard.") {
 		t.Errorf("out = %q", out.String())
 	}
 
@@ -311,13 +311,13 @@ func TestHostTerminalOpensInRowFolder(t *testing.T) {
 
 func TestHostShellBannerAndExitStatus(t *testing.T) {
 	var out strings.Builder
-	h := &holdOnFailure{cmd: exec.Command("false"), banner: "Host shell in ~/x (not in a booth). exit returns to booth dash."}
+	h := &holdOnFailure{cmd: exec.Command("false"), banner: "Host shell in ~/x (not in a booth). exit returns to booth dashboard."}
 	h.SetStdin(strings.NewReader(""))
 	h.SetStdout(&out)
 	if err := h.Run(); err != nil {
 		t.Errorf("a shell's last exit status is not a failure: %v", err)
 	}
-	if out.String() != "Host shell in ~/x (not in a booth). exit returns to booth dash.\n" {
+	if out.String() != "Host shell in ~/x (not in a booth). exit returns to booth dashboard.\n" {
 		t.Errorf("out = %q", out.String())
 	}
 	missing := &holdOnFailure{cmd: exec.Command("/no/such/shell"), banner: "x"}

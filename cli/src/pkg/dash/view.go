@@ -124,7 +124,7 @@ func (m model) View() string {
 }
 
 func (m model) titleLine() string {
-	title := titleStyle.Render("booth dash")
+	title := titleStyle.Render("booth dashboard")
 	var parts []string
 	if m.loaded {
 		noun := "booths"

@@ -13,7 +13,7 @@ import (
 )
 
 // ExposedPort is one row of `booth expose list`, for callers outside this
-// package (booth dash's port picker).
+// package (booth dashboard's port picker).
 type ExposedPort struct {
 	ContainerPort int
 	HostIP        string
