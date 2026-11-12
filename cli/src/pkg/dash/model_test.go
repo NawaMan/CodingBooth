@@ -226,7 +226,8 @@ func TestPlanForRules(t *testing.T) {
 		{label: "open a stopped booth", key: keyOpen, booth: stopped("web"), refused: true},
 		{label: "open a booth with no port", key: keyOpen, booth: noPort, refused: true},
 		{label: "shell", key: keyShell, booth: running("web"), args: "shell --name web --engine docker", interactive: true},
-		{label: "shell into a stopped booth", key: keyShell, booth: stopped("web"), refused: true},
+		{label: "shell into a stopped booth offers to start it", key: keyShell, booth: stopped("web"),
+			args: "shell --name web --engine docker --run", confirm: "web is not running. Start it for a shell?", interactive: true},
 	}
 	for _, c := range cases {
 		p, reason := planFor(c.key, c.booth)
@@ -377,9 +378,29 @@ func TestOpenFailureShowsReason(t *testing.T) {
 func TestRefusedKeyExplains(t *testing.T) {
 	f := &fakeDeps{}
 	m := loaded(f, stopped("web"))
-	m, cmd := press(t, m, "enter")
+	m, cmd := press(t, m, "o")
 	if cmd != nil || !strings.Contains(m.status, "not running") {
 		t.Errorf("cmd %v, status %q", cmd != nil, m.status)
+	}
+}
+
+func TestEnterOnStoppedBoothOffersToStartIt(t *testing.T) {
+	f := &fakeDeps{}
+	m := loaded(f, stopped("web"))
+	m, cmd := press(t, m, "enter")
+	if cmd != nil || m.confirm == nil || !strings.Contains(stripANSI(m.View()), "web is not running. Start it for a shell?") {
+		t.Fatalf("enter on a stopped booth must ask first: confirm %+v\n%s", m.confirm, stripANSI(m.View()))
+	}
+	m, cmd = press(t, m, "n")
+	if cmd != nil || len(f.execed) != 0 || m.status != "Cancelled." {
+		t.Fatalf("n must cancel: execed %v status %q", f.execed, m.status)
+	}
+	m, _ = press(t, m, "enter")
+	if _, cmd = press(t, m, "y"); cmd == nil {
+		t.Fatal("y must open the shell")
+	}
+	if want := []string{"shell", "--name", "web", "--engine", "docker", "--run"}; len(f.execed) != 1 || !reflect.DeepEqual(f.execed[0], want) {
+		t.Fatalf("execed %v, want %v", f.execed, want)
 	}
 }
 

@@ -23,7 +23,8 @@ This file contains a list of changes for each released version.
 
 - **`booth dashboard`: a live table of every booth, with actions.** `booth list` that refreshes itself
   and that you can act on: pick a row, then `enter` opens a shell (exiting it comes back to the
-  table), `i` shows its details below the table (uptime, CPU and memory, viewers, idle shutdown,
+  table; on a booth that is not running, or a worktree with none, it asks, then brings one up for
+  the shell with `booth shell --run` and takes it down again afterwards), `i` shows its details below the table (uptime, CPU and memory, viewers, idle shutdown,
   ports, unanswered messages, last log lines), `o` opens its page in the browser, `p` picks one of its exposed ports to open, `m` sends its
   user a message (a toast, a banner, or a question whose answer comes back to the table), `s`
   starts, `x` stops, `r` restarts and `d` removes. Stop, restart and remove ask first, since the
