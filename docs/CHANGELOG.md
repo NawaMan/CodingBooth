@@ -14,6 +14,9 @@ This file contains a list of changes for each released version.
   listed even without a booth: `s` starts one there, `d` removes the worktree (never `--force`),
   `n` creates a new worktree with its booth, and `e` / `K` open the folder in your editor or
   GitKraken. See [booth lifecycle → dash](BOOTH_LIFECYCLE.md#dash).
+- **`booth worktree remove` names the files in the way.** Refusing a worktree with uncommitted or
+  untracked work said only how many files; it now names the first three (`… and 2 more`), and
+  `booth dash` shows that reason on its status line instead of just the advice to commit.
 - **Listing booths takes one engine call, not one per booth.** `booth list` and every command that
   finds a booth by name inspected each booth separately; they now inspect all of them at once, and
   fall back to one at a time only when a booth disappears mid-listing.

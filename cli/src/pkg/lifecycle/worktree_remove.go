@@ -153,7 +153,8 @@ func removalRefusal(entry gitworktree.Entry, booths []managedContainer, loss git
 		}
 	}
 	if len(loss.Changes) > 0 {
-		why = append(why, fmt.Sprintf("it has %d uncommitted or untracked file(s)", len(loss.Changes)))
+		why = append(why, fmt.Sprintf("it has %d uncommitted or untracked file(s): %s",
+			len(loss.Changes), changedFiles(loss.Changes, 3)))
 	}
 	if loss.HeadOnly > 0 {
 		why = append(why, fmt.Sprintf("its detached HEAD has %d commit(s) that no branch, remote or tag has", loss.HeadOnly))
@@ -163,6 +164,27 @@ func removalRefusal(entry gitworktree.Entry, booths []managedContainer, loss git
 	}
 	return fmt.Sprintf("Kept worktree %s:\n  - %s\nCommit or stop what you want to keep, or remove it anyway with --force.",
 		entry.Path, strings.Join(why, "\n  - "))
+}
+
+// changedFiles names up to limit of `git status --porcelain` lines' files,
+// then how many more there are.
+func changedFiles(changes []string, limit int) string {
+	var names []string
+	for _, line := range changes {
+		if len(names) == limit {
+			break
+		}
+		name := line
+		if len(line) > 3 {
+			name = line[3:] // "XY path"
+		}
+		names = append(names, name)
+	}
+	text := strings.Join(names, ", ")
+	if more := len(changes) - len(names); more > 0 {
+		text += fmt.Sprintf(" and %d more", more)
+	}
+	return text
 }
 
 // describeLoss lists what a --force removal throws away, or "" when it throws nothing away.

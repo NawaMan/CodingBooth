@@ -54,3 +54,12 @@ func TestBoothNames(t *testing.T) {
 	assert.Equal(t, []string{"feature-x", "custom"},
 		boothNames([]managedContainer{{Name: "custom"}, {Name: "feature-x"}}, "feature-x"))
 }
+
+func TestRefusalNamesTheFilesInTheWay(t *testing.T) {
+	e := gitworktree.Entry{Path: "/r/worktree/w", Branch: "w"}
+	two := gitworktree.Loss{Changes: []string{"?? docs/MUSIC-ONBOARDING.md", " M tools/a.sh"}}
+	assert.Contains(t, removalRefusal(e, nil, two, false),
+		"it has 2 uncommitted or untracked file(s): docs/MUSIC-ONBOARDING.md, tools/a.sh")
+	five := gitworktree.Loss{Changes: []string{"?? a", "?? b", "?? c", "?? d", "?? e"}}
+	assert.Contains(t, removalRefusal(e, nil, five, false), ": a, b, c and 2 more")
+}
