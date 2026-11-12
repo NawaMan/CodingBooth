@@ -14,6 +14,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 
 	"github.com/nawaman/codingbooth/src/pkg/lifecycle"
 )
@@ -650,5 +651,61 @@ func TestPortPickerIgnoresLateAnswer(t *testing.T) {
 	next, _ := m.Update(cmd())
 	if next.(model).picker != nil {
 		t.Error("a late ports answer reopened the picker")
+	}
+}
+
+// A refusal ends with what was kept and why; cut to one line, that end was lost.
+func TestLongErrorWrapsAndTheTableMakesRoom(t *testing.T) {
+	f := &fakeDeps{}
+	var booths []lifecycle.Booth
+	for _, name := range []string{"b01", "b02", "b03", "b04", "b05", "b06", "b07", "b08"} {
+		booths = append(booths, running(name))
+	}
+	m := loaded(f, booths...)
+	height := chromeLines + 5
+	next, _ := m.Update(tea.WindowSizeMsg{Width: 60, Height: height})
+	m = next.(model)
+	m, _ = press(t, m, "G")
+	m.setStatus("Kept worktree rescan-button: it has 22 uncommitted or untracked file(s): "+
+		"docs/SETUP.md, server/cmd/server/main.go, server/x.go and 19 more. Nothing was removed.", true)
+
+	view := stripANSI(m.View())
+	for _, want := range []string{"docs/SETUP.md", "Nothing was removed.", "b08"} {
+		if !strings.Contains(view, want) {
+			t.Errorf("view lacks %q:\n%s", want, view)
+		}
+	}
+	lines := strings.Split(view, "\n")
+	if len(lines) > height {
+		t.Errorf("view is %d lines, taller than the %d-line screen:\n%s", len(lines), height, view)
+	}
+	for _, line := range lines {
+		if lipgloss.Width(line) > 60 {
+			t.Errorf("line wider than the screen: %q", line)
+		}
+	}
+}
+
+func TestVeryLongErrorStopsAtThreeLines(t *testing.T) {
+	m := loaded(&fakeDeps{}, running("web"))
+	next, _ := m.Update(tea.WindowSizeMsg{Width: 40, Height: 30})
+	m = next.(model)
+	m.setStatus(strings.Repeat("word ", 100), true)
+	got := m.wrapStatus(m.status)
+	if len(got) != maxStatusLines || !strings.HasSuffix(got[len(got)-1], "…") {
+		t.Errorf("wrapped = %q, want %d lines ending in …", got, maxStatusLines)
+	}
+	if m.statusHeight() != maxStatusLines {
+		t.Errorf("statusHeight = %d", m.statusHeight())
+	}
+}
+
+func TestPlainStatusStaysOneLine(t *testing.T) {
+	m := loaded(&fakeDeps{}, running("web"))
+	next, _ := m.Update(tea.WindowSizeMsg{Width: 40, Height: 30})
+	m = next.(model)
+	m.setStatus(strings.Repeat("word ", 100), false)
+	if m.statusHeight() != 1 || strings.Contains(m.statusLine(), "\n") {
+		t.Errorf("a plain status wrapped: %q", m.statusLine())
 	}
 }
