@@ -30,9 +30,15 @@ func TestVersionColumnMarksBoothsBehind(t *testing.T) {
 		}})
 	m = next.(model)
 	view := stripANSI(m.View())
-	for _, want := range []string{"VERSION", "0.77.0 → 0.82.0", "0.82.0 (rebuilt)"} {
+	// Only the version that built it: being behind is the colour, not more text.
+	for _, want := range []string{"VERSION", "0.77.0", "0.82.0"} {
 		if !strings.Contains(view, want) {
 			t.Errorf("view lacks %q:\n%s", want, view)
+		}
+	}
+	for _, unwanted := range []string{"→", "(rebuilt)"} {
+		if strings.Contains(view, unwanted) {
+			t.Errorf("view shows %q; the cell holds only the version:\n%s", unwanted, view)
 		}
 	}
 	if !m.behind(m.rows[0]) || m.behind(m.rows[1]) || !m.behind(m.rows[2]) {
