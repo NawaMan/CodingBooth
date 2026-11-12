@@ -55,21 +55,70 @@ just version                 # claude --version
 just claude                  # an interactive Claude Code session in the booth
 just ask                     # one non-interactive task via scripts/ask-claude.sh
 just ask "Summarise the Justfile"
+just ask --quiet "Summarise the Justfile"   # print only the answer
 ```
 
 `just ask` runs `scripts/ask-claude.sh`, which calls `claude -p` with read-only tools, prints the
 answer and exits. It stops with a hint if the token is missing.
 
+### One prompt without `just`
+
+`./booth -- <command>` runs a command in a fresh booth and exits. The words after `--` are joined
+with spaces and run with `bash -lc`, so your shell's quotes are removed before the booth sees
+them. Quote the prompt twice:
+
+```console
+$ ./booth -- claude -p "'What day is after Monday?'"
+Info: compiling Boothfile '.../claude-token-example/.booth/Boothfile'...
+Info: image 'codingbooth-local:claude-token-example-base-0.83.0--rc1' is up to date, skipping the build.
+Tuesday comes after Monday.
+```
+
+With only one layer of quotes (`./booth -- claude -p 'What day is after Monday?'`), `bash -lc`
+gets `claude -p What day is after Monday?`, and Claude receives just `What` as the prompt.
+`just ask` adds the second layer for you.
+
+#### Giving it the token
+
+`CLAUDE_CODE_OAUTH_TOKEN` must be set on the host when the booth starts.
+
+1. **Get the token** (once). On the host, run `claude setup-token`, log in in the browser, and
+   copy the `sk-ant-oat01-...` token it prints. It is shown only once. This needs a
+   Pro/Max/Team/Enterprise subscription, not API billing.
+2. **Pass it to the command**, either way:
+
+   - **Directly**, as a variable for this one command:
+     ```bash
+     CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-... ./booth -- claude -p "'What day is after Monday?'"
+     ```
+     The token ends up in your shell history this way. To keep it out, read it in without echo
+     first: `read -rs CLAUDE_CODE_OAUTH_TOKEN && export CLAUDE_CODE_OAUTH_TOKEN`, then run
+     `./booth -- ...` as usual.
+
+   - **From [EnvFolio](https://github.com/NawaMan/EnvFolio)**, which keeps the token encrypted and
+     gives it only to the command you run. Store it once:
+     ```bash
+     folio insert secret claude/code-oauth-token    # paste the token; asked twice, no echo
+     ```
+     Then run:
+     ```bash
+     folio exec -s claude -- ./booth -- claude -p "'What day is after Monday?'"
+     ```
+     `-s` loads secrets, and `claude` loads every entry in that folder. `folio` names the
+     variable after the entry's path, so `claude/code-oauth-token` becomes
+     `CLAUDE_CODE_OAUTH_TOKEN`.
+
 ### Example
 
 Run from the host, `just ask` starts the booth, asks Claude, prints the answer, and stops the booth
-again. `2>/dev/null` hides the booth's start/stop messages, so only the answer shows:
+again. `--quiet` hides the booth's start/stop messages, so only the answer shows (errors, such as
+a missing login, still print):
 
 ```console
-$ just ask 'What is the day after Monday' 2>/dev/null
+$ just ask --quiet 'What is the day after Monday'
 The day after Monday is **Tuesday**.
 
-$ just ask 'What is the expected temperature in Bangkok tomorrow.' 2>/dev/null
+$ just ask --quiet 'What is the expected temperature in Bangkok tomorrow.'
 Bangkok should be hot and humid tomorrow (Monday, Oct 19), with a high of about 32–34°C and a low
 of about 22–26°C. The sources vary a little on the exact numbers.
 

@@ -42,5 +42,6 @@ shell:
     {{run-on-host}} {{booth}} shell --run
 
 # Run one Claude Code task non-interactively: just ask  or  just ask "your prompt"
+# Put --quiet first (just ask --quiet "your prompt") to print only the answer.
 ask *prompt:
-    {{run-in-booth}} scripts/ask-claude.sh {{quote(prompt)}}
+    @{{ if prompt =~ '^--quiet( |$)' { replace(run-in-booth, " exec --run --", " exec --run --quiet --") } else { run-in-booth } }} scripts/ask-claude.sh {{ quote(if prompt =~ '^--quiet( |$)' { trim_start(trim_start_match(prompt, "--quiet")) } else { prompt }) }}

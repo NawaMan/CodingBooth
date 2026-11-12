@@ -62,22 +62,41 @@ just version                 # claude --version
 just claude                  # an interactive Claude Code session in the booth
 just ask                     # one non-interactive task via scripts/ask-claude.sh
 just ask "Summarise the Justfile"
+just ask --quiet "Summarise the Justfile"   # print only the answer
 just vet https://github.com/jonschlinkert/is-odd   # vet a repo -> reports/jonschlinkert-is-odd.md
 ```
 
 `just ask` runs `scripts/ask-claude.sh`, which calls `claude -p` with read-only tools, prints the
 answer and exits. It stops with a hint if no login is found.
 
+### One prompt without `just`
+
+`./booth -- <command>` runs a command in a fresh booth and exits. The words after `--` are joined
+with spaces and run with `bash -lc`, so your shell's quotes are removed before the booth sees
+them. Quote the prompt twice:
+
+```console
+$ ./booth -- claude -p "'What day is after Monday?'"
+Info: compiling Boothfile '.../claude-example/.booth/Boothfile'...
+Info: image 'codingbooth-local:claude-example-base-0.83.0--rc1' is up to date, skipping the build.
+Tuesday comes after Monday.
+```
+
+With only one layer of quotes (`./booth -- claude -p 'What day is after Monday?'`), `bash -lc`
+gets `claude -p What day is after Monday?`, and Claude receives just `What` as the prompt.
+`just ask` adds the second layer for you.
+
 ### Example
 
 Run from the host, `just ask` starts the booth, asks Claude, prints the answer, and stops the booth
-again. `2>/dev/null` hides the booth's start/stop messages, so only the answer shows:
+again. `--quiet` hides the booth's start/stop messages, so only the answer shows (errors, such as
+a missing login, still print):
 
 ```console
-$ just ask 'What is the day after Monday' 2>/dev/null
+$ just ask --quiet 'What is the day after Monday'
 The day after Monday is **Tuesday**.
 
-$ just ask 'What is the expected temperature in Bangkok tomorrow.' 2>/dev/null
+$ just ask --quiet 'What is the expected temperature in Bangkok tomorrow.'
 Bangkok should be hot and humid tomorrow (Monday, Oct 19), with a high of about 32–34°C and a low
 of about 22–26°C. The sources vary a little on the exact numbers.
 
