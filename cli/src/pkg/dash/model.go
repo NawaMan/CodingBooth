@@ -108,7 +108,7 @@ type model struct {
 	repos    []lifecycle.Repo
 	fresh    map[string]lifecycle.Fresh
 	rows     []row  // what the table shows: headers, booths, bare worktrees
-	cursor   int    // index in rows; never a header once there is a row
+	cursor   int    // index in rows
 	offset   int    // first row shown when the table is taller than the screen
 	selected string // key of the selected row, kept across refreshes
 	busy     map[string]string
@@ -630,9 +630,9 @@ func (m *model) setStatus(status string, isErr bool) {
 	m.clampOffset()
 }
 
-// currentRow is the selected row (never a header).
+// currentRow is the selected row.
 func (m model) currentRow() (row, bool) {
-	if m.cursor < 0 || m.cursor >= len(m.rows) || m.rows[m.cursor].header {
+	if m.cursor < 0 || m.cursor >= len(m.rows) {
 		return row{}, false
 	}
 	return m.rows[m.cursor], true
@@ -648,23 +648,12 @@ func (m model) current() (lifecycle.Booth, bool) {
 	return *r.booth, true
 }
 
-// move steps the cursor delta selectable rows, skipping headers.
+// move steps the cursor delta rows.
 func (m *model) move(delta int) {
-	var selectable []int
-	at := 0
-	for i, r := range m.rows {
-		if r.header {
-			continue
-		}
-		if i <= m.cursor {
-			at = len(selectable)
-		}
-		selectable = append(selectable, i)
-	}
-	if len(selectable) == 0 {
+	if len(m.rows) == 0 {
 		return
 	}
-	m.cursor = selectable[max(0, min(len(selectable)-1, at+delta))]
+	m.cursor = max(0, min(len(m.rows)-1, m.cursor+delta))
 	m.selected = m.rows[m.cursor].key()
 	m.clampOffset()
 }
@@ -674,7 +663,7 @@ func (m *model) move(delta int) {
 // at the same place.
 func (m *model) reselect() {
 	for i, r := range m.rows {
-		if !r.header && r.key() == m.selected {
+		if r.key() == m.selected {
 			m.cursor = i
 			m.clampOffset()
 			return
@@ -683,7 +672,7 @@ func (m *model) reselect() {
 	if strings.HasPrefix(m.selected, "worktree:") {
 		path := strings.TrimPrefix(m.selected, "worktree:")
 		for i, r := range m.rows {
-			if !r.header && r.worktree != nil && r.worktree.Path == path {
+			if r.worktree != nil && r.worktree.Path == path {
 				m.cursor = i
 				m.selected = r.key()
 				m.clampOffset()
@@ -692,11 +681,6 @@ func (m *model) reselect() {
 		}
 	}
 	m.cursor = max(0, min(len(m.rows)-1, m.cursor))
-	// Land on a selectable row: the next one, else the one before.
-	m.move(0)
-	if _, ok := m.currentRow(); !ok {
-		m.move(1)
-	}
 	if r, ok := m.currentRow(); ok {
 		m.selected = r.key()
 	} else {

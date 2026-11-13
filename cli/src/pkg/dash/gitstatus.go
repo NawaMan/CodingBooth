@@ -56,7 +56,7 @@ func (m model) syncGit() (model, tea.Cmd) {
 	end := min(len(m.rows), m.offset+m.tableRows())
 	for i := m.offset; i < end && inFlight < gitInFlight; i++ {
 		r := m.rows[i]
-		if r.header || r.worktree == nil || r.worktree.Prunable || r.repo == nil {
+		if r.worktree == nil || r.worktree.Prunable || r.repo == nil {
 			continue
 		}
 		path := r.worktree.Path

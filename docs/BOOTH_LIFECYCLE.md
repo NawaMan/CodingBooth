@@ -147,14 +147,13 @@ removes it afterwards (`booth shell --run --name <name> --code <folder>`); `d` a
 booth whose engine did not answer is not shown as gone, and `--engine` shows only that engine's.
 Only booths the dashboard has seen are remembered; deleting the cache file forgets them all.
 
-**Grouped by repository.** Booths are grouped by the git repository their code is in, a blank line
-between two groups: the repository `booth dashboard` runs in first, then the others that have a
+**Grouped by repository.** Booths are grouped by the git repository their code is in: the repository `booth dashboard` runs in first, then the others that have a
 booth, by name. A group has no heading line: its main checkout leads it, not indented, its NAME in
 the group colour — the booth's name, or the repository's when it has no booth, with `(here)` on the
 repository the dashboard runs in. Its linked worktrees follow, indented, each with its booths or as
 a `no booth` row of its own (the WORKTREE column), so a worktree that has no booth yet is still one
 key away from one. A repository that is only its main checkout is therefore a single row. A booth whose code is
-in no repository is listed last, under "Other booths". `d` on a worktree row removes it only when
+in no repository is listed last, each one leading a group of its own (blue, not indented). `d` on a worktree row removes it only when
 nothing would be lost, as [`booth worktree remove`](BOOTH_WORKTREE.md#removing-a-worktree) does,
 and refuses while a booth runs on it; the main checkout is never removed. There is no landing or
 merging here: open the worktree in your editor or GitKraken for that.

@@ -67,14 +67,6 @@ func (m *model) clampOffset() {
 		m.offset = m.cursor - rows + 1
 	}
 	m.offset = max(0, min(m.offset, max(0, len(m.rows)-rows)))
-	// Show the header of the cursor's group when the cursor is its first row.
-	if m.offset > 0 && m.offset == m.cursor && rows > 1 && m.rows[m.offset-1].header && !m.rows[m.offset-1].gap() {
-		m.offset--
-	}
-	// Never start the table on the blank line between two groups.
-	if m.offset < m.cursor && m.offset < len(m.rows) && m.rows[m.offset].gap() {
-		m.offset++
-	}
 }
 
 func (m model) View() string {
@@ -374,9 +366,7 @@ func (m model) table() string {
 	for i, col := range cols {
 		widths[i] = lipgloss.Width(col.header)
 		for _, r := range m.rows {
-			if !r.header {
-				widths[i] = max(widths[i], lipgloss.Width(col.cell(r)))
-			}
+			widths[i] = max(widths[i], lipgloss.Width(col.cell(r)))
 		}
 		if col.max > 0 {
 			widths[i] = min(widths[i], col.max)
@@ -437,14 +427,6 @@ func (m model) table() string {
 	end := min(len(m.rows), m.offset+rows)
 	for i := m.offset; i < end; i++ {
 		r := m.rows[i]
-		if r.gap() {
-			b.WriteString("\n")
-			continue
-		}
-		if r.header {
-			b.WriteString(m.groupHeader(*r.repo) + "\n")
-			continue
-		}
 		cells := make([]string, len(cols))
 		for c, col := range cols {
 			cells[c] = col.cell(r)
@@ -505,19 +487,6 @@ func nameCell(r row) string {
 		name = "  " + name
 	}
 	return name
-}
-
-// groupHeader is a repository's line: its name, then where it is.
-func (m model) groupHeader(repo lifecycle.Repo) string {
-	name := repo.Name
-	if repo.Here {
-		name += " (here)"
-	}
-	line := groupStyle.Render(name)
-	if repo.Root != "" {
-		line += dimStyle.Render("  " + m.shortPath(repo.Root))
-	}
-	return line
 }
 
 // fit cuts a line to the screen width.
