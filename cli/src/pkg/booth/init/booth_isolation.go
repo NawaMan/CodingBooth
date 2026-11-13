@@ -67,8 +67,11 @@ func checkBoothIsolationEngine(config *appctx.AppConfig) error {
 		config.BoothIsolation = ""
 		return nil
 	}
-	if config.Egress {
-		return fmt.Errorf("--booth-isolation %s cannot be combined with --egress yet. See docs/BOOTH_SECURITY.md#booth-isolation", config.BoothIsolation)
+	// --egress alone works (the booth goes on an internal network behind the
+	// egress gateway); with --dind the booth shares the sidecar's network, which
+	// a Kata booth cannot.
+	if config.Egress && config.Dind {
+		return fmt.Errorf("--booth-isolation %s cannot be combined with --egress and --dind together yet (--egress alone works). See docs/BOOTH_SECURITY.md#booth-isolation", config.BoothIsolation)
 	}
 	if !config.Quiet {
 		fmt.Fprintf(os.Stderr, "Warning: --booth-isolation %s is experimental. See docs/BOOTH_SECURITY.md#booth-isolation.\n", config.BoothIsolation)

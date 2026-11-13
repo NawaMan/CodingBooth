@@ -91,6 +91,9 @@ func TestKataBoothRefusals(t *testing.T) {
 		{args: []string{"--net=host", "--pid=host", "--ipc", "host"}, want: []string{"--net=host", "--pid=host", "--ipc=host"}},
 		{args: []string{"--network", "mynet"}},
 		{args: []string{"--privileged", "--privileged"}, want: []string{"--privileged"}},
+		{args: []string{"--device", "/dev/kvm"}, want: []string{"--device /dev/kvm"}},
+		{args: []string{"--device=/dev/kvm:/dev/kvm:rwm"}, want: []string{"--device /dev/kvm"}},
+		{args: []string{"--device", "/dev/dri"}},
 	}
 	for _, c := range cases {
 		got := kataBoothRefusals(c.args)
