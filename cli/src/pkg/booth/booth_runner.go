@@ -41,6 +41,12 @@ func (runner *BoothRunner) Run() error {
 	// Settle whether a requested --dind-isolation can run here before the consent
 	// below: when it cannot, the booth falls back to the privileged sidecar, which
 	// that consent then covers.
+	// Likewise --booth-isolation: an ordinary container when Kata cannot run
+	// here, and run-args a Kata VM cannot honour are refused before any build.
+	ctx, err := ResolveBoothIsolation(ctx)
+	if err != nil {
+		return err
+	}
 	ctx = ResolveDindIsolation(ctx)
 	// Ask before anything is built or started if this booth could reach the host as root.
 	if err := EnsureHostEscapeConsent(ctx); err != nil {
@@ -87,6 +93,9 @@ func (runner *BoothRunner) Run() error {
 	ctx = WritePortManifest(ctx)
 	ctx = SetupDind(ctx)
 	ctx = SetupEgress(ctx)
+	if ctx, err = SetupBoothIsolation(ctx); err != nil {
+		return err
+	}
 	ctx = PrepareRunMode(ctx)
 	ctx = ApplyEnvFile(ctx)
 	ctx = PrepareCommonArgs(ctx)
@@ -274,6 +283,11 @@ func SetupDind(ctx appctx.AppContext) appctx.AppContext {
 		if ports := kataForwardPorts(extraPorts); len(ports) > 0 {
 			builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_DIND_FORWARD="+strings.Join(ports, " ")))
 		}
+		// --booth-isolation kata: the booth is a VM too, where Docker's embedded
+		// DNS does not answer, so the sidecar's name goes into /etc/hosts instead.
+		if ctx.BoothKata() {
+			builder.CommonArgs.Append(ilist.NewList[string]("--add-host", dindName+":"+sidecarAddress(ctx, dindName, dindNet)))
+		}
 		return builder.Build()
 	}
 
@@ -283,4 +297,20 @@ func SetupDind(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "DOCKER_HOST=tcp://localhost:2375"))
 
 	return builder.Build()
+}
+
+// sidecarAddress is a sidecar's IP address on network, for an --add-host; under
+// --dryrun (nothing started) a placeholder.
+func sidecarAddress(ctx appctx.AppContext, name, network string) string {
+	if ctx.Dryrun() {
+		return "<" + name + "-ip>"
+	}
+	flags := docker.DockerFlags{Silent: true, Engine: ctx.Engine()}
+	out, err := docker.DockerOutput(flags, "inspect", ilist.NewList(ilist.NewList(
+		"--format", `{{(index .NetworkSettings.Networks "`+network+`").IPAddress}}`, name)))
+	if address := strings.TrimSpace(out); err == nil && address != "" {
+		return address
+	}
+	fmt.Fprintf(os.Stderr, "Warning: could not find the address of %s on %s; the booth may not reach it by name.\n", name, network)
+	return "127.0.0.1"
 }

@@ -232,6 +232,14 @@ CONTAINER MODE:
                          EXPERIMENTAL. Size that VM (Kata's default: 2g, 1 CPU).
                          Also: dind-vm-memory / dind-vm-cpus, CB_DIND_VM_MEMORY /
                          CB_DIND_VM_CPUS.
+  --booth-isolation[=kata]
+                         EXPERIMENTAL. Run the booth itself in its own Kata VM
+                         (with --dind, the sidecar too). --vm-memory / --vm-cpus
+                         size it (default 4g, 2 CPUs). Needs Linux, Docker Engine,
+                         /dev/kvm and Kata; elsewhere it runs as an ordinary
+                         container with a big warning. Refuses --privileged,
+                         --gpus and --network/--pid/--ipc=host.
+                         Also: booth-isolation = "kata", CB_BOOTH_ISOLATION=kata.
   --dind-allowed         Start a --dind booth without asking. Command line only:
                          there is no config.toml key or environment variable for it.
   --privileged-allowed   Start without asking when run-args give the booth a way onto
@@ -257,12 +265,14 @@ CONTAINER MODE:
   --hide-welcome         Do not print the welcome banner when a shell starts.
                          Can also be set in config.toml (hide-welcome = true)
                          or with CB_HIDE_WELCOME=true
-  --vm-memory <size>     macOS / engine apple only: memory for the booth's VM
-                         (Apple container's default is 1 GB; a desktop needs
-                         more, e.g. 4g). Also vm-memory in config.toml or
-                         CB_VM_MEMORY. Ignored on Docker and Podman.
-  --vm-cpus <n>          macOS / engine apple only: CPUs for the booth's VM
-                         (default 4). Also vm-cpus / CB_VM_CPUS.
+  --vm-memory <size>     Memory for the booth's VM: engine apple (Apple
+                         container's default is 1 GB; a desktop needs more,
+                         e.g. 4g), or --booth-isolation kata (default 4g).
+                         Also vm-memory in config.toml or CB_VM_MEMORY.
+                         Ignored otherwise.
+  --vm-cpus <n>          CPUs for the booth's VM: engine apple (default 4) or
+                         --booth-isolation kata (default 2). Also vm-cpus /
+                         CB_VM_CPUS.
   --vm-shm-size <size>   macOS / engine apple only: size of /dev/shm, out of
                          the VM's memory (desktops get 1g). Also vm-shm-size /
                          CB_VM_SHM_SIZE.
@@ -441,8 +451,11 @@ HOST REACH:
   --dind / --dind-allowed / --privileged-allowed / --rootless / --egress
   --dind-isolation[=kata] / --dind-vm-memory / --dind-vm-cpus
                          DinD sidecar in a Kata VM (experimental).
+  --booth-isolation[=kata] The booth itself in a Kata VM (experimental).
   --public / --ok-public / --tls-cert <file> / --tls-key <file>
-  --vm-memory / --vm-cpus / --vm-shm-size / --apple-low-ports
+  --vm-memory / --vm-cpus
+                         Apple container, or --booth-isolation kata.
+  --vm-shm-size / --apple-low-ports
                          Apple container only.
 
 EXAMPLES:
@@ -506,6 +519,7 @@ CONTAINER MODE:
   --tls-key <path>       TLS private key file (used with --public)
   --dind                 Enable Docker-in-Docker sidecar (privileged: asks first)
   --dind-isolation[=kata] Run the DinD sidecar in its own Kata VM (experimental)
+  --booth-isolation[=kata] Run the booth itself in its own Kata VM (experimental)
   --dind-allowed         Start a --dind booth without asking (command line only)
   --privileged-allowed   Allow --privileged-like run-args without asking (command line only)
   --rootless             Skip the Linux rootless/userns-remap refusal (unsupported)

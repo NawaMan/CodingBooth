@@ -745,8 +745,15 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	//
 	// On Apple container each booth is its own VM: --vm-memory / --vm-cpus /
 	// --vm-shm-size size it (vmResourceArgs), and a vm-shm-size replaces this 1g.
+	//
+	// Under --booth-isolation kata, --vm-memory / --vm-cpus size the booth's Kata
+	// VM instead (kataBoothRunArgs), so only the shm size is left for here.
 	minMemory := imageVmMemoryMin(ctx.Engine(), ctx.Image())
-	vmArgs, vmNotes, err := vmResourceArgs(ctx.Engine(), ctx.VmMemory(), ctx.VmCpus(), ctx.VmShmSize(), minMemory, ctx.Variant(), ctx.HasDesktop())
+	vmMemory, vmCpus := ctx.VmMemory(), ctx.VmCpus()
+	if ctx.BoothKata() {
+		vmMemory, vmCpus = "", ""
+	}
+	vmArgs, vmNotes, err := vmResourceArgs(ctx.Engine(), vmMemory, vmCpus, ctx.VmShmSize(), minMemory, ctx.Variant(), ctx.HasDesktop())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "❌ %v\n", err)
 		os.Exit(1)
