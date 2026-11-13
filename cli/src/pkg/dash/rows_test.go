@@ -82,7 +82,7 @@ func TestGroupedViewSkipsHeadersAndShowsWorktrees(t *testing.T) {
 		t.Errorf("up from the first row moved: cursor %d", m.cursor)
 	}
 	view := stripANSI(m.View())
-	for _, want := range []string{"› proj (here)  -none-   main (main checkout)", "WORKTREE", "    fixer      Running  fix",
+	for _, want := range []string{"› proj (here)  -none-   main", "WORKTREE", "    fixer      Running  fix",
 		"    -          -none-   idea"} {
 		if !strings.Contains(view, want) {
 			t.Errorf("view lacks %q:\n%s", want, view)

@@ -109,8 +109,8 @@ func buildRows(booths []lifecycle.Booth, repos []lifecycle.Repo) []row {
 	return rows
 }
 
-// branchText is the WORKTREE cell: the branch, marked when it is the main
-// checkout or detached.
+// branchText is the WORKTREE cell: the branch, or "(detached)". The main
+// checkout is not marked; it already leads its group.
 func branchText(w *lifecycle.Worktree) string {
 	if w == nil {
 		return "-"
@@ -118,9 +118,6 @@ func branchText(w *lifecycle.Worktree) string {
 	name := w.Branch
 	if name == "" {
 		name = "(detached)"
-	}
-	if w.Main {
-		name += " (main checkout)"
 	}
 	return name
 }
