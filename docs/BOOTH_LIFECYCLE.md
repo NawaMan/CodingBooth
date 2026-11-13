@@ -141,8 +141,9 @@ shows as a warning line, and the rest of the table stays. `booth dashboard` need
 **Booths it has seen stay listed.** The dashboard remembers every booth it has shown, in
 `~/.cache/codingbooth/dashboard/seen.json` (the user cache directory). When such a booth's container
 is gone — removed by `d`, `booth remove`, or a `--run` that cleaned up after itself — it stays on its
-row as `Gone`, under its repository and worktree, for as long as its folder and that folder's `.booth`
-are still there (an express booth's own `.booth` folder). The title counts them (`3 booths · 2 gone`).
+row, under its repository and worktree, for as long as its folder and that folder's `.booth` are
+still there (an express booth's own `.booth` folder). Its STATUS is `-none-`, the same as a worktree
+with no booth: the folder is there and nothing runs. The title counts only booths with a container.
 On a gone booth, `enter` asks, then starts a terminal (base) booth under its old name for a shell and
 removes it afterwards (`booth shell --run --name <name> --code <folder>`); `d` asks, then forgets it
 (the folder is not touched); `t`, `e` and `K` open its folder; keys that need a container say so. A
@@ -161,7 +162,7 @@ forgetting a gone booth (`d`) unhides it too.
 booth, by name. A group has no heading line: its main checkout leads it, not indented, its NAME in
 the group colour — the booth's name, or the repository's when it has no booth, with `(here)` on the
 repository the dashboard runs in. Its linked worktrees follow, indented, each with its booths or as
-a `no booth` row of its own (the WORKTREE column), so a worktree that has no booth yet is still one
+a `-none-` row of its own (the WORKTREE column), so a worktree that has no booth yet is still one
 key away from one. A repository that is only its main checkout is therefore a single row. A booth whose code is
 in no repository is listed last, each one leading a group of its own (blue, not indented). `d` on a worktree row removes it only when
 nothing would be lost, as [`booth worktree remove`](BOOTH_WORKTREE.md#removing-a-worktree) does,
