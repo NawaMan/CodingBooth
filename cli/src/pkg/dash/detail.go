@@ -6,6 +6,7 @@ package dash
 
 import (
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -53,9 +54,9 @@ type (
 // them as fit.
 const logLinesWanted = 20
 
-// detailFixedLines: a blank, the header, the Image, Viewers, Idle, Ports and
-// Messages rows, and the Logs row.
-const detailFixedLines = 8
+// detailFixedLines: a blank, the header, the Image, Booth dir, Viewers, Idle,
+// Ports and Messages rows, and the Logs row.
+const detailFixedLines = 9
 
 func (m model) toggleDetail() (model, tea.Cmd) {
 	if m.detailOpen {
@@ -218,6 +219,7 @@ func (m model) detailView() string {
 		out.WriteString(dimStyle.Render(label) + m.fitTo(value, len(label)) + "\n")
 	}
 	row("Image", m.imageText(b))
+	row("Booth dir", m.boothDirText(b))
 	if b.Running() {
 		row("Viewers", partText(p.state, func(s lifecycle.BoothState) string { return viewersText(s.Presence) }))
 		row("Idle", partText(p.state, func(s lifecycle.BoothState) string { return idleText(s.Idle, now) }))
@@ -382,4 +384,16 @@ func (m model) imageText(b lifecycle.Booth) string {
 	}
 	return strings.Join(why, "; ") + ". To update: booth remove --force --name " + b.Name +
 		" (a persisted home goes with it), then run booth in its folder"
+}
+
+// boothDirText is the .booth the booth reads: its folder's, or an express
+// booth's own (marked, as that is not the folder's config).
+func (m model) boothDirText(b lifecycle.Booth) string {
+	if b.BoothDir != "" {
+		return m.shortPath(b.BoothDir) + " (express)"
+	}
+	if b.CodePath == "" {
+		return "-"
+	}
+	return m.shortPath(filepath.Join(b.CodePath, ".booth"))
 }

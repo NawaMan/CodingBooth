@@ -90,6 +90,23 @@ func TestGroupedViewSkipsHeadersAndShowsWorktrees(t *testing.T) {
 	}
 }
 
+func TestExpressBoothMarkedInName(t *testing.T) {
+	here := boothAt("proj", "/home/u/dev/proj")
+	here.BoothDir = "/tmp/codingbooth-express-1/.booth"
+	loose := boothAt("loose", "/tmp/loose")
+	loose.BoothDir = "/home/u/.cache/codingbooth/express/abc/.booth"
+	m := loaded(&fakeDeps{repos: testRepos()}, here, loose, boothAt("fixer", "/home/u/dev/proj/worktree/fix"))
+	view := stripANSI(m.View())
+	for _, want := range []string{"proj (here, express)", "loose (express)", "    fixer  "} {
+		if !strings.Contains(view, want) {
+			t.Errorf("view lacks %q:\n%s", want, view)
+		}
+	}
+	if strings.Contains(view, "fixer (express)") {
+		t.Errorf("a booth reading its folder's .booth is marked express:\n%s", view)
+	}
+}
+
 func TestStartBoothOnWorktree(t *testing.T) {
 	f := &fakeDeps{repos: testRepos()}
 	m := loaded(f)
@@ -427,7 +444,7 @@ func TestNameCellLeadsWithTheMainCheckoutAndIndentsTheRest(t *testing.T) {
 		{row{repo: &notHere, worktree: &notHere.Worktrees[0], main: true}, "todos"},
 		{row{repo: proj, worktree: &proj.Worktrees[1]}, "  -"},
 		{row{repo: otherBooths, booth: &b, main: true}, "projbooth"}, // in no repository: not indented
-		{row{booth: &b}, "projbooth"}, // no repositories: the plain list
+		{row{booth: &b}, "projbooth"},                                // no repositories: the plain list
 	}
 	for _, c := range cases {
 		if got := nameCell(c.r); got != c.want {
