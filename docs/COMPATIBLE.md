@@ -38,6 +38,7 @@ Docker Desktop, with the `booth` wrapper in Git Bash or WSL.
 | Credential mounts (for example Claude Code's) | No guarantee that the credential stays mode 0600 | Same reason |
 | `booth logs -f` | Ctrl+C may not stop the follow inside the booth | A native Windows process cannot get SIGINT |
 | `--dind-isolation kata` / `dind+kata` | Not available; booth falls back to the plain sidecar and says so | Docker Desktop's VM has no Kata |
+| `--booth-isolation kata` | Not available; the booth runs as an ordinary container and says so | Same |
 | `android-sdk+kvm` (hardware-accelerated emulator) | Only under WSL2 with `/dev/kvm`; otherwise slow software emulation | Needs KVM |
 | `cuda` (running GPU code) | Only through WSL2 with NVIDIA's driver | Needs the NVIDIA Container Toolkit |
 
@@ -46,6 +47,7 @@ Docker Desktop, with the `booth` wrapper in Git Bash or WSL.
 | Feature | On macOS | Why |
 | --- | --- | --- |
 | `--dind-isolation kata` / `dind+kata` | Not available | Needs Linux with Docker Engine (not Docker Desktop), `/dev/kvm` and Kata |
+| `--booth-isolation kata` | Not available; an ordinary container instead | Same |
 | `android-sdk+kvm` | No hardware acceleration | No `/dev/kvm` |
 | `cuda` (running GPU code) | Not available | No NVIDIA GPU passthrough |
 | Everything in the [arm64](#cpu-arm64) table | Same as arm64, on Apple Silicon | Docker builds arm64 images there |
@@ -60,6 +62,7 @@ Docker is the supported engine. See [Container engines](BOOTH_ENGINES.md).
 | `--dind` (the `dind` template) | Apple container | Refused for now; with no engine chosen, the run goes to Docker or Podman ([details](CONTAINER_SUPPORT.md)) |
 | `--egress` (allowlist, Envoy, read-only) | Apple container | Same |
 | `--dind-isolation kata` | Podman | Falls back to the plain sidecar ([details](BOOTH_SECURITY.md#contain-it---dind-isolation-kata-experimental)) |
+| `--booth-isolation kata` | Podman, Apple container | An ordinary container instead, with a warning ([details](BOOTH_SECURITY.md#booth-isolation)) |
 | Any booth | Linux rootless Docker, or userns-remap | Not supported: use rootful Docker Engine, or Docker Desktop |
 
 ## Hardware
@@ -67,6 +70,7 @@ Docker is the supported engine. See [Container engines](BOOTH_ENGINES.md).
 | Feature | Needs |
 | --- | --- |
 | `--dind-isolation kata` | Linux, `/dev/kvm`, and Kata Containers' `containerd-shim-kata-v2` on `PATH` |
+| `--booth-isolation kata` | The same; `--privileged`, `--gpus` and host namespaces are refused in it |
 | Fast Android emulator | A `/dev/kvm` the booth user can open |
 | `cuda`, to run GPU code (compiling works anywhere) | An NVIDIA GPU, its driver, and the NVIDIA Container Toolkit |
 
