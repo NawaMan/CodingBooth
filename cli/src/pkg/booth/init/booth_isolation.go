@@ -58,6 +58,15 @@ func checkBoothIsolationEngine(config *appctx.AppConfig) error {
 	if config.BoothIsolation == "" {
 		return nil
 	}
+	// Engine apple already runs each booth in a VM of its own: there is nothing for
+	// Kata to add, and nothing is lost, so it is a note, not the fallback banner.
+	if config.Engine == "apple" {
+		if !config.Quiet {
+			fmt.Fprintf(os.Stderr, "ℹ️  --booth-isolation: engine apple already runs each booth in its own VM; nothing more to do.\n")
+		}
+		config.BoothIsolation = ""
+		return nil
+	}
 	if config.Egress {
 		return fmt.Errorf("--booth-isolation %s cannot be combined with --egress yet. See docs/BOOTH_SECURITY.md#booth-isolation", config.BoothIsolation)
 	}

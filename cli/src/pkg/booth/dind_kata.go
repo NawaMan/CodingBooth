@@ -88,6 +88,9 @@ func kataDindSidecarArgs(dindName, dindNet, parentName string, extraPorts, names
 		"--label", "cb.role=sidecar",
 		"--label", "cb.parent=" + parentName,
 		"--label", "cb.dind-isolation=kata",
+		// Docker Engine's usual open-file limit, not Kata's 2^30, which every
+		// container inside then inherits (see kataNofile).
+		"--ulimit", kataNofile,
 	}
 	if memMiB > 0 {
 		args = append(args, "--annotation", "io.katacontainers.config.hypervisor.default_memory="+strconv.Itoa(memMiB))
@@ -108,12 +111,25 @@ func kataDindSidecarArgs(dindName, dindNet, parentName string, extraPorts, names
 }
 
 // kataDindVmSize reads --dind-vm-memory / --dind-vm-cpus (validated already).
+// Unset, a sidecar that --booth-isolation kata put in Kata gets the booth's
+// default VM (4g, 2 CPUs): its plain sidecar would have had all of this
+// machine, and Kata's own 2 GB / 1 CPU cannot hold a Compose stack such as
+// Appwrite's. Under --dind-isolation alone, unset still means Kata's default.
 func kataDindVmSize(ctx appctx.AppContext) (memMiB, cpus int) {
-	if ctx.DindVmMemory() != "" {
-		memMiB = appctx.DindVmMemoryMiB(ctx.DindVmMemory())
+	memory, cpuCount := ctx.DindVmMemory(), ctx.DindVmCpus()
+	if ctx.BoothKata() {
+		if memory == "" {
+			memory = kataBoothDefaultMemory
+		}
+		if cpuCount == "" {
+			cpuCount = kataBoothDefaultCpus
+		}
 	}
-	if ctx.DindVmCpus() != "" {
-		cpus, _ = strconv.Atoi(ctx.DindVmCpus())
+	if memory != "" {
+		memMiB = appctx.DindVmMemoryMiB(memory)
+	}
+	if cpuCount != "" {
+		cpus, _ = strconv.Atoi(cpuCount)
 	}
 	return memMiB, cpus
 }

@@ -96,3 +96,15 @@ func TestCheckBoothIsolationEngine(t *testing.T) {
 		t.Errorf("kata + egress: want a refusal naming --egress, got %v", err)
 	}
 }
+
+func TestCheckBoothIsolationEngine_Apple(t *testing.T) {
+	// Engine apple is a VM per booth already: a note, no banner, no refusal, and
+	// the booth runs as engine apple always does.
+	config := appctx.AppConfig{BoothIsolation: "kata", Engine: "apple", Quiet: true}
+	if err := checkBoothIsolationEngine(&config); err != nil {
+		t.Errorf("apple: unexpected error %v", err)
+	}
+	if config.BoothIsolation != "" {
+		t.Errorf("apple: BoothIsolation = %q, want it cleared", config.BoothIsolation)
+	}
+}

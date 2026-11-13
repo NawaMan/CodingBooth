@@ -89,8 +89,15 @@ if kata_supported; then
     check 18 "With --dind the sidecar is in Kata too"  has "$DIND" "cb.dind-isolation=kata"
     check 19 "No privileged docker:dind sidecar"       has_not "$DIND" "--privileged"
     check 20 "The booth finds the sidecar by --add-host" has "$DIND" "--add-host '\\?kata-ws-10000-dind:"
+
+    # A host socket (host-audio's PulseAudio socket, say) cannot cross into the VM.
+    SOCK="$TMP_DIR/test.sock"
+    python3 -c 'import socket,sys; socket.socket(socket.AF_UNIX).bind(sys.argv[1])' "$SOCK"
+    SOCKET=$(booth_dryrun --booth-isolation -v "$SOCK:/run/test.sock:ro")
+    LAST_OUTPUT="$SOCKET"
+    check 25 "A host-socket mount is refused, by name" has "$SOCKET" "cannot mount a host socket into the VM ($SOCK)"
 else
-    echo "SKIP: tests 1-20 (the Kata shape) need a host that runs Kata; the fallback below still runs."
+    echo "SKIP: tests 1-20 and 25 (the Kata shape) need a host that runs Kata; the fallback below still runs."
 fi
 
 # --- Everywhere: no Kata on this machine → loud fallback to an ordinary container
