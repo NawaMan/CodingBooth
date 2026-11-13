@@ -523,8 +523,10 @@ func (m model) behind(r row) bool {
 
 // nameCell is the NAME cell: the booth's name, or "-". A main checkout's row
 // leads its repository's group, so with no booth it names the repository, and
-// it is marked (here) when the dashboard runs in that repository. Rows under
-// a main checkout (its linked worktrees) or under "Other booths" are indented.
+// it is marked (here) when the dashboard runs in that repository. An express
+// booth is marked (express): it reads a .booth of its own, not its folder's.
+// Rows under a main checkout (its linked worktrees) or under "Other booths"
+// are indented.
 func nameCell(r row) string {
 	name := "-"
 	switch {
@@ -533,8 +535,15 @@ func nameCell(r row) string {
 	case r.main:
 		name = r.repo.Name
 	}
+	var marks []string
 	if r.main && r.repo.Here {
-		name += " (here)"
+		marks = append(marks, "here")
+	}
+	if r.booth != nil && r.booth.BoothDir != "" {
+		marks = append(marks, "express")
+	}
+	if len(marks) > 0 {
+		name += " (" + strings.Join(marks, ", ") + ")"
 	}
 	if !r.main && r.repo != nil {
 		name = "  " + name

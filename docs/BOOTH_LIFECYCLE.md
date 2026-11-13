@@ -165,7 +165,9 @@ forgetting a gone booth (`d`) unhides it too.
 the group colour — the booth's name, or the repository's when it has no booth, with `(here)` on the
 repository the dashboard runs in. Its linked worktrees follow, indented, each with its booths or as
 a `-` row of its own (the WORKTREE column), so a worktree that has no booth yet is still one
-key away from one. A repository that is only its main checkout is therefore a single row. A booth whose code is
+key away from one. A repository that is only its main checkout is therefore a single row. An
+express booth is marked `(express)` after its name (`CodingBooth (here, express)`): it reads a `.booth`
+of its own, not the one in its folder, so `c` and VERSION are about that one. A booth whose code is
 in no repository leads a group of its own (blue, not indented). `d` on a worktree row removes it only when
 nothing would be lost, as [`booth worktree remove`](BOOTH_WORKTREE.md#removing-a-worktree) does,
 and refuses while a booth runs on it; the main checkout is never removed. There is no landing or
@@ -217,6 +219,7 @@ dashboard stops waiting; the question stays on the booth's screen until it is an
 
 - how long it has been up (or since it stopped), and its CPU and memory (`booth stats`; not on
   engine `apple`)
+- the `.booth` it reads: its folder's, or an express booth's own, marked `(express)`
 - how many browser pages are viewing it, and its idle shutdown — off, paused until a time, or after
   how long — both asked of the booth's own message API from inside it, so a password-protected
   booth answers too

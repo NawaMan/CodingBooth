@@ -4,6 +4,10 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth dashboard` marks an express booth.** Its NAME ends in `(express)` (`(here, express)` on the
+  repository the dashboard runs in), and the `i` pane has a `Booth dir` row: the `.booth` the booth
+  reads — its folder's, or the express booth's own. See [booth lifecycle → dashboard](BOOTH_LIFECYCLE.md#dashboard).
+
 - **`booth dashboard`: `ctrl+↑`/`ctrl+↓` reorder the rows, with separator lines, and the order is kept.** The groups (a
   repository with its worktrees, or a booth in no repository) start sorted by name, ignoring case;
   `ctrl+↑`/`ctrl+↓` moves the selected group up or down, or, on a linked worktree, that worktree within

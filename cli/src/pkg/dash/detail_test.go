@@ -77,6 +77,7 @@ func TestDetailPaneShowsEveryPart(t *testing.T) {
 	view := stripANSI(m.View())
 	for _, part := range []string{
 		"web · Running · up 2h · CPU 1.5% · MEM 300MiB / 8GiB (3.6%)",
+		"Booth dir ~/dev/web/.booth",
 		"Viewers   2 viewing (1 in background)",
 		"Idle      asks after 30m idle, then shuts down 1m later",
 		"Ports     10000 http://localhost:10000",
@@ -89,6 +90,17 @@ func TestDetailPaneShowsEveryPart(t *testing.T) {
 		if !strings.Contains(view, part) {
 			t.Errorf("pane lacks %q:\n%s", part, view)
 		}
+	}
+}
+
+func TestDetailPaneShowsExpressBoothDir(t *testing.T) {
+	b := detailBooth()
+	b.BoothDir = "/tmp/codingbooth-express-1/.booth"
+	m := loaded(&fakeDeps{}, b)
+	m, cmd := press(t, m, "i")
+	m = drain(t, m, cmd)
+	if view := stripANSI(m.View()); !strings.Contains(view, "Booth dir /tmp/codingbooth-express-1/.booth (express)") {
+		t.Errorf("pane lacks the express .booth:\n%s", view)
 	}
 }
 
