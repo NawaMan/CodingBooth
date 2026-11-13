@@ -34,6 +34,8 @@ type plan struct {
 	// Dir is where the command runs ("" = where the dashboard runs): worktree
 	// commands name the worktree within the repository they run in.
 	Dir string
+	// Danger shows the question in the error colour: answering y loses work.
+	Danger bool
 }
 
 // planFor decides what key does to booth. A key that does not apply to the
@@ -80,13 +82,13 @@ func planFor(key string, booth lifecycle.Booth) (plan, string) {
 
 	case keyRemove:
 		if booth.Running() {
-			return plan{Verb: "remove", Args: with("remove", "--force"),
-				Confirm: fmt.Sprintf("%s is running. Force-remove it and its home volume?", booth.Name),
-				Busy:    "removing…", Done: "Removed " + booth.Name + "."}, ""
+			return plan{Verb: "delete", Args: with("remove", "--force"),
+				Confirm: fmt.Sprintf("%s is running. Force-delete it and its home volume?", booth.Name),
+				Busy:    "deleting…", Done: "Deleted " + booth.Name + "."}, ""
 		}
-		return plan{Verb: "remove", Args: with("remove"),
-			Confirm: fmt.Sprintf("Remove %s and its home volume?", booth.Name),
-			Busy:    "removing…", Done: "Removed " + booth.Name + "."}, ""
+		return plan{Verb: "delete", Args: with("remove"),
+			Confirm: fmt.Sprintf("Delete %s and its home volume?", booth.Name),
+			Busy:    "deleting…", Done: "Deleted " + booth.Name + "."}, ""
 
 	case keyOpen:
 		if !booth.Running() {

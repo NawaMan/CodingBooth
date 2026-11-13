@@ -223,7 +223,7 @@ func TestPlanForRules(t *testing.T) {
 		{label: "restart asks", key: keyRestart, booth: running("web"), args: "restart --name web --engine docker", confirm: "Restart web?"},
 		{label: "restart a stopped booth", key: keyRestart, booth: stopped("web"), refused: true},
 		{label: "remove a stopped booth", key: keyRemove, booth: stopped("web"), args: "remove --name web --engine docker", confirm: "home volume"},
-		{label: "remove a running booth forces, and says so", key: keyRemove, booth: running("web"), args: "remove --name web --engine docker --force", confirm: "Force-remove"},
+		{label: "remove a running booth forces, and says so", key: keyRemove, booth: running("web"), args: "remove --name web --engine docker --force", confirm: "Force-delete"},
 		{label: "open a stopped booth", key: keyOpen, booth: stopped("web"), refused: true},
 		{label: "open a booth with no port", key: keyOpen, booth: noPort, refused: true},
 		{label: "shell", key: keyShell, booth: running("web"), args: "shell --name web --engine docker", interactive: true},

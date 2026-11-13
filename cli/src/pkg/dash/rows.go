@@ -6,6 +6,7 @@ package dash
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/nawaman/codingbooth/src/pkg/lifecycle"
 )
@@ -127,7 +128,7 @@ func planForWorktree(key string, r row) (plan, string) {
 	switch key {
 	case keyStart:
 		if w.Prunable {
-			return plan{}, fmt.Sprintf("%s's folder is gone; d removes the worktree record.", w.Name())
+			return plan{}, fmt.Sprintf("%s's folder is gone; d deletes the worktree record.", w.Name())
 		}
 		// The main checkout runs booth as it is; another worktree by name. It
 		// already exists, so booth leaves it in place when the booth ends.
@@ -141,16 +142,15 @@ func planForWorktree(key string, r row) (plan, string) {
 
 	case keyRemove:
 		if w.Main {
-			return plan{}, "The main checkout is not removed from here."
+			return plan{}, "The main checkout is not deleted from here."
 		}
-		return plan{Verb: "remove worktree", Args: []string{"worktree", "remove", w.Name()}, Dir: r.repo.Root,
-			Confirm: fmt.Sprintf("Remove worktree %s and its branch? Refused if anything would be lost; "+
-				"a branch with commits found nowhere else is kept.", w.Name()),
-			Busy: "removing…", Done: "Removed worktree " + w.Name() + "."}, ""
+		// A worktree whose folder is gone has no work left to read: delete
+		// its record. Any other is read first (see deleteWorktreePlan).
+		return deleteWorktreePlan(r, gitworktreeClean, nil), ""
 
 	case keyShell:
 		if w.Prunable {
-			return plan{}, fmt.Sprintf("%s's folder is gone; d removes the worktree record.", w.Name())
+			return plan{}, fmt.Sprintf("%s's folder is gone; d deletes the worktree record.", w.Name())
 		}
 		// `shell --run` creates a terminal (base) booth on the worktree and
 		// removes it again when the shell ends; s starts the project's own.
@@ -171,4 +171,53 @@ func planForWorktree(key string, r row) (plan, string) {
 func newWorktreePlan(repo *lifecycle.Repo, name string) plan {
 	return plan{Verb: "create worktree", Args: []string{"--worktree", name, "--daemon"},
 		Dir: repo.Root, Interactive: true, Hold: true, Done: "Created worktree " + name + " and started its booth."}
+}
+
+// gitworktreeClean is the state of a worktree with nothing to lose.
+var gitworktreeClean = lifecycle.GitState{}
+
+// deleteWorktreePlan is d on a worktree row, once its git status is read:
+// state, or err when it could not be. A clean worktree is deleted as
+// `booth worktree remove` does it, keeping a branch with commits found nowhere
+// else. One with uncommitted files or unmerged commits, or whose status is not
+// known, is force-deleted, after a question that says what is lost and urges a
+// last look.
+func deleteWorktreePlan(r row, state lifecycle.GitState, err error) plan {
+	w := r.worktree
+	done := "Deleted worktree " + w.Name() + "."
+	args := []string{"worktree", "remove", w.Name()}
+	var lost []string
+	if state.Dirty > 0 {
+		lost = append(lost, plural(state.Dirty, "uncommitted file"))
+	}
+	if state.Ahead > 0 {
+		lost = append(lost, plural(state.Ahead, "unmerged commit"))
+	}
+	if err == nil && len(lost) == 0 {
+		return plan{Verb: "delete worktree", Args: args, Dir: r.repo.Root,
+			Confirm: fmt.Sprintf("Delete worktree %s and its branch? A branch with commits found nowhere else is kept.", w.Name()),
+			Busy:    "deleting…", Done: done}
+	}
+	what := "work git could not read (" + errText(err) + ")"
+	if err == nil {
+		what = strings.Join(lost, " and ")
+	}
+	return plan{Verb: "delete worktree", Args: append(args, "--force", "--yes"), Dir: r.repo.Root, Danger: true,
+		Confirm: fmt.Sprintf("⚠ %s has %s. Deleting it DISCARDS them for good, with its branch and its booths' volumes. "+
+			"Look again first (t terminal, e editor, K GitKraken). Force delete?", w.Name(), what),
+		Busy: "deleting…", Done: done}
+}
+
+func plural(n int, noun string) string {
+	if n == 1 {
+		return "1 " + noun
+	}
+	return fmt.Sprintf("%d %ss", n, noun)
+}
+
+func errText(err error) string {
+	if err == nil {
+		return ""
+	}
+	return err.Error()
 }
