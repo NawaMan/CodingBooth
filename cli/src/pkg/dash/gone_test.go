@@ -60,11 +60,11 @@ func TestFetchAddsTheRememberedBoothsAndFindsTheirRepos(t *testing.T) {
 	}
 }
 
-func TestGoneBoothShowsAsGoneAndCounted(t *testing.T) {
+func TestGoneBoothShowsAsNoneAndIsNotCounted(t *testing.T) {
 	m := goneModel(&fakeDeps{})
 	m.width, m.height = 120, 30
-	view := m.View()
-	if !strings.Contains(view, "Gone") || !strings.Contains(view, "1 booth · 1 gone") {
+	view := stripANSI(m.View())
+	if !strings.Contains(view, "old   -none-") || !strings.Contains(view, "1 booth · refreshed") || strings.Contains(view, "Gone") {
 		t.Fatalf("view:\n%s", view)
 	}
 }

@@ -135,11 +135,10 @@ func (m model) titleLine() string {
 	title := titleStyle.Render("booth dashboard")
 	var parts []string
 	if m.loaded {
-		live, gone := 0, 0
+		// A gone booth shows as -none-, like a worktree without one: not counted.
+		live := 0
 		for _, b := range m.booths {
-			if b.Gone() {
-				gone++
-			} else {
+			if !b.Gone() {
 				live++
 			}
 		}
@@ -148,9 +147,6 @@ func (m model) titleLine() string {
 			noun = "booth"
 		}
 		parts = append(parts, fmt.Sprintf("%d %s", live, noun))
-		if gone > 0 {
-			parts = append(parts, fmt.Sprintf("%d gone", gone))
-		}
 		if m.showHidden {
 			parts = append(parts, warnStyle.Render(fmt.Sprintf("showing %d hidden", m.hiddenRows)))
 		} else if m.hiddenRows > 0 {
@@ -351,6 +347,10 @@ func (m model) multiEngine() bool {
 	return false
 }
 
+// noBooth is the STATUS of a row with nothing running and no container: a
+// worktree without a booth, or a booth seen before whose container is gone.
+const noBooth = "-none-"
+
 func (m model) statusCell(r row) string {
 	if r.booth == nil {
 		if busy, ok := m.busy[r.key()]; ok {
@@ -359,7 +359,7 @@ func (m model) statusCell(r row) string {
 		if r.worktree != nil && r.worktree.Prunable {
 			return "folder gone"
 		}
-		return "no booth"
+		return noBooth
 	}
 	b := *r.booth
 	state := "Stopped"
@@ -368,7 +368,9 @@ func (m model) statusCell(r row) string {
 	} else if b.Running() {
 		state = "Running"
 	} else if b.Gone() {
-		state = "Gone"
+		// A remembered booth with no container is, to the user, the same as a
+		// worktree with no booth: its folder is there, nothing runs.
+		state = noBooth
 	}
 	// A question waiting for the booth user's answer.
 	if m.asking[boothKey(b)] > 0 {
