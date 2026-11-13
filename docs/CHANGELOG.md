@@ -27,9 +27,10 @@ This file contains a list of changes for each released version.
   the shell with `booth shell --run` and takes it down again afterwards), `i` shows its details below the table (uptime, CPU and memory, viewers, idle shutdown,
   ports, unanswered messages, last log lines), `o` opens its page in the browser, `p` picks one of its exposed ports to open, `m` sends its
   user a message (a toast, a banner, or a question whose answer comes back to the table), `s`
-  starts, `x` stops, `r` restarts and `d` removes. Stop, restart and remove ask first, since the
+  starts, `x` stops, `r` restarts and `d` deletes. Stop, restart and delete ask first, since the
   table holds other sessions' booths too. Booths are grouped by git repository, each worktree
-  listed even without a booth: `s` starts one there, `d` removes the worktree (never `--force`),
+  listed even without a booth: `s` starts one there, `d` deletes the worktree (one with
+  uncommitted files or unmerged commits only after a warning that names them, then with `--force`),
   `n` creates a new worktree with its booth, `l` shows a booth's whole log and follows it (in
   `less +F` when installed), `t` opens a host shell in the folder, a VERSION column shows the version that built each
   booth, in the warning colour when it is older than its project now uses or its image was

@@ -120,21 +120,80 @@ func TestStartBoothOnMainCheckout(t *testing.T) {
 	}
 }
 
-func TestRemoveWorktreeAsksAndNeverForces(t *testing.T) {
+// deleteModel is the repos of testRepos, with fix's git status read as state, err.
+func deleteModel(f *fakeDeps, state lifecycle.GitState, err error) model {
+	deps := f.deps()
+	deps.GitStatus = func(lifecycle.Repo, lifecycle.Worktree) (lifecycle.GitState, error) { return state, err }
+	m := newModel(deps)
+	next, _ := m.Update(snapshotMsg{seq: 1, repos: f.repos})
+	return next.(model)
+}
+
+// pressDelete presses d on fix and feeds back its git check: the question it asks.
+func pressDelete(t *testing.T, m model) model {
+	t.Helper()
+	m, cmd := press(t, m, "down", "d")
+	if cmd == nil || m.confirm != nil || m.busy["worktree:/home/u/dev/proj/worktree/fix"] != "checking…" {
+		t.Fatalf("d must read the worktree first: cmd %v confirm %+v busy %v", cmd != nil, m.confirm, m.busy)
+	}
+	next, _ := m.Update(cmd())
+	return next.(model)
+}
+
+func TestDeleteMainCheckoutIsRefused(t *testing.T) {
 	f := &fakeDeps{repos: testRepos()}
-	m := loaded(f)
-	m, _ = press(t, m, "d")
-	if m.confirm != nil || !strings.Contains(m.status, "main checkout") {
+	m, cmd := press(t, deleteModel(f, lifecycle.GitState{}, nil), "d")
+	if cmd != nil || m.confirm != nil || !strings.Contains(m.status, "main checkout") {
 		t.Fatalf("d on the main checkout: confirm %v status %q", m.confirm, m.status)
 	}
-	m, _ = press(t, m, "down", "d")
-	if m.confirm == nil || !strings.Contains(m.confirm.plan.Confirm, "Remove worktree fix") {
-		t.Fatalf("d on a worktree must ask: %+v", m.confirm)
+}
+
+func TestDeleteCleanWorktreeAsksAndNeverForces(t *testing.T) {
+	f := &fakeDeps{repos: testRepos()}
+	m := pressDelete(t, deleteModel(f, lifecycle.GitState{Base: "main", Behind: 3}, nil))
+	if m.confirm == nil || m.confirm.plan.Danger || !strings.Contains(m.confirm.plan.Confirm, "Delete worktree fix and its branch?") {
+		t.Fatalf("a clean worktree gets the plain question: %+v", m.confirm)
 	}
 	_, cmd := press(t, m, "y")
 	cmd()
 	if want := []string{"worktree", "remove", "fix"}; !reflect.DeepEqual(f.ran[0], want) || f.ranIn[0] != "/home/u/dev/proj" {
 		t.Fatalf("ran %v in %q, want %v", f.ran[0], f.ranIn[0], want)
+	}
+}
+
+func TestDeleteWorktreeWithWorkWarnsThenForces(t *testing.T) {
+	f := &fakeDeps{repos: testRepos()}
+	m := pressDelete(t, deleteModel(f, lifecycle.GitState{Base: "main", Dirty: 22, Ahead: 1}, nil))
+	if m.confirm == nil || !m.confirm.plan.Danger {
+		t.Fatalf("a worktree with work gets the warning: %+v", m.confirm)
+	}
+	for _, want := range []string{"fix has 22 uncommitted files and 1 unmerged commit", "DISCARDS", "Look again first", "Force delete?"} {
+		if !strings.Contains(m.confirm.plan.Confirm, want) {
+			t.Errorf("question lacks %q: %q", want, m.confirm.plan.Confirm)
+		}
+	}
+	if view := stripANSI(m.View()); !strings.Contains(view, "Force delete? [y/N]") {
+		t.Errorf("question not shown:\n%s", view)
+	}
+
+	// n keeps it.
+	m2, cmd := press(t, m, "n")
+	if cmd != nil || len(f.ran) != 0 || m2.status != "Cancelled." {
+		t.Fatalf("n must keep it: ran %v status %q", f.ran, m2.status)
+	}
+
+	_, cmd = press(t, m, "y")
+	cmd()
+	if want := []string{"worktree", "remove", "fix", "--force", "--yes"}; !reflect.DeepEqual(f.ran[0], want) {
+		t.Fatalf("ran %v, want %v", f.ran[0], want)
+	}
+}
+
+func TestDeleteWorktreeWhoseStatusFailsWarns(t *testing.T) {
+	f := &fakeDeps{repos: testRepos()}
+	m := pressDelete(t, deleteModel(f, lifecycle.GitState{}, errors.New("index.lock exists")))
+	if m.confirm == nil || !m.confirm.plan.Danger || !strings.Contains(m.confirm.plan.Confirm, "index.lock exists") {
+		t.Fatalf("an unknown status must warn, naming why: %+v", m.confirm)
 	}
 }
 
@@ -277,9 +336,9 @@ func TestRefusedWorktreeRemovalSaysWhatIsInTheWay(t *testing.T) {
 		"  - it has 2 uncommitted or untracked file(s): docs/MUSIC-ONBOARDING.md, tools/a.sh\n" +
 		"Commit or stop what you want to keep, or remove it anyway with --force.\n"
 	next, _ := m.Update(actionDoneMsg{key: "worktree:/home/u/dev/proj/worktree/fix", name: "fix",
-		plan: plan{Verb: "remove worktree"}, output: out, err: errors.New("exit status 1")})
+		plan: plan{Verb: "delete worktree"}, output: out, err: errors.New("exit status 1")})
 	got := next.(model)
-	want := "Kept worktree fix: it has 2 uncommitted or untracked file(s): docs/MUSIC-ONBOARDING.md, tools/a.sh. Nothing was removed."
+	want := "Kept worktree fix: it has 2 uncommitted or untracked file(s): docs/MUSIC-ONBOARDING.md, tools/a.sh. Nothing was deleted."
 	if got.status != want || !got.statusErr {
 		t.Errorf("status = %q (err %v)\nwant %q", got.status, got.statusErr, want)
 	}

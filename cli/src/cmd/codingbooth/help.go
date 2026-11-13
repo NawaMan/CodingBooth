@@ -579,7 +579,7 @@ USAGE:  %s dashboard [options]
 
 Lists the booths of every engine (as %s list does), refreshed every couple of
 seconds. Every booth is shown, including ones other sessions started, so stop,
-restart and remove ask first.
+restart and delete ask first.
 
 KEYS:
   ↑/↓ (j/k)  Select a booth          enter  Open a shell in it (back here on exit);
@@ -596,7 +596,9 @@ KEYS:
   e          Open its folder in $VISUAL ($EDITOR, else code)
   K          Open its folder in GitKraken
   s          Start it                x      Stop it
-  r          Restart it              d      Remove it (and its home volume)
+  r          Restart it              d      Delete it (and its home volume)
+             On a worktree: delete it; one with uncommitted files or
+             unmerged commits is force-deleted, after a warning
   n          New worktree in this repository, with its booth started
   R          Refresh now             q      Quit
 

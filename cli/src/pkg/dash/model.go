@@ -11,6 +11,7 @@ package dash
 
 import (
 	"context"
+	"fmt"
 	"os/exec"
 	"strings"
 	"time"
@@ -141,6 +142,30 @@ type portPicker struct {
 	cursor  int
 	loading bool
 	err     error
+}
+
+// deleteCheckMsg is a worktree's git status, read fresh for d's question.
+type deleteCheckMsg struct {
+	key   string
+	row   row
+	state lifecycle.GitState
+	err   error
+}
+
+// checkBeforeDelete reads the worktree's git status now (the GIT column's may
+// be old), then asks: the question says what deleting it would lose.
+func (m model) checkBeforeDelete(r row) (tea.Model, tea.Cmd) {
+	key := r.key()
+	m.busy[key] = "checking…"
+	m.setStatus("", false)
+	read := m.deps.GitStatus
+	return m, func() tea.Msg {
+		if read == nil || r.repo == nil {
+			return deleteCheckMsg{key: key, row: r, err: fmt.Errorf("no git status reader")}
+		}
+		state, err := read(*r.repo, *r.worktree)
+		return deleteCheckMsg{key: key, row: r, state: state, err: err}
+	}
 }
 
 type pendingConfirm struct {
@@ -301,10 +326,17 @@ func (m model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
+	case deleteCheckMsg:
+		delete(m.busy, msg.key)
+		if m.confirm != nil || m.prompt != nil || m.compose != nil || m.picker != nil {
+			return m, nil // something else took the status line meanwhile
+		}
+		return m.run(msg.key, msg.row.worktree.Name(), deleteWorktreePlan(msg.row, msg.state, msg.err))
+
 	case actionDoneMsg:
 		delete(m.busy, msg.key)
 		m.staleGit()
-		if msg.err != nil && msg.plan.Verb == "remove worktree" {
+		if msg.err != nil && msg.plan.Verb == "delete worktree" {
 			m.setStatus(keptWorktree(msg.name, msg.output, msg.err), true)
 		} else if msg.err != nil {
 			m.setStatus(failure(msg.plan.Verb, msg.name, msg.output, msg.err), true)
@@ -439,6 +471,9 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 		if state, busy := m.busy[r.key()]; busy {
 			m.setStatus(r.worktree.Name()+" is "+strings.TrimSuffix(state, "…")+"; wait for it to finish.", false)
 			return m, nil
+		}
+		if key == keyRemove && !r.worktree.Main && !r.worktree.Prunable {
+			return m.checkBeforeDelete(r)
 		}
 		p, reason := planForWorktree(key, r)
 		if reason != "" {
@@ -652,9 +687,9 @@ func keptWorktree(name, output string, err error) string {
 		}
 	}
 	if len(why) == 0 {
-		return failure("remove worktree", name, output, err)
+		return failure("delete worktree", name, output, err)
 	}
-	return "Kept worktree " + name + ": " + strings.Join(why, "; ") + ". Nothing was removed."
+	return "Kept worktree " + name + ": " + strings.Join(why, "; ") + ". Nothing was deleted."
 }
 
 // failure is the status line for a failed action: the command's own last

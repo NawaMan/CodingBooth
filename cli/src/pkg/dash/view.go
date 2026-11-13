@@ -36,7 +36,7 @@ func (m model) helpLines() []string {
 	if m.deps.GitKraken != nil {
 		look += " · K GitKraken"
 	}
-	return []string{look, "↑/↓ move · s start · x stop · r restart · d remove · n new worktree · R refresh · q quit"}
+	return []string{look, "↑/↓ move · s start · x stop · r restart · d delete · n new worktree · R refresh · q quit"}
 }
 
 // chromeLines is everything but the table rows: title, blank, header, and
@@ -167,6 +167,8 @@ func (m model) statusLine() string {
 // statusText is what the status line says, how, and whether it wraps.
 func (m model) statusText() (text string, style lipgloss.Style, wraps bool) {
 	switch {
+	case m.confirm != nil && m.confirm.plan.Danger:
+		return m.confirm.plan.Confirm + " [y/N]", errorStyle, true
 	case m.confirm != nil:
 		return m.confirm.plan.Confirm + " [y/N]", confirmStyle, true
 	case m.compose != nil && m.compose.err != "":

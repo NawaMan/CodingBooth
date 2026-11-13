@@ -119,7 +119,7 @@ seconds (`--interval 5s` to change that) and takes `--engine` like the other com
 | `s` | Start it, as `booth start` does: a daemon booth's start, and an interactive booth's session, take the terminal and come back to the dashboard. On a worktree with no booth: start one there (`booth --worktree <name> --daemon`) |
 | `x` | Stop it |
 | `r` | Restart it |
-| `d` | Remove it and its home volume (`--force` when it is running). On a worktree with no booth: remove the worktree (`booth worktree remove <name>`, never `--force`) |
+| `d` | Delete it and its home volume (`booth remove`, `--force` when it is running). On a worktree with no booth: delete the worktree. It reads the worktree's git status first. A clean one is deleted with `booth worktree remove <name>`, which keeps a branch with commits found nowhere else. One with uncommitted files or unmerged commits, or whose status cannot be read, gets a warning in red that names what is lost and urges a last look (`t`, `e`, `K`); `y` force-deletes it with `booth worktree remove <name> --force --yes`, which discards that work, its branch and its booths' volumes |
 | `n` | New worktree in the selected row's repository: type a name (the new branch, from the repository's current commit); booth creates it and starts its booth (`booth --worktree <name> --daemon`) |
 | `R` | Refresh now |
 | `q` | Quit |
@@ -130,7 +130,7 @@ Enter so its reason stays readable. Everything else runs in the background, with
 could read your keys from.
 
 It shows every booth on the machine, including ones other sessions started, so stop, restart and
-remove ask `[y/N]` first — and the question says when a stop also removes the container (a booth
+delete ask `[y/N]` first — and the question says when a stop also removes the container (a booth
 that is not keep-alive). Each action runs the same `booth` command you would type, naming the booth
 and its engine, so it behaves exactly as it does from the command line. An engine that cannot answer
 shows as a warning line, and the rest of the table stays. `booth dashboard` needs a terminal; scripts use
