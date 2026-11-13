@@ -38,6 +38,8 @@ func rowSummary(rows []row) []string {
 	out := make([]string, len(rows))
 	for i, r := range rows {
 		switch {
+		case r.gap():
+			out[i] = ""
 		case r.header:
 			out[i] = "# " + r.repo.Name
 		case r.booth != nil && r.worktree != nil:
@@ -58,10 +60,15 @@ func TestBuildRowsGroupsBoothsUnderWorktrees(t *testing.T) {
 		boothAt("proj", "/home/u/dev/proj"),
 		boothAt("loose", "/tmp/scratch"),
 	}
-	got := rowSummary(buildRows(booths, testRepos()))
-	want := []string{"# proj", "example @main", "proj @main", "fixer @fix", "(none) @idea", "# Other booths", "loose"}
+	var got []string
+	rows := buildRows(booths, testRepos())
+	got = rowSummary(rows)
+	want := []string{"example @main", "proj @main", "fixer @fix", "(none) @idea", "", "# Other booths", "loose"}
 	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("rows = %v\nwant %v", got, want)
+		t.Fatalf("rows = %q\nwant %q", got, want)
+	}
+	if !rows[0].main || !rows[1].main || rows[2].main || rows[3].main || rows[6].main {
+		t.Errorf("only the main checkout's rows lead the group: %+v", rows)
 	}
 	if flat := rowSummary(buildRows(booths, nil)); !reflect.DeepEqual(flat, []string{"fixer", "example", "proj", "loose"}) {
 		t.Errorf("without repositories = %v, want the plain list", flat)
@@ -75,11 +82,12 @@ func TestGroupedViewSkipsHeadersAndShowsWorktrees(t *testing.T) {
 		t.Fatalf("first row selected = %+v, want the main checkout (not the header)", r)
 	}
 	m, _ = press(t, m, "up")
-	if m.cursor != 1 {
-		t.Errorf("up from the first row moved onto the header: cursor %d", m.cursor)
+	if m.cursor != 0 {
+		t.Errorf("up from the first row moved: cursor %d", m.cursor)
 	}
 	view := stripANSI(m.View())
-	for _, want := range []string{"proj (here)  ~/dev/proj", "WORKTREE", "no booth  main (main checkout)", "fixer  Running   fix"} {
+	for _, want := range []string{"› proj (here)  no booth  main (main checkout)", "WORKTREE", "    fixer      Running   fix",
+		"    -          no booth  idea"} {
 		if !strings.Contains(view, want) {
 			t.Errorf("view lacks %q:\n%s", want, view)
 		}
@@ -276,7 +284,7 @@ func TestOpenInEditorAndGitKraken(t *testing.T) {
 	}
 }
 
-func TestScrollingKeepsGroupHeaderInView(t *testing.T) {
+func TestScrollingStartsAtTheGroupsMainCheckout(t *testing.T) {
 	repos := []lifecycle.Repo{
 		{Name: "a", Root: "/a", Worktrees: []lifecycle.Worktree{{Path: "/a", Main: true}, {Path: "/a/w1", Branch: "w1"}, {Path: "/a/w2", Branch: "w2"}}},
 		{Name: "b", Root: "/b", Worktrees: []lifecycle.Worktree{{Path: "/b", Main: true}, {Path: "/b/w1", Branch: "w1"}}},
@@ -287,8 +295,11 @@ func TestScrollingKeepsGroupHeaderInView(t *testing.T) {
 	m = next.(model)
 	m, _ = press(t, m, "end", "up") // b's main checkout, the first row of its group
 	view := stripANSI(m.View())
-	if !strings.Contains(view, "b  /b") || !strings.Contains(view, "›") {
-		t.Errorf("the header of the cursor's group must show:\n%s", view)
+	if !strings.Contains(view, "› b ") || !strings.Contains(view, "w1") {
+		t.Errorf("b's group must show from its main checkout:\n%s", view)
+	}
+	if strings.Contains(view, "NAME  STATUS    WORKTREE                    VARIANT  PORT  VERSION  AGE  CODE PATH\n\n") {
+		t.Errorf("scrolling must not spend a row on the blank line above the group:\n%q", view)
 	}
 }
 
@@ -406,70 +417,47 @@ func TestEnterOnBareWorktreeOffersATerminalBooth(t *testing.T) {
 	}
 }
 
-// soloRepo is a repository that is only its main checkout.
-func soloRepo(name string, here bool) lifecycle.Repo {
-	root := "/home/u/dev/" + name
-	return lifecycle.Repo{Name: name, Root: root, Here: here,
-		Worktrees: []lifecycle.Worktree{{Path: root, Branch: "main", Main: true}}}
-}
-
-func TestBuildRowsShowsAOneCheckoutRepoAsOneRow(t *testing.T) {
-	repos := []lifecycle.Repo{soloRepo("here", true), soloRepo("todos", false), soloRepo("twice", false), testRepos()[0]}
-	booths := []lifecycle.Booth{
-		boothAt("todos", "/home/u/dev/todos"),
-		boothAt("twice", "/home/u/dev/twice"),
-		boothAt("twice-2", "/home/u/dev/twice"),
-	}
-	rows := buildRows(booths, repos)
-	got := rowSummary(rows)
-	want := []string{
-		"(none) @main", // here: no booth, no header
-		"todos @main",  // one booth, no header
-		"# twice",      // two booths keep their header
-		"twice @main", "twice-2 @main",
-		"# proj", "(none) @main", "(none) @fix", "(none) @idea", // worktrees keep theirs
-	}
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("rows\n got %q\nwant %q", got, want)
-	}
-	if !rows[0].solo || !rows[1].solo || rows[3].solo || rows[6].solo {
-		t.Fatalf("solo marks wrong: %+v", rows)
-	}
-	if rows[0].repo == nil || rows[0].repo.Name != "here" {
-		t.Fatalf("a solo row keeps its repository (n needs it): %+v", rows[0])
-	}
-}
-
-func TestOneRowRepoIsNamedInTheNameCell(t *testing.T) {
-	here, todos := soloRepo("here", true), soloRepo("todos", false)
-	b := boothAt("todos-booth", "/home/u/dev/todos")
+func TestNameCellLeadsWithTheMainCheckoutAndIndentsTheRest(t *testing.T) {
+	repos := testRepos()
+	proj := &repos[0]
+	b := boothAt("projbooth", "/home/u/dev/proj")
+	notHere := lifecycle.Repo{Name: "todos", Root: "/t", Worktrees: []lifecycle.Worktree{{Path: "/t", Main: true}}}
 	cases := []struct {
 		r    row
 		want string
 	}{
-		{row{repo: &here, worktree: &here.Worktrees[0], solo: true}, "here (here)"},
-		{row{repo: &todos, worktree: &todos.Worktrees[0], solo: true}, "todos"},
-		{row{repo: &todos, worktree: &todos.Worktrees[0], solo: true, booth: &b}, "todos-booth"},
-		{row{repo: &here, worktree: &here.Worktrees[0]}, "-"}, // under a header: as before
+		{row{repo: proj, worktree: &proj.Worktrees[0], main: true}, "proj (here)"},
+		{row{repo: proj, worktree: &proj.Worktrees[0], main: true, booth: &b}, "projbooth (here)"},
+		{row{repo: &notHere, worktree: &notHere.Worktrees[0], main: true}, "todos"},
+		{row{repo: proj, worktree: &proj.Worktrees[1]}, "  -"},
+		{row{repo: otherBooths, booth: &b}, "  projbooth"},
+		{row{booth: &b}, "projbooth"}, // no repositories: the plain list
 	}
 	for _, c := range cases {
 		if got := nameCell(c.r); got != c.want {
-			t.Errorf("nameCell(%+v) = %q, want %q", c.r, got, c.want)
+			t.Errorf("nameCell(main=%v booth=%v) = %q, want %q", c.r.main, c.r.booth != nil, got, c.want)
 		}
 	}
 }
 
-func TestOneRowRepoIsSelectableAndDrawnWithoutAHeader(t *testing.T) {
-	f := &fakeDeps{repos: []lifecycle.Repo{soloRepo("todos", true)}}
-	m := newModel(f.deps())
-	next, _ := m.Update(snapshotMsg{seq: 1, repos: f.repos})
-	m = next.(model)
-	m.width, m.height = 120, 20
-	if r, ok := m.currentRow(); !ok || !r.solo {
-		t.Fatalf("the one row is not selected: %+v", m.rows)
+func TestMainCheckoutNameIsDrawnInTheGroupColour(t *testing.T) {
+	m := loaded(&fakeDeps{repos: testRepos()}, boothAt("fixer", "/home/u/dev/proj/worktree/fix"))
+	name := m.columns()[0]
+	if name.lead == nil || !name.lead(m.rows[0]) || name.lead(m.rows[1]) {
+		t.Fatalf("NAME lead: main %v, worktree %v", name.lead != nil && name.lead(m.rows[0]), name.lead != nil && name.lead(m.rows[1]))
 	}
-	view := m.View()
-	if !strings.Contains(view, "todos (here)") || strings.Count(view, "~/dev/todos") != 1 {
-		t.Fatalf("view:\n%s", view)
+}
+
+func TestGroupsAreSeparatedByABlankLine(t *testing.T) {
+	repos := append(testRepos(), lifecycle.Repo{Name: "todos", Root: "/t", Worktrees: []lifecycle.Worktree{{Path: "/t", Branch: "main", Main: true}}})
+	m := loaded(&fakeDeps{repos: repos}, boothAt("t", "/t"))
+	m.width, m.height = 120, 30
+	view := stripANSI(m.View())
+	if !strings.Contains(view, "~/dev/proj.worktrees/idea\n\n  t ") {
+		t.Fatalf("no blank line between proj and todos, or todos is indented:\n%s", view)
+	}
+	m, _ = press(t, m, "end", "up")
+	if r, _ := m.currentRow(); r.booth != nil || r.worktree.Name() != "idea" {
+		t.Fatalf("up from todos must skip the blank line onto idea: %+v", r)
 	}
 }

@@ -11,17 +11,21 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/lifecycle"
 )
 
-// row is one line of the table: a repository's header, a booth, or a
-// worktree that has no booth.
+// row is one line of the table: a booth, a worktree that has no booth, or a
+// line that is not selectable (header): the blank between two repositories
+// (repo nil) or the "Other booths" heading.
 type row struct {
-	header   bool                // the repository's header line; not selectable
+	header   bool                // not selectable: a blank line, or the Other booths heading
 	repo     *lifecycle.Repo     // the repository the row is under; nil when ungrouped
 	booth    *lifecycle.Booth    // the booth on this row
 	worktree *lifecycle.Worktree // the worktree the booth runs in, or the bare worktree
-	// solo: the repository's only row (its main checkout, with at most one
-	// booth), shown without a header line; NAME says which repository it is.
-	solo bool
+	// main: a row of the repository's main checkout, which leads its group
+	// (NAME in the group colour, not indented; its linked worktrees are).
+	main bool
 }
+
+// gap reports whether r is the blank line between two groups.
+func (r row) gap() bool { return r.header && r.repo == nil }
 
 // key names a row across refreshes: its booth, else its worktree.
 func (r row) key() string {
@@ -84,33 +88,31 @@ func buildRows(booths []lifecycle.Booth, repos []lifecycle.Repo) []row {
 		placed[best] = append(placed[best], i)
 	}
 
+	// No heading lines: each repository's main checkout leads its group, its
+	// linked worktrees follow, and a blank line separates two groups.
 	var rows []row
 	for r := range repos {
 		repo := &repos[r]
-		// A repository that is just its main checkout, with at most one booth,
-		// is one line: a header above it would only repeat its path.
-		if len(repo.Worktrees) == 1 && len(placed[place{r, 0}]) <= 1 {
-			solo := row{repo: repo, worktree: &repo.Worktrees[0], solo: true}
-			if in := placed[place{r, 0}]; len(in) == 1 {
-				solo.booth = &booths[in[0]]
-			}
-			rows = append(rows, solo)
-			continue
+		if len(rows) > 0 {
+			rows = append(rows, row{header: true})
 		}
-		rows = append(rows, row{header: true, repo: repo})
 		for w := range repo.Worktrees {
 			wt := &repo.Worktrees[w]
+			lead := w == 0 // the main checkout comes first (a bare repository's first worktree stands in)
 			in := placed[place{r, w}]
 			if len(in) == 0 {
-				rows = append(rows, row{repo: repo, worktree: wt})
+				rows = append(rows, row{repo: repo, worktree: wt, main: lead})
 				continue
 			}
 			for _, i := range in {
-				rows = append(rows, row{repo: repo, worktree: wt, booth: &booths[i]})
+				rows = append(rows, row{repo: repo, worktree: wt, booth: &booths[i], main: lead})
 			}
 		}
 	}
 	if len(others) > 0 {
+		if len(rows) > 0 {
+			rows = append(rows, row{header: true})
+		}
 		rows = append(rows, row{header: true, repo: otherBooths})
 		for _, i := range others {
 			rows = append(rows, row{repo: otherBooths, booth: &booths[i]})

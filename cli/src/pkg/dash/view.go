@@ -68,8 +68,12 @@ func (m *model) clampOffset() {
 	}
 	m.offset = max(0, min(m.offset, max(0, len(m.rows)-rows)))
 	// Show the header of the cursor's group when the cursor is its first row.
-	if m.offset > 0 && m.offset == m.cursor && rows > 1 && m.rows[m.offset-1].header {
+	if m.offset > 0 && m.offset == m.cursor && rows > 1 && m.rows[m.offset-1].header && !m.rows[m.offset-1].gap() {
 		m.offset--
+	}
+	// Never start the table on the blank line between two groups.
+	if m.offset < m.cursor && m.offset < len(m.rows) && m.rows[m.offset].gap() {
+		m.offset++
 	}
 }
 
@@ -294,6 +298,9 @@ type column struct {
 	flex   bool // takes the width left over (the code path)
 	// warn, when it says so, draws the cell in the warning colour.
 	warn func(row) bool
+	// lead, when it says so, draws the cell in the group colour (a main
+	// checkout's NAME).
+	lead func(row) bool
 }
 
 func (m model) columns() []column {
@@ -305,7 +312,7 @@ func (m model) columns() []column {
 			return f(*r.booth)
 		}
 	}
-	cols := []column{{header: "NAME", cell: nameCell, max: 32}}
+	cols := []column{{header: "NAME", cell: nameCell, max: 32, lead: func(r row) bool { return r.main }}}
 	if m.multiEngine() {
 		cols = append(cols, column{header: "ENGINE", cell: boothCell(func(b lifecycle.Booth) string { return b.Engine })})
 	}
@@ -408,6 +415,9 @@ func (m model) table() string {
 			if r != nil && cols[i].warn != nil && cols[i].warn(*r) {
 				cellStyle = style.Foreground(busyStyle.GetForeground())
 			}
+			if r != nil && cols[i].lead != nil && cols[i].lead(*r) {
+				cellStyle = style.Foreground(groupStyle.GetForeground()).Bold(true)
+			}
 			if i > 0 {
 				line.WriteString(style.Render("  "))
 			}
@@ -427,6 +437,10 @@ func (m model) table() string {
 	end := min(len(m.rows), m.offset+rows)
 	for i := m.offset; i < end; i++ {
 		r := m.rows[i]
+		if r.gap() {
+			b.WriteString("\n")
+			continue
+		}
 		if r.header {
 			b.WriteString(m.groupHeader(*r.repo) + "\n")
 			continue
@@ -472,19 +486,23 @@ func (m model) behind(r row) bool {
 	return f.Older || f.Rebuilt
 }
 
-// nameCell is the NAME cell: the booth's name. A repository shown as one
-// line (no header) is named there instead when it has no booth, and marked
-// (here) when the dashboard runs in it.
+// nameCell is the NAME cell: the booth's name, or "-". A main checkout's row
+// leads its repository's group, so with no booth it names the repository, and
+// it is marked (here) when the dashboard runs in that repository. Rows under
+// a main checkout (its linked worktrees) or under "Other booths" are indented.
 func nameCell(r row) string {
 	name := "-"
 	switch {
 	case r.booth != nil:
 		name = r.booth.Name
-	case r.solo:
+	case r.main:
 		name = r.repo.Name
 	}
-	if r.solo && r.repo.Here {
+	if r.main && r.repo.Here {
 		name += " (here)"
+	}
+	if !r.main && r.repo != nil {
+		name = "  " + name
 	}
 	return name
 }
