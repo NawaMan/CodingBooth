@@ -305,7 +305,7 @@ func (m model) columns() []column {
 			return f(*r.booth)
 		}
 	}
-	cols := []column{{header: "NAME", cell: boothCell(func(b lifecycle.Booth) string { return b.Name }), max: 32}}
+	cols := []column{{header: "NAME", cell: nameCell, max: 32}}
 	if m.multiEngine() {
 		cols = append(cols, column{header: "ENGINE", cell: boothCell(func(b lifecycle.Booth) string { return b.Engine })})
 	}
@@ -470,6 +470,23 @@ func (m model) behind(r row) bool {
 	}
 	f := m.fresh[boothKey(*r.booth)]
 	return f.Older || f.Rebuilt
+}
+
+// nameCell is the NAME cell: the booth's name. A repository shown as one
+// line (no header) is named there instead when it has no booth, and marked
+// (here) when the dashboard runs in it.
+func nameCell(r row) string {
+	name := "-"
+	switch {
+	case r.booth != nil:
+		name = r.booth.Name
+	case r.solo:
+		name = r.repo.Name
+	}
+	if r.solo && r.repo.Here {
+		name += " (here)"
+	}
+	return name
 }
 
 // groupHeader is a repository's line: its name, then where it is.

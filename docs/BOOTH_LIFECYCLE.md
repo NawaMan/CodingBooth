@@ -150,7 +150,9 @@ Only booths the dashboard has seen are remembered; deleting the cache file forge
 **Grouped by repository.** Booths are listed under the git repository their code is in: the
 repository `booth dashboard` runs in first, marked `(here)`, then the others that have a booth, by name.
 Under each, every worktree shows (the WORKTREE column), with its booths, or as a `no booth` row of
-its own, so a worktree that has no booth yet is still one key away from one. A booth whose code is
+its own, so a worktree that has no booth yet is still one key away from one. A repository that is only
+its main checkout, with at most one booth, is a single row with no header line; its NAME is the
+booth's, or the repository's when it has none (with `(here)` when the dashboard runs in it). A booth whose code is
 in no repository is listed last, under "Other booths". `d` on a worktree row removes it only when
 nothing would be lost, as [`booth worktree remove`](BOOTH_WORKTREE.md#removing-a-worktree) does,
 and refuses while a booth runs on it; the main checkout is never removed. There is no landing or

@@ -405,3 +405,71 @@ func TestEnterOnBareWorktreeOffersATerminalBooth(t *testing.T) {
 		t.Fatalf("execed %v in %v, want %v in the worktree", f.execed, f.execedIn, want)
 	}
 }
+
+// soloRepo is a repository that is only its main checkout.
+func soloRepo(name string, here bool) lifecycle.Repo {
+	root := "/home/u/dev/" + name
+	return lifecycle.Repo{Name: name, Root: root, Here: here,
+		Worktrees: []lifecycle.Worktree{{Path: root, Branch: "main", Main: true}}}
+}
+
+func TestBuildRowsShowsAOneCheckoutRepoAsOneRow(t *testing.T) {
+	repos := []lifecycle.Repo{soloRepo("here", true), soloRepo("todos", false), soloRepo("twice", false), testRepos()[0]}
+	booths := []lifecycle.Booth{
+		boothAt("todos", "/home/u/dev/todos"),
+		boothAt("twice", "/home/u/dev/twice"),
+		boothAt("twice-2", "/home/u/dev/twice"),
+	}
+	rows := buildRows(booths, repos)
+	got := rowSummary(rows)
+	want := []string{
+		"(none) @main", // here: no booth, no header
+		"todos @main",  // one booth, no header
+		"# twice",      // two booths keep their header
+		"twice @main", "twice-2 @main",
+		"# proj", "(none) @main", "(none) @fix", "(none) @idea", // worktrees keep theirs
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("rows\n got %q\nwant %q", got, want)
+	}
+	if !rows[0].solo || !rows[1].solo || rows[3].solo || rows[6].solo {
+		t.Fatalf("solo marks wrong: %+v", rows)
+	}
+	if rows[0].repo == nil || rows[0].repo.Name != "here" {
+		t.Fatalf("a solo row keeps its repository (n needs it): %+v", rows[0])
+	}
+}
+
+func TestOneRowRepoIsNamedInTheNameCell(t *testing.T) {
+	here, todos := soloRepo("here", true), soloRepo("todos", false)
+	b := boothAt("todos-booth", "/home/u/dev/todos")
+	cases := []struct {
+		r    row
+		want string
+	}{
+		{row{repo: &here, worktree: &here.Worktrees[0], solo: true}, "here (here)"},
+		{row{repo: &todos, worktree: &todos.Worktrees[0], solo: true}, "todos"},
+		{row{repo: &todos, worktree: &todos.Worktrees[0], solo: true, booth: &b}, "todos-booth"},
+		{row{repo: &here, worktree: &here.Worktrees[0]}, "-"}, // under a header: as before
+	}
+	for _, c := range cases {
+		if got := nameCell(c.r); got != c.want {
+			t.Errorf("nameCell(%+v) = %q, want %q", c.r, got, c.want)
+		}
+	}
+}
+
+func TestOneRowRepoIsSelectableAndDrawnWithoutAHeader(t *testing.T) {
+	f := &fakeDeps{repos: []lifecycle.Repo{soloRepo("todos", true)}}
+	m := newModel(f.deps())
+	next, _ := m.Update(snapshotMsg{seq: 1, repos: f.repos})
+	m = next.(model)
+	m.width, m.height = 120, 20
+	if r, ok := m.currentRow(); !ok || !r.solo {
+		t.Fatalf("the one row is not selected: %+v", m.rows)
+	}
+	view := m.View()
+	if !strings.Contains(view, "todos (here)") || strings.Count(view, "~/dev/todos") != 1 {
+		t.Fatalf("view:\n%s", view)
+	}
+}
