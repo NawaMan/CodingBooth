@@ -10,12 +10,14 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/nawaman/codingbooth/src/pkg/booth"
+	"github.com/nawaman/codingbooth/src/pkg/boothinit/selection"
 	"github.com/nawaman/codingbooth/src/pkg/dash"
 	"github.com/nawaman/codingbooth/src/pkg/docker"
 	"github.com/nawaman/codingbooth/src/pkg/lifecycle"
@@ -123,6 +125,7 @@ func runDashboard(version string) {
 			}
 			return string(out), nil
 		},
+		Config:   dashProjectConfig,
 		Interval: *interval,
 		Home:     home,
 	}
@@ -216,4 +219,46 @@ func logView(self string, b lifecycle.Booth) (logs, pager *exec.Cmd) {
 		return detach(exec.Command(self, append(args, "-n", "5000")...)), exec.Command(less, "-R", start)
 	}
 	return exec.Command(self, append(args, "-n", "200")...), nil
+}
+
+// dashProjectConfig is what the dashboard's c shows about boothDir: the select
+// DSL its "# Configured by:" header records, read the way booth config reads it
+// back (readBoothHeader: the Boothfile's header, else config.toml's).
+func dashProjectConfig(boothDir string) (dash.ProjectConfig, error) {
+	info, err := os.Stat(boothDir)
+	if os.IsNotExist(err) {
+		return dash.ProjectConfig{}, nil
+	}
+	if err != nil {
+		return dash.ProjectConfig{}, err
+	}
+	if !info.IsDir() {
+		return dash.ProjectConfig{}, fmt.Errorf("%s is not a directory", boothDir)
+	}
+	config := dash.ProjectConfig{Exists: true}
+	for _, name := range []string{"Boothfile", "config.toml"} {
+		if cmd, found := readConfiguredByHeader(filepath.Join(boothDir, name)); found {
+			config.Generated = true
+			for _, dsl := range headerSelects(cmd) {
+				config.Items = append(config.Items, selection.SplitItems(dsl)...)
+			}
+			break
+		}
+	}
+	return config, nil
+}
+
+// headerSelects is the --select values of a recorded header command, split the
+// way parseAdjustCommand splits it. Not parseInitFlags itself: it exits on a
+// malformed header, which would take the dashboard down with it.
+func headerSelects(cmd string) []string {
+	var selects []string
+	fields := headerFields(cmd)
+	for i := 0; i+1 < len(fields); i++ {
+		if fields[i] == "--select" {
+			selects = append(selects, fields[i+1])
+			i++
+		}
+	}
+	return selects
 }

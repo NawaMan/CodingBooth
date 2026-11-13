@@ -83,7 +83,7 @@ func TestDetailPaneShowsEveryPart(t *testing.T) {
 		"Messages  1 waiting: Deploy?",
 		"Logs      last 3 lines",
 		"    one\n    two\n    progress 100%\n",
-		"i info · l log",
+		"i info · c config · l log",
 		"↑/↓ move · s start",
 	} {
 		if !strings.Contains(view, part) {

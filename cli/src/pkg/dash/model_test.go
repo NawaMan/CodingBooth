@@ -65,6 +65,9 @@ type fakeDeps struct {
 	krakened  []string
 	shelled   []string
 	logViewed []string
+
+	configs    map[string]ProjectConfig // by .booth dir
+	configRead []string                 // each .booth dir read
 }
 
 func (f *fakeDeps) deps() Deps {
@@ -126,6 +129,10 @@ func (f *fakeDeps) deps() Deps {
 		GitKraken: func(path string) error {
 			f.krakened = append(f.krakened, path)
 			return nil
+		},
+		Config: func(boothDir string) (ProjectConfig, error) {
+			f.configRead = append(f.configRead, boothDir)
+			return f.configs[boothDir], nil
 		},
 		Home: "/home/u",
 		Now:  func() time.Time { return testNow },

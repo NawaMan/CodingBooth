@@ -63,6 +63,8 @@ func (m model) toggleDetail() (model, tea.Cmd) {
 		m.clampOffset()
 		return m, nil
 	}
+	// One pane at a time: i takes c's place.
+	m.configOpen, m.config = false, nil
 	m.detailOpen = true
 	m.detailSeq++
 	return m, m.detailTick()
