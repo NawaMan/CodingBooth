@@ -4,6 +4,22 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`--booth-isolation kata` (experimental): the booth itself can run in its own Kata VM.** One flag
+  (`--booth-isolation`, bare means `kata`), `CB_BOOTH_ISOLATION=kata`, or `booth-isolation = "kata"` in
+  `.booth/config.toml` starts the booth with Kata's runtime: same image, same `coder` uid, the code
+  folder mounted read-write, the same front door, but a way out of the container lands in a VM with its
+  own kernel instead of on your machine. The VM defaults to 4 GB and 2 CPUs; `--vm-memory` /
+  `--vm-cpus` size it. With `--dind` the sidecar goes into Kata too, so no consent is asked. booth
+  gives the VM your machine's real resolvers (Docker's embedded DNS does not answer inside it).
+  With `--egress` the booth stands alone on an internal network behind the egress gateway, so
+  nothing leaves it except through the proxy. `--privileged`, `--gpus`, `--device /dev/kvm` (Kata's
+  guest kernel has no KVM), `--network`/`--pid`/`--ipc=host`, host-socket mounts (such as
+  `host-audio`'s) and `--egress` with `--dind` are refused with it. Where Kata cannot run (Windows, Docker Desktop,
+  Podman, no KVM or Kata), the booth runs as an ordinary container behind a large banner; on engine
+  apple, where every booth is already its own VM, a one-line note says there is nothing more to do.
+  95 of the 99 examples pass with `CB_BOOTH_ISOLATION=kata`; the other four are refused up front,
+  with the reason: two `host-audio` (sockets) and two Android (`/dev/kvm`). See [Security → Put the booth in a VM](BOOTH_SECURITY.md#booth-isolation).
+
 - **`booth shell --run` creates a terminal (base) booth; `--variant` picks another.** A booth
   `shell --run` has to create used to take the project's own variant, so a desktop project built and
   started a desktop just to open a shell. It is now `--variant base`; `shell --run --variant <v>`

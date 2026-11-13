@@ -198,6 +198,24 @@ The egress creates up to two sidecar containers:
 
 When `--dind` is also enabled, the DinD sidecar doubles as the network namespace owner — no separate netns sidecar is created.
 
+### With `--booth-isolation kata`
+
+A Kata booth is a VM with its own kernel, so it cannot share the netns owner's namespace
+(`--network container:…`). `egress_kata.go` puts it behind the netns owner instead:
+
+- an **internal network** `{name}-{port}-egress-int` (`docker network create --internal`) holds the
+  booth alone, with no route out;
+- the netns owner becomes a **gateway**: started on the egress network with `ip_forward=1`, then
+  connected to the internal network. It publishes the booth's ports and keeps a `CB_BOOTH` DNAT
+  chain pointed at the booth's address (re-resolved every 2 s). `FORWARD` drops everything but
+  DNATed connections and their replies, so the booth cannot route out through it;
+- Envoy runs in the gateway's namespace as usual. The booth gets `--add-host <gateway>:<ip>`, and
+  `booth--dind-forward` (`BOOTH_DIND_HOST` / `BOOTH_DIND_FORWARD=15001`) carries the booth's
+  `127.0.0.1:15001` to it, so the proxy env vars are unchanged.
+
+`--egress` with `--dind` stays refused under `--booth-isolation`. See
+[Security → With `--egress`](../BOOTH_SECURITY.md#booth-isolation-egress).
+
 ### Naming Convention
 
 Container and network names follow the pattern `{booth-name}-{port}-{suffix}`:
@@ -207,6 +225,7 @@ Container and network names follow the pattern `{booth-name}-{port}-{suffix}`:
 | Netns owner     | `{name}-{port}-egress-netns`   | `myproject-10000-egress-netns`   |
 | Envoy proxy     | `{name}-{port}-egress-proxy`   | `myproject-10000-egress-proxy`   |
 | Egress network | `{name}-{port}-egress-net`     | `myproject-10000-egress-net`     |
+| Internal network (Kata booth only) | `{name}-{port}-egress-int` | `myproject-10000-egress-int` |
 
 ### Labels
 
@@ -267,6 +286,7 @@ cd my-egress-test
 | File                                    | Responsibility                                              |
 |-----------------------------------------|-------------------------------------------------------------|
 | `cli/src/pkg/booth/egress_setup.go`    | Sidecar creation, Envoy config generation, firewall, cleanup|
+| `cli/src/pkg/booth/egress_kata.go`     | Egress for a `--booth-isolation kata` booth: internal network, gateway, DNAT |
 | `cli/src/pkg/booth/booth_runner.go`     | Orchestration — calls `SetupEgress()`                      |
 | `cli/src/pkg/booth/booth.go`            | Normal exit cleanup                                         |
 | `cli/src/pkg/defaults/example-allowlist.txt` | Default allowlist template                             |
