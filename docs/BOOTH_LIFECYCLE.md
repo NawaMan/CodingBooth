@@ -109,6 +109,7 @@ seconds (`--interval 5s` to change that) and takes `--engine` like the other com
 | `↑`/`↓` (`j`/`k`), `g`/`G` | Select a booth |
 | `enter` | Open a shell in it (`booth shell`); exiting the shell comes back to the dashboard. On a stopped booth it asks, then starts it for the shell and stops it again afterwards (`booth shell --run`). On a worktree with no booth it asks, then starts a terminal (base) booth there for the shell and removes it afterwards (`booth shell --run --code <worktree>`); `s` starts the project's own booth instead |
 | `i` | Show or hide its details below the table (see below) |
+| `c` | Show or hide its project config in the same place (see below) |
 | `l` | Show its whole log, following it while it runs: piped into `less +F` (`ctrl+c` pauses to scroll or search with `/`, `F` follows again, `q` comes back); without `less`, `booth logs -f`, which `ctrl+c` ends |
 | `t` | Open a shell on the host (`$SHELL`) in its folder — the booth's code path, or the worktree; `exit` comes back to the dashboard |
 | `o` | Open its page in the browser (`http://localhost:<port>`, `https` for a `--public` booth) |
@@ -210,6 +211,14 @@ dashboard stops waiting; the question stays on the booth's screen until it is an
 
 The pane reloads every 5 seconds, for the selected booth only. A part that cannot load says why,
 and the others still show; a stopped booth shows only its stop time, messages and logs.
+
+`c` shows, in the same place (it replaces the `i` pane, and `i` replaces it), the selected row's
+project config: the select DSL its `.booth` was generated from, as the `# Configured by:` header of
+its `Boothfile` (else its `config.toml`) records it — the selection `booth config` starts from —
+one item (a template with its extensions) per line, as many as fit. It
+reads the `.booth` the booth itself uses, or the worktree's own for a row with no booth, and
+follows the cursor. A `.booth` with no such header was not written by `booth config`, so the pane
+says so instead of showing a selection. `R` reads it again.
 
 ### `start`
 

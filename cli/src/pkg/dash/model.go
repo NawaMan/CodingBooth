@@ -32,6 +32,7 @@ const (
 	keyPorts   = "p"
 	keyMessage = "m"
 	keyDetail  = "i"
+	keyConfig  = "c"
 	keyNew     = "n"
 	keyEditor  = "e"
 	keyTerm    = "t"
@@ -93,6 +94,8 @@ type Deps struct {
 	State   func(booth lifecycle.Booth) (lifecycle.BoothState, error)
 	Pending func(booth lifecycle.Booth) ([]lifecycle.PendingMessage, error)
 	Logs    func(booth lifecycle.Booth, lines int) (string, error)
+	// Config reads the project config in boothDir (c); nil turns c off.
+	Config func(boothDir string) (ProjectConfig, error)
 	// GitStatus reads a worktree's git status for the GIT column; nil hides it.
 	GitStatus func(repo lifecycle.Repo, w lifecycle.Worktree) (lifecycle.GitState, error)
 	// GitInterval is how long a worktree's git status is kept (default 10s).
@@ -146,6 +149,9 @@ type model struct {
 	detail     *detailPane
 	detailGen  int // bumped for each booth the pane loads
 	detailSeq  int // bumped each time the pane opens; ends the old tick chain
+
+	configOpen bool // c: the config pane takes the detail pane's place
+	config     *configPane
 
 	// ctx ends with the dashboard; questions still waiting are cancelled.
 	ctx    context.Context
@@ -309,8 +315,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return next, cmd
 	}
 	m, load := m.syncDetail()
+	m, config := m.syncConfig()
 	m, git := m.syncGit()
-	return m, tea.Batch(cmd, load, git)
+	return m, tea.Batch(cmd, load, config, git)
 }
 
 func (m model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -320,6 +327,9 @@ func (m model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case gitMsg:
 		return m.applyGit(msg), nil
+
+	case configMsg:
+		return m.applyConfig(msg), nil
 
 	case detailTickMsg:
 		if !m.detailOpen || msg.seq != m.detailSeq {
@@ -460,9 +470,13 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 	case keyRefresh:
 		m.setStatus("", false)
 		m.staleGit()
-		return m.refresh(true)
+		m, config := m.reloadConfig()
+		m, cmd := m.refresh(true)
+		return m, tea.Batch(config, cmd)
 	case keyDetail:
 		return m.toggleDetail()
+	case keyConfig:
+		return m.toggleConfig()
 	case keyHide:
 		return m.toggleHide()
 	case keyHidden:

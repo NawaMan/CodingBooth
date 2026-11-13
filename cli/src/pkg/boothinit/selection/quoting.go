@@ -167,3 +167,17 @@ func isDSLSpace(c byte) bool {
 func isDSLOperator(c byte) bool {
 	return c == '+' || c == '~'
 }
+
+// SplitItems splits a select DSL into its items — one template with its
+// extensions each — on the "/" that separate them, as ParseSelectDSL does
+// (never inside a quoted value), dropping empty ones. Each keeps its text as
+// written, for display.
+func SplitItems(dsl string) []string {
+	var items []string
+	for _, part := range splitUnquoted(dsl, '/') {
+		if part = strings.TrimSpace(part); part != "" {
+			items = append(items, part)
+		}
+	}
+	return items
+}

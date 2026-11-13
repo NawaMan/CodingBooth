@@ -600,6 +600,8 @@ KEYS:
              not running: ask, then start it just for the shell (shell --run)
   i          Show or hide its details below the table: uptime, CPU and memory,
              viewers, idle shutdown, ports, unanswered messages, last log lines
+  c          Show or hide its project config in that place: the select DSL its
+             .booth was generated from (booth config), if it was
   o          Open its page in the browser
   p          Pick one of its exposed ports (as expose list shows) to open
   m          Send its user a message: toast, banner, or a question whose
