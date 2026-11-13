@@ -40,7 +40,11 @@ func (m model) helpLines() []string {
 	if m.deps.GitKraken != nil {
 		look += " · K GitKraken"
 	}
-	change := "↑/↓ move · s start · x stop · r restart · d delete · n new worktree"
+	change := "↑/↓ move"
+	if m.deps.SaveOrder != nil {
+		change += " · ctrl+↑/↓ reorder"
+	}
+	change += " · s start · x stop · r restart · d delete · n new worktree"
 	switch {
 	case m.deps.Hide == nil:
 	case m.showHidden:

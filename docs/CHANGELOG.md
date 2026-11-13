@@ -4,6 +4,14 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth dashboard`: `ctrl+↑`/`ctrl+↓` reorder the rows, and the order is kept.** The groups (a
+  repository with its worktrees, or a booth in no repository) start sorted by name, ignoring case;
+  `ctrl+↑`/`ctrl+↓` moves the selected group up or down, or, on a linked worktree, that worktree within
+  its repository. The order is kept in `~/.cache/codingbooth/dashboard/order.json`, and a repository,
+  booth or worktree seen for the first time goes to the bottom. The repository the dashboard runs in
+  is no longer always first; the cursor starts on it instead. See
+  [booth lifecycle → dashboard](BOOTH_LIFECYCLE.md#dashboard).
+
 - **`--booth-isolation kata` (experimental): the booth itself can run in its own Kata VM.** One flag
   (`--booth-isolation`, bare means `kata`), `CB_BOOTH_ISOLATION=kata`, or `booth-isolation = "kata"` in
   `.booth/config.toml` starts the booth with Kata's runtime: same image, same `coder` uid, the code

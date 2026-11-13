@@ -15,9 +15,10 @@ import (
 // next time the dashboard opens.
 
 // layout lays out the table from the booths and repositories: the rows not
-// hidden, or under H only the hidden ones. The cursor stays on its row.
+// hidden, or under H only the hidden ones, in the saved order (see order.go).
+// The cursor stays on its row.
 func (m *model) layout() {
-	all := buildRows(m.booths, m.repos)
+	all := m.arrange(buildRows(m.booths, m.repos))
 	m.hiddenRows = 0
 	rows := all[:0:0]
 	for _, r := range all {

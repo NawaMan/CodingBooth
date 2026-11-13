@@ -124,6 +124,7 @@ seconds (`--interval 5s` to change that) and takes `--engine` like the other com
 | `n` | New worktree in the selected row's repository: type a name (the new branch, from the repository's current commit); booth creates it and starts its booth (`booth --worktree <name> --daemon`) |
 | `h` | Hide it from the table; it stays hidden the next time the dashboard opens. Under `H`: show it again |
 | `H` | Show only the hidden rows (the title says how many); `H` again goes back |
+| `ctrl+↑`/`ctrl+↓` | Move its group (a repository with its worktrees, or a booth in no repository) up or down; on a linked worktree, move that worktree within its repository. The order is kept for the next time (see below) |
 | `R` | Refresh now |
 | `q` | Quit |
 
@@ -159,16 +160,24 @@ a row again; `H` again goes back. The hidden rows are kept in
 `~/.cache/codingbooth/dashboard/hidden.json`; an entry is dropped once its folder is gone, and
 forgetting a gone booth (`d`) unhides it too.
 
-**Grouped by repository.** Booths are grouped by the git repository their code is in: the repository `booth dashboard` runs in first, then the others that have a
-booth, by name. A group has no heading line: its main checkout leads it, not indented, its NAME in
+**Grouped by repository.** Booths are grouped by the git repository their code is in. A group has no heading line: its main checkout leads it, not indented, its NAME in
 the group colour — the booth's name, or the repository's when it has no booth, with `(here)` on the
 repository the dashboard runs in. Its linked worktrees follow, indented, each with its booths or as
 a `-none-` row of its own (the WORKTREE column), so a worktree that has no booth yet is still one
 key away from one. A repository that is only its main checkout is therefore a single row. A booth whose code is
-in no repository is listed last, each one leading a group of its own (blue, not indented). `d` on a worktree row removes it only when
+in no repository leads a group of its own (blue, not indented). `d` on a worktree row removes it only when
 nothing would be lost, as [`booth worktree remove`](BOOTH_WORKTREE.md#removing-a-worktree) does,
 and refuses while a booth runs on it; the main checkout is never removed. There is no landing or
 merging here: open the worktree in your editor or GitKraken for that.
+
+**Ordering rows.** The first time, the groups are sorted by name (ignoring case: the repositories,
+and the booths in no repository among them), and each repository's linked worktrees by name under
+its main checkout. `ctrl+↑`/`ctrl+↓` moves the selected row's group past the next group shown; on a
+linked worktree's row it moves that worktree within its repository (the main checkout always leads,
+and the booths on a worktree move with it). Hidden rows keep their place. The order is kept in
+`~/.cache/codingbooth/dashboard/order.json`; anything not in it yet — a new repository, booth or
+worktree — goes to the bottom (of the table, or of its repository), and an entry is dropped once its
+folder is gone. The cursor starts on the repository the dashboard runs in, wherever it is.
 
 **GIT** is each worktree's status: `*3` files changed (uncommitted or untracked; booth's own
 `.booth/.tmp/` is not counted), `↑2` commits ahead and `↓5` behind, or `clean`. A worktree counts
