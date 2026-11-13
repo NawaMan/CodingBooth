@@ -95,3 +95,27 @@ func TestRemove_RefusesChangesUnlessForced(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// A modified-only file's porcelain line starts with a space (" M path"); trimming the
+// output took it from the first line, and its name lost a letter in the refusal
+// (`ocs/SETUP.md`).
+func TestAssess_KeepsTheFirstLinesLeadingSpace(t *testing.T) {
+	root, main := repo(t)
+	e := worktree(t, main, filepath.Join(root, "wt", "w"), "w")
+	file := filepath.Join(e.Path, "docs", "SETUP.md")
+	if err := os.MkdirAll(filepath.Dir(file), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(file, []byte("one\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	run(t, e.Path, "add", "docs/SETUP.md")
+	commit(t, e.Path, "setup")
+	if err := os.WriteFile(file, []byte("two\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	loss, err := Assess(main, e)
+	if err != nil || len(loss.Changes) != 1 || loss.Changes[0] != " M docs/SETUP.md" {
+		t.Fatalf("changes = %q (%v), want [\" M docs/SETUP.md\"]", loss.Changes, err)
+	}
+}
