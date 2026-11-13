@@ -20,6 +20,10 @@ import (
 // the main checkout always leads. The order is kept by Deps.SaveOrder, so the
 // next dashboard opens with it. Anything not in it yet goes to the bottom, by
 // name, and is added: the first time, that sorts everything by name.
+//
+// Several dashboards share the one order. Each snapshot reads it again, so
+// one's changes show in the others; and every change starts from the order as
+// saved now, not from this dashboard's copy, so it never undoes another's.
 
 // groupKey names the group a row is in: its repository, else its booth (a
 // booth in no repository is a group of its own).
@@ -56,49 +60,26 @@ func (m *model) arrange(all []row) []row {
 	if m.deps.SaveOrder == nil {
 		return all
 	}
-	pos := make(map[string]int, len(m.order))
-	for i, e := range m.order {
-		pos[e.Key] = i
-	}
-	var groups, inners []unit
-	added := map[string]bool{}
-	for _, r := range all {
-		if g := groupUnit(r); g.key != "" && !added[g.key] {
-			if _, known := pos[g.key]; !known {
-				added[g.key] = true
-				groups = append(groups, g)
-			}
-		}
-		if k := innerKey(r); k != "" && !added[k] {
-			if _, known := pos[k]; !known {
-				added[k] = true
-				inners = append(inners, unit{k, r.worktree.Name(), r.worktree.Path})
-			}
-		}
-	}
-	if len(groups)+len(inners) > 0 {
-		byName := func(units []unit) {
-			sort.SliceStable(units, func(i, j int) bool {
-				a, b := strings.ToLower(units[i].name), strings.ToLower(units[j].name)
-				if a != b {
-					return a < b
-				}
-				return units[i].key < units[j].key
-			})
-		}
-		byName(groups)
-		byName(inners)
-		order := append([]lifecycle.OrderEntry{}, m.order...)
+	if groups, inners := missingUnits(all, m.order); len(groups)+len(inners) > 0 {
+		// Another dashboard may have added them, or changed the order, since
+		// it was read: add to the order as saved now.
+		order := m.savedOrder()
+		groups, inners = missingUnits(all, order)
 		for _, u := range append(groups, inners...) {
-			pos[u.key] = len(order)
 			order = append(order, lifecycle.OrderEntry{Key: u.key, Path: u.path})
 		}
-		m.order = order
-		if err := m.deps.SaveOrder(order); err != nil {
+		if len(groups)+len(inners) == 0 {
+			m.order = order
+		} else if err := m.saveOrder(order); err != nil {
+			m.order = order // still shown in this order; the next change saves it again
 			m.setStatus("Could not save the row order: "+err.Error(), true)
 		}
 	}
 
+	pos := make(map[string]int, len(m.order))
+	for i, e := range m.order {
+		pos[e.Key] = i
+	}
 	rank := func(r row) (int, int) {
 		inner := -1 // the rows that lead come first in their group
 		if k := innerKey(r); k != "" {
@@ -118,6 +99,57 @@ func (m *model) arrange(all []row) []row {
 	return sorted
 }
 
+// missingUnits are the groups and the worktrees of all that order does not
+// have yet, each by name.
+func missingUnits(all []row, order []lifecycle.OrderEntry) (groups, inners []unit) {
+	known := make(map[string]bool, len(order))
+	for _, e := range order {
+		known[e.Key] = true
+	}
+	for _, r := range all {
+		if g := groupUnit(r); g.key != "" && !known[g.key] {
+			known[g.key] = true
+			groups = append(groups, g)
+		}
+		if k := innerKey(r); k != "" && !known[k] {
+			known[k] = true
+			inners = append(inners, unit{k, r.worktree.Name(), r.worktree.Path})
+		}
+	}
+	byName := func(units []unit) {
+		sort.SliceStable(units, func(i, j int) bool {
+			a, b := strings.ToLower(units[i].name), strings.ToLower(units[j].name)
+			if a != b {
+				return a < b
+			}
+			return units[i].key < units[j].key
+		})
+	}
+	byName(groups)
+	byName(inners)
+	return groups, inners
+}
+
+// savedOrder is the order as saved now (another dashboard may have changed
+// it), else this dashboard's copy when there is no store to read.
+func (m model) savedOrder() []lifecycle.OrderEntry {
+	if m.deps.Order == nil {
+		return append([]lifecycle.OrderEntry{}, m.order...)
+	}
+	return m.deps.Order()
+}
+
+// saveOrder saves order and makes it this dashboard's. A snapshot already on
+// its way read the order before this save, so its order is dropped.
+func (m *model) saveOrder(order []lifecycle.OrderEntry) error {
+	if err := m.deps.SaveOrder(order); err != nil {
+		return err
+	}
+	m.order = order
+	m.orderGen++
+	return nil
+}
+
 // reorder moves the selected row's group (or, on a linked worktree, that
 // worktree) delta places among the ones the table shows. It swaps places with
 // its neighbour in the saved order, so the rows hidden between them stay put.
@@ -125,6 +157,10 @@ func (m model) reorder(delta int) (tea.Model, tea.Cmd) {
 	if m.deps.SaveOrder == nil {
 		return m, nil
 	}
+	// Move among the rows as they are now: another dashboard may have moved
+	// them since the last snapshot.
+	m.order = m.savedOrder()
+	m.layout()
 	r, ok := m.currentRow()
 	if !ok {
 		return m, nil
@@ -172,11 +208,10 @@ func (m model) reorder(delta int) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	order[i], order[j] = order[j], order[i]
-	if err := m.deps.SaveOrder(order); err != nil {
+	if err := m.saveOrder(order); err != nil {
 		m.setStatus("Could not save the row order: "+err.Error(), true)
 		return m, nil
 	}
-	m.order = order
 	m.setStatus("", false)
 	m.layout()
 	return m, nil
@@ -206,8 +241,11 @@ func (m model) addSeparator() (tea.Model, tea.Cmd) {
 	if m.deps.SaveOrder == nil || m.showHidden {
 		return m, nil
 	}
+	// From the order as saved now, so a separator another dashboard added
+	// keeps its number and its place.
+	saved := m.savedOrder()
 	next := 1
-	for _, e := range m.order {
+	for _, e := range saved {
 		if num, ok := strings.CutPrefix(e.Key, separatorPrefix); ok {
 			if n, err := strconv.Atoi(num); err == nil {
 				next = max(next, n+1)
@@ -215,26 +253,25 @@ func (m model) addSeparator() (tea.Model, tea.Cmd) {
 		}
 	}
 	key := separatorPrefix + strconv.Itoa(next)
-	at := len(m.order)
+	at := len(saved)
 	if r, ok := m.currentRow(); ok {
 		// Right after its group in the order: rows hidden after it stay
 		// below the line, out of sight either way.
 		after := groupKey(r)
-		for i, e := range m.order {
+		for i, e := range saved {
 			if e.Key == after {
 				at = i + 1
 			}
 		}
 	}
-	order := make([]lifecycle.OrderEntry, 0, len(m.order)+1)
-	order = append(order, m.order[:at]...)
+	order := make([]lifecycle.OrderEntry, 0, len(saved)+1)
+	order = append(order, saved[:at]...)
 	order = append(order, lifecycle.OrderEntry{Key: key})
-	order = append(order, m.order[at:]...)
-	if err := m.deps.SaveOrder(order); err != nil {
+	order = append(order, saved[at:]...)
+	if err := m.saveOrder(order); err != nil {
 		m.setStatus("Could not add a separator: "+err.Error(), true)
 		return m, nil
 	}
-	m.order = order
 	m.selected = key
 	m.setStatus("Added a separator. ctrl+↑/↓ moves it; d deletes it.", false)
 	m.layout()
@@ -243,17 +280,17 @@ func (m model) addSeparator() (tea.Model, tea.Cmd) {
 
 // deleteSeparator takes the separator key out of the order.
 func (m model) deleteSeparator(key string) (tea.Model, tea.Cmd) {
-	order := make([]lifecycle.OrderEntry, 0, len(m.order))
-	for _, e := range m.order {
+	saved := m.savedOrder()
+	order := make([]lifecycle.OrderEntry, 0, len(saved))
+	for _, e := range saved {
 		if e.Key != key {
 			order = append(order, e)
 		}
 	}
-	if err := m.deps.SaveOrder(order); err != nil {
+	if err := m.saveOrder(order); err != nil {
 		m.setStatus("Could not delete the separator: "+err.Error(), true)
 		return m, nil
 	}
-	m.order = order
 	m.setStatus("Deleted the separator.", false)
 	m.layout()
 	return m, nil

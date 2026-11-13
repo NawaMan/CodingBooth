@@ -180,7 +180,10 @@ linked worktree's row it moves that worktree within its repository (the main che
 and the booths on a worktree move with it). Hidden rows keep their place. The order is kept in
 `~/.cache/codingbooth/dashboard/order.json`; anything not in it yet — a new repository, booth or
 worktree — goes to the bottom (of the table, or of its repository), and an entry is dropped once its
-folder is gone. The cursor starts on the repository the dashboard runs in, wherever it is.
+folder is gone. The cursor starts on the repository the dashboard runs in, wherever it is. Dashboards
+open at the same time share the file: each reads it again at every refresh, and each move starts
+from the order as saved then, so one dashboard's moves and separators show in another and are never
+undone by it.
 
 **Separators.** `-` adds a line below the selected row's group, to set groups apart; it is kept in the
 same order as the rows. A separator is selected like a row: `ctrl+↑`/`ctrl+↓` moves it past the next

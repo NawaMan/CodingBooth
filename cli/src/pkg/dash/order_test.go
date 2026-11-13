@@ -7,6 +7,7 @@ package dash
 import (
 	"errors"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
 
@@ -317,4 +318,132 @@ func TestSeparatorsAreNotInTheHiddenView(t *testing.T) {
 	if n := len(store.keys()); n != 6 {
 		t.Errorf("- in the hidden view added a separator: %v", store.keys())
 	}
+}
+
+// Two dashboards share one order store; each must see the other's changes and
+// never undo them.
+
+// sharedDashboard is a dashboard on store whose snapshots return booths and
+// repos, as the real one's do (order included).
+func sharedDashboard(store *orderStore, booths []lifecycle.Booth, repos []lifecycle.Repo) model {
+	deps := store.wire((&fakeDeps{snapshot: booths, repos: repos}).deps())
+	deps.Repos = func([]lifecycle.Booth) []lifecycle.Repo { return repos }
+	return refreshed(newModel(deps))
+}
+
+// refreshed is m after a snapshot taken now.
+func refreshed(m model) model {
+	m, fetch := m.refresh(true)
+	next, _ := m.Update(fetch())
+	return next.(model)
+}
+
+func TestOrderAnotherDashboardsMoveShowsOnRefresh(t *testing.T) {
+	store := &orderStore{}
+	booths, repos := orderRepos()
+	a := sharedDashboard(store, booths, repos)
+	b := sharedDashboard(store, booths, repos)
+	a, _ = press(t, a, "ctrl+up") // zeta above Mid
+	b = refreshed(b)
+	if got, want := rowSummary(b.rows), rowSummary(a.rows); !reflect.DeepEqual(got, want) {
+		t.Errorf("other dashboard after a refresh = %v, want %v", got, want)
+	}
+}
+
+func TestOrderMoveKeepsAnotherDashboardsMove(t *testing.T) {
+	store := &orderStore{}
+	booths, repos := orderRepos()
+	a := sharedDashboard(store, booths, repos)
+	b := sharedDashboard(store, booths, repos)
+	a, _ = press(t, a, "ctrl+up") // alpha, zeta, Mid
+	// b has not refreshed: its rows are still alpha, Mid, zeta. Its cursor is
+	// on zeta; ctrl+up moves zeta among the rows as saved now: above alpha.
+	b, _ = press(t, b, "ctrl+up")
+	want := []string{"repo:/home/u/dev/zeta", "repo:/home/u/dev/alpha", "Mid@docker"}
+	if got := groupKeys(store); !reflect.DeepEqual(got, want) {
+		t.Errorf("saved groups = %v, want %v (a's move kept, b's on top of it)", got, want)
+	}
+	if got, want := rowSummary(b.rows), rowSummary(refreshed(a).rows); !reflect.DeepEqual(got, want) {
+		t.Errorf("b shows %v, a %v", got, want)
+	}
+}
+
+func TestOrderNewBoothKeepsAnotherDashboardsMove(t *testing.T) {
+	store := &orderStore{}
+	booths, repos := orderRepos()
+	a := sharedDashboard(store, booths, repos)
+	b := sharedDashboard(store, booths, repos)
+	// b's snapshot reads the order, then a moves zeta, then the snapshot
+	// arrives with a new booth in it.
+	b, fetch := b.refresh(true)
+	msg := fetch().(snapshotMsg)
+	a, _ = press(t, a, "ctrl+up") // alpha, zeta, Mid
+	msg.booths = append(msg.booths, running("Aardvark"))
+	next, _ := b.Update(msg)
+	b = next.(model)
+	want := []string{"repo:/home/u/dev/alpha", "repo:/home/u/dev/zeta", "Mid@docker", "Aardvark@docker"}
+	if got := groupKeys(store); !reflect.DeepEqual(got, want) {
+		t.Errorf("saved groups = %v, want %v (a's move kept, Aardvark added)", got, want)
+	}
+}
+
+func TestOrderSeparatorKeepsAnotherDashboards(t *testing.T) {
+	store := &orderStore{}
+	booths, repos := orderRepos()
+	a := sharedDashboard(store, booths, repos)
+	b := sharedDashboard(store, booths, repos)
+	a, _ = press(t, a, "ctrl+up", "-") // zeta above Mid, a line below zeta
+	b, _ = press(t, b, "-")
+	var seps []string
+	for _, k := range store.keys() {
+		if strings.HasPrefix(k, separatorPrefix) {
+			seps = append(seps, k)
+		}
+	}
+	sort.Strings(seps)
+	if !reflect.DeepEqual(seps, []string{"separator:1", "separator:2"}) {
+		t.Errorf("separators = %v, want both a's and b's, numbered apart", seps)
+	}
+	if got := groupKeys(store); got[1] != "repo:/home/u/dev/zeta" {
+		t.Errorf("saved groups = %v: b's separator undid a's move", got)
+	}
+	// d on b's separator leaves a's alone.
+	b, _ = press(t, b, "d")
+	if got := store.keys(); !containsKey(got, "separator:1") || containsKey(got, "separator:2") {
+		t.Errorf("after b deleted its separator: %v", got)
+	}
+}
+
+func TestOrderSnapshotFromBeforeAMoveIsDropped(t *testing.T) {
+	store := &orderStore{}
+	booths, repos := orderRepos()
+	m := sharedDashboard(store, booths, repos)
+	m, fetch := m.refresh(true)
+	late := fetch() // read the order before the move below
+	m, _ = press(t, m, "ctrl+up")
+	moved := rowSummary(m.rows)
+	next, _ := m.Update(late)
+	if got := rowSummary(next.(model).rows); !reflect.DeepEqual(got, moved) {
+		t.Errorf("a snapshot older than the move put the rows back: %v, want %v", got, moved)
+	}
+}
+
+// groupKeys are the saved keys that are groups (no worktrees, no separators).
+func groupKeys(store *orderStore) []string {
+	var keys []string
+	for _, k := range store.keys() {
+		if !strings.HasPrefix(k, "worktree:") && !strings.HasPrefix(k, separatorPrefix) {
+			keys = append(keys, k)
+		}
+	}
+	return keys
+}
+
+func containsKey(keys []string, key string) bool {
+	for _, k := range keys {
+		if k == key {
+			return true
+		}
+	}
+	return false
 }

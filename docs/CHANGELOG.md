@@ -14,7 +14,9 @@ This file contains a list of changes for each released version.
   its repository. The order is kept in `~/.cache/codingbooth/dashboard/order.json`, and a repository,
   booth or worktree seen for the first time goes to the bottom. The repository the dashboard runs in
   is no longer always first; the cursor starts on it instead. `-` adds a separator line below the
-  selected group; it is kept in the same order, `ctrl+↑`/`ctrl+↓` moves it and `d` deletes it. See
+  selected group; it is kept in the same order, `ctrl+↑`/`ctrl+↓` moves it and `d` deletes it. Two
+  dashboards open at once share the order: one's moves and separators show in the other at its next
+  refresh, and neither undoes the other's. See
   [booth lifecycle → dashboard](BOOTH_LIFECYCLE.md#dashboard).
 
 - **`--booth-isolation kata` (experimental): the booth itself can run in its own Kata VM.** One flag

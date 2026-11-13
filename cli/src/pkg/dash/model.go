@@ -137,7 +137,8 @@ type model struct {
 	showHidden bool            // H: the table shows only the hidden rows
 	hiddenGen  int             // bumped on each h; an older snapshot's hidden keys are dropped
 
-	order []lifecycle.OrderEntry // the rows' order, first on top (see order.go)
+	order    []lifecycle.OrderEntry // the rows' order, first on top (see order.go)
+	orderGen int                    // bumped on each save; an older snapshot's order is dropped
 
 	loading     bool // a snapshot is in flight
 	fetchSeq    int  // the latest snapshot asked for
@@ -217,6 +218,12 @@ type (
 		// hiddenGen is the model's when the snapshot began: an h since then
 		// makes its hidden keys old.
 		hiddenGen int
+		// order is the saved row order, read with the snapshot (orderRead),
+		// so another dashboard's changes show here too. orderGen is the
+		// model's when the snapshot began: a save since then makes it old.
+		order     []lifecycle.OrderEntry
+		orderRead bool
+		orderGen  int
 		warnings  []string
 		err       error
 	}
@@ -282,6 +289,7 @@ func (m model) Init() tea.Cmd {
 func (m model) fetch(seq int) tea.Cmd {
 	snapshot, findRepos, freshness, remembered := m.deps.Snapshot, m.deps.Repos, m.deps.Freshness, m.deps.Remembered
 	readHidden, hiddenGen := m.deps.Hidden, m.hiddenGen
+	readOrder, orderGen := m.deps.Order, m.orderGen
 	return func() tea.Msg {
 		booths, warnings, err := snapshot()
 		var repos []lifecycle.Repo
@@ -299,8 +307,14 @@ func (m model) fetch(seq int) tea.Cmd {
 		if err == nil && readHidden != nil {
 			hidden = readHidden()
 		}
+		var order []lifecycle.OrderEntry
+		orderRead := err == nil && readOrder != nil
+		if orderRead {
+			order = readOrder()
+		}
 		return snapshotMsg{seq: seq, booths: booths, repos: repos, fresh: fresh, hidden: hidden,
-			hiddenGen: hiddenGen, warnings: warnings, err: err}
+			hiddenGen: hiddenGen, order: order, orderRead: orderRead, orderGen: orderGen,
+			warnings: warnings, err: err}
 	}
 }
 
@@ -378,6 +392,9 @@ func (m model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.fresh = msg.fresh
 			if msg.hiddenGen == m.hiddenGen {
 				m.hidden = msg.hidden
+			}
+			if msg.orderRead && msg.orderGen == m.orderGen {
+				m.order = msg.order
 			}
 			m.refreshedAt = m.deps.Now()
 			m.layout()
