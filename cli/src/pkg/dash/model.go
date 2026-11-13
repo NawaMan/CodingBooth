@@ -39,6 +39,8 @@ const (
 	// GitKraken is K: g already jumps to the top.
 	keyGitKraken = "K"
 	keyRefresh   = "R"
+	keyHide      = "h"
+	keyHidden    = "H"
 )
 
 // Deps is everything the dashboard does outside itself; tests replace it.
@@ -58,6 +60,11 @@ type Deps struct {
 	Remembered func(live []lifecycle.Booth, warnings []string) []lifecycle.Booth
 	// Forget drops a remembered booth (d on a gone booth's row).
 	Forget func(booth lifecycle.Booth) error
+	// Hidden reads the keys of the rows h hid (see row.key); nil hides nothing
+	// and turns h off.
+	Hidden func() map[string]bool
+	// Hide hides the row named key, whose folder is path, or shows it again.
+	Hide func(key, path string, hidden bool) error
 	// Repos finds the repositories to group booths under; nil shows a flat list.
 	Repos func(booths []lifecycle.Booth) []lifecycle.Repo
 	// Editor is the command that opens path in the user's editor; it gets the
@@ -114,6 +121,11 @@ type model struct {
 	busy     map[string]string
 	asking   map[string]int      // questions sent and not yet answered, per booth
 	git      map[string]gitEntry // each worktree's git status, by path (see gitstatus.go)
+
+	hidden     map[string]bool // keys of the rows h hid
+	hiddenRows int             // how many rows are hidden now
+	showHidden bool            // H: the table shows only the hidden rows
+	hiddenGen  int             // bumped on each h; an older snapshot's hidden keys are dropped
 
 	loading     bool // a snapshot is in flight
 	fetchSeq    int  // the latest snapshot asked for
@@ -182,12 +194,16 @@ type pendingConfirm struct {
 
 type (
 	snapshotMsg struct {
-		seq      int
-		booths   []lifecycle.Booth
-		repos    []lifecycle.Repo
-		fresh    map[string]lifecycle.Fresh
-		warnings []string
-		err      error
+		seq    int
+		booths []lifecycle.Booth
+		repos  []lifecycle.Repo
+		fresh  map[string]lifecycle.Fresh
+		hidden map[string]bool
+		// hiddenGen is the model's when the snapshot began: an h since then
+		// makes its hidden keys old.
+		hiddenGen int
+		warnings  []string
+		err       error
 	}
 	tickMsg       struct{}
 	actionDoneMsg struct {
@@ -246,6 +262,7 @@ func (m model) Init() tea.Cmd {
 
 func (m model) fetch(seq int) tea.Cmd {
 	snapshot, findRepos, freshness, remembered := m.deps.Snapshot, m.deps.Repos, m.deps.Freshness, m.deps.Remembered
+	readHidden, hiddenGen := m.deps.Hidden, m.hiddenGen
 	return func() tea.Msg {
 		booths, warnings, err := snapshot()
 		var repos []lifecycle.Repo
@@ -259,7 +276,12 @@ func (m model) fetch(seq int) tea.Cmd {
 		if err == nil && findRepos != nil {
 			repos = findRepos(booths)
 		}
-		return snapshotMsg{seq: seq, booths: booths, repos: repos, fresh: fresh, warnings: warnings, err: err}
+		var hidden map[string]bool
+		if err == nil && readHidden != nil {
+			hidden = readHidden()
+		}
+		return snapshotMsg{seq: seq, booths: booths, repos: repos, fresh: fresh, hidden: hidden,
+			hiddenGen: hiddenGen, warnings: warnings, err: err}
 	}
 }
 
@@ -330,9 +352,11 @@ func (m model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.booths = msg.booths
 			m.repos = msg.repos
 			m.fresh = msg.fresh
-			m.rows = buildRows(m.booths, m.repos)
+			if msg.hiddenGen == m.hiddenGen {
+				m.hidden = msg.hidden
+			}
 			m.refreshedAt = m.deps.Now()
-			m.reselect()
+			m.layout()
 		}
 		return m, nil
 
@@ -439,6 +463,10 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 		return m.refresh(true)
 	case keyDetail:
 		return m.toggleDetail()
+	case keyHide:
+		return m.toggleHide()
+	case keyHidden:
+		return m.toggleHiddenView()
 	case keyNew:
 		r, ok := m.currentRow()
 		if !ok || r.repo == nil || r.repo == otherBooths {

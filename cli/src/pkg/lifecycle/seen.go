@@ -152,15 +152,20 @@ func (s Seen) save(entries map[string]seenEntry) error {
 	sort.Slice(list, func(i, j int) bool {
 		return seenKey(list[i].Name, list[i].Engine) < seenKey(list[j].Name, list[j].Engine)
 	})
-	data, err := json.MarshalIndent(list, "", "  ")
+	return writeJSON(s.Path, list)
+}
+
+// writeJSON writes v to path as indented JSON, through a temporary file and a
+// rename, so a second dashboard never reads half a file.
+func writeJSON(path string, v any) error {
+	data, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(s.Path), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
-	// Write then rename, so a second dashboard never reads half a file.
-	tmp, err := os.CreateTemp(filepath.Dir(s.Path), ".seen-*.json")
+	tmp, err := os.CreateTemp(filepath.Dir(path), "."+strings.TrimSuffix(filepath.Base(path), ".json")+"-*.json")
 	if err != nil {
 		return err
 	}
@@ -173,7 +178,7 @@ func (s Seen) save(entries map[string]seenEntry) error {
 		os.Remove(tmp.Name())
 		return err
 	}
-	return os.Rename(tmp.Name(), s.Path)
+	return os.Rename(tmp.Name(), path)
 }
 
 // stillThere: the booth's folder and its .booth both exist.

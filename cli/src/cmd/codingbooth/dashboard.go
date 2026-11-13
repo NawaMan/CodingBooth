@@ -66,10 +66,19 @@ func runDashboard(version string) {
 	cwd, _ := os.Getwd()
 
 	seen := lifecycle.DefaultSeen(engine)
+	hidden := lifecycle.DefaultHidden()
 	deps := dash.Deps{
 		Snapshot:   func() ([]lifecycle.Booth, []string, error) { return lifecycle.Snapshot(engine) },
 		Remembered: seen.Remember,
-		Forget:     func(b lifecycle.Booth) error { return seen.Forget(b.Name, b.Engine) },
+		Forget: func(b lifecycle.Booth) error {
+			// A forgotten booth is not listed again, so it is not hidden either.
+			if err := hidden.Set(b.Name+"@"+b.Engine, b.CodePath, false); err != nil {
+				return err
+			}
+			return seen.Forget(b.Name, b.Engine)
+		},
+		Hidden: hidden.Keys,
+		Hide:   hidden.Set,
 		Run: func(dir string, args []string) (string, error) {
 			// No stdin: a command that would prompt fails instead of hanging
 			// behind the dashboard.
