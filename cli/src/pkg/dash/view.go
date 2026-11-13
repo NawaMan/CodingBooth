@@ -49,7 +49,7 @@ func (m model) tableRows() int {
 	if m.height <= 0 {
 		return max(1, len(m.rows))
 	}
-	rows := m.height - chromeLines - len(m.warnings)
+	rows := m.height - chromeLines - len(m.warnings) - (m.statusHeight() - 1)
 	if m.compose != nil {
 		rows -= composeLines
 	}
@@ -143,23 +143,81 @@ func (m model) titleLine() string {
 	return title + dimStyle.Render(" · ") + dimStyle.Render(strings.Join(parts, " · "))
 }
 
+// maxStatusLines is how far a question or an error wraps: a refusal ends with
+// what was kept and why, which a one-line cut would hide.
+const maxStatusLines = 3
+
+// statusLine is the status, below the table: a question or an error wrapped to
+// at most maxStatusLines lines, anything else on one.
 func (m model) statusLine() string {
 	if m.prompt != nil {
 		return m.promptLine()
 	}
-	if m.confirm != nil {
-		return confirmStyle.Render(m.fit(m.confirm.plan.Confirm + " [y/N]"))
+	text, style, wraps := m.statusText()
+	if !wraps {
+		return style.Render(m.fit(text))
 	}
-	if m.compose != nil && m.compose.err != "" {
-		return errorStyle.Render(m.fit(m.compose.err))
+	lines := m.wrapStatus(text)
+	for i, line := range lines {
+		lines[i] = style.Render(line)
 	}
-	if m.status == "" {
-		return ""
+	return strings.Join(lines, "\n")
+}
+
+// statusText is what the status line says, how, and whether it wraps.
+func (m model) statusText() (text string, style lipgloss.Style, wraps bool) {
+	switch {
+	case m.confirm != nil:
+		return m.confirm.plan.Confirm + " [y/N]", confirmStyle, true
+	case m.compose != nil && m.compose.err != "":
+		return m.compose.err, errorStyle, true
+	case m.statusErr:
+		return m.status, errorStyle, true
 	}
-	if m.statusErr {
-		return errorStyle.Render(m.fit(m.status))
+	return m.status, lipgloss.NewStyle(), false
+}
+
+// statusHeight is how many lines the status line takes (one even when empty:
+// chromeLines counts it).
+func (m model) statusHeight() int {
+	if m.prompt != nil {
+		return 1
 	}
-	return m.fit(m.status)
+	text, _, wraps := m.statusText()
+	if !wraps {
+		return 1
+	}
+	return len(m.wrapStatus(text))
+}
+
+// wrapStatus breaks text at spaces to the screen's width, in at most
+// maxStatusLines lines; what does not fit ends the last one in "…".
+func (m model) wrapStatus(text string) []string {
+	if m.width <= 0 || text == "" {
+		return []string{text}
+	}
+	var lines []string
+	line := ""
+	for _, word := range strings.Fields(text) {
+		switch {
+		case line == "":
+			line = word
+		case lipgloss.Width(line+" "+word) <= m.width:
+			line += " " + word
+		default:
+			lines = append(lines, line)
+			line = word
+		}
+	}
+	lines = append(lines, line)
+	if len(lines) > maxStatusLines {
+		rest := strings.Join(lines[maxStatusLines-1:], " ")
+		lines = append(lines[:maxStatusLines-1], truncateRight(rest+" ", m.width))
+	}
+	for i := range lines {
+		lines[i] = truncateRight(lines[i], m.width) // a word wider than the screen
+	}
+	return lines
 }
 
 // pickerView lists the ports p offers to open.

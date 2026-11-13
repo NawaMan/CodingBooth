@@ -503,6 +503,7 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 func (m model) run(key, name string, p plan) (tea.Model, tea.Cmd) {
 	if p.Confirm != "" {
 		m.confirm = &pendingConfirm{plan: p, key: key, name: name}
+		m.clampOffset() // a wrapped question takes rows from the table
 		return m, nil
 	}
 	return m.execute(key, name, p)
@@ -563,6 +564,8 @@ func (m model) handlePickerKey(key string) (tea.Model, tea.Cmd) {
 
 func (m *model) setStatus(status string, isErr bool) {
 	m.status, m.statusErr = status, isErr
+	// A wrapped status takes rows from the table; keep the cursor on screen.
+	m.clampOffset()
 }
 
 // currentRow is the selected row (never a header).
