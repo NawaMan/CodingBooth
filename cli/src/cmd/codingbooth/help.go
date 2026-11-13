@@ -606,13 +606,12 @@ VERSION shows the CodingBooth version that built each booth, in the warning
 colour when it is older than what booth would build in its project now or its
 image was rebuilt since; i says which, and how to update it.
 
-Booths are grouped under their git repository, with each worktree listed even
-without a booth. On such a row, s starts a booth there and d removes the
+Booths are grouped by git repository, a blank line between groups: the main
+checkout leads (its NAME in blue), its worktrees are indented under it, each
+listed even without a booth. On such a row, s starts a booth there and d removes the
 worktree (as worktree remove does: never what would be lost). Starting a booth
 takes the terminal (booth may build, or ask before starting a booth that can
-reach the host) and comes back here when it is done. A repository with only its
-main checkout and at most one booth is one row, named after the repository when
-it has no booth.
+reach the host) and comes back here when it is done.
 
 A booth seen here before whose container is gone stays listed as Gone while its
 folder and .booth are still there: enter starts a booth there just for a shell

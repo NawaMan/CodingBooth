@@ -80,7 +80,7 @@ func TestGitColumnShowsEachWorktreesStatus(t *testing.T) {
 	if !strings.Contains(stripANSI(m.View()), "GIT") {
 		t.Fatal("no GIT column")
 	}
-	if cell := m.gitCell(m.rows[2]); cell != "…" {
+	if cell := m.gitCell(m.rows[1]); cell != "…" {
 		t.Errorf("before it is read the cell is %q, want …", cell)
 	}
 
@@ -91,7 +91,7 @@ func TestGitColumnShowsEachWorktreesStatus(t *testing.T) {
 			t.Errorf("view lacks %q:\n%s", want, view)
 		}
 	}
-	if !m.gitDirty(m.rows[2]) || m.gitDirty(m.rows[1]) {
+	if !m.gitDirty(m.rows[1]) || m.gitDirty(m.rows[0]) {
 		t.Error("only the worktree with changes is drawn as dirty")
 	}
 }
@@ -131,14 +131,14 @@ func TestGitReadsOnlyWorktreesOnScreenAFewAtATime(t *testing.T) {
 	}
 	repos := []lifecycle.Repo{repo}
 
-	// Room for 4 rows: the header and three worktrees.
+	// Room for 4 rows: four worktrees (no header line).
 	g := &gitFake{}
 	m, cmd := gitModel(g, repos, chromeLines+4)
 	if m.tableRows() != 4 {
 		t.Fatalf("tableRows = %d", m.tableRows())
 	}
 	_ = drainGit(t, m, cmd)
-	if want := []string{"/r/big/w0", "/r/big/w1", "/r/big/w2"}; !reflect.DeepEqual(sorted(g.read), want) {
+	if want := []string{"/r/big/w0", "/r/big/w1", "/r/big/w2", "/r/big/w3"}; !reflect.DeepEqual(sorted(g.read), want) {
 		t.Errorf("read %v, want only the rows on screen %v", g.read, want)
 	}
 
