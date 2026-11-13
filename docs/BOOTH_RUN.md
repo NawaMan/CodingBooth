@@ -973,6 +973,22 @@ large banner and the usual consent (asks, or refuses without a terminal; `--dind
 Setup, what changes, how to verify it, and the known limits:
 **[Security → Contain it](BOOTH_SECURITY.md#dind-isolation)**.
 
+**Putting the booth itself in a VM (`--booth-isolation kata`, experimental)**
+
+The same Kata setup can run the **whole booth** in its own VM, not just the sidecar:
+
+```bash
+./booth --booth-isolation                      # bare = kata
+./booth --booth-isolation --vm-memory 8g --vm-cpus 4
+export CB_BOOTH_ISOLATION=kata                 # every booth from this shell
+```
+
+Or `booth-isolation = "kata"` in `.booth/config.toml`. The VM defaults to 4 GB and 2 CPUs. With
+`--dind`, the sidecar goes into Kata too. Run-args a VM cannot honour (`--privileged`, `--gpus`,
+`--network`/`--pid`/`--ipc=host`) and `--egress` are refused; where Kata cannot run, the booth is an
+ordinary container behind a large banner. Details:
+**[Security → Put the booth in a VM](BOOTH_SECURITY.md#booth-isolation)**.
+
 ---
 
 ## Public Access (`--public`)

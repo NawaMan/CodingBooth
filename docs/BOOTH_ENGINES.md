@@ -38,6 +38,7 @@ Native copy and inspection commands are covered in the [Booth tools engine table
 | --- | --- | --- | --- |
 | `--dind` (Docker-in-Docker sidecar) | yes | experimental (nested Podman sidecar) | no — refused, or another engine is picked |
 | `--dind-isolation kata` (DinD sidecar in a Kata VM) | experimental — Docker Engine on Linux with KVM; Docker Desktop falls back ([Security](BOOTH_SECURITY.md#dind-isolation)) | no — falls back to the plain sidecar, with a warning | no — `--dind` is refused on apple, or another engine is picked |
+| `--booth-isolation kata` (the booth itself in a Kata VM) | experimental — Docker Engine on Linux with KVM; elsewhere an ordinary container, with a warning ([Security](BOOTH_SECURITY.md#booth-isolation)) | no — an ordinary container, with a warning | no — an ordinary container (each booth is already its own VM there), with a warning |
 | `--egress` (filtered outbound network) | yes | yes | no — refused, or another engine is picked |
 | `--privileged`, `--device`, `--pid/ipc/userns=host`, `--security-opt` run-args | yes | yes | no — the engine rejects them |
 | Bind mounts (`-v`) | yes | yes | yes (single-file mounts have a quirk — see its page) |
@@ -79,7 +80,9 @@ that way out reaches depends on the engine, and the security warning says so:
 
 With `--dind-isolation kata` (experimental) on Docker Engine, `--dind` drops out of this table: the
 sidecar runs in its own Kata VM, which shares nothing from this machine, so booth does not report it
-or ask. See [Security → Contain it](BOOTH_SECURITY.md#dind-isolation).
+or ask. See [Security → Contain it](BOOTH_SECURITY.md#dind-isolation). With `--booth-isolation kata`,
+a way out of the booth itself lands in its own Kata VM; the rows above about mounts still apply to
+what is mounted into it. See [Security → Put the booth in a VM](BOOTH_SECURITY.md#booth-isolation).
 
 Two things that change the picture on a VM-based engine:
 

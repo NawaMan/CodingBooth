@@ -9,6 +9,11 @@
 > container; `--booth-isolation` would isolate the booth itself. What `--dind-isolation kata` learned
 > about Kata (no `--privileged`, embedded DNS, overlayfs on virtio-fs, sizing by annotation) is in
 > [BOOTH_SECURITY.md → Contain it](../BOOTH_SECURITY.md#dind-isolation).
+>
+> **Kata shipped (2026-11-12, experimental):** `--booth-isolation[=kata]` runs the booth itself in a
+> Kata VM — see [BOOTH_SECURITY.md → Put the booth in a VM](../BOOTH_SECURITY.md#booth-isolation).
+> It reuses `--vm-memory` / `--vm-cpus` for the VM size. gVisor, sysbox and sbx below are still
+> designed-only.
 
 ## Context
 
