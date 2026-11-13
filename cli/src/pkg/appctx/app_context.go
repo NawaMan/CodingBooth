@@ -141,6 +141,14 @@ func (ctx AppContext) DindIsolation() string { return ctx.values.Config.DindIsol
 func (ctx AppContext) DindKata() bool        { return ctx.Dind() && ctx.DindIsolation() == "kata" }
 func (ctx AppContext) DindVmMemory() string  { return ctx.values.Config.DindVmMemory }
 func (ctx AppContext) DindVmCpus() string    { return ctx.values.Config.DindVmCpus }
+
+// BoothIsolation is the booth's own isolation mode: "" (an ordinary container)
+// or "kata" (its own Kata VM). BoothKata reports the latter.
+func (ctx AppContext) BoothIsolation() string { return ctx.values.Config.BoothIsolation }
+func (ctx AppContext) BoothKata() bool        { return ctx.BoothIsolation() == "kata" }
+func (ctx AppContext) BoothIsolationUnavailable() string {
+	return ctx.values.Config.BoothIsolationUnavailable
+}
 func (ctx AppContext) DindIsolationUnavailable() string {
 	return ctx.values.Config.DindIsolationUnavailable
 }
@@ -292,6 +300,7 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    DindIsolation:    %q\n", ctx.DindIsolation())
 	fmt.Fprintf(&str, "    DindVmMemory:     %s\n", ctx.DindVmMemory())
 	fmt.Fprintf(&str, "    DindVmCpus:       %s\n", ctx.DindVmCpus())
+	fmt.Fprintf(&str, "    BoothIsolation:   %q\n", ctx.BoothIsolation())
 	fmt.Fprintf(&str, "    Rootless:         %t\n", ctx.Rootless())
 	fmt.Fprintf(&str, "    Sudo:             %t\n", ctx.Sudo())
 	fmt.Fprintf(&str, "    Egress:          %t\n", ctx.Egress())

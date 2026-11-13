@@ -165,6 +165,7 @@ var runFlags = []Flag{
 	flag(File, "--tls-key"),
 	boolFlag("--dind"),
 	enumFlag("--dind-isolation", "kata", "none"),
+	enumFlag("--booth-isolation", "kata", "none"),
 	flag(Text, "--dind-vm-memory"),
 	flag(Text, "--dind-vm-cpus"),
 	boolFlag("--dind-allowed"),

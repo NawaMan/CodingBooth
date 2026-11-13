@@ -165,6 +165,17 @@ type AppConfig struct {
 	// back to the plain privileged sidecar). Never read from config or env.
 	DindIsolationUnavailable string `toml:"-" ignored:"true"`
 
+	// BoothIsolation runs the booth itself under a stronger isolation than an
+	// ordinary container (experimental). "" or "none" = an ordinary container;
+	// "kata" = the booth runs in its own Kata Containers VM (Linux, Docker
+	// Engine, KVM). VmMemory and VmCpus size that VM. With --dind, the sidecar
+	// goes into a Kata VM too. See docs/BOOTH_SECURITY.md#booth-isolation.
+	BoothIsolation string `toml:"booth-isolation,omitempty" envconfig:"CB_BOOTH_ISOLATION"`
+	// BoothIsolationUnavailable is why a requested --booth-isolation could not be
+	// had on this machine (set by booth.ResolveBoothIsolation, which then falls
+	// back to an ordinary container). Never read from config or env.
+	BoothIsolationUnavailable string `toml:"-" ignored:"true"`
+
 	// DindAllowed and PrivilegedAllowed pre-approve a booth that can reach the host (the --dind
 	// sidecar; --privileged-like run-args). They come only from the command line: no config.toml
 	// key and no environment variable, so a cloned repo can never grant them to itself.
@@ -299,6 +310,7 @@ func (config AppConfig) String() string {
 	fmt.Fprintf(&str, "    DindIsolation:     %q\n", config.DindIsolation)
 	fmt.Fprintf(&str, "    DindVmMemory:      %s\n", config.DindVmMemory)
 	fmt.Fprintf(&str, "    DindVmCpus:        %s\n", config.DindVmCpus)
+	fmt.Fprintf(&str, "    BoothIsolation:    %q\n", config.BoothIsolation)
 	fmt.Fprintf(&str, "    Sudo:              %t\n", config.Sudo)
 	fmt.Fprintf(&str, "    Egress:           %t\n", config.Egress)
 	fmt.Fprintf(&str, "    EgressMode:       %q\n", config.EgressMode)
