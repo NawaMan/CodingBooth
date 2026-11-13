@@ -610,7 +610,9 @@ Booths are grouped under their git repository, with each worktree listed even
 without a booth. On such a row, s starts a booth there and d removes the
 worktree (as worktree remove does: never what would be lost). Starting a booth
 takes the terminal (booth may build, or ask before starting a booth that can
-reach the host) and comes back here when it is done.
+reach the host) and comes back here when it is done. A repository with only its
+main checkout and at most one booth is one row, named after the repository when
+it has no booth.
 
 A booth seen here before whose container is gone stays listed as Gone while its
 folder and .booth are still there: enter starts a booth there just for a shell

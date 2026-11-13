@@ -18,6 +18,9 @@ type row struct {
 	repo     *lifecycle.Repo     // the repository the row is under; nil when ungrouped
 	booth    *lifecycle.Booth    // the booth on this row
 	worktree *lifecycle.Worktree // the worktree the booth runs in, or the bare worktree
+	// solo: the repository's only row (its main checkout, with at most one
+	// booth), shown without a header line; NAME says which repository it is.
+	solo bool
 }
 
 // key names a row across refreshes: its booth, else its worktree.
@@ -84,6 +87,16 @@ func buildRows(booths []lifecycle.Booth, repos []lifecycle.Repo) []row {
 	var rows []row
 	for r := range repos {
 		repo := &repos[r]
+		// A repository that is just its main checkout, with at most one booth,
+		// is one line: a header above it would only repeat its path.
+		if len(repo.Worktrees) == 1 && len(placed[place{r, 0}]) <= 1 {
+			solo := row{repo: repo, worktree: &repo.Worktrees[0], solo: true}
+			if in := placed[place{r, 0}]; len(in) == 1 {
+				solo.booth = &booths[in[0]]
+			}
+			rows = append(rows, solo)
+			continue
+		}
 		rows = append(rows, row{header: true, repo: repo})
 		for w := range repo.Worktrees {
 			wt := &repo.Worktrees[w]
