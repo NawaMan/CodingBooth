@@ -110,9 +110,10 @@ func kataBoothFallbackBanner(reason string) string {
 }
 
 // kataBoothRefusals lists the run-args a Kata VM cannot honour: --privileged
-// (Kata then tries to pass every host device into the VM, and fails), GPUs, and
-// the host's network, PID or IPC namespace (the VM has its own kernel, so there
-// is no host namespace to join).
+// (Kata then tries to pass every host device into the VM, and fails), GPUs,
+// /dev/kvm (no nested virtualisation: Kata's guest kernel has no KVM), and the
+// host's network, PID or IPC namespace (the VM has its own kernel, so there is
+// no host namespace to join).
 func kataBoothRefusals(args []string) []string {
 	var refused []string
 	seen := map[string]bool{}
@@ -142,6 +143,12 @@ func kataBoothRefusals(args []string) []string {
 		case "--gpus":
 			next()
 			add("--gpus")
+		case "--device":
+			// Kata's guest kernels are built without KVM: /dev/kvm is a dead node
+			// in the VM, and the Android emulator waits on it until it times out.
+			if host, _, _ := strings.Cut(next(), ":"); host == "/dev/kvm" {
+				add("--device /dev/kvm")
+			}
 		case "--network", "--net", "--pid", "--ipc":
 			if v := next(); v == "host" {
 				add(flag + "=host")

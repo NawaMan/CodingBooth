@@ -71,7 +71,7 @@ Docker is the supported engine. See [Container engines](BOOTH_ENGINES.md).
 | Feature | Needs |
 | --- | --- |
 | `--dind-isolation kata` | Linux, `/dev/kvm`, and Kata Containers' `containerd-shim-kata-v2` on `PATH` |
-| `--booth-isolation kata` | The same; `--privileged`, `--gpus`, host namespaces and host-socket mounts (e.g. `host-audio`) are refused in it |
+| `--booth-isolation kata` | The same; `--privileged`, `--gpus`, `--device /dev/kvm`, host namespaces, host-socket mounts (e.g. `host-audio`) and `--egress` with `--dind` are refused in it |
 | Fast Android emulator | A `/dev/kvm` the booth user can open |
 | `cuda`, to run GPU code (compiling works anywhere) | An NVIDIA GPU, its driver, and the NVIDIA Container Toolkit |
 

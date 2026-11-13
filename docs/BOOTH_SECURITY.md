@@ -569,8 +569,8 @@ privileged sidecar on this machine, reachable from the booth, would undo the VM.
 
 - **What you mount in.** The code folder is shared into the VM (virtio-fs) read-write, as are any
   convenience mounts (§3). Code in the booth can change them, as you.
-- **The network.** The VM has full outbound access and reaches your LAN. `--egress` cannot be
-  combined with it yet.
+- **The network.** The VM has full outbound access and reaches your LAN — unless you add
+  `--egress` ([below](#booth-isolation-egress)).
 - **The hypervisor.** A QEMU/KVM escape would still reach the host.
 
 #### What it needs
@@ -619,12 +619,32 @@ all of this machine, and Kata's 2 GB / 1 CPU cannot hold a Compose stack such as
 - **The DinD sidecar by name:** with `--dind`, the sidecar's name is added to the booth's
   `/etc/hosts` (`--add-host`), since that embedded DNS is what normally resolves it.
 - **Refused:** run-args a VM cannot honour — `--privileged` (Kata then tries to pass every host
-  device into the VM, and fails), `--gpus`, and `--network`/`--pid`/`--ipc=host` (there is no host
-  namespace to join from another kernel). Remove them, or run without `--booth-isolation`.
+  device into the VM, and fails), `--gpus`, `--device /dev/kvm` (Kata's guest kernels are built
+  without KVM, so there is no nested virtualisation: the node is there but dead, and the Android
+  emulator would wait on it until it times out), and `--network`/`--pid`/`--ipc=host` (there is no
+  host namespace to join from another kernel). Remove them, or run without `--booth-isolation`.
 - **Refused: host sockets.** A bind mount whose source is a socket on this machine — the PulseAudio
   and PipeWire sockets of the `host-audio` template, an engine socket — cannot cross into the VM
   (virtio-fs shares files, not sockets); Kata would fail the run with a bare "Input/output error".
   booth refuses it up front and names the socket.
+
+<a id="booth-isolation-egress"></a>
+#### With `--egress`
+
+An ordinary egress booth shares the egress sidecar's network namespace, where Envoy listens on
+`127.0.0.1:15001`. A Kata booth has a kernel of its own and cannot share it, so instead:
+
+- the booth stands **alone on an internal network** (`docker network create --internal`): no
+  gateway, no route out. Nothing leaves it except through the proxy, and there is no firewall rule
+  inside the booth for its root to undo;
+- the egress sidecar is the **gateway**: it is on that network and on an ordinary one, Envoy runs
+  in its namespace as usual, and it publishes the booth's ports and DNATs them on to the booth. It
+  forwards nothing else — its `FORWARD` policy drops all but those connections and their replies;
+- in the booth, `127.0.0.1:15001` is carried to the gateway's Envoy, so `HTTP_PROXY` and
+  everything that names the proxy are as in any egress booth.
+
+`--egress` together with `--dind` is still refused with `--booth-isolation`: there the booth shares
+the DinD sidecar's network.
 
 #### How to tell it is running in Kata
 
@@ -635,11 +655,10 @@ docker inspect -f '{{.HostConfig.Runtime}}' <booth>    # io.containerd.kata.v2
 
 #### Known limits (experimental)
 
-- **Not with `--egress`** yet (refused).
+- **Not with `--egress` and `--dind` together** (refused); `--egress` alone works.
 - **Not with host audio** (`host-audio`): its sockets are refused, see above.
-- **Devices** passed with `--device` are not refused, but may not work inside the VM. `/dev/kvm`
-  does appear in the VM (nested virtualisation), yet the Android emulator did not boot within
-  15 minutes there, so the Android examples do not pass under Kata.
+- **No Android emulator:** `--device /dev/kvm` is refused, see above.
+- **Other devices** passed with `--device` are not refused, but may not work inside the VM.
 - Startup is slower: a VM boots for each booth.
 
 ### Keep the booth's trust store current

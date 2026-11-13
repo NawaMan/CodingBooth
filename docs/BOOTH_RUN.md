@@ -984,8 +984,8 @@ export CB_BOOTH_ISOLATION=kata                 # every booth from this shell
 ```
 
 Or `booth-isolation = "kata"` in `.booth/config.toml`. The VM defaults to 4 GB and 2 CPUs. With
-`--dind`, the sidecar goes into Kata too. Run-args a VM cannot honour (`--privileged`, `--gpus`,
-`--network`/`--pid`/`--ipc=host`) and `--egress` are refused; where Kata cannot run, the booth is an
+`--dind`, the sidecar goes into Kata too. Run-args a VM cannot honour (`--privileged`, `--gpus`, `--device /dev/kvm`,
+`--network`/`--pid`/`--ipc=host`, host-socket mounts) and `--egress` with `--dind` are refused; where Kata cannot run, the booth is an
 ordinary container behind a large banner. Details:
 **[Security → Put the booth in a VM](BOOTH_SECURITY.md#booth-isolation)**.
 

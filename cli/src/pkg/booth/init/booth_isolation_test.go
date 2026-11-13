@@ -91,9 +91,12 @@ func TestCheckBoothIsolationEngine(t *testing.T) {
 	if err := checkBoothIsolationEngine(&appctx.AppConfig{BoothIsolation: "kata", Quiet: true}); err != nil {
 		t.Errorf("kata: unexpected error %v", err)
 	}
-	err := checkBoothIsolationEngine(&appctx.AppConfig{BoothIsolation: "kata", Egress: true, Quiet: true})
-	if err == nil || !strings.Contains(err.Error(), "--egress") {
-		t.Errorf("kata + egress: want a refusal naming --egress, got %v", err)
+	if err := checkBoothIsolationEngine(&appctx.AppConfig{BoothIsolation: "kata", Egress: true, Quiet: true}); err != nil {
+		t.Errorf("kata + egress: unexpected error %v", err)
+	}
+	err := checkBoothIsolationEngine(&appctx.AppConfig{BoothIsolation: "kata", Egress: true, Dind: true, Quiet: true})
+	if err == nil || !strings.Contains(err.Error(), "--egress and --dind") {
+		t.Errorf("kata + egress + dind: want a refusal naming --egress and --dind, got %v", err)
 	}
 }
 

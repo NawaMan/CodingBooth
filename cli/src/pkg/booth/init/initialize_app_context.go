@@ -155,10 +155,12 @@ func validateConfig(config *appctx.AppConfig) {
 	if err := resolveEngineConfig(config); err != nil {
 		panic(err)
 	}
-	if err := checkDindIsolationEngine(config); err != nil {
+	// Booth isolation first: with --dind it put the sidecar in Kata itself, so a
+	// refusal should name the flag the user gave.
+	if err := checkBoothIsolationEngine(config); err != nil {
 		panic(err)
 	}
-	if err := checkBoothIsolationEngine(config); err != nil {
+	if err := checkDindIsolationEngine(config); err != nil {
 		panic(err)
 	}
 	if err := validateEgressConfig(config); err != nil {

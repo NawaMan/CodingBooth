@@ -11,7 +11,8 @@
 # under another kernel, in a VM of the default size; coder is still the host's
 # uid and its files land on the host as that uid; names resolve; the front door
 # answers; and the host's disks are not in the booth's /dev. Then a second booth
-# with --dind: its sidecar is in Kata too, and the booth reaches it by name.
+# with --dind: its sidecar is in Kata too, and the booth reaches it by name. And
+# a third with --egress: alone on an internal network behind the egress gateway.
 #
 # Skips — exit 0 — where Kata cannot run: macOS, Windows, Docker Desktop, no
 # /dev/kvm, or no Kata installed (kata_supported in tests/common--source.sh).
@@ -33,8 +34,15 @@ DIND_NAME="$NAME-dind"
 DIND_PORT="$(pick_free_port_other_than "$PORT")"
 SIDECAR="$DIND_NAME-$DIND_PORT-dind"
 NET="$DIND_NAME-$DIND_PORT-net"
-trap 'docker rm -f "$NAME" "$DIND_NAME" "$SIDECAR" >/dev/null 2>&1 || true
-      docker network rm "$NET" >/dev/null 2>&1 || true
+EGRESS_NAME="$NAME-egress"
+EGRESS_PORT="$(pick_free_port_other_than "$PORT" "$DIND_PORT")"
+EGRESS_PREFIX="$EGRESS_NAME-$EGRESS_PORT-egress"
+trap 'docker rm -f "$NAME" "$DIND_NAME" "$SIDECAR" "$EGRESS_NAME" "$EGRESS_PREFIX-proxy" "$EGRESS_PREFIX-netns" >/dev/null 2>&1 || true
+      for _ in 1 2 3 4 5; do  # a Kata VM can take a moment to let go of its network
+          docker network rm "$NET" "$EGRESS_PREFIX-int" "$EGRESS_PREFIX-net" >/dev/null 2>&1 || true
+          docker network ls --format "{{.Name}}" | grep -q "^$NAME-" || break
+          sleep 1
+      done
       rm -rf "$TEST_DIR" 2>/dev/null || true' EXIT
 mkdir -p "$TEST_DIR/.booth"
 
@@ -117,5 +125,31 @@ for _ in {1..30}; do
     sleep 2
 done
 check "$(ok test "$PING" == "OK")" 10 "The booth reaches the sidecar's daemon by name" "ping: '$PING'"
+
+# 12-15. With --egress: the booth is still a Kata VM, alone on an internal
+# network; its front door answers through the egress gateway, the proxy lets
+# allowed traffic out, and nothing else leaves — even for root.
+STATUS=0
+OUTPUT=$(cd "$TEST_DIR" && CB_EGRESS_ALLOWLIST=pypi.org no_tty_run "$BOOTH" --name "$EGRESS_NAME" --variant base --port "$EGRESS_PORT" \
+    --booth-isolation --egress --daemon --keep-alive </dev/null 2>&1) || STATUS=$?
+EGRESS_RUN=$(docker inspect -f '{{.HostConfig.Runtime}} {{.HostConfig.NetworkMode}}' "$EGRESS_NAME" 2>&1 || true)
+check "$(ok test $STATUS -eq 0 -a "$EGRESS_RUN" == "io.containerd.kata.v2 $EGRESS_PREFIX-int")" 12 \
+    "With --egress the booth runs in Kata, on the internal network" "exit $STATUS, '$EGRESS_RUN' $(tail -3 <<<"$OUTPUT")"
+CODE="000"
+for _ in {1..60}; do
+    CODE=$(curl -s -o /dev/null -m 3 -w '%{http_code}' "http://127.0.0.1:$EGRESS_PORT/" 2>/dev/null || true)
+    [[ "$CODE" != "000" ]] && break
+    sleep 2
+done
+check "$(ok test "$CODE" != "000")" 13 "Its port $EGRESS_PORT answers on the host, through the gateway" "http code: $CODE"
+PROXIED="000"
+for _ in {1..15}; do
+    PROXIED=$(in_booth "$EGRESS_NAME" 'curl -s -o /dev/null -m 10 -w "%{http_code}" -x http://127.0.0.1:15001 https://pypi.org')
+    [[ "$PROXIED" =~ ^[23] ]] && break
+    sleep 2
+done
+check "$(ok test -n "$PROXIED" -a "${PROXIED:0:1}" != "0")" 14 "An allowed site is reached through 127.0.0.1:15001" "http code: '$PROXIED'"
+DIRECT=$(docker exec "$EGRESS_NAME" bash -c 'curl -s -o /dev/null -m 8 -w "%{http_code}" --noproxy "*" https://pypi.org; echo " exit $?"' 2>&1 || true)
+check "$(ok test "${DIRECT%% *}" == "000")" 15 "A direct connection fails, even as root" "$DIRECT"
 
 exit $FAILED

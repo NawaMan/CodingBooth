@@ -80,9 +80,19 @@ if kata_supported; then
     check 15 "--privileged and --gpus are refused"     has "$REFUSED" "cannot run a booth with --privileged, --gpus"
     check 16 "Refused before anything runs"            has_not "$REFUSED" "docker \\\\"
 
+    KVM=$(booth_dryrun --booth-isolation --device /dev/kvm)
+    LAST_OUTPUT="$KVM"
+    check 30 "--device /dev/kvm is refused (no nested KVM in Kata)" has "$KVM" "cannot run a booth with --device /dev/kvm"
+
     EGRESS=$(booth_dryrun --booth-isolation --egress)
     LAST_OUTPUT="$EGRESS"
-    check 17 "--egress is refused"                     has "$EGRESS" "cannot be combined with --egress"
+    check 17 "--egress: the booth is on an internal network" has "$EGRESS" "create --internal kata-ws-10000-egress-int"
+    check 26 "--egress: the gateway forwards only DNAT"  has "$EGRESS" "iptables -P FORWARD DROP"
+    check 27 "--egress: the booth stands on that network, not in a shared netns" has "$EGRESS" "--network kata-ws-10000-egress-int"
+    check 28 "--egress: localhost:15001 is carried to the proxy" has "$EGRESS" "BOOTH_DIND_FORWARD=15001"
+    EGRESS_DIND=$(booth_dryrun --booth-isolation --egress --dind)
+    LAST_OUTPUT="$EGRESS_DIND"
+    check 29 "--egress with --dind is refused, naming --booth-isolation" has "$EGRESS_DIND" "booth-isolation kata cannot be combined with --egress and --dind"
 
     DIND=$(booth_dryrun --booth-isolation --dind)
     LAST_OUTPUT="$DIND"
@@ -97,7 +107,7 @@ if kata_supported; then
     LAST_OUTPUT="$SOCKET"
     check 25 "A host-socket mount is refused, by name" has "$SOCKET" "cannot mount a host socket into the VM ($SOCK)"
 else
-    echo "SKIP: tests 1-20 and 25 (the Kata shape) need a host that runs Kata; the fallback below still runs."
+    echo "SKIP: tests 1-20 and 25-30 (the Kata shape) need a host that runs Kata; the fallback below still runs."
 fi
 
 # --- Everywhere: no Kata on this machine → loud fallback to an ordinary container

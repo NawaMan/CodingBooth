@@ -50,13 +50,31 @@ func SetupEgress(ctx appctx.AppContext) appctx.AppContext {
 		builder.CreatedEgressNet = createdNet
 
 		extraPorts := extractPortFlags(ctx.RunArgs())
-		if err := startEgressNetnsOwner(ctx, netnsOwner, netName, ctx.PortNumber(), extraPorts); err != nil {
-			fmt.Fprintf(os.Stderr, "❌ Failed to start egress netns sidecar: %v\n", err)
-			os.Exit(1)
-		}
+		if ctx.BoothKata() {
+			// A Kata booth cannot share the sidecar's namespace: it goes on an
+			// internal network behind the sidecar instead (egress_kata.go).
+			intNet := getEgressInternalNet(ctx)
+			if _, err := createInternalNetwork(ctx, intNet); err != nil {
+				fmt.Fprintf(os.Stderr, "❌ Failed to create the egress internal network: %v\n", err)
+				os.Exit(1)
+			}
+			if err := startKataEgressGateway(ctx, netnsOwner, netName, intNet, extraPorts); err != nil {
+				fmt.Fprintf(os.Stderr, "❌ Failed to start egress gateway sidecar: %v\n", err)
+				os.Exit(1)
+			}
+			builder.RunArgs = stripNetworkAndPortFlags(ctx.RunArgs())
+			for _, arg := range kataEgressBoothArgs(intNet, netnsOwner, sidecarAddress(ctx, netnsOwner, intNet)) {
+				builder.CommonArgs.Append(ilist.NewList[string](arg...))
+			}
+		} else {
+			if err := startEgressNetnsOwner(ctx, netnsOwner, netName, ctx.PortNumber(), extraPorts); err != nil {
+				fmt.Fprintf(os.Stderr, "❌ Failed to start egress netns sidecar: %v\n", err)
+				os.Exit(1)
+			}
 
-		builder.RunArgs = stripNetworkAndPortFlags(ctx.RunArgs())
-		builder.CommonArgs.Append(ilist.NewList[string]("--network", fmt.Sprintf("container:%s", netnsOwner)))
+			builder.RunArgs = stripNetworkAndPortFlags(ctx.RunArgs())
+			builder.CommonArgs.Append(ilist.NewList[string]("--network", fmt.Sprintf("container:%s", netnsOwner)))
+		}
 	}
 
 	ctx = builder.Build()
@@ -485,5 +503,8 @@ func cleanupEgressResources(ctx appctx.AppContext, flags *docker.DockerFlags) {
 	_ = docker.Docker(*flags, "stop", ilist.NewList(ilist.NewList(getEgressNetnsName(ctx))))
 	if ctx.CreatedEgressNet() {
 		_ = docker.Docker(*flags, "network", ilist.NewList(ilist.NewList("rm", getEgressNet(ctx))))
+	}
+	if ctx.BoothKata() {
+		_ = docker.Docker(*flags, "network", ilist.NewList(ilist.NewList("rm", getEgressInternalNet(ctx))))
 	}
 }
