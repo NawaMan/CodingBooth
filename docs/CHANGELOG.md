@@ -36,7 +36,9 @@ This file contains a list of changes for each released version.
   booth, in the warning colour when it is older than its project now uses or its image was
   rebuilt since, a GIT column shows each worktree's changed files, commits ahead/behind main
   (the main checkout: its upstream) and whether its branch has been merged, and `e` / `K`
-  open it in your editor or GitKraken. See [booth lifecycle → dashboard](BOOTH_LIFECYCLE.md#dashboard).
+  open it in your editor or GitKraken. A booth the dashboard has seen stays listed as `Gone` once
+  its container is removed, while its folder and `.booth` are still there: `enter` brings up a
+  booth there for a shell, `d` forgets it. See [booth lifecycle → dashboard](BOOTH_LIFECYCLE.md#dashboard).
 - **`booth worktree remove` names the files in the way.** Refusing a worktree with uncommitted or
   untracked work said only how many files; it now names the first three (`… and 2 more`), and
   `booth dashboard` shows that reason on its status line instead of just the advice to commit.

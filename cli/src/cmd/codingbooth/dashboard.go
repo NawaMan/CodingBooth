@@ -65,8 +65,11 @@ func runDashboard(version string) {
 	home, _ := os.UserHomeDir()
 	cwd, _ := os.Getwd()
 
+	seen := lifecycle.DefaultSeen(engine)
 	deps := dash.Deps{
-		Snapshot: func() ([]lifecycle.Booth, []string, error) { return lifecycle.Snapshot(engine) },
+		Snapshot:   func() ([]lifecycle.Booth, []string, error) { return lifecycle.Snapshot(engine) },
+		Remembered: seen.Remember,
+		Forget:     func(b lifecycle.Booth) error { return seen.Forget(b.Name, b.Engine) },
 		Run: func(dir string, args []string) (string, error) {
 			// No stdin: a command that would prompt fails instead of hanging
 			// behind the dashboard.

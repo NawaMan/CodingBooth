@@ -36,6 +36,8 @@ type plan struct {
 	Dir string
 	// Danger shows the question in the error colour: answering y loses work.
 	Danger bool
+	// Forget, when set, drops this remembered booth instead of running a command.
+	Forget *lifecycle.Booth
 }
 
 // planFor decides what key does to booth. A key that does not apply to the
@@ -45,6 +47,9 @@ func planFor(key string, booth lifecycle.Booth) (plan, string) {
 	with := func(subcommand string, extra ...string) []string {
 		args := append([]string{subcommand}, target...)
 		return append(args, extra...)
+	}
+	if booth.Gone() {
+		return gonePlan(key, booth)
 	}
 
 	switch key {
@@ -110,6 +115,27 @@ func planFor(key string, booth lifecycle.Booth) (plan, string) {
 				Confirm: fmt.Sprintf("%s is not running. Start it for a shell? It stops again when the shell ends.", booth.Name)}, ""
 		}
 		return plan{Verb: "shell", Args: with("shell"), Interactive: true}, ""
+	}
+	return plan{}, ""
+}
+
+// gonePlan is what key does to a remembered booth whose container is gone:
+// Enter makes one for a shell, d forgets it, the rest need a container.
+func gonePlan(key string, booth lifecycle.Booth) (plan, string) {
+	switch key {
+	case keyShell:
+		// The same --run as a bare worktree's: a booth for the shell, under
+		// its old name, removed again when the shell ends.
+		return plan{Verb: "open a shell in", Interactive: true, Hold: true, Dir: booth.CodePath,
+			Args:    []string{"shell", "--run", "--name", booth.Name, "--engine", booth.Engine, "--code", booth.CodePath},
+			Confirm: fmt.Sprintf("%s has no container. Start a terminal booth for a shell? It is removed when the shell ends.", booth.Name)}, ""
+	case keyRemove:
+		forget := booth
+		return plan{Verb: "forget", Forget: &forget,
+			Confirm: fmt.Sprintf("Forget %s? Its folder is not touched.", booth.Name),
+			Done:    "Forgot " + booth.Name + "."}, ""
+	case keyStart, keyStop, keyRestart, keyOpen:
+		return plan{}, booth.Name + " has no container; Enter opens a shell in its folder."
 	}
 	return plan{}, ""
 }

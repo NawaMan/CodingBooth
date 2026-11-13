@@ -119,7 +119,7 @@ seconds (`--interval 5s` to change that) and takes `--engine` like the other com
 | `s` | Start it, as `booth start` does: a daemon booth's start, and an interactive booth's session, take the terminal and come back to the dashboard. On a worktree with no booth: start one there (`booth --worktree <name> --daemon`) |
 | `x` | Stop it |
 | `r` | Restart it |
-| `d` | Delete it and its home volume (`booth remove`, `--force` when it is running). On a worktree with no booth: delete the worktree. It reads the worktree's git status first. A clean one is deleted with `booth worktree remove <name>`, which keeps a branch with commits found nowhere else. One with uncommitted files or unmerged commits, or whose status cannot be read, gets a warning in red that names what is lost and urges a last look (`t`, `e`, `K`); `y` force-deletes it with `booth worktree remove <name> --force --yes`, which discards that work, its branch and its booths' volumes |
+| `d` | Delete it and its home volume (`booth remove`, `--force` when it is running). On a gone booth: forget it. On a worktree with no booth: delete the worktree. It reads the worktree's git status first. A clean one is deleted with `booth worktree remove <name>`, which keeps a branch with commits found nowhere else. One with uncommitted files or unmerged commits, or whose status cannot be read, gets a warning in red that names what is lost and urges a last look (`t`, `e`, `K`); `y` force-deletes it with `booth worktree remove <name> --force --yes`, which discards that work, its branch and its booths' volumes |
 | `n` | New worktree in the selected row's repository: type a name (the new branch, from the repository's current commit); booth creates it and starts its booth (`booth --worktree <name> --daemon`) |
 | `R` | Refresh now |
 | `q` | Quit |
@@ -135,6 +135,17 @@ that is not keep-alive). Each action runs the same `booth` command you would typ
 and its engine, so it behaves exactly as it does from the command line. An engine that cannot answer
 shows as a warning line, and the rest of the table stays. `booth dashboard` needs a terminal; scripts use
 `booth list --json`.
+
+**Booths it has seen stay listed.** The dashboard remembers every booth it has shown, in
+`~/.cache/codingbooth/dashboard/seen.json` (the user cache directory). When such a booth's container
+is gone — removed by `d`, `booth remove`, or a `--run` that cleaned up after itself — it stays on its
+row as `Gone`, under its repository and worktree, for as long as its folder and that folder's `.booth`
+are still there (an express booth's own `.booth` folder). The title counts them (`3 booths · 2 gone`).
+On a gone booth, `enter` asks, then starts a terminal (base) booth under its old name for a shell and
+removes it afterwards (`booth shell --run --name <name> --code <folder>`); `d` asks, then forgets it
+(the folder is not touched); `t`, `e` and `K` open its folder; keys that need a container say so. A
+booth whose engine did not answer is not shown as gone, and `--engine` shows only that engine's.
+Only booths the dashboard has seen are remembered; deleting the cache file forgets them all.
 
 **Grouped by repository.** Booths are listed under the git repository their code is in: the
 repository `booth dashboard` runs in first, marked `(here)`, then the others that have a booth, by name.

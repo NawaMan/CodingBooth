@@ -51,6 +51,13 @@ type Deps struct {
 	// Freshness says which booths are behind what `booth` would build now
 	// (keyed name@engine); nil marks none.
 	Freshness func(booths []lifecycle.Booth) map[string]lifecycle.Fresh
+	// Remembered records the live booths and returns the booths seen before
+	// whose containers are gone but whose folders and .booth are still there
+	// (State lifecycle.StateGone); nil remembers nothing. warnings are the
+	// snapshot's: an engine that did not answer has no gone booths.
+	Remembered func(live []lifecycle.Booth, warnings []string) []lifecycle.Booth
+	// Forget drops a remembered booth (d on a gone booth's row).
+	Forget func(booth lifecycle.Booth) error
 	// Repos finds the repositories to group booths under; nil shows a flat list.
 	Repos func(booths []lifecycle.Booth) []lifecycle.Repo
 	// Editor is the command that opens path in the user's editor; it gets the
@@ -238,16 +245,19 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) fetch(seq int) tea.Cmd {
-	snapshot, findRepos, freshness := m.deps.Snapshot, m.deps.Repos, m.deps.Freshness
+	snapshot, findRepos, freshness, remembered := m.deps.Snapshot, m.deps.Repos, m.deps.Freshness, m.deps.Remembered
 	return func() tea.Msg {
 		booths, warnings, err := snapshot()
 		var repos []lifecycle.Repo
 		var fresh map[string]lifecycle.Fresh
-		if err == nil && findRepos != nil {
-			repos = findRepos(booths)
-		}
 		if err == nil && freshness != nil {
 			fresh = freshness(booths)
+		}
+		if err == nil && remembered != nil {
+			booths = append(booths, remembered(booths, warnings)...)
+		}
+		if err == nil && findRepos != nil {
+			repos = findRepos(booths)
 		}
 		return snapshotMsg{seq: seq, booths: booths, repos: repos, fresh: fresh, warnings: warnings, err: err}
 	}
@@ -487,6 +497,13 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 	}
 
 	booth := *r.booth
+	if booth.Gone() {
+		switch key {
+		case keyPorts, keyLog, keyMessage:
+			m.setStatus(booth.Name+" has no container; Enter opens a shell in its folder.", false)
+			return m, nil
+		}
+	}
 	switch key {
 	case keyPorts:
 		if !booth.Running() {
@@ -566,6 +583,16 @@ func (m model) execute(key, name string, p plan) (tea.Model, tea.Cmd) {
 		m.busy[key] = p.Busy
 		m.setStatus("", false)
 	}
+	if p.Forget != nil {
+		forget, booth := m.deps.Forget, *p.Forget
+		return m, func() tea.Msg {
+			var err error
+			if forget != nil {
+				err = forget(booth)
+			}
+			return actionDoneMsg{key: key, name: name, plan: p, err: err}
+		}
+	}
 	run := m.deps.Run
 	return m, func() tea.Msg {
 		output, err := run(p.Dir, p.Args)
@@ -611,10 +638,11 @@ func (m model) currentRow() (row, bool) {
 	return m.rows[m.cursor], true
 }
 
-// current is the selected booth, when the selected row has one.
+// current is the selected booth, when the selected row has one with a
+// container (a gone booth has nothing to show in the detail pane).
 func (m model) current() (lifecycle.Booth, bool) {
 	r, ok := m.currentRow()
-	if !ok || r.booth == nil {
+	if !ok || r.booth == nil || r.booth.Gone() {
 		return lifecycle.Booth{}, false
 	}
 	return *r.booth, true
