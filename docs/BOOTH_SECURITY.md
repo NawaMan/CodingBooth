@@ -588,6 +588,13 @@ container** — never silently:
 
 It does not ask first: an ordinary container is what every other booth is.
 
+On **engine apple** there is no banner: Apple container already runs each booth in a VM of its own,
+so there is nothing for Kata to add. The run says so in one line and goes on as usual:
+
+```
+ℹ️  --booth-isolation: engine apple already runs each booth in its own VM; nothing more to do.
+```
+
 #### Sizing the VM
 
 `--vm-memory` / `--vm-cpus` (also `vm-memory` / `vm-cpus`, `CB_VM_MEMORY` / `CB_VM_CPUS`) — the same
@@ -595,17 +602,29 @@ settings that size the booth's VM on Apple container. The default is **4 GB and 
 default (2 GB, 1 CPU) is too small to build most projects. booth sets them through Kata's
 annotations, because `-m` / `--cpus` would only add to Kata's default VM.
 
+With `--dind`, the sidecar's VM gets the same default (4 GB, 2 CPUs) — a plain sidecar would have had
+all of this machine, and Kata's 2 GB / 1 CPU cannot hold a Compose stack such as Appwrite's.
+`--dind-vm-memory` / `--dind-vm-cpus` size it instead.
+
 #### What booth does differently for a Kata booth
 
 - **DNS:** the booth gets a `resolv.conf` naming this machine's real resolvers (from
   `/run/systemd/resolve/resolv.conf` or `/etc/resolv.conf`, loopback entries dropped). Docker's
   embedded DNS (`127.0.0.11`), which a booth on a user-defined network such as the DinD network is
   given, does not answer inside the VM.
+- **Open-file limit:** the booth gets Docker Engine's usual `nofile=1024:524288` (`--ulimit`), as
+  does a Kata DinD sidecar. Kata would otherwise start it with 2^30, and programs that size a table
+  by that limit run out of memory in the VM — each Erlang VM took 1.4 GB. A `--ulimit nofile=…`
+  of your own in run-args wins.
 - **The DinD sidecar by name:** with `--dind`, the sidecar's name is added to the booth's
   `/etc/hosts` (`--add-host`), since that embedded DNS is what normally resolves it.
 - **Refused:** run-args a VM cannot honour — `--privileged` (Kata then tries to pass every host
   device into the VM, and fails), `--gpus`, and `--network`/`--pid`/`--ipc=host` (there is no host
   namespace to join from another kernel). Remove them, or run without `--booth-isolation`.
+- **Refused: host sockets.** A bind mount whose source is a socket on this machine — the PulseAudio
+  and PipeWire sockets of the `host-audio` template, an engine socket — cannot cross into the VM
+  (virtio-fs shares files, not sockets); Kata would fail the run with a bare "Input/output error".
+  booth refuses it up front and names the socket.
 
 #### How to tell it is running in Kata
 
@@ -617,8 +636,10 @@ docker inspect -f '{{.HostConfig.Runtime}}' <booth>    # io.containerd.kata.v2
 #### Known limits (experimental)
 
 - **Not with `--egress`** yet (refused).
-- **Devices** passed with `--device` (for example `/dev/kvm` for the Android emulator) are not
-  refused, but may not work inside the VM.
+- **Not with host audio** (`host-audio`): its sockets are refused, see above.
+- **Devices** passed with `--device` are not refused, but may not work inside the VM. `/dev/kvm`
+  does appear in the VM (nested virtualisation), yet the Android emulator did not boot within
+  15 minutes there, so the Android examples do not pass under Kata.
 - Startup is slower: a VM boots for each booth.
 
 ### Keep the booth's trust store current

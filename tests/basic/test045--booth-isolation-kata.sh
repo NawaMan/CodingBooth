@@ -99,6 +99,10 @@ check "$(ok test "$CODE" != "000")" 7 "The booth's port $PORT answers on the hos
 BOOTH_DISKS=$(in_booth "$NAME" 'ls /dev | grep -E "^(nvme|sd[a-z])" | tr "\n" " "; echo "[done]"' | tail -1)
 check "$(ok test "$BOOTH_DISKS" == "[done]")" 8 "None of the host's nvme/sd disks are in the booth" "$BOOTH_DISKS"
 
+# 11. Docker's usual open-file limit, not Kata's 2^30 (Erlang's VM sizes its port table by it).
+NOFILE=$(in_booth "$NAME" 'ulimit -n')
+check "$(ok test "$NOFILE" == "1024")" 11 "The booth's open-file limit is Docker's usual 1024, not Kata's 2^30" "ulimit -n: '$NOFILE'"
+
 # 9-10. With --dind: the sidecar goes into Kata too, and the booth reaches its daemon by name.
 STATUS=0
 OUTPUT=$(cd "$TEST_DIR" && no_tty_run "$BOOTH" --name "$DIND_NAME" --variant base --port "$DIND_PORT" \

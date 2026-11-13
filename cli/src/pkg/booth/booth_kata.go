@@ -55,6 +55,11 @@ func ResolveBoothIsolation(ctx appctx.AppContext) (appctx.AppContext, error) {
 			return ctx, fmt.Errorf("invalid vm-cpus %q (expected a whole number of CPUs, 1 or more)", cpus)
 		}
 	}
+	homeDir, _ := os.UserHomeDir()
+	if sockets := kataBoothSocketMounts(flattenUserArgs(ctx), homeDir, isHostSocket); len(sockets) > 0 {
+		return ctx, fmt.Errorf("--booth-isolation kata cannot mount a host socket into the VM (%s): a Kata VM shares files with the host, not sockets. Remove the mount (for host audio: the host-audio template), or run without --booth-isolation. See docs/BOOTH_SECURITY.md#booth-isolation",
+			strings.Join(sockets, ", "))
+	}
 	if refused := kataBoothRefusals(flattenUserArgs(ctx)); len(refused) > 0 {
 		return ctx, fmt.Errorf("--booth-isolation kata cannot run a booth with %s: a Kata VM does not support %s. Remove %s, or run without --booth-isolation. See docs/BOOTH_SECURITY.md#booth-isolation",
 			strings.Join(refused, ", "), pluralIt(len(refused)), pluralIt(len(refused)))
@@ -146,6 +151,43 @@ func kataBoothRefusals(args []string) []string {
 	return refused
 }
 
+// kataBoothSocketMounts lists the bind-mount sources that are sockets on the host
+// (the PulseAudio and PipeWire sockets, an engine socket). Kata shares the host's
+// files with the VM over virtio-fs, which cannot carry a socket: the run fails with
+// a bare "Input/output error" from the Kata agent, so it is refused up front instead.
+func kataBoothSocketMounts(args []string, homeDir string, isSocket func(string) bool) []string {
+	var sockets []string
+	for i := 0; i < len(args); i++ {
+		flag, spec, inline := strings.Cut(args[i], "=")
+		if flag != "-v" && flag != "--volume" && flag != "--mount" {
+			continue
+		}
+		if !inline {
+			if i+1 >= len(args) {
+				break
+			}
+			i++
+			spec = args[i]
+		}
+		source := volumeSource(spec)
+		if flag == "--mount" {
+			source, _ = parseMountSpec(spec)
+		}
+		if !isBindMountSource(source) {
+			continue
+		}
+		if isSocket(expandHostPath(os.ExpandEnv(source), homeDir)) {
+			sockets = append(sockets, source)
+		}
+	}
+	return sockets
+}
+
+func isHostSocket(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && info.Mode()&os.ModeSocket != 0
+}
+
 // kataBoothRunArgs is what --booth-isolation kata adds to the booth's own
 // `docker run`: Kata's runtime, the VM's size (Kata reads it from annotations;
 // -m/--cpus would only add to its default), and a resolv.conf naming the host's
@@ -213,5 +255,34 @@ func SetupBoothIsolation(ctx appctx.AppContext) (appctx.AppContext, error) {
 	for _, arg := range kataBoothRunArgs(ctx.VmMemory(), ctx.VmCpus(), resolvConf) {
 		builder.CommonArgs.Append(ilist.NewList[string](arg...))
 	}
+	if !setsNofileUlimit(flattenUserArgs(ctx)) {
+		builder.CommonArgs.Append(ilist.NewList[string]("--ulimit", kataNofile))
+	}
 	return builder.Build(), nil
+}
+
+// kataNofile is the open-file limit a Kata booth (and a Kata DinD sidecar)
+// gets: Docker Engine's usual one. Kata otherwise starts the container with
+// 2^30 (soft and hard), and programs that size a table by that limit run out of
+// memory in the VM: Erlang's VM takes 1.4 GB for its port table, and two of
+// them are OOM-killed in a 4g VM.
+const kataNofile = "nofile=1024:524288"
+
+// setsNofileUlimit reports whether the run-args already set the open-file limit,
+// which then wins over kataNofile.
+func setsNofileUlimit(args []string) bool {
+	for i := 0; i < len(args); i++ {
+		flag, value, inline := strings.Cut(args[i], "=")
+		if flag != "--ulimit" {
+			continue
+		}
+		if !inline && i+1 < len(args) {
+			i++
+			value = args[i]
+		}
+		if strings.HasPrefix(value, "nofile=") {
+			return true
+		}
+	}
+	return false
 }

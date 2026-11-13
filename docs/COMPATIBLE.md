@@ -62,7 +62,8 @@ Docker is the supported engine. See [Container engines](BOOTH_ENGINES.md).
 | `--dind` (the `dind` template) | Apple container | Refused for now; with no engine chosen, the run goes to Docker or Podman ([details](CONTAINER_SUPPORT.md)) |
 | `--egress` (allowlist, Envoy, read-only) | Apple container | Same |
 | `--dind-isolation kata` | Podman | Falls back to the plain sidecar ([details](BOOTH_SECURITY.md#contain-it---dind-isolation-kata-experimental)) |
-| `--booth-isolation kata` | Podman, Apple container | An ordinary container instead, with a warning ([details](BOOTH_SECURITY.md#booth-isolation)) |
+| `--booth-isolation kata` | Podman | An ordinary container instead, with a warning ([details](BOOTH_SECURITY.md#booth-isolation)) |
+| `--booth-isolation kata` | Apple container | Not needed: each booth is already its own VM; a one-line note |
 | Any booth | Linux rootless Docker, or userns-remap | Not supported: use rootful Docker Engine, or Docker Desktop |
 
 ## Hardware
@@ -70,7 +71,7 @@ Docker is the supported engine. See [Container engines](BOOTH_ENGINES.md).
 | Feature | Needs |
 | --- | --- |
 | `--dind-isolation kata` | Linux, `/dev/kvm`, and Kata Containers' `containerd-shim-kata-v2` on `PATH` |
-| `--booth-isolation kata` | The same; `--privileged`, `--gpus` and host namespaces are refused in it |
+| `--booth-isolation kata` | The same; `--privileged`, `--gpus`, host namespaces and host-socket mounts (e.g. `host-audio`) are refused in it |
 | Fast Android emulator | A `/dev/kvm` the booth user can open |
 | `cuda`, to run GPU code (compiling works anywhere) | An NVIDIA GPU, its driver, and the NVIDIA Container Toolkit |
 
