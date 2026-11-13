@@ -197,3 +197,124 @@ func TestNoOrderStoreKeepsRowsAsBuilt(t *testing.T) {
 		t.Errorf("rows = %v, want %v", got, want)
 	}
 }
+
+// sepSummary is rowSummary with separators drawn as "---".
+func sepSummary(rows []row) []string {
+	out := rowSummary(rowsWithoutSeps(rows))
+	var all []string
+	i := 0
+	for _, r := range rows {
+		if r.sep != "" {
+			all = append(all, "---")
+			continue
+		}
+		all = append(all, out[i])
+		i++
+	}
+	return all
+}
+
+func rowsWithoutSeps(rows []row) []row {
+	var out []row
+	for _, r := range rows {
+		if r.sep == "" {
+			out = append(out, r)
+		}
+	}
+	return out
+}
+
+func TestSeparatorIsAddedBelowTheGroupAndSelected(t *testing.T) {
+	store := &orderStore{}
+	booths, repos := orderRepos()
+	m := orderModel(store, booths, repos)
+	m, _ = press(t, m, "g", "-") // on alpha
+	want := []string{"(none) @main", "---", "Mid", "(none) @main", "(none) @a-idea", "fixer @b-fix"}
+	if got := sepSummary(m.rows); !reflect.DeepEqual(got, want) {
+		t.Fatalf("rows = %v, want %v", got, want)
+	}
+	if r, _ := m.currentRow(); r.sep == "" {
+		t.Errorf("cursor not on the new separator")
+	}
+	if got := store.keys()[1]; got != "separator:1" {
+		t.Errorf("saved second = %s, want separator:1", got)
+	}
+	// On a linked worktree it goes below the whole repository.
+	m, _ = press(t, m, "G", "-")
+	if got := sepSummary(m.rows); got[len(got)-1] != "---" {
+		t.Errorf("separator not below zeta's worktrees: %v", got)
+	}
+	if got := store.keys()[4]; got != "separator:2" {
+		t.Errorf("saved = %v, want separator:2 right after zeta", store.keys())
+	}
+	view := stripANSI(m.View())
+	if !strings.Contains(view, "────") || !strings.Contains(view, "- separator") {
+		t.Errorf("separator line or help missing:\n%s", view)
+	}
+}
+
+func TestSeparatorMovesAndIsDeleted(t *testing.T) {
+	store := &orderStore{}
+	booths, repos := orderRepos()
+	m := orderModel(store, booths, repos)
+	m, _ = press(t, m, "g", "-", "ctrl+down")
+	want := []string{"(none) @main", "Mid", "---", "(none) @main", "(none) @a-idea", "fixer @b-fix"}
+	if got := sepSummary(m.rows); !reflect.DeepEqual(got, want) {
+		t.Fatalf("rows = %v, want %v", got, want)
+	}
+	// Reopened: still there.
+	m = orderModel(store, booths, repos)
+	if got := sepSummary(m.rows); !reflect.DeepEqual(got, want) {
+		t.Fatalf("after reopening rows = %v, want %v", got, want)
+	}
+	m, cmd := press(t, m, "g", "down", "down", "d")
+	if cmd != nil || m.confirm != nil {
+		t.Errorf("d on a separator should delete it at once")
+	}
+	if got := sepSummary(m.rows); len(got) != 5 || strings.Join(got, ",") != strings.Join(rowSummary(m.rows), ",") {
+		t.Errorf("separator not deleted: %v", got)
+	}
+	for _, k := range store.keys() {
+		if strings.HasPrefix(k, "separator:") {
+			t.Errorf("separator still saved: %v", store.keys())
+		}
+	}
+}
+
+func TestSeparatorIgnoresBoothKeys(t *testing.T) {
+	store := &orderStore{}
+	booths, repos := orderRepos()
+	f := &fakeDeps{snapshot: booths, repos: repos}
+	deps := store.wire(f.deps())
+	m := newModel(deps)
+	next, _ := m.Update(snapshotMsg{seq: 1, booths: booths, repos: repos})
+	m, _ = press(t, next.(model), "g", "-")
+	for _, key := range []string{"s", "x", "r", "enter", "o", "p", "m", "l", "t", "e", "n", "i", "c"} {
+		m, _ = press(t, m, key)
+	}
+	if len(f.ran)+len(f.execed) != 0 || m.confirm != nil {
+		t.Errorf("a key on a separator acted: ran %v execed %v confirm %+v", f.ran, f.execed, m.confirm)
+	}
+}
+
+func TestSeparatorsAreNotInTheHiddenView(t *testing.T) {
+	store := &orderStore{}
+	hidden := &hideStore{}
+	booths, repos := orderRepos()
+	deps := hidden.wire(store.wire((&fakeDeps{snapshot: booths, repos: repos}).deps()))
+	hidden.keys["Mid@docker"] = true
+	m := newModel(deps)
+	next, _ := m.Update(snapshotMsg{seq: 1, booths: booths, repos: repos, hidden: deps.Hidden()})
+	m, _ = press(t, next.(model), "g", "-", "h") // h on a separator does not hide it
+	if !strings.Contains(m.status, "d deletes it") || len(hidden.keys) != 1 {
+		t.Errorf("h on a separator: status %q hidden %v", m.status, hidden.keys)
+	}
+	m, _ = press(t, m, "H")
+	if got := sepSummary(m.rows); !reflect.DeepEqual(got, []string{"Mid"}) {
+		t.Errorf("hidden view = %v, want only Mid", got)
+	}
+	m, _ = press(t, m, "-")
+	if n := len(store.keys()); n != 6 {
+		t.Errorf("- in the hidden view added a separator: %v", store.keys())
+	}
+}

@@ -43,6 +43,9 @@ func (m model) helpLines() []string {
 	change := "↑/↓ move"
 	if m.deps.SaveOrder != nil {
 		change += " · ctrl+↑/↓ reorder"
+		if !m.showHidden {
+			change += " · - separator"
+		}
 	}
 	change += " · s start · x stop · r restart · d delete · n new worktree"
 	switch {
@@ -397,7 +400,9 @@ func (m model) table() string {
 	for i, col := range cols {
 		widths[i] = lipgloss.Width(col.header)
 		for _, r := range m.rows {
-			widths[i] = max(widths[i], lipgloss.Width(col.cell(r)))
+			if r.sep == "" {
+				widths[i] = max(widths[i], lipgloss.Width(col.cell(r)))
+			}
 		}
 		if col.max > 0 {
 			widths[i] = min(widths[i], col.max)
@@ -458,6 +463,10 @@ func (m model) table() string {
 	end := min(len(m.rows), m.offset+rows)
 	for i := m.offset; i < end; i++ {
 		r := m.rows[i]
+		if r.sep != "" {
+			b.WriteString(separatorLine(i == m.cursor, widths) + "\n")
+			continue
+		}
 		cells := make([]string, len(cols))
 		for c, col := range cols {
 			cells[c] = col.cell(r)
@@ -481,6 +490,19 @@ func (m model) table() string {
 		b.WriteString("\n")
 	}
 	return b.String()
+}
+
+// separatorLine draws a separator row across the table's columns.
+func separatorLine(selected bool, widths []int) string {
+	width := 0
+	for _, w := range widths {
+		width += w + 2
+	}
+	line := strings.Repeat("─", max(1, width-2))
+	if selected {
+		return cursorStyle.Render("› " + line)
+	}
+	return "  " + dimStyle.Render(line)
 }
 
 // versionText is the VERSION cell: the version that built the booth. A booth

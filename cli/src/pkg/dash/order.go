@@ -6,6 +6,7 @@ package dash
 
 import (
 	"sort"
+	"strconv"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -177,6 +178,83 @@ func (m model) reorder(delta int) (tea.Model, tea.Cmd) {
 	}
 	m.order = order
 	m.setStatus("", false)
+	m.layout()
+	return m, nil
+}
+
+// Separators (-) are lines the user puts between groups. Each is a group of
+// its own in the saved order ("separator:<n>", with no folder, so it is never
+// dropped): ctrl+↑/↓ moves it like any group, d deletes it. They are not
+// hidden, so H does not show them.
+
+const separatorPrefix = "separator:"
+
+// separatorRows are the separators in the saved order.
+func (m model) separatorRows() []row {
+	var rows []row
+	for _, e := range m.order {
+		if strings.HasPrefix(e.Key, separatorPrefix) {
+			rows = append(rows, row{sep: e.Key})
+		}
+	}
+	return rows
+}
+
+// addSeparator puts a separator below the selected row's group (or at the
+// bottom of an empty table) and selects it.
+func (m model) addSeparator() (tea.Model, tea.Cmd) {
+	if m.deps.SaveOrder == nil || m.showHidden {
+		return m, nil
+	}
+	next := 1
+	for _, e := range m.order {
+		if num, ok := strings.CutPrefix(e.Key, separatorPrefix); ok {
+			if n, err := strconv.Atoi(num); err == nil {
+				next = max(next, n+1)
+			}
+		}
+	}
+	key := separatorPrefix + strconv.Itoa(next)
+	at := len(m.order)
+	if r, ok := m.currentRow(); ok {
+		// Right after its group in the order: rows hidden after it stay
+		// below the line, out of sight either way.
+		after := groupKey(r)
+		for i, e := range m.order {
+			if e.Key == after {
+				at = i + 1
+			}
+		}
+	}
+	order := make([]lifecycle.OrderEntry, 0, len(m.order)+1)
+	order = append(order, m.order[:at]...)
+	order = append(order, lifecycle.OrderEntry{Key: key})
+	order = append(order, m.order[at:]...)
+	if err := m.deps.SaveOrder(order); err != nil {
+		m.setStatus("Could not add a separator: "+err.Error(), true)
+		return m, nil
+	}
+	m.order = order
+	m.selected = key
+	m.setStatus("Added a separator. ctrl+↑/↓ moves it; d deletes it.", false)
+	m.layout()
+	return m, nil
+}
+
+// deleteSeparator takes the separator key out of the order.
+func (m model) deleteSeparator(key string) (tea.Model, tea.Cmd) {
+	order := make([]lifecycle.OrderEntry, 0, len(m.order))
+	for _, e := range m.order {
+		if e.Key != key {
+			order = append(order, e)
+		}
+	}
+	if err := m.deps.SaveOrder(order); err != nil {
+		m.setStatus("Could not delete the separator: "+err.Error(), true)
+		return m, nil
+	}
+	m.order = order
+	m.setStatus("Deleted the separator.", false)
 	m.layout()
 	return m, nil
 }
