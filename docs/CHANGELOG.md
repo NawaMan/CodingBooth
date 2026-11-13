@@ -15,7 +15,9 @@ This file contains a list of changes for each released version.
   `host-audio`'s) and `--egress` are refused with it. Where Kata cannot run (Windows, Docker Desktop,
   Podman, no KVM or Kata), the booth runs as an ordinary container behind a large banner; on engine
   apple, where every booth is already its own VM, a one-line note says there is nothing more to do.
-  91 of the 99 examples pass with `CB_BOOTH_ISOLATION=kata`. See [Security → Put the booth in a VM](BOOTH_SECURITY.md#booth-isolation).
+  93 of the 99 examples pass with `CB_BOOTH_ISOLATION=kata`; of the other six, four are refused by
+  design (two `--egress`, two `host-audio`) and the two Android ones time out: the emulator does not
+  boot inside the VM. See [Security → Put the booth in a VM](BOOTH_SECURITY.md#booth-isolation).
 
 - **`booth shell --run` creates a terminal (base) booth; `--variant` picks another.** A booth
   `shell --run` has to create used to take the project's own variant, so a desktop project built and
