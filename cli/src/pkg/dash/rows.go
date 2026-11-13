@@ -11,21 +11,17 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/lifecycle"
 )
 
-// row is one line of the table: a booth, a worktree that has no booth, or a
-// line that is not selectable (header): the blank between two repositories
-// (repo nil) or the "Other booths" heading.
+// row is one line of the table: a booth, or a worktree that has no booth.
+// Every row is selectable; there are no heading lines.
 type row struct {
-	header   bool                // not selectable: a blank line, or the Other booths heading
 	repo     *lifecycle.Repo     // the repository the row is under; nil when ungrouped
 	booth    *lifecycle.Booth    // the booth on this row
 	worktree *lifecycle.Worktree // the worktree the booth runs in, or the bare worktree
-	// main: a row of the repository's main checkout, which leads its group
-	// (NAME in the group colour, not indented; its linked worktrees are).
+	// main: a row that leads its group — a repository's main checkout, or a
+	// booth in no repository (NAME in the group colour, not indented; a
+	// repository's linked worktrees are).
 	main bool
 }
-
-// gap reports whether r is the blank line between two groups.
-func (r row) gap() bool { return r.header && r.repo == nil }
 
 // key names a row across refreshes: its booth, else its worktree.
 func (r row) key() string {
@@ -88,14 +84,12 @@ func buildRows(booths []lifecycle.Booth, repos []lifecycle.Repo) []row {
 		placed[best] = append(placed[best], i)
 	}
 
-	// No heading lines: each repository's main checkout leads its group, its
-	// linked worktrees follow, and a blank line separates two groups.
+	// No heading lines: each repository's main checkout leads its group and
+	// its linked worktrees follow; booths in no repository come last, each
+	// leading a group of its own.
 	var rows []row
 	for r := range repos {
 		repo := &repos[r]
-		if len(rows) > 0 {
-			rows = append(rows, row{header: true})
-		}
 		for w := range repo.Worktrees {
 			wt := &repo.Worktrees[w]
 			lead := w == 0 // the main checkout comes first (a bare repository's first worktree stands in)
@@ -109,14 +103,8 @@ func buildRows(booths []lifecycle.Booth, repos []lifecycle.Repo) []row {
 			}
 		}
 	}
-	if len(others) > 0 {
-		if len(rows) > 0 {
-			rows = append(rows, row{header: true})
-		}
-		rows = append(rows, row{header: true, repo: otherBooths})
-		for _, i := range others {
-			rows = append(rows, row{repo: otherBooths, booth: &booths[i]})
-		}
+	for _, i := range others {
+		rows = append(rows, row{repo: otherBooths, booth: &booths[i], main: true})
 	}
 	return rows
 }

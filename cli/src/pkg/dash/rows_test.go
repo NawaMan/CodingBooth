@@ -38,10 +38,6 @@ func rowSummary(rows []row) []string {
 	out := make([]string, len(rows))
 	for i, r := range rows {
 		switch {
-		case r.gap():
-			out[i] = ""
-		case r.header:
-			out[i] = "# " + r.repo.Name
 		case r.booth != nil && r.worktree != nil:
 			out[i] = r.booth.Name + " @" + r.worktree.Name()
 		case r.booth != nil:
@@ -63,12 +59,12 @@ func TestBuildRowsGroupsBoothsUnderWorktrees(t *testing.T) {
 	var got []string
 	rows := buildRows(booths, testRepos())
 	got = rowSummary(rows)
-	want := []string{"example @main", "proj @main", "fixer @fix", "(none) @idea", "", "# Other booths", "loose"}
+	want := []string{"example @main", "proj @main", "fixer @fix", "(none) @idea", "loose"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("rows = %q\nwant %q", got, want)
 	}
-	if !rows[0].main || !rows[1].main || rows[2].main || rows[3].main || rows[6].main {
-		t.Errorf("only the main checkout's rows lead the group: %+v", rows)
+	if !rows[0].main || !rows[1].main || rows[2].main || rows[3].main || !rows[4].main {
+		t.Errorf("the main checkout's rows and a booth in no repository lead; worktrees do not: %+v", rows)
 	}
 	if flat := rowSummary(buildRows(booths, nil)); !reflect.DeepEqual(flat, []string{"fixer", "example", "proj", "loose"}) {
 		t.Errorf("without repositories = %v, want the plain list", flat)
@@ -430,7 +426,7 @@ func TestNameCellLeadsWithTheMainCheckoutAndIndentsTheRest(t *testing.T) {
 		{row{repo: proj, worktree: &proj.Worktrees[0], main: true, booth: &b}, "projbooth (here)"},
 		{row{repo: &notHere, worktree: &notHere.Worktrees[0], main: true}, "todos"},
 		{row{repo: proj, worktree: &proj.Worktrees[1]}, "  -"},
-		{row{repo: otherBooths, booth: &b}, "  projbooth"},
+		{row{repo: otherBooths, booth: &b, main: true}, "projbooth"}, // in no repository: not indented
 		{row{booth: &b}, "projbooth"}, // no repositories: the plain list
 	}
 	for _, c := range cases {
@@ -448,16 +444,19 @@ func TestMainCheckoutNameIsDrawnInTheGroupColour(t *testing.T) {
 	}
 }
 
-func TestGroupsAreSeparatedByABlankLine(t *testing.T) {
+func TestGroupsFollowEachOtherWithNoBlankOrHeadingLine(t *testing.T) {
 	repos := append(testRepos(), lifecycle.Repo{Name: "todos", Root: "/t", Worktrees: []lifecycle.Worktree{{Path: "/t", Branch: "main", Main: true}}})
-	m := loaded(&fakeDeps{repos: repos}, boothAt("t", "/t"))
+	m := loaded(&fakeDeps{repos: repos}, boothAt("t", "/t"), boothAt("loose", "/tmp/scratch"))
 	m.width, m.height = 120, 30
 	view := stripANSI(m.View())
-	if !strings.Contains(view, "~/dev/proj.worktrees/idea\n\n  t ") {
-		t.Fatalf("no blank line between proj and todos, or todos is indented:\n%s", view)
+	if !strings.Contains(view, "~/dev/proj.worktrees/idea\n  t ") || !strings.Contains(view, "/t\n  loose ") {
+		t.Fatalf("groups must follow each other, not indented:\n%s", view)
 	}
-	m, _ = press(t, m, "end", "up")
+	if strings.Contains(view, "Other booths") {
+		t.Fatalf("no Other booths heading:\n%s", view)
+	}
+	m, _ = press(t, m, "end", "up", "up")
 	if r, _ := m.currentRow(); r.booth != nil || r.worktree.Name() != "idea" {
-		t.Fatalf("up from todos must skip the blank line onto idea: %+v", r)
+		t.Fatalf("up from loose, then t, lands on idea: %+v", r)
 	}
 }
