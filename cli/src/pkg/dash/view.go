@@ -127,11 +127,22 @@ func (m model) titleLine() string {
 	title := titleStyle.Render("booth dashboard")
 	var parts []string
 	if m.loaded {
+		live, gone := 0, 0
+		for _, b := range m.booths {
+			if b.Gone() {
+				gone++
+			} else {
+				live++
+			}
+		}
 		noun := "booths"
-		if len(m.booths) == 1 {
+		if live == 1 {
 			noun = "booth"
 		}
-		parts = append(parts, fmt.Sprintf("%d %s", len(m.booths), noun))
+		parts = append(parts, fmt.Sprintf("%d %s", live, noun))
+		if gone > 0 {
+			parts = append(parts, fmt.Sprintf("%d gone", gone))
+		}
 		parts = append(parts, "refreshed "+m.refreshedAt.Format("15:04:05"))
 	}
 	if m.loaded && m.listErr != nil {
@@ -340,6 +351,8 @@ func (m model) statusCell(r row) string {
 		state = busy
 	} else if b.Running() {
 		state = "Running"
+	} else if b.Gone() {
+		state = "Gone"
 	}
 	// A question waiting for the booth user's answer.
 	if m.asking[boothKey(b)] > 0 {
@@ -428,7 +441,7 @@ func (m model) table() string {
 			style = cursorStyle
 		case m.busy[r.key()] != "":
 			style = busyStyle
-		case r.booth == nil:
+		case r.booth == nil, r.booth.Gone():
 			style = dimStyle
 		case r.booth.Running():
 			style = runningStyle

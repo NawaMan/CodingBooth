@@ -612,6 +612,10 @@ worktree (as worktree remove does: never what would be lost). Starting a booth
 takes the terminal (booth may build, or ask before starting a booth that can
 reach the host) and comes back here when it is done.
 
+A booth seen here before whose container is gone stays listed as Gone while its
+folder and .booth are still there: enter starts a booth there just for a shell
+(shell --run), d forgets it (the folder is not touched).
+
 OPTIONS:
   --engine <docker|podman|apple>  Show only this engine's booths
   --interval <duration>           Time between refreshes (default 2s, e.g. 5s)
