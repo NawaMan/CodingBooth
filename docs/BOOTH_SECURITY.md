@@ -295,8 +295,9 @@ GPU booth to say "yes" would only teach people to say it without reading.
 
 ### Contain it: `--dind-isolation kata` (experimental)
 
-> **Experimental.** Verified by hand on one host (below); not yet covered by a container test, and
-> its interface may change.
+> **Experimental.** Verified on one host (below) and by a container test (`tests/basic/test040`, which
+> skips where Kata cannot run); its interface may change. To put the **booth itself** in a VM, see
+> [`--booth-isolation kata`](#booth-isolation).
 
 `--dind-isolation kata` runs the DinD sidecar in its own **[Kata Containers](https://katacontainers.io/)
 VM** instead of `--privileged` on this machine. The booth itself stays an ordinary container: same
@@ -525,6 +526,140 @@ to host-root. Every other layer holds today, but you can shrink the blast radius
   explicitly needed files.
 - **Use `--egress`** to restrict outbound connections when running third-party or untrusted
   dependencies (not a boundary in a `--dind` booth). See **[Egress](implementations/EGRESS.md)**.
+- **Put the booth in its own VM: `--booth-isolation kata`** (experimental) — container-root is then
+  root in a throwaway VM with its own kernel. See **[below](#booth-isolation)**.
+
+<a id="booth-isolation"></a>
+
+### Put the booth in a VM: `--booth-isolation kata` (experimental)
+
+> **Experimental.** Verified on one host and by a container test (`tests/basic/test045`, which skips
+> where Kata cannot run); its interface may change.
+
+`--booth-isolation kata` runs the **booth itself** in its own
+**[Kata Containers](https://katacontainers.io/) VM**. It is the same booth — same image, same `coder`
+user with your uid, the code folder mounted read-write, the same front door — started with Kata's
+runtime instead of runc. A way out of the container, or a kernel exploit, lands in that VM's guest
+kernel, **not on this machine**.
+
+```bash
+./booth --booth-isolation                  # bare = kata
+export CB_BOOTH_ISOLATION=kata             # every booth from this shell (and the test suites)
+```
+
+Or `booth-isolation = "kata"` in `.booth/config.toml`. `--booth-isolation none` turns a configured
+one off for a run. Every run prints an `experimental` warning.
+
+**With `--dind`, the sidecar goes into Kata too** (as if `--dind-isolation kata` were given): a
+privileged sidecar on this machine, reachable from the booth, would undo the VM. So a
+`--booth-isolation --dind` booth needs no consent prompt.
+
+#### What it gains — and what it does not
+
+**Gains**
+
+- **Container-root is root in a VM.** Without user-namespace remapping, root in an ordinary booth is
+  root on this machine's kernel (§5 above). In a Kata booth it is root in a guest kernel that has none
+  of this machine's devices, disks or processes.
+- **A kernel exploit lands in a throwaway kernel.** Getting out takes a hypervisor escape as well.
+- **Nothing else changes for the work inside.** Builds, editors, desktops and the front door behave
+  as in any booth.
+
+**Not protected**
+
+- **What you mount in.** The code folder is shared into the VM (virtio-fs) read-write, as are any
+  convenience mounts (§3). Code in the booth can change them, as you.
+- **The network.** The VM has full outbound access and reaches your LAN — unless you add
+  `--egress` ([below](#booth-isolation-egress)).
+- **The hypervisor.** A QEMU/KVM escape would still reach the host.
+
+#### What it needs
+
+The same as [`--dind-isolation kata`](#dind-isolation): Linux, Docker Engine (not Docker Desktop),
+`/dev/kvm`, and Kata's shim on `PATH`. booth checks them at the very start of the run. Where they
+are missing (macOS, Windows, Docker Desktop, no KVM or Kata), the booth runs as an **ordinary
+container** — never silently:
+
+```
+⚠️ ⚠️ ⚠️  BOOTH ISOLATION (KATA) WAS ASKED FOR, BUT IS NOT AVAILABLE ON THIS MACHINE  ⚠️ ⚠️ ⚠️
+    --booth-isolation kata needs Linux (Docker Engine with KVM); this is darwin. ...
+    Going on as an ORDINARY CONTAINER instead — not a Kata VM.
+```
+
+It does not ask first: an ordinary container is what every other booth is.
+
+On **engine apple** there is no banner: Apple container already runs each booth in a VM of its own,
+so there is nothing for Kata to add. The run says so in one line and goes on as usual:
+
+```
+ℹ️  --booth-isolation: engine apple already runs each booth in its own VM; nothing more to do.
+```
+
+#### Sizing the VM
+
+`--vm-memory` / `--vm-cpus` (also `vm-memory` / `vm-cpus`, `CB_VM_MEMORY` / `CB_VM_CPUS`) — the same
+settings that size the booth's VM on Apple container. The default is **4 GB and 2 CPUs**; Kata's own
+default (2 GB, 1 CPU) is too small to build most projects. booth sets them through Kata's
+annotations, because `-m` / `--cpus` would only add to Kata's default VM.
+
+With `--dind`, the sidecar's VM gets the same default (4 GB, 2 CPUs) — a plain sidecar would have had
+all of this machine, and Kata's 2 GB / 1 CPU cannot hold a Compose stack such as Appwrite's.
+`--dind-vm-memory` / `--dind-vm-cpus` size it instead.
+
+#### What booth does differently for a Kata booth
+
+- **DNS:** the booth gets a `resolv.conf` naming this machine's real resolvers (from
+  `/run/systemd/resolve/resolv.conf` or `/etc/resolv.conf`, loopback entries dropped). Docker's
+  embedded DNS (`127.0.0.11`), which a booth on a user-defined network such as the DinD network is
+  given, does not answer inside the VM.
+- **Open-file limit:** the booth gets Docker Engine's usual `nofile=1024:524288` (`--ulimit`), as
+  does a Kata DinD sidecar. Kata would otherwise start it with 2^30, and programs that size a table
+  by that limit run out of memory in the VM — each Erlang VM took 1.4 GB. A `--ulimit nofile=…`
+  of your own in run-args wins.
+- **The DinD sidecar by name:** with `--dind`, the sidecar's name is added to the booth's
+  `/etc/hosts` (`--add-host`), since that embedded DNS is what normally resolves it.
+- **Refused:** run-args a VM cannot honour — `--privileged` (Kata then tries to pass every host
+  device into the VM, and fails), `--gpus`, `--device /dev/kvm` (Kata's guest kernels are built
+  without KVM, so there is no nested virtualisation: the node is there but dead, and the Android
+  emulator would wait on it until it times out), and `--network`/`--pid`/`--ipc=host` (there is no
+  host namespace to join from another kernel). Remove them, or run without `--booth-isolation`.
+- **Refused: host sockets.** A bind mount whose source is a socket on this machine — the PulseAudio
+  and PipeWire sockets of the `host-audio` template, an engine socket — cannot cross into the VM
+  (virtio-fs shares files, not sockets); Kata would fail the run with a bare "Input/output error".
+  booth refuses it up front and names the socket.
+
+<a id="booth-isolation-egress"></a>
+#### With `--egress`
+
+An ordinary egress booth shares the egress sidecar's network namespace, where Envoy listens on
+`127.0.0.1:15001`. A Kata booth has a kernel of its own and cannot share it, so instead:
+
+- the booth stands **alone on an internal network** (`docker network create --internal`): no
+  gateway, no route out. Nothing leaves it except through the proxy, and there is no firewall rule
+  inside the booth for its root to undo;
+- the egress sidecar is the **gateway**: it is on that network and on an ordinary one, Envoy runs
+  in its namespace as usual, and it publishes the booth's ports and DNATs them on to the booth. It
+  forwards nothing else — its `FORWARD` policy drops all but those connections and their replies;
+- in the booth, `127.0.0.1:15001` is carried to the gateway's Envoy, so `HTTP_PROXY` and
+  everything that names the proxy are as in any egress booth.
+
+`--egress` together with `--dind` is still refused with `--booth-isolation`: there the booth shares
+the DinD sidecar's network.
+
+#### How to tell it is running in Kata
+
+```bash
+docker inspect -f '{{.HostConfig.Runtime}}' <booth>    # io.containerd.kata.v2
+./booth exec -- 'echo $BOOTH_ISOLATION; uname -r'     # kata, and Kata's guest kernel
+```
+
+#### Known limits (experimental)
+
+- **Not with `--egress` and `--dind` together** (refused); `--egress` alone works.
+- **Not with host audio** (`host-audio`): its sockets are refused, see above.
+- **No Android emulator:** `--device /dev/kvm` is refused, see above.
+- **Other devices** passed with `--device` are not refused, but may not work inside the VM.
+- Startup is slower: a VM boots for each booth.
 
 ### Keep the booth's trust store current
 

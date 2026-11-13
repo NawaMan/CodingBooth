@@ -144,10 +144,20 @@ func validateConfig(config *appctx.AppConfig) {
 	// run that then fails.
 	// --dind-isolation implies --dind, which keeps Apple container out of the
 	// default engine pick, so it is settled before the engine.
+	// --booth-isolation kata with --dind puts the sidecar in Kata too, so it is
+	// settled before --dind-isolation is checked.
+	if err := normalizeBoothIsolation(config); err != nil {
+		panic(err)
+	}
 	if err := normalizeDindIsolation(config); err != nil {
 		panic(err)
 	}
 	if err := resolveEngineConfig(config); err != nil {
+		panic(err)
+	}
+	// Booth isolation first: with --dind it put the sidecar in Kata itself, so a
+	// refusal should name the flag the user gave.
+	if err := checkBoothIsolationEngine(config); err != nil {
 		panic(err)
 	}
 	if err := checkDindIsolationEngine(config); err != nil {
@@ -508,6 +518,17 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 				i++
 			}
 
+		case "--booth-isolation":
+			// Optional value, as --dind-isolation: bare means kata, and the next
+			// argument is taken only when it is a known mode.
+			if i+1 < args.Length() && isBoothIsolationMode(args.At(i+1)) {
+				cfg.BoothIsolation = args.At(i + 1)
+				i += 2
+			} else {
+				cfg.BoothIsolation = "kata"
+				i++
+			}
+
 		case "--dind-vm-memory", "--dind-vm-cpus":
 			v, err := needValue(args, i, arg)
 			if err != nil {
@@ -804,6 +825,11 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			// --dind-isolation=<mode>, the explicit spelling of the optional value.
 			if mode, ok := strings.CutPrefix(arg, "--dind-isolation="); ok {
 				cfg.DindIsolation = mode
+				i++
+				continue
+			}
+			if mode, ok := strings.CutPrefix(arg, "--booth-isolation="); ok {
+				cfg.BoothIsolation = mode
 				i++
 				continue
 			}
