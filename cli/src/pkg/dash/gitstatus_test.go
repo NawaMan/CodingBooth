@@ -86,7 +86,7 @@ func TestGitColumnShowsEachWorktreesStatus(t *testing.T) {
 
 	m = drainGit(t, m, cmd)
 	view := stripANSI(m.View())
-	for _, want := range []string{"main (main checkout)  ↑1", "fix                   *2 ↑3 ↓1", "idea                  merged"} {
+	for _, want := range []string{"main      ↑1", "fix       *2 ↑3 ↓1", "idea      merged"} {
 		if !strings.Contains(view, want) {
 			t.Errorf("view lacks %q:\n%s", want, view)
 		}
