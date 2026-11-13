@@ -600,6 +600,8 @@ KEYS:
              On a worktree: delete it; one with uncommitted files or
              unmerged commits is force-deleted, after a warning
   n          New worktree in this repository, with its booth started
+  h          Hide it (kept across runs); under H, show it again
+  H          Show only the hidden rows; H again goes back
   R          Refresh now             q      Quit
 
 VERSION shows the CodingBooth version that built each booth, in the warning

@@ -40,7 +40,9 @@ This file contains a list of changes for each released version.
   its container is removed, while its folder and `.booth` are still there: `enter` brings up a
   booth there for a shell, `d` forgets it. Groups have no heading line: a repository's main checkout leads
   its group (its NAME in the group colour), its linked worktrees are indented under it, and a booth
-  in no repository leads a group of its own; a repository with only its main checkout is one row. See [booth lifecycle → dashboard](BOOTH_LIFECYCLE.md#dashboard).
+  in no repository leads a group of its own; a repository with only its main checkout is one row.
+  `h` hides a booth or a worktree from the table, and it stays hidden across runs; `H` shows the
+  hidden rows instead, where `h` brings one back. See [booth lifecycle → dashboard](BOOTH_LIFECYCLE.md#dashboard).
 - **`booth worktree remove` names the files in the way.** Refusing a worktree with uncommitted or
   untracked work said only how many files; it now names the first three (`… and 2 more`), and
   `booth dashboard` shows that reason on its status line instead of just the advice to commit.

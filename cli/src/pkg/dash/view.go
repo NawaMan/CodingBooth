@@ -36,7 +36,15 @@ func (m model) helpLines() []string {
 	if m.deps.GitKraken != nil {
 		look += " · K GitKraken"
 	}
-	return []string{look, "↑/↓ move · s start · x stop · r restart · d delete · n new worktree · R refresh · q quit"}
+	change := "↑/↓ move · s start · x stop · r restart · d delete · n new worktree"
+	switch {
+	case m.deps.Hide == nil:
+	case m.showHidden:
+		change += " · h unhide · H back"
+	default:
+		change += " · h hide · H hidden"
+	}
+	return []string{look, change + " · R refresh · q quit"}
 }
 
 // chromeLines is everything but the table rows: title, blank, header, and
@@ -87,6 +95,10 @@ func (m model) View() string {
 		b.WriteString(errorStyle.Render("Could not list booths: "+m.listErr.Error()) + "\n")
 	case !m.loaded:
 		b.WriteString(dimStyle.Render("Loading booths…") + "\n")
+	case len(m.rows) == 0 && m.showHidden:
+		b.WriteString(dimStyle.Render("Nothing is hidden. h hides a row; H goes back.") + "\n")
+	case len(m.rows) == 0 && m.hiddenRows > 0:
+		b.WriteString(dimStyle.Render(fmt.Sprintf("Every row is hidden (%d). H shows them.", m.hiddenRows)) + "\n")
 	case len(m.rows) == 0:
 		b.WriteString(dimStyle.Render("No booths. Run `booth` in a project folder to start one.") + "\n")
 	default:
@@ -138,6 +150,11 @@ func (m model) titleLine() string {
 		parts = append(parts, fmt.Sprintf("%d %s", live, noun))
 		if gone > 0 {
 			parts = append(parts, fmt.Sprintf("%d gone", gone))
+		}
+		if m.showHidden {
+			parts = append(parts, warnStyle.Render(fmt.Sprintf("showing %d hidden", m.hiddenRows)))
+		} else if m.hiddenRows > 0 {
+			parts = append(parts, fmt.Sprintf("%d hidden", m.hiddenRows))
 		}
 		parts = append(parts, "refreshed "+m.refreshedAt.Format("15:04:05"))
 	}

@@ -121,6 +121,8 @@ seconds (`--interval 5s` to change that) and takes `--engine` like the other com
 | `r` | Restart it |
 | `d` | Delete it and its home volume (`booth remove`, `--force` when it is running). On a gone booth: forget it. On a worktree with no booth: delete the worktree. It reads the worktree's git status first. A clean one is deleted with `booth worktree remove <name>`, which keeps a branch with commits found nowhere else. One with uncommitted files or unmerged commits, or whose status cannot be read, gets a warning in red that names what is lost and urges a last look (`t`, `e`, `K`); `y` force-deletes it with `booth worktree remove <name> --force --yes`, which discards that work, its branch and its booths' volumes |
 | `n` | New worktree in the selected row's repository: type a name (the new branch, from the repository's current commit); booth creates it and starts its booth (`booth --worktree <name> --daemon`) |
+| `h` | Hide it from the table; it stays hidden the next time the dashboard opens. Under `H`: show it again |
+| `H` | Show only the hidden rows (the title says how many); `H` again goes back |
 | `R` | Refresh now |
 | `q` | Quit |
 
@@ -146,6 +148,14 @@ removes it afterwards (`booth shell --run --name <name> --code <folder>`); `d` a
 (the folder is not touched); `t`, `e` and `K` open its folder; keys that need a container say so. A
 booth whose engine did not answer is not shown as gone, and `--engine` shows only that engine's.
 Only booths the dashboard has seen are remembered; deleting the cache file forgets them all.
+
+**Hiding rows.** `h` takes the selected row out of the table, and the title counts what is hidden
+(`3 booths · 2 hidden`). A booth row hides that booth; a worktree row with no booth hides that
+worktree, and a booth started on it later shows. Hiding the main checkout hides only its row; its
+worktrees stay listed. `H` switches to the hidden rows, where every key works as usual and `h` shows
+a row again; `H` again goes back. The hidden rows are kept in
+`~/.cache/codingbooth/dashboard/hidden.json`; an entry is dropped once its folder is gone, and
+forgetting a gone booth (`d`) unhides it too.
 
 **Grouped by repository.** Booths are grouped by the git repository their code is in: the repository `booth dashboard` runs in first, then the others that have a
 booth, by name. A group has no heading line: its main checkout leads it, not indented, its NAME in
