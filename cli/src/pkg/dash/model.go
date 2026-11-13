@@ -44,6 +44,7 @@ const (
 	keyHidden    = "H"
 	keyRaise     = "ctrl+up"
 	keyLower     = "ctrl+down"
+	keySeparator = "-"
 )
 
 // Deps is everything the dashboard does outside itself; tests replace it.
@@ -501,6 +502,8 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 		return m.reorder(-1)
 	case keyLower:
 		return m.reorder(1)
+	case keySeparator:
+		return m.addSeparator()
 	case keyNew:
 		r, ok := m.currentRow()
 		if !ok || r.repo == nil || r.repo == otherBooths {
@@ -536,6 +539,12 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 
 	r, ok := m.currentRow()
 	if !ok {
+		return m, nil
+	}
+	if r.sep != "" {
+		if key == keyRemove {
+			return m.deleteSeparator(r.sep)
+		}
 		return m, nil
 	}
 	if r.booth == nil {

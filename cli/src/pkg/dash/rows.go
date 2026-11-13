@@ -21,11 +21,16 @@ type row struct {
 	// booth in no repository (NAME in the group colour, not indented; a
 	// repository's linked worktrees are).
 	main bool
+	// sep: a separator line the user put between groups (its key in the
+	// saved order, "separator:<n>"); it has no booth, worktree or repository.
+	sep string
 }
 
 // key names a row across refreshes: its booth, else its worktree.
 func (r row) key() string {
 	switch {
+	case r.sep != "":
+		return r.sep
 	case r.booth != nil:
 		return boothKey(*r.booth)
 	case r.worktree != nil:

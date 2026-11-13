@@ -620,6 +620,7 @@ KEYS:
   H          Show only the hidden rows; H again goes back
   ctrl+↑/↓    Move its group up or down; on a worktree, within its repository
              (kept across runs; new rows go to the bottom)
+  -          Add a separator line below its group; ctrl+↑/↓ moves it, d deletes it
   R          Refresh now             q      Quit
 
 VERSION shows the CodingBooth version that built each booth, in the warning

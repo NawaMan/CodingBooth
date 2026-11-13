@@ -18,7 +18,7 @@ import (
 // hidden, or under H only the hidden ones, in the saved order (see order.go).
 // The cursor stays on its row.
 func (m *model) layout() {
-	all := m.arrange(buildRows(m.booths, m.repos))
+	all := m.arrange(append(buildRows(m.booths, m.repos), m.separatorRows()...))
 	m.hiddenRows = 0
 	rows := all[:0:0]
 	for _, r := range all {
@@ -53,6 +53,10 @@ func (m model) toggleHide() (tea.Model, tea.Cmd) {
 	}
 	r, ok := m.currentRow()
 	if !ok {
+		return m, nil
+	}
+	if r.sep != "" {
+		m.setStatus("A separator is not hidden; d deletes it.", false)
 		return m, nil
 	}
 	key, name, hide := r.key(), rowName(r), !m.showHidden

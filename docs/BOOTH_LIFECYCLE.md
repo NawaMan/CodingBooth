@@ -125,6 +125,7 @@ seconds (`--interval 5s` to change that) and takes `--engine` like the other com
 | `h` | Hide it from the table; it stays hidden the next time the dashboard opens. Under `H`: show it again |
 | `H` | Show only the hidden rows (the title says how many); `H` again goes back |
 | `ctrl+↑`/`ctrl+↓` | Move its group (a repository with its worktrees, or a booth in no repository) up or down; on a linked worktree, move that worktree within its repository. The order is kept for the next time (see below) |
+| `-` | Add a separator line below its group, and select it: `ctrl+↑`/`ctrl+↓` moves it, `d` deletes it (see below) |
 | `R` | Refresh now |
 | `q` | Quit |
 
@@ -178,6 +179,11 @@ and the booths on a worktree move with it). Hidden rows keep their place. The or
 `~/.cache/codingbooth/dashboard/order.json`; anything not in it yet — a new repository, booth or
 worktree — goes to the bottom (of the table, or of its repository), and an entry is dropped once its
 folder is gone. The cursor starts on the repository the dashboard runs in, wherever it is.
+
+**Separators.** `-` adds a line below the selected row's group, to set groups apart; it is kept in the
+same order as the rows. A separator is selected like a row: `ctrl+↑`/`ctrl+↓` moves it past the next
+group, and `d` deletes it at once (no question: `-` brings it back). Other keys do nothing on it,
+it cannot be hidden, and `H` does not show it.
 
 **GIT** is each worktree's status: `*3` files changed (uncommitted or untracked; booth's own
 `.booth/.tmp/` is not counted), `↑2` commits ahead and `↓5` behind, or `clean`. A worktree counts
