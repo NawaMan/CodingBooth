@@ -42,6 +42,8 @@ const (
 	keyRefresh   = "R"
 	keyHide      = "h"
 	keyHidden    = "H"
+	keyRaise     = "ctrl+up"
+	keyLower     = "ctrl+down"
 )
 
 // Deps is everything the dashboard does outside itself; tests replace it.
@@ -66,6 +68,10 @@ type Deps struct {
 	Hidden func() map[string]bool
 	// Hide hides the row named key, whose folder is path, or shows it again.
 	Hide func(key, path string, hidden bool) error
+	// Order reads the saved row order (see order.go); SaveOrder replaces it.
+	// A nil SaveOrder keeps the rows as built and turns ctrl+↑/↓ off.
+	Order     func() []lifecycle.OrderEntry
+	SaveOrder func(order []lifecycle.OrderEntry) error
 	// Repos finds the repositories to group booths under; nil shows a flat list.
 	Repos func(booths []lifecycle.Booth) []lifecycle.Repo
 	// Editor is the command that opens path in the user's editor; it gets the
@@ -129,6 +135,8 @@ type model struct {
 	hiddenRows int             // how many rows are hidden now
 	showHidden bool            // H: the table shows only the hidden rows
 	hiddenGen  int             // bumped on each h; an older snapshot's hidden keys are dropped
+
+	order []lifecycle.OrderEntry // the rows' order, first on top (see order.go)
 
 	loading     bool // a snapshot is in flight
 	fetchSeq    int  // the latest snapshot asked for
@@ -256,9 +264,13 @@ func newModel(deps Deps) model {
 	if deps.GitInterval <= 0 {
 		deps.GitInterval = 10 * time.Second
 	}
+	var order []lifecycle.OrderEntry
+	if deps.Order != nil {
+		order = deps.Order()
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	return model{deps: deps, busy: map[string]string{}, asking: map[string]int{},
-		git:     map[string]gitEntry{},
+		git: map[string]gitEntry{}, order: order,
 		loading: true, fetchSeq: 1, ctx: ctx, cancel: cancel}
 }
 
@@ -358,6 +370,7 @@ func (m model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.listErr = msg.err
 		m.warnings = msg.warnings
 		if msg.err == nil {
+			first := !m.loaded
 			m.loaded = true
 			m.booths = msg.booths
 			m.repos = msg.repos
@@ -367,6 +380,9 @@ func (m model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.refreshedAt = m.deps.Now()
 			m.layout()
+			if first {
+				m.selectHere()
+			}
 		}
 		return m, nil
 
@@ -481,6 +497,10 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 		return m.toggleHide()
 	case keyHidden:
 		return m.toggleHiddenView()
+	case keyRaise:
+		return m.reorder(-1)
+	case keyLower:
+		return m.reorder(1)
 	case keyNew:
 		r, ok := m.currentRow()
 		if !ok || r.repo == nil || r.repo == otherBooths {
@@ -698,6 +718,18 @@ func (m *model) move(delta int) {
 	m.cursor = max(0, min(len(m.rows)-1, m.cursor+delta))
 	m.selected = m.rows[m.cursor].key()
 	m.clampOffset()
+}
+
+// selectHere starts the cursor on the repository the dashboard runs in, which
+// the saved order may have put anywhere.
+func (m *model) selectHere() {
+	for i, r := range m.rows {
+		if r.main && r.repo != nil && r.repo.Here {
+			m.cursor, m.selected = i, r.key()
+			m.clampOffset()
+			return
+		}
+	}
 }
 
 // reselect keeps the cursor on the same row after a refresh. A worktree that

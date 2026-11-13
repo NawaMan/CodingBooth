@@ -69,6 +69,7 @@ func runDashboard(version string) {
 
 	seen := lifecycle.DefaultSeen(engine)
 	hidden := lifecycle.DefaultHidden()
+	order := lifecycle.DefaultOrder()
 	deps := dash.Deps{
 		Snapshot:   func() ([]lifecycle.Booth, []string, error) { return lifecycle.Snapshot(engine) },
 		Remembered: seen.Remember,
@@ -79,8 +80,10 @@ func runDashboard(version string) {
 			}
 			return seen.Forget(b.Name, b.Engine)
 		},
-		Hidden: hidden.Keys,
-		Hide:   hidden.Set,
+		Hidden:    hidden.Keys,
+		Hide:      hidden.Set,
+		Order:     order.Load,
+		SaveOrder: order.Save,
 		Run: func(dir string, args []string) (string, error) {
 			// No stdin: a command that would prompt fails instead of hanging
 			// behind the dashboard.

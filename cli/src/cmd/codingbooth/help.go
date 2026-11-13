@@ -618,6 +618,8 @@ KEYS:
   n          New worktree in this repository, with its booth started
   h          Hide it (kept across runs); under H, show it again
   H          Show only the hidden rows; H again goes back
+  ctrl+↑/↓    Move its group up or down; on a worktree, within its repository
+             (kept across runs; new rows go to the bottom)
   R          Refresh now             q      Quit
 
 VERSION shows the CodingBooth version that built each booth, in the warning
@@ -626,7 +628,7 @@ image was rebuilt since; i says which, and how to update it.
 
 Booths are grouped by git repository: the main checkout leads (its NAME in
 blue), its worktrees are indented under it, each listed even without a booth.
-A booth in no repository comes last, leading a group of its own. On such a row, s starts a booth there and d removes the
+A booth in no repository leads a group of its own. Groups start sorted by name. On such a row, s starts a booth there and d removes the
 worktree (as worktree remove does: never what would be lost). Starting a booth
 takes the terminal (booth may build, or ask before starting a booth that can
 reach the host) and comes back here when it is done.
