@@ -150,7 +150,7 @@ func (m model) titleLine() string {
 	title := titleStyle.Render("booth dashboard")
 	var parts []string
 	if m.loaded {
-		// A gone booth shows as -none-, like a worktree without one: not counted.
+		// A gone booth shows as -, like a worktree without one: not counted.
 		live := 0
 		for _, b := range m.booths {
 			if !b.Gone() {
@@ -364,7 +364,7 @@ func (m model) multiEngine() bool {
 
 // noBooth is the STATUS of a row with nothing running and no container: a
 // worktree without a booth, or a booth seen before whose container is gone.
-const noBooth = "-none-"
+const noBooth = "-"
 
 func (m model) statusCell(r row) string {
 	if r.booth == nil {

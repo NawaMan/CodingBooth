@@ -61,7 +61,7 @@ This file contains a list of changes for each released version.
   booth, in the warning colour when it is older than its project now uses or its image was
   rebuilt since, a GIT column shows each worktree's changed files, commits ahead/behind main
   (the main checkout: its upstream) and whether its branch has been merged, and `e` / `K`
-  open it in your editor or GitKraken. A booth the dashboard has seen stays listed (STATUS `-none-`,
+  open it in your editor or GitKraken. A booth the dashboard has seen stays listed (STATUS `-`,
   as for a worktree with no booth) once its container is removed, while its folder and `.booth` are still there: `enter` brings up a
   booth there for a shell, `d` forgets it. Groups have no heading line: a repository's main checkout leads
   its group (its NAME in the group colour), its linked worktrees are indented under it, and a booth

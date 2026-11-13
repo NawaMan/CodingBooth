@@ -634,7 +634,7 @@ worktree (as worktree remove does: never what would be lost). Starting a booth
 takes the terminal (booth may build, or ask before starting a booth that can
 reach the host) and comes back here when it is done.
 
-A booth seen here before whose container is gone stays listed (STATUS -none-,
+A booth seen here before whose container is gone stays listed (STATUS -,
 as for a worktree without a booth) while its folder and .booth are still there: enter starts a booth there just for a shell
 (shell --run), d forgets it (the folder is not touched).
 
