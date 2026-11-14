@@ -135,6 +135,11 @@ the example's in-booth tests in a later plain-bash step that gets its environmen
 `GITHUB_ENV` / `GITHUB_PATH`. `ubuntu` runs as root with `--add-user dev` and checks the user, the
 variant's APPLY line, the rewritten `-e` values, and the in-booth tests in dev's login shell.
 
+**On real runners.** `tests/manual/run-host-provision-gha-manual-test.sh` (part of
+`tests/run-manual-tests.sh`) runs the refusals lane, then starts `host-provision-exp.yaml` on the
+current branch, waits for it (about 25 minutes) and lists the failed examples. The workflow runs
+what origin has, so the branch must be pushed with this HEAD; the test never pushes.
+
 **Keeping the copies in step.** `base-provision.sh`, the `booth-entry` copy and the
 `booth--as-coder` copy are written by hand from files under `variants/base/`.
 `cli/src/pkg/prepare/drift_test.go` runs with `go test ./...` and fails when one of them falls
