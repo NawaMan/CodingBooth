@@ -3,7 +3,7 @@
 # https://github.com/NawaMan/CodingBooth/blob/main/docs/just/Justfile
 booth        := env("BOOTH", "./booth")
 own-booth    := if justfile_directory() == "/home/coder/code" { "true" } else if path_exists(justfile_directory() / ".booth") == "true" { "false" } else { "true" }
-run-in-booth := if env("BOOTH_CONTAINER_NAME", "") == "" { booth + " exec --run --" } else if own-booth == "true" { "" } else { "echo 'just: " + file_name(justfile_directory()) + " has its own booth, and this is the " + env("BOOTH_CONTAINER_NAME") + " booth - exit it and run the recipe on the host.' >&2; exit 2;" }
+run-in-booth := if env("CB_TARGET", "booth") != "booth" { "" } else if env("BOOTH_CONTAINER_NAME", "") == "" { booth + " exec --run --" } else if own-booth == "true" { "" } else { "echo 'just: " + file_name(justfile_directory()) + " has its own booth, and this is the " + env("BOOTH_CONTAINER_NAME") + " booth - exit it and run the recipe on the host.' >&2; exit 2;" }
 run-on-host  := if env("BOOTH_CONTAINER_NAME", "") == "" { "" } else { "echo 'just: this recipe runs on the host - exit the booth and run it there.' >&2; exit 2;" }
 # Same, but keeps the booth running afterwards -- for recipes that start a
 # DinD sidecar meant to outlive this command (a plain --run would tear the

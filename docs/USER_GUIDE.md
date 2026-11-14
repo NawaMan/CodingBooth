@@ -136,6 +136,12 @@ from a booth on a parent folder — `cd ~/code/music-example` in a booth started
 rather than failing on a tool the parent's booth does not have. A subfolder without its own
 `.booth/` is part of the booth's project and runs in place.
 
+On a machine set up by `booth prepare gha` or `booth prepare ubuntu`, which sets `CB_TARGET`, a
+`{{run-in-booth}}` line also runs as is: the machine has the booth's tools, so `just test` in a
+workflow step needs no booth. A Justfile made before 0.83.0 lacks this: start its `run-in-booth`
+line with `if env("CB_TARGET", "booth") != "booth" { "" } else`, as in
+[docs/just/Justfile](just/Justfile).
+
 ### Edit with your own editor
 
 The project folder is mounted into the booth at `/home/coder/code`, and file ownership is mapped to

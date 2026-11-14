@@ -163,7 +163,7 @@ func TestStarterRuns(t *testing.T) {
 		cmd.Dir = dir
 		var env []string
 		for _, kv := range os.Environ() {
-			if !strings.HasPrefix(kv, "BOOTH_CONTAINER_NAME=") && !strings.HasPrefix(kv, "BOOTH=") {
+			if !strings.HasPrefix(kv, "BOOTH_CONTAINER_NAME=") && !strings.HasPrefix(kv, "BOOTH=") && !strings.HasPrefix(kv, "CB_TARGET=") {
 				env = append(env, kv)
 			}
 		}
@@ -217,6 +217,26 @@ func TestStarterRuns(t *testing.T) {
 	}
 	if out, err := run(false, "--dry-run", "info"); err != nil || !strings.Contains(out, "./booth exec --run -- booth--info") {
 		t.Errorf("host info with .booth/: err=%v out=%q, want it handed to ./booth exec --run", err, out)
+	}
+
+	// On a machine `booth prepare` set up (CB_TARGET gha or host), the project
+	// folder has its own .booth/ and no booth is running: the machine has the
+	// booth's tools, so run-in-booth runs the line as is, with or without
+	// BOOTH_CONTAINER_NAME. run-on-host stays as on any host.
+	for _, target := range []string{"gha", "host"} {
+		prepared := []string{"CB_TARGET=" + target}
+		for _, inBooth := range []bool{false, true} {
+			if out, err := runWith(prepared, inBooth, "--dry-run", "info"); err != nil || strings.Contains(out, "exec --run") || strings.Contains(out, "exit 2") || !strings.Contains(out, "booth--info") {
+				t.Errorf("CB_TARGET=%s (BOOTH_CONTAINER_NAME set: %v) info: err=%v out=%q, want a bare booth--info", target, inBooth, err, out)
+			}
+		}
+		if out, err := runWith(prepared, false, "--dry-run", "shell"); err != nil || !strings.Contains(out, "./booth shell --run") {
+			t.Errorf("CB_TARGET=%s shell: err=%v out=%q, want ./booth shell --run as on a host", target, err, out)
+		}
+	}
+	// CB_TARGET=booth is today's behaviour.
+	if out, err := runWith([]string{"CB_TARGET=booth"}, false, "--dry-run", "info"); err != nil || !strings.Contains(out, "./booth exec --run -- booth--info") {
+		t.Errorf("CB_TARGET=booth host info: err=%v out=%q, want it handed to ./booth exec --run", err, out)
 	}
 }
 
