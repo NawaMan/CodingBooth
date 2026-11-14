@@ -1,0 +1,8 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --select gh+token/git-credential
+
+env APT_SNAPSHOT=20261023T000000Z
+
+arg GH_VERSION=latest
+
+setup gh --version ${GH_VERSION}

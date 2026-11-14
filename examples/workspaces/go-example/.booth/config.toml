@@ -1,6 +1,7 @@
-# Configured by: booth config --no-tui --overwrite --variant xfce --select go:1.25.7+vscode-ext+kernel+mod-cache/python:3.13.12/notebook:18888/codeserver:19999
+# Configured by: booth config --no-tui --overwrite --variant xfce --port 30000 --select go:1.25.7+vscode-ext+kernel+mod-cache/python:3.13.12+pip-config+vscode-ext/notebook:18888/codeserver:19999
 
 variant = "xfce"
+port = "30000"
 
 run-args = [
     "-e", "GOMODCACHE=/home/coder/go/pkg/mod",
