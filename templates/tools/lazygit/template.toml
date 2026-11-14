@@ -1,9 +1,10 @@
-cb-version = "1.1.0"
+cb-version = "1.1.1"
 display-name = "Lazygit"
 primary = true
 display-disc = "Simple terminal UI for git commands"
 display-detail = "Installs lazygit, a simple terminal UI for git commands, making it easy to stage, commit, and manage branches. Already in every booth; select this only to pin a version."
 display-order = 60
+in-variants = ["base"]
 tags = ["git", "tui", "cli"]
 
 [params.LAZYGIT_VERSION]

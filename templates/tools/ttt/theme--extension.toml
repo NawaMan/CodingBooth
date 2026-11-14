@@ -1,4 +1,4 @@
-cb-version = "0.2.0"
+cb-version = "0.2.1"
 display-name = "Theme"
 display-disc = "Pick TTT's theme and border style (default zenith, rounded)"
 display-detail = """Every booth already starts TTT on zenith with rounded borders: the base image's \
@@ -11,6 +11,7 @@ with ttt+theme:zenith,double (default, theme, rounded, sharp, double, bold, asci
 To leave a key to TTT's own default, set it empty in the container: \
 booth config --env TTT_THEME= --env TTT_BORDER_STYLE=."""
 display-order = 30
+in-variants = ["base"]
 auto-select = true
 tags = ["ttt", "editor", "theme"]
 

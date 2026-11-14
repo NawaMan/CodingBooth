@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/nawaman/codingbooth/src/pkg/booth"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/selection"
 	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/tui"
@@ -73,6 +74,9 @@ type State struct {
 	LostComments    []string            `json:"lostComments"`
 	HasLocal        bool                `json:"hasLocal"`
 	Dirty           bool                `json:"dirty"`
+	// Variant is the canonical variant the Variant field resolves to ("" for a
+	// name booth would refuse), so the page can mark templates already in it.
+	Variant string `json:"variant"`
 }
 
 // NewSession builds session state the same way the TUI's newModel does:
@@ -183,6 +187,7 @@ func (thisSession *Session) stateLocked() State {
 		LostComments:    append([]string{}, thisSession.lostComments...),
 		HasLocal:        thisSession.hasLocal,
 		Dirty:           !thisSession.snapshot().equal(thisSession.baseline),
+		Variant:         thisSession.variant(),
 	}
 }
 
@@ -212,6 +217,13 @@ func (thisSession *Session) Toggle(key string) error {
 		}
 	} else {
 		thisSession.selected[key] = true
+		entry := parent
+		if extension != nil {
+			entry = extension
+		}
+		if variant := thisSession.variant(); entry.InVariant(variant) {
+			notifications = append(notifications, entry.InVariantNote(variant))
+		}
 		if extension != nil {
 			thisSession.initParamDefaults(key, extension)
 			if !thisSession.selected[parent.Name] {
@@ -511,4 +523,14 @@ func (thisSession *Session) AcceptAdopted() error {
 		return refresh()
 	}
 	return nil
+}
+
+// variant is the canonical variant the Variant field resolves to, the same way
+// booth resolves it at start ("" or console → base). "" for a refused name.
+func (thisSession *Session) variant() string {
+	canonical, ok := booth.CanonicalVariant(thisSession.stringFields["variant"])
+	if !ok {
+		return ""
+	}
+	return canonical
 }

@@ -141,6 +141,10 @@ func (m *model) applySelectItem(item treeItem) {
 	var notifications []string
 	m.selected[key] = true
 
+	if m.inVariant(item) {
+		notifications = append(notifications, itemTemplate(item).InVariantNote(m.currentVariant()))
+	}
+
 	if item.kind == kindExtension {
 		m.initParamDefaults(key, item.extension)
 		// Auto-select parent template if not selected

@@ -843,6 +843,10 @@ func (m model) renderTemplateLine(item treeItem, width int, isCursor bool) strin
 	mark := ""
 	if item.template.UnsupportedOn(m.hostArch) {
 		mark = "!"
+	} else if m.inVariant(item) {
+		// Already in the variant image. The arch warning wins the slot: a tool
+		// that will not install matters more than one that is already there.
+		mark = inVariantMark
 	}
 
 	plainPrefix := check + " " + mark + name
@@ -861,8 +865,11 @@ func (m model) renderTemplateLine(item treeItem, width int, isCursor bool) strin
 
 	styledName := boldStyle.Render(name)
 	styledMark := mark
-	if mark != "" {
+	switch mark {
+	case "!":
 		styledMark = archWarnStyle.Render(mark)
+	case inVariantMark:
+		styledMark = inVariantStyle.Render(mark)
 	}
 	line := check + " " + styledMark + styledName
 	if descStr != "" {
@@ -901,7 +908,13 @@ func (m model) renderExtensionLine(item treeItem, width int, isCursor bool) stri
 		autoMark = "*"
 	}
 
-	plainPrefix := "    " + check + " " + autoMark + name
+	// Same slot as a template row's marker, ahead of the auto-select "*".
+	varMark := ""
+	if m.inVariant(item) {
+		varMark = inVariantMark
+	}
+
+	plainPrefix := "    " + check + " " + varMark + autoMark + name
 	// See renderTemplateLine: width, not byte length, for the same reason.
 	remaining := width - lipgloss.Width(plainPrefix) - 2
 	descStr := ""
@@ -913,7 +926,11 @@ func (m model) renderExtensionLine(item treeItem, width int, isCursor bool) stri
 	}
 
 	styledName := boldStyle.Render(autoMark + name)
-	line := "    " + check + " " + styledName
+	line := "    " + check + " "
+	if varMark != "" {
+		line += inVariantStyle.Render(varMark)
+	}
+	line += styledName
 	if descStr != "" {
 		line += "  " + detailLabel.Render(descStr)
 	}
@@ -1018,6 +1035,7 @@ func (m model) renderTemplateDetail(t *tmpl.Template, width int) ([]string, int,
 	// Above the description, not below it: someone scanning this panel to decide
 	// whether to tick the box needs to see "this will not install" first.
 	lines = append(lines, m.renderArchWarning(t, width)...)
+	lines = append(lines, m.renderInVariantNote(treeItem{kind: kindTemplate, template: t}, width)...)
 
 	if t.DisplayDesc != "" {
 		lines = append(lines, wrapText(t.DisplayDesc, width)...)
@@ -1111,6 +1129,7 @@ func (m model) renderExtensionDetail(item treeItem, width int) ([]string, int, m
 	lines = append(lines, detailTitle.Render(ext.DisplayName))
 	lines = append(lines, detailLabel.Render(fmt.Sprintf("Extension of %s", item.template.Name)))
 	lines = append(lines, "")
+	lines = append(lines, m.renderInVariantNote(item, width)...)
 
 	if ext.DisplayDesc != "" {
 		lines = append(lines, wrapText(ext.DisplayDesc, width)...)

@@ -1,4 +1,4 @@
-cb-version = "0.2.0"
+cb-version = "0.2.1"
 display-name   = "Plank Dock"
 display-disc   = "Plank Reloaded dock (Matte theme) in place of XFCE's bottom panel"
 display-detail = """\
@@ -13,6 +13,7 @@ the dock for its Preferences — changes made there are kept. The plank-reloaded
 repo is not covered by APT_SNAPSHOT; pin it with xfce+plank:<version> \
 (e.g. xfce+plank:0.11.172-1)."""
 display-order  = 16
+in-variants = ["desktop-xfce"]
 auto-select    = true
 tags = [
     "desktop",
