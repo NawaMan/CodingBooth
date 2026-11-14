@@ -197,12 +197,15 @@ func Exec(args []string, stderr io.Writer) error {
 
 	// A desktop booth (just brought up by --run, or still starting from elsewhere)
 	// may not have its display yet; a GUI command started now would fail to open.
-	if err := waitForDesktop(target, *silenceBuild, stderr); err != nil {
+	// The env it reports (a Wayland desktop's socket, Xwayland's DISPLAY) goes to
+	// the command, under any -e of the user's own.
+	desktopEnv, err := waitForDesktop(target, *silenceBuild, stderr)
+	if err != nil {
 		return err
 	}
 
 	// Build docker exec args
-	execArgs := buildExecFlags(*interactive, *daemon, *dir, envVars, *envfile, target.AppleLowPorts)
+	execArgs := buildExecFlags(*interactive, *daemon, *dir, mergeDesktopEnv(desktopEnv, envVars), *envfile, target.AppleLowPorts)
 
 	// Container name
 	execArgs = append(execArgs, ilist.NewList(target.Name))

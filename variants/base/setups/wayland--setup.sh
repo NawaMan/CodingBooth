@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.1
+# cb-version: 1.0.2
 
 # wayland--setup.sh — root-only installer for a Wayland-native desktop (labwc) streamed
 # to the browser over VNC/noVNC.
@@ -158,6 +158,9 @@ fi
 # labwc config: autostart the shell bits + a right-click menu with the common apps.
 mkdir -p "$HOME/.config/labwc"
 cat > "$HOME/.config/labwc/autostart" <<AUTO
+# Xwayland's DISPLAY, which only the compositor's children are given: recorded
+# for booth--desktop-ready, so a GUI app from \`booth exec\` can reach it too.
+echo "\${DISPLAY:-}" > "\${XDG_RUNTIME_DIR}/cb-x-display"
 [ -f "$WALL" ] && swaybg -i "$WALL" -m fill &
 waybar &
 ${DEFAULT_TERMINAL} &
@@ -264,6 +267,9 @@ fi
 #    sway refuses to start when it sees the Nvidia driver in /proc/modules —
 #    which a container shares with its host — though it renders in software
 #    here and never touches the GPU; --unsupported-gpu lets it through.
+# A restarted booth keeps /tmp: drop the last session's records, so
+# booth--desktop-ready cannot report a desktop until this one has written them.
+rm -f "$XDG_RUNTIME_DIR/cb-wayland-display" "$XDG_RUNTIME_DIR/cb-x-display"
 COMPOSITOR_ARGS=()
 if [[ "$WAYLAND_COMPOSITOR" == sway ]]; then
   COMPOSITOR_ARGS=(--unsupported-gpu)

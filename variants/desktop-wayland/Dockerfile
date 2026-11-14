@@ -8,6 +8,13 @@ FROM nawaman/codingbooth:base-${BOOTH_VERSION_TAG}
 # one inherit it. Docker and Podman ignore it. See docs/CONTAINER_SUPPORT.md.
 LABEL com.codingbooth.vm-memory-min="4g"
 
+# GUI apps from `booth exec`. The label tells the CLI this booth has a Wayland
+# desktop, so exec waits for `booth--desktop-ready wayland` and runs the command
+# with the env it prints (XDG_RUNTIME_DIR, WAYLAND_DISPLAY, Xwayland's DISPLAY).
+# No ENV here: the compositor is picked at run time and its socket name differs,
+# and XDG_RUNTIME_DIR follows coder's uid. Images built FROM this one inherit it.
+LABEL com.codingbooth.desktop="wayland"
+
 # Given user is root and /opt/codingbooth/setups is in PATH (from base image)
 
 ARG APT_SNAPSHOT=

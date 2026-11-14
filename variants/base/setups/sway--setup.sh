@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.1
+# cb-version: 0.1.2
 
 # sway--setup.sh — the sway tiling compositor for the Wayland desktop.
 #
@@ -102,6 +102,10 @@ bar {
 
 # Open the terminal at start, as the labwc desktop does.
 exec \$term
+
+# Record Xwayland's DISPLAY (sway gives it only to its own children) for
+# booth--desktop-ready, as the labwc desktop's autostart does.
+exec sh -c 'echo "\${DISPLAY:-}" > "\${XDG_RUNTIME_DIR}/cb-x-display"'
 
 # Pieces that must float rather than tile.
 for_window [app_id="wofi"]            floating enable, border none

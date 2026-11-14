@@ -330,7 +330,7 @@ setup	stern	1.0.0	34ea4d09b559d24efa60cde0b1f79536d24bce1a33904c40f08648f1fc095f
 setup	supercollider	0.1.0	90e9a0ab1920027a12ef18ddb7234f9bd03560ed8f855e22cae86e2acf230016	variants/base/setups/supercollider--setup.sh
 setup	superfile	0.1.0	dd678bfaf672bc74af3e3aa3a734317aa9a407b2e10b1ad2caef70ad2783f262	variants/base/setups/superfile--setup.sh
 setup	svelte-code-extension	1.0.0	72a89f4990116bf86fe62a09ae0269fbd5f6e1aa73519b10b2d1beb5a47c7999	variants/base/setups/svelte-code-extension--setup.sh
-setup	sway	0.1.1	a84990c34c0f35888fe43de5bd99a5311033b2a39253e27ce8aa1a76f1f81113	variants/base/setups/sway--setup.sh
+setup	sway	0.1.2	b7a30cb191fd04919a451a550602d9982d36e5820b935be1f611618ab744c1cb	variants/base/setups/sway--setup.sh
 setup	sway-ctrl-alt	0.1.0	1b80287d9197d0d069db5d6cde174e867424365c7bd9e2679c45d8c0e31770b5	variants/base/setups/sway-ctrl-alt--setup.sh
 setup	sway-gaps	0.2.0	05743af72ea9f12733b3dbcb4f7777da66112a510fafb10d7501cd8516d06292	variants/base/setups/sway-gaps--setup.sh
 setup	swift	1.1.0	7b076d08a922b96ee25c7b16493f40828e6af7d0ef1b902d9c3dc58ddbdc1ff1	variants/base/setups/swift--setup.sh
@@ -356,7 +356,7 @@ setup	vue-code-extension	0.1.0	e75b46cd8553f1ee3b70b23d5b98f8ddc7215c1204f43180a
 setup	wails	0.3.0	6fa24e24b75ced33536bc0ae2317f8880373026341ed3e742fcd077758ab9a3c	variants/base/setups/wails--setup.sh
 setup	wails-android	0.1.0	4f4373e30df218c77731d7c37a8b7a260aae56831b6e0b5eb8f2875bb340e001	variants/base/setups/wails-android--setup.sh
 setup	warp	1.0.0	a7b2ea3c833b92cee4b52150e3d0be5bb7a7e290f045c40e2042ecc92441abbd	variants/base/setups/warp--setup.sh
-setup	wayland	1.0.1	747d3e8a63e3c66f281bfb1be44093a10344d7dcdf1f88263a99885131fc6dea	variants/base/setups/wayland--setup.sh
+setup	wayland	1.0.2	7b90f4f633a20de4f7d1f532c17da8dd0c3bcdcc3a0001b7b2a75859ff40916a	variants/base/setups/wayland--setup.sh
 setup	xfce	1.0.0	b767d43e8d75a62b44e8e69e25a87b8a2da65734e5122313b76669966a534dae	variants/base/setups/xfce--setup.sh
 setup	xfce-theme	0.3.0	3aaece21b4d035ec5c8b7709e074ab844a91270de0096e22278658c8db1f5036	variants/base/setups/xfce-theme--setup.sh
 setup	xfce-wallpaper	1.0.0	90cef9dd780257750f474fbcfa0fb2f3a4fc5fb4c24b8e7e53e5cfee8d3bfe70	variants/base/setups/xfce-wallpaper--setup.sh

@@ -4,13 +4,21 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth exec` runs GUI apps on a Wayland desktop booth too.** On `desktop-wayland`, `exec` waits
+  for the compositor and gives the command the session's `XDG_RUNTIME_DIR`, `WAYLAND_DISPLAY` and
+  Xwayland's `DISPLAY` — none of them can be set in the image, since the compositor (labwc or sway)
+  is chosen at start and the uid is the host's. Native Wayland apps and X apps both open on the
+  desktop; a `-e` of your own for any of these wins. `booth--desktop-ready` takes the desktop kind
+  (`x11` or `wayland`) and prints that env. See
+  [booth connect → GUI apps on a desktop booth](BOOTH_CONNECT.md#gui-apps-on-a-desktop-booth).
+
 - **`booth exec` runs GUI apps on a desktop booth.** The X11 desktop variants (`desktop-xfce`,
   `desktop-lxqt`, `desktop-kde`) set `DISPLAY=:1` in the image environment, so a command from
   `booth exec` finds the desktop, and `exec` waits for the booth's X server before running it: a
   booth just brought up by `--run` no longer needs a wait loop in the recipe. On a desktop that is
   already up the wait is a single check; one that does not come up within 90 seconds fails the
   `exec` without running the command. The images carry a new label, `com.codingbooth.desktop`,
-  and base has a new helper, `booth--desktop-ready`. `desktop-wayland` is not covered yet. See
+  and base has a new helper, `booth--desktop-ready`. (`desktop-wayland`: see the entry above.) See
   [booth connect → GUI apps on a desktop booth](BOOTH_CONNECT.md#gui-apps-on-a-desktop-booth).
 
 - **`booth dashboard` marks an express booth.** Its NAME ends in `(express)` (`(here, express)` on the
