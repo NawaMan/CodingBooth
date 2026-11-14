@@ -170,7 +170,6 @@ jobs:
         env:
           REPORT: ${{ runner.temp }}/report.txt
           CHECK_SHELL: bash -c
-          BOOTH_CONTAINER_NAME: host-provision
         run: |
           "$GITHUB_WORKSPACE/experiments/host-provision/check-example.sh"
           ! grep -q '^FAIL ' "$REPORT"

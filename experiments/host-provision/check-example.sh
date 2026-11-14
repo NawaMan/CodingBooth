@@ -11,8 +11,9 @@
 # example's folder:
 #   - the base image's tools and the booth-entry user steps;
 #   - every one of the example's own .cb-tests/inBooth-test*.sh, each in a
-#     login shell. BOOTH_CONTAINER_NAME is set so the example's Justfile runs
-#     its recipes here instead of starting a booth.
+#     login shell. The example's Justfile runs its {{run-in-booth}} recipes
+#     here, not in a booth, because CB_TARGET (gha or host) says this machine
+#     was set up by `booth prepare`, as it would for a real user.
 # CHECK_SHELL (default 'bash -lc') runs each check; 'bash -c' runs them in a
 # shell that reads no profile, as a later GHA step after `booth prepare gha` does.
 # Appends to $REPORT.
@@ -22,7 +23,6 @@ set -uo pipefail
 
 REPORT="${REPORT:-$HOME/host-provision-report.txt}"
 TESTLOG="${REPORT%.txt}-tests.log"
-export BOOTH_CONTAINER_NAME="${BOOTH_CONTAINER_NAME:-host-provision}"
 read -ra CHECK_SHELL <<< "${CHECK_SHELL:-bash -lc}"
 FAILS=0
 
