@@ -164,9 +164,9 @@ the whole list, so you don't have to restate everything else:
 ./booth config --no-tui --overwrite --remove-mount /app/data
 ```
 
-`--remove-*` and `--add-*` for the same field can combine in one run — a
-`--remove-select go --add-select go:1.25` replaces `go`'s params by dropping it
-and adding it back, in one step.
+`--remove-*` and `--add-*` for the same field can combine in one run. For the
+selection they apply in the order given (see below); `--add-select go:1.25` on
+its own already replaces `go`'s params.
 
 #### Selection paths
 

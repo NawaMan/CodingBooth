@@ -172,6 +172,7 @@ that baseline, so pass only the change:
 booth config --no-tui --overwrite --add-select docker           # add a template
 booth config --no-tui --overwrite --add-select go+vscode-ext    # add an extension to an existing template
 booth config --no-tui --overwrite --remove-select python        # drop one
+booth config --no-tui --overwrite --remove-select go+vscode-ext # drop an extension: always with its template
 booth config --no-tui --overwrite --add-env TZ=UTC              # also --add-expose, --add-mount, --remove-*
 ```
 

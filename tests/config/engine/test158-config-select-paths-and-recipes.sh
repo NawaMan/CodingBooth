@@ -128,4 +128,30 @@ run booth config $prj --no-tui --overwrite --add-select java
 has "$boothfile" "$header go+linter/python/rust/java"
 check $? "an old @web/rust header is rescued"
 
+# ---------------------------------------------------------------------------
+# +x replaces ~x: adding an excluded extension back drops the exclusion.
+# ---------------------------------------------------------------------------
+run rm -Rf $prj/.booth
+run booth config $prj --no-tui --select "python~vscode-ext"
+run booth config $prj --no-tui --overwrite --add-select python+vscode-ext
+has "$boothfile" "$header python+vscode-ext"
+check $? "--add-select python+vscode-ext replaces python~vscode-ext"
+
+# ---------------------------------------------------------------------------
+# ~glow is a root node: --remove-select ~glow matches only that removal.
+# ---------------------------------------------------------------------------
+run rm -Rf $prj/.booth
+run booth config $prj --no-tui --select "go/~glow"
+run booth config $prj --no-tui --overwrite --remove-select "~glow"
+has "$boothfile" "$header go"
+check $? "--remove-select ~glow drops the removal"
+if has "$boothfile" "~glow"; then ok=1; else ok=0; fi
+check $ok "and no ~glow is left in the Boothfile"
+
+run booth config $prj --no-tui --overwrite --add-select glow
+if booth config $prj --no-tui --overwrite --remove-select "~glow" 2> "$warning" >/dev/null; then ok=1; else ok=0; fi
+check $ok "--remove-select ~glow is refused while glow is selected"
+has "$warning" "is selected, not removed from the image"
+check $? "and the error says glow is selected"
+
 finally
