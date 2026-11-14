@@ -6,6 +6,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -18,11 +19,11 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/aptsnapshot"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/configweb"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/output"
-	"github.com/nawaman/codingbooth/src/pkg/justinit"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/selection"
 	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/tui"
 	"github.com/nawaman/codingbooth/src/pkg/docker"
+	"github.com/nawaman/codingbooth/src/pkg/justinit"
 )
 
 // runConfig handles the "config" command — booth configuration via TUI or CLI.
@@ -233,7 +234,7 @@ func runConfigCLI(version string, targetPath string, flags initFlags) {
 	printAdoptOutcome(os.Stderr, baseline)
 	drifted := baseline.drifted
 	flags = mergeFlags(baseline.flags, flags, targetPath)
-	flags.selectDSL = strings.Join(flags.selectDSLs, "/")
+	expandSelectFlagsOrExit(&flags, targetPath)
 	templatesVersion := templatesVersionFor(flags, version)
 
 	var out *output.BoothOutput
@@ -1146,32 +1147,68 @@ func mergeSelectDSLs(existing, cli initFlags, projectRoot string) []string {
 		fmt.Fprintf(os.Stderr, "Error reading existing selection: %v\n", err)
 		os.Exit(1)
 	}
-	addText, err := resolveDSLFragments(cli.addSelectDSLs, projectRoot)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error reading --add-select: %v\n", err)
+	editor := selection.NewSelectionEditor(parseSelectionOrExit(baseText, "existing selection"))
+
+	// Adds and removes apply in the order they were given, so the later write to
+	// a slot wins. Every removal is tried, so one run reports all of its errors.
+	failed := false
+	for _, edit := range orderedSelectEdits(cli) {
+		if edit.add {
+			addText, err := resolveDSLFragments([]string{edit.value}, projectRoot)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error reading --add-select: %v\n", err)
+				os.Exit(1)
+			}
+			editor.Add(parseSelectionOrExit(addText, "--add-select"))
+			continue
+		}
+		if err := editor.Remove(edit.value); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: --remove-select %q %v.\n", edit.value, removeErrorText(err))
+			failed = true
+		}
+	}
+	if failed {
+		fmt.Fprintln(os.Stderr, "Nothing was written.")
 		os.Exit(1)
 	}
 
-	base := parseSelectionOrExit(baseText, "existing selection")
-	add := parseSelectionOrExit(addText, "--add-select")
-
-	if len(cli.removeSelectNames) > 0 {
-		var unmatched []string
-		base, unmatched = selection.RemoveFromSelection(base, cli.removeSelectNames)
-		if len(unmatched) > 0 {
-			for _, name := range unmatched {
-				fmt.Fprintf(os.Stderr, "Error: --remove-select %q did not match anything in the existing selection.\n", name)
-			}
-			fmt.Fprintln(os.Stderr, "Nothing was written.")
-			os.Exit(1)
-		}
-	}
-
-	merged := selection.MergeSelections(base, add)
+	merged := editor.Selection()
 	if merged == nil {
 		return nil
 	}
 	return []string{selection.SerializeSelection(merged)}
+}
+
+// selectEdit is one --add-select (add) or --remove-select, as given.
+type selectEdit struct {
+	add   bool
+	value string
+}
+
+// orderedSelectEdits is cli's --add-select and --remove-select in command-line
+// order. Flags built without the parser (tests, other entry points) carry only
+// the two lists; they apply removes first, as they always have.
+func orderedSelectEdits(cli initFlags) []selectEdit {
+	if len(cli.selectEdits) > 0 {
+		return cli.selectEdits
+	}
+	var edits []selectEdit
+	for _, name := range cli.removeSelectNames {
+		edits = append(edits, selectEdit{value: name})
+	}
+	for _, dsl := range cli.addSelectDSLs {
+		edits = append(edits, selectEdit{add: true, value: dsl})
+	}
+	return edits
+}
+
+// removeErrorText words a RemovePath error to follow `--remove-select "x"`.
+func removeErrorText(err error) string {
+	var noMatch *selection.NoMatchError
+	if errors.As(err, &noMatch) {
+		return noMatch.Error()
+	}
+	return "is refused: " + err.Error()
 }
 
 // parseSelectionOrExit parses already-resolved DSL text (no recipe/URL/stdin
@@ -1444,6 +1481,20 @@ func buildPreSelection(registry *tmpl.TemplateRegistry, flags initFlags, existin
 	pre.AppliedRecipes = applied
 	pre.RecipeNote = note
 
+	// A param reset ("go:", or a node removed and added back in this run) shows
+	// the defaults, not the pin the old Boothfile holds; see overlayExistingArgs.
+	reset := map[string]bool{}
+	for _, item := range items {
+		if item.ResetParams {
+			reset[item.Name] = true
+		}
+		for _, ext := range item.Extensions {
+			if ext.ResetParams {
+				reset[item.Name+"/"+ext.Name] = true
+			}
+		}
+	}
+
 	for _, item := range items {
 		t, ok := registry.ByName[item.Name]
 		if !ok {
@@ -1506,8 +1557,13 @@ func buildPreSelection(registry *tmpl.TemplateRegistry, flags initFlags, existin
 		if !ok {
 			continue
 		}
-		overlayExistingArgs(pre.ParamValues, name, t, existingArgs)
+		if !reset[name] {
+			overlayExistingArgs(pre.ParamValues, name, t, existingArgs)
+		}
 		for extName := range pre.SelectedExts[name] {
+			if reset[name+"/"+extName] {
+				continue
+			}
 			for _, ext := range t.Extensions {
 				if ext.Name == extName {
 					overlayExistingArgs(pre.ParamValues, name+"/"+extName, ext, existingArgs)
@@ -1724,10 +1780,15 @@ Flags:
                             one token per --set and never split on commas).
 
 Reconfiguring an existing booth (edit one entry instead of restating the list):
-  --add-select <dsl>       Add onto the existing selection (repeatable). An
-                            extension merges onto an already-selected template
-                            instead of selecting it a second time.
-  --remove-select <name>   Drop a template or extension by name (repeatable)
+  --add-select <dsl>       Add onto the existing selection (repeatable). Only
+                            what you write changes: go+lsp adds lsp under go
+                            and leaves go's params alone; params you write
+                            replace the node's, and an empty list (go:)
+                            resets them to the defaults.
+  --remove-select <path>   Drop one node (repeatable): a template with its
+                            extensions (go), an extension (go+linter), an
+                            exclusion (go~lsp) or a removal (~glow). A bare
+                            extension name is refused: name its template.
   --add-expose <port>      Add or update one expose mapping, keyed on the
                             container port (repeatable)
   --remove-expose <port>   Drop one expose mapping by container port (repeatable)
@@ -1741,6 +1802,10 @@ Reconfiguring an existing booth (edit one entry instead of restating the list):
 
   A --remove-* or --unset that matches nothing is an error, and nothing is
   written.
+
+  --add-select and --remove-select apply in the order given, so the later
+  write to a node wins. A recipe (@name) expands into its templates when it is
+  used, and the booth records those templates, not the recipe.
 
   A plain flag (--select/--expose/--env/--mount) combined with its own
   --remove-* in the same run is refused: the plain flag already replaces the

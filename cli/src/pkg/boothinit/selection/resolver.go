@@ -49,7 +49,7 @@ func ResolveWithOverrides(parsed *ParsedSelection, registry *tmpl.TemplateRegist
 				pi.Name, quoteHint(parsed.Items, i))
 		}
 
-		paramValues, err := resolveParams(t, pi.Params, overrides)
+		paramValues, err := resolveParams(t, pi.Params, paramOverrides(pi.ResetParams, overrides))
 		if err != nil {
 			return nil, fmt.Errorf("template %q: %w", pi.Name, err)
 		}
@@ -258,6 +258,15 @@ func resolveParams(t *tmpl.Template, positional []string, overrides map[string]s
 	return values, nil
 }
 
+// paramOverrides is the preserved-pin map a node's params resolve against: none
+// when the selection reset them ("go:"), so they come back at their defaults.
+func paramOverrides(reset bool, overrides map[string]string) map[string]string {
+	if reset {
+		return nil
+	}
+	return overrides
+}
+
 // isPin reports whether an override carried over from an existing Boothfile is a value
 // the user chose, rather than one the previous generation derived.
 //
@@ -344,8 +353,8 @@ func resolveExtensions(t *tmpl.Template, explicit []ParsedExtension, excludes []
 			// Already auto-selected. Naming it again with params (`xfce+plank:1.2`)
 			// is how the user pins them, so those win over the defaults it was
 			// auto-selected with; a bare repeat changes nothing.
-			if len(pe.Params) > 0 {
-				paramValues, err := resolveParams(result[i].Extension, pe.Params, overrides)
+			if len(pe.Params) > 0 || pe.ResetParams {
+				paramValues, err := resolveParams(result[i].Extension, pe.Params, paramOverrides(pe.ResetParams, overrides))
 				if err != nil {
 					return nil, fmt.Errorf("extension %q: %w", pe.Name, err)
 				}
@@ -358,7 +367,7 @@ func resolveExtensions(t *tmpl.Template, explicit []ParsedExtension, excludes []
 		if !ok {
 			return nil, fmt.Errorf("unknown extension %q", pe.Name) // parent may be stock or project-local
 		}
-		paramValues, err := resolveParams(ext, pe.Params, overrides)
+		paramValues, err := resolveParams(ext, pe.Params, paramOverrides(pe.ResetParams, overrides))
 		if err != nil {
 			return nil, fmt.Errorf("extension %q: %w", pe.Name, err)
 		}

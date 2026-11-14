@@ -29,6 +29,10 @@ type ParsedSelection struct {
 type ParsedExtension struct {
 	Name   string
 	Params []string
+
+	// ResetParams marks an empty param list written out ("pkg:"): put the params
+	// back to their defaults, ignoring any pin the existing Boothfile carries.
+	ResetParams bool
 }
 
 // ParsedItem is a single template selection from the DSL.
@@ -38,6 +42,10 @@ type ParsedItem struct {
 	Params     []string
 	Extensions []ParsedExtension
 	Excludes   []string // extensions to exclude (from ~ operator)
+
+	// ResetParams marks an empty param list written out ("go:"): put the params
+	// back to their defaults, ignoring any pin the existing Boothfile carries.
+	ResetParams bool
 
 	// Remove marks a top-level "~name" item: take the template's tool out of the
 	// variant image that ships it (Template.Remove), rather than select it. A

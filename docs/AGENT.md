@@ -136,7 +136,7 @@ cd ~/code
 
 | Change | Flag |
 |---|---|
-| add / drop a template or extension | `--add-select python`, `--add-select go+linter`, `--remove-select python` |
+| add / drop a template or extension | `--add-select python`, `--add-select go+linter`, `--remove-select python`, `--remove-select go+linter` |
 | an env var | `--add-env TZ=UTC`, `--remove-env TZ` |
 | a published port | `--add-expose 8080`, `--add-expose +3000:5000` |
 | a mount | `--add-mount ~/data:/home/coder/data` |
