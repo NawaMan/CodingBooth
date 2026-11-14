@@ -80,6 +80,11 @@ type managedContainer struct {
 	// Version is cb.version: the CodingBooth version that created the booth.
 	Version string
 
+	// Desktop is the image's com.codingbooth.desktop label ("x11" on the X11
+	// desktop variants, inherited by images built FROM them): exec waits for
+	// that desktop's display before running a command. Empty: no desktop.
+	Desktop string
+
 	// SecurityWarning: the settings that let code in the booth reach the host, as recorded when
 	// it was created (hostescape.LabelKey). Printed again whenever the booth is started.
 	SecurityWarning []hostescape.Reason
@@ -782,6 +787,7 @@ func containerFromInspect(data inspectData, fallbackName string) managedContaine
 		ImageID:       data.Image,
 		ImageRef:      data.Config.Image,
 		Version:       labels["cb.version"],
+		Desktop:       labels[DesktopLabel],
 
 		SecurityWarning: hostescape.DecodeLabel(labels[hostescape.LabelKey]),
 	}

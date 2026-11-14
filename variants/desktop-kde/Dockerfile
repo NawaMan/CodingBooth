@@ -8,6 +8,13 @@ FROM nawaman/codingbooth:base-${BOOTH_VERSION_TAG}
 # one inherit it. Docker and Podman ignore it. See docs/CONTAINER_SUPPORT.md.
 LABEL com.codingbooth.vm-memory-min="4g"
 
+# GUI apps from `booth exec`. An exec session gets no login shell, so the desktop's
+# profile DISPLAY never reaches it; set it here instead. The label tells the CLI
+# this booth has an X11 desktop, so exec waits for booth--desktop-ready before it
+# runs the command. Images built FROM this one inherit both.
+ENV DISPLAY=:1
+LABEL com.codingbooth.desktop="x11"
+
 # Given user is root and /opt/codingbooth/setups is in PATH (from base image)
 
 ARG PYTHON_VERSION=3.12

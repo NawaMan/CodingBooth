@@ -195,6 +195,12 @@ func Exec(args []string, stderr io.Writer) error {
 		))
 	}
 
+	// A desktop booth (just brought up by --run, or still starting from elsewhere)
+	// may not have its display yet; a GUI command started now would fail to open.
+	if err := waitForDesktop(target, *silenceBuild, stderr); err != nil {
+		return err
+	}
+
 	// Build docker exec args
 	execArgs := buildExecFlags(*interactive, *daemon, *dir, envVars, *envfile, target.AppleLowPorts)
 
