@@ -88,6 +88,9 @@ func recipeApplyError(parsed *selection.ParsedSelection, registry *tmpl.Template
 		if !ok {
 			return fmt.Sprintf("unknown template %q", item.Name)
 		}
+		if item.Remove && !t.Removable() {
+			return fmt.Sprintf("~%s: template cannot be removed", item.Name)
+		}
 		known := map[string]bool{}
 		for _, ext := range t.Extensions {
 			known[ext.Name] = true
@@ -103,6 +106,14 @@ func recipeApplyError(parsed *selection.ParsedSelection, registry *tmpl.Template
 
 func (m *model) applyRecipeItem(item selection.ParsedItem) {
 	t := m.registry.ByName[item.Name]
+	if item.Remove {
+		// "~name" in a recipe: take the tool out of the image, as [ ] on [=].
+		if m.selected[t.Name] {
+			m.deselectTemplate(t)
+		}
+		m.removed[t.Name] = true
+		return
+	}
 	if !m.selected[t.Name] {
 		m.applySelectItem(treeItem{kind: kindTemplate, template: t})
 	}
@@ -212,6 +223,10 @@ func (m model) matchingRecipe(name string) (*selection.ParsedSelection, bool) {
 }
 
 func (m model) recipeItemMatches(item selection.ParsedItem) bool {
+	if item.Remove {
+		t, ok := m.registry.ByName[item.Name]
+		return ok && m.isRemoved(t)
+	}
 	t, ok := m.registry.ByName[item.Name]
 	if !ok || !m.selected[item.Name] {
 		return false

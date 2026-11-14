@@ -45,6 +45,18 @@ type Template struct {
 	// is flagged. Required when UnsupportedArch is set (guarded by a test).
 	UnsupportedArchNote string
 
+	// Variant images that already hold what this template installs, by canonical
+	// variant name ("base", "notebook", "desktop-xfce", ...). "base" stands for
+	// every variant, since each one is built FROM base. Selecting the template
+	// there still works — it installs the template's own release over the image's
+	// — but it adds no new tool, so the TUI marks it. See InVariant.
+	InVariants []string
+
+	// Remove is the Boothfile snippet that takes this item's tool back out of a
+	// variant image that ships it — emitted when the selection says ~name. Only
+	// an item with one can be removed; see Removable.
+	Remove string
+
 	// Config scalar values (match-or-error merge strategy)
 	Variant  string
 	Port     string

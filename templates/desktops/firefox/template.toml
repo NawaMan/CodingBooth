@@ -1,9 +1,16 @@
-cb-version = "1.0.0"
+cb-version = "1.1.0"
 display-name = "Firefox"
 primary = true
 display-disc = "Firefox browser for web testing (Mozillateam PPA)"
 display-detail = "Installs Firefox browser via the Mozillateam PPA. Useful for web development testing in desktop variants."
 display-order = 32
+in-variants = ["desktop-xfce", "desktop-kde", "desktop-lxqt", "desktop-wayland"]
+remove = """\
+run if dpkg -s firefox >/dev/null 2>&1; then apt-get purge -y firefox; fi \
+ && update-alternatives --remove x-www-browser /usr/bin/firefox 2>/dev/null || true
+run rm -f /etc/apt/sources.list.d/mozillateam-ubuntu-ppa.list /etc/apt/preferences.d/mozillateam-firefox \
+    /etc/apt/keyrings/mozillateam-ppa.gpg /etc/skel/Desktop/firefox.desktop
+"""
 tags = [
     "browser",
     "firefox",

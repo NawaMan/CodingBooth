@@ -73,6 +73,7 @@ type PreSelection struct {
 	BoolFields        map[string]bool            // pre-set bool values (dind, keep-alive, etc.)
 	ListFields        map[string][]string        // pre-set list values (expose, env, mount)
 	ParamValues       map[string]string          // "tmplName:PARAM" or "tmplName/extName:PARAM" → value
+	Removed           map[string]bool            // template names the selection removes from the image ("~name")
 
 	// Recipes lists .booth/recipes/*.recipe. AppliedRecipes are the @name
 	// tokens in the selection that opened the TUI. RecipeNote is shown when

@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/nawaman/codingbooth/src/pkg/booth"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/selection"
 	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/tui"
@@ -26,6 +27,7 @@ type Session struct {
 	registry     *tmpl.TemplateRegistry
 	hostArch     string
 	selected     map[string]bool
+	removed      map[string]bool // "~name": in the variant image, taken out (see tui model.removed)
 	stringFields map[string]string
 	boolFields   map[string]bool
 	listFields   map[string][]string
@@ -49,6 +51,7 @@ type Session struct {
 
 type sessionSnapshot struct {
 	selected map[string]bool
+	removed  map[string]bool
 	params   map[string]string
 	strings  map[string]string
 	bools    map[string]bool
@@ -73,6 +76,11 @@ type State struct {
 	LostComments    []string            `json:"lostComments"`
 	HasLocal        bool                `json:"hasLocal"`
 	Dirty           bool                `json:"dirty"`
+	// Variant is the canonical variant the Variant field resolves to ("" for a
+	// name booth would refuse), so the page can mark templates already in it.
+	Variant string `json:"variant"`
+	// Removed names the templates the save takes out of the image ("~name").
+	Removed map[string]bool `json:"removed"`
 }
 
 // NewSession builds session state the same way the TUI's newModel does:
@@ -82,6 +90,7 @@ func NewSession(registry *tmpl.TemplateRegistry, pre *tui.PreSelection, warning 
 		registry:     registry,
 		hostArch:     tmpl.HostArch(),
 		selected:     make(map[string]bool),
+		removed:      make(map[string]bool),
 		stringFields: make(map[string]string),
 		boolFields:   make(map[string]bool),
 		listFields:   make(map[string][]string),
@@ -110,6 +119,9 @@ func NewSession(registry *tmpl.TemplateRegistry, pre *tui.PreSelection, warning 
 			if len(values) > 0 {
 				thisSession.listFields[key] = append([]string{}, values...)
 			}
+		}
+		for templateName := range pre.Removed {
+			thisSession.removed[templateName] = true
 		}
 		for templateName := range pre.SelectedTemplates {
 			thisSession.selected[templateName] = true
@@ -183,6 +195,8 @@ func (thisSession *Session) stateLocked() State {
 		LostComments:    append([]string{}, thisSession.lostComments...),
 		HasLocal:        thisSession.hasLocal,
 		Dirty:           !thisSession.snapshot().equal(thisSession.baseline),
+		Variant:         thisSession.variant(),
+		Removed:         thisSession.removedNow(),
 	}
 }
 
@@ -198,6 +212,18 @@ func (thisSession *Session) Toggle(key string) error {
 	}
 
 	var notifications []string
+	// [=] → [ ] (~name) → [x] → [=], as in the TUI: a removable template whose
+	// tool the variant image ships is removed before it is selected.
+	if extension == nil && !thisSession.selected[key] && parent.Removable() &&
+		parent.InVariant(thisSession.variant()) && !thisSession.removed[key] {
+		thisSession.removed[key] = true
+		thisSession.notification = fmt.Sprintf("~%s: the booth takes %s out of the %s image. Click again to select the template's own release.",
+			key, key, thisSession.variant())
+		return nil
+	}
+	if extension == nil {
+		delete(thisSession.removed, key)
+	}
 	if thisSession.selected[key] {
 		delete(thisSession.selected, key)
 		if extension == nil {
@@ -212,6 +238,13 @@ func (thisSession *Session) Toggle(key string) error {
 		}
 	} else {
 		thisSession.selected[key] = true
+		entry := parent
+		if extension != nil {
+			entry = extension
+		}
+		if variant := thisSession.variant(); entry.InVariant(variant) {
+			notifications = append(notifications, entry.InVariantNote(variant))
+		}
 		if extension != nil {
 			thisSession.initParamDefaults(key, extension)
 			if !thisSession.selected[parent.Name] {
@@ -392,6 +425,7 @@ func (thisSession *Session) clearParamValues(itemKey string, template *tmpl.Temp
 func (thisSession *Session) snapshot() sessionSnapshot {
 	return sessionSnapshot{
 		selected: maps.Clone(thisSession.selected),
+		removed:  maps.Clone(thisSession.removed),
 		params:   maps.Clone(thisSession.paramValues),
 		strings:  maps.Clone(thisSession.stringFields),
 		bools:    maps.Clone(thisSession.boolFields),
@@ -401,6 +435,7 @@ func (thisSession *Session) snapshot() sessionSnapshot {
 
 func (thisSnapshot sessionSnapshot) equal(other sessionSnapshot) bool {
 	return maps.Equal(thisSnapshot.selected, other.selected) &&
+		maps.Equal(thisSnapshot.removed, other.removed) &&
 		maps.Equal(thisSnapshot.params, other.params) &&
 		maps.Equal(thisSnapshot.strings, other.strings) &&
 		maps.Equal(thisSnapshot.bools, other.bools) &&
@@ -455,7 +490,21 @@ func (thisSession *Session) buildSelectDSL() string {
 			parts = append(parts, item)
 		}
 	}
+	for _, category := range thisSession.registry.Categories {
+		for _, template := range category.Templates {
+			if thisSession.isRemoved(template) {
+				parts = append(parts, "~"+template.Name)
+			}
+		}
+	}
 	return strings.Join(parts, "/")
+}
+
+// isRemoved matches the TUI's rule: unticked from [=], not selected, removable,
+// and in the current variant's image — so a variant change drops the removal.
+func (thisSession *Session) isRemoved(template *tmpl.Template) bool {
+	return thisSession.removed[template.Name] && !thisSession.selected[template.Name] &&
+		template.Removable() && template.InVariant(thisSession.variant())
 }
 
 func (thisSession *Session) buildParamDSL(itemKey string, template *tmpl.Template) string {
@@ -511,4 +560,28 @@ func (thisSession *Session) AcceptAdopted() error {
 		return refresh()
 	}
 	return nil
+}
+
+// variant is the canonical variant the Variant field resolves to, the same way
+// booth resolves it at start ("" or console → base). "" for a refused name.
+func (thisSession *Session) variant() string {
+	canonical, ok := booth.CanonicalVariant(thisSession.stringFields["variant"])
+	if !ok {
+		return ""
+	}
+	return canonical
+}
+
+// removedNow is the set isRemoved holds right now, for the page to draw.
+func (thisSession *Session) removedNow() map[string]bool {
+	result := map[string]bool{}
+	if thisSession.registry == nil {
+		return result
+	}
+	for name, template := range thisSession.registry.ByName {
+		if template != nil && thisSession.isRemoved(template) {
+			result[name] = true
+		}
+	}
+	return result
 }

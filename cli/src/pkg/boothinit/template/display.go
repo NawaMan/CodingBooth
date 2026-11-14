@@ -77,6 +77,12 @@ func FormatTemplateDetail(w io.Writer, t *Template, registry *TemplateRegistry, 
 		fmt.Fprintf(w, "Description: %s\n", t.DisplayDesc)
 	}
 
+	// Already in the image: selecting it adds no new tool, only this template's
+	// own release (and whatever else it configures).
+	if where := t.InVariantsText(); where != "" {
+		fmt.Fprintf(w, "In image:    %s\n", where)
+	}
+
 	// No build for this machine's architecture — before the long description, so
 	// it is not missed by anyone skimming to decide whether to use the template.
 	if t.UnsupportedOn(HostArch()) {

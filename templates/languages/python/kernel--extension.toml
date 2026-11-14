@@ -1,7 +1,8 @@
-cb-version = "1.0.0"
+cb-version = "1.0.1"
 display-name = "Python Notebook Kernel"
 display-disc = "Python Jupyter notebook kernel"
 display-order = 5
+in-variants = ["desktop-xfce", "desktop-kde", "desktop-lxqt", "desktop-wayland"]
 auto-select = false
 requires = ["notebook"]
 tags = [

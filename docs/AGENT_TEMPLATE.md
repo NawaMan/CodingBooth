@@ -156,6 +156,8 @@ install go golang.org/x/tools/gopls@latest
 | `owner-permission` | array of tables | Mount points `booth-entry` updates on startup. Merged into `.booth/owner-permission.yaml`. `path` is absolute. `user`, `group`, and `mode` are optional; `mode` is a 3- or 4-digit octal string such as `"1777"`. A directory entry sets the mode on that directory and every directory under it, and the owner on everything in the tree, files included. A path that is not a mount point is left alone. |
 | `unsupported-arch`      | []string | Architectures with no build (`"arm64"`, `"amd64"`)  |
 | `unsupported-arch-note` | string   | Why, and what to use instead — required with the above |
+| `in-variants`   | []string   | Variant images that already hold what this item installs (`"base"` = every variant) — see below |
+| `remove`        | string     | Boothfile step that takes the tool back out of those images, run for a `~name` selection — see below |
 
 Scalars merge **match-or-error** across selected templates; arrays **combine and dedup**.
 
@@ -252,6 +254,57 @@ Both keys go together — a declaration without a note falls back to a generic
 sentence that says something is missing but not what to do instead. The
 `tests/config/catalog/test92-arch-unsupported-is-declared.sh` guard enforces the pair,
 and that arch bail-outs in setup scripts exit 0 with an explanation.
+
+### Templates already in a variant image
+
+Some tools are baked into a variant's image: `glow`, `ttt` and `envfolio` are in base, so in
+every variant; `firefox` and `google-chrome` are in each desktop variant. Their templates still
+make sense, because selecting one pins the template's own release or adds configuration, but
+selecting one adds no new tool. Declare where the tool already is:
+
+```toml
+in-variants = ["base"]                                  # every variant is built FROM base
+in-variants = ["desktop-xfce", "desktop-kde"]           # canonical variant names only
+```
+
+By itself this does **not** change what is selected or built. `booth config` shows the checkbox as
+`[=]` when the Config tab's Variant (default `base`) is one of them, explains it in the detail
+panel, and says so when the box is ticked. `booth config --web` does the same, and `booth template
+show` prints an `In image:` line. Extensions take the key too (`ttt+lsp`).
+
+To let a user take the tool **out**, add a `remove` step. It is Boothfile text, like a segment:
+
+```toml
+in-variants = ["base"]
+remove = """\
+run rm -f /usr/local/bin/lazygit
+"""
+```
+
+A selection with the top-level item `~lazygit` then skips the template's own segments and emits
+only this step, at order 95, after every install and post-setup step. In the TUI the checkbox then
+cycles `[=]` → `[ ]` → `[x]`. Write the step so that the booth still works without the tool, and
+rerunning it does no harm:
+
+- delete what the setup installed: the binary, man pages, completions, its `startup.d` script.
+- repoint anything that named the tool. `ttt` resets `$EDITOR` with `env EDITOR=nano` and moves
+  the `editor` link.
+- purge apt packages behind `dpkg -s`, and drop the sources and keys the setup added. Firefox and
+  Chrome also remove their `/etc/skel/Desktop` icon and their `x-www-browser` alternative.
+
+Leave `remove` off when something else in the booth needs the tool (gnupg for apt, envfolio for
+the folio features, python on a desktop). The item then shows `[=]` and cannot be removed.
+`booth config` refuses `~name` for an item without a step, or for a variant not listed in
+`in-variants`. `TestCatalogRemoveNeedsInVariants` fails on a `remove` with no `in-variants`.
+
+The values are checked against the images, not trusted:
+`TestCatalogInVariantsMatchVariantImages` (`cli/src/pkg/boothinit/template/invariant_test.go`)
+reads `variants/*/Dockerfile` and the setups they call, and for every item with a `setup` line
+requires `in-variants` to list exactly the variants whose image already runs all of them. A
+variant that gains or drops a tool fails that test until the template says so. Items installed
+another way (`install apt mc`) cannot be checked like that; their values only have to name real
+variants. Leave an item out when the template does materially more than the image does (`zsh`
+adds Oh My Zsh), since the mark tells the user selecting it changes nothing new.
 
 ### Parameters
 

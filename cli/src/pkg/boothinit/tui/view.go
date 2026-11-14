@@ -827,10 +827,7 @@ func (m model) renderLeftPanel(leftWidth, contentH int) []string {
 
 func (m model) renderTemplateLine(item treeItem, width int, isCursor bool) string {
 	isSelected := m.selected[item.template.Name]
-	check := "[ ]"
-	if isSelected {
-		check = "[x]"
-	}
+	check := m.checkState(item)
 
 	name := item.template.ListLabel()
 	desc := item.template.DisplayDesc
@@ -864,7 +861,7 @@ func (m model) renderTemplateLine(item treeItem, width int, isCursor bool) strin
 	if mark != "" {
 		styledMark = archWarnStyle.Render(mark)
 	}
-	line := check + " " + styledMark + styledName
+	line := m.styledCheck(check) + " " + styledMark + styledName
 	if descStr != "" {
 		line += "  " + detailLabel.Render(descStr)
 	}
@@ -888,10 +885,7 @@ func (m model) renderTemplateLine(item treeItem, width int, isCursor bool) strin
 func (m model) renderExtensionLine(item treeItem, width int, isCursor bool) string {
 	extKey := item.template.Name + "/" + item.extension.Name
 	isSelected := m.selected[extKey]
-	check := "[ ]"
-	if isSelected {
-		check = "[x]"
-	}
+	check := m.checkState(item)
 
 	name := item.extension.Name
 	desc := item.extension.DisplayDesc
@@ -913,7 +907,7 @@ func (m model) renderExtensionLine(item treeItem, width int, isCursor bool) stri
 	}
 
 	styledName := boldStyle.Render(autoMark + name)
-	line := "    " + check + " " + styledName
+	line := "    " + m.styledCheck(check) + " " + styledName
 	if descStr != "" {
 		line += "  " + detailLabel.Render(descStr)
 	}
@@ -1018,6 +1012,7 @@ func (m model) renderTemplateDetail(t *tmpl.Template, width int) ([]string, int,
 	// Above the description, not below it: someone scanning this panel to decide
 	// whether to tick the box needs to see "this will not install" first.
 	lines = append(lines, m.renderArchWarning(t, width)...)
+	lines = append(lines, m.renderInVariantNote(treeItem{kind: kindTemplate, template: t}, width)...)
 
 	if t.DisplayDesc != "" {
 		lines = append(lines, wrapText(t.DisplayDesc, width)...)
@@ -1111,6 +1106,7 @@ func (m model) renderExtensionDetail(item treeItem, width int) ([]string, int, m
 	lines = append(lines, detailTitle.Render(ext.DisplayName))
 	lines = append(lines, detailLabel.Render(fmt.Sprintf("Extension of %s", item.template.Name)))
 	lines = append(lines, "")
+	lines = append(lines, m.renderInVariantNote(item, width)...)
 
 	if ext.DisplayDesc != "" {
 		lines = append(lines, wrapText(ext.DisplayDesc, width)...)

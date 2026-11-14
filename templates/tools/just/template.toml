@@ -1,9 +1,13 @@
-cb-version = "1.1.0"
+cb-version = "1.2.0"
 display-name = "just"
 primary = true
 display-disc = "Command runner for project-scoped recipes (Justfile)"
 display-detail = "Installs just, a handy way to save and run project-specific commands. Like make, but without the build-system semantics. Already in every booth; select this only to pin a version."
 display-order = 65
+in-variants = ["base"]
+remove = """\
+run rm -f /usr/local/bin/just /etc/bash_completion.d/just
+"""
 tags = [
     "cli",
     "build",
