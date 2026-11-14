@@ -424,7 +424,7 @@ That recorded command is the **baseline**. A later `booth config` starts from it
 |---|---|
 | Nothing for a setting | Keeps the recorded value |
 | `--add-select X`, `--add-env`, `--add-expose`, `--add-mount` | Adds one entry, keeps the rest |
-| `--remove-select X`, `--remove-env KEY`, `--remove-expose PORT`, `--remove-mount PATH` | Drops one entry |
+| `--remove-select X` (a template, or `X+ext` for an extension), `--remove-env KEY`, `--remove-expose PORT`, `--remove-mount PATH` | Drops one entry |
 | `--select …`, `--env …`, `--expose …`, `--mount …` | **Replaces** that whole list |
 
 ```bash

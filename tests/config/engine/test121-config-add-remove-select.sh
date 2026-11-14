@@ -1,9 +1,9 @@
 #!/bin/bash
 # --add-select / --remove-select edit an existing booth's selection in place,
 # instead of the plain --select's whole-selection replace. --add-select unions
-# in template/extension names; --remove-select drops them, and can combine with
-# --add-select in the same run to replace one template's params without
-# restating anything else.
+# in template/extension nodes; --remove-select drops one by its path (go,
+# go+linter), and can combine with --add-select in the same run to replace one
+# template's params without restating anything else.
 source "$(dirname "$0")/../test-helpers--source.sh"
 
 begin
@@ -59,13 +59,23 @@ has "$boothfile" "# Configured by: booth config --no-tui --overwrite --select go
 check $? "python was removed, go and java survive"
 
 # ---------------------------------------------------------------------------
-# --remove-select drops just an extension, keeping its template.
+# --remove-select drops just an extension, named by its path under its template.
 # ---------------------------------------------------------------------------
 run rm -Rf $prj/.booth
 run booth config $prj --no-tui --select "go+linter+go-pkg/python"
-run booth config $prj --no-tui --overwrite --remove-select linter
+run booth config $prj --no-tui --overwrite --remove-select go+linter
 has "$boothfile" "# Configured by: booth config --no-tui --overwrite --select go+go-pkg/python"
 check $? "the linter extension was removed, go-pkg and go and python survive"
+
+# A bare extension name is not a path — the same name sits under many
+# templates — so it is refused, and the error gives the path to use.
+cp "$boothfile" "$prj/Boothfile.before"
+if booth config $prj --no-tui --overwrite --remove-select go-pkg 2> "$warning" >/dev/null; then ok=1; else ok=0; fi
+check $ok "a bare extension name is refused"
+cmp -s "$boothfile" "$prj/Boothfile.before"
+check $? "and the booth was not rewritten"
+has "$warning" 'go+go-pkg'
+check $? "the error names the path, go+go-pkg"
 
 # ---------------------------------------------------------------------------
 # --remove-select and --add-select combine in one run: replace a template's

@@ -4,6 +4,23 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`--add-select` and `--remove-select` address nodes by path.** A selection is a tree of templates
+  and their extensions, and `--remove-select` now names one node: `go`, `go+linter`, `go~lsp` or
+  `~glow`. **Breaking:** a bare extension name (`--remove-select linter`) is refused, since the same
+  name sits under many templates and the old lookup took the first one it found; the error lists
+  the paths to use. Adds and removes apply in the order given, so the later write to a node wins.
+  Adding through a path changes only its last node (`--add-select go+lsp` leaves `go`'s version
+  alone), and an empty param list resets a node to its defaults (`--add-select go:`), past a pin
+  the Boothfile still holds. See [Selection paths](BOOTH_CONFIG.md#selection-paths).
+
+- **A recipe is expanded when it is used.** The header of a booth configured with `--select @web`
+  now records the templates the recipe selected, not `@web`, so the booth does not depend on the
+  recipe file, and a later edit to the recipe reaches it only when the recipe is used again
+  (`--add-select @web`). `--remove-select @web` is refused. **Fixed:** `--select @web --select glow`
+  was recorded as `--select @web/glow`, which read back as a recipe named `web/glow`, so every later
+  `booth config` of that booth failed with "recipe not found"; such a header is now read as the
+  recipe plus `glow`.
+
 - **`booth config` shows what the variant image already has, and can take it out.** In the TUI and in
   `booth config --web`, the checkbox of a template whose tool ships with the image of the Config
   tab's Variant (default base) reads `[=]`. On every variant that covers glow, ttt, lazygit,

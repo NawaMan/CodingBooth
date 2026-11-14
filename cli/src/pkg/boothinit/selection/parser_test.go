@@ -489,3 +489,46 @@ func TestParse_MalformedPlusStillErrors(t *testing.T) {
 		assert.Contains(t, err.Error(), "empty extension name", "%q", dsl)
 	}
 }
+
+func TestParseSelectDSL_EmptyParamListIsAReset(t *testing.T) {
+	parsed, err := ParseSelectDSL("go:+linter:+lsp/python")
+	require.NoError(t, err)
+	assert.True(t, parsed.Items[0].ResetParams)
+	assert.Empty(t, parsed.Items[0].Params)
+	assert.True(t, parsed.Items[0].Extensions[0].ResetParams)
+	assert.False(t, parsed.Items[0].Extensions[1].ResetParams)
+	assert.False(t, parsed.Items[1].ResetParams)
+}
+
+func TestReadSelectInput_RescuesJoinedRecipeHeader(t *testing.T) {
+	project := t.TempDir()
+	recipes := filepath.Join(project, ".booth", "recipes")
+	require.NoError(t, os.MkdirAll(filepath.Join(recipes, "team"), 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(recipes, "web.recipe"), []byte("go+linter # the stack\npython"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(recipes, "team", "api.recipe"), []byte("rust"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(project, "local.recipe"), []byte("java"), 0644))
+
+	// Headers once recorded `--select @web --select glow` as "@web/glow".
+	result, err := ReadSelectInputWithProject("@web/glow", project)
+	require.NoError(t, err)
+	parsed, err := ParseSelectDSL(result)
+	require.NoError(t, err)
+	assert.Equal(t, "go+linter/python/glow", SerializeSelection(parsed), "a trailing # comment does not swallow glow")
+
+	// A recipe in a subdirectory is still one path, tried first.
+	result, err = ReadSelectInputWithProject("@team/api", project)
+	require.NoError(t, err)
+	assert.Equal(t, "rust", result)
+
+	// Two recipes, one with a path of its own.
+	result, err = ReadSelectInputWithProject("@team/api/@"+filepath.Join(project, "local.recipe")+"/go", project)
+	require.NoError(t, err)
+	parsed, err = ParseSelectDSL(result)
+	require.NoError(t, err)
+	assert.Equal(t, "rust/java/go", SerializeSelection(parsed))
+
+	// Nothing to rescue: the original error stands.
+	_, err = ReadSelectInputWithProject("@missing/glow", project)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `recipe "missing/glow" not found`)
+}
