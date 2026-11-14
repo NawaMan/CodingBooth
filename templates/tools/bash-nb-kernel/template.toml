@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.0.1"
 display-name = "Bash Notebook Kernel"
 primary = true
 display-disc = "Bash Jupyter notebook kernel (requires notebook)"
@@ -6,6 +6,7 @@ display-detail = """Adds a Bash kernel to JupyterLab so notebook cells can run s
 commands directly. Useful for running ad-hoc scripts, exploring system tools, or teaching \
 shell workflows in a notebook. Requires the notebook template (which pulls in python)."""
 display-order = 25
+in-variants = ["notebook", "codeserver", "desktop-xfce", "desktop-kde", "desktop-lxqt", "desktop-wayland"]
 auto-select = false
 requires = ["notebook"]
 tags = [

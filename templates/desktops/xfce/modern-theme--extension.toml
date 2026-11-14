@@ -1,4 +1,4 @@
-cb-version = "0.2.0"
+cb-version = "0.2.1"
 display-name   = "Modern Theme"
 display-disc   = "Greybird-dark apps and windows, Reversal-dark icons, Gruppled cursor"
 display-detail = """\
@@ -11,6 +11,7 @@ material-cursors). Only the system defaults change, so \
 a choice made later in Settings, or with `booth--theme set <type> <name>` from \
 any shell in the booth, always wins. Same look as the desktop-xfce variant."""
 display-order  = 15
+in-variants = ["desktop-xfce"]
 auto-select    = true
 tags = [
     "desktop",

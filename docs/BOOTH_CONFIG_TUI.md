@@ -96,7 +96,8 @@ If the booth holds hand-written files, step 2 also raises a warning on open and 
 - **Footer line 1**: Messages and notifications (auto-select, dependency resolution)
 - **Footer line 2**: Context-sensitive keybinding hints
 
-Extensions marked with `*` are auto-selected when their parent template is selected.
+Extensions marked with `*` are auto-selected when their parent template is selected. `=` marks
+an item already in the variant's image (below).
 
 A template marked with `!` has no build for your machine's architecture — for example
 `google-chrome` on Apple Silicon, since Google publishes no linux/arm64 Chrome. You can still
@@ -104,6 +105,16 @@ select it and the booth still builds: the setup prints a warning and skips rathe
 so one absent tool never takes down a build in which everything else succeeded. The right panel
 opens with what is missing and what to use instead, and selecting it repeats that in the footer.
 Templates with a working arm64 build — `chromium`, `firefox`, `playwright` — are not marked.
+
+A template or extension marked with `=` is already in the image of the variant you picked: its
+tool ships with that image, so selecting it adds nothing new. It only installs the template's own
+release over the image's, plus whatever else the template sets up. `glow`, `ttt`, `lazygit` and
+`envfolio` are marked on every variant, because they are in base, which every variant is built
+from. `firefox`, `google-chrome` and `python` are marked once you switch the Config tab's
+**Variant** to a desktop. The mark follows that field, and an empty Variant means base. The right
+panel says which image holds the tool, and selecting the template repeats that in the footer. When
+a row has both marks, the `!` arch warning takes the slot. `booth template show <name>` prints the
+same thing as an `In image:` line.
 
 ---
 

@@ -4,6 +4,16 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth config` marks templates the variant image already has.** A `=` before the name (in the
+  TUI and in `booth config --web`) says the tool already ships with the image of the Variant on the
+  Config tab, which defaults to base. On every variant that covers glow, ttt, lazygit, superfile,
+  differ, just, envfolio, gnupg and mc. Desktop variants add Firefox, Chrome, Python and their
+  desktop. notebook and codeserver add Python, JupyterLab or code-server. Selecting one still works
+  and installs the template's own release; the detail panel and the footer say so. Templates and
+  extensions declare it with the new `in-variants` key, and a unit test checks every declaration
+  against the variant Dockerfiles. `booth template show` prints it as `In image:`. See
+  [booth config → TUI Layout](BOOTH_CONFIG_TUI.md#tui-layout).
+
 - **`booth exec` runs GUI apps on a Wayland desktop booth too.** On `desktop-wayland`, `exec` waits
   for the compositor and gives the command the session's `XDG_RUNTIME_DIR`, `WAYLAND_DISPLAY` and
   Xwayland's `DISPLAY` — none of them can be set in the image, since the compositor (labwc or sway)

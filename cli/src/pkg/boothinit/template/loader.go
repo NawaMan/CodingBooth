@@ -41,6 +41,7 @@ type specToml struct {
 	AutoSelect          *bool                `toml:"auto-select"`
 	UnsupportedArch     []string             `toml:"unsupported-arch"`
 	UnsupportedArchNote string               `toml:"unsupported-arch-note"`
+	InVariants          []string             `toml:"in-variants"`
 	Variant             string               `toml:"variant"`
 	Port                string               `toml:"port"`
 	Timezone            string               `toml:"timezone"`
@@ -217,6 +218,7 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 		AutoSelect:          spec.AutoSelect,
 		UnsupportedArch:     spec.UnsupportedArch,
 		UnsupportedArchNote: spec.UnsupportedArchNote,
+		InVariants:          spec.InVariants,
 		CBVersion:           spec.CBVersion,
 		Variant:             spec.Variant,
 		Port:                spec.Port,
@@ -417,6 +419,7 @@ func loadExtensionFile(filePath, name, categoryName string) (*Template, error) {
 		AutoSelect:          spec.AutoSelect,
 		UnsupportedArch:     spec.UnsupportedArch,
 		UnsupportedArchNote: spec.UnsupportedArchNote,
+		InVariants:          spec.InVariants,
 		CBVersion:           spec.CBVersion,
 		Variant:             spec.Variant,
 		Port:                spec.Port,

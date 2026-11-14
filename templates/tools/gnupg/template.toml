@@ -1,9 +1,10 @@
-cb-version = "1.0.0"
+cb-version = "1.0.1"
 display-name = "GnuPG"
 primary = true
 display-disc = "GPG keys in the booth: bring chosen keys from the host with +keys"
 display-detail = "GnuPG 2.5 (gpg) is in every booth already; this template adds nothing on its own. Select +keys to bring chosen private keys from the host's keyring, still protected by their passphrase, together with the host's public keyring — to decrypt, sign (git commits too, once user.signingkey is set), or encrypt to the people the host knows. For the EnvFolio store's key, tools/envfolio+seed brings it already."
 display-order = 65
+in-variants = ["base"]
 tags = [
     "cli",
     "gpg",

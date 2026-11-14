@@ -56,6 +56,9 @@
     .item input[type=checkbox] { accent-color: var(--selected); width: 15px; height: 15px;
       flex-shrink: 0; cursor: pointer; }
     .bang { color: var(--warn); font-weight: 700; }
+    .invariant { color: #5fafaf; font-weight: 700; }
+    .in-variant { border-left: 3px solid #5fafaf; padding: 6px 10px; margin-bottom: 10px; color: var(--muted); }
+    .in-variant strong { color: #5fafaf; }
     .group { margin: 16px 0 8px; color: #ff87ff; font-weight: 700; font-size: 12px;
       text-transform: uppercase; letter-spacing: .04em; }
     .field { display: grid; grid-template-columns: 180px 1fr; gap: 8px; align-items: start;
@@ -163,6 +166,13 @@ function isSelected(key) { return !!state.selected[key]; }
 
 function extensionsOf(template) { return template.extensions || []; }
 
+// Already in the image of the variant the Config tab resolves to (state.variant,
+// canonical). "base" stands for every variant: each image is built FROM base.
+function inVariant(item) {
+  const v = state.variant || "";
+  return !!v && (item.inVariants || []).some(x => x === "base" || x === v);
+}
+
 function passesFilter(template) {
   const exts = extensionsOf(template);
   if (filter === "all") return true;
@@ -235,7 +245,8 @@ function renderList() {
 
 function itemRow(key, item, isExt) {
   const checked = isSelected(key) ? " checked" : "";
-  const bang = item.unsupportedOnHost ? ' <span class="bang">!</span>' : "";
+  const bang = item.unsupportedOnHost ? ' <span class="bang">!</span>'
+    : inVariant(item) ? ` <span class="invariant" title="Already in the ${esc(state.variant)} image">=</span>` : "";
   const star = item.autoSelect ? "*" : "";
   const hi = highlighted === key ? " hi" : "";
   const ext = isExt ? " ext" : "";
@@ -317,6 +328,9 @@ function renderDetail() {
   let html = "";
   if (item.unsupportedOnHost) {
     html += `<div class="arch">No ${esc(catalog.hostArch)} build — it will NOT be installed. ${esc(item.unsupportedArchNote)}</div>`;
+  }
+  if (inVariant(item)) {
+    html += `<div class="in-variant"><strong>= Already in the ${esc(state.variant)} image.</strong> Selecting it adds no new tool: it installs the template's own release over the image's, and whatever else the template sets up.</div>`;
   }
   html += `<h2>${esc(item.displayName || item.name)}</h2>`;
   html += `<p>${esc(item.displayDetail || item.displayDesc || "")}</p>`;
