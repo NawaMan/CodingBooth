@@ -14,6 +14,15 @@ cd "$ROOT"
 
 echo "=== WebKitGTK sandbox is disabled ==="
 
+# Off a booth (`booth prepare`, CB_TARGET gha or host) there is no booth desktop
+# (a GHA run is a base booth), and the sandbox workaround is for a container: the
+# GUI launch is not part of build/test (docs/REUSE_BOOTH.md). The builds are
+# test002 and test003.
+if [[ "${CB_TARGET:-booth}" != "booth" ]]; then
+    echo "SKIP: CB_TARGET=${CB_TARGET}: launching the GUI needs the booth's desktop"
+    exit 0
+fi
+
 FAILED=0
 
 if [[ "${WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS:-}" == "1" ]]; then
