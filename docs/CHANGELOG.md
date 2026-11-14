@@ -4,6 +4,15 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth exec` runs GUI apps on a desktop booth.** The X11 desktop variants (`desktop-xfce`,
+  `desktop-lxqt`, `desktop-kde`) set `DISPLAY=:1` in the image environment, so a command from
+  `booth exec` finds the desktop, and `exec` waits for the booth's X server before running it: a
+  booth just brought up by `--run` no longer needs a wait loop in the recipe. On a desktop that is
+  already up the wait is a single check; one that does not come up within 90 seconds fails the
+  `exec` without running the command. The images carry a new label, `com.codingbooth.desktop`,
+  and base has a new helper, `booth--desktop-ready`. `desktop-wayland` is not covered yet. See
+  [booth connect → GUI apps on a desktop booth](BOOTH_CONNECT.md#gui-apps-on-a-desktop-booth).
+
 - **`booth dashboard` marks an express booth.** Its NAME ends in `(express)` (`(here, express)` on the
   repository the dashboard runs in), and the `i` pane has a `Booth dir` row: the `.booth` the booth
   reads — its folder's, or the express booth's own. See [booth lifecycle → dashboard](BOOTH_LIFECYCLE.md#dashboard).

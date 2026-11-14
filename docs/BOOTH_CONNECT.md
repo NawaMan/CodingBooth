@@ -20,6 +20,7 @@ Back to [README](../README.md)
 - [Overview](#overview)
 - [shell](#shell)
 - [exec](#exec)
+  - [GUI apps on a desktop booth](#gui-apps-on-a-desktop-booth)
 - [Target Resolution](#target-resolution)
 - [Run the booth if it is not running](#run-the-booth-if-it-is-not-running)
   - [Cleanup](#cleanup-the-booth-is-brought-back-down-afterwards)
@@ -178,6 +179,36 @@ Two combinations are refused rather than silently doing the wrong thing:
 The same reasoning applies to a booth an earlier `--run` left ephemeral: `--daemon` against one fails unless `--keep-alive` is given, since the next session to leave would take the booth — and the detached command — down with it.
 
 The detached command shares the booth's lifetime, not `exec`'s: stopping or removing the booth stops it too.
+
+### GUI apps on a desktop booth
+
+On the X11 desktop variants (`desktop-xfce`, `desktop-lxqt`, `desktop-kde`), and on images built
+`FROM` them, a GUI app started with `exec` opens on the booth's desktop with nothing extra:
+
+```bash
+./booth exec --run --keep-alive -- xfce4-terminal                    # opens on the desktop
+./booth exec myproject --daemon -- bash -c 'code . >/dev/null 2>&1'  # start it and return
+```
+
+Two things make that work:
+
+- **`DISPLAY` is set.** An `exec` session gets no login shell, so the desktop's profile never runs
+  in it; these images set `DISPLAY=:1` in their environment instead.
+- **`exec` waits for the display.** These images carry the label `com.codingbooth.desktop`. Before
+  running the command, `exec` asks the booth whether its X server answers
+  (`booth--desktop-ready`, which runs `xset q`). On a desktop that is already up that is one quick
+  check. On one that is still starting — just created or restarted by `--run`, or brought up from
+  another terminal — `exec` prints `Waiting for the desktop of booth "…" to come up...` (hidden by
+  `--silence-build`) and holds the command until the display answers. If it does not answer within
+  90 seconds, `exec` fails with exit code `1` and does not run the command; `booth logs` shows why
+  the desktop did not start.
+
+"Up" means the X server answers. The panel and window manager may still be loading, which a GUI
+app does not need. A recipe that needs the window manager itself, such as `i3-msg`, still waits
+for it.
+
+The Wayland desktop (`desktop-wayland`) does not do this yet: its X display is started on demand by
+the compositor, so it has no fixed `DISPLAY` to set.
 
 ---
 
