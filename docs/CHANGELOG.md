@@ -4,6 +4,14 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`just` recipes run in place on a machine `booth prepare` set up.** With `CB_TARGET` gha or host
+  (which `booth prepare` writes to `/etc/profile.d` and, on a runner, to `GITHUB_ENV`),
+  `{{run-in-booth}}` runs the line as is, instead of handing it to `./booth exec --run` (which
+  would start a Docker booth on the runner) or refusing it as another project's booth. The
+  `booth just-init` starter and every example's Justfile carry the new branch. An existing
+  Justfile keeps its old line; add the branch by hand (see
+  [Run recipes from the host](USER_GUIDE.md#run-recipes-from-the-host)).
+
 - **`--add-select` and `--remove-select` address nodes by path.** A selection is a tree of templates
   and their extensions, and `--remove-select` now names one node: `go`, `go+linter`, `go~lsp` or
   `~glow`. **Breaking:** a bare extension name (`--remove-select linter`) is refused, since the same
