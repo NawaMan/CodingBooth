@@ -24,6 +24,9 @@ func SerializeSelection(sel *ParsedSelection) string {
 // SerializeItem renders a single ParsedItem back to DSL text:
 // name[:p1,p2][+ext1[:e1p1,...]]...[~exc1][~exc2]
 func SerializeItem(item ParsedItem) string {
+	if item.Remove {
+		return "~" + item.Name
+	}
 	var b strings.Builder
 	b.WriteString(item.Name)
 	writeParamList(&b, item.Params)
@@ -85,6 +88,10 @@ func MergeSelections(base, add *ParsedSelection) *ParsedSelection {
 }
 
 func mergeItem(base, add ParsedItem) ParsedItem {
+	// Selecting and removing the same template are opposites: the later word wins.
+	if base.Remove || add.Remove {
+		return add
+	}
 	merged := base
 	if len(add.Params) > 0 {
 		merged.Params = add.Params

@@ -52,6 +52,11 @@ type Template struct {
 	// — but it adds no new tool, so the TUI marks it. See InVariant.
 	InVariants []string
 
+	// Remove is the Boothfile snippet that takes this item's tool back out of a
+	// variant image that ships it — emitted when the selection says ~name. Only
+	// an item with one can be removed; see Removable.
+	Remove string
+
 	// Config scalar values (match-or-error merge strategy)
 	Variant  string
 	Port     string

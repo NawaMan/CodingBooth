@@ -616,7 +616,31 @@ func compileSelectionE(flags initFlags, projectRoot string, overrides map[string
 	mergeConfigCache(out)
 	mergeConfigShared(out)
 
+	if err := checkRemovalsInVariant(resolved, out.Config.Variant); err != nil {
+		return nil, nil, err
+	}
+
 	return out, resolved, nil
+}
+
+// checkRemovalsInVariant refuses a "~name" for a tool the booth's variant image
+// does not ship: there is nothing to take out, and the step would only say
+// otherwise. variant is the config value, before alias resolution.
+func checkRemovalsInVariant(resolved *selection.ResolvedSelection, variant string) error {
+	if resolved == nil || len(resolved.Removed) == 0 {
+		return nil
+	}
+	canonical, ok := booth.CanonicalVariant(variant)
+	if !ok {
+		return nil // ValidateVariant reports an unknown variant when the booth starts
+	}
+	for _, t := range resolved.Removed {
+		if !t.InVariant(canonical) {
+			return fmt.Errorf("resolving selection: ~%s: %s is not in the %s image, so there is nothing to remove (it is in: %s)",
+				t.Name, t.Name, canonical, t.InVariantsText())
+		}
+	}
+	return nil
 }
 
 // printDryrun prints what would be generated without writing files.

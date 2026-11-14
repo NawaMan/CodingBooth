@@ -23,6 +23,7 @@ import (
 // chip are deliberately absent: looking around is not editing.
 type configSnapshot struct {
 	selected map[string]bool
+	removed  map[string]bool
 	params   map[string]string
 	strings  map[string]string
 	bools    map[string]bool
@@ -38,6 +39,7 @@ func (m model) snapshot() configSnapshot {
 	}
 	return configSnapshot{
 		selected: maps.Clone(m.selected),
+		removed:  maps.Clone(m.removed),
 		params:   maps.Clone(m.paramValues),
 		strings:  maps.Clone(m.stringFields),
 		bools:    maps.Clone(m.boolFields),
@@ -47,6 +49,7 @@ func (m model) snapshot() configSnapshot {
 
 func (s configSnapshot) equal(other configSnapshot) bool {
 	return maps.Equal(s.selected, other.selected) &&
+		maps.Equal(s.removed, other.removed) &&
 		maps.Equal(s.params, other.params) &&
 		maps.Equal(s.strings, other.strings) &&
 		maps.Equal(s.bools, other.bools) &&

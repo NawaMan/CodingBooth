@@ -827,10 +827,7 @@ func (m model) renderLeftPanel(leftWidth, contentH int) []string {
 
 func (m model) renderTemplateLine(item treeItem, width int, isCursor bool) string {
 	isSelected := m.selected[item.template.Name]
-	check := "[ ]"
-	if isSelected {
-		check = "[x]"
-	}
+	check := m.checkState(item)
 
 	name := item.template.ListLabel()
 	desc := item.template.DisplayDesc
@@ -843,10 +840,6 @@ func (m model) renderTemplateLine(item treeItem, width int, isCursor bool) strin
 	mark := ""
 	if item.template.UnsupportedOn(m.hostArch) {
 		mark = "!"
-	} else if m.inVariant(item) {
-		// Already in the variant image. The arch warning wins the slot: a tool
-		// that will not install matters more than one that is already there.
-		mark = inVariantMark
 	}
 
 	plainPrefix := check + " " + mark + name
@@ -865,13 +858,10 @@ func (m model) renderTemplateLine(item treeItem, width int, isCursor bool) strin
 
 	styledName := boldStyle.Render(name)
 	styledMark := mark
-	switch mark {
-	case "!":
+	if mark != "" {
 		styledMark = archWarnStyle.Render(mark)
-	case inVariantMark:
-		styledMark = inVariantStyle.Render(mark)
 	}
-	line := check + " " + styledMark + styledName
+	line := m.styledCheck(check) + " " + styledMark + styledName
 	if descStr != "" {
 		line += "  " + detailLabel.Render(descStr)
 	}
@@ -895,10 +885,7 @@ func (m model) renderTemplateLine(item treeItem, width int, isCursor bool) strin
 func (m model) renderExtensionLine(item treeItem, width int, isCursor bool) string {
 	extKey := item.template.Name + "/" + item.extension.Name
 	isSelected := m.selected[extKey]
-	check := "[ ]"
-	if isSelected {
-		check = "[x]"
-	}
+	check := m.checkState(item)
 
 	name := item.extension.Name
 	desc := item.extension.DisplayDesc
@@ -908,13 +895,7 @@ func (m model) renderExtensionLine(item treeItem, width int, isCursor bool) stri
 		autoMark = "*"
 	}
 
-	// Same slot as a template row's marker, ahead of the auto-select "*".
-	varMark := ""
-	if m.inVariant(item) {
-		varMark = inVariantMark
-	}
-
-	plainPrefix := "    " + check + " " + varMark + autoMark + name
+	plainPrefix := "    " + check + " " + autoMark + name
 	// See renderTemplateLine: width, not byte length, for the same reason.
 	remaining := width - lipgloss.Width(plainPrefix) - 2
 	descStr := ""
@@ -926,11 +907,7 @@ func (m model) renderExtensionLine(item treeItem, width int, isCursor bool) stri
 	}
 
 	styledName := boldStyle.Render(autoMark + name)
-	line := "    " + check + " "
-	if varMark != "" {
-		line += inVariantStyle.Render(varMark)
-	}
-	line += styledName
+	line := "    " + m.styledCheck(check) + " " + styledName
 	if descStr != "" {
 		line += "  " + detailLabel.Render(descStr)
 	}

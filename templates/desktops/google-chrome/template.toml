@@ -1,10 +1,16 @@
-cb-version = "1.0.1"
+cb-version = "1.1.0"
 display-name = "Google Chrome"
 primary = true
 display-disc = "Google Chrome browser for web testing (DEB repo)"
 display-detail = "Installs Google Chrome browser from the official DEB repository. Useful for web development testing in desktop variants."
 display-order = 34
 in-variants = ["desktop-xfce", "desktop-kde", "desktop-lxqt", "desktop-wayland"]
+remove = """\
+run if dpkg -s google-chrome-stable >/dev/null 2>&1; then apt-get purge -y google-chrome-stable; fi \
+ && update-alternatives --remove x-www-browser /usr/local/bin/google-chrome 2>/dev/null || true
+run rm -rf /usr/local/bin/google-chrome /etc/opt/chrome /etc/apt/sources.list.d/google-chrome.list \
+    /etc/apt/keyrings/google-linux-signing-keyring.gpg /etc/skel/Desktop/google-chrome.desktop
+"""
 tags = [
     "browser",
     "chrome",

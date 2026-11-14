@@ -19,9 +19,10 @@ import (
 func variantRegistry() *tmpl.TemplateRegistry {
 	glow := &tmpl.Template{Name: "glow", InVariants: []string{"base"}}
 	firefox := &tmpl.Template{Name: "firefox", InVariants: []string{"desktop-xfce"}}
+	lazygit := &tmpl.Template{Name: "lazygit", InVariants: []string{"base"}, Remove: "run rm -f /usr/local/bin/lazygit"}
 	return &tmpl.TemplateRegistry{
-		Categories: []*tmpl.Category{{Name: "tools", DisplayName: "Tools", Templates: []*tmpl.Template{glow, firefox}}},
-		ByName:     map[string]*tmpl.Template{"glow": glow, "firefox": firefox},
+		Categories: []*tmpl.Category{{Name: "tools", DisplayName: "Tools", Templates: []*tmpl.Template{glow, firefox, lazygit}}},
+		ByName:     map[string]*tmpl.Template{"glow": glow, "firefox": firefox, "lazygit": lazygit},
 	}
 }
 
@@ -61,5 +62,41 @@ func TestSession_SelectInVariantSaysSo(t *testing.T) {
 	}
 	if got := session.CurrentState().Notification; strings.Contains(got, "already in") {
 		t.Errorf("firefox is not in base, notification = %q", got)
+	}
+}
+
+func TestSession_RemovableCyclesThroughRemoved(t *testing.T) {
+	session := NewSession(variantRegistry(), nil, "", nil)
+	want := []string{"~lazygit", "lazygit", ""}
+	for i, dsl := range want {
+		if err := session.Toggle("lazygit"); err != nil {
+			t.Fatal(err)
+		}
+		if got := session.Result(false).SelectDSL; got != dsl {
+			t.Fatalf("after %d toggles DSL = %q, want %q", i+1, got, dsl)
+		}
+	}
+}
+
+func TestSession_StateNamesRemoved(t *testing.T) {
+	session := NewSession(variantRegistry(), nil, "", nil)
+	_ = session.Toggle("lazygit")
+	state := session.CurrentState()
+	if !state.Removed["lazygit"] || !state.Dirty {
+		t.Errorf("removed = %v dirty = %v, want lazygit removed and a change to save", state.Removed, state.Dirty)
+	}
+	if views := BuildCatalog(variantRegistry(), "amd64").Categories[0].Templates; !views[2].Removable || views[0].Removable {
+		t.Errorf("catalog removable flags wrong: glow=%v lazygit=%v", views[0].Removable, views[2].Removable)
+	}
+}
+
+func TestSession_PreSelectedRemovalReopens(t *testing.T) {
+	pre := &tui.PreSelection{Removed: map[string]bool{"lazygit": true}}
+	session := NewSession(variantRegistry(), pre, "", nil)
+	if got := session.Result(false).SelectDSL; got != "~lazygit" {
+		t.Errorf("DSL = %q, want ~lazygit", got)
+	}
+	if session.CurrentState().Dirty {
+		t.Error("a removal read back from the booth is not a change")
 	}
 }

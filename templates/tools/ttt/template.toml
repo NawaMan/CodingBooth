@@ -1,10 +1,16 @@
-cb-version = "0.2.2"
+cb-version = "0.3.0"
 display-name = "TTT"
 primary = true
 display-disc = "Terminal IDE with LSP, git, and an embedded terminal"
 display-detail = """TTT 1.9.0 is already in the base image as the default editor ($EDITOR, editor), pointed at the booth's language servers and started on the zenith theme with rounded borders; select this template to pick another release or a theme. Installs the TTT Editor from the official GitHub release, checked against its checksums.txt: a single Linux binary under /opt/ttt, with ttt on PATH. Workspace search needs rg, so the setup installs ripgrep when it is missing. Config is ~/.config/ttt/settings.json. ttt+theme (pick another theme or border; zenith, rounded by default) and ttt+lsp (the booth's language servers) are selected with it; deselect either with ttt~theme or ttt~lsp. Select +config-shared to keep that directory in git. Pin a release with ttt:1.8.0; the default is latest, falling back to 1.8.0."""
 display-order = 18
 in-variants = ["base"]
+remove = """\
+run rm -rf /opt/ttt /usr/local/bin/ttt /opt/codingbooth/ttt \
+    /usr/share/startup.d/74-cb-ttt-theme--startup.sh /usr/share/startup.d/74-cb-ttt-lsp--startup.sh \
+ && ln -sfn /usr/bin/nano /usr/local/bin/editor
+env EDITOR=nano
+"""
 tags = [
     "ttt",
     "editor",

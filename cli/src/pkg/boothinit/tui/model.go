@@ -43,6 +43,11 @@ type model struct {
 	width    int
 	height   int
 
+	// removed holds templates the user unticked from [=]: their tool is in the
+	// variant image, and the save writes "~name" to take it out. A template that
+	// is also selected is not removed — selecting wins (see isRemoved).
+	removed map[string]bool
+
 	// Identity of the running codingbooth binary — set by RunConfig from the
 	// ldflags-injected main.version/main.buildDate, not part of newModel's own
 	// construction. Purely informational (header display); never written to
@@ -187,6 +192,7 @@ func newModel(registry *tmpl.TemplateRegistry, pre *PreSelection) model {
 		registry:     registry,
 		hostArch:     tmpl.HostArch(),
 		selected:     make(map[string]bool),
+		removed:      make(map[string]bool),
 		stringFields: make(map[string]string),
 		boolFields:   defaultBoolValues(),
 		cycleIndices: make(map[string]int),
@@ -283,6 +289,9 @@ func newModel(registry *tmpl.TemplateRegistry, pre *PreSelection) model {
 					}
 				}
 			}
+		}
+		for tName := range pre.Removed {
+			m.removed[tName] = true
 		}
 		for tName := range pre.SelectedTemplates {
 			m.selected[tName] = true
@@ -1566,6 +1575,17 @@ func (m model) checkboxDSL() string {
 			}
 
 			parts = append(parts, item)
+		}
+	}
+
+	// Removals last: "~name" for every [ ] the image would otherwise ship. A
+	// removal the current variant has no use for (the tool is not in its image)
+	// is dropped, so switching variant never saves a step that would be refused.
+	for _, cat := range m.registry.Categories {
+		for _, t := range cat.Templates {
+			if m.isRemoved(t) {
+				parts = append(parts, "~"+t.Name)
+			}
 		}
 	}
 

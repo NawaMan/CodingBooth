@@ -199,8 +199,20 @@ func startsExtensionName(s string) bool {
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
 }
 
-// parseItem parses a single template selection: "name[:p1,p2][+ext1][+ext2][~exc1][~exc2]"
+// parseItem parses a single template selection: "name[:p1,p2][+ext1][+ext2][~exc1][~exc2]",
+// or a removal, "~name": take that template's tool out of the variant image.
 func parseItem(s string) (ParsedItem, error) {
+	if strings.HasPrefix(s, "~") {
+		name := strings.TrimSpace(s[1:])
+		if name == "" {
+			return ParsedItem{}, fmt.Errorf("empty template name to remove in %q", s)
+		}
+		if strings.ContainsAny(name, ":+~") {
+			return ParsedItem{}, fmt.Errorf("a removal takes a template name only, not params or extensions: %q", s)
+		}
+		return ParsedItem{Name: name, Remove: true}, nil
+	}
+
 	// Split by "~" — first part is template[+extensions], rest are exclusions
 	tildeParts := splitUnquoted(s, '~')
 	basePart := tildeParts[0]

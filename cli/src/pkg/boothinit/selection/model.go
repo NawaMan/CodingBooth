@@ -38,11 +38,20 @@ type ParsedItem struct {
 	Params     []string
 	Extensions []ParsedExtension
 	Excludes   []string // extensions to exclude (from ~ operator)
+
+	// Remove marks a top-level "~name" item: take the template's tool out of the
+	// variant image that ships it (Template.Remove), rather than select it. A
+	// removal carries no params, extensions or excludes.
+	Remove bool
 }
 
 // ResolvedSelection is a validated selection ready for output generation.
 type ResolvedSelection struct {
 	Templates []SelectedTemplate
+
+	// Removed are the templates a top-level "~name" takes out of the image, in
+	// selection order. They are not selected: only their Remove step is emitted.
+	Removed []*tmpl.Template
 }
 
 // SelectedTemplate represents a fully resolved template selection.

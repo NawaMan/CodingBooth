@@ -213,3 +213,37 @@ func TestCatalogInVariantsMatchVariantImages(t *testing.T) {
 		}
 	}
 }
+
+// TestCatalogRemoveNeedsInVariants: a remove step takes a tool out of an image,
+// so it only means something on an item that says which images ship it. An item
+// with `remove` and no `in-variants` would offer nothing (Removable is false),
+// which is a declaration mistake worth catching here rather than in the TUI.
+func TestCatalogRemoveNeedsInVariants(t *testing.T) {
+	registry, err := LoadRegistry(repoTemplatesDir(t))
+	require.NoError(t, err)
+	check := func(label string, item *Template) {
+		if strings.TrimSpace(item.Remove) != "" && len(item.InVariants) == 0 {
+			t.Errorf("%s: declares remove but no in-variants", label)
+		}
+	}
+	removable := 0
+	for _, category := range registry.Categories {
+		for _, tmpl := range category.Templates {
+			check(tmpl.Name, tmpl)
+			if tmpl.Removable() {
+				removable++
+			}
+			for _, ext := range tmpl.Extensions {
+				check(tmpl.Name+"+"+ext.Name, ext)
+			}
+		}
+	}
+	assert.Equal(t, 8, removable, "glow, lazygit, superfile, differ, just, ttt, firefox, google-chrome")
+}
+
+func TestRemovable(t *testing.T) {
+	assert.True(t, (&Template{InVariants: []string{"base"}, Remove: "run rm -f /x"}).Removable())
+	assert.False(t, (&Template{InVariants: []string{"base"}}).Removable(), "no remove step")
+	assert.False(t, (&Template{Remove: "run rm -f /x"}).Removable(), "in no image")
+	assert.False(t, (&Template{InVariants: []string{"base"}, Remove: "  \n"}).Removable(), "blank step")
+}
