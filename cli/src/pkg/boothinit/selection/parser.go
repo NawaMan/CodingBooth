@@ -37,9 +37,59 @@ func ReadSelectInputWithProject(value, projectRoot string) (string, error) {
 		return fetchURL(normalizeRecipeURL(strings.TrimPrefix(value, "@@")))
 	}
 	if strings.HasPrefix(value, "@") {
-		return readRecipeRef(strings.TrimPrefix(value, "@"), projectRoot)
+		body, err := readRecipeRef(strings.TrimPrefix(value, "@"), projectRoot)
+		if err != nil {
+			if rescued, ok := readJoinedRecipeRefs(value, projectRoot); ok {
+				return rescued, nil
+			}
+		}
+		return body, err
 	}
 	return value, nil
+}
+
+// readJoinedRecipeRefs reads a value in which a recipe reference is followed by
+// more selection after a "/": "@web/glow". Headers written before recipes were
+// expanded on use joined every --select with "/", so `--select @web --select
+// glow` was recorded as "@web/glow" — which reads as one recipe path and broke
+// every later reconfigure of that booth.
+//
+// A recipe path can hold a "/" itself (@team/api, @./recipes/x.recipe), so the
+// caller tries the whole value first; this is only the fallback. Each "@" piece
+// is grown one "/" segment at a time until it names a file, and the other pieces
+// are kept as they are. ok is false when a piece cannot be read, or the value
+// has an @@ URL in it (a URL path cannot be told from the selection after it).
+func readJoinedRecipeRefs(value, projectRoot string) (string, bool) {
+	tokens := splitUnquoted(value, '/')
+	if len(tokens) < 2 {
+		return "", false
+	}
+	var parts []string
+	for i := 0; i < len(tokens); {
+		token := strings.TrimSpace(tokens[i])
+		if strings.HasPrefix(token, "@@") || strings.Contains(token, "://") {
+			return "", false
+		}
+		if !strings.HasPrefix(token, "@") {
+			parts = append(parts, token)
+			i++
+			continue
+		}
+		found := false
+		for j := i; j < len(tokens); j++ {
+			ref := strings.TrimPrefix(strings.Join(tokens[i:j+1], "/"), "@")
+			if body, err := readRecipeRef(ref, projectRoot); err == nil {
+				parts = append(parts, body)
+				i, found = j+1, true
+				break
+			}
+		}
+		if !found {
+			return "", false
+		}
+	}
+	// Newlines, not "/": a recipe may end in a # comment, which "/" would extend.
+	return strings.Join(parts, "\n"), true
 }
 
 // NormalizeInput normalizes whitespace in selection input.
@@ -242,6 +292,8 @@ func parseItem(s string) (ParsedItem, error) {
 			paramStr := ext[colonIdx+1:]
 			if paramStr != "" {
 				pe.Params = unquoteAll(splitUnquoted(paramStr, ','))
+			} else {
+				pe.ResetParams = true
 			}
 		} else {
 			pe.Name = ext
@@ -255,11 +307,14 @@ func parseItem(s string) (ParsedItem, error) {
 	// Split template part by ":" — name and params
 	var name string
 	var params []string
+	reset := false
 	if colonIdx := strings.Index(templatePart, ":"); colonIdx >= 0 {
 		name = templatePart[:colonIdx]
 		paramStr := templatePart[colonIdx+1:]
 		if paramStr != "" {
 			params = unquoteAll(splitUnquoted(paramStr, ','))
+		} else {
+			reset = true
 		}
 	} else {
 		name = templatePart
@@ -270,10 +325,11 @@ func parseItem(s string) (ParsedItem, error) {
 	}
 
 	return ParsedItem{
-		Name:       name,
-		Params:     params,
-		Extensions: extensions,
-		Excludes:   excludes,
+		Name:        name,
+		Params:      params,
+		Extensions:  extensions,
+		Excludes:    excludes,
+		ResetParams: reset,
 	}, nil
 }
 

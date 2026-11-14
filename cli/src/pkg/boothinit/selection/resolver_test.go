@@ -789,3 +789,15 @@ func TestIsPin_PlainDefaultUnaffected(t *testing.T) {
 	assert.False(t, isPin("22", "22", map[string]string{"NODE_VERSION": "22"}))
 	assert.True(t, isPin("1.58.2", "latest", map[string]string{"PLAYWRIGHT_VERSION": "1.58.2"}))
 }
+
+func TestResolveWithOverrides_ResetIgnoresOverride(t *testing.T) {
+	registry := loadTestRegistry(t)
+	parsed, err := ParseSelectDSL("go:")
+	require.NoError(t, err)
+	require.True(t, parsed.Items[0].ResetParams)
+
+	// "go:" puts GO_VERSION back to the default, not the pin the old Boothfile holds.
+	resolved, err := ResolveWithOverrides(parsed, registry, map[string]string{"GO_VERSION": "1.22"})
+	require.NoError(t, err)
+	assert.Equal(t, registry.ByName["go"].Params["GO_VERSION"].Default, resolved.Templates[0].ParamValues["GO_VERSION"])
+}
