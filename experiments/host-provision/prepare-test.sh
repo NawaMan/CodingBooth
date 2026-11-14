@@ -107,7 +107,7 @@ gha)
   echo "runner ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/runner
   P=/home/runner/work/project; mkdir -p "$P" && cp -a /w/example/. "$P" && chown -R runner: /home/runner/work
   install -d -m 0777 /tmp/gh; touch /tmp/gh/env /tmp/gh/path; chmod 666 /tmp/gh/*
-  runuser -u runner -- env -i HOME=/home/runner USER=runner PATH=/usr/bin:/bin \
+  runuser -u runner -- env -i HOME=/home/runner USER=runner PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
     GITHUB_ACTIONS=true GITHUB_ENV=/tmp/gh/env GITHUB_PATH=/tmp/gh/path \
     bash -c "cd $P && /w/booth prepare gha --report /tmp/report.txt" < /dev/null > /out/prepare.log 2>&1; rc=$?
   cp /tmp/report.txt /out/report.txt 2>/dev/null; cp /tmp/gh/env /out/github_env; cp /tmp/gh/path /out/github_path
@@ -120,7 +120,7 @@ gha)
   check "CB_TARGET=gha reaches later steps"              bash -c "grep -A1 \"^CB_TARGET<<\" /tmp/gh/env | grep -qx gha"
   # A later step: plain bash, nothing from a profile, only what GitHub would carry over.
   check "a later plain-bash step passes the in-booth tests" run_tests "$P" \
-    runuser -u runner -- env -i HOME=/home/runner USER=runner PATH=/usr/bin:/bin \
+    runuser -u runner -- env -i HOME=/home/runner USER=runner PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
       GITHUB_ENV=/tmp/gh/env GITHUB_PATH=/tmp/gh/path bash --noprofile --norc -c "source /w/load-github-env.sh && eval \"\$0\""
   ;;
 ubuntu)
