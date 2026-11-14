@@ -4,6 +4,18 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth config` shows what the variant image already has, and can take it out.** In the TUI and in
+  `booth config --web`, the checkbox of a template whose tool ships with the image of the Config
+  tab's Variant (default base) reads `[=]`. On every variant that covers glow, ttt, lazygit,
+  superfile, differ, just, envfolio, gnupg and mc. The desktop variants add Firefox, Chrome, Python
+  and their desktop. Space moves a removable one `[=]` → `[ ]` → `[x]`: kept, removed, or pinned to
+  the template's own release. Removed is saved as a new top-level `~name` item (`--select
+  go/~glow`), and the Boothfile then ends with the template's remove step. glow, ttt (which also
+  sets `$EDITOR` to nano), lazygit, superfile, differ and just can be removed, and on the desktops
+  firefox and google-chrome. Templates declare this with the new `in-variants` and `remove` keys,
+  and a unit test checks `in-variants` against the variant Dockerfiles. See
+  [Removing a tool the image ships](BOOTH_CONFIG.md#removing-a-tool-the-image-ships).
+
 - **`booth exec` runs GUI apps on a Wayland desktop booth too.** On `desktop-wayland`, `exec` waits
   for the compositor and gives the command the session's `XDG_RUNTIME_DIR`, `WAYLAND_DISPLAY` and
   Xwayland's `DISPLAY` — none of them can be set in the image, since the compositor (labwc or sway)

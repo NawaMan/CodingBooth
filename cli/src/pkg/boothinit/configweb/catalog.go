@@ -35,6 +35,8 @@ type TemplateView struct {
 	UnsupportedArch     []string       `json:"unsupportedArch"`
 	UnsupportedArchNote string         `json:"unsupportedArchNote"`
 	UnsupportedOnHost   bool           `json:"unsupportedOnHost"`
+	InVariants          []string       `json:"inVariants"`
+	Removable           bool           `json:"removable"`
 	AutoSelect          bool           `json:"autoSelect"`
 	Params              []ParamView    `json:"params"`
 	Extensions          []TemplateView `json:"extensions"`
@@ -97,6 +99,8 @@ func templateView(template *tmpl.Template, hostArch string, isExtension bool) Te
 		UnsupportedArch:     nonNilStrings(template.UnsupportedArch),
 		UnsupportedArchNote: template.UnsupportedArchNote,
 		UnsupportedOnHost:   template.UnsupportedOn(hostArch),
+		InVariants:          nonNilStrings(template.InVariants),
+		Removable:           template.Removable(),
 		Params:              paramViews(template),
 	}
 	if view.DisplayName == "" {

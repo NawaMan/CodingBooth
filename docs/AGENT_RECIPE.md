@@ -86,6 +86,10 @@ firebase
 
 This is useful when you don't have the credentials on the host, or don't want them mounted into the container.
 
+A `~` that stands as an item of its own, after a `/`, does something else. It takes a tool the
+variant image ships back out (`go/~glow`). In a recipe, write it on its own line as `/~glow`. See
+[Removing a tool the image ships](BOOTH_CONFIG.md#removing-a-tool-the-image-ships).
+
 ### Spaces Around `+` and `~`
 
 Spaces around `+` and `~` are allowed and ignored:

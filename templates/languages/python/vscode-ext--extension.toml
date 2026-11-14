@@ -1,7 +1,8 @@
-cb-version = "1.0.0"
+cb-version = "1.0.1"
 display-name = "Python VS Code Extension"
 display-disc = "Python language support extension for VS Code"
 display-order = 1
+in-variants = ["desktop-xfce", "desktop-kde", "desktop-lxqt", "desktop-wayland"]
 auto-select = true
 tags = [
     "python",

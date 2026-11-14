@@ -1449,6 +1449,13 @@ func buildPreSelection(registry *tmpl.TemplateRegistry, flags initFlags, existin
 		if !ok {
 			continue
 		}
+		if item.Remove {
+			if pre.Removed == nil {
+				pre.Removed = map[string]bool{}
+			}
+			pre.Removed[item.Name] = true
+			continue
+		}
 		pre.SelectedTemplates[item.Name] = true
 
 		// Map positional params to named params for the template
