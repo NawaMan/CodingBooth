@@ -27,6 +27,12 @@ func Resolve(parsed *ParsedSelection, registry *tmpl.TemplateRegistry) (*Resolve
 func ResolveWithOverrides(parsed *ParsedSelection, registry *tmpl.TemplateRegistry, overrides map[string]string) (*ResolvedSelection, error) {
 	selectedNames := make(map[string]bool)
 
+	removed, kept, err := resolveRemovals(parsed, registry)
+	if err != nil {
+		return nil, err
+	}
+	parsed = kept
+
 	// Check for duplicate selections
 	for i, pi := range parsed.Items {
 		if selectedNames[pi.Name] {
@@ -119,7 +125,52 @@ func ResolveWithOverrides(parsed *ParsedSelection, registry *tmpl.TemplateRegist
 		}
 	}
 
-	return &ResolvedSelection{Templates: items}, nil
+	for _, item := range items {
+		for _, t := range removed {
+			if item.Template.Name == t.Name {
+				// Only reachable through Requires: a direct pick is refused above.
+				return nil, fmt.Errorf("~%s removes a template the selection needs (required by another selected template)", t.Name)
+			}
+		}
+	}
+
+	return &ResolvedSelection{Templates: items, Removed: removed}, nil
+}
+
+// resolveRemovals splits the "~name" items off a selection. Each must name a
+// removable template (Template.Removable) that is not also selected; kept is
+// the selection without them.
+func resolveRemovals(parsed *ParsedSelection, registry *tmpl.TemplateRegistry) (removed []*tmpl.Template, kept *ParsedSelection, err error) {
+	selected := map[string]bool{}
+	for _, pi := range parsed.Items {
+		if !pi.Remove {
+			selected[pi.Name] = true
+		}
+	}
+	seen := map[string]bool{}
+	kept = &ParsedSelection{}
+	for _, pi := range parsed.Items {
+		if !pi.Remove {
+			kept.Items = append(kept.Items, pi)
+			continue
+		}
+		t, ok := registry.ByName[pi.Name]
+		if !ok {
+			return nil, nil, fmt.Errorf("~%s: unknown template (not in built-in catalog or .booth/templates/)", pi.Name)
+		}
+		if !t.Removable() {
+			return nil, nil, fmt.Errorf("~%s: this template cannot be removed from the image (it declares no remove step)", pi.Name)
+		}
+		if selected[pi.Name] {
+			return nil, nil, fmt.Errorf("template %q is both selected and removed (~%s)", pi.Name, pi.Name)
+		}
+		if seen[pi.Name] {
+			continue
+		}
+		seen[pi.Name] = true
+		removed = append(removed, t)
+	}
+	return removed, kept, nil
 }
 
 // quoteHint returns advice to quote a param value when the item at idx looks like

@@ -475,7 +475,7 @@ template	datagrip	1.0.0	41dcf00b2fdb288079ae12d0c7d2b7e9b13413e3f3e5334dec4ed754
 template	dbeaver	1.1.0	97b2dbc75f287cd2691347c7fb8bf43f58015e676bc33f00950386e4405f52dd	templates/ides/dbeaver/template.toml
 template	dblab	0.2.0	1332a0a508fcb2c5b63e9bb1e957cce6c1f5f46196bb6b3926c99ba8f622de85	templates/tools/dblab/template.toml
 template	deno	1.1.0	fb2f939bc2f658ddbc7d1fa9cc63dd94819a9544384902d850d804a8ab31ee72	templates/languages/deno/template.toml
-template	differ	0.1.2	3e10567346193524a2536d01fa82c6a2e27134316530ed8443959fc83f667d2d	templates/ai-tools/differ/template.toml
+template	differ	0.2.0	b85e5b5f56caf41b2ebac22ef9c0d55d88b47547f7496df45dd42073f68e3026	templates/ai-tools/differ/template.toml
 template	dind	1.1.0	cdddfa4b3a2b72b9a5d7a90edc59fad19b2da3d6ffc6db7e9753aefcd0e67e1f	templates/tools/dind/template.toml
 template	direnv	1.0.0	37ee50a7cf5e643d444eb8bf6be17ac10b0c490cd5e85bb396266584a9ec25fe	templates/tools/direnv/template.toml
 template	dive	1.0.0	a1b366ad07d23aaa671bfb1c8d910e92620300202955adbaf20adcb9246968f6	templates/tools/dive/template.toml
@@ -494,7 +494,7 @@ template	excalidraw	1.0.0	86c9ad6816d3aba78628bce02322d8e9e91836adf368ec68b0c5d2
 template	exercism	1.1.0	c2a46ddfe0b8159df0154f403df8d1ebbbe916a53eed1f49af4584ef9a3ac03a	templates/education/exercism/template.toml
 template	ffmpeg	1.0.0	c2df74ca40d15edbbbc161d19794ba58d7ad47b22e69b19e0009717792aef13c	templates/tools/ffmpeg/template.toml
 template	firebase	1.0.0	dc0e54f22dee9bc7241799bace704d20794388f1b7433d139edb2e5db3c8a07a	templates/tools/firebase/template.toml
-template	firefox	1.0.1	f10e2a86fc062a38b9876eb3da70f35fb98e852d7602c18d5a01cf5882c6ff65	templates/desktops/firefox/template.toml
+template	firefox	1.1.0	0f0433d5460c31528d27081a24a0f84c3e1339ea8dd91d6a18a426b9f3db0e01	templates/desktops/firefox/template.toml
 template	floci	0.4.0	14b5a5a5751977bf9d1112227ac70defd74d6a9900efff434c7553dcca21be27	templates/tools/floci/template.toml
 template	flutter	0.3.1	7809a3a7d96b2a45d145154bc1036a4dda51a9ddfd7be01b3c63ee799722b4e2	templates/languages/flutter/template.toml
 template	fpc	1.0.1	2b888b45db9ea947c02a775760a62dffc650453ab8560ee56cd89946a6942872	templates/languages/fpc/template.toml
@@ -512,11 +512,11 @@ template	ghostty	1.0.0	dfd4b340de849325faebce647f64b0230fdea7b52208075fc01b4e050
 template	gimp	1.0.0	1855591e9d1aee68552d78e04c8f42d3c312421e8544d23f134f3ef53d82f85f	templates/desktops/gimp/template.toml
 template	git-credential	1.0.1	de28f82873973111f0982ec8cbda74e8dedaa57b15084e80b5bb234c9fe18720	templates/tools/git-credential/template.toml
 template	gleam	0.2.0	cd7dd2489d3c3dace9868b0b13857e58ba32cea312fd65d27f3870d2e49f73e1	templates/languages/gleam/template.toml
-template	glow	1.0.1	6057c5e1c35e8f9548ad3c2417a410f1dbbbb71354eaf5de47a36f4d67a96c8e	templates/tools/glow/template.toml
+template	glow	1.1.0	14da9a97178defa04034a0ac30767b473ad647a9dcca42f19a1a1768727399df	templates/tools/glow/template.toml
 template	gnupg	1.0.1	b1bada4cff7a4d8423a3fe2d9cffa91c899831995c6a6cfa3f6791feadc2f6ec	templates/tools/gnupg/template.toml
 template	go	1.2.0	8f16643ccefe5622b7ccdd7ba28650bc41fdd98ec09ebf6491bcb81fe389be86	templates/languages/go/template.toml
 template	goland	1.0.0	e657667702b91cc74de699fc1a4fd329c253579685824186871c7f9d9aadc111	templates/ides/goland/template.toml
-template	google-chrome	1.0.1	dfd7fe42d3c7546759201306e541a0d871569f1106a3bf02f78a03feb18547f2	templates/desktops/google-chrome/template.toml
+template	google-chrome	1.1.0	8b44d76d188bb8d91b7b146d6486766f516bc6088ee8f89cdc6aacbf684a222f	templates/desktops/google-chrome/template.toml
 template	goose	1.0.0	d38a963864204dcc5282c8e1eebdf3c7c8b8f383a15929b5a9ca4f6f64982295	templates/ai-tools/goose/template.toml
 template	goose-lang	0.1.1	f1723e61538017f2e2fc3c615f4a1141c24f30289d5a85068c78231ebd59f15a	templates/languages/goose-lang/template.toml
 template	gradle	1.2.0	92998d729c683916467208dcd9f8572c7a2a4e2c2c3b66c7e3dd36126b44a52a	templates/tools/gradle/template.toml
@@ -538,7 +538,7 @@ template	inkscape	1.0.0	b7d51ef89c00cb734281a52a4cf9629c1971152ee6520998a5afe863
 template	java	1.1.0	f7219f2a4f9ed237663c6624137dab3d88475c18daf3a7d0f2d078841b05661b	templates/languages/java/template.toml
 template	jetbrains-plugin-pkg	0.1.0	af572e55dd41814c76a8ae24462c6c1c3408a5075c648259226f627a9e3bf965	templates/ides/jetbrains-plugin-pkg/template.toml
 template	julia	1.2.0	85deedcf976ca8e87bd5fa2ddadd96f9066d4b5d5bf8d1c11e8cef9e705e7b00	templates/languages/julia/template.toml
-template	just	1.1.1	ca112cfa89d23aeee72a1f76b8af680eebbe36f238a68974e96d2e8b725fdd13	templates/tools/just/template.toml
+template	just	1.2.0	662e6995b07d8c51f4d90bfe101c7fd1015bb6787056cb6d9bb3e136de6f0f56	templates/tools/just/template.toml
 template	k3d	1.0.0	71932187da528c0251e8ba067e6930cd4c9c889d8448b7cb055b6ffba2a1103d	templates/tools/k3d/template.toml
 template	k9s	1.0.0	62fe58c37caa6f310b4e92e30bb144593b3dbc5326f93221c43ea5b3759a19de	templates/tools/k9s/template.toml
 template	kafka	2.1.0	1bfc854e6211e14a401863e53aef51c2594cceea97f6562aea02199cccc2dd6d	templates/middlewares/kafka/template.toml
@@ -552,7 +552,7 @@ template	kubectx	1.0.0	ea49d5aa2b0b2c75a730848858eac03bd649672f86d2f14e6acd39d97
 template	kustomize	1.0.0	a0bfbfae90ba824771c02ff65585f14584c6befec839eac888a2e879089dfa80	templates/tools/kustomize/template.toml
 template	latex	0.1.0	166db2935d55e150cfd641cd13fa9b344dad0c99c6615b2219e2abb2a17fdfde	templates/tools/latex/template.toml
 template	lazydocker	1.0.0	d1489214f93a5c045e9dee8da67859ac6e9955321bac025ea758d42b6c7d2156	templates/tools/lazydocker/template.toml
-template	lazygit	1.1.1	d89c8fd0c9ee79401e476f899df0b5f0ce79c19cc8324cb21543ea60c2ec64da	templates/tools/lazygit/template.toml
+template	lazygit	1.2.0	a6db7dcc1a04023aaff8e17031fb2b1ad57a9136f818c09365735fcd242a055d	templates/tools/lazygit/template.toml
 template	lazysql	0.2.0	19acb1774853c31c1937aa939d9d3b8692e97590626876f8cf77255dc4585b9b	templates/tools/lazysql/template.toml
 template	lean	0.1.0	c9b0ac621897d8e771e0a64fcc074e56c2527c50f40eae5463aa4be709de60f0	templates/languages/lean/template.toml
 template	libreoffice	1.0.0	8b693055cc5e8dcd6c5f53d302ac127c8ad55a21eb3fa050420fa7d593208df3	templates/desktops/libreoffice/template.toml
@@ -623,7 +623,7 @@ template	sqlite	1.0.0	acb431a561235cd8e3a1aa4440602eae54201f1058767e97e2273c62c5
 template	sqluv	0.1.0	2ca235a1be79ace871a862f26ba71382222a6b7d24a51de0de3909b9c89294be	templates/tools/sqluv/template.toml
 template	stern	1.0.0	f9651b9141a4d7c4870e46426794ad0f5b6dd5c0c31d0bf82a42a7f99be0eeda	templates/tools/stern/template.toml
 template	supercollider	0.1.0	bce23515a0bcb3cb61bd2f230b14d595c46746d02ca006cae74a03cfc9ceae9f	templates/tools/supercollider/template.toml
-template	superfile	0.1.3	54486bd1f4efee7ba1ae204ac730416fc1783e357cb3df6e01ee26011c2de16e	templates/tools/superfile/template.toml
+template	superfile	0.2.0	a02a77d46f605b878a1a9df7678088774df9181f1b14f44ad068265f0c8f1ce5	templates/tools/superfile/template.toml
 template	svelte	0.1.0	2ef837e43415e3798d32fbe342d88e9073abab5be2ee0261c6e0ce3e4734b862	templates/frameworks/svelte/template.toml
 template	sway	0.1.1	73aede41360cf6557b64d58f994563e678a2a339650bc595a9283b86378f1c75	templates/desktops/sway/template.toml
 template	swift	1.1.0	efb5427f92ba956dca4a95ebee6f5f9edcee0dda4f8f8b68399a549023409352	templates/languages/swift/template.toml
@@ -632,7 +632,7 @@ template	tela-icons	0.1.0	bc9fb120c9a2a35da5e4078832bc039a940fdefacc925f99eb66e6
 template	terraform	1.0.0	151cdf8d4ddba87cd10e5b51a11c17d61e35a29be195131aec1ff425781da76c	templates/tools/terraform/template.toml
 template	thinkrail	0.1.0	5607ae0565dea0de475a063935904dd67545ed1beee013330a4fa2fcba16a06f	templates/ai-tools/thinkrail/template.toml
 template	thonny	1.0.0	64571e52b43139716e35c9bd72304a5642bd69c155b599bfdeba438e67388d0e	templates/education/thonny/template.toml
-template	ttt	0.2.2	ec7b29bacdbf3c1cb75376701e3dc29593355cf8ef3fad16b60dc39007ec1e8a	templates/tools/ttt/template.toml
+template	ttt	0.3.0	157289a408e9604ec3d279f73965e54475b9ea536f755f7577bdd20ec2a8a57d	templates/tools/ttt/template.toml
 template	vhs	1.0.0	f2f8d6aca4c461eea09eb9922032616049a00be4f6994ab510538cda9cf29a07	templates/tools/vhs/template.toml
 template	vm-cpus	1.0.0	c843ec808161827deac4fc590e588a5e89bf63e0b6c3c70daf7519b14c990412	templates/booth-vm/vm-cpus/template.toml
 template	vm-memory	1.0.0	adc63eaf0d364e048e73443de713f63bc0f60d6d1cce6118aa8952081c5f97ee	templates/booth-vm/vm-memory/template.toml

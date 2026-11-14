@@ -52,8 +52,27 @@ func Compile(resolved *selection.ResolvedSelection) (*output.BoothOutput, error)
 			return nil, err
 		}
 	}
+	for _, t := range resolved.Removed {
+		c.collectRemoval(t)
+	}
 
 	return c.build()
+}
+
+// RemoveSegmentOrder is the Boothfile order band of a "~name" removal: after
+// every install and post-setup step (90), so nothing the selection runs later
+// puts the tool back, and nothing it runs needs it gone sooner.
+const RemoveSegmentOrder = 95
+
+// collectRemoval emits a removed template's Remove step. The tool is baked into
+// an earlier image layer, so this takes the command away; it does not shrink
+// the image.
+func (c *collector) collectRemoval(t *tmpl.Template) {
+	content := fmt.Sprintf("# ~%s: %s is in the variant image; removed by this selection\n%s",
+		t.Name, t.Name, strings.TrimSpace(t.Remove))
+	c.boothfileSegs = append(c.boothfileSegs, sourcedSegment{
+		Order: RemoveSegmentOrder, Content: content, SourceName: "~" + t.Name,
+	})
 }
 
 type collector struct {

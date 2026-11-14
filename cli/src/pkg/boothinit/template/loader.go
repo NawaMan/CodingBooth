@@ -42,6 +42,7 @@ type specToml struct {
 	UnsupportedArch     []string             `toml:"unsupported-arch"`
 	UnsupportedArchNote string               `toml:"unsupported-arch-note"`
 	InVariants          []string             `toml:"in-variants"`
+	Remove              string               `toml:"remove"`
 	Variant             string               `toml:"variant"`
 	Port                string               `toml:"port"`
 	Timezone            string               `toml:"timezone"`
@@ -219,6 +220,7 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 		UnsupportedArch:     spec.UnsupportedArch,
 		UnsupportedArchNote: spec.UnsupportedArchNote,
 		InVariants:          spec.InVariants,
+		Remove:              spec.Remove,
 		CBVersion:           spec.CBVersion,
 		Variant:             spec.Variant,
 		Port:                spec.Port,
@@ -420,6 +422,7 @@ func loadExtensionFile(filePath, name, categoryName string) (*Template, error) {
 		UnsupportedArch:     spec.UnsupportedArch,
 		UnsupportedArchNote: spec.UnsupportedArchNote,
 		InVariants:          spec.InVariants,
+		Remove:              spec.Remove,
 		CBVersion:           spec.CBVersion,
 		Variant:             spec.Variant,
 		Port:                spec.Port,

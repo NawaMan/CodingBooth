@@ -96,7 +96,7 @@ If the booth holds hand-written files, step 2 also raises a warning on open and 
 - **Footer line 1**: Messages and notifications (auto-select, dependency resolution)
 - **Footer line 2**: Context-sensitive keybinding hints
 
-Extensions marked with `*` are auto-selected when their parent template is selected. `=` marks
+Extensions marked with `*` are auto-selected when their parent template is selected. `[=]` marks
 an item already in the variant's image (below).
 
 A template marked with `!` has no build for your machine's architecture — for example
@@ -106,15 +106,29 @@ so one absent tool never takes down a build in which everything else succeeded. 
 opens with what is missing and what to use instead, and selecting it repeats that in the footer.
 Templates with a working arm64 build — `chromium`, `firefox`, `playwright` — are not marked.
 
-A template or extension marked with `=` is already in the image of the variant you picked: its
-tool ships with that image, so selecting it adds nothing new. It only installs the template's own
-release over the image's, plus whatever else the template sets up. `glow`, `ttt`, `lazygit` and
-`envfolio` are marked on every variant, because they are in base, which every variant is built
-from. `firefox`, `google-chrome` and `python` are marked once you switch the Config tab's
-**Variant** to a desktop. The mark follows that field, and an empty Variant means base. The right
-panel says which image holds the tool, and selecting the template repeats that in the footer. When
-a row has both marks, the `!` arch warning takes the slot. `booth template show <name>` prints the
-same thing as an `In image:` line.
+A checkbox showing `[=]` means the item's tool is already in the image of the variant you picked.
+It is kept without being selected. `glow`, `ttt`, `lazygit` and `envfolio` show `[=]` on every
+variant, because they are in base, which every variant is built from. `firefox`, `google-chrome`
+and `python` show `[=]` once you switch the Config tab's **Variant** to a desktop. The state follows
+that field, and an empty Variant means base.
+
+`Space`, or a click on the checkbox, moves a `[=]` template through three states:
+
+| Checkbox | Meaning | Saved as |
+|---|---|---|
+| `[=]` | Kept, as the image ships it | nothing |
+| `[ ]` | Removed from the image | `~glow` |
+| `[x]` | Selected: the template's own release is installed over the image's | `glow` |
+
+The order is `[=]` → `[ ]` → `[x]` → `[=]`. Only templates with a remove step can be removed:
+glow, ttt, lazygit, superfile, differ and just, plus firefox and google-chrome on the desktop
+variants. The rest (gnupg, envfolio, python, notebook, the desktops themselves) skip `[ ]` and go
+`[=]` ↔ `[x]`. When a template is removed, its `[=]` extensions show `[ ]` too. The right panel says
+which state the item is in and what the next `Space` does. Switching to a variant whose image lacks
+a removed tool drops that removal from the save. See
+[Removing a tool the image ships](BOOTH_CONFIG.md#removing-a-tool-the-image-ships).
+
+`booth template show <name>` prints which images hold the tool as an `In image:` line.
 
 ---
 

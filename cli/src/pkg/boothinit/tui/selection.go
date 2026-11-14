@@ -24,9 +24,17 @@ func (m *model) toggleSelection() {
 	}
 	item := items[cursor]
 
-	if m.selected[item.key()] {
+	// A template whose tool is in the variant image cycles [=] → [ ] → [x] → [=]:
+	// kept, removed (~name), pinned to the template's release. One that cannot be
+	// removed skips [ ], and anything else is the plain [ ] ↔ [x].
+	switch {
+	case m.selected[item.key()]:
 		m.requestDeselect(item)
-	} else {
+	case item.kind == kindTemplate && m.inVariant(item) && item.template.Removable() && !m.removed[item.template.Name]:
+		m.removed[item.template.Name] = true
+		m.notification = fmt.Sprintf("~%s: the booth takes %s out of the %s image. Space again selects the template's own release.",
+			item.template.Name, item.template.Name, m.currentVariant())
+	default:
 		m.requestSelect(item)
 	}
 }
@@ -140,6 +148,9 @@ func (m *model) applySelectItem(item treeItem) {
 	key := item.key()
 	var notifications []string
 	m.selected[key] = true
+	if item.kind == kindTemplate {
+		delete(m.removed, key) // [ ] → [x]: selecting puts the tool back
+	}
 
 	if m.inVariant(item) {
 		notifications = append(notifications, itemTemplate(item).InVariantNote(m.currentVariant()))

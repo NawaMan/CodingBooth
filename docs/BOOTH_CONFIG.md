@@ -435,6 +435,36 @@ Use `~` to exclude extensions that would otherwise be auto-selected:
 firebase~credential
 ```
 
+### Removing a tool the image ships
+
+Some tools come with the variant image: glow, ttt, lazygit, superfile, differ and just are in
+base, so they are in every variant, and the desktop variants ship Firefox and Google Chrome. A
+top-level `~name`, written as an item of its own after a `/`, takes one back out:
+
+```
+go/~glow/~ttt
+```
+
+The Boothfile then ends with that template's remove step, after every install and post-setup
+step. The step takes the command away. It does not make the image smaller, because the earlier
+layer still holds the files. `~ttt` also points `$EDITOR` and `/usr/local/bin/editor` at nano.
+
+The removal is recorded in the selection like any other item, so a reconfigure reproduces it,
+`--add-select '~glow'` adds one, and `--add-select glow` puts glow back in its place. `booth
+config` refuses a removal when:
+
+- the template has no remove step. Only the eight templates above have one. gnupg, envfolio and
+  python stay because other parts of the booth need them.
+- the variant's image does not ship the tool, for example `~firefox` on base. `booth template show
+  <name>` lists which images do (`In image:`).
+- the same selection also selects that template (`glow/~glow`).
+
+In the TUI the same thing is a checkbox state: see
+[TUI Layout](BOOTH_CONFIG_TUI.md#tui-layout). `~name` with a name of its own is a removal; `~` straight
+after a template (`firebase~credential`) still excludes an extension. A line that starts with `~` is joined to the line before it (see
+[Whitespace rules](#whitespace-rules)), so in a recipe file put the removal on its own line as
+`/~glow`. A bare `~glow` line would become `go~glow`, an extension exclusion that `go` refuses.
+
 ### Putting it together
 
 ```

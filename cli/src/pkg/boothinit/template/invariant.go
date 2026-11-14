@@ -30,6 +30,12 @@ func (t *Template) InVariant(variant string) bool {
 	return false
 }
 
+// Removable reports whether a ~name selection can take this item's tool out of
+// the image: it has to be in some image, and the template has to say how.
+func (t *Template) Removable() bool {
+	return t != nil && strings.TrimSpace(t.Remove) != "" && len(t.InVariants) > 0
+}
+
 // InVariantsText says which images hold this template, for a detail panel:
 // "every variant (base image)" or the variants by name. Empty when none do.
 func (t *Template) InVariantsText() string {

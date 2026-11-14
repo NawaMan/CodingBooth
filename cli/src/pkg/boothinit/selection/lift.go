@@ -25,6 +25,9 @@ func LiftParams(sel *ParsedSelection, registry *tmpl.TemplateRegistry, args map[
 	changed := false
 	for i := range sel.Items {
 		item := &sel.Items[i]
+		if item.Remove {
+			continue // a removal carries no params to lift into
+		}
 		t, ok := registry.ByName[item.Name]
 		if !ok {
 			continue
