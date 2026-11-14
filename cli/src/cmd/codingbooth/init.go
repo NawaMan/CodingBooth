@@ -39,9 +39,10 @@ var hostEnvPortRE = regexp.MustCompile(`^\$\{[A-Za-z_][A-Za-z0-9_]*(:-\+?[0-9]+)
 
 type initFlags struct {
 	selectDSLs        []string
-	selectDSL         string   // resolved: joined from selectDSLs after ReadSelectInput
-	addSelectDSLs     []string // --add-select: unioned onto the baseline selection
-	removeSelectNames []string // --remove-select: template/extension names dropped from the baseline
+	selectDSL         string       // resolved: joined from selectDSLs after ReadSelectInput
+	addSelectDSLs     []string     // --add-select: unioned onto the baseline selection
+	removeSelectNames []string     // --remove-select: template/extension paths dropped from the baseline
+	selectEdits       []selectEdit // --add-select and --remove-select, in command-line order
 	cmds              []string
 	exposes           []string // --expose port mappings
 	addExposes        []string // --add-expose: unioned onto the baseline, by container port
@@ -93,6 +94,7 @@ func parseInitFlags(args []string) initFlags {
 				os.Exit(1)
 			}
 			flags.addSelectDSLs = append(flags.addSelectDSLs, args[i+1])
+			flags.selectEdits = append(flags.selectEdits, selectEdit{add: true, value: args[i+1]})
 			i++
 		case "--remove-select":
 			if i+1 >= len(args) {
@@ -100,6 +102,7 @@ func parseInitFlags(args []string) initFlags {
 				os.Exit(1)
 			}
 			flags.removeSelectNames = append(flags.removeSelectNames, args[i+1])
+			flags.selectEdits = append(flags.selectEdits, selectEdit{value: args[i+1]})
 			i++
 		case "--templates-path":
 			if i+1 >= len(args) {
@@ -328,7 +331,7 @@ func runInitNew(version string, args []string) {
 		flagArgs = args[1:]
 	}
 	flags := parseInitFlags(flagArgs)
-	flags.selectDSL = strings.Join(flags.selectDSLs, "/")
+	expandSelectFlagsOrExit(&flags, targetPath)
 
 	var out *output.BoothOutput
 	var resolved *selection.ResolvedSelection
@@ -399,7 +402,7 @@ func runInitDryrun(version string, args []string) {
 	// Dryrun has no project path argument; use cwd so local recipes/templates still resolve.
 	targetPath := "."
 	flags := parseInitFlags(args)
-	flags.selectDSL = strings.Join(flags.selectDSLs, "/")
+	expandSelectFlagsOrExit(&flags, targetPath)
 
 	var out *output.BoothOutput
 	var resolved *selection.ResolvedSelection
@@ -537,6 +540,41 @@ func resolveDSLFragments(raw []string, projectRoot string) (string, error) {
 		parts = append(parts, resolved)
 	}
 	return strings.Join(parts, "/"), nil
+}
+
+// expandSelectFlags reads the --select fragments once — a recipe, a file, a URL,
+// stdin — and puts the nodes they hold in their place. A recipe is expanded
+// when it is used: the booth records the templates it selected, not "@name", so
+// a later reconfigure neither re-reads a recipe that has since changed nor
+// depends on it still being there.
+//
+// flags.selectDSLs keeps any param reset ("go:") for the compiler, which must
+// not carry the old Boothfile's pin for that node; flags.selectDSL — what the
+// header records — drops it, since by then the node simply has no params.
+func expandSelectFlags(flags *initFlags, projectRoot string) error {
+	if len(flags.selectDSLs) == 0 {
+		flags.selectDSL = ""
+		return nil
+	}
+	text, err := resolveDSLFragments(flags.selectDSLs, projectRoot)
+	if err != nil {
+		return fmt.Errorf("reading selection: %w", err)
+	}
+	parsed, err := selection.ParseSelectDSL(text)
+	if err != nil {
+		return fmt.Errorf("parsing selection: %w", err)
+	}
+	flags.selectDSLs = []string{selection.SerializeSelection(parsed)}
+	flags.selectDSL = selection.SerializeSelection(selection.StripParamResets(parsed))
+	return nil
+}
+
+// expandSelectFlagsOrExit is expandSelectFlags, exiting with its error.
+func expandSelectFlagsOrExit(flags *initFlags, projectRoot string) {
+	if err := expandSelectFlags(flags, projectRoot); err != nil {
+		fmt.Fprintf(os.Stderr, "Error %v\n", err)
+		os.Exit(1)
+	}
 }
 
 // compileSelection runs the full pipeline: read input → parse → resolve → compile.

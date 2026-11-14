@@ -146,8 +146,9 @@ the whole list, so you don't have to restate everything else:
 ./booth config --no-tui --overwrite --add-select go+linter   # adds `linter` to the
                                                               # already-selected `go`
 
-# Drop one template or extension by name.
+# Drop one template (with its extensions), or one extension by its path.
 ./booth config --no-tui --overwrite --remove-select python
+./booth config --no-tui --overwrite --remove-select go+linter
 
 # Add or update one expose/env/mount entry, keyed on the part that identifies it —
 # the container port, the env KEY, the container path — so re-adding an existing
@@ -163,9 +164,41 @@ the whole list, so you don't have to restate everything else:
 ./booth config --no-tui --overwrite --remove-mount /app/data
 ```
 
-`--remove-*` and `--add-*` for the same field can combine in one run — a
-`--remove-select go --add-select go:1.25` replaces `go`'s params by dropping it
-and adding it back, in one step.
+`--remove-*` and `--add-*` for the same field can combine in one run. For the
+selection they apply in the order given (see below); `--add-select go:1.25` on
+its own already replaces `go`'s params.
+
+#### Selection paths
+
+A selection is a shallow tree: templates at the root, each with its extensions
+under it. `--add-select` and `--remove-select` name nodes of that tree by path:
+
+| Path        | Node                                                          |
+|-------------|---------------------------------------------------------------|
+| `go`        | the template `go` — removing it takes its extensions with it  |
+| `go+linter` | the extension `linter` under `go`                             |
+| `go~lsp`    | the exclusion of `go`'s default extension `lsp`               |
+| `~glow`     | glow taken out of the image (see [Removing a tool the image ships](#removing-a-tool-the-image-ships)) |
+
+- **Adding changes only what you write.** `--add-select go+lsp` adds `lsp` under
+  `go`; `go` itself — its params and its other extensions — is just the way
+  there, and stays as it is. Params you do write replace the node's params
+  (`go+go-pkg:"c"` leaves only `c`, not the earlier list plus `c`).
+- **An empty param list resets.** `--add-select go:` puts `go`'s params back to
+  the template defaults, and so does `go+go-pkg:` for an extension's — also past
+  a pin that only the Boothfile's `arg` line still holds.
+- **`+x` and `~x` share a slot**, and so do `glow` and `~glow`: the later one
+  replaces the earlier.
+- **Order matters.** Adds and removes apply in the order given, so the later
+  write to a node wins. A node removed and added back in the same run comes
+  back new, at its defaults rather than at its old pin.
+- **An extension needs its template.** Extension names repeat across templates
+  (`vscode-ext` is under fifty of them), so `--remove-select vscode-ext` is
+  refused and the error lists the paths that match, such as `go+vscode-ext`.
+- **`--remove-select ~glow` matches only a removal**; `--remove-select glow`
+  clears the glow slot whatever it holds.
+- **A recipe is not a node.** `--add-select @web` adds the nodes the recipe holds
+  now; `--remove-select @web` is refused — remove those templates by path.
 
 A removal that matches nothing is an error, and nothing is written. That is
 almost always a typo or a stale value, and carrying on would leave the booth
@@ -549,7 +582,7 @@ to the end of the line. A recipe does not contain another recipe.
 |----------------------------|----------------------------------------------------------------|
 | `--select <dsl>`           | Template selection (repeatable)                                |
 | `--add-select <dsl>`       | Reconfigure only: add onto the existing selection instead of replacing it — see [Adding or removing one entry](#adding-or-removing-one-entry) (repeatable) |
-| `--remove-select <name>`   | Reconfigure only: drop a template or extension by name from the existing selection (repeatable) |
+| `--remove-select <path>`   | Reconfigure only: drop one node of the existing selection — a template (`go`), an extension under it (`go+linter`), an exclusion (`go~lsp`), or a removal (`~glow`); see [Selection paths](#selection-paths) (repeatable) |
 | `--no-tui`                 | Non-interactive CLI mode                                       |
 | `--web`                    | Browser UI on the booth port (`127.0.0.1:<port>`)              |
 | `--dryrun`                 | Preview what would be generated without writing files; fails where a real run would |
