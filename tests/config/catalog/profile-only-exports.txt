@@ -15,7 +15,8 @@ opensshd        *   # CB_SSH_PORT only describes the service to a shell
 sql-studio      *   # SQLSTUDIO_PORT only describes the service to a shell
 
 # --- Desktops: the display belongs to the desktop session. For `booth exec`, the
-#     X11 desktop variants set ENV DISPLAY=:1 in their own Dockerfile (#190). ----
+#     X11 desktop variants set ENV DISPLAY=:1 in their own Dockerfile; on Wayland,
+#     exec gets the session env from booth--desktop-ready (#190). ----
 kde             *   # session env (DISPLAY, VNC, geometry) is set by the desktop's own startup
 lxqt            *   # session env (DISPLAY, VNC, geometry) is set by the desktop's own startup
 wayland         *   # session env (VNC, geometry, session type) is set by the desktop's own startup

@@ -182,8 +182,9 @@ The detached command shares the booth's lifetime, not `exec`'s: stopping or remo
 
 ### GUI apps on a desktop booth
 
-On the X11 desktop variants (`desktop-xfce`, `desktop-lxqt`, `desktop-kde`), and on images built
-`FROM` them, a GUI app started with `exec` opens on the booth's desktop with nothing extra:
+On the desktop variants (`desktop-xfce`, `desktop-lxqt`, `desktop-kde`, `desktop-wayland`), and on
+images built `FROM` them, a GUI app started with `exec` opens on the booth's desktop with nothing
+extra:
 
 ```bash
 ./booth exec --run --keep-alive -- xfce4-terminal                    # opens on the desktop
@@ -192,23 +193,26 @@ On the X11 desktop variants (`desktop-xfce`, `desktop-lxqt`, `desktop-kde`), and
 
 Two things make that work:
 
-- **`DISPLAY` is set.** An `exec` session gets no login shell, so the desktop's profile never runs
-  in it; these images set `DISPLAY=:1` in their environment instead.
-- **`exec` waits for the display.** These images carry the label `com.codingbooth.desktop`. Before
-  running the command, `exec` asks the booth whether its X server answers
-  (`booth--desktop-ready`, which runs `xset q`). On a desktop that is already up that is one quick
-  check. On one that is still starting — just created or restarted by `--run`, or brought up from
-  another terminal — `exec` prints `Waiting for the desktop of booth "…" to come up...` (hidden by
-  `--silence-build`) and holds the command until the display answers. If it does not answer within
-  90 seconds, `exec` fails with exit code `1` and does not run the command; `booth logs` shows why
-  the desktop did not start.
+- **The command gets the desktop's environment.** An `exec` session gets no login shell, so the
+  desktop's profile never runs in it. The X11 desktops set `DISPLAY=:1` in their image. The Wayland
+  desktop has nothing fixed to set: the compositor (labwc, or sway) is chosen when the booth
+  starts and names its socket differently, `XDG_RUNTIME_DIR` follows `coder`'s uid, and Xwayland's
+  `DISPLAY` is known only to the compositor's own children. So `exec` asks the booth and passes
+  what it reports — `XDG_RUNTIME_DIR`, `WAYLAND_DISPLAY`, and Xwayland's `DISPLAY` — to the
+  command. Native Wayland apps use the socket; X apps (VS Code, Chrome) go through Xwayland, which
+  the compositor starts on the first connection. A `-e` of your own for any of these wins.
+- **`exec` waits for the desktop.** These images carry the label `com.codingbooth.desktop`
+  (`x11` or `wayland`). Before running the command, `exec` asks the booth whether its desktop
+  answers (`booth--desktop-ready`: `xset q` on X11, `wlr-randr` on the compositor's socket on
+  Wayland). On a desktop that is already up that is one quick check. On one that is still
+  starting — just created or restarted by `--run`, or brought up from another terminal — `exec`
+  prints `Waiting for the desktop of booth "…" to come up...` (hidden by `--silence-build`) and
+  holds the command until it answers. If it does not answer within 90 seconds, `exec` fails with
+  exit code `1` and does not run the command; `booth logs` shows why the desktop did not start.
 
-"Up" means the X server answers. The panel and window manager may still be loading, which a GUI
-app does not need. A recipe that needs the window manager itself, such as `i3-msg`, still waits
+"Up" means the display server answers. The panel and window manager may still be loading, which a
+GUI app does not need. A recipe that needs the window manager itself, such as `i3-msg`, still waits
 for it.
-
-The Wayland desktop (`desktop-wayland`) does not do this yet: its X display is started on demand by
-the compositor, so it has no fixed `DISPLAY` to set.
 
 ---
 

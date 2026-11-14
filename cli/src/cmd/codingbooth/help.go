@@ -928,10 +928,11 @@ command was started). Redirect output inside the container to keep it. It cannot
 be combined with -it, and with --run it requires --keep-alive — otherwise the
 booth would be stopped on return, killing the detached command.
 
-On a desktop booth (desktop-xfce, desktop-lxqt, desktop-kde) DISPLAY is set, and
-exec waits for the desktop's display before running the command, so a GUI app
-opens on it even right after --run brings the booth up. A display that does not
-come up within 90 seconds fails exec without running the command.
+On a desktop booth (desktop-xfce, desktop-lxqt, desktop-kde, desktop-wayland)
+exec waits for the desktop before running the command and gives it the display
+env (DISPLAY; on Wayland also WAYLAND_DISPLAY and XDG_RUNTIME_DIR), so a GUI app
+opens on it even right after --run brings the booth up. Your own -e wins. A
+desktop that does not come up within 90 seconds fails exec without running it.
 
 EXAMPLES:
   %s exec myproject -- make test

@@ -1,32 +1,65 @@
 #!/bin/bash
-# booth--desktop-ready — is this booth's desktop display up?
+# booth--desktop-ready [x11|wayland] — is this booth's desktop up?
 #
-#   exit 0  the display accepts connections; a GUI app started now will open
+#   exit 0  it is; stdout has the KEY=VALUE lines a GUI app needs to reach it
 #   exit 1  not (yet): the desktop is still starting, or it is down
-#   exit 2  nothing to check: this booth has no display to wait for
+#   exit 2  nothing to check: this booth has no desktop to wait for
 #
 # `booth exec` polls it before running a command in a booth whose image is
-# labelled com.codingbooth.desktop (the desktop variants), so `booth exec --run
-# -- some-gui-app` does not start the app before its X server. It checks the
-# display live rather than reading a marker file: /tmp survives a booth stop and
-# start, so a marker from the last session would claim a desktop that is not up.
+# labelled com.codingbooth.desktop, passing the label's value as the kind, and
+# hands the printed lines to the command as its environment (a -e of your own
+# wins). That is how `booth exec --run -- some-gui-app` neither starts the app
+# before its display nor starts it without one.
 #
-# Run it as the user whose session it checks (coder): the X server's auth cookie
-# is in that user's ~/.Xauthority. "Up" means the X server answers; the window
-# manager and panel may still be loading, which a GUI app does not need.
+#   x11      (default) the image sets DISPLAY; up when that X server answers.
+#   wayland  nothing fixed to set: the compositor (labwc or sway) is picked at
+#            run time, its socket name differs, XDG_RUNTIME_DIR follows coder's
+#            uid, and Xwayland's DISPLAY is known only to the compositor's
+#            children. start-wayland records the socket (cb-wayland-display)
+#            and the compositor's autostart records DISPLAY (cb-x-display);
+#            up when both are there and the compositor answers on the socket.
 #
-# Lives in base so every variant built FROM it has the same helper; only the
-# images with the label ask for it.
+# Checked live, never from a marker alone: /tmp survives a booth stop and
+# start, so a record from the last session could claim a desktop that is not
+# up. start-wayland deletes its records before the compositor starts.
+#
+# Run it as the user whose session it checks (coder): the X server's auth
+# cookie and the Wayland socket are that user's.
 
-case "${1:-}" in
+kind="${1:-x11}"
+case "$kind" in
   -h|--help)
-    sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,27p' "$0" | sed 's/^# \{0,1\}//'
     exit 0
     ;;
 esac
 
-[[ -n "${DISPLAY:-}" ]] || exit 2
-command -v xset >/dev/null 2>&1 || exit 2
+case "$kind" in
+  x11)
+    [[ -n "${DISPLAY:-}" ]] || exit 2
+    command -v xset >/dev/null 2>&1 || exit 2
+    xset q >/dev/null 2>&1 || exit 1
+    echo "DISPLAY=${DISPLAY}"
+    ;;
 
-xset q >/dev/null 2>&1 && exit 0
-exit 1
+  wayland)
+    command -v wlr-randr >/dev/null 2>&1 || exit 2
+    runtime="${XDG_RUNTIME_DIR:-/tmp/xdg-$(id -u)}"
+    [[ -r "$runtime/cb-wayland-display" && -r "$runtime/cb-x-display" ]] || exit 1
+    socket="$(tr -d ' \t\r\n' < "$runtime/cb-wayland-display")"
+    [[ -n "$socket" && -S "$runtime/$socket" ]] || exit 1
+    # A socket file can outlive its compositor; a client call cannot.
+    XDG_RUNTIME_DIR="$runtime" WAYLAND_DISPLAY="$socket" wlr-randr >/dev/null 2>&1 || exit 1
+    x_display="$(tr -d ' \t\r\n' < "$runtime/cb-x-display")"
+    echo "XDG_RUNTIME_DIR=${runtime}"
+    echo "WAYLAND_DISPLAY=${socket}"
+    # Empty when the compositor runs without Xwayland: native Wayland apps only.
+    [[ -n "$x_display" ]] && echo "DISPLAY=${x_display}"
+    ;;
+
+  *)
+    echo "booth--desktop-ready: unknown desktop kind '$kind' (x11 or wayland)" >&2
+    exit 2
+    ;;
+esac
+exit 0
