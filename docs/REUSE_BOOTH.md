@@ -135,6 +135,21 @@ the example's in-booth tests in a later plain-bash step that gets its environmen
 `GITHUB_ENV` / `GITHUB_PATH`. `ubuntu` runs as root with `--add-user dev` and checks the user, the
 variant's APPLY line, the rewritten `-e` values, and the in-booth tests in dev's login shell.
 
+**Keeping the copies in step.** `base-provision.sh`, the `booth-entry` copy and the
+`booth--as-coder` copy are written by hand from files under `variants/base/`.
+`cli/src/pkg/prepare/drift_test.go` runs with `go test ./...` and fails when one of them falls
+behind:
+
+- each copy, without its `# CB_TARGET:` guard lines and the marked user exception, must equal the
+  real script line for line;
+- the `run_setup` lines must be the base Dockerfile's `RUN <x>--setup.sh` lines, in order. A
+  setup left out on purpose is in the test's skip list, and has a `skip "<name>: why"` line in
+  the script;
+- `base-provision.sh` records the sha256 of the Dockerfile it was last checked against
+  (`# mirrors variants/base/Dockerfile sha256: …`). Any base change fails the test until someone
+  mirrors it, or adds a skip line, and records the new hash
+  (`sed 's/\r$//' variants/base/Dockerfile | sha256sum`).
+
 ---
 
 ## The two targets

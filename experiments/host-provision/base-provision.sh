@@ -12,6 +12,12 @@
 # container are skipped with a line saying why, so the log doubles as a list.
 #
 # Usage: sudo CB_TARGET=gha|host base-provision.sh <repo-root>
+#
+# Drift guard: cli/src/pkg/prepare/drift_test.go fails when the base Dockerfile
+# no longer hashes to the value below. After a base change, mirror it here (or
+# add a skip line saying why not), then put the new hash in:
+#   sed 's/\r$//' variants/base/Dockerfile | sha256sum
+# mirrors variants/base/Dockerfile sha256: 7a0b0d3a118a88d71b50e0a620872e0c577a7d009e770fb291ad848a38a1eb46
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -29,17 +35,21 @@ export DEBIAN_FRONTEND=noninteractive
 step() { printf '\n[base-provision] === %s\n' "$*"; }
 skip() { printf '[base-provision] SKIP %s\n' "$*"; }
 
+# The Dockerfile's retry window: 8 attempts, 30s more each time (~14 min), so a
+# snapshot.ubuntu.com outage is waited out the same way.
 apt_install() {
-  for attempt in 1 2 3 4 5; do
+  for attempt in 1 2 3 4 5 6 7 8; do
     timeout --kill-after=30 600 apt-get update -o APT::Update::Error-Mode=any && break
-    [ "$attempt" -lt 5 ] || exit 1
-    sleep $((attempt * 15))
+    [ "$attempt" -lt 8 ] || exit 1
+    echo "⚠️  apt-get update failed (attempt $attempt of 8); retrying in $((attempt * 30))s"
+    sleep $((attempt * 30))
   done
-  for attempt in 1 2 3 4 5; do
+  for attempt in 1 2 3 4 5 6 7 8; do
     timeout --kill-after=30 1800 apt-get install -y --no-install-recommends -o Acquire::Retries=5 "$@" && break
     dpkg --configure -a || true
-    [ "$attempt" -lt 5 ] || exit 1
-    sleep $((attempt * 15))
+    [ "$attempt" -lt 8 ] || exit 1
+    echo "⚠️  apt-get install failed (attempt $attempt of 8); retrying in $((attempt * 30))s"
+    sleep $((attempt * 30))
   done
 }
 
@@ -137,6 +147,7 @@ run_setup() {
 }
 run_setup tls--setup.sh
 run_setup viewmd--setup.sh
+run_setup glow--setup.sh --version 3.0.0
 run_setup gnupg--setup.sh --version 2.5.24
 run_setup envfolio--setup.sh
 run_setup just--setup.sh
@@ -152,10 +163,13 @@ step "Entry scripts"
 install -m 0755 "$HERE/booth-entry"     /usr/local/bin/booth-entry       # the CB_TARGET-guarded copy
 install -m 0755 "$HERE/booth--as-coder" /usr/local/bin/booth--as-coder   # the CB_USER_NAME copy
 install -m 0755 "$BASE/booth--file-sync" /usr/local/bin/booth--file-sync
+skip "booth--dind-forward + 56-cb-dind-forward--startup.sh: forward to a --dind-isolation kata sidecar, container-only"
+skip "booth--desktop-ready: answers booth exec on a desktop image, container-only"
 install -m 0755 "$BASE/tilde"            /usr/local/bin/tilde
 install -m 0644 "$BASE/99z-cb--profile.sh" /etc/profile.d/99z-cb--profile.sh
 install -m 0755 "$BASE/99z-cb--startup.sh" /usr/share/startup.d/99z-cb--startup.sh
 skip "start-ttyd / start-webconsole / web-ttyd-split: the Console UI is container-only"
+skip "booth-message-wrapper--setup.sh: the nginx message overlay in front of a booth's web ports, container-only"
 
 echo
 echo "[base-provision] ✅ done (CB_TARGET=$CB_TARGET)"
