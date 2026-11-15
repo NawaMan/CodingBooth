@@ -1,0 +1,10 @@
+# Configured by: booth config --no-tui --overwrite --select gh+token/git-credential
+
+
+run-args = [
+    "-e", "GH_TOKEN",
+    "-e", "GITHUB_TOKEN",
+    "-e", "GH_ENTERPRISE_TOKEN",
+    "-e", "GH_HOST",
+    "-v", "~/.gitconfig:/etc/cb-home-seed/.gitconfig:ro"
+]
