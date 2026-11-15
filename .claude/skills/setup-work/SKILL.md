@@ -23,11 +23,15 @@ often loaded alone):
    light on the work is not permission to edit the main clone.
 
 **Standing rule — end every turn by naming the try-it folder.** Once §2 has picked a workspace,
-close each reply with the folder and the one command that exercises the change:
+close each reply with one command that goes to the folder and exercises the change:
 
-> 🧪 Try it: `examples/workspaces/zig-example` — `./booth -- just run`
+> 🧪 Try it: `cd ~/dev/git/CodingBooth/worktree/<name>/examples/workspaces/zig-example && ./booth -- just run`
 
-The user cannot check your work without that line. Repeat it every turn, not just the last one.
+Make it a single command that can be pasted into any shell as it is: `cd` with the folder's full
+path (from `~`, or absolute, and inside the worktree when you are in one), then `&&` and the
+command, in one code span. A repo-relative folder with the command beside it has to be retyped,
+and only works from the right directory. The user cannot check your work without that line. Repeat
+it every turn, not just the last one.
 
 ---
 
@@ -474,4 +478,4 @@ and I did not run it" is a fine outcome to state, and not one to paper over.
 
 Close with the try-it line:
 
-> 🧪 Try it: `<workspace>` — `<command>`
+> 🧪 Try it: `cd <full path to the workspace> && <command>`
