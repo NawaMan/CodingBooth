@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 
 # booth--expose: Create a TCP tunnel to expose a container port on the host.
 #
@@ -91,9 +91,28 @@ expose_list() {
         done <<< "$out"
         return 0
     }
-    gather_ss ss
-    if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
-        gather_ss sudo ss
+    # No ss (the base image has no iproute2): read the listening ports from
+    # /proc/net/tcp{,6} instead. State 0A is LISTEN; the port is the hex after
+    # the colon of local_address. No process names this way, so SERVER is "-".
+    gather_proc() {
+        local f _sl local_addr _rem state port
+        for f in /proc/net/tcp /proc/net/tcp6; do
+            [[ -r "$f" ]] || continue
+            while read -r _sl local_addr _rem state _; do
+                [[ "$state" == "0A" ]] || continue
+                port=$((16#${local_addr##*:}))
+                [[ -z "${LISTEN_PROC[$port]:-}" ]] && LISTEN_PROC["$port"]="-"
+            done < <(tail -n +2 "$f")
+        done
+        return 0
+    }
+    if command -v ss >/dev/null 2>&1; then
+        gather_ss ss
+        if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+            gather_ss sudo ss
+        fi
+    else
+        gather_proc
     fi
 
     printf '%-9s %-22s %-5s %-11s %-7s %s\n' CONTAINER HOST PROTO KIND STATUS SERVER

@@ -192,6 +192,10 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
   on 8090, all reached from the host browser through a single mapped port. *(Secondary:
   reproducibility — the Go toolchain is pinned in the Boothfile, PocketBase in `go.mod`, and the
   schema is Go migrations, so a fresh clone builds an identical database.)*
+- **share-example** — beyond the host. A Notes Board app (API + front end, `just dev`) is shared
+  for a look or a review with `just share-web` / `just share-api`. Each gives a temporary public
+  https URL through `cloudflared-share` / `ngrok-share`, with no host port and, for Cloudflare, no
+  account.
 - *(Also strongly present in fastapi, nextjs, js, and every full-stack example above.)*
 
 ## 🔐 Credential seeding — host creds without secrets in the repo
@@ -323,6 +327,7 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 | rust-example | Notebook / multi-kernel (evcxr) |
 | server-example | Port exposure |
 | server-example-2 | Port exposure (auto-pick free port) |
+| share-example | Port exposure (temporary public URL) |
 | spring-boot-example | Precise version compatibility |
 | systemlib-example | Precise version compatibility |
 | turtle-example | Try / compare side-by-side (Logo vs Python turtle) |

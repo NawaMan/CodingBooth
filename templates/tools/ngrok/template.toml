@@ -1,0 +1,22 @@
+cb-version = "0.1.0"
+display-name = "ngrok"
+primary = true
+display-disc = "ngrok agent: share a booth server on a public URL"
+display-detail = "Installs the ngrok agent (v3, current stable: ngrok publishes no versioned downloads, so there is no version pin; `ngrok update` in the booth moves on). `ngrok http 8080` gives the server in the booth a public https URL, with ngrok's request inspector on http://localhost:4040 inside the booth. ngrok needs a (free) account: passes `NGROK_AUTHTOKEN` from the host when it is set, or run `ngrok config add-authtoken <token>` in the booth. The authtoken is in the container's environment, so `docker inspect` on the booth shows it. The Share extension (auto-selected) adds `ngrok-share <port>`, which prints just the URL."
+display-order = 39
+tags = [
+    "share",
+    "tunnel",
+    "network",
+    "cli",
+]
+
+# Bare passthrough: booth emits -e only when the host has the variable.
+run-args = [
+    "-e", "NGROK_AUTHTOKEN",
+]
+
+[segments]
+Boothfile = """
+setup ngrok
+"""

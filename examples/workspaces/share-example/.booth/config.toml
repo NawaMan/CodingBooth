@@ -1,0 +1,9 @@
+# Configured by: booth config --no-tui --overwrite --expose +8080 --expose +3001 --select nodejs/cloudflared/ngrok
+
+
+run-args = [
+    "-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro",
+    "-e", "NGROK_AUTHTOKEN",
+    "--publish", "+8080:8080",
+    "--publish", "+3001:3001"
+]

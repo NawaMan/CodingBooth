@@ -24,6 +24,7 @@ Back to [README](../README.md)
 - [Closing a tunnel](#closing-a-tunnel)
 - [Listing ports](#listing-ports)
 - [The other direction: reaching a service on the host](#the-other-direction-reaching-a-service-on-the-host)
+- [Sharing beyond the host: a public URL](#sharing-beyond-the-host-a-public-url)
 - [Relationship to -p and --expose](#relationship-to--p-and---expose)
 - [Security](#security)
 - [Limitations](#limitations)
@@ -276,6 +277,31 @@ requires the egress allowlist to permit it — that restriction is the point of
 running with `--egress`.
 
 ---
+
+## Sharing beyond the host: a public URL
+
+`booth--expose` makes a port reachable from **the host**. To let someone else open it, such as a
+teammate, a phone, or a webhook sender, select a tunnel tool. Its auto-selected Share extension adds
+a one-word command that prints a temporary public https URL. The URL works until Ctrl+C:
+
+```bash
+booth config --select cloudflared     # cloudflared-share <port>: trycloudflare.com, no registration
+booth config --select ngrok           # ngrok-share <port>: needs NGROK_AUTHTOKEN
+```
+
+```bash
+# Inside the booth:
+cloudflared-share 8080
+# 🌐 Shared: https://<words>.trycloudflare.com  ->  http://localhost:8080
+```
+
+Cloudflare quick tunnels need **no registration**: no account, login or token. The URL is random and
+new each time. ngrok needs a free account for its authtoken (`NGROK_AUTHTOKEN`, or
+`ngrok config add-authtoken`).
+
+The tunnel connects outward from the booth, so it needs no `booth--expose`, no host port and no
+`--public`. Anyone who has the URL can reach the server. Both commands refuse the booth's own port
+(10000) unless given `--ok-booth`. See [share-example](../examples/workspaces/share-example/).
 
 ## Relationship to `-p` and `--expose`
 

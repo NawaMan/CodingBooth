@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Notes Board</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <h1>Notes Board</h1>
+    <!-- The tests look for this marker to prove a shared URL reaches this page. -->
+    <p class="sub" id="marker">share-example app · served from a CodingBooth</p>
+
+    <form id="add">
+      <input id="author" placeholder="Your name" maxlength="40">
+      <input id="text" placeholder="Leave a note…" maxlength="500" required>
+      <button>Add</button>
+    </form>
+
+    <ul id="notes"></ul>
+    <p class="status" id="status"></p>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

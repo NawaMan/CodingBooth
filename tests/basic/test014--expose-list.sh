@@ -119,3 +119,23 @@ else
   echo "$BOOTH_OUT" >&2
   exit 1
 fi
+
+# -------------------------------------------------------
+# Test 4: the front door, which is listening, reads "up" — and the unserved
+# 9999 reads DOWN. The base image has no `ss`, so this holds only through the
+# /proc/net/tcp fallback; before it, every row read DOWN. The front door's web
+# stack comes up after the container does, so poll for it (up to 30s).
+# -------------------------------------------------------
+for _ in {1..30}; do
+  echo "$BOOTH_OUT" | grep -qE '^10000[[:space:]].*[[:space:]]up[[:space:]]' && break
+  sleep 1
+  BOOTH_OUT=$(run_booth exec "$NAME" -- booth--expose list 2>/dev/null)
+done
+if echo "$BOOTH_OUT" | grep -qE '^10000[[:space:]].*[[:space:]]up[[:space:]]' && \
+   echo "$BOOTH_OUT" | grep -qE "^${CONTAINER_PORT}[[:space:]].*[[:space:]]DOWN[[:space:]]"; then
+  print_test_result "true" "$0" "4" "In-booth booth--expose list: front door up, unserved $CONTAINER_PORT DOWN"
+else
+  print_test_result "false" "$0" "4" "In-booth booth--expose list STATUS column (output below)"
+  echo "$BOOTH_OUT" >&2
+  exit 1
+fi

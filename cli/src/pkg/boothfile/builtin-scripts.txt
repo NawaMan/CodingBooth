@@ -50,6 +50,8 @@ setup cleanup-after
 setup clojure
 setup clojure-code-extension
 setup cloudbeaver
+setup cloudflared
+setup cloudflared-share
 setup cmake
 setup cmake-code-extension
 setup cobol-code-extension
@@ -253,6 +255,8 @@ setup neovim
 setup neovim-lsp
 setup network-whitelist
 setup nginx
+setup ngrok
+setup ngrok-share
 setup nim
 setup nim-code-extension
 setup nodejs

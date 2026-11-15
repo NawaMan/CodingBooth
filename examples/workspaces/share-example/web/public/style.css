@@ -1,0 +1,17 @@
+:root { --bg: #f6f7f9; --card: #fff; --ink: #1d2330; --muted: #6b7280; --accent: #2563eb; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, sans-serif; }
+main { max-width: 40rem; margin: 3rem auto; padding: 0 1rem; }
+h1 { margin: 0; }
+.sub { margin: .25rem 0 1.5rem; color: var(--muted); }
+form { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+input { padding: .55rem .7rem; border: 1px solid #d1d5db; border-radius: 6px; font: inherit; }
+#author { flex: 1 1 8rem; }
+#text { flex: 3 1 14rem; }
+button { padding: .55rem 1rem; border: 0; border-radius: 6px; background: var(--accent); color: #fff; font: inherit; cursor: pointer; }
+ul { list-style: none; padding: 0; margin: 0; display: grid; gap: .5rem; }
+li { background: var(--card); border-radius: 8px; padding: .75rem 1rem; display: flex; gap: 1rem; align-items: start; box-shadow: 0 1px 2px #0001; }
+li .body { flex: 1; }
+li .meta { color: var(--muted); font-size: .85rem; }
+li button { background: none; color: var(--muted); padding: 0 .25rem; }
+.status { color: #b91c1c; min-height: 1.5em; }
