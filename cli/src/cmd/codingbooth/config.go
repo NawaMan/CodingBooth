@@ -74,6 +74,11 @@ func runConfig(version, buildDate string) {
 		os.Exit(1)
 	}
 	if flags.noTUI {
+		// Only a new apt snapshot asked for: change that one Boothfile line, not
+		// the whole .booth/ (see config_single_value.go).
+		if isSnapshotOnlyChange(flagArgs) && runConfigSnapshotOnly(version, targetPath, flags) {
+			return
+		}
 		runConfigCLI(version, targetPath, flags)
 	} else if flags.web || shouldUseWebUI() {
 		runConfigWeb(version, targetPath, flags)
@@ -1739,7 +1744,8 @@ choices, in the TUI on save or here as flags:
 
 Flags:
   --select <selection>     Template selection DSL (repeatable)
-  --no-tui                 Non-interactive CLI mode (requires --select)
+  --no-tui                 Non-interactive CLI mode. With no --select, it reuses
+                           the selection recorded in the booth's header
   --web                    Browser UI on the booth port (127.0.0.1:<port>)
   --dryrun                 Preview what would be generated without writing files
   --variant <variant>      Set variant (base, notebook, codeserver, xfce, kde)
@@ -1752,6 +1758,9 @@ Flags:
                            (no freeze). Without it, an existing booth keeps the
                            snapshot it has and a new booth is frozen to the one
                            this release's images were built against.
+                           With --no-tui and no other change, it rewrites only
+                           the Boothfile's APT_SNAPSHOT line (and its
+                           fingerprint), never the rest of .booth/
   --overwrite              Overwrite existing files without prompting, including
                            hand-written ones (--no-tui only)
   --beside                 Keep hand-written files; write the generated content

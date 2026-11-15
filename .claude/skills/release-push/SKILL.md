@@ -224,11 +224,11 @@ examples/sync-apt-snapshot.sh              # moves every example pinned older, v
 examples/ensure-config.sh | tail -1        # must report STALE-APT 0
 ```
 
-`sync-apt-snapshot.sh` bumps through `booth config --apt-snapshot`, never `sed`, so each example's
-`.booth/.generated` fingerprint stays valid. Only older pins move; an empty pin (no freeze) is
-kept. Reconfiguring also re-copies template-owned files (`.booth/startups/`, `.booth/setups/`,
-seeds under `.booth/shared/`) — **look at the diff and keep only `Boothfile` and `.generated`**
-unless a refresh of those is wanted; a `.booth/setups/` copy of a built-in shadows it.
+`sync-apt-snapshot.sh` bumps through `booth config --no-tui --apt-snapshot`, never `sed`, so each
+example's `.booth/.generated` fingerprint stays valid. Only older pins move; an empty pin (no
+freeze) is kept. A snapshot-only `booth config` rewrites just the `env APT_SNAPSHOT=` line and the
+fingerprint, so the diff is `Boothfile` + `.generated` per example and nothing else — anything more
+is a bug worth stopping for.
 
 Commit `apt-snapshot.txt` and the examples together (`Pin apt snapshot to <id> for X.Y.Z`),
 separate from the version commit. If the pin did not move (re-running a release the same week),

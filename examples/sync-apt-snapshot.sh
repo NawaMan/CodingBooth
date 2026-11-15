@@ -79,8 +79,9 @@ for name in "${EXAMPLES[@]}"; do
     fi
 
     # From inside the workspace: the path given to booth config lands in the header.
-    if out="$(cd "$ws" && "$CODINGBOOTH" config --no-tui --overwrite --apt-snapshot "$TARGET" </dev/null 2>&1)"; then
-        rm -f "$ws/.booth"/*.bak
+    # A snapshot-only change rewrites just that Boothfile line (and .generated):
+    # no --overwrite, and nothing else in .booth/ is re-copied.
+    if out="$(cd "$ws" && "$CODINGBOOTH" config --no-tui --apt-snapshot "$TARGET" </dev/null 2>&1)"; then
         echo "$name  $pinned -> $TARGET"
     else
         failed=$((failed + 1))

@@ -144,6 +144,8 @@ The base image is Ubuntu 26.04, where `--snapshot` is auto-supported (no apt con
 | Move it to a recent day | `booth config --apt-snapshot today` | type `TODAY` |
 | No freeze at all | `booth config --apt-snapshot none` | clear the field |
 
+**Moving only the date touches only that line.** `booth config --no-tui --apt-snapshot <id>` with no other change rewrites the Boothfile's `env APT_SNAPSHOT=` line and nothing else: no `--overwrite` needed, and the rest of `.booth/` — `config.toml`, startups, home seeds, your hand edits in any of them — is left exactly as it is. A Boothfile `booth config` wrote stays generated (its `.booth/.generated` fingerprint is updated with it); a hand-written one gets the line changed and stays hand-written. Add any other flag and it is a full reconfigure as before.
+
 `today` means **a week ago** (UTC), not the current day: a snapshot id names a UTC day, and the day it is where you are may be one the snapshot service has not published yet. A week back exists in every timezone. The image build and the release use the same rule.
 
 **Not older than the image.** The base image is itself built at a snapshot, recorded in it as `CB_IMAGE_APT_SNAPSHOT`. A booth pinned to an *older* one can fail to install packages that need an exact version of one the image already has newer — apt will not downgrade it. `install apt` warns when that is the case, and if the install fails, prints the fix: `booth config --apt-snapshot <the image's snapshot>` (or `today`). `booth config` warns too, before any build, when the booth's image is already on this machine — the TUI's Apt Snapshot field shows which image and what it was built at.

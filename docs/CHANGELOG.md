@@ -4,6 +4,15 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Moving the apt snapshot no longer regenerates the whole `.booth/`.** `booth config --no-tui
+  --apt-snapshot <id|today|none>` with no other change rewrites only the Boothfile's
+  `env APT_SNAPSHOT=` line, needs no `--overwrite`, and leaves `config.toml`, startups, setups and
+  seeds untouched — hand edits included. A generated Boothfile stays generated (`.booth/.generated`
+  is updated); a hand-written one gets the line changed and stays hand-written. Any other flag
+  alongside makes it a full reconfigure, as before. `booth config --help` also no longer claims
+  `--no-tui` requires `--select`: without one it reuses the booth's recorded selection. See
+  [REPRODUCIBILITY.md](REPRODUCIBILITY.md#apt--pin-the-snapshot-not-the-package).
+
 - **go-example is now a small Go project; the old one is go-full-example.** The new go-example is
   a plain base booth (Go, gopls, delve) with `go4096`, a terminal sliding-tile puzzle using only
   the standard library, with unit tests and a `--demo` mode. The batteries-included example
