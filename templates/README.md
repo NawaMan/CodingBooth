@@ -492,6 +492,8 @@ with no dependency on a language, so they sit here too.
 
 | Extension                  | Display Name                  |
 |----------------------------|-------------------------------|
+| `aws-cli/credential--extension` | AWS Credentials          |
+| `aws-cli/env--extension`   | AWS Env Credentials           |
 | `gh/copilot--extension`    | GitHub Copilot CLI            |
 | `gh/token--extension`      | GitHub CLI Token              |
 | `go/linter--extension`     | Go Linter                     |

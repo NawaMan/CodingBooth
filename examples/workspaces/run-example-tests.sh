@@ -75,6 +75,15 @@ else
     example_image_variant() { echo "base"; }
 fi
 
+# missing_required_env reads an example's .cb-tests/requires-env.txt (see below).
+# Same guard: without the helper nothing is required, and the example's own test
+# still declines to run.
+if [[ -f "$SCRIPT_DIR/../../tests/requires-env--source.sh" ]]; then
+    source "$SCRIPT_DIR/../../tests/requires-env--source.sh"
+else
+    missing_required_env() { :; }
+fi
+
 # Default settings
 MAX_PARALLEL=1
 
@@ -509,6 +518,11 @@ run_examples() {
             # only. Declaring it here, not in the example's own wrapper, keeps
             # the 70 byte-identical run-automatic-on-host-test.sh copies alike.
             requires_arch="$example_dir/.cb-tests/requires-arch.txt"
+            # Likewise .cb-tests/requires-env.txt: one host environment
+            # variable per line, `A|B` meaning either will do. An example
+            # credentialed only from the environment (aws-env-example) is
+            # skipped on a host that has not set them, not failed.
+            missing_env="$(missing_required_env "$example_dir/.cb-tests/requires-env.txt")"
             # --dind and --egress are not supported on Apple container yet
             # (docs/CONTAINER_SUPPORT.md). This runner pins CB_ENGINE=docker,
             # so this only applies to a run made on purpose with
@@ -523,6 +537,9 @@ run_examples() {
                 test_exit_code=77
             elif [ -f "$requires_arch" ] && ! grep -qx "$(uname -m)" "$requires_arch"; then
                 echo "SKIP: runs on $(tr '\n' ' ' < "$requires_arch")only; this host is $(uname -m)."
+                test_exit_code=77
+            elif [ -n "$missing_env" ]; then
+                echo "SKIP: needs host environment variable(s): ${missing_env}."
                 test_exit_code=77
             else
                 run_with_timeout "$EXAMPLE_TIMEOUT" bash -c "cd '$example_dir' && VARIANT=base CB_PORT=RANDOM ./run-automatic-on-host-test.sh"

@@ -1,0 +1,14 @@
+# Configured by: booth config --no-tui --overwrite --select aws-cli+env~credential/claude-code+auto-accept+credential+settings-cache
+
+
+run-args = [
+    "-e", "AWS_ACCESS_KEY_ID",
+    "-e", "AWS_SECRET_ACCESS_KEY",
+    "-e", "AWS_SESSION_TOKEN",
+    "-e", "AWS_REGION",
+    "-e", "AWS_DEFAULT_REGION",
+    "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
+    "-v", "~/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro"
+]
+
+cache-dirs = ["home/coder/.claude"]
