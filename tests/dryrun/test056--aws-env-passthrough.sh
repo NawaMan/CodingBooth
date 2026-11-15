@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------------------
 # Test: aws-env-example's run-args hand the AWS credentials over by name only.
 #
-# The example's config (aws-cli+env~credential) lists AWS_* as bare `-e NAME`.
+# The example's config (aws-cli+env~credential, plus claude-code) lists AWS_* as bare `-e NAME`.
 # With the host's variables set, the docker command copies each one by name, so
 # the secret values never appear in the command line, the dryrun output or a log.
 # A variable the host has not set (here AWS_SESSION_TOKEN, AWS_DEFAULT_REGION)

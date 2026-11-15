@@ -5,11 +5,16 @@ variables**. No `~/.aws` file is mounted or seeded. It is the setup a CI runner 
 Actions secrets, a pipeline's injected keys), and the counterpart of
 [aws-example](../aws-example/), which seeds your host's `~/.aws` files instead.
 
-It uses the `aws-cli+env` extension, with the file-based `credential` extension switched off:
+It uses the `aws-cli+env` extension, with the file-based `credential` extension switched off, plus
+Claude Code (auto-accept, host login, settings cache) so an agent can work against AWS in the booth:
 
 ```bash
-booth config --no-tui --select 'aws-cli+env~credential'
+booth config --no-tui --select 'aws-cli+env~credential/claude-code+auto-accept+credential+settings-cache'
 ```
+
+Only the AWS part is needed for the credentials; `--select 'aws-cli+env~credential'` alone gives an
+AWS-only booth. Anything running in the booth, Claude included, can read the AWS variables and act
+with their permissions — give it a scoped key, not an admin one.
 
 For all three ways to give a booth AWS credentials (files, environment, EnvFolio) side by side,
 see the [AWS in a Booth](../../../docs/demos/aws/README.md) walkthrough.

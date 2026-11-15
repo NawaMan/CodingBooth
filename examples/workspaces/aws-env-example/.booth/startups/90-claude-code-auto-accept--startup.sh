@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-# Configured by: booth config --no-tui --overwrite --select gh+token/aws-cli+env~credential/claude-code+auto-accept+credential+settings-cache
+# Configured by: booth config --no-tui --overwrite --select aws-cli+env~credential/claude-code+auto-accept+credential+settings-cache
 
 # Detect user-bound volumes and protect them from accidental rm -rf
 # by patching Claude Code's deny rules with jq.
