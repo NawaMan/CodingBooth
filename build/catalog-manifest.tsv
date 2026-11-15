@@ -663,6 +663,7 @@ extension	appwrite-server+expose	0.1.0	7fecedfc771e65cb15a15ef536baed30a8a979d3a
 extension	appwrite-server+persist	0.1.0	6a7746ab8c9b7409b7b451fdd535f264e7df230d80cac482ceba1934c11455e8	templates/tools/appwrite-server/persist--extension.toml
 extension	appwrite-server+seed	0.1.0	e7404f4396d976c8615738c9bdaca30dadbdae277a5b82faa5ca9d9e8432e2ca	templates/tools/appwrite-server/seed--extension.toml
 extension	aws-cli+credential	1.0.0	d68c144521e4088c05e9adbd0a1a166bbd294c213eefb8cb761c431fd21f1ed5	templates/tools/aws-cli/credential--extension.toml
+extension	aws-cli+env	0.1.0	53f9a2eb80aa1f684938a769df3506beb9b672f4e0ab9df206cf51bb2017dd82	templates/tools/aws-cli/env--extension.toml
 extension	aws-sam-cli+credential	1.0.0	242311d8b4dfe1b7a9d6692c1579416df38ed7586f7821f9fdc134a335e73e9b	templates/tools/aws-sam-cli/credential--extension.toml
 extension	aws-sam-cli+dind	1.0.0	32f4c5ec651b369cf8d88210be62e8023a2f4180c4a414ce0d8713e40070c0cc	templates/tools/aws-sam-cli/dind--extension.toml
 extension	azure-cli+credential	1.0.0	9c3609cdab8d13947ea33ef6308f90409c10d06079feaad05304d8e60be0801f	templates/tools/azure-cli/credential--extension.toml

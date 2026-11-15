@@ -1,0 +1,17 @@
+cb-version = "0.1.0"
+display-name = "AWS Env Credentials"
+display-disc = "Pass AWS_* credential variables from the host environment"
+display-detail = "Passes `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`, `AWS_REGION` and `AWS_DEFAULT_REGION` from the host environment into the booth, so the AWS CLI works with no `~/.aws` files at all — the usual setup on a CI runner. A variable not set on the host is left out, so selecting this without them does nothing. It combines with the file-based AWS Credentials extension: the CLI takes each setting from the environment first and falls back to the files. `AWS_PROFILE` is not passed: it names a profile in `~/.aws/config`, which this extension does not provide. The values are in the container's environment, so `docker inspect` on the booth shows them."
+display-order = 3
+auto-select = false
+tags = ["aws", "credential", "env"]
+
+# Bare passthrough: booth emits each -e only when the host has the variable,
+# so an unset key never lands as an empty one.
+run-args = [
+    "-e", "AWS_ACCESS_KEY_ID",
+    "-e", "AWS_SECRET_ACCESS_KEY",
+    "-e", "AWS_SESSION_TOKEN",
+    "-e", "AWS_REGION",
+    "-e", "AWS_DEFAULT_REGION",
+]

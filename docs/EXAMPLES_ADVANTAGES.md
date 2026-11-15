@@ -198,6 +198,8 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 
 - **aws-example** — mounts `~/.aws` read-only via `cb-home-seed`; a committed
   `.booth/home/.aws/config` pins the profile/region while secrets stay on the host.
+- **aws-env-example** — the same AWS CLI with no files at all: the `aws-cli+env` extension passes
+  `AWS_*` variables from the host by name, the way a CI runner provides them.
 - **gcloud-example** — seeds gcloud's credential/config files individually (read-only) via the
   `gcloud+credential` extension, plus Claude Code and token-credential seeding for in-booth AI use.
 - **firebase-example** — mounts `firebase-tools.json` read-only so the `firebase` CLI works with no
@@ -252,6 +254,7 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 | angular-example | Host stays clean |
 | apt-example | Reproducibility (archive snapshot) |
 | appwrite-example | Batteries-included (local Appwrite) |
+| aws-env-example | Credential seeding |
 | aws-example | Credential seeding |
 | bun-example | Host stays clean |
 | cache-example | Persistence / cache |
