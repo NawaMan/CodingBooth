@@ -285,7 +285,7 @@ teammate, a phone, or a webhook sender, select a tunnel tool. Its auto-selected 
 a one-word command that prints a temporary public https URL. The URL works until Ctrl+C:
 
 ```bash
-booth config --select cloudflared     # cloudflared-share <port>: trycloudflare.com, no account
+booth config --select cloudflared     # cloudflared-share <port>: trycloudflare.com, no registration
 booth config --select ngrok           # ngrok-share <port>: needs NGROK_AUTHTOKEN
 ```
 
@@ -294,6 +294,10 @@ booth config --select ngrok           # ngrok-share <port>: needs NGROK_AUTHTOKE
 cloudflared-share 8080
 # 🌐 Shared: https://<words>.trycloudflare.com  ->  http://localhost:8080
 ```
+
+Cloudflare quick tunnels need **no registration**: no account, login or token. The URL is random and
+new each time. ngrok needs a free account for its authtoken (`NGROK_AUTHTOKEN`, or
+`ngrok config add-authtoken`).
 
 The tunnel connects outward from the booth, so it needs no `booth--expose`, no host port and no
 `--public`. Anyone who has the URL can reach the server. Both commands refuse the booth's own port

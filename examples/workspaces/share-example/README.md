@@ -26,12 +26,51 @@ booth config --no-tui --select 'nodejs/cloudflared/ngrok' --expose +8080 --expos
 
 ## Table of Contents
 
+- [Share it: the steps](#share-it-the-steps)
 - [The workflow](#the-workflow)
 - [Which one to share](#which-one-to-share)
 - [Sharing your own app](#sharing-your-own-app)
 - [ngrok authtoken](#ngrok-authtoken)
 - [Tests](#tests)
 - [Security Notes](#security-notes)
+
+## Share it: the steps
+
+| | Cloudflare | ngrok |
+|---|---|---|
+| Account | **None: no registration, no login, no token** | Free account, for its authtoken |
+| URL | random `https://<words>.trycloudflare.com`, new each time | `https://<id>.ngrok-free.app` (free plan) |
+| Share the app | `just share-web` | `just share-web-ngrok` |
+| Share only the API | `just share-api` | `just share-api-ngrok` |
+
+**1. Start the app** (one terminal or Console UI pane):
+
+```bash
+just dev
+```
+
+**2a. Share with Cloudflare** (a second pane). There's nothing to set up:
+
+```bash
+just share-web          # = cloudflared-share 8080
+# 🌐 Shared: https://<words>.trycloudflare.com  ->  http://localhost:8080
+```
+
+Send that link. Ctrl+C stops sharing. Cloudflare's quick tunnels are meant for testing and demos,
+with no uptime guarantee. A fixed address on your own domain (a *named* tunnel,
+`cloudflared tunnel login`) is the only part that needs a Cloudflare account, and the share command
+doesn't use one.
+
+**2b. Or share with ngrok** (a second pane). Get your authtoken from
+<https://dashboard.ngrok.com/get-started/your-authtoken> and save it in the booth once:
+
+```bash
+ngrok config add-authtoken <your-token>
+just share-web-ngrok    # = ngrok-share 8080
+```
+
+To keep the token across booth rebuilds, set `NGROK_AUTHTOKEN` on the host, or in `.booth/.env`,
+instead. See [ngrok authtoken](#ngrok-authtoken).
 
 ## The workflow
 
