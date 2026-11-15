@@ -145,8 +145,10 @@ of `tests/run-manual-tests.sh`; skipped without AWS credentials) runs
 `experiments/host-provision/ec2-test.sh`: one fresh Ubuntu 26.04 EC2 instance per example, in
 parallel. On each, as the AMI's own sudo user `ubuntu`, it runs `booth prepare ubuntu --yes`, then,
 in a new login, checks `CB_TARGET=host` and runs the example's own in-booth tests. Default examples
-are go-example and zig-example (`CB_EC2_EXAMPLES` picks others); a run takes about 20 minutes and a
-few cents. Everything it makes is tagged `cb-test=host-provision` and removed at the end, on failure
+are go-example and zig-example, both on the base variant (`CB_EC2_EXAMPLES` picks others); a run
+takes about 5 minutes and a few cents. go-full-example (the xfce variant, Python, Jupyter,
+code-server) tests the variant path, which only the ubuntu target applies: its `prepare` alone takes
+about 12 minutes. Everything it makes is tagged `cb-test=host-provision` and removed at the end, on failure
 and on Ctrl-C or SIGTERM; each instance also terminates itself after 90 minutes, in case the
 machine running the test dies mid-run. The run fails if anything of it is left, and
 `ec2-test.sh --sweep` removes everything the test ever tagged. The root + `--add-user` path stays

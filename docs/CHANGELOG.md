@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **go-example is now a small Go project; the old one is go-full-example.** The new go-example is
+  a plain base booth (Go, gopls, delve) with `go4096`, a terminal sliding-tile puzzle using only
+  the standard library, with unit tests and a `--demo` mode. The batteries-included example
+  (xfce desktop, Python, Jupyter with GoNB, code-server, shared module caches, cross-compiling
+  treemoji) moved, unchanged, to `examples/workspaces/go-full-example`.
+
 - **`just` recipes run in place on a machine `booth prepare` set up.** With `CB_TARGET` gha or host
   (which `booth prepare` writes to `/etc/profile.d` and, on a runner, to `GITHUB_ENV`),
   `{{run-in-booth}}` runs the line as is, instead of handing it to `./booth exec --run` (which

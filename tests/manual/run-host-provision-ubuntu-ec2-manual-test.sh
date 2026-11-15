@@ -8,7 +8,8 @@
 # This test runs experiments/host-provision/ec2-test.sh: one fresh EC2 instance
 # per example (default go-example and zig-example, in parallel), `booth prepare
 # ubuntu` as the AMI's sudo user, then the example's own in-booth tests in a new
-# login. About 20 minutes and a few cents.
+# login. About 5 minutes and a few cents; go-full-example (the xfce variant) adds
+# about 12, see docs/REUSE_BOOTH.md.
 #
 # Every instance, key pair and security group it makes is removed at the end,
 # on failure and on Ctrl-C; each instance also terminates itself after 90

@@ -10,14 +10,18 @@ run-on-host  := if env("BOOTH_CONTAINER_NAME", "") == "" { "" } else { "echo 'ju
 default:
     @just --list
 
-# Cross-compile treemoji into ./bin/
+# Build the game into ./bin/go4096
 build:
-    {{run-in-booth}} ./build.sh
+    {{run-in-booth}} go build -o bin/go4096 .
 
-# Run treemoji (builds first if needed)
+# Play (`just run --seed 42` for a game you can replay)
 run *args:
-    {{run-in-booth}} ./run-treemoji.sh {{ args }}
+    {{run-in-booth}} go run . {{ args }}
 
-# Run Go unit tests
+# Let the game play itself and print how it ends
+demo:
+    {{run-in-booth}} go run . --demo
+
+# Run the unit tests
 test:
-    {{run-in-booth}} ./run-go-test.sh
+    {{run-in-booth}} go test ./...

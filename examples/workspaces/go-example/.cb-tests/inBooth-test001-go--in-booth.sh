@@ -1,5 +1,5 @@
-#\!/bin/bash
-# Test: go
-
-echo "=== Testing go ==="
+#!/bin/bash
+set -euo pipefail
+# Go is installed and on PATH.
+echo "=== Testing Go ==="
 go version

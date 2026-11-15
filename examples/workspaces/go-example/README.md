@@ -1,8 +1,10 @@
 # Go Example
 
-This example is a batteries-included Go workspace with gopls, delve, and the GoNB notebook kernel. The bundled `treemoji` command is a tiny tree-like CLI that walks a directory and prints its structure with emoji icons, supporting flags for hidden files, directories-only, and a maximum depth. This is a genuinely batteries-included Go setup: gopls for editor intelligence, delve for debugging, and the GoNB kernel for notebook-style exploration all come up together, so nothing about the toolchain is left for you to assemble. The real showcase is cross-compilation — `build.sh` builds the very same `treemoji` binary for Linux, macOS (Intel and Apple Silicon), Windows, and beyond just by setting `GOOS`/`GOARCH`. You can ship a release for every platform from one Linux booth, without a CI matrix and without touching a single other machine.
+This example is a small Go project in a plain base booth: Go with gopls and delve, and nothing else. The program, `go4096`, is a terminal sliding-tile puzzle. Slide the tiles with the arrow keys (or WASD), equal tiles that meet merge into their sum, and the goal is a 4096 tile. It uses only the standard library: raw key input comes from `stty`, so `go build` never downloads a module. The rules live in `game/` with unit tests, apart from the terminal code in `main.go`, and `--demo` plays a fixed game by itself, so the binary can be tested without a terminal.
 
-**Stack:** Go, gopls, delve, Python, Jupyter Notebook, GoNB kernel, code-server
+For Go with a desktop, notebooks (GoNB), code-server, shared module caches and cross-compiling, see [go-full-example](../go-full-example/).
+
+**Stack:** Go, gopls, delve
 
 ## Quick start
 
@@ -13,33 +15,17 @@ booth
 
 # 2. Inside the booth
 just --list
-just run
-just test
-#    or open VS Code, create a .ipynb and select the Go kernel
+just run                 # play: arrows or WASD, q quits
+just run --seed 42       # a game you can replay
+just demo                # the game plays itself and prints how it ends
+just test                # the rules' unit tests
+just build               # ./bin/go4096
 ```
-
-## Shared download cache
-
-`go+mod-cache` mounts two volumes that every booth on this machine shares.
-
-| Volume | What it holds |
-| --- | --- |
-| `booth-cache-gomod` | Module downloads (`GOMODCACHE`) |
-| `booth-cache-gobuild` | Build cache (`GOCACHE`) |
-
-This example does not bake modules into the image, so the first `go test` fills the volumes:
-
-```bash
-./booth -- go test ./...
-```
-
-Copy this folder to a second path and run the same command with `GOPROXY=off`. That booth installs from the volumes. List them with `docker volume ls --filter label=cb.volume=cache`. While no booth is using one, `docker volume rm booth-cache-gomod` clears it.
 
 ## What's included
 
-| Component          | Details                              |
-|--------------------|--------------------------------------|
-| Language           | Go (with gopls and delve)            |
-| Notebook           | Jupyter with GoNB kernel             |
-| VS Code extensions | Go language support                  |
-| Editor             | code-server (VS Code in browser)     |
+| Component       | Details                                   |
+|-----------------|-------------------------------------------|
+| Language        | Go (template default), gopls, delve       |
+| VS Code support | Go extension (for a VS Code you attach)   |
+| Sample          | `go4096`: `main.go` (terminal), `game/` (rules + tests) |
