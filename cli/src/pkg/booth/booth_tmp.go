@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/githubstar"
 	"github.com/nawaman/codingbooth/src/pkg/lifecyclelog"
 )
 
@@ -40,7 +41,7 @@ func PrepareBoothTmp(ctx appctx.AppContext) appctx.AppContext {
 
 	// A star click left by a booth that never cleaned up (a daemon, a crash) is
 	// recorded before the folder is emptied.
-	PromoteGitHubStar(boothDir)
+	githubstar.Promote(boothDir)
 
 	// Empty contents unless --keep-tmp-on-start is set. The lifecycle log is
 	// kept: it is how a booth that stopped or restarted can be traced afterwards.
@@ -96,7 +97,7 @@ func cleanupBoothTmp(ctx appctx.AppContext) {
 	if boothDir == "" {
 		return
 	}
-	PromoteGitHubStar(boothDir) // before the click it holds is emptied away
+	githubstar.Promote(boothDir) // before the click it holds is emptied away
 	if ctx.LeaveTmpOnExit() {
 		return
 	}

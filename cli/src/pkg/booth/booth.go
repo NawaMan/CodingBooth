@@ -24,6 +24,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
 	"github.com/nawaman/codingbooth/src/pkg/docker"
+	"github.com/nawaman/codingbooth/src/pkg/githubstar"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 	"github.com/nawaman/codingbooth/src/pkg/mountoverlap"
 	"github.com/nawaman/codingbooth/src/pkg/pathmode"
@@ -902,8 +903,8 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_EXPECTED_VIEWER_COUNT=%d", ctx.ExpectedViewerCount())))
 
 	// GitHub star prompt: on, off (CB_STAR_PROMPT=off), or done (the link was clicked
-	// in some booth on this host). See github_star.go.
-	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_STAR_PROMPT="+GitHubStarPrompt()))
+	// in some booth on this host). See pkg/githubstar.
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_STAR_PROMPT="+githubstar.Prompt()))
 
 	// Custom startup script
 	if ctx.Startup() != "" {
