@@ -735,34 +735,6 @@ booth_step() {
   return 0
 }
 
-# Watch mode: stop at a point in a test so a person can look at what it set up.
-#
-# Off unless CB_TEST_WATCH=1, so suites never block. When on, it prints what to
-# look at and waits for Enter on the controlling terminal — the suites pipe a
-# test through `tee`, so stdin is not the keyboard there. No terminal (CI, a
-# sandbox) means no one to wait for: it prints the note and carries on.
-#
-# A test calls it only at points where waiting changes nothing it asserts on:
-# between steps, or inside a step whose next move the test itself controls
-# (a marker file it creates, not a sleep that keeps running during the pause).
-#
-# Usage:
-#     watch_pause "booth $NAME is running with keep-alive" \
-#                 "try: ./codingbooth shell $NAME"
-watch_pause() {
-  [[ "${CB_TEST_WATCH:-}" == "1" ]] || return 0
-  local line
-  printf '\n  \033[1;36m⏸  %s\033[0m\n' "$1"
-  shift
-  for line in "$@"; do printf '     %s\n' "$line"; done
-  if { : </dev/tty; } 2>/dev/null; then
-    printf '     \033[2m(Enter to continue)\033[0m'
-    read -r _ </dev/tty || true
-    printf '\n'
-  fi
-  return 0
-}
-
 # Opt a test into building against a locally-rebuilt base image instead of the
 # upstream nawaman/codingbooth Hub image. Use this when the test triggers a
 # Boothfile build that relies on a setup-script fix that hasn't shipped to

@@ -368,22 +368,6 @@ Don't. Bash reads a script incrementally as it executes, so editing a file mid-r
 part it has not reached yet — it will report a failure that has nothing to do with your change. Let
 the suite finish, or run the single test on its own.
 
-## Watching a test run
-
-A test that used to be a manual one can still be watched. Run it on its own with `CB_TEST_WATCH=1`
-and it stops at the points worth looking at, prints what is set up and what to try (a URL,
-`booth shell <name>`), and waits for Enter:
-
-```bash
-CB_TEST_WATCH=1 tests/complex/features/test-connect-run-lifecycle/test--connect-run-lifecycle.sh
-```
-
-Without the variable — every suite run — the pauses do nothing. With it but no terminal (CI, a
-sandbox), they print their note and carry on. A test adds a pause with `watch_pause "<what>"
-"<hint>"…` from `common--source.sh`, and only where waiting cannot change what it asserts: between
-steps, or mid-step when the next move is the test's own (a marker file it creates), never while a
-`sleep` it is timing keeps running.
-
 ## Diagnostics
 
 The complex suite traces every booth call — command, exit code, stderr — to

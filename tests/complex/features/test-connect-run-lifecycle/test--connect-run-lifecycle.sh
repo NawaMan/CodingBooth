@@ -18,9 +18,6 @@
 #
 # The booth is named after its folder (no --name on the create calls), so the
 # folder name doubles as a check that the name is derived from it.
-#
-# Watch it: CB_TEST_WATCH=1 ./test--connect-run-lifecycle.sh
-# pauses between steps and prints what to look at.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -84,9 +81,6 @@ wait_state() {
 pass() { print_test_result "true" "$SELF" "$1" "$2"; }
 fail() { print_test_result "false" "$SELF" "$1" "$2"; FAILED=$((FAILED + 1)); }
 
-watch_pause "booth $NAME — folder $WORKDIR, port $PORT" \
-  "in another terminal: watch -n1 'docker ps -a --filter name=$NAME'"
-
 # ---------------------------------------------------------------------------
 # 1) exec without --run, and no booth: refused
 # ---------------------------------------------------------------------------
@@ -118,9 +112,6 @@ else
   fail 3 "keep-alive booth not left running (out='$OUT' state=$STATE keep-alive=$KA)"
 fi
 
-watch_pause "step 3 left $NAME running (keep-alive)" \
-  "open http://localhost:$PORT  or  $BOOTH_BIN shell $NAME"
-
 # ---------------------------------------------------------------------------
 # 4) exec --run on a running booth: untouched
 # ---------------------------------------------------------------------------
@@ -139,8 +130,6 @@ fi
 # ---------------------------------------------------------------------------
 booth stop "$NAME" >/dev/null || true
 if wait_state exited 30; then
-  watch_pause "$NAME is stopped (keep-alive keeps the container)" \
-    "next: exec --run should start it, run, and stop it again"
   OUT="$(booth exec "$NAME" --run -- whoami || true)"
   if [[ "$OUT" == "coder" ]] && wait_state exited 30; then
     pass 5 "exec --run starts a stopped keep-alive booth, then stops it again"
@@ -155,8 +144,7 @@ fi
 # 6) two sessions; the creator leaves first
 #
 # Each session waits for a marker file in the mounted code folder instead of
-# sleeping, so the test decides when each one leaves — and a watch pause in the
-# middle cannot change the outcome.
+# sleeping, so the test decides when each one leaves rather than a timer.
 # ---------------------------------------------------------------------------
 docker rm -f "$NAME" >/dev/null 2>&1 || true
 CODE=/home/coder/code
@@ -182,8 +170,6 @@ else
     fail 6 "session B never attached (state=$(state_of "$NAME"))"
     kill "$A_PID" "$B_PID" 2>/dev/null || true
   else
-    watch_pause "two sessions attached to $NAME" \
-      "next: the creator (A) leaves; the booth must stay up for B"
     touch "$WORKDIR/.a-release"
     wait "$A_PID" || true
     sleep 2
@@ -194,8 +180,6 @@ else
       fail 6 "creator's exit tore the booth down under session B (state=$STATE)"
     fi
 
-    watch_pause "A has left; $NAME still serves B" \
-      "next: B leaves; the booth should be removed"
     touch "$WORKDIR/.b-release"
     wait "$B_PID" || true
     if wait_state missing 30; then
