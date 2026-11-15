@@ -72,7 +72,7 @@ The advantages, in CodingBooth's own vocabulary:
   carries baked-in repair so the next person doesn't have to redo it.
 - **rails-example** — Ruby + Postgres + Rails, with Postgres auto-starting so `rails new` works
   immediately.
-- **go-example** — `gopls`, `delve`, the GoNB kernel, and code-server all assembled.
+- **go-full-example** — `gopls`, `delve`, the GoNB kernel, and code-server all assembled.
 - **java-example** — JDK 25, Maven, the JJava kernel, *and* Eclipse + IntelliJ GUIs.
 - **octave-example** — Octave + the Calysto kernel + gnuplot, preconfigured.
 - **claude-example** — Claude Code CLI preinstalled in a minimal booth, logged in with the
@@ -235,7 +235,7 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 
 ## 🌍 Standardize-to-Linux / cross-platform parity
 
-- **go-example** and **zig-snake-example** — cross-compile from the one Linux booth to
+- **go-full-example** and **zig-snake-example** — cross-compile from the one Linux booth to
   linux/macOS/windows across amd64/arm64; the resulting binaries run natively on the host with no
   host toolchain installed.
 
@@ -279,7 +279,8 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 | flask-example | Reproducibility |
 | fsharp-example | Host stays clean |
 | gcloud-example | Credential seeding |
-| go-example | Batteries-included / Standardize-to-Linux |
+| go-example | Minimal (a plain base booth) |
+| go-full-example | Batteries-included / Standardize-to-Linux |
 | grok-example | Batteries-included |
 | haskell-example | Batteries-included (with baked-in repair) |
 | herdr-example | Batteries-included |

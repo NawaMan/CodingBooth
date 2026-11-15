@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 
 # -----------------------------------------------------------------------------
-# check-go-example.sh  (EXPERIMENT -- see docs/REUSE_BOOTH.md)
+# check-go-full-example.sh  (EXPERIMENT -- see docs/REUSE_BOOTH.md)
 #
 # Run as the real user, as the command booth-entry ends with. Checks that the
 # provisioned tools are reachable from each kind of shell, that the startup

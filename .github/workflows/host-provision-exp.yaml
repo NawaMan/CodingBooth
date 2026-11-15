@@ -45,6 +45,7 @@ jobs:
       matrix:
         example:
           - go-example
+          - go-full-example
           - zig-example
           - bun-example
           - deno-example

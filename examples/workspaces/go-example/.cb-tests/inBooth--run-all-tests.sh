@@ -1,6 +1,4 @@
 #!/bin/bash
-# Run all in-booth test scripts and collect results
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 passed=0

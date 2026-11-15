@@ -189,7 +189,7 @@ same folder has its own too.
 | `booth-rabbitmqdata-{name}` | `middlewares/rabbitmq` | — |
 | `booth-flocidata-{name}` | `tools/floci` | floci |
 | `cb-home-<booth name>` | the CLI, for `--persist-home` | — (one per booth) |
-| `booth-cache-gomod`, `booth-cache-gobuild` | `go+mod-cache` | go-example |
+| `booth-cache-gomod`, `booth-cache-gobuild` | `go+mod-cache` | go-full-example |
 | `booth-cache-npm` | `nodejs+npm-cache` | npm-example |
 | `booth-cache-pnpm` | `nodejs+pnpm-cache` | npm-example |
 | `booth-cache-pip` | `python+pip-cache` (owner and mode set at start) | pip-example |
