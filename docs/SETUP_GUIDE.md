@@ -206,6 +206,8 @@ booth's home at start, read-only:
 | `openssh+keys` | only the keys in one folder you choose (default `~/.ssh/booth`) — e.g. a deploy key |
 | `openssh+credential` | all of `~/.ssh`, every private key included — the you-are-on-your-own mode, for code you trust |
 | `gh+token` | GitHub CLI login, from the host `GH_TOKEN` (`GH_TOKEN=$(gh auth token) booth …`); git uses it too, an SSH remote included when the booth has no `ssh` |
+| `aws-cli+credential` *(on by default with `aws-cli`)* | `~/.aws/config`, `~/.aws/credentials` and the SSO session cache |
+| `aws-cli+env` | the host's `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`, `AWS_REGION`, `AWS_DEFAULT_REGION`, by name; `aws-cli+env~credential` for these alone (CI, or `folio exec -s aws -- booth …`) — see [AWS in a Booth](demos/aws/README.md) |
 | `envfolio+seed` | chosen items of your host's EnvFolio store, still encrypted, and the store key (passphrase-protected), so `folio` in the booth opens the secrets itself (`envfolio+seed:"gh @app1 --secrets"` — the arguments you give `folio exec`) |
 | `envfolio+store-host` | your host's whole EnvFolio store and gpg keyring, live and writable — every private key included |
 | `gnupg+keys` | chosen GPG keys (passphrase-protected) and your public keyring: `gnupg+keys:"me@example.com"` |

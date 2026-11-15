@@ -11,10 +11,14 @@ It uses the `aws-cli+env` extension, with the file-based `credential` extension 
 booth config --no-tui --select 'aws-cli+env~credential'
 ```
 
+For all three ways to give a booth AWS credentials (files, environment, EnvFolio) side by side,
+see the [AWS in a Booth](../../../docs/demos/aws/README.md) walkthrough.
+
 ## Table of Contents
 
 - [What reaches the booth](#what-reaches-the-booth)
 - [Quick Start](#quick-start)
+- [Keys from EnvFolio](#keys-from-envfolio)
 - [Using it with your ~/.aws files](#using-it-with-your-aws-files)
 - [Combining with the file method](#combining-with-the-file-method)
 - [Tests](#tests)
@@ -55,16 +59,41 @@ just version             # aws --version - the only recipe that needs no credent
 No `just` on the host? `./booth exec --run -- just check` does the same, and plain `./booth` opens
 a shell.
 
+A recipe runs in this project's booth if one is already running, and that booth keeps the
+variables it was started with. If `just check` fails although your shell has them, stop the
+running booth (`./booth stop`) and try again.
+
+## Keys from EnvFolio
+
+[EnvFolio](https://github.com/NawaMan/EnvFolio) keeps the keys in an encrypted store and sets them
+as environment variables for one command, which is what this booth reads. Store them once:
+
+```bash
+folio insert secret aws/access-key-id        # -> AWS_ACCESS_KEY_ID
+folio insert secret aws/secret-access-key    # -> AWS_SECRET_ACCESS_KEY
+folio insert text   aws/region               # -> AWS_REGION
+```
+
+then run any command through `folio exec` (`-s` includes secrets; `-n` instead shows the
+variable names without unlocking anything):
+
+```bash
+folio exec -s aws -- just check
+folio exec -s aws -- ./booth -- aws s3 ls
+```
+
+Already exporting `AWS_REGION` in your shell profile? Then the two secrets are enough.
+
 ## Using it with your ~/.aws files
 
 If your keys live in `~/.aws/credentials` (the method [aws-example](../aws-example/) uses), you can
-still try this example by lifting them into the environment for one command:
+still try this example by lifting them into the environment for one command. AWS CLI v2 prints
+them as `export` lines (with `AWS_SESSION_TOKEN` too, for SSO or role profiles):
 
 ```bash
-AWS_ACCESS_KEY_ID=$(aws configure get aws_access_key_id) \
-AWS_SECRET_ACCESS_KEY=$(aws configure get aws_secret_access_key) \
-AWS_REGION=$(aws configure get region) \
-    just check
+( eval "$(aws configure export-credentials --format env)"
+  export AWS_REGION=$(aws configure get region)
+  just check )
 ```
 
 ## Combining with the file method

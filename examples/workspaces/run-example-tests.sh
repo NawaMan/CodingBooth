@@ -75,6 +75,15 @@ else
     example_image_variant() { echo "base"; }
 fi
 
+# missing_required_env reads an example's .cb-tests/requires-env.txt (see below).
+# Same guard: without the helper nothing is required, and the example's own test
+# still declines to run.
+if [[ -f "$SCRIPT_DIR/../../tests/requires-env--source.sh" ]]; then
+    source "$SCRIPT_DIR/../../tests/requires-env--source.sh"
+else
+    missing_required_env() { :; }
+fi
+
 # Default settings
 MAX_PARALLEL=1
 
@@ -513,20 +522,7 @@ run_examples() {
             # variable per line, `A|B` meaning either will do. An example
             # credentialed only from the environment (aws-env-example) is
             # skipped on a host that has not set them, not failed.
-            requires_env="$example_dir/.cb-tests/requires-env.txt"
-            missing_env=""
-            if [ -f "$requires_env" ]; then
-                while IFS= read -r env_line || [ -n "$env_line" ]; do
-                    env_line="${env_line%%#*}"; env_line="${env_line//[[:space:]]/}"
-                    [ -n "$env_line" ] || continue
-                    env_found=false
-                    IFS='|' read -ra env_alts <<< "$env_line"
-                    for env_name in "${env_alts[@]}"; do
-                        [ -n "${!env_name:-}" ] && env_found=true
-                    done
-                    [ "$env_found" = true ] || missing_env="$missing_env $env_line"
-                done < "$requires_env"
-            fi
+            missing_env="$(missing_required_env "$example_dir/.cb-tests/requires-env.txt")"
             # --dind and --egress are not supported on Apple container yet
             # (docs/CONTAINER_SUPPORT.md). This runner pins CB_ENGINE=docker,
             # so this only applies to a run made on purpose with
@@ -543,7 +539,7 @@ run_examples() {
                 echo "SKIP: runs on $(tr '\n' ' ' < "$requires_arch")only; this host is $(uname -m)."
                 test_exit_code=77
             elif [ -n "$missing_env" ]; then
-                echo "SKIP: needs host environment variable(s):${missing_env}."
+                echo "SKIP: needs host environment variable(s): ${missing_env}."
                 test_exit_code=77
             else
                 run_with_timeout "$EXAMPLE_TIMEOUT" bash -c "cd '$example_dir' && VARIANT=base CB_PORT=RANDOM ./run-automatic-on-host-test.sh"

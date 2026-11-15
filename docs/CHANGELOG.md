@@ -31,14 +31,17 @@ This file contains a list of changes for each released version.
 
 - **AWS credentials from environment variables: the `aws-cli+env` extension and `aws-env-example`.**
   The extension passes `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`,
-  `AWS_REGION` and `AWS_DEFAULT_REGION` from the host into the booth, by name only, so a variable the
-  host has not set is left out and no value is written to a project file. This is the setup a CI
+  `AWS_REGION` and `AWS_DEFAULT_REGION` from the host into the booth, by name only, so a variable
+  the host has not set is left out and no value is written to a project file. This is the setup a CI
   runner usually has. It combines with the file-based `aws-cli+credential` (still auto-selected);
   select `aws-cli+env~credential` for environment variables only. The new
   `examples/workspaces/aws-env-example` does that, and its test checks inside the booth that the
-  keys and region come from `env` and that an STS call succeeds. An example can now list the host
-  environment variables it needs in `.cb-tests/requires-env.txt` (`A|B` for either);
-  `run-example-tests.sh` reports it `SKIPPED` on a host without them, instead of failing it.
+  keys and region come from `env` and that an STS call succeeds. The keys can come from an EnvFolio
+  store for one command: `folio exec -s aws -- booth -- aws s3 ls`. The new walkthrough [AWS in a
+  Booth](demos/aws/README.md) compares the three routes: files, environment, EnvFolio. An example
+  can now list the host environment variables it needs in `.cb-tests/requires-env.txt` (`A|B` for
+  either); `run-example-tests.sh` reports it `SKIPPED` on a host without them, instead of failing
+  it.
 
 - **`booth config` shows what the variant image already has, and can take it out.** In the TUI and in
   `booth config --web`, the checkbox of a template whose tool ships with the image of the Config

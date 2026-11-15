@@ -2,6 +2,10 @@
 
 This example is an isolated booth for developing against AWS with the AWS CLI. Your host `~/.aws/config`, `~/.aws/credentials` and SSO token cache are mounted read-only and copied into the booth's home at startup (the `cb-home-seed` pattern), so commands like `aws sts get-caller-identity` work as soon as the booth starts — provided your host credentials are valid. An included Jupyter notebook walks through common operations. Your keys never enter the project tree, git history, a Dockerfile or the image, and the booth cannot modify your host `~/.aws`. Anything running in the booth can still *read* the copy and act with your full permissions, so give an agent a narrowly scoped profile or role rather than your admin keys.
 
+No `~/.aws` files, or would rather keep the keys out of them? [aws-env-example](../aws-env-example/)
+takes them from environment variables (CI, or EnvFolio's `folio exec`), and
+[AWS in a Booth](../../../docs/demos/aws/README.md) compares the ways side by side.
+
 ## Table of Contents
 
 - [Why Run AWS Development in CodingBooth?](#why-run-aws-development-in-codingbooth)
