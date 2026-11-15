@@ -22,6 +22,7 @@ Back to [README](../README.md)
 - [Overlay HTML Injection](#overlay-html-injection)
 - [Attention Signals](#attention-signals)
 - [Viewer Count](#viewer-count)
+- [GitHub Star Prompt](#github-star-prompt)
 - [Adding a Variant](#adding-a-variant)
 - [Extending the Overlay](#extending-the-overlay)
 
@@ -204,6 +205,8 @@ The API server (`booth-message-api-server`) is a lightweight HTTP server built w
 | POST | `/booth-messages/api/respond/<id>` | Writes a response file for the given ID |
 | GET | `/booth-messages/api/presence` | How many pages are viewing the booth, and how many are expected — see [Viewer Count](#viewer-count) |
 | POST | `/booth-messages/api/presence` | A page's heartbeat (`{"id", "visible"}`) or its release on closing (`{"id", "release": true}`) |
+| GET | `/booth-messages/api/star` | Whether to ask for a GitHub star: `{"prompt": "on" \| "off" \| "done"}` — see [GitHub Star Prompt](#github-star-prompt) |
+| POST | `/booth-messages/api/star` | The star link was clicked: never ask again |
 
 The server reads and writes JSON files in `.booth/.tmp/messages/` (bind-mounted from the host). This file-based approach means the CLI on the host and the API server inside the container share state without any network communication between host and container.
 
@@ -305,6 +308,31 @@ listens only to `/activity`.
 
 A booth whose API server has no presence endpoint answers 404, and the page hides the count and
 stops asking.
+
+---
+
+## GitHub Star Prompt
+
+After about five minutes of use in a booth's web UI, a toast in the bottom-right corner asks
+for a star on GitHub, with a **⭐ Star on GitHub** link and a **Later** button. It stays until
+answered.
+
+- **What counts as use:** time with the page in view and focused, added up across visits in
+  this browser (`localStorage`). Only the wrapped variants count — codeserver, notebook and the
+  desktops. The Console UI, `booth -- <cmd>`, a terminal session and SSH never ask.
+- **Star on GitHub** opens the repository in a new tab and ends the prompt for good, in every
+  booth on this host: the page posts `/booth-messages/api/star`, the booth writes
+  `.booth/.tmp/github-star`, and the CLI copies that into `<config dir>/codingbooth/github-star`
+  (`~/.config/codingbooth/github-star` on Linux) before it empties `.booth/.tmp/` — when the
+  booth exits, or when the next one on that folder starts. Booths started after that get
+  `BOOTH_STAR_PROMPT=done`. The browser remembers the click as well, so the same browser stops
+  asking at once.
+- **Later** puts it off for two weeks in this browser. A page asks at most once.
+- **Turning it off:** `CB_STAR_PROMPT=off` on the host (also `false`, `no`, `0`) passes
+  `BOOTH_STAR_PROMPT=off` to the booths it starts — for demos, recordings and hosted booths.
+  Touching the marker file turns it off for good.
+
+A booth whose API server has no `/star` endpoint answers 404, and the page never asks.
 
 ---
 

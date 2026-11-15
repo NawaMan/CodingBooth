@@ -38,6 +38,10 @@ func PrepareBoothTmp(ctx appctx.AppContext) appctx.AppContext {
 
 	tmpDir := filepath.Join(boothDir, ".tmp")
 
+	// A star click left by a booth that never cleaned up (a daemon, a crash) is
+	// recorded before the folder is emptied.
+	PromoteGitHubStar(boothDir)
+
 	// Empty contents unless --keep-tmp-on-start is set. The lifecycle log is
 	// kept: it is how a booth that stopped or restarted can be traced afterwards.
 	// So are the git pointer files, which another booth on this folder mounts.
@@ -85,11 +89,15 @@ func keepTmpEntry(name string) bool {
 // cleanupBoothTmp empties .booth/.tmp/ on exit unless --leave-tmp-on-exit is set.
 // The lifecycle log stays, so the booth's end can still be read after it.
 func cleanupBoothTmp(ctx appctx.AppContext) {
-	if ctx.Dryrun() || ctx.LeaveTmpOnExit() {
+	if ctx.Dryrun() {
 		return
 	}
 	boothDir := hostBoothDir(ctx)
 	if boothDir == "" {
+		return
+	}
+	PromoteGitHubStar(boothDir) // before the click it holds is emptied away
+	if ctx.LeaveTmpOnExit() {
 		return
 	}
 	tmpDir := filepath.Join(boothDir, ".tmp")
