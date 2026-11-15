@@ -20,6 +20,7 @@ import (
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
 	"github.com/nawaman/codingbooth/src/pkg/docker"
+	"github.com/nawaman/codingbooth/src/pkg/githubstar"
 	"github.com/nawaman/codingbooth/src/pkg/hostescape"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 	"github.com/nawaman/codingbooth/src/pkg/lifecyclelog"
@@ -343,6 +344,10 @@ func Stop(args []string, stderr io.Writer) error {
 	}
 	engine := target.Engine
 	lifecyclelog.AppendAt(target.hostBoothDir(), target.Name, "stop-requested", "by=host-cli", "force="+strconv.FormatBool(*force))
+	// A GitHub star click in this booth reaches the user-wide marker now, so booths
+	// started in other folders stop asking too. A start also does it, for a booth
+	// that was never stopped through here.
+	githubstar.Promote(target.hostBoothDir())
 
 	if *force {
 		if err := docker.Docker(docker.DockerFlags{Silent: false, Engine: engine}, "kill", ilist.NewList(ilist.NewList(target.Name))); err != nil {

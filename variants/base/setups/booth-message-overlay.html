@@ -838,6 +838,45 @@
     margin: 0;
   }
 
+  /* GitHub star prompt — a toast that stays until answered */
+  .toast.star-toast {
+    cursor: default;
+  }
+
+  .star-toast .star-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 10px;
+  }
+
+  .star-toast .star-link {
+    background: #3b82f6;
+    color: #fff;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .star-toast .star-link:hover {
+    background: #2563eb;
+  }
+
+  .star-toast .star-later {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 5px 4px;
+  }
+
+  .star-toast .star-later:hover {
+    color: #f1f5f9;
+  }
+
   .toast-progress {
     position: absolute;
     bottom: 0;
@@ -3152,6 +3191,104 @@
     window.addEventListener("pageshow", function (e) {
       if (e.persisted) { gone = false; beat(); }
     });
+  })();
+
+  // GitHub star prompt. After about five minutes of use in a booth's web UI,
+  // a toast asks for a star on GitHub. Only the wrapped variants count
+  // (codeserver, notebook, the desktops: pages with #booth-inner); the Console
+  // UI, `booth -- cmd` and terminal sessions never ask. Use is time with the
+  // page in view and focused, added up across visits in this browser.
+  //
+  // Clicking the link is the only answer that ends it for good: the booth
+  // records the click (POST /star), and the CLI carries it to every booth
+  // started afterwards on this host (BOOTH_STAR_PROMPT=done). "Later" puts it
+  // off for two weeks; a page shows it at most once. CB_STAR_PROMPT=off on the
+  // host turns it off.
+  (function () {
+    if (!document.getElementById("booth-inner") || !window.fetch) return;
+    var apiBase = window.BOOTH_MSG_API_BASE || "booth-messages/api";
+    var REPO_URL = "https://github.com/NawaMan/CodingBooth";
+    var ASK_AFTER_MS = 5 * 60 * 1000;
+    var LATER_MS = 14 * 24 * 60 * 60 * 1000;
+    var TICK_MS = 10 * 1000;
+    var USED_KEY = "cb.booth.star.usedMs";
+    var LATER_KEY = "cb.booth.star.laterUntil";
+    var DONE_KEY = "cb.booth.star.done";
+    var timer = null;
+
+    function get(key) {
+      try { return window.localStorage.getItem(key); } catch (e) { return null; }
+    }
+    function set(key, value) {
+      try { window.localStorage.setItem(key, value); } catch (e) { }
+    }
+    // Kept in memory too, so a browser without storage still asks only once
+    // per page and still counts this page's time.
+    var usedMs = parseInt(get(USED_KEY), 10) || 0;
+
+    function snoozed() {
+      var until = parseInt(get(LATER_KEY), 10) || 0;
+      return until > Date.now();
+    }
+
+    function stop() {
+      if (timer) { clearInterval(timer); timer = null; }
+    }
+
+    function clicked() {
+      set(DONE_KEY, "1");
+      fetch(apiBase + "/star", { method: "POST" }).catch(function () { });
+    }
+
+    function show() {
+      var container = document.getElementById("toast-container");
+      if (!container) return;
+      var el = document.createElement("div");
+      el.className = "toast star-toast";
+      el.setAttribute("role", "status");
+      el.innerHTML =
+        '<h3>⭐ Enjoying CodingBooth?</h3>' +
+        '<p>A star on GitHub helps other people find it.</p>' +
+        '<div class="star-actions">' +
+        '<a class="star-link" target="_blank" rel="noopener noreferrer"></a>' +
+        '<button type="button" class="star-later">Later</button>' +
+        '</div>';
+      var link = el.querySelector(".star-link");
+      link.href = REPO_URL;
+      link.textContent = "⭐ Star on GitHub";
+      function close() {
+        el.classList.add("toast-out");
+        setTimeout(function () { el.remove(); }, 300);
+      }
+      link.addEventListener("click", function () { clicked(); close(); });
+      el.querySelector(".star-later").addEventListener("click", function () {
+        set(LATER_KEY, String(Date.now() + LATER_MS));
+        close();
+      });
+      container.appendChild(el);
+    }
+
+    function tick() {
+      if (document.visibilityState !== "visible" || !document.hasFocus()) return;
+      usedMs += TICK_MS;
+      set(USED_KEY, String(usedMs));
+      if (usedMs < ASK_AFTER_MS || snoozed()) return;
+      stop();
+      show();
+    }
+
+    if (get(DONE_KEY) === "1") return;
+    fetch(apiBase + "/star")
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        // A booth from before the prompt answers 404: no prompt.
+        if (!j || j.prompt !== "on") {
+          if (j && j.prompt === "done") set(DONE_KEY, "1");
+          return;
+        }
+        timer = setInterval(tick, TICK_MS);
+      })
+      .catch(function () { });
   })();
 
   // Sound button (browser-audio). A booth with the browser-audio template runs

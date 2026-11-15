@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A one-time ask for a GitHub star.** After about five minutes in a booth's web UI (codeserver,
+  notebook or a desktop — not the Console UI or a command), a toast offers a link to star
+  CodingBooth on GitHub. Clicking it ends the ask in every booth on the host; **Later** puts it
+  off for two weeks. `CB_STAR_PROMPT=off` turns it off. See
+  [GitHub Star Prompt](BOOTH_UI_OVERLAY.md#github-star-prompt).
+
 - **`booth config print` lists what a booth is configured with.** It prints the summary a save
   ends with — each template with its params, its extensions under it — and writes nothing.
   Reconfigure flags apply, so `booth config print --add-select go+linter` previews a change. That

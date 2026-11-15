@@ -27,6 +27,8 @@
 #   GET  /booth-messages/api/presence      — how many pages are viewing this booth, and how many are expected
 #   POST /booth-messages/api/presence      — a page's heartbeat {"id": ID, "visible": true|false} or {"id": ID, "release": true}
 #   POST /booth-messages/api/session-reset — end a Console UI pane's tmux session {"session": 1-6, "force": bool}
+#   GET  /booth-messages/api/star          — whether to show the GitHub star prompt: on, off or done
+#   POST /booth-messages/api/star          — the star link was clicked: never show the prompt again
 #   GET  /booth-messages/api/audio/state   — whether this booth streams its sound (browser-audio), as JSON
 #   GET  /booth-messages/api/audio/stream  — that sound, as raw s16le PCM, for as long as the page listens
 #
@@ -72,6 +74,7 @@ handle_request() {
                 /booth-messages/api/list) handle_list ;;
                 /booth-messages/api/idle/state) handle_idle_state ;;
                 /booth-messages/api/presence) handle_presence "" ;;
+                /booth-messages/api/star) handle_star_state ;;
                 /booth-messages/api/audio/state) handle_audio_state ;;
                 /booth-messages/api/audio/stream) handle_audio_stream ;;
                 *) send_response 404 '{"error":"not found"}' ;;
@@ -127,6 +130,9 @@ handle_request() {
                     ;;
                 /booth-messages/api/presence)
                     handle_presence "$body"
+                    ;;
+                /booth-messages/api/star)
+                    handle_star_clicked
                     ;;
                 *) send_response 404 '{"error":"not found"}' ;;
             esac
@@ -425,6 +431,30 @@ handle_presence() {
     local expected="${BOOTH_EXPECTED_VIEWER_COUNT:-1}"
     [[ "$expected" =~ ^[0-9]+$ ]] || expected=1
     send_response 200 "{\"ok\":true,\"viewers\":${viewers},\"background\":${background},\"expected\":$((10#$expected))}"
+}
+
+# The GitHub star prompt. BOOTH_STAR_PROMPT comes from the CLI: on, off (CB_STAR_PROMPT=off
+# on the host) or done (the link was clicked in some booth on this host). A click in this
+# booth is written to .booth/.tmp/github-star, which the CLI copies to a user-wide marker
+# before it empties .tmp/ — so the next booth starts with done.
+STAR_MARKER="${BOOTH_STAR_MARKER:-/home/coder/code/.booth/.tmp/github-star}"
+
+handle_star_state() {
+    local prompt="${BOOTH_STAR_PROMPT:-on}"
+    case "$prompt" in on|off|done) ;; *) prompt=on ;; esac
+    if [ "$prompt" = on ] && [ -e "$STAR_MARKER" ]; then
+        prompt=done
+    fi
+    send_response 200 "{\"ok\":true,\"prompt\":\"${prompt}\"}"
+}
+
+handle_star_clicked() {
+    if ! { mkdir -p "$(dirname "$STAR_MARKER")" \
+            && printf 'clicked %(%Y-%m-%dT%H:%M:%S%z)T\n' -1 > "$STAR_MARKER"; } 2>/dev/null; then
+        send_response 500 '{"error":"cannot record the click"}'
+        return
+    fi
+    send_response 200 '{"ok":true}'
 }
 
 handle_idle_pause() {
