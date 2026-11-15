@@ -29,7 +29,7 @@ fi
 
 echo "=== share-web-ngrok: the whole app on a public URL ==="
 start_app
-url="$(share ngrok-share "$WEB_PORT")" || fail "no Shared: URL from ngrok-share"
+url="$(share ngrok-share "$NOTES_WEB_PORT")" || fail "no Shared: URL from ngrok-share"
 echo "URL: $url"
 # The free plan's browser warning page is skipped for clients sending this header.
 fetch_until "$url/" 'share-example app' -H 'ngrok-skip-browser-warning: 1' || fail "$url does not serve the page"

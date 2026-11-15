@@ -10,7 +10,7 @@
 
 const http = require('node:http');
 
-const PORT = Number(process.env.API_PORT || 3001);
+const PORT = Number(process.env.NOTES_API_PORT || 3001);
 const notes = [
   { id: 1, text: 'Edit api/server.js or web/public/ and see it change', author: 'share-example', created: new Date().toISOString() },
 ];

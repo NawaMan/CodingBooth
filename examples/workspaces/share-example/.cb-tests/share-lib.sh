@@ -3,7 +3,11 @@
 fail() { echo "FAIL: $*"; exit 1; }
 
 # Not 3001/8080, so a `just dev` the user left running is not in the way.
-export API_PORT=13001 WEB_PORT=18080
+export NOTES_API_PORT=13001 NOTES_WEB_PORT=18080
+# What a Console UI pane already has in its environment (start-ttyd-split exports
+# its own API_PORT=<booth port>+7). The app must not pick these up: it once did,
+# and `just dev` tried to bind the console's port.
+export API_PORT=10007 WEB_PORT=10000
 LOG_DIR="$(mktemp -d)"
 PIDS=()
 cleanup() {
@@ -25,8 +29,8 @@ wait_http() {   # wait_http <url> — up to 15s
 start_app() {
     "$HOME/code/dev.sh" >"$LOG_DIR/dev.log" 2>&1 &
     PIDS+=($!)
-    wait_http "http://localhost:$API_PORT/api/health" || { cat "$LOG_DIR/dev.log"; fail "API did not start on :$API_PORT"; }
-    wait_http "http://localhost:$WEB_PORT/"           || { cat "$LOG_DIR/dev.log"; fail "front end did not start on :$WEB_PORT"; }
+    wait_http "http://localhost:$NOTES_API_PORT/api/health" || { cat "$LOG_DIR/dev.log"; fail "API did not start on :$NOTES_API_PORT"; }
+    wait_http "http://localhost:$NOTES_WEB_PORT/"           || { cat "$LOG_DIR/dev.log"; fail "front end did not start on :$NOTES_WEB_PORT"; }
 }
 
 # share <cmd> <port> [args] — start a share in the background, print its public URL.

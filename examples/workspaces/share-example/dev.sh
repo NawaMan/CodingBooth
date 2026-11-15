@@ -6,7 +6,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-export API_PORT="${API_PORT:-3001}" WEB_PORT="${WEB_PORT:-8080}"
+export NOTES_API_PORT="${NOTES_API_PORT:-3001}" NOTES_WEB_PORT="${NOTES_WEB_PORT:-8080}"
 
 pids=()
 trap 'pkill -f "node --watch (api|web)/server.js" 2>/dev/null; kill "${pids[@]}" 2>/dev/null || true' EXIT INT TERM
@@ -14,6 +14,6 @@ trap 'pkill -f "node --watch (api|web)/server.js" 2>/dev/null; kill "${pids[@]}"
 node --watch api/server.js 2>&1 | sed -u 's/^/[api] /' & pids+=($!)
 node --watch web/server.js 2>&1 | sed -u 's/^/[web] /' & pids+=($!)
 
-echo "App: http://localhost:$WEB_PORT in the booth (API: :$API_PORT/api/notes); from the host: just ports"
+echo "App: http://localhost:$NOTES_WEB_PORT in the booth (API: :$NOTES_API_PORT/api/notes); from the host: just ports"
 echo "Share it from another terminal: just share-web   (or just share-api)"
 wait

@@ -9,8 +9,8 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const PORT = Number(process.env.WEB_PORT || 8080);
-const API = `http://localhost:${Number(process.env.API_PORT || 3001)}`;
+const PORT = Number(process.env.NOTES_WEB_PORT || 8080);
+const API = `http://localhost:${Number(process.env.NOTES_API_PORT || 3001)}`;
 const ROOT = path.join(__dirname, 'public');
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml' };
 
