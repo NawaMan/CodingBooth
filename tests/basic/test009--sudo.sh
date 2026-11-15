@@ -8,7 +8,10 @@ set -euo pipefail
 source ../common--source.sh
 
 # -------------------------------------------------------
-# Test: --sudo true allows sudo, --sudo false revokes it
+# Test: --sudo true allows sudo, --sudo false revokes it; on by default
+#
+# The full checklist (config.toml, the no-sudo template, build-time installs)
+# is tests/manual/run-sudo-manual-test.sh.
 # -------------------------------------------------------
 
 # -------------------------------------------------------
@@ -44,5 +47,17 @@ if [[ "$ACTUAL" == "EXIT=1" ]]; then
   print_test_result "true" "$0" "3" "sudo fails with --no-sudo"
 else
   print_test_result "false" "$0" "3" "sudo fails with --no-sudo (got: $ACTUAL)"
+  exit 1
+fi
+
+# -------------------------------------------------------
+# Test 4: no flag — sudo is on by default
+# -------------------------------------------------------
+ACTUAL=$(run_coding_booth --variant base -- "sudo whoami" 2>&1 | tail -1)
+
+if [[ "$ACTUAL" == "root" ]]; then
+  print_test_result "true" "$0" "4" "sudo works with no --sudo flag (default)"
+else
+  print_test_result "false" "$0" "4" "sudo works with no --sudo flag (got: $ACTUAL)"
   exit 1
 fi
