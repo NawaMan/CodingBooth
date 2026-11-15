@@ -244,6 +244,24 @@ run would: an unknown template, or [hand-written files](#hand-written-files) wit
 or `--beside`. Exit 0 means the same command without `--dryrun` would write what it printed. With
 `--overwrite` or `--beside`, it notes on stderr which hand-written files would be backed up or kept.
 
+### Printing what a booth is configured with
+
+`booth config print [path]` lists the booth's templates, their params and their extensions — the
+same summary a save prints at its end — and writes nothing:
+
+```
+$ booth config print
+  - Go (GO_VERSION=1.27.3)
+    + Go VS Code Extension (auto)
+```
+
+It reads the selection the way a reconfigure does: the `# Configured by:` header, with
+[edits made outside booth config](#edits-that-can-be-read-back) read back when they can be, and the
+Boothfile's param pins applied. When edits cannot be read back, it says so on stderr and prints
+what the header records. Reconfigure flags apply, so it previews a change before you make it:
+`booth config print --add-select go+linter`. A folder with no booth, or a Boothfile booth config
+did not write, is an error. (To configure a folder named `print`, write it `./print`.)
+
 ---
 
 ## Selection DSL

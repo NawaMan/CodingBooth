@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -1375,25 +1376,60 @@ func printMountOverlaps(w io.Writer, out *output.BoothOutput) {
 }
 
 func printSummary(resolved *selection.ResolvedSelection) {
+	writeSummary(os.Stdout, resolved)
+}
+
+// writeSummary lists a resolved selection: each template with its params, its
+// extensions under it, then any tool the selection takes out of the image. It is
+// what a save prints, and all that `booth config print` prints.
+//
+// Params come in the template's declaration order, so the same booth prints the
+// same lines every time (they used to follow Go's random map order).
+func writeSummary(w io.Writer, resolved *selection.ResolvedSelection) {
 	for _, st := range resolved.Templates {
-		line := st.Template.DisplayName
-		if len(st.ParamValues) > 0 {
-			var params []string
-			for k, v := range st.ParamValues {
-				params = append(params, k+"="+v)
-			}
-			line += " (" + strings.Join(params, ", ") + ")"
-		}
-		fmt.Printf("  - %s\n", line)
+		fmt.Fprintf(w, "  - %s%s\n", st.Template.DisplayName, summaryParams(st.Template, st.ParamValues))
 		for _, ext := range st.Extensions {
 			mode := ""
 			if ext.SelectMode == selection.AutoSelected {
 				mode = " (auto)"
 			}
-			fmt.Printf("    + %s%s\n", ext.Extension.DisplayName, mode)
+			fmt.Fprintf(w, "    + %s%s%s\n", ext.Extension.DisplayName, summaryParams(ext.Extension, ext.ParamValues), mode)
 		}
 	}
-	fmt.Println()
+	for _, removed := range resolved.Removed {
+		fmt.Fprintf(w, "  - %s (removed from the image)\n", removed.DisplayName)
+	}
+	fmt.Fprintln(w)
+}
+
+// summaryParams renders " (K=v, K2=v2)" for a summary line, in the template's
+// declaration order and then by name for any it does not declare; "" for none.
+func summaryParams(t *tmpl.Template, values map[string]string) string {
+	if len(values) == 0 {
+		return ""
+	}
+	var keys []string
+	seen := map[string]bool{}
+	for _, k := range t.ParamOrder {
+		if _, ok := values[k]; ok && !seen[k] {
+			keys = append(keys, k)
+			seen[k] = true
+		}
+	}
+	var rest []string
+	for k := range values {
+		if !seen[k] {
+			rest = append(rest, k)
+		}
+	}
+	sort.Strings(rest)
+	keys = append(keys, rest...)
+
+	params := make([]string, len(keys))
+	for i, k := range keys {
+		params[i] = k + "=" + values[k]
+	}
+	return " (" + strings.Join(params, ", ") + ")"
 }
 
 // parseSetOverrides parses --set values into a key-value map, typed to match

@@ -4,6 +4,13 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth config print` lists what a booth is configured with.** It prints the summary a save
+  ends with — each template with its params, its extensions under it — and writes nothing.
+  Reconfigure flags apply, so `booth config print --add-select go+linter` previews a change. That
+  summary now lists params in the template's order (it was random), shows extension params, and
+  names any tool the selection removes from the image. See
+  [Printing what a booth is configured with](BOOTH_CONFIG.md#printing-what-a-booth-is-configured-with).
+
 - **Moving the apt snapshot no longer regenerates the whole `.booth/`.** `booth config --no-tui
   --apt-snapshot <id|today|none>` with no other change rewrites only the Boothfile's
   `env APT_SNAPSHOT=` line, needs no `--overwrite`, and leaves `config.toml`, startups, setups and

@@ -41,6 +41,10 @@ func runConfig(version, buildDate string) {
 		printConfigHelp()
 		return
 	}
+	if len(args) > 0 && args[0] == "print" {
+		runConfigPrint(version, args[1:])
+		return
+	}
 
 	// Parse target path (first non-flag argument)
 	targetPath := "."
@@ -1724,10 +1728,15 @@ func checkBoothWritable(targetPath string) string {
 
 func printConfigHelp() {
 	fmt.Println(`Usage: booth config [path] [flags]
+       booth config print [path] [flags]
 
 Configure a CodingBooth environment. Opens an interactive TUI by default.
 Use --web for the same editor in a browser on the booth port, or --no-tui
 for non-interactive CLI mode.
+
+booth config print lists what the booth is configured with — the templates,
+their params and extensions, as a save prints them — and writes nothing.
+Reconfigure flags apply, so it previews a change: print --add-select go+lsp.
 
 If the target path already contains a .booth/Boothfile, the existing
 configuration is loaded as the baseline. CLI flags override the existing values.

@@ -426,7 +426,10 @@ func Spec() *Command {
 						Flags: []Flag{flag(Text, "--version")}},
 					{Name: "help", Desc: "Show help"},
 				}},
-			{Name: "config", Desc: "Configure this project's booth", Flags: configFlags, Args: []Kind{Dir}},
+			{Name: "config", Desc: "Configure this project's booth", Flags: configFlags, Args: []Kind{Dir},
+				Subs: []*Command{
+					{Name: "print", Desc: "Print what the booth is configured with", Flags: configFlags, Args: []Kind{Dir}},
+				}},
 			{Name: "just-init", Desc: "Write a starter Justfile",
 				Flags: []Flag{boolFlag("--yes", "-y"), flag(Dir, "--code")}, Args: []Kind{Dir}},
 			{Name: "prepare", Desc: "[Experimental] Run booth code on this machine",
