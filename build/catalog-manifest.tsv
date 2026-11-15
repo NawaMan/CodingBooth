@@ -49,6 +49,8 @@ setup	cleanup-after	1.0.0	679b2dbe30f9f7e5f35ef133016138647a6771504c26e179719001
 setup	clojure	1.0.0	4a10bbe9e06906881cdeb1628046c87aede4bc7dba01a66248ec82e9b05b8c50	variants/base/setups/clojure--setup.sh
 setup	clojure-code-extension	1.0.0	701ebfa9133409194342e7219aaad39716bf1ca824a1e62ea603aac2a9dda947	variants/base/setups/clojure-code-extension--setup.sh
 setup	cloudbeaver	1.0.0	0fc166fe6e7c21963e73f5aef0374fbb404faffcaf38096c8d6e961e0d60f463	variants/base/setups/cloudbeaver--setup.sh
+setup	cloudflared	0.1.0	cc8fac25d5fb7a2ad92ffa6e5de2f94c81740eb21e65ceb2197b76919597e6a0	variants/base/setups/cloudflared--setup.sh
+setup	cloudflared-share	0.1.0	79dd4e280176ee9b8d107f08e8e9b4ef41316dd810b5ae2779e84191f847ded4	variants/base/setups/cloudflared-share--setup.sh
 setup	cmake	1.0.0	6c78f883af7e7367c66c10fc35f0cd73695221dc1114a549d45d827c9488b14b	variants/base/setups/cmake--setup.sh
 setup	cmake-code-extension	0.1.0	d5358d9ef2d2c44609ff9aa96529a4f4cb5ae2310424ade736b28ea12c920185	variants/base/setups/cmake-code-extension--setup.sh
 setup	cobol-code-extension	0.1.0	d81974f9b54f4695014a9e5b7f8c6d7368869b5de64957c692f25050f52bb878	variants/base/setups/cobol-code-extension--setup.sh
@@ -252,6 +254,8 @@ setup	neovim	1.0.0	bf81805049e5766eff3c6e6a2f2dde4658fa127d2257d1d0d383892fe74cc
 setup	neovim-lsp	0.2.0	7a81035420493328b06185789b781cb9a5489bd1d004480a62a5cbe1a21ec1ea	variants/base/setups/neovim-lsp--setup.sh
 setup	network-whitelist	1.0.0	3d02b83cba6adfce82951ef427f109d42eed6c3979f577c210f7c02ae32a1742	variants/base/setups/network-whitelist--setup.sh
 setup	nginx	1.0.0	dbc90a29a20ddbd8ceea620903e7d8edeadc59bb114c9417c7cdc61dd956ea84	variants/base/setups/nginx--setup.sh
+setup	ngrok	0.1.0	d1c09574f77f0a24c47e351a35fb395a6fc35ee3e588890ebd69d10219aa5e09	variants/base/setups/ngrok--setup.sh
+setup	ngrok-share	0.1.0	2c8ba58f528c4e20b183bcdb008e7415d0b539048c648799d9a6fc772f3b40f6	variants/base/setups/ngrok-share--setup.sh
 setup	nim	1.1.0	7a5fb8487cec1d0ea3e6437d9ee5fef1dd61489710a2b588235e7b260af6158e	variants/base/setups/nim--setup.sh
 setup	nim-code-extension	1.0.0	59b4208b38f50b3d58ea827e9b367f11c88190ac9f76c46771bf52146688320f	variants/base/setups/nim-code-extension--setup.sh
 setup	nodejs	1.0.0	fe8db1b693f5f5972bc442c0ea7e81c7bf7490bd3fd0150c8c64a9688b10681d	variants/base/setups/nodejs--setup.sh
@@ -457,6 +461,7 @@ template	claude-code	1.0.0	068c01fcb7e3cec8747f5b0c4920dd5bc8c6883d8f18d5073b8c5
 template	clion	1.0.0	4007787575752d0e3b522a5e24564772969761e23cc512229be762c72cd4f75f	templates/ides/clion/template.toml
 template	clojure	1.0.0	c7181d11715d6ef7c7fd21868992fdb68a29968329a071a513aa401036ce37a7	templates/languages/clojure/template.toml
 template	cloudbeaver	1.1.0	b63a14be7a2702f0b7782aa3f1017ab71e93115fb8a2ac9929a3b27431920736	templates/tools/cloudbeaver/template.toml
+template	cloudflared	0.1.0	71064dda58f3616a0287f4923abe09d89e2f1edaa460ac5e3227df16e9ad4745	templates/tools/cloudflared/template.toml
 template	cmake	1.1.0	52a948b5a2c2e35a3ba50e8f3d00a4b5da646077fa76a1795fa86b4cf78c0f63	templates/tools/cmake/template.toml
 template	code-ext-pkg	1.0.0	5161e9075a8ab8c7407c3fcd641e3aa246fbdf0bdbfa8db25040af432f7e1550	templates/ides/code-ext-pkg/template.toml
 template	codeblocks	0.1.0	2a87b5da33d30e2ef8a77ef405977a0960df64f5a2ec0bb009837ca970928276	templates/ides/codeblocks/template.toml
@@ -573,6 +578,7 @@ template	n8n	0.3.0	b40dbbf1ef166ab18e66b020b7d5d1df70eba06f78b313a03c565d7cb99dd
 template	nbgrader	1.0.0	2e0765a2aa72972a73952ce75ac6a8333a943dae1c5110dc1ca7c863ceba1b8d	templates/education/nbgrader/template.toml
 template	neovim	1.1.0	3e4610278f62279baeb0d74c7ff481298c011c8058b1b0a78c94ca6226c8ee1d	templates/tools/neovim/template.toml
 template	nginx	1.0.0	ae357de64d5f1752798f6f237e6e273653040803c065118d2f365f3c62f70329	templates/tools/nginx/template.toml
+template	ngrok	0.1.0	3c9f42f1da867ac957fc74d83d5848110c7a8fc4baaf2f52789871ce91330ea9	templates/tools/ngrok/template.toml
 template	nim	1.0.3	ca403257092caa594ce9085ec44b6043363cd6c3902572a684f21e70cd545778	templates/languages/nim/template.toml
 template	no-sudo	1.0.0	2a2a45035e22409fbc5b73e3de5870ca9f5a41a5b9470b8df34176f0fb7a99b6	templates/tools/no-sudo/template.toml
 template	nodejs	1.0.0	1bd0eb933c905b9f431c86507df4190cdc0f315d12f98ad2a4a043c13b24bddd	templates/languages/nodejs/template.toml
@@ -688,6 +694,7 @@ extension	clion+skip-first-run	0.1.0	33831599f0972a2d490dbd2d68877efe30cb9e8946d
 extension	clojure+vscode-ext	1.0.0	cab7e3e6dc5d46121dcd39958b1600ef98b3a8a80515fdc98e1cae507d4b59b5	templates/languages/clojure/vscode-ext--extension.toml
 extension	cloudbeaver+autostart	1.0.0	25542b5fa8f7bd3685b406f040d5a82d2065978404740b407048a7e386634d9d	templates/tools/cloudbeaver/autostart--extension.toml
 extension	cloudbeaver+expose	1.0.0	9c3c332814992c9a05ad7375140cee87e136aa3344e7d1b78e69aac36f231f5b	templates/tools/cloudbeaver/expose--extension.toml
+extension	cloudflared+share	0.1.0	458e140dbd524dd30d4f7e63d02f6c9a42d7ce8ba6797394ae4572a8a4559f3e	templates/tools/cloudflared/share--extension.toml
 extension	cmake+vscode-ext	0.1.0	c792246628e9ccda4cdd1bdd480236550ea98033020ca7588e38ebf515fd2201	templates/tools/cmake/vscode-ext--extension.toml
 extension	codeserver+autostart	1.0.0	f43ebba8394766189f510e7718976ac80270af10c37298bccfa08486e507d87b	templates/ides/codeserver/autostart--extension.toml
 extension	codeserver+expose	1.0.0	b7d32ebd02c403173d2dc59c2d3dee7b6c46fbbaf9234cdc23bba359a20d42ba	templates/ides/codeserver/expose--extension.toml
@@ -882,6 +889,7 @@ extension	neovim+data-cache	1.0.0	d7dda185adfab3b1bcce23edfce01ea1b76633630b5c5f
 extension	neovim+lsp	0.2.0	2989c3e9bcad34f91e19845b737e8a307c3f20c42518b5b152a01a63e1049d89	templates/tools/neovim/lsp--extension.toml
 extension	nginx+expose	1.0.0	b252b85f50d4d1a1cf5624e94883d1e97fa7229358f6d01eedffd785fc5774ea	templates/tools/nginx/expose--extension.toml
 extension	nginx+php-fpm	0.1.0	1e045eb9ebaecba69f237deab990543111b3a9344be06611799ba84d4b9b8879	templates/tools/nginx/php-fpm--extension.toml
+extension	ngrok+share	0.1.0	e732208c4124a4375737c0ea144bc0b42d19d555f4cadb1e5dbb78d186261f25	templates/tools/ngrok/share--extension.toml
 extension	nim+vscode-ext	1.0.0	eb2effd82a887dde6ef64c419d29f2dab4d2f47d4208c591cff79d1325d0f0b1	templates/languages/nim/vscode-ext--extension.toml
 extension	nodejs+kernel	1.0.0	cb9232648b0d536319ea86808f9878fa8e76685413880d0277c3584a9d5bfe81	templates/languages/nodejs/kernel--extension.toml
 extension	nodejs+npm-cache	0.1.0	5dca7ee4a7c1545ea7519de97cd33ff205eecae0096da18d521a1205bbffb6cf	templates/languages/nodejs/npm-cache--extension.toml

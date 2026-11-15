@@ -1,0 +1,12 @@
+cb-version = "0.1.0"
+display-name = "Cloudflare Quick Share"
+display-disc = "cloudflared-share <port>: a temporary public URL for a booth server"
+display-detail = "Adds `cloudflared-share <port|url>`, which opens a Cloudflare quick tunnel to a server in the booth and prints only its https://<words>.trycloudflare.com URL; Ctrl+C stops sharing. No account is needed. Anyone who has the URL can reach the server, so it refuses the booth's own port (10000: the terminal / IDE) unless given `--ok-booth`. `--verbose` shows cloudflared's log; arguments after `--` go to `cloudflared tunnel`."
+display-order = 1
+auto-select = true
+tags = ["share", "tunnel"]
+
+[segments]
+Boothfile = """
+setup cloudflared-share
+"""

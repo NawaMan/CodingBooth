@@ -1,0 +1,12 @@
+cb-version = "0.1.0"
+display-name = "ngrok Quick Share"
+display-disc = "ngrok-share <port>: a temporary public URL for a booth server"
+display-detail = "Adds `ngrok-share <port|url>`, which opens an ngrok tunnel to a server in the booth and prints only its public URL (and the inspector at http://localhost:4040); Ctrl+C stops sharing. It checks for an authtoken first (NGROK_AUTHTOKEN, or one saved with `ngrok config add-authtoken`) and says how to get one. Anyone who has the URL can reach the server, so it refuses the booth's own port (10000: the terminal / IDE) unless given `--ok-booth`. Arguments after `--` go to `ngrok http`, e.g. `-- --basic-auth 'me:secret'` to put a password on it. On the free plan, browsers see an ngrok warning page once before the site."
+display-order = 1
+auto-select = true
+tags = ["share", "tunnel"]
+
+[segments]
+Boothfile = """
+setup ngrok-share
+"""

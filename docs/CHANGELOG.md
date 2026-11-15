@@ -4,6 +4,17 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Temporary share: give a booth server a public URL with one command.** New `cloudflared`
+  (Cloudflare Tunnel) and `ngrok` templates, each with an auto-selected `share` extension that
+  adds `cloudflared-share <port>` / `ngrok-share <port>`. The command opens a tunnel to a server
+  in the booth and prints only the public https URL, which works until Ctrl+C. No host port, no
+  firewall change. Cloudflare quick tunnels need no account. ngrok uses `NGROK_AUTHTOKEN`, which
+  the ngrok template passes from the host. Both commands refuse the booth's own port (10000, its
+  terminal / IDE) unless given `--ok-booth`. Select them with `--select cloudflared`,
+  `--select ngrok` or both. `examples/workspaces/share-example` serves a page and shares it with
+  `just share-cloudflare` / `just share-ngrok`. Its test fetches the public URL back over the
+  internet.
+
 - **A one-time ask for a GitHub star.** After about five minutes in a booth's web UI (codeserver,
   notebook or a desktop — not the Console UI or a command), a toast offers a link to star
   CodingBooth on GitHub. Clicking it ends the ask in every booth on the host; **Later** puts it

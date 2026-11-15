@@ -1,0 +1,4 @@
+# Configured by: booth config --no-tui --overwrite --select cloudflared/ngrok
+
+
+run-args = ["-e", "NGROK_AUTHTOKEN"]

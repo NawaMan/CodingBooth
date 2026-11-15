@@ -1,0 +1,21 @@
+cb-version = "0.1.0"
+display-name = "Cloudflare Tunnel"
+primary = true
+display-disc = "cloudflared: share a booth server on a public URL, no account needed"
+display-detail = "Installs cloudflared, the Cloudflare Tunnel client. `cloudflared tunnel --url http://localhost:8080` opens a quick tunnel: a temporary https://<words>.trycloudflare.com URL that reaches the server in the booth from anywhere, with no Cloudflare account and no port published on the host. It lasts while the command runs. Named tunnels on your own domain (`cloudflared tunnel login`) work too, but need a Cloudflare account and a domain on it. The Share extension (auto-selected) adds `cloudflared-share <port>`, which prints just the URL. Pin a release with CLOUDFLARED_VERSION."
+display-order = 38
+tags = [
+    "share",
+    "tunnel",
+    "network",
+    "cli",
+]
+
+[params.CLOUDFLARED_VERSION]
+default = "latest"
+suggests = ["latest", "2026.11.0", "2026.10.7"]
+
+[segments]
+Boothfile = """
+setup cloudflared --version ${CLOUDFLARED_VERSION}
+"""
