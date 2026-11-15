@@ -395,7 +395,7 @@ install	uv	1.0.0	96850ee91ade44ee60d37f9d133603381f485fa169d2636b9d168a784a31c17
 install	yarn	1.0.0	c7dae3e93b54c1052224c765e33748106f26da79adc97725b5c12a6134e0efce	variants/base/setups/yarn--install.sh
 helper	booth--console-reset	0.1.0	d74c9ed6f3e001b17ddb8ff3acd1f743959a2adeb911ae4277a86853415ce505	variants/base/setups/booth--console-reset
 helper	booth--envs	1.0.0	12d1b1092b570ba3129adcc326672f5fcfc828d6eefe6c5312f8bd8bce96d41d	variants/base/setups/booth--envs
-helper	booth--expose	1.0.0	c45b4b22252a6e67a72f72a7f235f25a1c9a13a78111c7d0df0a038a1cf36ab7	variants/base/setups/booth--expose
+helper	booth--expose	1.0.1	8f57a17ea8493ab895c437b5ea18f5f6b7e8cc0e7417d7e744f37487ecdc35d1	variants/base/setups/booth--expose
 helper	booth--idle-monitor	1.0.0	bd5c81c416f04c2ac415482a17d3bade424219ada60864305a4e45c8a9e00186	variants/base/setups/booth--idle-monitor
 helper	booth--info	1.0.1	c9b1ec967222372e600a42102b264289904a39aa46e3d4e488716511e6764a38	variants/base/setups/booth--info
 helper	booth--lifecycle-log	0.1.0	97553f9e1374ba00cc29bb6da4436132e5a9c84624b006b5f93009e8f3d58bae	variants/base/setups/booth--lifecycle-log

@@ -34,17 +34,29 @@ run-on-host  := if env("BOOTH_CONTAINER_NAME", "") == "" { "" } else { "echo 'ju
 default:
     @just --list
 
-# Serve ./site on http://localhost:8080 in the booth (Ctrl+C stops it)
-serve:
-    {{run-in-booth}} caddy file-server --listen :8080 --root site
+# Start the app for development: API on :3001 + front end on :8080 (Ctrl+C stops both)
+dev:
+    {{run-in-booth}} ./dev.sh
 
-# Serve the site and share it on a temporary trycloudflare.com URL - no account
-share-cloudflare:
-    {{run-in-booth}} ./share.sh cloudflared
+# Share the front end (the whole app) on a temporary public trycloudflare.com URL
+share-web:
+    {{run-in-booth}} cloudflared-share 8080
 
-# Serve the site and share it through ngrok - needs NGROK_AUTHTOKEN on the host
-share-ngrok:
-    {{run-in-booth}} ./share.sh ngrok
+# Share only the API (e.g. for a teammate's client or a webhook) on its own public URL
+share-api:
+    {{run-in-booth}} cloudflared-share 3001
+
+# Same as share-web, through ngrok - needs NGROK_AUTHTOKEN on the host
+share-web-ngrok:
+    {{run-in-booth}} ngrok-share 8080
+
+# Same as share-api, through ngrok - needs NGROK_AUTHTOKEN on the host
+share-api-ngrok:
+    {{run-in-booth}} ngrok-share 3001
+
+# Where the app is reachable from the host (the published ports)
+ports:
+    {{run-in-booth}} booth--expose list
 
 # Run the example's tests in the booth (the ngrok one skips without NGROK_AUTHTOKEN)
 test:

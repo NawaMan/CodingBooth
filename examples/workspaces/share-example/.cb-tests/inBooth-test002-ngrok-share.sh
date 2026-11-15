@@ -1,6 +1,7 @@
 #!/bin/bash
 # ngrok-share: without an authtoken it says how to get one; it refuses the booth's
-# own port; with NGROK_AUTHTOKEN set it shares the site and the URL serves it.
+# own port; with NGROK_AUTHTOKEN set it shares the running app's front end and the
+# public URL serves the page and the API behind it.
 set -euo pipefail
 source "$(dirname "$0")/share-lib.sh"
 
@@ -26,12 +27,11 @@ if [[ -z "${NGROK_AUTHTOKEN:-}" ]]; then
     exit 0
 fi
 
-echo "=== shares the site on a public URL ==="
-start_site
-ngrok-share "$PORT" >"$LOG_DIR/share.log" 2>&1 &
-PIDS+=($!)
-url="$(wait_for_url "$LOG_DIR/share.log")" || fail "no Shared: URL from ngrok-share"
+echo "=== share-web-ngrok: the whole app on a public URL ==="
+start_app
+url="$(share ngrok-share "$WEB_PORT")" || fail "no Shared: URL from ngrok-share"
 echo "URL: $url"
 # The free plan's browser warning page is skipped for clients sending this header.
-fetch_marker "$url" -H 'ngrok-skip-browser-warning: 1' || fail "$url does not serve the site"
-echo "ok: the public URL serves the booth's page"
+fetch_until "$url/" 'share-example app' -H 'ngrok-skip-browser-warning: 1' || fail "$url does not serve the page"
+fetch_until "$url/api/health" 'notes-api' -H 'ngrok-skip-browser-warning: 1' || fail "$url/api/health does not reach the API"
+echo "ok: page and API reachable through the public URL"

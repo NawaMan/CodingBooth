@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 
 #
-# Test for the share example: cloudflared-share and ngrok-share in a real booth.
+# Test for the share example: the notes app shared with cloudflared-share / ngrok-share.
 # Needs internet access (the public URL is fetched back). The ngrok live share
 # runs only when NGROK_AUTHTOKEN is set on the host; the rest always runs.
 #
