@@ -5,7 +5,8 @@ description: Cut a release from the current --rc version — offer to refresh ca
 
 # Cut a release and reopen the tree
 
-Two version commits, exactly one push, and one dispatch that needs its own yes.
+Two version commits, exactly one push, one test dispatch (step 4b, part of the flow), and one
+release dispatch that needs its own yes.
 Catalog version bumps, if accepted, are extra commits **before** the first version
 commit — they ride the same push.
 
@@ -19,6 +20,7 @@ commit — they ride the same push.
 2.                                                → git push origin main
 3.  version.txt/README.md: X.Y.Z → X.(Y+1).0--rc1 → commit "X.(Y+1).0--rc1"  → NO push
 4.  report
+4b. GHA host-provision test on origin/main (the release commit) — must be green before step 5
 5.  offer to dispatch `Release everything`, wait for a yes, then watch it
 6.  after a green release: offer to dispatch the tap's `Bump formulas`, wait for a yes, then watch it
 ```
@@ -294,10 +296,38 @@ explicitly in the report, because "ahead 1" otherwise reads like an oversight.
 ## 4. Report
 
 State the two commits, that the release was pushed and the bump was not, and the final `ahead 1`.
+Say that the step-4b GHA test is running (or its result, if it finished).
 
 Then say plainly **what has and has not happened**: the release version is on `origin/main`, so the
 `Release everything` workflow is now *eligible* — but nothing has run, because it is manual dispatch.
 Do not imply a release is in flight when nothing has been dispatched.
+
+## 4b. GHA host-provision test — on the release commit, before step 5
+
+`booth prepare gha|ubuntu` (docs/REUSE_BOOTH.md) is only proven on real runners by
+`.github/workflows/host-provision-exp.yaml`, and nothing else in the release runs it. Run it here,
+against the commit step 2 pushed:
+
+```bash
+CB_GHA_REF=main tests/manual/run-host-provision-gha-manual-test.sh    # ~25 min; run in background
+```
+
+- **`CB_GHA_REF=main` is required.** Without it the script checks that local HEAD equals
+  `origin/main`, and after step 3 HEAD is the unpushed rc bump, so it refuses. With it, the run
+  tests `origin/main`, which is exactly the release commit.
+- It first runs a quick local lane (the `prepare-test.sh` refusals, needs Docker), then dispatches
+  the workflow, waits, and lists the failed examples. It never pushes.
+- Dispatching it is part of this flow — no separate yes. It runs CI on this repo and publishes
+  nothing. Start it right after step 3 so the wait overlaps the report.
+
+**Green** (`✅ PASS: every job of run …`) → include the run id/URL in the report and go to step 5.
+
+**Red** → do **not** offer step 5 as if nothing happened. Report the failed examples and the
+`gh run view <id> --log-failed` line, and ask: fix first, or release anyway. Fixing first means:
+undo the local step-3 bump (`git reset --keep HEAD~1`), commit the fix on the release version,
+push, re-run 4b, then redo step 3. A failure is acceptable only when it is explainable as the
+example needing something a runner does not have (a desktop, a booth-only feature), and then the
+fix is a skip in that example's test, not a release with a red run.
 
 ## 5. Offer to dispatch `Release everything` — then watch it
 
@@ -306,7 +336,8 @@ local commits and one push. This step is not — it publishes Docker images, cre
 and deploys the live site. Offer it, name what it will publish, and wait. "Cut a release" earlier in
 the conversation is not consent for this; ask again here.
 
-Preconditions (steps 1–2 establish them; step 3 preserves them by not pushing):
+Preconditions (steps 1–2 establish them; step 3 preserves them by not pushing; step 4b must be
+green, or the user said to release anyway):
 
 ```bash
 git show origin/main:version.txt      # must be the non-rc release version
