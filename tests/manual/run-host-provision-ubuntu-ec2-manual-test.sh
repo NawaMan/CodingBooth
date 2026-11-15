@@ -35,7 +35,8 @@ fi
 BIN=bin/codingbooth-linux-amd64
 [[ -x "$BIN" ]] || { echo "  ❌ FAIL: $BIN is missing: run ./build/cli-build.sh"; exit 1; }
 newer="$(find cli/src experiments/host-provision variants/base -type f -newer "$BIN" \
-           -not -path '*/.out/*' -print -quit 2>/dev/null)"
+           -not -path '*/.out/*' -not -name '*-test.sh' -not -name 'check-*.sh' \
+           -print -quit 2>/dev/null)"   # the harness scripts run from the checkout, not the kit
 [[ -z "$newer" ]] || echo "  ⚠️  $newer is newer than $BIN: the run tests the binary as built (./build/cli-build.sh)"
 
 read -ra examples <<< "${CB_EC2_EXAMPLES:-go-example zig-example}"
