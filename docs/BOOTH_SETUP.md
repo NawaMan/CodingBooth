@@ -3,7 +3,7 @@
 Conventions for the setup scripts in `variants/base/setups/` — the trio of artifacts they produce,
 the ordering levels, and the shared helpers they reuse.
 
-At v0.80.0--rc1, the catalog contains **332 setup scripts** and **24 install scripts**.
+At v0.83.0--rc1, the catalog contains **368 setup scripts** and **24 install scripts**.
 Helpers, libraries, assets and scripts parked under `future/` are counted separately or
 excluded; see the [catalog inventory](UNDERSTAND_SETUPS.md#catalog-inventory).
 

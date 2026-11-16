@@ -5,7 +5,7 @@ should take arguments, run-args and volume conventions, the autostart + expose p
 a per-order catalogue of what already exists. Read this before adding a template, so the new one
 lands in the same band as its neighbours.
 
-At v0.80.0--rc1, this tree contains **205 templates** and **341 extensions** in **9 categories**.
+At v0.83.0--rc1, this tree contains **223 templates** and **371 extensions** in **9 categories**.
 The [catalog inventory](../docs/UNDERSTAND_SETUPS.md#catalog-inventory) gives the category breakdown
 and counting method. An extension is counted under its parent, including auto-selected extensions.
 
