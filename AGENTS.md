@@ -136,7 +136,7 @@ two ways through it:
 **[booth config → Hand-Written Files](docs/BOOTH_CONFIG.md#hand-written-files)**.
 
 ```bash
-export CB_TEMPLATES_PATH="$PWD/templates"        # local templates; a --rc version has no release to fetch
+export CB_TEMPLATES_PATH="$PWD/templates"        # local templates: edits show without a rebuild
 (cd "$WS" && "$REPO/codingbooth" config --no-tui --overwrite \
     --select 'go+vscode-ext' --expose '+-1910:8090')
 rm -f "$WS/.booth"/*.bak                          # only if it replaced something

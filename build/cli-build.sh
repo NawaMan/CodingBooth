@@ -70,6 +70,16 @@ echo ""
 echo "🧳 Packing the kit booth prepare embeds (variants, docs, experiments/host-provision)..."
 go run ./src/cmd/prepare-kit --root .. --out src/pkg/prepare/kit/kit.tar.gz
 echo ""
+echo "📚 Packing the template catalog the binary embeds (templates/)..."
+EMBEDDED_TEMPLATES="src/pkg/boothinit/cache/embedded/templates.zip"
+# Remove the old one first: a failed pack must not leave a stale catalog to embed.
+rm -f "$EMBEDDED_TEMPLATES"
+go run ./src/cmd/templates-pack --root .. --version "$VERSION" --out "$EMBEDDED_TEMPLATES"
+if [[ ! -s "$EMBEDDED_TEMPLATES" ]]; then
+    echo "❌ Error: $EMBEDDED_TEMPLATES was not written"
+    exit 1
+fi
+echo ""
 
 # The binary trusts what its Go toolchain's crypto/x509 trusts, so an older Go
 # ships a CLI that still accepts the compromised eMudhra CA keys. go.mod's
@@ -110,6 +120,22 @@ BUILD_OUTPUT=$(go build -ldflags "${LDFLAGS}" -o "$LOCAL_OUTPUT" "$SRC_DIR/codin
 if $BUILD_SUCCESS; then
     LOCAL_SIZE=$(du -h "$LOCAL_OUTPUT" | cut -f1)
     echo "   ✅ Built: $LOCAL_OUTPUT (${LOCAL_SIZE})"
+
+    # Prove the catalog is in the binary: list templates with no local catalog, an
+    # empty cache, and no way to reach the release download.
+    EMBED_CHECK_DIR=$(mktemp -d)
+    EMBED_CHECK=$(cd "$EMBED_CHECK_DIR" && env -u CB_TEMPLATES_PATH \
+        XDG_CACHE_HOME="$EMBED_CHECK_DIR/cache" \
+        HTTPS_PROXY="http://127.0.0.1:9" https_proxy="http://127.0.0.1:9" NO_PROXY="" no_proxy="" \
+        "$OLDPWD/$LOCAL_OUTPUT" template list 2>&1) && EMBED_OK=true || EMBED_OK=false
+    rm -rf "$EMBED_CHECK_DIR"
+    if $EMBED_OK; then
+        echo "   ✅ Embedded template catalog works offline"
+    else
+        echo "   ❌ The built binary cannot list templates from its embedded catalog:"
+        echo "$EMBED_CHECK" | sed 's/^/      /'
+        exit 1
+    fi
 else
     echo "   ❌ FAILED to build local executable"
     echo "$BUILD_OUTPUT" | sed 's/^/      /'

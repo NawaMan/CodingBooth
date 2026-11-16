@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The template catalog is inside the binary.** `booth config` and `booth template` no longer
+  download `templates.zip` for the binary's own version, so they work offline and on a first
+  run. Another version (`--version`, or the one a booth was generated with) still comes from the
+  cache or the GitHub release, and `--templates-path` / `CB_TEMPLATES_PATH` still win.
+  `build/cli-build.sh` packs the catalog and checks that the built binary can list templates
+  with no network.
 - **Temporary share: give a booth server a public URL with one command.** New `cloudflared`
   (Cloudflare Tunnel) and `ngrok` templates, each with an auto-selected `share` extension that
   adds `cloudflared-share <port>` / `ngrok-share <port>`. The command opens a tunnel to a server

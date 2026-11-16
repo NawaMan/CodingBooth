@@ -2,8 +2,9 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 
-// Package cache handles downloading, caching, and extracting template zip
-// files from GitHub releases.
+// Package cache resolves the template catalog for a version: the one embedded in
+// the binary when it is that version's, else a templates.zip cached from, or
+// downloaded from, the GitHub release.
 package cache
 
 import (
@@ -22,11 +23,16 @@ const (
 )
 
 // ResolveTemplatesDir returns a path to an extracted templates directory.
-// It checks the local cache for a previously downloaded templates.zip,
+// The catalog embedded in the binary is used when it is the one for version.
+// Otherwise it checks the local cache for a previously downloaded templates.zip,
 // downloading from GitHub releases if not found. The zip is extracted
 // to a temporary directory. The caller must invoke the returned cleanup
 // function when done.
 func ResolveTemplatesDir(version string) (string, func(), error) {
+	if r := embeddedFor(version); r != nil {
+		return extractToTemp(r, "embedded catalog")
+	}
+
 	cacheDir, err := getCacheDir()
 	if err != nil {
 		return "", nil, fmt.Errorf("determining cache directory: %w", err)
@@ -42,7 +48,22 @@ func ResolveTemplatesDir(version string) (string, func(), error) {
 		}
 	}
 
-	// Extract to temp dir
+	return extractZipFileToTemp(zipPath)
+}
+
+// extractZipFileToTemp extracts the templates.zip at zipPath to a new temp directory.
+func extractZipFileToTemp(zipPath string) (string, func(), error) {
+	r, err := zip.OpenReader(zipPath)
+	if err != nil {
+		return "", nil, fmt.Errorf("opening zip %s: %w", zipPath, err)
+	}
+	defer r.Close()
+	return extractToTemp(&r.Reader, zipPath)
+}
+
+// extractToTemp extracts a templates zip to a new temp directory and returns its
+// templates/ directory. The caller must invoke the returned cleanup function.
+func extractToTemp(r *zip.Reader, source string) (string, func(), error) {
 	tmpDir, err := os.MkdirTemp("", "cb-init-")
 	if err != nil {
 		return "", nil, fmt.Errorf("creating temp directory: %w", err)
@@ -50,25 +71,29 @@ func ResolveTemplatesDir(version string) (string, func(), error) {
 
 	cleanup := func() { os.RemoveAll(tmpDir) }
 
-	if err := ExtractTemplatesZip(zipPath, tmpDir); err != nil {
+	if err := extractZip(r, tmpDir); err != nil {
 		cleanup()
-		return "", nil, fmt.Errorf("extracting templates: %w", err)
+		return "", nil, fmt.Errorf("extracting templates from %s: %w", source, err)
 	}
 
 	// The zip contains a top-level "templates/" directory
 	templatesDir := filepath.Join(tmpDir, "templates")
 	if info, err := os.Stat(templatesDir); err != nil || !info.IsDir() {
 		cleanup()
-		return "", nil, fmt.Errorf("extracted zip does not contain a templates/ directory")
+		return "", nil, fmt.Errorf("%s does not contain a templates/ directory", source)
 	}
 
 	return templatesDir, cleanup, nil
 }
 
 // ResolveCachedTemplatesDir is ResolveTemplatesDir without the download: it
-// fails when the version's templates.zip is not already in the cache. For
-// callers that must stay quick and offline, such as shell completion.
+// fails when the version's catalog is neither embedded nor already in the cache.
+// For callers that must stay quick and offline, such as shell completion.
 func ResolveCachedTemplatesDir(version string) (string, func(), error) {
+	if r := embeddedFor(version); r != nil {
+		return extractToTemp(r, "embedded catalog")
+	}
+
 	cacheDir, err := getCacheDir()
 	if err != nil {
 		return "", nil, err
@@ -77,17 +102,7 @@ func ResolveCachedTemplatesDir(version string) (string, func(), error) {
 	if _, err := os.Stat(zipPath); err != nil {
 		return "", nil, err
 	}
-
-	tmpDir, err := os.MkdirTemp("", "cb-init-")
-	if err != nil {
-		return "", nil, err
-	}
-	cleanup := func() { os.RemoveAll(tmpDir) }
-	if err := ExtractTemplatesZip(zipPath, tmpDir); err != nil {
-		cleanup()
-		return "", nil, err
-	}
-	return filepath.Join(tmpDir, "templates"), cleanup, nil
+	return extractZipFileToTemp(zipPath)
 }
 
 // downloadTemplatesZip downloads templates.zip from GitHub releases for the
@@ -140,8 +155,12 @@ func ExtractTemplatesZip(zipPath, destDir string) error {
 		return fmt.Errorf("opening zip %s: %w", zipPath, err)
 	}
 	defer r.Close()
+	return extractZip(&r.Reader, destDir)
+}
 
-	destDir, err = filepath.Abs(destDir)
+// extractZip extracts r to destDir with the security checks of ExtractTemplatesZip.
+func extractZip(r *zip.Reader, destDir string) error {
+	destDir, err := filepath.Abs(destDir)
 	if err != nil {
 		return fmt.Errorf("resolving destination path: %w", err)
 	}

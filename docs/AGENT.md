@@ -273,9 +273,9 @@ conventions and helpers), `BOOTH_HOME.md`, `BOOTH_LOCALCACHE.md`, `BOOTH_SHARED.
 
 ## 8. Which templates exist for this version
 
-The catalog is versioned with the CLI. `./booth template` downloads the templates for the version
-pinned in `.booth/tools/codingbooth.lock` (from that GitHub release) and lists them, together with
-this project's local ones:
+The catalog is versioned with the CLI, and the binary carries its own version's catalog.
+`./booth template` lists the templates for the version pinned in
+`.booth/tools/codingbooth.lock`, with no download, together with this project's local ones:
 
 ```bash
 cd ~/code

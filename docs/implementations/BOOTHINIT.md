@@ -299,9 +299,27 @@ For `run-args` and `build-args`: arrays from all templates are concatenated and 
 
 ---
 
-## Template Cache and Download
+## Template Catalog: Embedded, Cache and Download
 
-Templates are distributed as `templates.zip` alongside each CodingBooth release.
+The binary carries the template catalog of its own version, so `booth config` and
+`booth template` need no network and no download for it. A catalog is looked up in this order:
+
+1. **Local** — `--templates-path <dir>` or `CB_TEMPLATES_PATH`.
+2. **Embedded** — when the version asked for is the version the binary was built as.
+3. **Cache** — a `templates.zip` downloaded earlier for that version.
+4. **Download** — `templates.zip` from that version's GitHub release.
+
+Steps 3 and 4 serve every other version: `--version <x>`, and the version recorded in a
+booth's `.booth/.generated`, which a reconfigure compares against.
+
+**Embedding:** `build/cli-build.sh` runs `go run ./src/cmd/templates-pack`, which zips
+`templates/` into `cli/src/pkg/boothinit/cache/embedded/templates.zip` with the version as the
+zip comment, and `go:embed` takes it into the binary. The file is generated and not committed.
+The archive is deterministic. After the local build, the script lists templates with an empty
+cache and no network, and fails the build when the binary cannot. A binary built with a plain
+`go build` has no embedded catalog and starts at step 3.
+
+Templates are also distributed as `templates.zip` alongside each CodingBooth release.
 
 **Cache location:**
 ```
@@ -317,7 +335,7 @@ https://github.com/NawaMan/CodingBooth/releases/download/<version>/templates.zip
 
 **Extraction:** Every run extracts to a fresh temp directory (`/tmp/cb-init-<random>/`) and cleans up on completion. This prevents tampering with cached extractions — since templates generate files that end up in `.booth/` (including setup scripts and startup commands), integrity is critical.
 
-**Development override:** Use `--templates-path <dir>` or set `CB_TEMPLATES_PATH` to load templates from a local directory, skipping download entirely.
+**Development override:** Use `--templates-path <dir>` or set `CB_TEMPLATES_PATH` to load templates from a local directory. It wins over the embedded catalog, so an edit under `templates/` shows without a rebuild.
 
 ---
 
@@ -438,7 +456,8 @@ cli/src/
     │   └── compiler.go          # Compile() with collector pattern
     │
     └── cache/                   # Template download and caching
-        └── cache.go             # GitHub release download, zip extraction
+        ├── cache.go             # GitHub release download, zip extraction
+        └── embedded.go          # the catalog embedded in the binary
 ```
 
 ### Template Library
