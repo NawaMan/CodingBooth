@@ -68,6 +68,12 @@ check "login escapes a pane into the console, not window.top" \
         && grep -qF 'window.parent.location = window.location.href' "$BASE/web-ttyd-split/login.html" \
         && echo true || echo false)"
 
+# A booth: tab is same-origin with the console (/proxy/<port>/), so without
+# this the page sees the console as its referrer and an app that refuses to be
+# framed by its own origin (Excalidraw's "I'm not a pretzel!") will not render.
+check "web tab frames hide the console from the page's referrer" \
+    "$(grep -qF 'iframe.referrerPolicy = "no-referrer";' "$BASE/web-ttyd-split/index.html" && echo true || echo false)"
+
 if [[ "$ALL_PASSED" != "true" ]]; then
     exit 1
 fi

@@ -2757,6 +2757,13 @@
         iframe.className = "web-tab-frame";
         iframe.dataset.tabId = tab.id;
         iframe.title = tab.title || tab.display || "Web tab";
+        // A booth: target is served from /proxy/<port>/ on the console's own
+        // origin, so the page would see a same-origin document.referrer and
+        // an app that guards against being framed by itself (Excalidraw:
+        // "I'm not a pretzel!") refuses to render. This covers only the
+        // frame's own navigation — requests the page makes afterwards keep
+        // their Referer, which is what nginx routes root-absolute paths by.
+        iframe.referrerPolicy = "no-referrer";
         iframe.addEventListener("load", function() {
           applyIframeFallbackStyle(iframe);
           syncAddrFromIframe(iframe);
