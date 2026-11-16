@@ -45,6 +45,14 @@ func runConfig(version, buildDate string) {
 		runConfigPrint(version, args[1:])
 		return
 	}
+	if len(args) > 0 && args[0] == "repair" {
+		runConfigRepair(version, args[1:])
+		return
+	}
+	if len(args) > 0 && args[0] == "validate" {
+		runConfigValidate(version, args[1:])
+		return
+	}
 
 	// Parse target path (first non-flag argument)
 	targetPath := "."
@@ -1729,6 +1737,8 @@ func checkBoothWritable(targetPath string) string {
 func printConfigHelp() {
 	fmt.Println(`Usage: booth config [path] [flags]
        booth config print [path] [flags]
+       booth config repair [path] [--into <name>] [--dryrun] [--templates-path <dir>]
+       booth config validate [path] [--templates-path <dir>]
 
 Configure a CodingBooth environment. Opens an interactive TUI by default.
 Use --web for the same editor in a browser on the booth port, or --no-tui
@@ -1737,6 +1747,19 @@ for non-interactive CLI mode.
 booth config print lists what the booth is configured with — the templates,
 their params and extensions, as a save prints them — and writes nothing.
 Reconfigure flags apply, so it previews a change: print --add-select go+lsp.
+
+booth config repair makes files edited outside booth config count as generated
+again, when the edits read back: it re-stamps .booth/.generated, or rewrites
+only Boothfile/config.toml with the edits recorded in the header. It never
+forces — edits it cannot read back, or comments a rewrite would drop, are
+refused with the reasons and nothing is written. With --into <name>, lines no
+flag writes (an added install, run, setup, arg, or run-args entry) move into a
+project template, .booth/templates/<name>.toml, which joins the selection —
+still only when the result reads back exactly.
+
+booth config validate checks the same thing and writes nothing: it exits 0 when
+.booth/ holds what booth config writes, 1 when it does not — saying why, and
+whether booth config repair would fix it.
 
 If the target path already contains a .booth/Boothfile, the existing
 configuration is loaded as the baseline. CLI flags override the existing values.

@@ -934,6 +934,56 @@ With neither flag, config refuses and tells you both options — under `--dryrun
 
 `.bak` and `.new` are gitignored — they are merge scratch, not configuration.
 
+### Repairing without reconfiguring
+
+`booth config repair` is the third way, for edits that [read back](#edits-that-can-be-read-back):
+it makes the files count as generated again without changing what they do, and without a
+reconfigure. It is what the TUI does when you answer OK to "edited outside booth config".
+
+```bash
+./booth config repair            # --dryrun to see what it would do
+```
+
+| What it finds | What it does |
+| --- | --- |
+| Nothing edited | Says so; writes nothing |
+| The files already match what booth config writes; only `.booth/.generated` disagrees | Re-stamps `.booth/.generated` — no file content changes |
+| Edits that read back as flags (an added `timezone`, an env var, …) | Rewrites only `Boothfile`, `config.toml` and `owner-permission.yaml` with those flags recorded in the header, plus `.generated`. Setups, startups and seeds are not re-copied |
+| Edits that cannot be read back, comments a rewrite would drop, or a Boothfile booth config never wrote | Refuses with the reasons; writes nothing |
+
+It attempts and never forces: for the refused cases, `--beside` and `--overwrite` above are the ways
+through. It takes only `--dryrun`, `--templates-path` and `--into` — to change the booth, use
+`booth config`.
+
+**Lines no flag writes — `--into <name>`.** An added `install apt …`, `run …`, `setup …` with its
+`arg`, or a run-args entry like `--gpus all` has no flag, so plain repair refuses it. A
+[project template](#selection-sources) can write it, though, and `--into` makes one:
+
+```bash
+./booth config repair --into pnpm-native --dryrun   # shows the template it would write
+./booth config repair --into pnpm-native
+```
+
+Each run of such Boothfile lines becomes a segment in the order band between its neighbours (with
+the comments directly above it), each added `arg NAME=VALUE` a param, each unflagged run-args entry a
+`run-args` entry — in `.booth/templates/<name>.toml`, and `<name>` joins the selection. The result is
+proven first, on a copy of `.booth/`: the regenerated files must match yours line for line, losing no
+comment, or nothing is written. Template lines that were **removed, changed, or reordered** are still
+refused — a template can only add lines; a reconfigure takes the catalog's. `validate` (and a
+refusing repair) say when `--into` would work.
+
+A booth written by an older catalog shows its template updates as such lines: when `.booth/.generated`
+records no `templates=` release, pass that release's catalog with `--templates-path` to compare against
+it.
+
+`booth config validate` does the same reading and writes nothing. It exits `0` when `.booth/` holds
+what booth config writes and `1` when it does not, saying what is off and whether `repair` would fix
+it, so it can go in a pre-commit hook or CI:
+
+```bash
+./booth config validate          # Valid: .booth/ holds what booth config wrote.
+```
+
 ### In the TUI
 
 The TUI warns as soon as it opens, so you find out before configuring rather than after:

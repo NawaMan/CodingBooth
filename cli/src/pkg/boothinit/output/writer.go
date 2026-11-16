@@ -139,54 +139,8 @@ func writeOutput(out *BoothOutput, targetPath string, beside []string) error {
 		return fmt.Errorf("writing .gitignore: %w", err)
 	}
 
-	// Fingerprint what we write, so a later run can tell our own output from
-	// content a human has since edited. See guard.go. A diverted file is NOT
-	// recorded: what sits at the canonical path is still the user's own content,
-	// and must keep reading back as hand-written until they merge.
-	written := make(map[string]string, len(GuardedFiles))
-
-	writeGuarded := func(name, content string) error {
-		if content == "" {
-			return nil
-		}
-		if divert[name] {
-			return writeFile(filepath.Join(boothDir, name+".new"), content, 0644)
-		}
-		if err := writeFile(filepath.Join(boothDir, name), content, 0644); err != nil {
-			return err
-		}
-		written[name] = hashContent(content)
-		return nil
-	}
-
-	if out.Config != nil {
-		content := SerializeConfigToml(out.Config, out.Command, out.AdjustCommand)
-		if err := writeGuarded("config.toml", content); err != nil {
-			return fmt.Errorf("writing config.toml: %w", err)
-		}
-	}
-
-	if out.Boothfile != nil {
-		content := SerializeBoothfile(out.Boothfile, out.Command, out.AdjustCommand)
-		if err := writeGuarded("Boothfile", content); err != nil {
-			return fmt.Errorf("writing Boothfile: %w", err)
-		}
-	}
-
-	permContent := SerializeOwnerPermission(out.OwnerPerms, out.Command, out.AdjustCommand)
-	if permContent == "" {
-		permPath := filepath.Join(boothDir, OwnerPermissionName)
-		if isGeneratedFile(permPath) {
-			if err := os.Remove(permPath); err != nil {
-				return fmt.Errorf("removing %s: %w", OwnerPermissionName, err)
-			}
-		}
-	} else if err := writeGuarded(OwnerPermissionName, permContent); err != nil {
-		return fmt.Errorf("writing %s: %w", OwnerPermissionName, err)
-	}
-
-	if err := writeManifest(boothDir, written, out.TemplatesVersion); err != nil {
-		return fmt.Errorf("writing %s: %w", ManifestName, err)
+	if err := writeGuardedFiles(out, boothDir, divert); err != nil {
+		return err
 	}
 
 	// Always clean up stale generated startup files (from previous selections)
@@ -286,6 +240,74 @@ func writeOutput(out *BoothOutput, targetPath string, beside []string) error {
 	// coder rather than root from inside a booth. Best-effort, never fatal.
 	StampBoothOwnership(targetPath)
 
+	return nil
+}
+
+// WriteGuarded writes only the guarded files (Boothfile, config.toml,
+// owner-permission.yaml) and their fingerprint. Everything else in .booth/ —
+// setups, startups, home and seed files, .gitignore — is left exactly as it is.
+// It is for `booth config repair`, which makes a booth's own files generated
+// again without re-copying anything the templates own.
+func WriteGuarded(out *BoothOutput, targetPath string) error {
+	boothDir := filepath.Join(targetPath, ".booth")
+	if err := os.MkdirAll(boothDir, 0755); err != nil {
+		return fmt.Errorf("creating .booth/: %w", err)
+	}
+	return writeGuardedFiles(out, boothDir, nil)
+}
+
+// writeGuardedFiles writes the guarded files and records them in the manifest,
+// diverting any named in divert to a "<name>.new" sibling.
+func writeGuardedFiles(out *BoothOutput, boothDir string, divert map[string]bool) error {
+	// Fingerprint what we write, so a later run can tell our own output from
+	// content a human has since edited. See guard.go. A diverted file is NOT
+	// recorded: what sits at the canonical path is still the user's own content,
+	// and must keep reading back as hand-written until they merge.
+	written := make(map[string]string, len(GuardedFiles))
+
+	writeGuarded := func(name, content string) error {
+		if content == "" {
+			return nil
+		}
+		if divert[name] {
+			return writeFile(filepath.Join(boothDir, name+".new"), content, 0644)
+		}
+		if err := writeFile(filepath.Join(boothDir, name), content, 0644); err != nil {
+			return err
+		}
+		written[name] = hashContent(content)
+		return nil
+	}
+
+	if out.Config != nil {
+		content := SerializeConfigToml(out.Config, out.Command, out.AdjustCommand)
+		if err := writeGuarded("config.toml", content); err != nil {
+			return fmt.Errorf("writing config.toml: %w", err)
+		}
+	}
+
+	if out.Boothfile != nil {
+		content := SerializeBoothfile(out.Boothfile, out.Command, out.AdjustCommand)
+		if err := writeGuarded("Boothfile", content); err != nil {
+			return fmt.Errorf("writing Boothfile: %w", err)
+		}
+	}
+
+	permContent := SerializeOwnerPermission(out.OwnerPerms, out.Command, out.AdjustCommand)
+	if permContent == "" {
+		permPath := filepath.Join(boothDir, OwnerPermissionName)
+		if isGeneratedFile(permPath) {
+			if err := os.Remove(permPath); err != nil {
+				return fmt.Errorf("removing %s: %w", OwnerPermissionName, err)
+			}
+		}
+	} else if err := writeGuarded(OwnerPermissionName, permContent); err != nil {
+		return fmt.Errorf("writing %s: %w", OwnerPermissionName, err)
+	}
+
+	if err := writeManifest(boothDir, written, out.TemplatesVersion); err != nil {
+		return fmt.Errorf("writing %s: %w", ManifestName, err)
+	}
 	return nil
 }
 

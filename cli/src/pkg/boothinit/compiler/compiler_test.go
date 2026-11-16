@@ -7,6 +7,7 @@ package compiler
 import (
 	"testing"
 
+	"github.com/nawaman/codingbooth/src/pkg/boothinit/output"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/selection"
 	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
 	"github.com/stretchr/testify/assert"
@@ -957,17 +958,17 @@ func TestCompile_MultiTemplateFilesCombined(t *testing.T) {
 // --- Helper functions ---
 
 func TestMergeSegments_Empty(t *testing.T) {
-	assert.Equal(t, "", mergeSegments(nil))
+	assert.Equal(t, "", mergedBody(nil))
 }
 
 func TestMergeSegments_Single(t *testing.T) {
 	segs := []sourcedSegment{{Order: 50, Content: "hello\n", SourceName: "a"}}
-	assert.Equal(t, "hello\n", mergeSegments(segs))
+	assert.Equal(t, "hello\n", mergedBody(segs))
 }
 
 func TestMergeSegments_TrailingNewlineNormalized(t *testing.T) {
 	segs := []sourcedSegment{{Order: 50, Content: "hello\n\n\n", SourceName: "a"}}
-	assert.Equal(t, "hello\n", mergeSegments(segs))
+	assert.Equal(t, "hello\n", mergedBody(segs))
 }
 
 func TestBuildArgLines_Empty(t *testing.T) {
@@ -1389,4 +1390,22 @@ func TestCompile_CachePathsRecordedInConfig(t *testing.T) {
 	assert.Equal(t, []string{"home/coder/.gnupg:0700"}, out.Config.CacheDirs)
 	require.Len(t, out.Cache, 1)
 	require.Len(t, out.CacheDirs, 1)
+}
+
+func mergedBody(segs []sourcedSegment) string {
+	body, _ := mergeSegments(segs)
+	return body
+}
+
+func TestMergeSegments_SpansFollowTheMergedOrder(t *testing.T) {
+	segs := []sourcedSegment{
+		{Order: 60, Content: "late\n", SourceName: "b"},
+		{Order: 30, Content: "early\n", SourceName: "a"},
+	}
+	body, spans := mergeSegments(segs)
+	assert.Equal(t, "early\nlate\n", body)
+	assert.Equal(t, []output.BoothfileSpan{
+		{Order: 30, Source: "a", Content: "early"},
+		{Order: 60, Source: "b", Content: "late"},
+	}, spans)
 }

@@ -23,6 +23,9 @@ var ownedCommentPrefixes = []string{
 	"# Adjust with",
 }
 
+// IsOwnedComment reports whether a comment is one booth config writes itself.
+func IsOwnedComment(text string) bool { return isOwnedComment(text) }
+
 func isOwnedComment(text string) bool {
 	for _, prefix := range ownedCommentPrefixes {
 		if strings.HasPrefix(text, prefix) {
