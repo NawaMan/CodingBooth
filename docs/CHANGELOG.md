@@ -34,7 +34,9 @@ This file contains a list of changes for each released version.
   forces: edits it cannot read back, or comments a rewrite would drop, are refused with the
   reasons and nothing is written. `--dryrun` shows what it would do. `booth config validate`
   is the check-only form: exit 0 when `.booth/` is what booth config writes, 1 when not, saying
-  whether `repair` would fix it. See
+  whether `repair` would fix it. `repair --into <name>` moves lines no flag writes (an added
+  `install`, `run`, `setup` + `arg`, or a run-args entry like `--gpus all`) into a project template
+  `.booth/templates/<name>.toml` and selects it — proven to read back line for line first. See
   [Repairing without reconfiguring](BOOTH_CONFIG.md#repairing-without-reconfiguring).
 
 - **`booth config print` lists what a booth is configured with.** It prints the summary a save

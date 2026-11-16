@@ -83,6 +83,18 @@ type ConfigToml struct {
 // Content is the raw text of the Boothfile (already merged/ordered segments).
 type BoothfileContent struct {
 	Content string
+
+	// Spans are the template segments Content's body is made of, in order — which
+	// band and template each run of lines came from. Not written anywhere; repair
+	// --into uses it to place moved lines in the band they sat in.
+	Spans []BoothfileSpan
+}
+
+// BoothfileSpan is one template segment as it landed in the Boothfile.
+type BoothfileSpan struct {
+	Order   int
+	Source  string // the template, or "parent+extension"
+	Content string
 }
 
 // FileContent represents a file to be written to a target location.

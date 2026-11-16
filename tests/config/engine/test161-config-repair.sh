@@ -5,6 +5,7 @@
 # home-seed file is not re-copied. An edit it cannot read back is refused, with
 # nothing written. It attempts; it never forces. `booth config validate` is the
 # same reading, check-only: exit 0 when generated, 1 when not, nothing written.
+# `repair --into <name>` moves lines no flag writes into a project template.
 source "$(dirname "$0")/../test-helpers--source.sh"
 
 begin
@@ -81,7 +82,35 @@ check $? "an edit that cannot be read back is refused"
 [[ -z "$(changed-files)" ]]
 check $? "and nothing is written"
 
-! run booth config validate $prj
-check $? "validate: an unrepairable edit is not valid"
+validate_out=$(booth config validate $prj 2>&1)
+[[ $? -ne 0 && "$validate_out" == *"repair --into local"* ]]
+check $? "validate: a line no flag writes is not valid, and --into would fix it"
+
+snapshot
+run booth config repair $prj --into mine --dryrun
+[[ $? -eq 0 && -z "$(changed-files)" ]]
+check $? "--into --dryrun writes nothing"
+
+run booth config repair $prj --into mine
+check $? "--into moves the line into a project template"
+
+[[ "$(changed-files)" == ".booth/templates .generated Boothfile config.toml " ]]
+check $? "only the guarded files, the fingerprint and the new template change"
+
+grep -q "^run echo mine$" "$booth_dir/templates/mine.toml" \
+    && grep -q '^# Configured by:.*/mine' "$booth_dir/Boothfile" \
+    && grep -q '^run echo mine$' "$booth_dir/Boothfile"
+check $? "the line is in the template, the template is selected, the line is kept"
+
+run booth config validate $prj
+check $? "validate: the booth is valid again"
+
+sed -i '/^setup claude-code/d' "$booth_dir/Boothfile"
+snapshot
+! run booth config repair $prj --into other
+check $? "--into refuses a removed template line"
+
+[[ -z "$(changed-files)" ]]
+check $? "and nothing is written"
 
 finally

@@ -952,7 +952,29 @@ reconfigure. It is what the TUI does when you answer OK to "edited outside booth
 | Edits that cannot be read back, comments a rewrite would drop, or a Boothfile booth config never wrote | Refuses with the reasons; writes nothing |
 
 It attempts and never forces: for the refused cases, `--beside` and `--overwrite` above are the ways
-through. It takes only `--dryrun` and `--templates-path` — to change the booth, use `booth config`.
+through. It takes only `--dryrun`, `--templates-path` and `--into` — to change the booth, use
+`booth config`.
+
+**Lines no flag writes — `--into <name>`.** An added `install apt …`, `run …`, `setup …` with its
+`arg`, or a run-args entry like `--gpus all` has no flag, so plain repair refuses it. A
+[project template](#selection-sources) can write it, though, and `--into` makes one:
+
+```bash
+./booth config repair --into pnpm-native --dryrun   # shows the template it would write
+./booth config repair --into pnpm-native
+```
+
+Each run of such Boothfile lines becomes a segment in the order band between its neighbours (with
+the comments directly above it), each added `arg NAME=VALUE` a param, each unflagged run-args entry a
+`run-args` entry — in `.booth/templates/<name>.toml`, and `<name>` joins the selection. The result is
+proven first, on a copy of `.booth/`: the regenerated files must match yours line for line, losing no
+comment, or nothing is written. Template lines that were **removed, changed, or reordered** are still
+refused — a template can only add lines; a reconfigure takes the catalog's. `validate` (and a
+refusing repair) say when `--into` would work.
+
+A booth written by an older catalog shows its template updates as such lines: when `.booth/.generated`
+records no `templates=` release, pass that release's catalog with `--templates-path` to compare against
+it.
 
 `booth config validate` does the same reading and writes nothing. It exits `0` when `.booth/` holds
 what booth config writes and `1` when it does not, saying what is off and whether `repair` would fix

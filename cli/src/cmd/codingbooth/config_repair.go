@@ -46,7 +46,7 @@ const (
 // The flags each command takes. Anything a reconfigure takes beyond these would
 // make it a reconfigure, which neither is.
 var (
-	repairFlags   = map[string]bool{"--dryrun": true, "--templates-path": true}
+	repairFlags   = map[string]bool{"--dryrun": true, "--templates-path": true, "--into": true}
 	validateFlags = map[string]bool{"--templates-path": true}
 )
 
@@ -79,8 +79,20 @@ func runRepairCommand(version string, args []string, mode repairMode) {
 		targetPath = args[0]
 		flagArgs = args[1:]
 	}
+	into := ""
+	var initArgs []string
 	for i := 0; i < len(flagArgs); i++ {
 		arg := flagArgs[i]
+		if arg == "--into" && allowed[arg] {
+			if i+1 >= len(flagArgs) || strings.HasPrefix(flagArgs[i+1], "-") {
+				fmt.Fprintln(os.Stderr, "Error: --into needs a template name: booth config repair --into <name>")
+				os.Exit(1)
+			}
+			i++
+			into = flagArgs[i]
+			continue
+		}
+		initArgs = append(initArgs, arg)
 		switch {
 		case arg == "--help" || arg == "-h":
 			printConfigHelp()
@@ -90,11 +102,14 @@ func runRepairCommand(version string, args []string, mode repairMode) {
 				"To change the booth, run booth config (or booth config --no-tui with the flags).\n", name, arg, what)
 			os.Exit(1)
 		case arg == "--templates-path":
-			i++
+			if i+1 < len(flagArgs) {
+				i++
+				initArgs = append(initArgs, flagArgs[i])
+			}
 		}
 	}
 
-	err := repairBooth(os.Stdout, version, targetPath, parseInitFlags(flagArgs), mode)
+	err := repairBooth(os.Stdout, version, targetPath, parseInitFlags(initArgs), mode, into)
 	if errors.Is(err, errInvalid) {
 		os.Exit(1)
 	}
@@ -108,7 +123,10 @@ func runRepairCommand(version string, args []string, mode repairMode) {
 // w. A refusal is an error whose text is the whole message. In repairCheck mode
 // nothing is written: a booth repair could fix is reported to w and returns
 // errInvalid; one it could not returns the refusal, prefixed errNotValid.
-func repairBooth(w io.Writer, version, targetPath string, cli initFlags, mode repairMode) error {
+//
+// into names the project template --into moves lines no flag writes into; "" for
+// none.
+func repairBooth(w io.Writer, version, targetPath string, cli initFlags, mode repairMode, into string) error {
 	check := mode == repairCheck
 	refused := errNotRepaired
 	if check {
@@ -140,11 +158,37 @@ func repairBooth(w io.Writer, version, targetPath string, cli initFlags, mode re
 		return fmt.Errorf("%v\n%s %s not written by booth config (no \"# Configured by:\" header), so there is nothing to read the edits back against.\n"+
 			"To generate it: booth config --no-tui --select <selection> --beside (keeps yours, writes <name>.new).",
 			refused, files, isOrAre(edited))
+	case !adopt.adopted && into != "" && !check:
+		return repairInto(w, version, targetPath, into, files, baseline, cli)
 	case !adopt.adopted:
+		// Would moving the lines no flag writes into a template do it?
+		probe, probeReasons := planInto(version, targetPath, intoProbeName, baseline, cli)
+		if len(probeReasons) == 0 {
+			if check {
+				fmt.Fprintf(w, "Not valid: %s %s edited outside booth config, with lines no booth config flag writes.\n", files, isOrAre(edited))
+				fmt.Fprintf(w, "booth config repair --into %s moves them into .booth/templates/%s.toml and selects it:\n", intoProbeName, intoProbeName)
+				for _, line := range probe.describe() {
+					fmt.Fprintf(w, "  %s\n", line)
+				}
+				return errInvalid
+			}
+		}
+
 		var b strings.Builder
 		fmt.Fprintf(&b, "%v\n%s %s edited outside booth config, and the edits cannot be read back:\n", refused, files, isOrAre(edited))
 		for _, reason := range adopt.reasons {
 			fmt.Fprintf(&b, "  - %s\n", reason)
+		}
+		if len(probeReasons) == 0 {
+			fmt.Fprintf(&b, "No booth config flag writes those lines, but a project template can: booth config repair --into <name>\n"+
+				"moves them into .booth/templates/<name>.toml and selects it (--dryrun shows it first).")
+			return errors.New(b.String())
+		}
+		if intoWouldHelp(probe, probeReasons) {
+			b.WriteString("Moving the lines no flag writes into a template (repair --into) does not fix it either:\n")
+			for _, reason := range probeReasons {
+				fmt.Fprintf(&b, "  - %s\n", reason)
+			}
 		}
 		b.WriteString("Undo those edits, or run booth config to decide (--beside keeps yours; --overwrite replaces them, kept as <name>.bak).")
 		return errors.New(b.String())
@@ -154,6 +198,9 @@ func repairBooth(w io.Writer, version, targetPath string, cli initFlags, mode re
 			refused, files, lostCommentsText(adopt.lost))
 	}
 
+	if into != "" && !check {
+		fmt.Fprintf(w, "Nothing to move into %s: the edits read back without a template.\n", into)
+	}
 	if adopt.unchanged {
 		switch {
 		case check:
@@ -249,4 +296,69 @@ func matchVerb(names []string) string {
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
+}
+
+// repairInto is repair --into: the edits that no flag writes move into the project
+// template name, which joins the selection. Refused, with nothing written, unless
+// the result is proven to read back.
+func repairInto(w io.Writer, version, targetPath, name, files string, baseline boothBaseline, cli initFlags) error {
+	plan, reasons := planInto(version, targetPath, name, baseline, cli)
+	if len(reasons) > 0 {
+		var b strings.Builder
+		fmt.Fprintf(&b, "%v\nThe edits in %s cannot be moved into a template %s:\n", errNotRepaired, files, name)
+		for _, reason := range reasons {
+			fmt.Fprintf(&b, "  - %s\n", reason)
+		}
+		b.WriteString("Undo those edits, or run booth config to decide (--beside keeps yours; --overwrite replaces them, kept as <name>.bak).")
+		return errors.New(b.String())
+	}
+
+	rel := filepath.Join(".booth", "templates", name+".toml")
+	verb := "Repaired"
+	if cli.dryrun {
+		verb = "Would repair"
+	}
+	fmt.Fprintf(w, "%s: the lines in %s that no booth config flag writes move into %s, selected as %s:\n", verb, files, rel, name)
+	for _, line := range plan.describe() {
+		fmt.Fprintf(w, "  %s\n", line)
+	}
+	if changes := describeAdoptedChanges(plan.adopt, baseline.flags); len(changes) > 0 {
+		fmt.Fprintln(w, "Recorded in the header:")
+		for _, change := range changes {
+			fmt.Fprintf(w, "  %s\n", change)
+		}
+	}
+	if cli.dryrun {
+		fmt.Fprintf(w, "\n%s would hold:\n", rel)
+		for _, line := range strings.Split(strings.TrimRight(plan.template, "\n"), "\n") {
+			fmt.Fprintf(w, "  | %s\n", line)
+		}
+		return nil
+	}
+
+	path := plan.templatePath(targetPath)
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return fmt.Errorf("Error: %v", err)
+	}
+	if err := os.WriteFile(path, []byte(plan.template), 0o644); err != nil {
+		return fmt.Errorf("Error: %v", err)
+	}
+	out, err := compileRepaired(version, targetPath, plan.flags, cli)
+	if err != nil {
+		os.Remove(path)
+		return fmt.Errorf("%v\n%v", errNotRepaired, err)
+	}
+	if err := output.WriteGuarded(out, targetPath); err != nil {
+		return fmt.Errorf("Error: %v", err)
+	}
+	if still := output.Drifted(targetPath); len(still) > 0 {
+		return fmt.Errorf("Error: .booth/%s still differs from what booth config writes after the repair", strings.Join(still, ", .booth/"))
+	}
+	return nil
+}
+
+// intoWouldHelp says whether a failed --into probe is worth reporting: it found
+// lines it could move, and something else stopped it.
+func intoWouldHelp(probe intoPlan, reasons []string) bool {
+	return len(reasons) > 0 && (strings.Contains(strings.Join(reasons, "\n"), "can only add") || strings.Contains(strings.Join(reasons, "\n"), "reordered"))
 }

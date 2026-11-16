@@ -381,11 +381,11 @@ func (c *collector) build() (*output.BoothOutput, error) {
 	out.Config = cfg
 
 	// Boothfile
-	boothfileBody := mergeSegments(c.boothfileSegs)
+	boothfileBody, spans := mergeSegments(c.boothfileSegs)
 	argLines := buildArgLines(withoutRuntimeParams(params, c.runtimeParams))
 	if argLines != "" || boothfileBody != "" {
 		content := argLines + boothfileBody
-		out.Boothfile = &output.BoothfileContent{Content: content}
+		out.Boothfile = &output.BoothfileContent{Content: content, Spans: spans}
 	}
 
 	// Startups — emit each segment as a separate file
@@ -506,18 +506,21 @@ func sortSegments(segs []sourcedSegment) {
 // catalog), it says nothing about install dependencies, so a segment is never
 // placed ahead of a template it Requires regardless of where order/tiebreak
 // would otherwise put it — see topoSortSegments.
-func mergeSegments(segs []sourcedSegment) string {
+func mergeSegments(segs []sourcedSegment) (string, []output.BoothfileSpan) {
 	if len(segs) == 0 {
-		return ""
+		return "", nil
 	}
 
 	segs = topoSortSegments(segs)
 
 	var parts []string
+	var spans []output.BoothfileSpan
 	for _, seg := range segs {
-		parts = append(parts, strings.TrimRight(seg.Content, "\n"))
+		content := strings.TrimRight(seg.Content, "\n")
+		parts = append(parts, content)
+		spans = append(spans, output.BoothfileSpan{Order: seg.Order, Source: seg.SourceName, Content: content})
 	}
-	return strings.Join(parts, "\n") + "\n"
+	return strings.Join(parts, "\n") + "\n", spans
 }
 
 // topoSortSegments orders segments by (Order, SourceName) as a baseline, then

@@ -430,7 +430,7 @@ func Spec() *Command {
 				Subs: []*Command{
 					{Name: "print", Desc: "Print what the booth is configured with", Flags: configFlags, Args: []Kind{Dir}},
 					{Name: "repair", Desc: "Make hand-edited booth files generated again, if they read back", Args: []Kind{Dir},
-						Flags: []Flag{boolFlag("--dryrun"), flag(Dir, "--templates-path")}},
+						Flags: []Flag{boolFlag("--dryrun"), flag(Dir, "--templates-path"), flag(Text, "--into")}},
 					{Name: "validate", Desc: "Check that the booth files are what booth config writes", Args: []Kind{Dir},
 						Flags: []Flag{flag(Dir, "--templates-path")}},
 				}},
