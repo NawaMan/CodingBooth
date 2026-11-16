@@ -74,6 +74,12 @@ check "login escapes a pane into the console, not window.top" \
 check "web tab frames hide the console from the page's referrer" \
     "$(grep -qF 'iframe.referrerPolicy = "no-referrer";' "$BASE/web-ttyd-split/index.html" && echo true || echo false)"
 
+# Reload must go through that policy again. A true reload takes its referrer
+# from the page being reloaded, which for a /proxy/ page is the console's origin.
+check "Reload re-navigates a web tab instead of reloading it" \
+    "$(grep -qF 'if (iframe.classList.contains("web-tab-frame")) {' "$BASE/web-ttyd-split/index.html" \
+        && grep -qF 'renavigateWebFrame(iframe);' "$BASE/web-ttyd-split/index.html" && echo true || echo false)"
+
 if [[ "$ALL_PASSED" != "true" ]]; then
     exit 1
 fi
