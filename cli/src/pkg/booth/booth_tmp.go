@@ -34,6 +34,9 @@ func PrepareBoothTmp(ctx appctx.AppContext) appctx.AppContext {
 	// We must not create .booth/ as a side effect — it would cause the booth
 	// to mount an empty .booth/ directory on subsequent runs.
 	if info, err := os.Stat(boothDir); err != nil || !info.IsDir() {
+		if ctx.Record() {
+			fmt.Fprintln(os.Stderr, "Warning: --record needs a .booth/ folder in the code folder (the session is kept in .booth/.tmp/record/); nothing will be recorded. Create one with: booth config")
+		}
 		return ctx
 	}
 
@@ -57,6 +60,7 @@ func PrepareBoothTmp(ctx appctx.AppContext) appctx.AppContext {
 		}
 	}
 	lifecyclelog.TrimAt(boothDir)
+	lifecyclelog.ClearRecordingAt(boothDir)
 
 	// Create .tmp/ directory if it doesn't exist
 	if err := os.MkdirAll(tmpDir, 0755); err != nil {
@@ -81,8 +85,8 @@ func PrepareBoothTmp(ctx appctx.AppContext) appctx.AppContext {
 	return ctx
 }
 
-// keepTmpEntry is true for what emptying .booth/.tmp/ leaves: the lifecycle log, and the git
-// pointer files booths mount (GitPointersTmpName).
+// keepTmpEntry is true for what emptying .booth/.tmp/ leaves: the lifecycle log, a recorded
+// session (booth --record), and the git pointer files booths mount (GitPointersTmpName).
 func keepTmpEntry(name string) bool {
 	return lifecyclelog.Keep(name) || name == GitPointersTmpName
 }

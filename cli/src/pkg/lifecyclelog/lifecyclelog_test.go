@@ -58,8 +58,40 @@ func TestAppendNeverCreatesBoothDir(t *testing.T) {
 }
 
 func TestKeep(t *testing.T) {
-	if !Keep("lifecycle.log") || Keep("booth-startup.txt") || Keep("messages") {
-		t.Errorf("Keep should hold lifecycle.log only")
+	if !Keep("lifecycle.log") || !Keep("record") || Keep("booth-startup.txt") || Keep("messages") {
+		t.Errorf("Keep should hold lifecycle.log and a recorded session only")
+	}
+}
+
+// A host line reaches the activity log only while the recorder's marker is
+// there: `booth stop` knows nothing of --record, the marker is how it is told.
+func TestAppendCopiesIntoActivityLogOnlyWhileRecording(t *testing.T) {
+	code := t.TempDir()
+	boothDir := filepath.Join(code, ".booth")
+	recordDir := filepath.Join(boothDir, ".tmp", RecordDirName)
+	os.MkdirAll(recordDir, 0755)
+
+	Append(code, "demo", "started")
+	if _, err := os.Stat(ActivityPathAt(boothDir)); !os.IsNotExist(err) {
+		t.Fatalf("no marker: the activity log must not be written")
+	}
+
+	os.WriteFile(filepath.Join(recordDir, recordingMarker), nil, 0644)
+	Append(code, "demo", "stop-requested", "by=host-cli")
+	data, _ := os.ReadFile(ActivityPathAt(boothDir))
+	if !strings.HasSuffix(string(data), " demo stop-requested by=host-cli\n") {
+		t.Errorf("activity log = %q, want the host line", data)
+	}
+
+	ClearRecordingAt(boothDir)
+	Append(code, "demo", "exited")
+	after, _ := os.ReadFile(ActivityPathAt(boothDir))
+	if string(after) != string(data) {
+		t.Errorf("after ClearRecordingAt the activity log grew: %q", after)
+	}
+	lifecycle, _ := os.ReadFile(Path(code))
+	if strings.Count(string(lifecycle), "\n") != 3 {
+		t.Errorf("the lifecycle log takes every line regardless, got %q", lifecycle)
 	}
 }
 

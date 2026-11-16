@@ -42,9 +42,36 @@ func PathAt(boothDir string) string {
 	return filepath.Join(boothDir, ".tmp", FileName)
 }
 
-// Keep reports whether an entry of .booth/.tmp/ survives the start/exit wipe.
+// RecordDirName is the folder inside .booth/.tmp/ that a recorded booth
+// (booth --record) keeps its session in: the activity log, the file snapshots
+// and the terminal recordings. Written by booth--record, in the booth.
+const RecordDirName = "record"
+
+// ActivityFileName is the activity log's name inside the record folder. Same
+// line format as the lifecycle log.
+const ActivityFileName = "activity.log"
+
+// recordingMarker is the file booth--record leaves in the record folder while a
+// booth of this code folder is recorded. It is how a host command that knows
+// nothing of --record (booth stop, booth remove) still knows to copy its line.
+const recordingMarker = ".recording"
+
+// ActivityPathAt is the activity log inside an explicit .booth directory.
+func ActivityPathAt(boothDir string) string {
+	return filepath.Join(boothDir, ".tmp", RecordDirName, ActivityFileName)
+}
+
+// ClearRecordingAt removes the recording marker. Run at booth start: a recorded
+// booth's recorder puts it back, and one that is not recorded must not have its
+// host lines copied into an older session's activity log.
+func ClearRecordingAt(boothDir string) {
+	_ = os.Remove(filepath.Join(boothDir, ".tmp", RecordDirName, recordingMarker))
+}
+
+// Keep reports whether an entry of .booth/.tmp/ survives the start/exit wipe:
+// this log, and a recorded session — both are for reading after the booth.
 func Keep(entryName string) bool {
-	return entryName == FileName
+	return entryName == FileName || entryName == RecordDirName
 }
 
 // Line formats one log line.
@@ -83,7 +110,24 @@ func AppendAt(boothDir string, boothName string, event string, details ...string
 		return
 	}
 	defer file.Close()
-	_, _ = file.WriteString(Line(time.Now(), boothName, event, details...) + "\n")
+	line := Line(time.Now(), boothName, event, details...) + "\n"
+	_, _ = file.WriteString(line)
+	appendActivity(boothDir, line)
+}
+
+// appendActivity copies a host line into the activity log of a recorded booth,
+// so the session reads as one story there too. No marker, no copy.
+func appendActivity(boothDir string, line string) {
+	recordDir := filepath.Join(boothDir, ".tmp", RecordDirName)
+	if _, err := os.Stat(filepath.Join(recordDir, recordingMarker)); err != nil {
+		return
+	}
+	file, err := os.OpenFile(filepath.Join(recordDir, ActivityFileName), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+	_, _ = file.WriteString(line)
 }
 
 // Trim keeps the log under maxSize by dropping its oldest lines, cutting at a

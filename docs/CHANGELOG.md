@@ -4,6 +4,16 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Session recording: `booth --record`.** A booth started with `--record` (or `record = true`,
+  `CB_RECORD=true`) keeps what is done in it, on the host in `.booth/.tmp/record/`: an activity
+  log (every command typed in bash or zsh with its exit status and duration, ports that start
+  and stop listening and the process behind them, `booth--expose` tunnels, and the lifecycle
+  events), a git repository of file snapshots taken every 30 seconds, and an asciicast
+  recording of every Console UI pane. `booth logs activity` reads the log, with `-f` to follow
+  it. Every shell in a recorded booth says so. It shows how someone worked, for an interview
+  or a class; it is not tamper-proof, since the person in the booth has sudo. New
+  **[booth record](BOOTH_RECORD.md)** has what is kept, how to read it, and the decisions
+  behind it.
 - **The template catalog is inside the binary.** `booth config` and `booth template` no longer
   download `templates.zip` for the binary's own version, so they work offline and on a first
   run. Another version (`--version`, or the one a booth was generated with) still comes from the

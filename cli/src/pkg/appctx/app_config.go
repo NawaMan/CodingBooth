@@ -128,9 +128,12 @@ type AppConfig struct {
 	LogTime           bool   `toml:"log-time,omitempty"            envconfig:"CB_LOG_TIME" default:"false"`
 	PersistHome       bool   `toml:"persist-home,omitempty"        envconfig:"CB_PERSIST_HOME" default:"false"`
 	HideWelcome       bool   `toml:"hide-welcome,omitempty"        envconfig:"CB_HIDE_WELCOME" default:"false"`
-	IdleTime          int    `toml:"idle-time,omitempty"           envconfig:"CB_IDLE_TIME" default:"0"`
-	IdleShutdownTime  int    `toml:"idle-shutdown-time,omitempty"  envconfig:"CB_IDLE_SHUTDOWN_TIME" default:"0"`
-	IdleExitCode      int    `toml:"idle-exit-code,omitempty"      envconfig:"CB_IDLE_EXIT_CODE" default:"0"`
+	// Record turns on the session recorder (booth--record) in the booth: commands,
+	// terminal output, file snapshots and ports, kept in .booth/.tmp/record/.
+	Record           bool `toml:"record,omitempty"              envconfig:"CB_RECORD" default:"false"`
+	IdleTime         int  `toml:"idle-time,omitempty"           envconfig:"CB_IDLE_TIME" default:"0"`
+	IdleShutdownTime int  `toml:"idle-shutdown-time,omitempty"  envconfig:"CB_IDLE_SHUTDOWN_TIME" default:"0"`
+	IdleExitCode     int  `toml:"idle-exit-code,omitempty"      envconfig:"CB_IDLE_EXIT_CODE" default:"0"`
 
 	// ExpectedViewerCount is how many pages may view the booth before the Booth
 	// panel shows the viewer count: the count shows only when it is above this.
@@ -301,6 +304,7 @@ func (config AppConfig) String() string {
 	fmt.Fprintf(&str, "    Daemon:            %t\n", config.Daemon)
 	fmt.Fprintf(&str, "    Browser:           %t\n", config.Browser)
 	fmt.Fprintf(&str, "    HideWelcome:       %t\n", config.HideWelcome)
+	fmt.Fprintf(&str, "    Record:            %t\n", config.Record)
 	fmt.Fprintf(&str, "    AppleLowPorts:     %t\n", config.AppleLowPorts)
 	fmt.Fprintf(&str, "    VmMemory:          %s\n", config.VmMemory)
 	fmt.Fprintf(&str, "    VmCpus:            %s\n", config.VmCpus)

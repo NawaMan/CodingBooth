@@ -452,6 +452,7 @@ User-facing guides:
 - **[booth example](docs/BOOTH_EXAMPLE.md)** — Pre-built example workspaces
 - **[booth showcase](docs/BOOTH_SHOWCASE.md)** — Browse and import booths published on CodingBooths.online
 - **[booth lifecycle](docs/BOOTH_LIFECYCLE.md)** — Container lifecycle: keep-alive, start, stop, restart, remove, prune, logs
+- **[booth record](docs/BOOTH_RECORD.md)** — Session recording (`--record`): commands, terminal output, file snapshots, ports
 - **[booth tools](docs/BOOTH_TOOLS.md)** — Copy files and inspect booth state
 - **[booth connect](docs/BOOTH_CONNECT.md)** — Connect to running booths: open a shell or run commands
 - **[booth variants](docs/BOOTH_VARIANTS.md)** — Variant details, aliases, desktop configuration, clipboard, and use cases

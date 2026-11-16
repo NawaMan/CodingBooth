@@ -158,6 +158,7 @@ var runFlags = []Flag{
 	boolFlag("--daemon"),
 	boolFlag("--keep-alive"),
 	boolFlag("--hide-welcome"),
+	boolFlag("--record"),
 	boolFlag("--persist-home"),
 	boolFlag("--public"),
 	boolFlag("--ok-public"),

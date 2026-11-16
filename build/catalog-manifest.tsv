@@ -395,11 +395,13 @@ install	uv	1.0.0	96850ee91ade44ee60d37f9d133603381f485fa169d2636b9d168a784a31c17
 install	yarn	1.0.0	c7dae3e93b54c1052224c765e33748106f26da79adc97725b5c12a6134e0efce	variants/base/setups/yarn--install.sh
 helper	booth--console-reset	0.1.0	d74c9ed6f3e001b17ddb8ff3acd1f743959a2adeb911ae4277a86853415ce505	variants/base/setups/booth--console-reset
 helper	booth--envs	1.0.0	12d1b1092b570ba3129adcc326672f5fcfc828d6eefe6c5312f8bd8bce96d41d	variants/base/setups/booth--envs
-helper	booth--expose	1.0.1	8f57a17ea8493ab895c437b5ea18f5f6b7e8cc0e7417d7e744f37487ecdc35d1	variants/base/setups/booth--expose
+helper	booth--expose	1.1.0	15b7640da2887aec52a8ab7492ffe2b4e6494c04f6270f9206672d3a49277eea	variants/base/setups/booth--expose
 helper	booth--idle-monitor	1.0.0	bd5c81c416f04c2ac415482a17d3bade424219ada60864305a4e45c8a9e00186	variants/base/setups/booth--idle-monitor
 helper	booth--info	1.0.1	c9b1ec967222372e600a42102b264289904a39aa46e3d4e488716511e6764a38	variants/base/setups/booth--info
-helper	booth--lifecycle-log	0.1.0	97553f9e1374ba00cc29bb6da4436132e5a9c84624b006b5f93009e8f3d58bae	variants/base/setups/booth--lifecycle-log
+helper	booth--lifecycle-log	0.2.0	ab036f4fa220fff45d886a18aba99958029ac96b44948468d521d2cb32833347	variants/base/setups/booth--lifecycle-log
 helper	booth--msg	1.0.0	d47d05298421df358bf477766632feba3459011db13d41cc652b510fb49ff8c0	variants/base/setups/booth--msg
+helper	booth--record	0.1.0	5e8490ae7f73135c2a24fb99cf4dc6ed607ca6c9a6003ee1ca16706844351fc3	variants/base/setups/booth--record
+helper	booth--record-cast	0.1.0	9040bfba82b77e3708f5e01d16f2585ec8c0f93360ba134355a390572771eee9	variants/base/setups/booth--record-cast
 helper	booth--restart	1.0.0	ba42f1b4055bd6aa52e398d72c7cc33a5df7747a41d250080b47c51b6c0e6761	variants/base/setups/booth--restart
 helper	booth--shutdown	1.0.0	2b7d830b4da0ac0cd237e304c90454dda06febf68fe86c869ce424fa7da8b0b6	variants/base/setups/booth--shutdown
 helper	booth--theme	0.1.1	438e1bcb87e380d6e4013ed3dac1780bb4ae45aa110d65e45174093c1de40469	variants/base/setups/booth--theme

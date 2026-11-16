@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"time"
 
 	"github.com/nawaman/codingbooth/src/pkg/lifecyclelog"
@@ -21,21 +22,35 @@ import (
 // is stopped, or removed and gone from `booth list`.
 const lifecycleService = "lifecycle"
 
+// activityService is the name `booth logs activity` takes: the activity log of a
+// booth started with --record (commands, ports, snapshots, lifecycle events),
+// also on the host, in .booth/.tmp/record/. See docs/BOOTH_RECORD.md.
+const activityService = "activity"
+
+// hostLogPath is the file of a host-read service inside a .booth directory.
+func hostLogPath(boothDir string, service string) string {
+	if service == activityService {
+		return lifecyclelog.ActivityPathAt(boothDir)
+	}
+	return lifecyclelog.PathAt(boothDir)
+}
+
 // lifecycleFollowInterval is how often `booth logs -f lifecycle` checks the file.
 const lifecycleFollowInterval = 500 * time.Millisecond
 
-// wantsLifecycleLog reports whether the command asks for the lifecycle log, and
+// wantsLifecycleLog reports which host-read log (lifecycle or activity) the
+// command asks for, "" when neither, and
 // rejects mixing it with in-booth services: those are read through the engine,
 // this one from the host, and one command does one or the other.
-func wantsLifecycleLog(opts logsOptions) (bool, error) {
-	found := false
+func wantsLifecycleLog(opts logsOptions) (string, error) {
+	found := ""
 	for _, service := range opts.services {
-		if service == lifecycleService {
-			found = true
+		if service == lifecycleService || service == activityService {
+			found = service
 		}
 	}
-	if found && len(opts.services) > 1 {
-		return false, commandExit(1, "Error: the lifecycle log is read from the host, not the booth; ask for it on its own: booth logs lifecycle")
+	if found != "" && len(opts.services) > 1 {
+		return "", commandExit(1, fmt.Sprintf("Error: the %s log is read from the host, not the booth; ask for it on its own: booth logs %s", found, found))
 	}
 	return found, nil
 }
@@ -65,7 +80,7 @@ func lifecycleLogCodePath(opts logsOptions, containers []managedContainer, cwd s
 }
 
 // showLifecycleLog prints (or follows) the lifecycle log of the booth opts names.
-func showLifecycleLog(opts logsOptions, stdout io.Writer, stderr io.Writer) error {
+func showLifecycleLog(opts logsOptions, service string, stdout io.Writer, stderr io.Writer) error {
 	var containers []managedContainer
 	if opts.name != "" {
 		var err error
@@ -83,15 +98,18 @@ func showLifecycleLog(opts logsOptions, stdout io.Writer, stderr io.Writer) erro
 		return commandExit(1, err.Error())
 	}
 
-	path := lifecyclelog.Path(codePath)
+	path := hostLogPath(filepath.Join(codePath, ".booth"), service)
 	// A named express booth logs under cb.booth-dir, not <code>/.booth.
 	if opts.code == "" && opts.name != "" {
 		if container, found := findByName(containers, opts.name); found && container.BoothDir != "" {
-			path = lifecyclelog.PathAt(container.BoothDir)
+			path = hostLogPath(container.BoothDir, service)
 		}
 	}
 	content, err := os.ReadFile(path)
 	if errors.Is(err, os.ErrNotExist) && !opts.follow {
+		if service == activityService {
+			return commandExit(1, fmt.Sprintf("No activity log at %s: the booth of %s was not started with --record (or has not started yet).", path, codePath))
+		}
 		return commandExit(1, fmt.Sprintf("No lifecycle log at %s yet: nothing has been recorded for the booth of %s.", path, codePath))
 	}
 	if err != nil && !errors.Is(err, os.ErrNotExist) {

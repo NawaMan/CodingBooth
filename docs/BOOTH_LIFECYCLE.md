@@ -339,6 +339,7 @@ Show what a booth printed, or the logs its services wrote.
 ./booth logs --startup             # /tmp/startups.log, the image's startup hooks
 ./booth logs --name myproject      # another booth
 ./booth logs lifecycle             # what happened to the booth: started, stopped, idle, …
+./booth logs activity              # what was done in a booth run with --record (BOOTH_RECORD.md)
 ```
 
 With no service named it is `<engine> logs` for the booth: the main process (ttyd, code-server,

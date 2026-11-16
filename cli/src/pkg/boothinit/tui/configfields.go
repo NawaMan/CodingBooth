@@ -241,6 +241,8 @@ var fieldDisplays = []fieldDisplay{
 		Detail: "Container directories kept under .booth/shared/ as whole-dir\nbind mounts. Intended for git — team-shared state.\n\nExample:\n  home/coder/.local/share/code-server/User/snippets\n\nDo not put secrets, cookies, or full browser profiles."},
 
 	// --- Session ---
+	{Key: "record", Label: "Record Session", Group: "Session",
+		Detail: "Record what is done in the booth: commands typed,\nterminal output, file changes (git snapshots), ports\nopened and closed. Kept on the host in\n.booth/.tmp/record/; read with `booth logs activity`.\n\nEvery shell in the booth says that it is recorded.\nSee docs/BOOTH_RECORD.md."},
 	{Key: "idle-time", Label: "Idle Time", Group: "Session",
 		Detail: "Seconds of inactivity before the booth is considered\nidle. 0 disables idle tracking.\n\nExample: 300 (5 minutes)"},
 	{Key: "idle-shutdown-time", Label: "Idle Shutdown Time", Group: "Session",

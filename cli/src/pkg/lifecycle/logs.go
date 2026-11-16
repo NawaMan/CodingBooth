@@ -159,10 +159,10 @@ func Logs(args []string, stdout io.Writer, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	if lifecycle, err := wantsLifecycleLog(opts); err != nil {
+	if hostLog, err := wantsLifecycleLog(opts); err != nil {
 		return err
-	} else if lifecycle {
-		return showLifecycleLog(opts, stdout, stderr)
+	} else if hostLog != "" {
+		return showLifecycleLog(opts, hostLog, stdout, stderr)
 	}
 
 	containers, err := managedContainersAcross(resolveLifecycleEngines(opts.code, opts.engine), false, stderr)

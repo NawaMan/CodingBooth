@@ -166,6 +166,7 @@ func (ctx AppContext) KeepTmpOnStart() bool  { return ctx.values.Config.KeepTmpO
 func (ctx AppContext) LogTime() bool         { return ctx.values.Config.LogTime }
 func (ctx AppContext) PersistHome() bool     { return ctx.values.Config.PersistHome }
 func (ctx AppContext) HideWelcome() bool     { return ctx.values.Config.HideWelcome }
+func (ctx AppContext) Record() bool          { return ctx.values.Config.Record }
 func (ctx AppContext) AppleLowPorts() bool   { return ctx.values.Config.AppleLowPorts }
 func (ctx AppContext) VmMemory() string      { return ctx.values.Config.VmMemory }
 func (ctx AppContext) VmCpus() string        { return ctx.values.Config.VmCpus }
@@ -291,6 +292,7 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    Daemon:           %t\n", ctx.Daemon())
 	fmt.Fprintf(&str, "    Browser:          %t\n", ctx.Browser())
 	fmt.Fprintf(&str, "    HideWelcome:      %t\n", ctx.HideWelcome())
+	fmt.Fprintf(&str, "    Record:           %t\n", ctx.Record())
 	fmt.Fprintf(&str, "    AppleLowPorts:    %t\n", ctx.AppleLowPorts())
 	fmt.Fprintf(&str, "    VmMemory:         %s\n", ctx.VmMemory())
 	fmt.Fprintf(&str, "    VmCpus:           %s\n", ctx.VmCpus())

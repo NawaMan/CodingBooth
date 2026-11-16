@@ -118,6 +118,81 @@ elif [[ -n "${BASH_VERSION:-}" ]]; then
   PROMPT_COMMAND="_booth_msg_check${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 fi
 
+# ── Session recording (booth --record) ──
+# Every command typed at a prompt goes to the session's activity log when it
+# starts (`cmd`), and its exit status and duration when it ends (`cmd-done`).
+# bash and zsh only; see docs/BOOTH_RECORD.md for what this does not see.
+if [ "${BOOTH_RECORD:-false}" = "true" ]; then
+  _booth_record_dir="${BOOTH_RECORD_DIR:-$HOME/code/.booth/.tmp/record}"
+  _booth_record_line() {
+    local line
+    line="$(date '+%Y-%m-%dT%H:%M:%S%z') ${BOOTH_CONTAINER_NAME:-booth} $*"
+    line="${line//$'\n'/ }"
+    printf '%s\n' "$line" >> "$_booth_record_dir/activity.log" 2>/dev/null
+    return 0
+  }
+  if [[ -n "${ZSH_VERSION:-}" ]]; then
+    # In a string: bash must not have to parse zsh's array syntax.
+    eval '
+      _booth_record_preexec() {
+        _booth_record_start=$SECONDS
+        _booth_record_line cmd "shell=zsh" "pid=$$" "cwd=$PWD" "-- $1"
+      }
+      _booth_record_precmd() {
+        local st=$?
+        if [[ -n "${_booth_record_start:-}" ]]; then
+          _booth_record_line cmd-done "pid=$$" "exit=$st" "secs=$(( SECONDS - _booth_record_start ))"
+          unset _booth_record_start
+        fi
+        return $st
+      }
+      autoload -Uz add-zsh-hook 2>/dev/null && add-zsh-hook preexec _booth_record_preexec
+      # First, so that $? is still the command s status.
+      precmd_functions=(_booth_record_precmd ${precmd_functions:#_booth_record_precmd})
+    '
+  elif [[ -n "${BASH_VERSION:-}" ]]; then
+    # PS0 is expanded after a command is read and before it runs — in a
+    # subshell, so the start is passed to the prompt hook through a file.
+    _booth_record_pre() {
+      local cmd
+      cmd="$(HISTTIMEFORMAT='' builtin history 1 | sed '1s/^ *[0-9]*\*\{0,1\} *//')"
+      printf '%s\n' "$SECONDS" > "/tmp/.booth-record-cmd.$$" 2>/dev/null
+      _booth_record_line cmd "shell=bash" "pid=$$" "cwd=$PWD" "-- $cmd"
+    }
+    _booth_record_post() {
+      local st=$? start
+      # `history 1` is how the command is read, so nothing may be kept out of
+      # the history: no ignorespace, no HISTIGNORE.
+      HISTCONTROL=ignoredups
+      unset HISTIGNORE
+      if [[ -f "/tmp/.booth-record-cmd.$$" ]]; then
+        read -r start < "/tmp/.booth-record-cmd.$$"
+        rm -f "/tmp/.booth-record-cmd.$$"
+        _booth_record_line cmd-done "pid=$$" "exit=$st" "secs=$(( SECONDS - ${start:-$SECONDS} ))"
+      fi
+      return $st
+    }
+    # This file is sourced more than once per shell (see the welcome banner).
+    # Taken out and put back first each time: the hook above prepends itself on
+    # every pass, and $? must still be the command's when this one runs.
+    PROMPT_COMMAND="${PROMPT_COMMAND//_booth_record_post;/}"
+    PROMPT_COMMAND="_booth_record_post;${PROMPT_COMMAND:-}"
+    case "${PS0:-}" in
+      *_booth_record_pre*) ;;
+      *) PS0='$(_booth_record_pre)'"${PS0:-}" ;;
+    esac
+  fi
+  # booth-entry starts the recorder at boot; this covers a shell that beat it.
+  ( booth--record ensure >/dev/null 2>&1 & )
+  # Said in every new shell, and not silenced by --hide-welcome: a person must
+  # be able to tell that what they do here is kept.
+  if [ -z "${_cb_record_notice_shown:-}" ]; then
+    _cb_record_notice_shown=1
+    printf '\033[1;31m●\033[0m \033[1mThis booth session is recorded\033[0m: commands, terminal output, file changes and ports.\n'
+    printf '  Run booth--record status for what is kept and where.\n\n'
+  fi
+fi
+
 # Welcome message
 # Tip for those who are new to CodingBooth bash.
 # BOOTH_HIDE_WELCOME=true (booth --hide-welcome, hide-welcome = true in

@@ -13,11 +13,17 @@ import (
 )
 
 func TestWantsLifecycleLog(t *testing.T) {
-	if got, err := wantsLifecycleLog(logsOptions{services: []string{"lifecycle"}}); !got || err != nil {
-		t.Errorf("lifecycle alone: got %v, %v", got, err)
+	if got, err := wantsLifecycleLog(logsOptions{services: []string{"lifecycle"}}); got != "lifecycle" || err != nil {
+		t.Errorf("lifecycle alone: got %q, %v", got, err)
 	}
-	if got, err := wantsLifecycleLog(logsOptions{services: []string{"nginx-access"}}); got || err != nil {
-		t.Errorf("other service: got %v, %v", got, err)
+	if got, err := wantsLifecycleLog(logsOptions{services: []string{"activity"}}); got != "activity" || err != nil {
+		t.Errorf("activity alone: got %q, %v", got, err)
+	}
+	if got, err := wantsLifecycleLog(logsOptions{services: []string{"nginx-access"}}); got != "" || err != nil {
+		t.Errorf("other service: got %q, %v", got, err)
+	}
+	if _, err := wantsLifecycleLog(logsOptions{services: []string{"activity", "lifecycle"}}); err == nil {
+		t.Errorf("the two host logs are asked for one at a time")
 	}
 	if _, err := wantsLifecycleLog(logsOptions{services: []string{"lifecycle", "startups"}}); err == nil {
 		t.Errorf("mixing lifecycle with an in-booth service should be refused")
@@ -80,5 +86,14 @@ func TestCopyAppendedRestartsAfterTrim(t *testing.T) {
 	out.Reset()
 	if offset = copyAppended(path, offset, &out); out.String() != "new\n" || offset != 4 {
 		t.Errorf("after shrink: %q, offset %d", out.String(), offset)
+	}
+}
+
+func TestHostLogPath(t *testing.T) {
+	if got := hostLogPath("/p/.booth", "lifecycle"); got != "/p/.booth/.tmp/lifecycle.log" {
+		t.Errorf("lifecycle = %q", got)
+	}
+	if got := hostLogPath("/p/.booth", "activity"); got != "/p/.booth/.tmp/record/activity.log" {
+		t.Errorf("activity = %q", got)
 	}
 }

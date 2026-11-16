@@ -549,6 +549,24 @@ or `CB_HIDE_WELCOME=true` in the environment. The setting is applied when the co
 is created, so it covers every shell in that booth. The pending-messages notice
 (`booth--msg`) is not part of the banner and still appears.
 
+### Record the Session (`--record`)
+
+Keep a record of what is done in the booth — commands typed, terminal output, file changes,
+ports opened and closed — on the host, in `.booth/.tmp/record/`:
+
+```bash
+./booth --record
+./booth logs activity        # afterwards, or with -f while it runs
+```
+
+```toml
+# .booth/config.toml
+record = true
+```
+
+or `CB_RECORD=true` in the environment. Every shell in the booth says that it is recorded.
+What is kept, how to read it, and what it does not see: **[booth record](BOOTH_RECORD.md)**.
+
 ### Expected Viewers (`--expected-viewer-count`)
 
 The Booth panel shows how many pages are viewing the booth, but only once there are more than

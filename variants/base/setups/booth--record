@@ -1,0 +1,299 @@
+#!/usr/bin/env bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# cb-version: 0.1.0
+
+# -----------------------------------------------------------------------------
+# booth--record — the session recorder of a booth started with `booth --record`.
+#
+#   booth--record status              is this booth recorded, and what is there
+#   booth--record event <name> [...]  append one line to the activity log
+#   booth--record ensure              start the recorder if it is not running
+#   booth--record daemon              the recorder itself (started for you)
+#
+# Recording is on when BOOTH_RECORD=true (set by the CLI for --record). What it
+# keeps, all under .booth/.tmp/record/ in the code folder, on the host:
+#
+#   activity.log     one line per event, in the lifecycle log's format:
+#                    commands (written by the shell profile), ports that start
+#                    and stop listening, booth--expose tunnels, file snapshots,
+#                    and the booth's lifecycle events
+#   snapshots.git    a git repository of the code folder, committed every
+#                    BOOTH_RECORD_SNAPSHOT_INTERVAL seconds when files changed
+#   terminal/*.cast  what each tmux pane (the Console UI's panes) printed, as
+#                    asciicast v2: play with `asciinema play <file>`
+#
+# The recorder runs as coder and writes where coder can write. It shows what a
+# person did; it does not stop a person with sudo from editing it. See
+# docs/BOOTH_RECORD.md.
+#
+# Never fails its caller: `event` and `ensure` always exit 0.
+# -----------------------------------------------------------------------------
+
+REC_DIR="${BOOTH_RECORD_DIR:-/home/coder/code/.booth/.tmp/record}"
+CODE_DIR="${BOOTH_RECORD_CODE_DIR:-/home/coder/code}"
+ACTIVITY_LOG="$REC_DIR/activity.log"
+LOCK_FILE="/tmp/booth-record.lock"
+DAEMON_LOG="/tmp/booth-record.log"
+
+# Which parts run. A comma list of: ports, snapshots, terminal. (Commands are
+# logged by the shell profile, not by the daemon.)
+PARTS=",${BOOTH_RECORD_PARTS:-ports,snapshots,terminal},"
+PORT_INTERVAL="${BOOTH_RECORD_PORT_INTERVAL:-2}"
+SNAPSHOT_INTERVAL="${BOOTH_RECORD_SNAPSHOT_INTERVAL:-30}"
+TERMINAL_INTERVAL="${BOOTH_RECORD_TERMINAL_INTERVAL:-2}"
+# A file larger than this is left out of the snapshots (a downloaded dataset, a
+# build output nobody ignored).
+SNAPSHOT_MAX_FILE_KB="${BOOTH_RECORD_SNAPSHOT_MAX_FILE_KB:-2048}"
+
+is_on() { [ "${BOOTH_RECORD:-false}" = "true" ]; }
+
+event() {
+    local line
+    line="$(date '+%Y-%m-%dT%H:%M:%S%z') ${BOOTH_CONTAINER_NAME:-booth} $*"
+    # One line per event: a detail with a newline would forge a second one.
+    line="${line//$'\n'/ }"
+    line="${line//$'\r'/ }"
+    mkdir -p "$REC_DIR" 2>/dev/null
+    printf '%s\n' "$line" >> "$ACTIVITY_LOG" 2>/dev/null
+    return 0
+}
+
+log() { echo "[booth--record] $(date '+%Y-%m-%dT%H:%M:%S%z') $*" >&2; }
+
+# ---------------------------------------------------------------------------
+# Ports: which TCP ports are listening, read from /proc/net/tcp{,6} (the base
+# image has no `ss`). State 0A is LISTEN.
+# ---------------------------------------------------------------------------
+
+# Prints "port inode bind" per listening port, one per port (IPv4 wins).
+listening_ports() {
+    local f _sl local_addr _rem state _q _tr _re _uid _to inode addr port bind
+    declare -A seen=()
+    for f in /proc/net/tcp /proc/net/tcp6; do
+        [ -r "$f" ] || continue
+        while read -r _sl local_addr _rem state _q _tr _re _uid _to inode _; do
+            [ "$state" = "0A" ] || continue
+            addr="${local_addr%:*}"
+            port=$((16#${local_addr##*:}))
+            [ -z "${seen[$port]:-}" ] || continue
+            seen[$port]=1
+            case "$addr" in
+                00000000|00000000000000000000000000000000) bind="any" ;;
+                0100007F|00000000000000000000000001000000) bind="local" ;;
+                *) bind="other" ;;
+            esac
+            echo "$port $inode $bind"
+        done < <(tail -n +2 "$f")
+    done
+}
+
+# The process holding a listening socket, by its inode: "pid comm cmdline".
+# Another user's process (root's nginx) is only visible with sudo.
+socket_owner() {
+    local inode="$1" hit pid comm cmd
+    hit="$(find /proc/[0-9]*/fd -lname "socket:\[$inode\]" 2>/dev/null | head -1)"
+    if [ -z "$hit" ] && sudo -n true 2>/dev/null; then
+        hit="$(sudo -n find /proc -maxdepth 3 -path '/proc/[0-9]*/fd/*' -lname "socket:\[$inode\]" 2>/dev/null | head -1)"
+    fi
+    [ -n "$hit" ] || return 0
+    pid="${hit#/proc/}"; pid="${pid%%/*}"
+    comm="$(cat "/proc/$pid/comm" 2>/dev/null)"
+    cmd="$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null)"
+    cmd="${cmd% }"
+    echo "$pid ${comm:-?} ${cmd:0:160}"
+}
+
+ports_loop() {
+    declare -A known=()       # port -> process name, for the closing line
+    local first=true port inode bind owner pid comm cmd baseline
+    while true; do
+        declare -A now=()
+        baseline=""
+        while read -r port inode bind; do
+            [ -n "$port" ] || continue
+            now[$port]=1
+            [ -z "${known[$port]:-}" ] || continue
+            owner="$(socket_owner "$inode")"
+            pid="${owner%% *}"; owner="${owner#* }"
+            comm="${owner%% *}"; cmd="${owner#* }"
+            known[$port]="${comm:-?}"
+            if $first; then
+                baseline+="${baseline:+,}$port(${comm:-?})"
+            else
+                event port-listen "port=$port" "bind=$bind" "pid=${pid:-?}" "proc=${comm:-?}" "cmd=${cmd:-?}"
+            fi
+        done < <(listening_ports)
+        if $first; then
+            event ports-baseline "listening=${baseline:-none}"
+            first=false
+        fi
+        for port in "${!known[@]}"; do
+            if [ -z "${now[$port]:-}" ]; then
+                event port-closed "port=$port" "proc=${known[$port]}"
+                unset "known[$port]"
+            fi
+        done
+        unset now
+        sleep "$PORT_INTERVAL"
+    done
+}
+
+# ---------------------------------------------------------------------------
+# Snapshots: a git repository of the code folder that is not the project's own.
+# Its GIT_DIR is in the record folder, so the project's .git, index and history
+# are never touched; the project's .gitignore still decides what is left out.
+# ---------------------------------------------------------------------------
+
+snap_git() {
+    # The person's own git config must not sign, hook into, or name these.
+    GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null \
+    git --git-dir="$REC_DIR/snapshots.git" --work-tree="$CODE_DIR" \
+        -c user.name=booth-record -c user.email=booth-record@localhost \
+        -c commit.gpgsign=false -c core.hooksPath=/dev/null \
+        -c core.fsmonitor=false -c advice.addEmbeddedRepo=false \
+        -c safe.directory='*' "$@"
+}
+
+snapshot_once() {
+    local exclude="$REC_DIR/snapshots.git/info/exclude" f size stat names short
+    # Leave out files that are too large, before they are ever added.
+    while IFS= read -r -d '' f; do
+        [ -f "$CODE_DIR/$f" ] || continue
+        size="$(stat -c %s "$CODE_DIR/$f" 2>/dev/null || echo 0)"
+        if [ "$size" -gt $((SNAPSHOT_MAX_FILE_KB * 1024)) ]; then
+            printf '/%s\n' "$f" >> "$exclude"
+            event snapshot-skipped "file=$f" "size=$size" "larger than ${SNAPSHOT_MAX_FILE_KB}KB"
+        fi
+    done < <(snap_git ls-files -o --exclude-standard -z 2>/dev/null)
+
+    snap_git add -A >/dev/null 2>&1 || return 0
+    if ! snap_git rev-parse -q --verify HEAD >/dev/null 2>&1; then
+        snap_git commit -q --allow-empty -m "baseline $(date '+%Y-%m-%dT%H:%M:%S%z')" >/dev/null 2>&1 || return 0
+        event snapshot "commit=$(snap_git rev-parse --short HEAD 2>/dev/null)" "baseline" \
+            "files=$(snap_git ls-files 2>/dev/null | wc -l)"
+        return 0
+    fi
+    snap_git diff --cached --quiet HEAD 2>/dev/null && return 0
+    snap_git commit -q -m "snapshot $(date '+%Y-%m-%dT%H:%M:%S%z')" >/dev/null 2>&1 || return 0
+    short="$(snap_git rev-parse --short HEAD 2>/dev/null)"
+    stat="$(snap_git diff --shortstat HEAD~1 HEAD 2>/dev/null)"
+    names="$(snap_git diff --name-only HEAD~1 HEAD 2>/dev/null | head -5 | paste -sd, -)"
+    event snapshot "commit=$short" "changed:${stat:- nothing}" "files=$names"
+}
+
+snapshots_loop() {
+    if ! command -v git >/dev/null 2>&1; then
+        log "no git: file snapshots are off"
+        return 0
+    fi
+    if [ ! -d "$REC_DIR/snapshots.git" ]; then
+        snap_git init -q >/dev/null 2>&1 || { log "cannot create $REC_DIR/snapshots.git: file snapshots are off"; return 0; }
+        # The booth's own scratch, cache and downloaded tools are not the work.
+        printf '%s\n' '/.booth/.tmp/' '/.booth/cache/' '/.booth/tools/' >> "$REC_DIR/snapshots.git/info/exclude"
+    fi
+    while true; do
+        snapshot_once
+        sleep "$SNAPSHOT_INTERVAL"
+    done
+}
+
+# ---------------------------------------------------------------------------
+# Terminal: every tmux pane (the Console UI's panes are tmux sessions) is piped
+# into an asciicast file. Polled, so panes, windows and splits made later are
+# picked up too, and a pipe someone closed is opened again.
+# ---------------------------------------------------------------------------
+
+terminal_loop() {
+    if ! command -v tmux >/dev/null 2>&1 || ! command -v booth--record-cast >/dev/null 2>&1; then
+        log "no tmux or booth--record-cast: terminal recording is off"
+        return 0
+    fi
+    mkdir -p "$REC_DIR/terminal"
+    local pane piped session window index width height name file
+    while true; do
+        while read -r pane piped session window index width height; do
+            [ -n "$pane" ] && [ "$piped" = "0" ] || continue
+            name="${session//[^A-Za-z0-9_.-]/_}-w${window}p${index}-$(date '+%Y%m%d-%H%M%S')"
+            file="$REC_DIR/terminal/$name.cast"
+            # What is already on the screen, so the recording does not start blank.
+            tmux capture-pane -p -e -t "$pane" > "$file.seed" 2>/dev/null || rm -f "$file.seed"
+            if tmux pipe-pane -t "$pane" "exec booth--record-cast '$file' $width $height" 2>/dev/null; then
+                event terminal-recording "pane=$session:$window.$index" "file=terminal/$name.cast"
+            fi
+        done < <(tmux list-panes -a -F '#{pane_id} #{pane_pipe} #{session_name} #{window_index} #{pane_index} #{pane_width} #{pane_height}' 2>/dev/null)
+        sleep "$TERMINAL_INTERVAL"
+    done
+}
+
+# ---------------------------------------------------------------------------
+
+daemon() {
+    is_on || { echo "booth--record: this booth is not recorded (start it with: booth --record)" >&2; exit 1; }
+    exec 9>"$LOCK_FILE"
+    flock -n 9 || exit 0                 # one recorder per booth
+    exec >>"$DAEMON_LOG" 2>&1
+    mkdir -p "$REC_DIR" || { log "cannot create $REC_DIR: nothing is recorded"; exit 1; }
+    # Tells the host CLI to copy its own lifecycle lines (stop, exit) here too.
+    : > "$REC_DIR/.recording"
+    local parts="${PARTS#,}"
+    event record-started "parts=commands,${parts%,}" "snapshot-every=${SNAPSHOT_INTERVAL}s"
+    log "recording to $REC_DIR"
+    trap 'trap - TERM INT; event record-stopped; kill 0' TERM INT
+    case "$PARTS" in *,ports,*)     ports_loop     & ;; esac
+    case "$PARTS" in *,snapshots,*) snapshots_loop & ;; esac
+    case "$PARTS" in *,terminal,*)  terminal_loop  & ;; esac
+    wait
+}
+
+ensure() {
+    is_on || return 0
+    # The lock is held for as long as a recorder lives.
+    if ( exec 9>"$LOCK_FILE" && flock -n 9 ) 2>/dev/null; then
+        setsid "$0" daemon </dev/null >/dev/null 2>&1 &
+    fi
+    return 0
+}
+
+status() {
+    if ! is_on; then
+        echo "This booth is not recorded. Start it with: booth --record"
+        return 0
+    fi
+    echo "This booth is recorded."
+    if ( exec 9>"$LOCK_FILE" && flock -n 9 ) 2>/dev/null; then
+        echo "  recorder:   NOT running (booth--record ensure starts it)"
+    else
+        echo "  recorder:   running"
+    fi
+    echo "  folder:     $REC_DIR   (.booth/.tmp/record/ on the host)"
+    if [ -f "$ACTIVITY_LOG" ]; then
+        echo "  activity:   $(wc -l < "$ACTIVITY_LOG") lines"
+    fi
+    if [ -d "$REC_DIR/snapshots.git" ]; then
+        echo "  snapshots:  $(snap_git rev-list --count HEAD 2>/dev/null || echo 0) commits"
+    fi
+    if [ -d "$REC_DIR/terminal" ]; then
+        echo "  terminal:   $(find "$REC_DIR/terminal" -name '*.cast' | wc -l) recordings"
+    fi
+}
+
+case "${1:-status}" in
+    event)
+        shift
+        [ "$#" -ge 1 ] || { echo "Usage: booth--record event <name> [detail...]" >&2; exit 2; }
+        is_on && event "$@"
+        exit 0
+        ;;
+    ensure) ensure; exit 0 ;;
+    daemon) daemon ;;
+    status) status ;;
+    --help|-h|help)
+        sed -n '7,17p' "$0" | sed 's/^# \{0,1\}//'
+        ;;
+    *)
+        echo "Usage: booth--record [status|event <name> [detail...]|ensure|daemon]" >&2
+        exit 2
+        ;;
+esac

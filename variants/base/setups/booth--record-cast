@@ -1,0 +1,93 @@
+#!/usr/bin/perl
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# cb-version: 0.1.0
+
+# -----------------------------------------------------------------------------
+# booth--record-cast <file> <width> <height>
+#
+# Reads a terminal's output on stdin and writes it to <file> as an asciicast v2
+# recording: a JSON header line, then one [seconds, "o", text] line per chunk.
+# booth--record runs one per tmux pane, through `tmux pipe-pane`.
+#
+# <file>.seed, when it exists, is what was on the screen before the pipe opened;
+# it becomes the first frame and is then removed.
+#
+# Only output is recorded, never keystrokes: a password typed at a prompt that
+# does not echo is not in the file.
+#
+# Stops writing (and says so in the recording) at BOOTH_RECORD_TERMINAL_MAX_MB,
+# default 50, so a runaway `yes` cannot fill the host's disk.
+# -----------------------------------------------------------------------------
+
+use strict;
+use warnings;
+use Encode ();
+use IO::Handle;
+use JSON::PP ();
+use Time::HiRes qw(time);
+
+my ($file, $width, $height) = @ARGV;
+defined $file or die "Usage: booth--record-cast <file> <width> <height>\n";
+$width  = 80 unless defined $width  && $width  =~ /^\d+$/;
+$height = 24 unless defined $height && $height =~ /^\d+$/;
+
+my $max_bytes = ($ENV{BOOTH_RECORD_TERMINAL_MAX_MB} // 50) * 1024 * 1024;
+my $json      = JSON::PP->new->ascii->canonical;
+
+open(my $out, '>>', $file) or exit 0;
+$out->autoflush(1);
+
+my $start   = time;
+my $written = 0;
+
+sub emit {
+    my ($text) = @_;
+    return if $text eq '';
+    my $line = $json->encode([sprintf('%.6f', time - $start) + 0, 'o', $text]) . "\n";
+    $written += length $line;
+    print {$out} $line;
+}
+
+print {$out} $json->encode({
+    version   => 2,
+    width     => $width + 0,
+    height    => $height + 0,
+    timestamp => int($start),
+    env       => { TERM => ($ENV{TERM} // 'xterm-256color'), SHELL => ($ENV{SHELL} // '/bin/bash') },
+}) . "\n";
+
+if (open(my $seed, '<:raw', "$file.seed")) {
+    local $/;
+    my $screen = Encode::decode('UTF-8', scalar <$seed>);
+    close $seed;
+    unlink "$file.seed";
+    $screen =~ s/\s+\z//;
+    $screen =~ s/\n/\r\n/g;
+    emit($screen . "\r\n") if $screen ne '';
+}
+
+binmode STDIN;
+my $pending = '';
+my $capped  = 0;
+while (1) {
+    my $got = sysread(STDIN, my $chunk, 65536);
+    last unless $got;          # 0 at end of input, undef on error
+    next if $capped;           # keep draining so the pane never blocks
+    $pending .= $chunk;
+    # Decode what is whole; a character cut in half by the read stays for the
+    # next one. Bytes that can never be UTF-8 become U+FFFD.
+    my $text = Encode::decode('UTF-8', $pending, Encode::FB_QUIET);
+    while (length($pending) >= 4) {
+        $text .= "\x{FFFD}";
+        substr($pending, 0, 1, '');
+        $text .= Encode::decode('UTF-8', $pending, Encode::FB_QUIET);
+    }
+    emit($text);
+    if ($written > $max_bytes) {
+        emit("\r\n[booth--record: recording stopped, the file reached its size limit]\r\n");
+        $capped = 1;
+    }
+}
+close $out;

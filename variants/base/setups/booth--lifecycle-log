@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 # -----------------------------------------------------------------------------
 # booth--lifecycle-log <event> [detail...]
@@ -19,6 +19,11 @@
 # The host CLI appends to the same file (stop/restart/remove, the exit code of a
 # foreground run), so both sides of a booth's end land in one place.
 #
+# In a booth started with --record (BOOTH_RECORD=true) the line also goes to the
+# session's activity log, .booth/.tmp/record/activity.log, so that one file tells
+# the whole session. `started` is written by booth-entry on every boot, which is
+# what makes it the moment to start the recorder: see booth--record.
+#
 # Never fails its caller: a missing or read-only .booth/.tmp drops the line.
 # -----------------------------------------------------------------------------
 
@@ -32,4 +37,13 @@ line="${line//$'\n'/ }"
 
 mkdir -p "$(dirname "$LOG_FILE")" 2>/dev/null
 printf '%s\n' "$line" >> "$LOG_FILE" 2>/dev/null
+
+if [ "${BOOTH_RECORD:-false}" = "true" ]; then
+  RECORD_DIR="${BOOTH_RECORD_DIR:-/home/coder/code/.booth/.tmp/record}"
+  mkdir -p "$RECORD_DIR" 2>/dev/null
+  printf '%s\n' "$line" >> "$RECORD_DIR/activity.log" 2>/dev/null
+  if [ "$1" = "started" ] && command -v booth--record >/dev/null 2>&1; then
+    booth--record ensure >/dev/null 2>&1
+  fi
+fi
 exit 0

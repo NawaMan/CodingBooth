@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.1
+# cb-version: 1.1.0
 
 # booth--expose: Create a TCP tunnel to expose a container port on the host.
 #
@@ -215,6 +215,8 @@ expose_close() {
     local external
     external=$(tr -d ' \t\r\n' < "$TUNNEL_DIR/$port")
     rm -f "$TUNNEL_DIR/$port"
+    # A recorded booth (booth --record) notes the tunnel in its activity log.
+    booth--record event expose-closed "container=$port" "host=${external:-?}" 2>/dev/null || true
     echo "TCP tunnel closed: container localhost:${port} -> host localhost:${external:-?}"
 }
 
@@ -311,6 +313,8 @@ fi
 # --- Write control file ---
 mkdir -p "$TUNNEL_DIR"
 echo "$EXTERNAL_PORT" > "$TUNNEL_DIR/$CONTAINER_PORT"
+# A recorded booth (booth --record) notes the tunnel in its activity log.
+booth--record event expose-opened "container=$CONTAINER_PORT" "host=$EXTERNAL_PORT" 2>/dev/null || true
 
 # --- Output ---
 echo "TCP tunnel: container localhost:${CONTAINER_PORT} -> host localhost:${EXTERNAL_PORT}"

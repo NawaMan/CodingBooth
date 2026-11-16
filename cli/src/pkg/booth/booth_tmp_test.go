@@ -272,3 +272,24 @@ func TestCleanupBoothTmp_KeepsLifecycleLog(t *testing.T) {
 		t.Errorf("Expected the rest of .booth/.tmp/ to be wiped")
 	}
 }
+
+// A recorded session (booth --record) is what the booth is read from afterwards:
+// neither the start wipe nor the exit wipe may take it. Only its marker goes, at
+// start, so a booth that is not recorded does not write into an older session.
+func TestBoothTmp_KeepsRecordedSession(t *testing.T) {
+	tmpDir := t.TempDir()
+	recordDir := filepath.Join(tmpDir, ".booth", ".tmp", "record")
+	os.MkdirAll(recordDir, 0755)
+	os.WriteFile(filepath.Join(recordDir, "activity.log"), []byte("a session\n"), 0644)
+	os.WriteFile(filepath.Join(recordDir, ".recording"), nil, 0644)
+
+	PrepareBoothTmp(buildTmpCtx(tmpDir, false, false, false))
+	cleanupBoothTmp(buildTmpCtx(tmpDir, false, false, false))
+
+	if data, err := os.ReadFile(filepath.Join(recordDir, "activity.log")); err != nil || string(data) != "a session\n" {
+		t.Errorf("Expected the activity log to survive both wipes, got %q, %v", data, err)
+	}
+	if _, err := os.Stat(filepath.Join(recordDir, ".recording")); !os.IsNotExist(err) {
+		t.Errorf("Expected the recording marker to be cleared at start")
+	}
+}

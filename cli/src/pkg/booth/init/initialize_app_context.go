@@ -460,6 +460,10 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			cfg.HideWelcome = true
 			i++
 
+		case "--record":
+			cfg.Record = true
+			i++
+
 		case "--apple-low-ports":
 			cfg.AppleLowPorts = true
 			i++

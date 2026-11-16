@@ -848,6 +848,12 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_KEEP_ALIVE=%t", ctx.KeepAlive())))
 	// Read by the shell profile (99z-cb--profile.sh) to skip the welcome banner.
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_HIDE_WELCOME=%t", ctx.HideWelcome())))
+	// --record: read by booth--lifecycle-log (starts the recorder at boot), the
+	// shell profile (logs commands, prints the notice) and booth--record itself.
+	// Only set when on, so a booth that is not recorded has no trace of it.
+	if ctx.Record() {
+		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_RECORD=true"))
+	}
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_SILENCE_BUILD=%t", ctx.SilenceBuild())))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_PULL=%t", ctx.Pull())))
 	// The container engine (docker/podman) that started this booth. There was

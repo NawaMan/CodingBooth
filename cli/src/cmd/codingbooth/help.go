@@ -265,6 +265,12 @@ CONTAINER MODE:
   --hide-welcome         Do not print the welcome banner when a shell starts.
                          Can also be set in config.toml (hide-welcome = true)
                          or with CB_HIDE_WELCOME=true
+  --record               Record the session: commands typed, terminal output,
+                         file changes (git snapshots), ports opened and closed.
+                         Kept on the host in .booth/.tmp/record/; read with
+                         'booth logs activity'. Every shell in the booth says
+                         it is recorded. Also record = true in config.toml or
+                         CB_RECORD=true. See docs/BOOTH_RECORD.md
   --vm-memory <size>     Memory for the booth's VM: engine apple (Apple
                          container's default is 1 GB; a desktop needs more,
                          e.g. 4g), or --booth-isolation kata (default 4g).
@@ -426,6 +432,7 @@ WHERE:
   --engine <name>        docker, podman, or apple.
   --sudo <true|false>    sudo in the booth (default: true). --no-sudo is --sudo false.
   --hide-welcome         Do not print the welcome banner.
+  --record               Record the session (commands, terminal, files, ports).
   --persist-home         Experimental home volume cb-home-<name>.
 
 THIS LAUNCH:
@@ -533,6 +540,7 @@ CONTAINER MODE:
                          docs/PODMAN_SUPPORT.md and docs/CONTAINER_SUPPORT.md)
   --keep-alive           Do not remove container when stopped
   --hide-welcome         No welcome banner in shells (also: hide-welcome = true, CB_HIDE_WELCOME=true)
+  --record               Record the session into .booth/.tmp/record/ (also: record = true, CB_RECORD=true; docs/BOOTH_RECORD.md)
   --apple-low-ports      Engine apple only: let coder open ports below 1024 (also: apple-low-ports = true, CB_APPLE_LOW_PORTS=true)
   --vm-memory <size>     Engine apple only: memory for the booth's VM, default 1 GB (also: vm-memory, CB_VM_MEMORY)
   --vm-cpus <n>          Engine apple only: CPUs for the booth's VM, default 4 (also: vm-cpus, CB_VM_CPUS)
@@ -956,6 +964,7 @@ USAGE:  %s logs [options]                 (the booth's container output)
         %s logs --startup [options]       (the startup-hook log)
         %s logs --list                    (list the service log files)
         %s logs lifecycle [options]       (what happened to the booth, from the host)
+        %s logs activity [options]        (what was done in a booth run with --record)
 
 OPTIONS:
   --engine <docker|podman|apple>  Select the engine explicitly
@@ -988,6 +997,11 @@ out, a console pane's terminal gone, and how the container exited. It is
 it is there after the booth is gone: with no --name it reads the current
 folder's, and --code <path> reads a removed booth's.
 
+The service "activity" is the same kind of file for a booth started with
+--record: every command typed, ports that started and stopped listening, file
+snapshots, booth--expose tunnels, and the lifecycle events above, in
+.booth/.tmp/record/activity.log. See docs/BOOTH_RECORD.md.
+
 EXAMPLES:
   %s logs -f
   %s logs --name myproject --tail 100
@@ -996,7 +1010,8 @@ EXAMPLES:
   %s logs excalidraw -f
   %s logs n8n
   %s logs lifecycle -n 20
-`, s, s, s, s, s, s, s, s, s, s, s, s, s)
+  %s logs activity -f
+`, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s)
 }
 
 func showHelpExpose() {
