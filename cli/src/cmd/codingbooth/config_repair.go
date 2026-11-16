@@ -115,9 +115,11 @@ func repairBooth(w io.Writer, version, targetPath string, cli initFlags, mode re
 		refused = errNotValid
 	}
 
+	// A selection with nothing to build (e.g. only shell-history) writes config.toml
+	// alone, with no Boothfile — still a booth booth config wrote.
 	boothDir := filepath.Join(targetPath, ".booth")
-	if _, err := os.Stat(filepath.Join(boothDir, "Boothfile")); err != nil {
-		return fmt.Errorf("Error: no booth configured in %s (no .booth/Boothfile)", targetPath)
+	if !fileExists(filepath.Join(boothDir, "Boothfile")) && !fileExists(filepath.Join(boothDir, "config.toml")) {
+		return fmt.Errorf("Error: no booth configured in %s (no .booth/Boothfile or .booth/config.toml)", targetPath)
 	}
 
 	edited := output.Drifted(targetPath)
@@ -242,4 +244,9 @@ func matchVerb(names []string) string {
 		return "already matches"
 	}
 	return "already match"
+}
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }

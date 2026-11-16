@@ -6,6 +6,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -187,4 +188,13 @@ func TestValidate_UnrepairableSaysRepairCannotFixIt(t *testing.T) {
 	assert.Contains(t, err.Error(), "repair cannot fix it")
 	assert.Contains(t, err.Error(), "cannot be read back")
 	assert.Equal(t, before, snapshotFiles(t, dir))
+}
+
+// A selection with nothing to build writes config.toml alone — still a booth.
+func TestValidate_ConfigOnlyBoothIsChecked(t *testing.T) {
+	catalog, dir, _ := repairWorkspace(t)
+	require.NoError(t, os.Remove(filepath.Join(dir, ".booth", "Boothfile")))
+
+	_, err := validate(t, catalog, dir)
+	assert.NotContains(t, fmt.Sprint(err), "no booth configured")
 }
