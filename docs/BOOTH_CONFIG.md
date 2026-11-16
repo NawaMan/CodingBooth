@@ -934,6 +934,34 @@ With neither flag, config refuses and tells you both options — under `--dryrun
 
 `.bak` and `.new` are gitignored — they are merge scratch, not configuration.
 
+### Repairing without reconfiguring
+
+`booth config repair` is the third way, for edits that [read back](#edits-that-can-be-read-back):
+it makes the files count as generated again without changing what they do, and without a
+reconfigure. It is what the TUI does when you answer OK to "edited outside booth config".
+
+```bash
+./booth config repair            # --dryrun to see what it would do
+```
+
+| What it finds | What it does |
+| --- | --- |
+| Nothing edited | Says so; writes nothing |
+| The files already match what booth config writes; only `.booth/.generated` disagrees | Re-stamps `.booth/.generated` — no file content changes |
+| Edits that read back as flags (an added `timezone`, an env var, …) | Rewrites only `Boothfile`, `config.toml` and `owner-permission.yaml` with those flags recorded in the header, plus `.generated`. Setups, startups and seeds are not re-copied |
+| Edits that cannot be read back, comments a rewrite would drop, or a Boothfile booth config never wrote | Refuses with the reasons; writes nothing |
+
+It attempts and never forces: for the refused cases, `--beside` and `--overwrite` above are the ways
+through. It takes only `--dryrun` and `--templates-path` — to change the booth, use `booth config`.
+
+`booth config validate` does the same reading and writes nothing. It exits `0` when `.booth/` holds
+what booth config writes and `1` when it does not, saying what is off and whether `repair` would fix
+it, so it can go in a pre-commit hook or CI:
+
+```bash
+./booth config validate          # Valid: .booth/ holds what booth config wrote.
+```
+
 ### In the TUI
 
 The TUI warns as soon as it opens, so you find out before configuring rather than after:

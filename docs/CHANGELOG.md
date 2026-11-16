@@ -27,6 +27,16 @@ This file contains a list of changes for each released version.
   off for two weeks. `CB_STAR_PROMPT=off` turns it off. See
   [GitHub Star Prompt](BOOTH_UI_OVERLAY.md#github-star-prompt).
 
+- **`booth config repair` makes hand-edited booth files generated again, when the edits read
+  back.** The CLI form of the TUI's "edited outside booth config" OK: it re-stamps
+  `.booth/.generated` when the files already match, or rewrites only `Boothfile` / `config.toml`
+  with the edits recorded in the header — never re-copying setups, startups or seeds. It never
+  forces: edits it cannot read back, or comments a rewrite would drop, are refused with the
+  reasons and nothing is written. `--dryrun` shows what it would do. `booth config validate`
+  is the check-only form: exit 0 when `.booth/` is what booth config writes, 1 when not, saying
+  whether `repair` would fix it. See
+  [Repairing without reconfiguring](BOOTH_CONFIG.md#repairing-without-reconfiguring).
+
 - **`booth config print` lists what a booth is configured with.** It prints the summary a save
   ends with — each template with its params, its extensions under it — and writes nothing.
   Reconfigure flags apply, so `booth config print --add-select go+linter` previews a change. That

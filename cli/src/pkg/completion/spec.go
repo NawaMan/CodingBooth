@@ -429,6 +429,10 @@ func Spec() *Command {
 			{Name: "config", Desc: "Configure this project's booth", Flags: configFlags, Args: []Kind{Dir},
 				Subs: []*Command{
 					{Name: "print", Desc: "Print what the booth is configured with", Flags: configFlags, Args: []Kind{Dir}},
+					{Name: "repair", Desc: "Make hand-edited booth files generated again, if they read back", Args: []Kind{Dir},
+						Flags: []Flag{boolFlag("--dryrun"), flag(Dir, "--templates-path")}},
+					{Name: "validate", Desc: "Check that the booth files are what booth config writes", Args: []Kind{Dir},
+						Flags: []Flag{flag(Dir, "--templates-path")}},
 				}},
 			{Name: "just-init", Desc: "Write a starter Justfile",
 				Flags: []Flag{boolFlag("--yes", "-y"), flag(Dir, "--code")}, Args: []Kind{Dir}},
