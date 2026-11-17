@@ -4,6 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-src 'self' http: https:;">
+  <!-- A booth page is framed from this page's own origin. Seeing it as the
+       referrer, an app that refuses to be framed by itself (Excalidraw:
+       "I'm not a pretzel!") will not render. -->
+  <meta name="referrer" content="no-referrer">
   <title>Booth Web Preview</title>
   <link rel="stylesheet" href="preview.css">
   <script src="target.js" defer></script>
@@ -22,6 +26,6 @@
   </form>
   <p id="error" role="status" hidden></p>
   <p id="external-hint" role="status" hidden></p>
-  <iframe id="app" title="Preview application" sandbox="allow-scripts allow-same-origin allow-forms allow-downloads"></iframe>
+  <iframe id="app" title="Preview application" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-downloads"></iframe>
 </body>
 </html>

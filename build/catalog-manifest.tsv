@@ -430,7 +430,7 @@ lib	jetbrains-source.sh	0.1.0	dd1f0922678630909118a128d045d047eb49d0541ff439f72f
 lib	prebuilt-source.sh	0.1.1	014b77e8a84b3d36872954ce4690b1a6bd06cd5a63ad9bc91c9e999790901ac3	variants/base/setups/libs/prebuilt-source.sh
 lib	retry-source.sh	0.1.0	dc80e4474b59095be79b52489947dd6e7edae0bcb7efb5bc687b32e7f932d09e	variants/base/setups/libs/retry-source.sh
 lib	skip-setup.sh	1.0.0	ed256a1d9f447f755a6e7eb20cc5cef612aedf38d085740781eb064079da03ae	variants/base/setups/libs/skip-setup.sh
-assets	booth-web-preview	0.1.0	b7777911fb75cb633a8aeaf373bd3e3ac579736797db2d8dab740ddf1808e518	variants/base/setups/booth-web-preview/.cb-version
+assets	booth-web-preview	0.1.1	e11e47696f195ba2a33cf35edae03ec60bd49aba060ddb2bdc82b7d3a215dd65	variants/base/setups/booth-web-preview/.cb-version
 assets	fresh-plugins	0.2.0	e5d9a84d1a710388e845b69173ca77e3f24c2a14fa918171edd5874cc52c8952	variants/base/setups/fresh-plugins/.cb-version
 assets	logo-files	0.1.0	72cdb4272e6be5df2ad0e959508803ba6ef927b6e040e4affa3dca1293409d4e	variants/base/setups/logo-files/.cb-version
 template	act	1.0.0	33cac4f54cb7ceebada109f40c0f846caf3615f230ac76e7724e6be1fadfd916	templates/tools/act/template.toml

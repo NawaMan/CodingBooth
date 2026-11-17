@@ -139,16 +139,27 @@
     forward.disabled = position >= entries.length - 1;
     notify("state");
   }
-  function load(url) {
+  // Set while the frame is on its way through about:blank to this URL.
+  let reloading = null;
+  function replace(url) {
     // Replace navigations initiated by these controls; our bounded history
     // never backs out of the preview into the surrounding editor.
-    try {
-      // Replacing the same URL (especially one with a fragment after
-      // pushState) can be a same-document no-op. Reload must hit the server.
-      if (frame.contentWindow.location.href === url) frame.contentWindow.location.reload();
-      else frame.contentWindow.location.replace(url);
-    }
+    try { frame.contentWindow.location.replace(url); }
     catch { frame.src = url; }
+  }
+  function load(url) {
+    let same = false;
+    try { same = frame.contentWindow.location.href === url; } catch { /* cross-origin: a different page */ }
+    if (!same) { replace(url); return; }
+    // Replacing the same URL (especially one with a fragment after pushState)
+    // can be a same-document no-op, and Reload must hit the server. It is not
+    // location.reload(): a reload takes its referrer from the page being
+    // reloaded, and a booth page shares these controls' origin — Excalidraw
+    // (referrer policy "origin") then finds itself framed by its own origin
+    // and shows "I'm not a pretzel!". Leaving the page first makes the way
+    // back an ordinary navigation, which sends no referrer (see index.html).
+    reloading = url;
+    replace("about:blank");
   }
   function navigate(value, record = true) {
     try {
@@ -193,7 +204,10 @@
       }
     } catch { /* Cross-origin navigation cannot be observed; retain the entered address. */ }
   }
-  frame.addEventListener("load", () => { const requested = loading; loading = false; observe(requested); });
+  frame.addEventListener("load", () => {
+    if (reloading !== null) { const url = reloading; reloading = null; replace(url); return; }
+    const requested = loading; loading = false; observe(requested);
+  });
   // Includes SPA pushState/replaceState and fragment navigation without injecting
   // code into the application or replacing its networking APIs.
   setInterval(observe, 250);
