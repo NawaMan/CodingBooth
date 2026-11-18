@@ -25,7 +25,7 @@ often loaded alone):
 **Standing rule — end every turn by naming the try-it folder.** Once §2 has picked a workspace,
 close each reply with one command that goes to the folder and exercises the change:
 
-> 🧪 Try it: `cd ~/dev/git/CodingBooth/worktree/<name>/examples/workspaces/zig-example && ./booth -- just run`
+> 🧪 Try it: `cd ~/dev/git/CodingBooth/worktree/<name>/examples/booths/zig-example && ./booth -- just run`
 
 Make it a single command that can be pasted into any shell as it is: `cd` with the folder's full
 path (from `~`, or absolute, and inside the worktree when you are in one), then `&&` and the
@@ -126,15 +126,15 @@ guessing", say so and reproduce again instead.
 
 **Adding something new → offer a workspace, and ask.**
 
-> "I'll add `examples/workspaces/<name>-example` so this is exercisable — a small real project that
+> "I'll add `examples/booths/<name>-example` so this is exercisable — a small real project that
 > uses `<name>`, plus a test. Want that, or should I use a throwaway folder instead?"
 
-Do not create it unasked — `examples/workspaces/` is a published surface and ~60 entries deep.
+Do not create it unasked — `examples/booths/` is a published surface and ~60 entries deep.
 
 **Fixing a bug → find the workspace that already covers it, and reuse it.**
 
 ```bash
-grep -rln "<name>" examples/workspaces/*/.booth/Boothfile
+grep -rln "<name>" examples/booths/*/.booth/Boothfile
 grep -rln "<name>" tests/complex/*/.booth/Boothfile
 ```
 
@@ -145,7 +145,7 @@ a fix with a witness. Say which one you picked and why.
 does not earn a new published example.
 
 **User declines, or nothing fits → throwaway, no permission needed.** Build it in the scratchpad,
-never in `examples/workspaces/`:
+never in `examples/booths/`:
 
 ```bash
 WS="$SCRATCH/<name>-try"          # scratchpad dir from the environment, not /tmp
@@ -159,7 +159,7 @@ Tell the user it is a throwaway and where it is. It still gets named every turn.
 Copy the shape of a small existing one (`zig-example` is a good model):
 
 ```
-examples/workspaces/<name>-example/
+examples/booths/<name>-example/
 ├── .booth/
 │   ├── config.toml                 # variant = "base"  (unless the tool needs an IDE/desktop)
 │   ├── Boothfile                   # setup <name> …
@@ -196,7 +196,7 @@ Run it from *inside* `$WS` — a path passed as an argument is echoed into the c
 Run it with the shared runner:
 
 ```bash
-examples/workspaces/run-example-tests.sh --example <name>-example
+examples/booths/run-example-tests.sh --example <name>-example
 ```
 
 ---
@@ -449,7 +449,7 @@ tests/config/catalog/test94-catalog-manifest-is-current.sh   # every item has a 
 tests/config/init/test<NN>-init-<name>.sh
 ./build/docker-build.sh base                                                        # so the image has your script
 (cd tests/complex/boothfile/test-boothfile-<name> && ./test--boothfile-<name>.sh)   # needs Docker; builds an image
-examples/workspaces/run-example-tests.sh --example <name>-example                  # if you made one
+examples/booths/run-example-tests.sh --example <name>-example                  # if you made one
 ```
 
 ---

@@ -8,7 +8,7 @@ R development environment with Jupyter notebook support using the IRkernel.
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/r-example
+cd examples/booths/r-example
 booth
 
 # 2. Inside the booth — open VS Code, create a .ipynb file and select the R kernel

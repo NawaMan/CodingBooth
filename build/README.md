@@ -106,7 +106,7 @@ Installs the Go programming language (v1.24.1).
 
 ### clean-examples.sh
 
-Reclaims disk from the booths run in `examples/workspaces/` — without the collateral of
+Reclaims disk from the booths run in `examples/booths/` — without the collateral of
 `docker system prune -a --volumes`.
 
 ```bash
@@ -116,7 +116,7 @@ Reclaims disk from the booths run in `examples/workspaces/` — without the coll
 ```
 
 **What it removes:**
-- Stopped example booth containers (`cb.code-path` under `*/examples/workspaces/*`) and their stopped sidecars
+- Stopped example booth containers (`cb.code-path` under `*/examples/booths/*`) and their stopped sidecars
 - Example images — `codingbooth-local:<example-folder>-<variant>-<version>`
 - Example home volumes (`cb-home-<example>`), example data volumes (labelled
   `cb.project=<example>`, e.g. `booth-pgdata-<example>`), and DinD/egress networks

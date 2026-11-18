@@ -12,7 +12,7 @@ your host.
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/legacy-languages-example
+cd examples/booths/legacy-languages-example
 booth
 
 # 2. Inside the booth: run every language, or one at a time

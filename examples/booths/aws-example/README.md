@@ -33,7 +33,7 @@ takes them from environment variables (CI, or EnvFolio's `folio exec`), and
 
 ```bash
 # Start the workspace
-cd examples/workspaces/aws-example
+cd examples/booths/aws-example
 booth
 
 # Inside the workspace, AWS CLI is ready:

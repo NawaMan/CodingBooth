@@ -14,9 +14,9 @@ booth config --select 'python/host-audio'      # or add host-audio to any select
 
 Two examples use it:
 
-- **[drum-beat-example](../examples/workspaces/drum-beat-example/)** — a drum beat synthesized in plain
+- **[drum-beat-example](../examples/booths/drum-beat-example/)** — a drum beat synthesized in plain
   Python and played with `just beat`.
-- **[music-example](../examples/workspaces/music-example/)** — one progression across four music
+- **[music-example](../examples/booths/music-example/)** — one progression across four music
   tools (below), played together with `just jam`.
 
 ---

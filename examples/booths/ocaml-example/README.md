@@ -12,7 +12,7 @@ The toolchain is the part worth having done for you. Building the OCaml compiler
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/ocaml-example
+cd examples/booths/ocaml-example
 booth
 
 # 2. Inside the booth

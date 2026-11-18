@@ -12,7 +12,7 @@
 # hand-written guard a real run does, but writes nothing and starts no container.
 #
 # Usage: examples/ensure-config.sh [--diff] [example ...]
-#   example   workspace folder name(s) under examples/workspaces/ (default: all)
+#   example   workspace folder name(s) under examples/booths/ (default: all)
 #   --diff    show the diff for every example that would change
 #
 # Verdicts:
@@ -31,7 +31,7 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-WORKSPACES_DIR="${EXAMPLES_WORKSPACES_DIR:-$SCRIPT_DIR/workspaces}"
+BOOTHS_DIR="${EXAMPLES_BOOTHS_DIR:-$SCRIPT_DIR/booths}"
 # The local build: codingbooth.exe on Windows, where the extensionless
 # codingbooth beside it is the Linux cross-build and does not run on the host.
 source "$REPO_DIR/tests/booth-bin--source.sh"
@@ -57,7 +57,7 @@ if [[ ! -x "$CODINGBOOTH" ]]; then
 fi
 
 if [[ ${#EXAMPLES[@]} -eq 0 ]]; then
-    for dir in "$WORKSPACES_DIR"/*/; do
+    for dir in "$BOOTHS_DIR"/*/; do
         dir="${dir%/}"
         [[ -d "$dir/.booth" ]] && EXAMPLES+=("$(basename "$dir")")
     done
@@ -95,7 +95,7 @@ for name in "${EXAMPLES[@]}"; do
 done
 
 for name in "${EXAMPLES[@]}"; do
-    ws="$WORKSPACES_DIR/$name"
+    ws="$BOOTHS_DIR/$name"
     out="$TMP_DIR/$name.out"
     err="$TMP_DIR/$name.err"
     detail=""

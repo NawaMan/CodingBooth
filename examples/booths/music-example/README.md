@@ -18,7 +18,7 @@ you get the WAV files and the PDF, just no live sound. See
 ## Quick start
 
 ```bash
-cd examples/workspaces/music-example
+cd examples/booths/music-example
 just jam                  # render all four parts, then play them together
 ```
 

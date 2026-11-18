@@ -8,7 +8,7 @@ This example is a Rust (stable) development environment with Jupyter notebook su
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/rust-example
+cd examples/booths/rust-example
 booth
 
 # 2. Inside the booth

@@ -8,7 +8,7 @@ This example is a niche F# on .NET 9 workspace that runs entirely inside the con
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/fsharp-example
+cd examples/booths/fsharp-example
 booth
 
 # 2. Inside the booth — build and run

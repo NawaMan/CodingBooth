@@ -8,7 +8,7 @@
 #
 # Verifies that `setup floci` installs the Floci CLI. `floci version` prints
 # the CLI version without needing Docker. Starting the emulator and creating
-# an S3 bucket is examples/workspaces/floci-example (needs dind).
+# an S3 bucket is examples/booths/floci-example (needs dind).
 # -----------------------------------------------------------------------------
 
 set -euo pipefail

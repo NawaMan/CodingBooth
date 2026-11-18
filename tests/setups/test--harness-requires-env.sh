@@ -67,7 +67,7 @@ expect "a last line without a newline is still read" "${P}_A" "$(missing_require
 
 # The file the example actually ships: with the AWS variables unset it must
 # report all three lines; with them set, nothing.
-real="../../examples/workspaces/aws-env-example/.cb-tests/requires-env.txt"
+real="../../examples/booths/aws-env-example/.cb-tests/requires-env.txt"
 expect "aws-env-example: nothing set -> all three missing" \
     "AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_REGION|AWS_DEFAULT_REGION" \
     "$(env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY -u AWS_REGION -u AWS_DEFAULT_REGION \

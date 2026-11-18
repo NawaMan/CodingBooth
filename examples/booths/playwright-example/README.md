@@ -8,7 +8,7 @@ This example is a ready-to-run browser-automation environment built on Playwrigh
 
 ```bash
 # 1. Launch the booth (the playwright setup pre-installs browser binaries)
-cd examples/workspaces/playwright-example
+cd examples/booths/playwright-example
 booth
 
 # 2. Inside the booth — run the test suite

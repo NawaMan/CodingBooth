@@ -10,7 +10,7 @@ The quiet win here is that the Android toolchain is the classic "works on my mac
 
 ```bash
 # 1. Launch the booth — opens an XFCE desktop in your browser
-cd examples/workspaces/android-example
+cd examples/booths/android-example
 booth
 
 # 2. In a terminal inside the booth — build the APK
@@ -81,7 +81,7 @@ Android Studio's emulator runs natively on Apple Silicon with an arm64 system im
 The project folder is mounted into the booth, so the APK is already on the Mac. Start an emulator from Android Studio's Device Manager, then from the Mac (not the booth):
 
 ```bash
-cd examples/workspaces/android-example
+cd examples/booths/android-example
 adb install -r build/hello.apk           # adb from Android Studio's platform-tools
 adb shell monkey -p com.example.hello -c android.intent.category.LAUNCHER 1
 ```

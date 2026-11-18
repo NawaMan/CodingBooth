@@ -5,7 +5,7 @@ This example is a booth that bundles Herdr — an agent multiplexer, "tmux for A
 ## Quick start
 
 ```bash
-cd examples/workspaces/herdr-example
+cd examples/booths/herdr-example
 ./booth      # a bash shell in the booth (terminal variant)
 herdr        # inside it: start Herdr
 ```

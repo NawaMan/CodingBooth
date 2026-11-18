@@ -472,7 +472,7 @@ half they all point at — port picking, the `set -euo pipefail` traps, cleanup.
   generation. Extensions are `<name>--extension.toml` beside a parent `template.toml`. Patterns:
   `templates/README.md`; schema: `docs/AGENT_TEMPLATE.md`.
 - **Tests:** `tests/` (unit, config, complex, wrapper, …).
-- **Examples:** `examples/workspaces/` — Boothfile + README, plus a `Justfile` when the sample
+- **Examples:** `examples/booths/` — Boothfile + README, plus a `Justfile` when the sample
   has in-booth commands (`just --list` / `just run`).
 - **Product TODOs:** `docs/TODO.md` plus specialized lists (`docs/TODO-BINARY_COMPANIONS.md`,
   `docs/TODO-data.md`, …).

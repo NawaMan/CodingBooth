@@ -29,7 +29,7 @@
 set -euo pipefail
 
 MODE="${1:?usage: prepare-test.sh refusals|gha|ubuntu [example]}"
-EXAMPLE_REL="${2:-examples/workspaces/go-example}"
+EXAMPLE_REL="${2:-examples/booths/go-example}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$HERE/../.." && pwd)"
 EX_NAME="$(basename "$EXAMPLE_REL")"

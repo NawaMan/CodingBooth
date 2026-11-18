@@ -10,7 +10,7 @@ For Go with a desktop, notebooks (GoNB), code-server, shared module caches and c
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/go-example
+cd examples/booths/go-example
 booth
 
 # 2. Inside the booth

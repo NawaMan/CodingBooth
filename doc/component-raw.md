@@ -52,6 +52,6 @@
 - `bin/` — compiled multi-platform binaries
 - `build/` — `cli-build.sh`, `docker-build.sh`, `build-all.sh`
 - `tests/` — `unit/`, `basic/`, `boothfile/`, `config/`, `complex/`, `dryrun/`, `manual/`, `extra/`, `logs/`, plus `run-automate-tests.sh`, `run-manual-tests.sh`, `run-example-tests.sh`, `sanity-test.sh`, `common--source.sh`
-- `examples/workspaces/` — ~45 pre-built example projects (go, python, bun, java, aws, gcloud, dind, kind, jetbrain, nodejs, rust, scala, typescript, vim, excalidraw, …)
+- `examples/booths/` — ~45 pre-built example projects (go, python, bun, java, aws, gcloud, dind, kind, jetbrain, nodejs, rust, scala, typescript, vim, excalidraw, …)
 - `experiments/`, `doc/`, `docs/` — documentation (BOOTH_*.md user guides + `docs/implementations/` internals + `docs/plans/` + `docs/troubleshoot/`)
 - `version.txt`, `README.md`, `LICENSE`, `codingbooth` (wrapper/binary location)

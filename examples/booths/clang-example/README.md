@@ -8,7 +8,7 @@ This example is a C/C++ development environment with the LLVM/Clang toolchain an
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/clang-example
+cd examples/booths/clang-example
 booth
 
 # 2. Inside the booth — build and run the demo

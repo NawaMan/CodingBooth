@@ -20,7 +20,7 @@ not download it.
 
 ```bash
 # 1. Start the booth (code-server opens in your browser)
-cd examples/workspaces/lean-example
+cd examples/booths/lean-example
 booth
 
 # 2. Inside the booth

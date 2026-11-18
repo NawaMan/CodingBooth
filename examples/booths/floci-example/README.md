@@ -14,7 +14,7 @@ whole point: a local AWS you can hand to an agent or a teammate without a billin
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/floci-example
+cd examples/booths/floci-example
 booth
 
 # 2. Inside the booth — create a bucket and round-trip a file

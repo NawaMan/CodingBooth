@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # cb-version: 0.1.1
 #
-# EXPERIMENTAL: no tests/ suite yet; examples/workspaces/ocaml-example exercises it.
+# EXPERIMENTAL: no tests/ suite yet; examples/booths/ocaml-example exercises it.
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR

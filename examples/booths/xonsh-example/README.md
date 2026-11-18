@@ -7,7 +7,7 @@ A two-line [Xonsh](https://xon.sh/) script. Xonsh is a Python shell: `print(20 +
 ## Quick start
 
 ```bash
-cd examples/workspaces/xonsh-example
+cd examples/booths/xonsh-example
 ../../../codingbooth
 
 # inside the booth

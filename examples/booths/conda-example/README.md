@@ -30,7 +30,7 @@ Examples 1 and 2 read the same file, `data/requests.csv`: 30 minutes of traffic 
 
 ```bash
 # 1. Launch the booth — JupyterLab opens on the booth port (http://localhost:10000)
-cd examples/workspaces/conda-example
+cd examples/booths/conda-example
 ./booth
 
 # 2. In JupyterLab, open Latency.ipynb, then Molecules.ipynb, and Run → Run All Cells.

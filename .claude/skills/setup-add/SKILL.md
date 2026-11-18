@@ -14,7 +14,7 @@ there, plus:
 
 - the local-override try-it loop, so a script change can be exercised without rebuilding the base
   image,
-- the workspace policy (offer `examples/workspaces/<name>-example` and ask; throwaway otherwise),
+- the workspace policy (offer `examples/booths/<name>-example` and ask; throwaway otherwise),
 - the catalog guards to re-run after a template change,
 - a functional test standard rather than a `--version` grep.
 

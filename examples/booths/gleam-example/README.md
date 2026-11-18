@@ -8,7 +8,7 @@ This example is a small web service written in [Gleam](https://gleam.run), a typ
 
 ```bash
 # 1. Launch the booth (code-server opens in your browser)
-cd examples/workspaces/gleam-example
+cd examples/booths/gleam-example
 booth
 
 # 2. Inside the booth
@@ -79,5 +79,5 @@ reachable from the host at booth port + 8000 (the config's own `+8000:8000` mapp
 test-only `-p`) and gone after `just stop`.
 
 ```bash
-examples/workspaces/run-example-tests.sh --example gleam-example
+examples/booths/run-example-tests.sh --example gleam-example
 ```

@@ -8,7 +8,7 @@ This example pre-installs Python packages at booth-build time using `pip` and a 
 
 ```bash
 # 1. Launch the booth (dependencies are installed during the image build)
-cd examples/workspaces/pip-deps-example
+cd examples/booths/pip-deps-example
 booth
 
 # 2. Inside the booth — the packages from .booth/requirements.txt are already importable

@@ -8,7 +8,7 @@ This example is a GNU Octave environment with the Calysto Octave notebook kernel
 
 ```bash
 # 1. Launch the booth (default: notebook variant)
-cd examples/workspaces/octave-example
+cd examples/booths/octave-example
 booth
 
 # 2. Inside the booth

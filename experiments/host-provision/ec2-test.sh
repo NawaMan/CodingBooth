@@ -169,7 +169,7 @@ fi
 EXAMPLES=("$@")
 [ "${#EXAMPLES[@]}" -gt 0 ] || EXAMPLES=(go-example zig-example)
 for ex in "${EXAMPLES[@]}"; do
-  [ -d "$REPO/examples/workspaces/$ex" ] || die "no example examples/workspaces/$ex"
+  [ -d "$REPO/examples/booths/$ex" ] || die "no example examples/booths/$ex"
 done
 [ -x "$BIN" ] || die "$BIN is missing: run ./build/cli-build.sh"
 
@@ -250,7 +250,7 @@ one_example() {
   local stage="$WORK/stage-$ex"; mkdir -p "$stage/project"
   install -m 0755 "$BIN" "$stage/booth"
   install -m 0755 "$HERE/check-example.sh" "$stage/check-example.sh"
-  (cd "$REPO/examples/workspaces/$ex" && git ls-files -co --exclude-standard -z . | tar --null -T - -cf -) \
+  (cd "$REPO/examples/booths/$ex" && git ls-files -co --exclude-standard -z . | tar --null -T - -cf -) \
     | tar -xf - -C "$stage/project"
   tar -cf - -C "$stage" . | ssh "${SSH_OPTS[@]}" "ubuntu@$ip" 'tar -xf - -C ~' || { echo "FAIL  copy"; return 1; }
 

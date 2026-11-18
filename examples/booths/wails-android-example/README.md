@@ -41,7 +41,7 @@ does not yet ship those scripts.
 ## Run it
 
 ```bash
-cd examples/workspaces/wails-android-example
+cd examples/booths/wails-android-example
 booth
 ```
 

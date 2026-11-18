@@ -8,7 +8,7 @@ This example pre-installs npm dependencies at booth-build time so the first run 
 
 ```bash
 # 1. Launch the booth (dependencies are installed during the image build)
-cd examples/workspaces/npm-deps-example
+cd examples/booths/npm-deps-example
 booth
 
 # 2. Inside the booth — node_modules already exists; just use it

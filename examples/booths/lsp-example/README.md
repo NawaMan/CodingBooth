@@ -13,7 +13,7 @@ typescript-language-server (on Node.js), Fresh, Helix, Neovim + `neovim+lsp`
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/lsp-example
+cd examples/booths/lsp-example
 booth
 
 # 2. Inside the booth

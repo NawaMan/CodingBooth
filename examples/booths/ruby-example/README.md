@@ -8,7 +8,7 @@ This example is a Ruby 3.3 development environment with Jupyter notebook support
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/ruby-example
+cd examples/booths/ruby-example
 booth
 
 # 2. Inside the booth

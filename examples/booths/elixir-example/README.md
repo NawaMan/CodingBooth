@@ -8,7 +8,7 @@ This example is a minimal Elixir program running on the BEAM VM. The bundled pal
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/elixir-example
+cd examples/booths/elixir-example
 booth
 
 # 2. Inside the booth — run the palindrome checker

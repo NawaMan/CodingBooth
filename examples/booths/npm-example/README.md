@@ -8,7 +8,7 @@ This example installs popular npm global packages on top of the base booth. It p
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/npm-example
+cd examples/booths/npm-example
 booth
 
 # 2. Inside the booth — try the preinstalled tools

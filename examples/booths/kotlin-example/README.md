@@ -8,7 +8,7 @@ This example is a Kotlin workspace that compiles to a runnable JAR, paired with 
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/kotlin-example
+cd examples/booths/kotlin-example
 booth
 
 # 2. Inside the booth — compile and run

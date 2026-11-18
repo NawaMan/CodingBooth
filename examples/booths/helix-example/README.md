@@ -7,7 +7,7 @@ A one-file note opened with [Helix](https://helix-editor.com/). The booth instal
 ## Quick start
 
 ```bash
-cd examples/workspaces/helix-example
+cd examples/booths/helix-example
 ../../../codingbooth
 
 # inside the booth

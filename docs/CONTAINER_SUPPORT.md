@@ -370,10 +370,10 @@ published `base` image through the booth entrypoint:
   started, showed in `booth list` (with `CB_ENGINE=apple`), served its UI on the published
   port, ran `booth exec`, survived `restart`, `stop`, `start --daemon`, `stop -f`, and was
   removed; a one-shot `booth -- <command>` ran as `coder` in the mounted folder and was
-  cleaned up by `--rm`; `examples/workspaces/empty-example` built its Boothfile image with
+  cleaned up by `--rm`; `examples/booths/empty-example` built its Boothfile image with
   `container build` (from a local-only base tag) and ran a command in it.
 - **Interactive, in a real terminal:** `booth --engine apple` in the foreground (the
-  default run mode, with a TTY) started `examples/workspaces/empty-example` and worked.
+  default run mode, with a TTY) started `examples/booths/empty-example` and worked.
 - **No CI**: Apple container needs Apple Silicon and macOS 26.
 
 - **By hand, Tier 2** (same machine), with no `CB_ENGINE` set unless noted:
@@ -448,7 +448,7 @@ not fail — only in a run made on purpose with `CB_ENGINE=apple`:
 | `tests/dryrun/` | `test012--config-file--envvars.sh`, `test013--config-file--args.sh`, `test018--config-file--env-expand.sh` (their configs set `dind = true`) | same |
 | `tests/dryrun/dind/` | `test001--dind-ports-from-config.sh`, `test002--dind-ports-deduplicated.sh`, `test003--dind-host-gateway.sh` | same |
 | `tests/complex/` | `test-egress-allowlist`, `test-egress-allowlist-extra`, `test-egress-envoy`, `test-egress-ro` | `sidecars_supported --egress \|\| exit 0` |
-| `examples/workspaces/` | `appwrite`, `dind`, `egress-allowlist-extra`, `egress-envoy`, `floci`, `kind`, `kind-app`, `wails` (`-example`) | `run-example-tests.sh` reads `dind = true` / `egress = true` from the example's `.booth/config.toml` and reports it `skipped — not run, not verified` |
+| `examples/booths/` | `appwrite`, `dind`, `egress-allowlist-extra`, `egress-envoy`, `floci`, `kind`, `kind-app`, `wails` (`-example`) | `run-example-tests.sh` reads `dind = true` / `egress = true` from the example's `.booth/config.toml` and reports it `skipped — not run, not verified` |
 
 The examples check needs no per-example marker, so a new `--dind` / `--egress` example is covered
 by itself; a new test under `tests/` adds the one-line `sidecars_supported` guard.

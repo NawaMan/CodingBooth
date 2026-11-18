@@ -13,7 +13,7 @@ The policy is read from `.booth/egress/envoy.yaml` and enforced by:
 ## Quick run
 
 ```bash
-cd examples/workspaces/egress-envoy-example
+cd examples/booths/egress-envoy-example
 ./booth
 ```
 

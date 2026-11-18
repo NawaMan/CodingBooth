@@ -20,7 +20,7 @@ booth config --no-tui --overwrite --select gh+token/git-credential
 personal access token.
 
 ```bash
-cd examples/workspaces/git-example
+cd examples/booths/git-example
 
 # Hand the host's gh login to the booth (gh keeps it in the keyring, not in a file):
 GH_TOKEN=$(gh auth token) ./booth

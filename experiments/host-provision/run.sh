@@ -12,7 +12,7 @@
 #   3. booth-entry            the CB_TARGET-guarded copy, as root, which ends by
 #                             running the example's checks as this user
 #
-# Usage: run.sh gha|host [example-dir]   (default: examples/workspaces/go-example)
+# Usage: run.sh gha|host [example-dir]   (default: examples/booths/go-example)
 # Report: $REPORT (default /tmp/host-provision-report.txt)
 # -----------------------------------------------------------------------------
 
@@ -22,7 +22,7 @@ TARGET="${1:?usage: run.sh gha|host [example-dir]}"
 case "$TARGET" in gha|host) ;; *) echo "❌ target must be gha or host" >&2; exit 1 ;; esac
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$HERE/../.." && pwd)"
-EXAMPLE="$(cd "${2:-$REPO/examples/workspaces/go-example}" && pwd)"
+EXAMPLE="$(cd "${2:-$REPO/examples/booths/go-example}" && pwd)"
 # Not /tmp: with fs.protected_regular, root cannot write a user-owned file in a sticky dir.
 REPORT="${REPORT:-$HOME/host-provision-report.txt}"
 [ "$(id -u)" -ne 0 ] || { echo "❌ Run as the real user, not root" >&2; exit 1; }

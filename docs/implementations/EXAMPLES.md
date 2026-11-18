@@ -105,7 +105,7 @@ on:
 1. **Build codingbooth binary** - Ensures fresh binary for booth wrappers
 2. **Update booth wrappers** - Runs `examples/update-booth.sh` to sync booth wrapper to all examples
 3. **Create example-list.txt** - Generates index of all examples
-4. **Package workspace examples** - Creates `<name>-example.zip` for each example in `examples/workspaces/`
+4. **Package workspace examples** - Creates `<name>-example.zip` for each example in `examples/booths/`
 5. **Package demo** - Creates `demo.zip` from `examples/demo/`
 6. **Create GitHub Release** - Publishes all artifacts
 
@@ -140,7 +140,7 @@ The `booth example` commands default to the binary's version:
 ## Example Sources
 
 Examples are maintained in:
-- `examples/workspaces/*-example/` - Language/tool-specific examples
+- `examples/booths/*-example/` - Language/tool-specific examples
 - `examples/demo/` - Demo workspace
 
 Each example contains:
@@ -162,7 +162,7 @@ call `just <recipe>`, not the wrapped script. Tool-version checks and host-side 
 direct commands. `run-automatic-on-host-test.sh` is a host dispatcher and never calls `just`.
 
 Security/network examples:
-- `examples/workspaces/urlwhitelist-example/` - tinyproxy-based domain whitelist flow
-- `examples/workspaces/firewall-example/` - `--egress` egress enforcement (Envoy + iptables, with and without DinD reuse)
-- `examples/workspaces/egress-allowlist-extra-example/` - `--egress` with allowlist file + extra domains
-- `examples/workspaces/egress-envoy-example/` - `--egress` with custom `envoy.yaml` policy
+- `examples/booths/urlwhitelist-example/` - tinyproxy-based domain whitelist flow
+- `examples/booths/firewall-example/` - `--egress` egress enforcement (Envoy + iptables, with and without DinD reuse)
+- `examples/booths/egress-allowlist-extra-example/` - `--egress` with allowlist file + extra domains
+- `examples/booths/egress-envoy-example/` - `--egress` with custom `envoy.yaml` policy

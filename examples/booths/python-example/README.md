@@ -8,7 +8,7 @@ This example is a Python 3.13 environment wired for interactive work in Jupyter 
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/python-example
+cd examples/booths/python-example
 booth
 
 # 2. Inside the booth

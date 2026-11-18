@@ -8,7 +8,7 @@ This example is a batteries-included JVM workspace built around JDK 25. The bund
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/java-example
+cd examples/booths/java-example
 booth
 
 # 2. Inside the booth

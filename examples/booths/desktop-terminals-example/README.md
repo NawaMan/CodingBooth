@@ -14,7 +14,7 @@ already exposes (`glxinfo -B` reports a working GL 4.5 core profile). Nothing ex
 ## Quick start
 
 ```bash
-cd examples/workspaces/desktop-terminals-example
+cd examples/booths/desktop-terminals-example
 booth      # opens the XFCE desktop in your browser
 ```
 

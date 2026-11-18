@@ -8,7 +8,7 @@ This example is a batteries-included Go workspace with gopls, delve, and the GoN
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/go-full-example
+cd examples/booths/go-full-example
 booth
 
 # 2. Inside the booth

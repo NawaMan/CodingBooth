@@ -25,7 +25,7 @@ projects.
 
 ```bash
 # 1. Start the booth (code-server opens in your browser)
-cd examples/workspaces/lean-mathlib-example
+cd examples/booths/lean-mathlib-example
 booth                 # asks once to allow the ~/.cache/mathlib mount; say yes
 
 # 2. In the booth's terminal, the first time only
@@ -103,5 +103,5 @@ Lean rejects a false statement. A default run of all examples skips this one, be
 run unpacks about 7 GB. Run it explicitly:
 
 ```bash
-examples/workspaces/run-example-tests.sh --example lean-mathlib-example
+examples/booths/run-example-tests.sh --example lean-mathlib-example
 ```

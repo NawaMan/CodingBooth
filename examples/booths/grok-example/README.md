@@ -12,7 +12,7 @@ The same booth for other agents: [claude-example](../claude-example/), [codex-ex
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/grok-example
+cd examples/booths/grok-example
 booth
 
 # 2. Inside the booth — start a Grok session

@@ -27,7 +27,7 @@ built into a single Go binary.
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/appwrite-example
+cd examples/booths/appwrite-example
 booth
 
 # 2. Inside the booth — wait for health and point the CLI at localhost

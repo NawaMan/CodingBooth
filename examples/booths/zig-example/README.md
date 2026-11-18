@@ -8,7 +8,7 @@ This example is a minimal Zig project wired up with Zig's native `zig build` sys
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/zig-example
+cd examples/booths/zig-example
 booth
 
 # 2. Inside the booth — build and run the primes demo

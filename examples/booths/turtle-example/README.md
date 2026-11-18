@@ -8,7 +8,7 @@ This example is a classroom turtle-graphics booth with **two languages drawing t
 
 ```bash
 # 1. Launch the booth (XFCE desktop in the browser)
-cd examples/workspaces/turtle-example
+cd examples/booths/turtle-example
 booth
 ```
 

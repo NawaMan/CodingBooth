@@ -8,7 +8,7 @@ This example is a small Mojo factorial — a CLI program and a Jupyter notebook 
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/mojo-example
+cd examples/booths/mojo-example
 booth
 
 # 2. Inside the booth — CLI factorial, or the notebook

@@ -9,7 +9,7 @@
 ## Quick start
 
 ```bash
-cd examples/workspaces/n8n-example
+cd examples/booths/n8n-example
 ../../../codingbooth
 
 # the editor is already starting

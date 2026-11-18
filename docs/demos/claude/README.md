@@ -16,8 +16,8 @@ This article shows the two ways to use it:
 - **As a one-shot command** for scripts, Justfile recipes and quick questions.
 
 Two ready-made examples go with it:
-[claude-example](../../../examples/workspaces/claude-example/) (reuses the host's `claude`
-login) and [claude-token-example](../../../examples/workspaces/claude-token-example/) (logs in with
+[claude-example](../../../examples/booths/claude-example/) (reuses the host's `claude`
+login) and [claude-token-example](../../../examples/booths/claude-token-example/) (logs in with
 a token).
 
 ## 1. Add Claude Code to your project
@@ -47,7 +47,7 @@ claude setup-token                        # on the host, once; copy the sk-ant-o
 export CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-...
 ```
 
-[claude-token-example](../../../examples/workspaces/claude-token-example/) covers the token
+[claude-token-example](../../../examples/booths/claude-token-example/) covers the token
 route in full, including how to keep the token out of your shell history.
 
 ## 2. Chat with Claude inside the booth
@@ -117,7 +117,7 @@ claude -p "$1" --allowedTools "Read" "Glob" "Grep" "Bash(ls:*)" </dev/null
 
 The examples ship this as `just ask "your prompt"` (add `--quiet` first to hide the booth's
 start/stop messages), and
-[claude-example](../../../examples/workspaces/claude-example/README.md#vet-a-repo-before-you-run-it)
+[claude-example](../../../examples/booths/claude-example/README.md#vet-a-repo-before-you-run-it)
 builds a bigger job on the same idea. `just vet <git-url>` clones a stranger's repository into the
 booth and has Claude write a safety report on it, before anything from it runs on your machine.
 
@@ -128,7 +128,7 @@ booth and has Claude write a safety report on it, before anything from it runs o
 ## Try it
 
 ```bash
-cd examples/workspaces/claude-example      # or claude-token-example
+cd examples/booths/claude-example      # or claude-token-example
 ./booth                                    # then: claude
 ```
 

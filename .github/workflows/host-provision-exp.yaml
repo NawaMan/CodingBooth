@@ -151,7 +151,7 @@ jobs:
           path: ${{ runner.temp }}/cli
 
       - name: booth prepare gha
-        working-directory: examples/workspaces/${{ matrix.example }}
+        working-directory: examples/booths/${{ matrix.example }}
         run: |
           install -m 0755 "$RUNNER_TEMP/cli/codingbooth-linux-amd64" "$RUNNER_TEMP/booth"
           "$RUNNER_TEMP/booth" prepare gha --report "$RUNNER_TEMP/report.txt"
@@ -167,7 +167,7 @@ jobs:
 
       - name: Later step, default shell runs the example's own checks
         if: always()
-        working-directory: examples/workspaces/${{ matrix.example }}
+        working-directory: examples/booths/${{ matrix.example }}
         env:
           REPORT: ${{ runner.temp }}/report.txt
           CHECK_SHELL: bash -c

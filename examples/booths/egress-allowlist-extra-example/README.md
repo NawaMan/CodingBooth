@@ -13,7 +13,7 @@ Enforcement uses:
 ## Quick run
 
 ```bash
-cd examples/workspaces/egress-allowlist-extra-example
+cd examples/booths/egress-allowlist-extra-example
 ./booth
 ```
 

@@ -8,7 +8,7 @@ This example installs Debian/Ubuntu system packages with `install apt` on top of
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/apt-example
+cd examples/booths/apt-example
 booth
 
 # 2. Inside the booth — try the preinstalled tools

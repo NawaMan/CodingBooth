@@ -9,9 +9,9 @@ who can read them:
 
 | Way | Keys live in | Select | Example |
 | --- | --- | --- | --- |
-| **Files** | your host `~/.aws/` | `aws-cli` (the `credential` extension is on by default) | [aws-example](../../../examples/workspaces/aws-example/) |
-| **Environment variables** | the shell that starts the booth | `aws-cli+env~credential` | [aws-env-example](../../../examples/workspaces/aws-env-example/) |
-| **EnvFolio** | an encrypted EnvFolio store, unlocked for one command | `aws-cli+env~credential` | [aws-env-example](../../../examples/workspaces/aws-env-example/) |
+| **Files** | your host `~/.aws/` | `aws-cli` (the `credential` extension is on by default) | [aws-example](../../../examples/booths/aws-example/) |
+| **Environment variables** | the shell that starts the booth | `aws-cli+env~credential` | [aws-env-example](../../../examples/booths/aws-env-example/) |
+| **EnvFolio** | an encrypted EnvFolio store, unlocked for one command | `aws-cli+env~credential` | [aws-env-example](../../../examples/booths/aws-env-example/) |
 
 All three end the same way: inside the booth, `aws sts get-caller-identity` answers with who you
 are, and no key is ever written into the project.
@@ -148,15 +148,15 @@ agent) can read them. So pick *which* key carefully:
 ## Try it
 
 ```bash
-cd examples/workspaces/aws-env-example
+cd examples/booths/aws-env-example
 folio exec -s aws -- just check          # or, from ~/.aws: see route 2
 folio exec -s aws -- just config         # the TYPE column says "env"
 ```
 
 ```bash
-cd examples/workspaces/aws-example       # the files route, with a Jupyter notebook
+cd examples/booths/aws-example       # the files route, with a Jupyter notebook
 ./booth -- aws sts get-caller-identity
 ```
 
-Both examples have tests: `examples/workspaces/run-example-tests.sh --example aws-env-example`
+Both examples have tests: `examples/booths/run-example-tests.sh --example aws-env-example`
 runs the env one when your shell has the variables, and reports it **skipped** when it does not.

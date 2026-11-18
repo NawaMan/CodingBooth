@@ -14,7 +14,7 @@ but there is no sound to play through — see [Sound from a booth](../../../docs
 ## Quick start
 
 ```bash
-cd examples/workspaces/drum-beat-example
+cd examples/booths/drum-beat-example
 just beat                 # render 4 bars at 100 BPM and play them
 just beat 128 8           # 8 bars at 128 BPM
 ```

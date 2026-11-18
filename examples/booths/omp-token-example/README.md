@@ -10,7 +10,7 @@ Use this example when the host has no `omp` login to share (CI, a server), or wh
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/omp-token-example
+cd examples/booths/omp-token-example
 booth
 
 # 2. Inside the booth — start an omp session

@@ -8,7 +8,7 @@ This example installs extra command-line tools via [Homebrew on Linux](https://d
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/homebrew-example
+cd examples/booths/homebrew-example
 booth
 
 # 2. Inside the booth — try one of the brew-installed tools

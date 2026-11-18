@@ -8,7 +8,7 @@ This example is a Node.js 22 environment with Jupyter notebook support for both 
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/nodejs-example
+cd examples/booths/nodejs-example
 booth
 
 # 2. Inside the booth — open VS Code, create a .ipynb file and select the JavaScript or TypeScript kernel

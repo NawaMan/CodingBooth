@@ -7,7 +7,7 @@ A small Python file opened in [Zed](https://zed.dev/) on the booth's XFCE deskto
 ## Quick start
 
 ```bash
-cd examples/workspaces/zed-example
+cd examples/booths/zed-example
 ../../../codingbooth          # then open http://localhost:50811
 
 # inside the booth (or click the Zed icon in the dock)

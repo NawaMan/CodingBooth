@@ -8,7 +8,7 @@ This example is an R environment wired for statistical notebooks through Jupyter
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/r-example
+cd examples/booths/r-example
 booth
 
 # 2. Inside the booth

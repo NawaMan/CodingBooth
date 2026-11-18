@@ -14,7 +14,7 @@ The same booth for other agents: [claude-example](../claude-example/), [codex-ex
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/omp-example
+cd examples/booths/omp-example
 booth
 
 # 2. Inside the booth — start an omp session

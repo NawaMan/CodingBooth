@@ -8,7 +8,7 @@ This example bundles a full lineup of JetBrains IDEs into a single CodingBooth d
 
 ```bash
 # 1. Launch the booth (requires a desktop variant)
-cd examples/workspaces/jetbrain-exmple
+cd examples/booths/jetbrain-exmple
 ./booth
 
 # 2. The desktop opens in your browser, on the booth port

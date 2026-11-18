@@ -12,7 +12,7 @@ To log in with a token you pass in instead (no host login needed), see [claude-t
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/claude-example
+cd examples/booths/claude-example
 booth
 
 # 2. Inside the booth — start a Claude Code session

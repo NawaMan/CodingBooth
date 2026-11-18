@@ -9,7 +9,7 @@ the top panel, menu, tray, Thunar, notifications, and the Plank dock.
 ## Quick start
 
 ```bash
-cd examples/workspaces/i3-desktop-example
+cd examples/booths/i3-desktop-example
 booth      # opens the desktop in your browser, already tiling
 ```
 

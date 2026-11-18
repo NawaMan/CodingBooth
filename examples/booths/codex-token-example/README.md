@@ -10,7 +10,7 @@ Use this example when the host has no `codex` login to share (CI, a server), or 
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/codex-token-example
+cd examples/booths/codex-token-example
 booth
 
 # 2. Inside the booth — start a Codex session (the booth is its sandbox, see below)

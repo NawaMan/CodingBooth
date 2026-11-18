@@ -8,7 +8,7 @@ This example installs popular Python CLI tools and libraries globally on top of 
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/pip-example
+cd examples/booths/pip-example
 booth
 
 # 2. Inside the booth — try the preinstalled tools

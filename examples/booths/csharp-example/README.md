@@ -8,7 +8,7 @@ This example is a minimal C# console app targeting .NET 9. The bundled `Program.
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/csharp-example
+cd examples/booths/csharp-example
 booth
 
 # 2. Inside the booth — build and run

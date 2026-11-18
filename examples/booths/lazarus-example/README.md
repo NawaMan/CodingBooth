@@ -14,7 +14,7 @@ from a terminal.
 
 ```bash
 # 1. Launch the booth — opens the XFCE desktop in your browser
-cd examples/workspaces/lazarus-example
+cd examples/booths/lazarus-example
 booth
 
 # 2. From the host (or a terminal on the desktop)

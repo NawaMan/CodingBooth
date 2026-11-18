@@ -13,7 +13,7 @@ of TeX Live the image carries.
 
 ```bash
 # 1. Launch the booth — opens VS Code in your browser
-cd examples/workspaces/latex-example
+cd examples/booths/latex-example
 booth
 
 # 2. Open main.tex and save it: LaTeX Workshop builds main.pdf.

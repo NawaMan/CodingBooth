@@ -42,9 +42,9 @@ done < <(
         find tests -name '*.sh' -type f \
             -not -path '*/prj--*' -not -path '*/logs/*' -not -path '*/.booth/*' \
             -not -path '*/node_modules/*'
-        find examples/workspaces -maxdepth 1 -name '*.sh' -type f
-        find examples/workspaces -mindepth 2 -maxdepth 2 -name 'run-automatic-on-host-test.sh' -type f
-        find examples/workspaces -mindepth 3 -maxdepth 3 -path '*/.cb-tests/*.sh' -type f \
+        find examples/booths -maxdepth 1 -name '*.sh' -type f
+        find examples/booths -mindepth 2 -maxdepth 2 -name 'run-automatic-on-host-test.sh' -type f
+        find examples/booths -mindepth 3 -maxdepth 3 -path '*/.cb-tests/*.sh' -type f \
             -not -name 'inBooth-*'
     } | LC_ALL=C sort
 )

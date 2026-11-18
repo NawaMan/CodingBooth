@@ -54,7 +54,7 @@ export AWS_ACCESS_KEY_ID=AKIA...
 export AWS_SECRET_ACCESS_KEY=...
 export AWS_REGION=us-east-1
 
-cd examples/workspaces/aws-env-example
+cd examples/booths/aws-env-example
 just check               # ./check-connection.sh - OK when the booth can reach AWS
 just whoami              # aws sts get-caller-identity
 just config              # aws configure list - the TYPE column says "env"
@@ -122,7 +122,7 @@ On a host without the variables it is **skipped**, not failed: `.cb-tests/requir
 what it needs, and `run-example-tests.sh` reports the example as `SKIPPED`.
 
 ```bash
-examples/workspaces/run-example-tests.sh --example aws-env-example
+examples/booths/run-example-tests.sh --example aws-env-example
 ```
 
 ## Security Notes

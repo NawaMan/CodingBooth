@@ -8,7 +8,7 @@ This example pre-downloads Maven dependencies at booth-build time so the first r
 
 ```bash
 # 1. Launch the booth (dependencies are resolved during the image build)
-cd examples/workspaces/mvn-deps-example
+cd examples/booths/mvn-deps-example
 booth
 
 # 2. Inside the booth — compile and run; no network round-trips for deps

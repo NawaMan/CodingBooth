@@ -10,7 +10,7 @@ Use this example when the host has no `claude` login to share (CI, a server, mac
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/claude-token-example
+cd examples/booths/claude-token-example
 booth
 
 # 2. Inside the booth — start a Claude Code session

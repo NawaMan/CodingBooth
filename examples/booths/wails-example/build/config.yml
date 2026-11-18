@@ -10,7 +10,7 @@ info:
   productIdentifier: "io.codingbooth.wails-example" # The unique product identifier
   description: "A Wails v3 counter built in a CodingBooth" # The application description
   copyright: "(c) 2026, CodingBooth" # Copyright text
-  comments: "examples/workspaces/wails-example" # Comments
+  comments: "examples/booths/wails-example" # Comments
   version: "0.0.1" # The application version
   # cfBundleIconName: "appicon" # The macOS icon name in Assets.car icon bundles (optional)
   #                               # Should match the name of your .icon file without the extension

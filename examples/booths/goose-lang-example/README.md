@@ -19,7 +19,7 @@ the compiler, so neither fails on a fresh machine with `stdint.h not found`.
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/goose-lang-example
+cd examples/booths/goose-lang-example
 booth
 
 # 2. Inside the booth — run the primes demo

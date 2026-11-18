@@ -2,7 +2,7 @@
 
 Personal/playground booth to **test Firebase CLI host-credential seeding**, especially the case where firebase-tools leaves an empty or `{}` `firebase-tools.json` that would block a normal no-clobber home-seed.
 
-Not the polished product example (`examples/workspaces/firebase-example`). This tree is intentionally small: base variant, Firebase only, one credential mount.
+Not the polished product example (`examples/booths/firebase-example`). This tree is intentionally small: base variant, Firebase only, one credential mount.
 
 ## Prerequisites
 

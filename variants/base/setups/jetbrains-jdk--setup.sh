@@ -30,7 +30,7 @@
 # SDKs are named <vendor>-<major> (temurin-25, corretto-17), which is what a JetBrains
 # IDE calls a JDK it discovers by itself. Projects reference SDKs by name in
 # .idea/misc.xml, so matching that convention is what makes an existing project resolve
-# without editing it -- examples/workspaces/java-example already asks for "temurin-25".
+# without editing it -- examples/booths/java-example already asks for "temurin-25".
 # The JDKs are also symlinked into the seed's ~/.jdks, one of the dirs the IDE scans, so
 # its own detection agrees with this table rather than adding a duplicate entry.
 

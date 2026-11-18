@@ -30,7 +30,7 @@ This is the foundation for running Kubernetes (KIND), building multi-container a
 
 ```bash
 # Start the workspace
-cd examples/workspaces/dind-example
+cd examples/booths/dind-example
 ../../codingbooth
 
 # Inside the workspace, Docker is ready:

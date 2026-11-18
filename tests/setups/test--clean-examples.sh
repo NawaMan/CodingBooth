@@ -17,7 +17,7 @@
 # removal. What is asserted is the script's own selection and ordering, not the
 # engine's filters — those were checked against a real daemon when it was written.
 #
-# Example names come from the real examples/workspaces/ tree: go-example,
+# Example names come from the real examples/booths/ tree: go-example,
 # js-example and server-example-2 (a name that itself ends in -<digits>).
 # -----------------------------------------------------------------------------
 
@@ -52,13 +52,13 @@ trap 'rm -rf "$FAKE_DIR"' EXIT
 
 # id|name|state|cb.code-path|cb.role|cb.parent — every cb.managed container.
 cat > "$FAKE_DIR/containers" <<'EOF'
-c1|go-example|exited|/x/examples/workspaces/go-example||
+c1|go-example|exited|/x/examples/booths/go-example||
 c2|go-example-10000-dind|exited||sidecar|go-example-10000
 c3|myproj|exited|/x/myproj||
-c4|js-example|running|/y/worktree/z/examples/workspaces/js-example||
+c4|js-example|running|/y/worktree/z/examples/booths/js-example||
 c5|myproj-dind|exited||sidecar|myproj
 c6|go-examplex-dind|exited||sidecar|go-examplex
-c7|server-example-2|created|/x/examples/workspaces/server-example-2||
+c7|server-example-2|created|/x/examples/booths/server-example-2||
 EOF
 # Images a running container uses (`ps --format {{.Image}}`).
 echo "codingbooth-local:js-example-base-1.0" > "$FAKE_DIR/running-images"

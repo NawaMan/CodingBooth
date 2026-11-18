@@ -40,7 +40,7 @@ How: `setup bash` moves the distro bash to `/usr/bin/bash.distro` (a `dpkg-diver
 ## Quick start
 
 ```bash
-cd examples/workspaces/bash-example
+cd examples/booths/bash-example
 ../../../codingbooth
 
 # inside the booth

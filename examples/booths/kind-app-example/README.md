@@ -90,7 +90,7 @@ This example includes:
 
 ```bash
 # Start the booth
-cd examples/workspaces/kind-app-example
+cd examples/booths/kind-app-example
 booth
 
 # Inside the workspace, run:

@@ -8,7 +8,7 @@ This example is a minimal PHP environment with Composer for dependency managemen
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/php-example
+cd examples/booths/php-example
 booth
 
 # 2. Inside the booth — run the anagram demo

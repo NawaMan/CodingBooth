@@ -2,6 +2,6 @@
 
 # Test: floci CLI installation via Boothfile.
 # `floci start` needs Docker; this test only proves the CLI landed. The
-# functional "create a bucket" path is examples/workspaces/floci-example.
+# functional "create a bucket" path is examples/booths/floci-example.
 
 setup floci

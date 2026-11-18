@@ -10,7 +10,7 @@ The notebook side is the same story. IHaskell, the Haskell Jupyter kernel, is 14
 
 ```bash
 # 1. Launch the booth
-cd examples/workspaces/haskell-example
+cd examples/booths/haskell-example
 booth
 
 # 2. Inside the booth
