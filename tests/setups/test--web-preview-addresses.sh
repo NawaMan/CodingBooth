@@ -53,3 +53,18 @@ for (const query of ['python', 'python async examples', 'site:python.org async',
 console.log('PASS: booth ports, external addresses, bare hosts, relative navigation and encoded Google searches');
 JS
 print_test_result true "$0" 1 "Preview addresses select the intended booth server, external page or Google search"
+
+# A booth page is framed from the controls' own origin (/proxy/<port>/). An app
+# that refuses to be framed by its own origin (Excalidraw: "I'm not a
+# pretzel!") renders only when it sees no referrer — on the first load, and on
+# Reload, which therefore must not be a true reload: that takes its referrer
+# from the page being reloaded.
+MEDIA=../../variants/base/setups/booth-web-preview/media
+hides=false
+if grep -qF '<meta name="referrer" content="no-referrer">' "$MEDIA/index.html" \
+   && grep -qF 'id="app" title="Preview application" referrerpolicy="no-referrer"' "$MEDIA/index.html" \
+   && ! grep -qE 'location\.reload\(\)' <(grep -vE '^\s*//' "$MEDIA/preview.js"); then
+  hides=true
+fi
+print_test_result "$hides" "$0" 2 "The preview frame sends no referrer and Reload re-navigates instead of reloading"
+[[ "$hides" == true ]]

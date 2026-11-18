@@ -4,6 +4,16 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Excalidraw (and apps like it) work in the Console UI web pane and in Web Preview.** Opening
+  `http://booth:20400/` in a pane, or in the code-server / notebook Web Preview, showed "I'm not
+  a pretzel!": a `booth:` address is served from the same origin as the page framing it, and
+  Excalidraw refuses to render when it sees that origin as its referrer. Both now open a booth
+  page with no referrer, and their Reload opens the address again rather than reloading it,
+  since a true reload brought the message back. The Console UI also refuses service-worker
+  scripts: a proxied app's worker would install on the console's origin and answer later visits
+  itself (Excalidraw's showed the console inside the pane), so apps in a pane run without
+  offline support. A browser that picked up such a worker before this change keeps it until it
+  is removed once by hand (DevTools → Application → Service Workers → Unregister).
 - **Session recording: `booth --record`.** A booth started with `--record` (or `record = true`,
   `CB_RECORD=true`) keeps what is done in it, on the host in `.booth/.tmp/record/`: an activity
   log (every command typed in bash or zsh with its exit status and duration, ports that start

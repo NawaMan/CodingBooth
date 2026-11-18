@@ -1397,8 +1397,36 @@
       // site is cross-origin, where location.reload() throws, so it is
       // loaded again from its src — the page the tab opened on, since where
       // a cross-origin page has navigated to cannot be read.
+      // A web tab is re-navigated rather than reloaded. A true reload takes
+      // its referrer from the page being reloaded, not from the frame's
+      // referrerpolicy, and a /proxy/<port>/ page is same-origin with the
+      // console — so Excalidraw (referrer policy "origin") came back from
+      // every reload believing it was framed by itself ("I'm not a pretzel!").
+      // Setting src goes through the policy again, like the first load.
+      function renavigateWebFrame(iframe) {
+        var href = "";
+        try {
+          href = iframe.contentWindow.location.href;
+        } catch (_e) { /* cross-origin: only the original src is known */ }
+        if (!href || href === "about:blank") href = iframe.src;
+        if (href.indexOf("#") === -1) {
+          iframe.src = href;
+          return;
+        }
+        // Same URL with a fragment is a scroll, not a load — leave the page
+        // first so coming back to it is a real navigation.
+        iframe.addEventListener("load", function() {
+          iframe.src = href;
+        }, { once: true });
+        iframe.src = "about:blank";
+      }
+
       function reloadFrame(iframe) {
         if (!iframe) return;
+        if (iframe.classList.contains("web-tab-frame")) {
+          renavigateWebFrame(iframe);
+          return;
+        }
         try {
           iframe.contentWindow.location.reload();
         } catch (_e) {
@@ -2757,6 +2785,13 @@
         iframe.className = "web-tab-frame";
         iframe.dataset.tabId = tab.id;
         iframe.title = tab.title || tab.display || "Web tab";
+        // A booth: target is served from /proxy/<port>/ on the console's own
+        // origin, so the page would see a same-origin document.referrer and
+        // an app that guards against being framed by itself (Excalidraw:
+        // "I'm not a pretzel!") refuses to render. This covers only the
+        // frame's own navigation — requests the page makes afterwards keep
+        // their Referer, which is what nginx routes root-absolute paths by.
+        iframe.referrerPolicy = "no-referrer";
         iframe.addEventListener("load", function() {
           applyIframeFallbackStyle(iframe);
           syncAddrFromIframe(iframe);

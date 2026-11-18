@@ -80,6 +80,17 @@ http {
         # proxy) and send the browser to a port that is not the published one.
         absolute_redirect off;
 
+        # No service workers on the console's origin. A proxied app registers
+        # its worker from a root-absolute "/sw.js", which lands here with
+        # scope "/" — the whole console, every pane and every other proxied
+        # app. Excalidraw's then answered each later navigation to its own
+        # /proxy/<port>/ with a cached copy of the console page. Browsers mark
+        # the script fetch (and every update check) with this header, so a 404
+        # here stops the install; the console registers no worker of its own.
+        if ($http_service_worker = "script") {
+            return 404;
+        }
+
         # The login form itself is the one page reachable without a session.
         # Already signed in (or no password at all) => nothing to ask for.
         location = /login {

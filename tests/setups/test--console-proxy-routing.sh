@@ -18,7 +18,8 @@
 #    to the cookie.
 # 4) Opening a /proxy/<port>/ page as a document sets cb_proxy_port=<port>;
 #    a subresource does not.
-# 5) With neither, the root still serves the console itself.
+# 5) A service-worker script fetch is refused, at the root and under /proxy/.
+# 6) With neither, the root still serves the console itself.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -126,6 +127,19 @@ check "A /proxy/8080/ page in an iframe (globe pane) sets cb_proxy_port=8080" \
 hdr="$(docker exec "$NAME" curl -s -m 5 -D - -o /dev/null -H 'Sec-Fetch-Dest: script' http://127.0.0.1:10000/proxy/5173/main.js | tr -d '\r')"
 check "A subresource under /proxy/ leaves the cookie alone" \
     "$(grep -qi '^Set-Cookie:' <<< "$hdr" && echo false || echo true)" "$hdr"
+
+# A proxied app's service worker would install on the console's own origin
+# with scope "/" and answer every later navigation there (Excalidraw's served a
+# cached console page in place of itself). The same file as a plain script is
+# still the app's to serve.
+code="$(docker exec "$NAME" curl -s -m 5 -o /dev/null -w '%{http_code}' -H 'Service-Worker: script' -H "$REF_8080" http://127.0.0.1:10000/sw.js)"
+check "A service-worker script fetch is refused (root path)" "$([[ "$code" == 404 ]] && echo true || echo false)" "got: $code"
+
+code="$(docker exec "$NAME" curl -s -m 5 -o /dev/null -w '%{http_code}' -H 'Service-Worker: script' http://127.0.0.1:10000/proxy/8080/sw.js)"
+check "A service-worker script fetch is refused (under /proxy/)" "$([[ "$code" == 404 ]] && echo true || echo false)" "got: $code"
+
+got="$(ask -H "$REF_8080" http://127.0.0.1:10000/sw.js)"
+check "The same path without the Service-Worker header still reaches the app" "$([[ "$got" == app-8080 ]] && echo true || echo false)" "got: $got"
 
 got="$(ask http://127.0.0.1:10000/some/path)"
 check "No Referer and no cookie: the root serves the console" "$([[ "$got" == console-ui ]] && echo true || echo false)" "got: $got"
