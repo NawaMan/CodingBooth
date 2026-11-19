@@ -66,7 +66,8 @@ fi
 
 # Test 4: `dotnet ef` is usable (Entity Framework CLI entrypoint).
 # Output is multi-line ("Entity Framework Core .NET Command-line Tools" then a version).
-ACTUAL=$(capture_codingbooth "cat" --silence-build -- 'bash -lc "dotnet ef --version"') || ACTUAL=""
+# dotnet-ef 11 writes it to stderr (10 and earlier: stdout), so merge the two in the booth.
+ACTUAL=$(capture_codingbooth "cat" --silence-build -- 'bash -lc "dotnet ef --version 2>&1"') || ACTUAL=""
 if echo "$ACTUAL" | grep -qiE 'Entity Framework' && echo "$ACTUAL" | grep -qE '[0-9]+\.[0-9]+'; then
     print_test_result "true" "$0" "4" "dotnet ef reports a version"
 else

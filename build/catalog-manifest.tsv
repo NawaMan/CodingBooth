@@ -168,7 +168,7 @@ setup	jenv	1.0.0	b191d7d6948ccf22c8a25f2ca766b4f5fbd567736399a174ce03255517c689c
 setup	jetbrains	1.0.1	927b691f601bcb3de39398cf11aeb1c8eb81819f19066c70df21a682b02b91f8	variants/base/setups/jetbrains--setup.sh
 setup	jetbrains-first-run	0.1.0	10de26bb2a94e257f55c97087dcbdb549dc59c4d05cf311bc2f440da6c38a4ea	variants/base/setups/jetbrains-first-run--setup.sh
 setup	jetbrains-import-project	0.1.0	9928c407aa4ba054a568a20a1091fdcf833b9ead47157c3a3863e796abfe4dbe	variants/base/setups/jetbrains-import-project--setup.sh
-setup	jetbrains-jdk	0.1.0	21e7e0cd7608d6dfa391e5e4f88f48e48ef2feb63ed162bd0b2761aaef4f18f0	variants/base/setups/jetbrains-jdk--setup.sh
+setup	jetbrains-jdk	0.1.1	8a53b693e6d5908e377878a010702d4625f12318d0c2296eef8d01f45de47d1f	variants/base/setups/jetbrains-jdk--setup.sh
 setup	jetbrains-mono-nerd-font	0.1.0	8bf75fc95d7b2d76d2434c2dcc86bb8ce462302e0bbe92895a1fd2d24210aaee	variants/base/setups/jetbrains-mono-nerd-font--setup.sh
 setup	julia	1.1.0	f0ff7cc839760a6ade10cdc6e9c219ff8c298a5edadb15fc73189e7c361833c1	variants/base/setups/julia--setup.sh
 setup	julia-code-extension	1.0.0	1bb7295322f30356e85152ca1d1a4ded5d469c29fb853544e7f53b31503574a2	variants/base/setups/julia-code-extension--setup.sh
@@ -263,7 +263,7 @@ setup	nodejs-code-extension	1.0.0	06e2a52486f776bb9685b286f98e817579723eb5aa0bbd
 setup	nodejs-nb-kernel	1.0.0	c14bb6754b327912cbe21b464ac50402f02624f62ecd6c4412d24600af580650	variants/base/setups/nodejs-nb-kernel--setup.sh
 setup	notebook	1.2.0	a75a0f15c01dfead920a612aab00ed99e4eed3e0a7c91951e8a47ed0b004d2fc	variants/base/setups/notebook--setup.sh
 setup	obsidian	1.1.0	eb1208e5b663fe6ab23ae7caef4df73b6d49623637332efc5fd2388d158d992e	variants/base/setups/obsidian--setup.sh
-setup	ocaml	0.1.1	0ca2698f113a8208bd1edfabd25a1bc0497101901dc41c6d2666d8298df81f16	variants/base/setups/ocaml--setup.sh
+setup	ocaml	0.1.2	d1c8def0a5bb6a70ce2b60f1f900222ad7b7ec6f7164cf92bc66ed08056bfd95	variants/base/setups/ocaml--setup.sh
 setup	octave	1.0.0	13512ef609c564ac17f75dfe9c1eaa4fbaf24811ff2e1e1be6a83789a75f3298	variants/base/setups/octave--setup.sh
 setup	octave-code-extension	1.0.0	27b2fdae57711ff302bf8e54ffb1e1801db11994c7a7877a612acc1a639a2dec	variants/base/setups/octave-code-extension--setup.sh
 setup	octave-nb-kernel	1.0.0	800150e1139736c66ae5095fae00e09c2126b04cb73d0e33fbbce5ecadfbdaf3	variants/base/setups/octave-nb-kernel--setup.sh
@@ -407,8 +407,8 @@ helper	booth--shutdown	1.0.0	2b7d830b4da0ac0cd237e304c90454dda06febf68fe86c869ce
 helper	booth--theme	0.1.1	438e1bcb87e380d6e4013ed3dac1780bb4ae45aa110d65e45174093c1de40469	variants/base/setups/booth--theme
 helper	booth-keyboard-capture.js	0.1.0	1b8bdf5a1dd143bb693efb5d01ff2fc1ac227a91fffadf5e25a45fdbecb05b18	variants/base/setups/booth-keyboard-capture.js
 helper	booth-lifecycle-watcher	1.0.0	2542a0cbd246097ec7b16b5c30d14769abf02bcc8190b8755b1bb0db4dad2b7f	variants/base/setups/booth-lifecycle-watcher
-helper	booth-message-api-server	1.5.0	d347248f2b10844347e1c5f81c98d5a84d50bdd822cc7198fa651b242e5c1a7e	variants/base/setups/booth-message-api-server
-helper	booth-message-overlay.html	1.3.0	2913c1cd534abe9b5d0a2c6d1838b44b64288753072edd398628c659156bfa68	variants/base/setups/booth-message-overlay.html
+helper	booth-message-api-server	1.6.0	414b1c2185eeaa89825bada7e0bb727e85e3e9068d72cedd9569831b81be463f	variants/base/setups/booth-message-api-server
+helper	booth-message-overlay.html	1.4.0	648f369139738f80e6e41e5f40b5ec937b5a7710627224b29870fec0784f269b	variants/base/setups/booth-message-overlay.html
 helper	booth-ready.js	0.1.1	7f34aa1fc35ab3436a405bb4d037746e60fd207aaf857a16838a889378205d0a	variants/base/setups/booth-ready.js
 helper	booth-timer-notifier	1.0.0	989957246822c338cb8d8d99c3be2e9d8fede407bc75b68469e3981635d620c1	variants/base/setups/booth-timer-notifier
 helper	cb-booth-favicon.sh	0.1.0	1a58ecdc1b85acfb1cc1bf8e775dc533308ed7520611c0c8b62e51d22e31690e	variants/base/setups/cb-booth-favicon.sh

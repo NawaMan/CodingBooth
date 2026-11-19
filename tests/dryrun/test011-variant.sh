@@ -122,6 +122,7 @@ ${SHM}    -p 127.0.0.1:10000:10000 \\
     -e 'BOOTH_HOST_NAME=host.docker.internal' \\
     -e 'BOOTH_HOST_IP=XXXXX' \\
     -e 'BOOTH_EXPECTED_VIEWER_COUNT=1' \\
+    -e 'BOOTH_STAR_PROMPT=XXXXX' \\
     '--pull=never' \\
     -e 'TZ=America/Toronto' \\
     nawaman/codingbooth:${GOT_VARIANT}-${VERSION} \\

@@ -95,6 +95,9 @@ for manifest in $(git ls-files -- '*/.booth/.generated' '.booth/.generated' 2>/d
     while IFS= read -r line; do
         case "$line" in ''|'#'*) continue ;; esac
         name="${line%%=*}"
+        # `templates=<version>` records the catalog release that wrote the files
+        # (guard.go's manifestTemplatesKey) — a key, not a file name.
+        [[ "$name" == "templates" ]] && continue
         [[ -f "$dir/$name" ]] || missing="${missing}${dir}/${name}\n"
     done < "$manifest"
 done

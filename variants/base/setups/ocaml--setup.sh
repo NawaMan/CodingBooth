@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.1
+# cb-version: 0.1.2
 #
 # EXPERIMENTAL: no tests/ suite yet; examples/booths/ocaml-example exercises it.
 

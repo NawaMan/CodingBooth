@@ -1338,6 +1338,7 @@ normalize_output() {
         -e "s/HOST_UID:[[:space:]]+[0-9]+/HOST_UID:       XXXXX/g" \
         -e "s/HOST_GID:[[:space:]]+[0-9]+/HOST_GID:       XXXXX/g" \
         -e "s/BOOTH_HOST_IP=[0-9.]+/BOOTH_HOST_IP=XXXXX/g" \
+        -e "s/BOOTH_STAR_PROMPT=(on|off|done)/BOOTH_STAR_PROMPT=XXXXX/g" \
         -e "s/cb\.created-at=[0-9T:-]+Z/cb.created-at=XXXXX/g"
 }
 

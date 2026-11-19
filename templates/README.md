@@ -433,6 +433,7 @@ with no dependency on a language, so they sit here too.
 | `tools/bash`               | Bash |
 | `tools/build-essential`    | Build Essentials |
 | `tools/cloudbeaver`        | CloudBeaver |
+| `tools/cloudflared`        | Cloudflare Tunnel |
 | `tools/cmake`              | CMake |
 | `tools/conan`              | Conan |
 | `tools/conda`              | Conda (Miniforge) |
@@ -476,6 +477,7 @@ with no dependency on a language, so they sit here too.
 | `tools/mkcert`             | mkcert |
 | `tools/neovim`             | Neovim |
 | `tools/nginx`              | nginx |
+| `tools/ngrok`              | ngrok |
 | `tools/openssh`            | OpenSSH Client |
 | `tools/posting`            | Posting |
 | `tools/pulumi`             | Pulumi |
@@ -494,9 +496,11 @@ with no dependency on a language, so they sit here too.
 |----------------------------|-------------------------------|
 | `aws-cli/credential--extension` | AWS Credentials          |
 | `aws-cli/env--extension`   | AWS Env Credentials           |
+| `cloudflared/share--extension` | Cloudflare Quick Share    |
 | `gh/copilot--extension`    | GitHub Copilot CLI            |
 | `gh/token--extension`      | GitHub CLI Token              |
 | `go/linter--extension`     | Go Linter                     |
+| `ngrok/share--extension`   | ngrok Quick Share             |
 | `openssh/server--extension`| OpenSSH Server                |
 | `openssh/credential--extension` | SSH Credentials          |
 | `openssh/expose--extension`| Expose SSH Port               |
