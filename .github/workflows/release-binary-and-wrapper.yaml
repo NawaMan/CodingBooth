@@ -118,7 +118,7 @@ jobs:
           echo "# CodingBooth Examples" > example-list.txt
           echo "" >> example-list.txt
           echo "## Workspace Examples" >> example-list.txt
-          for dir in examples/workspaces/*-example/; do
+          for dir in examples/booths/*-example/; do
             name=$(basename "$dir")
             echo "- $name" >> example-list.txt
           done
@@ -129,7 +129,7 @@ jobs:
       - name: Package workspace examples
         run: |
           mkdir -p dist
-          cd examples/workspaces
+          cd examples/booths
           for dir in *-example/; do
             name=$(basename "$dir")
             zip -r "../../dist/${name}.zip" "$dir"

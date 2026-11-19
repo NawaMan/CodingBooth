@@ -15,7 +15,7 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 BOOTH_BIN="${PROJECT_ROOT}/codingbooth"
-PLAYGROUND_DIR="${PROJECT_ROOT}/examples/workspaces/empty-example"
+PLAYGROUND_DIR="${PROJECT_ROOT}/examples/booths/empty-example"
 
 VARIANTS=()
 DURATIONS=()

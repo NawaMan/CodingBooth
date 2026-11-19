@@ -152,9 +152,9 @@ for dir in "$SCRIPT_DIR"/*/; do
     : $((updated++))
 done
 
-# Update booth in immediate subfolders of examples/workspaces/
-if [[ -d "$SCRIPT_DIR/workspaces" ]]; then
-    for dir in "$SCRIPT_DIR/workspaces"/*/; do
+# Update booth in immediate subfolders of examples/booths/
+if [[ -d "$SCRIPT_DIR/booths" ]]; then
+    for dir in "$SCRIPT_DIR/booths"/*/; do
         install_booth "$dir"
         : $((updated++))
     done

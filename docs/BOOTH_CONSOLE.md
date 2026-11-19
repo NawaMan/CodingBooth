@@ -117,7 +117,7 @@ Two per-pane settings skip step 2 and make the file win on **every** load, not j
 - **`"web": false`** — the pane is always a terminal. Any Web view this browser saved for it is cleared.
 - **`"web": true` with `"force": true`** — the pane always opens exactly the file's `tabs`. Whatever tabs this browser saved for it are cleared first, so a changed tab list in the file actually takes effect.
 
-Use it when the pane's contents are part of the project's setup rather than a starting suggestion — for example `examples/workspaces/kind-example`, which pins its Markdown viewer and the cluster's service tabs to pane 1 and keeps panes 2 and 3 as terminals:
+Use it when the pane's contents are part of the project's setup rather than a starting suggestion — for example `examples/booths/kind-example`, which pins its Markdown viewer and the cluster's service tabs to pane 1 and keeps panes 2 and 3 as terminals:
 
 ```json
 {

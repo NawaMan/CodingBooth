@@ -1,6 +1,6 @@
 # What Each Example Demonstrates
 
-Every workspace in [`examples/workspaces/`](../examples/workspaces/) is a runnable booth, and
+Every workspace in [`examples/booths/`](../examples/booths/) is a runnable booth, and
 **isolation is the baseline for all of them** — your project files are mounted, everything else
 is contained and ephemeral, and every file you create is owned by your host UID/GID. Isolation is
 assumed everywhere and is not repeated below.

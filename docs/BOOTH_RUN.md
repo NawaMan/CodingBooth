@@ -969,7 +969,7 @@ Host
         └── DOCKER_HOST=tcp://localhost:2375
 ```
 
-> See `examples/workspaces/dind-example` for basic DinD usage and `examples/workspaces/kind-example` for KinD.
+> See `examples/booths/dind-example` for basic DinD usage and `examples/booths/kind-example` for KinD.
 
 **Isolating the sidecar in a VM (`--dind-isolation kata`, experimental)**
 

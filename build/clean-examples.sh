@@ -3,12 +3,12 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 
-# Remove the Docker assets left behind by the booths in examples/workspaces/ —
+# Remove the Docker assets left behind by the booths in examples/booths/ —
 # and only those — instead of `docker system prune -a --volumes`, which also
 # takes every other project's images, volumes and data.
 #
 # What counts as an example asset (see cli/src/pkg/booth for the naming):
-#   containers  stopped, label cb.managed=true, cb.code-path under */examples/workspaces/*
+#   containers  stopped, label cb.managed=true, cb.code-path under */examples/booths/*
 #   sidecars    stopped, label cb.role=sidecar, cb.parent = an example booth name
 #   images      codingbooth-local:<example-folder>-<variant>-<version>
 #   volumes     cb-home-<example booth>  (persisted homes)
@@ -27,7 +27,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-EXAMPLES_DIR="$(cd "$SCRIPT_DIR/../examples/workspaces" && pwd)"
+EXAMPLES_DIR="$(cd "$SCRIPT_DIR/../examples/booths" && pwd)"
 ENGINE="${BOOTH_ENGINE:-docker}"
 
 DRYRUN=false
@@ -40,7 +40,7 @@ show_help() {
 Usage: ./build/clean-examples.sh [options]
 
 Remove the containers, images, home and data volumes, and networks created by the
-booths in examples/workspaces/. Lists what it found, asks, then removes it.
+booths in examples/booths/. Lists what it found, asks, then removes it.
 
 Options:
   -n, --dry-run      List what would be removed; remove nothing
@@ -100,11 +100,11 @@ CONTAINERS="$("$ENGINE" ps -a --filter label=cb.managed=true \
     | awk -F'|' -v re="$BOOTH_RE" '
         $3 == "running" { next }
         $5 == "sidecar" { if ($6 ~ re) print $1 "|" $2 " (sidecar of " $6 ")"; next }
-        $4 ~ /\/examples\/workspaces\// { print $1 "|" $2 }')"
+        $4 ~ /\/examples\/booths\// { print $1 "|" $2 }')"
 
 RUNNING="$("$ENGINE" ps --filter label=cb.managed=true \
         --format '{{.Names}}|{{.Label "cb.code-path"}}' \
-    | awk -F'|' '$2 ~ /\/examples\/workspaces\// { print $1 }')"
+    | awk -F'|' '$2 ~ /\/examples\/booths\// { print $1 }')"
 
 # Images a running container uses are left alone (a shared ID would otherwise be
 # silently untagged rather than refused).

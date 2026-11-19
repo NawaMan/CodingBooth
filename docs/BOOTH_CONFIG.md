@@ -763,7 +763,7 @@ additional project dependencies; it defaults to one build job.
 ### Lean 4 theorem prover (experimental)
 
 Lean is **experimental**. It is new, so expect rough edges. There are two examples:
-`examples/workspaces/lean-example` (core Lean, quick to start) and `lean-mathlib-example`. The
+`examples/booths/lean-example` (core Lean, quick to start) and `lean-mathlib-example`. The
 extensions without an example (`interact`, `blueprint`, `mcp`, `nvim`) are tested by the
 `tests/complex/boothfile/test-boothfile-lean-*` fixtures, which are small working projects too.
 

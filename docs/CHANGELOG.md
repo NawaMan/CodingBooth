@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The examples moved from `examples/workspaces/` to `examples/booths/`.** Only the folder in
+  the repository changed: the example names, the release zips and `booth example` are the same.
+  A link or a script that points at `examples/workspaces/<name>` needs the new path, and
+  `EXAMPLES_WORKSPACES_DIR` (read by `examples/ensure-config.sh` and
+  `examples/sync-apt-snapshot.sh`) is now `EXAMPLES_BOOTHS_DIR`. Older entries below keep the
+  path they were written with.
 - **Excalidraw (and apps like it) work in the Console UI web pane and in Web Preview.** Opening
   `http://booth:20400/` in a pane, or in the code-server / notebook Web Preview, showed "I'm not
   a pretzel!": a `booth:` address is served from the same origin as the page framing it, and

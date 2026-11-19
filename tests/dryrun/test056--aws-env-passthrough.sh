@@ -21,7 +21,7 @@ source ../common--source.sh
 strip_ansi() { sed -r 's/\x1B\[[0-9;]*[A-Za-z]//g'; }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG="$SCRIPT_DIR/../../examples/workspaces/aws-env-example/.booth/config.toml"
+CONFIG="$SCRIPT_DIR/../../examples/booths/aws-env-example/.booth/config.toml"
 
 SECRET_ID="AKIACBTESTDRYRUN$$"
 SECRET_KEY="cb-test-secret-value-$$"

@@ -277,7 +277,7 @@ untouched by this verification):
   same known behavior `--egress` already has (see
   [Verification status](#verification-status)).
 
-**Real example, real setup scripts (2026-09-23):** `examples/workspaces/dind-example`
+**Real example, real setup scripts (2026-09-23):** `examples/booths/dind-example`
 (`--select dind/docker-buildx/...`) was run for real under `--engine podman --dind` —
 the actual `dind--setup.sh` script (not an ad-hoc package install) ran during the
 image build. Its own `start-server.sh` (`docker build -t http-server .` then
@@ -298,7 +298,7 @@ got HTTP 200, `stop-server.sh` cleaned up. No other shipped script forces
 reason).
 
 **kind (Kubernetes-in-Docker) works (2026-09-24/25).**
-`examples/workspaces/kind-example`'s `start-cluster.sh` (`kind create cluster`)
+`examples/booths/kind-example`'s `start-cluster.sh` (`kind create cluster`)
 surfaced three real bugs, all now fixed — two in the sidecar image's shipped
 `/etc/containers/containers.conf` (fixed in `podmanDindStartupScript` in
 `dind_setup.go`, by patching the file before `podman system service` starts), one
@@ -399,7 +399,7 @@ on 2026-09-23 for Phase 4:
 | `booth build --engine podman --silence-build` on the JDK + lazygit + vscode-ext example (10 real build steps): before the fix, the run's captured stdout showed the leaked `STEP`/`RUN` output live; after the fix, stdout carries only the final `Built: …` line and stderr only the experimental warning — the same 10 `STEP` lines still appear (confirmed on the same build without `--silence-build`, redirected to stderr by the pre-existing BuildKit-compat shim), proving the silent path now genuinely hides them rather than the build simply having nothing to print | works |
 | `booth --engine podman --dind --daemon`: the nested-Podman sidecar and booth both start, `docker build`/`docker run` and a `docker-compose up`/DNS/`docker-compose down` cycle all work from inside the booth against its own `DOCKER_HOST`, and `booth stop` removes both containers cleanly | works |
 | An image built by Docker (a fresh test image using `SHELL`/`USER`/`WORKDIR`/`ENTRYPOINT`, and the real local `variants/base` image), copied with `docker save \| podman load` and run on Podman — user, env, workdir, entrypoint and build-time files all intact; the base image starts through `tini` → `booth-entry` and aligns `coder` under `--userns=keep-id --user root` (2026-09-26) | works |
-| `examples/workspaces/kind-example` under `--engine podman --dind`, unmodified except the `KubeletInUserNamespace` fix: `start-cluster.sh` (real `kind create cluster`), `check-cluster.sh`, `deploy-hello.sh` (build → `kind load` → 2-replica rollout → `curl` gets a real JSON response), `remove-hello.sh`, cluster teardown — all as the `coder` user | works |
+| `examples/booths/kind-example` under `--engine podman --dind`, unmodified except the `KubeletInUserNamespace` fix: `start-cluster.sh` (real `kind create cluster`), `check-cluster.sh`, `deploy-hello.sh` (build → `kind load` → 2-replica rollout → `curl` gets a real JSON response), `remove-hello.sh`, cluster teardown — all as the `coder` user | works |
 
 Automated: Go unit tests (`pkg/appctx/engine_test.go`, `pkg/docker/engine_test.go`,
 `pkg/docker/host_check_test.go`, `pkg/docker/docker_build_test.go`,
@@ -490,7 +490,7 @@ The unverified items are **not done yet**; they are tracked, to be done incremen
 | TUI field | `engine` in `pkg/boothinit/tui/configfields.go` |
 | `--dind` + Podman warning | `resolveEngineConfig` in `pkg/booth/init/initialize_app_context.go` |
 | Nested-Podman DinD sidecar | `podmanDindSidecarImage`, `startDindSidecar`, `podmanDindStartupScript` in `pkg/booth/dind_setup.go` |
-| kind's `KubeletInUserNamespace` fix + `mktemp` config path | `examples/workspaces/kind-example/start-cluster.sh` |
+| kind's `KubeletInUserNamespace` fix + `mktemp` config path | `examples/booths/kind-example/start-cluster.sh` |
 | Engine-named user hints (`stop`, DinD `stop`/`network rm`/`logs`, `--persist-home` reclaim) | `engineOrDocker` in `pkg/booth/booth.go`, used from `runAsDaemon`, `printHomeVolumeWarning`, and `waitForDindReady` in `dind_setup.go` |
 | Engine-named build-failure banner | `DockerBuild` in `pkg/docker/docker_build.go` (`flags.binary()`) |
 | Silent-build stream capture per engine (both stdout+stderr on Podman) | `DockerBuild` in `pkg/docker/docker_build.go` |

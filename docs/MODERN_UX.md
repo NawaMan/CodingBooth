@@ -44,7 +44,7 @@ review: "without a launcher, people won't know" — fair). Proven end-to-end, no
 `tests/complex/boothfile/test-boothfile-alacritty` and `test-boothfile-kitty` start a throwaway `Xvnc`
 session, have each terminal run a command in its pty (checked via a marker file — a terminal
 renders its child in its own window, not the caller's stdout, so that's the only reliable signal),
-and check the icon lands in `/etc/skel/Desktop`. `examples/workspaces/desktop-terminals-example`
+and check the icon lands in `/etc/skel/Desktop`. `examples/booths/desktop-terminals-example`
 does the pty/marker-file proof against a real running desktop booth via `docker exec`. All four
 catalog guards (`test86`/`test88`/`test90`/`test92`) pass. Not verified on arm64 — flagged, not
 blocking. Kitty comes from a pinned, SHA256-verified upstream release rather than apt (2026-09-24):

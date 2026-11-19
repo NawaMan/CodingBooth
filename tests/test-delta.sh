@@ -58,9 +58,9 @@ if [[ "${1:-}" == "--list" ]]; then
     echo "unit:     (cd cli && go test ./src/pkg/booth/)"
     echo "          build/check-catalog-versions.sh"
     printf '          tests/config/%s\n' "${CONFIG_TESTS[@]}"
-    printf '          codingbooth --dryrun --code examples/workspaces/%s: one --platform in docker build\n' "${PLATFORM_EXAMPLES[@]}"
+    printf '          codingbooth --dryrun --code examples/booths/%s: one --platform in docker build\n' "${PLATFORM_EXAMPLES[@]}"
     echo "          the same for wails-android-example with its ${PLATFORM_BEFORE} config.toml"
-    printf 'examples: examples/workspaces/run-example-tests.sh --example %s\n' "${EXAMPLES[@]}"
+    printf 'examples: examples/booths/run-example-tests.sh --example %s\n' "${EXAMPLES[@]}"
     echo "          git status of those examples is clean"
     exit 0
 fi
@@ -121,7 +121,7 @@ one_build_platform() {
 one_build_platform_before() {
     local ws="$RUN_DIR/wails-android-before"
     rm -rf "$ws" && mkdir -p "$ws"
-    cp -r "$REPO/examples/workspaces/wails-android-example/.booth" "$ws/"
+    cp -r "$REPO/examples/booths/wails-android-example/.booth" "$ws/"
     git -C "$REPO" show "$PLATFORM_BEFORE:examples/workspaces/wails-android-example/.booth/config.toml" \
         > "$ws/.booth/config.toml" || return 1
     grep -q '^build-args = \["--platform"' "$ws/.booth/config.toml" \
@@ -151,19 +151,19 @@ if want unit; then
         run "config/${t%.sh}" "$REPO/tests/config" bash "$t"
     done
     for e in "${PLATFORM_EXAMPLES[@]}"; do
-        run "dryrun/$e: one build --platform" "$REPO" one_build_platform "$REPO/examples/workspaces/$e"
+        run "dryrun/$e: one build --platform" "$REPO" one_build_platform "$REPO/examples/booths/$e"
     done
     run "dryrun/wails-android-example ($PLATFORM_BEFORE config): one build --platform" "$REPO" one_build_platform_before
 fi
 
 if want examples; then
     # One example per check, so each gets its own line and log. The runner also
-    # keeps its own per-example log, examples/workspaces/.<name>.log.
+    # keeps its own per-example log, examples/booths/.<name>.log.
     for e in "${EXAMPLES[@]}"; do
-        run "example/$e" "$REPO/examples/workspaces" ./run-example-tests.sh --example "$e"
+        run "example/$e" "$REPO/examples/booths" ./run-example-tests.sh --example "$e"
     done
     paths=()
-    for e in "${EXAMPLES[@]}"; do paths+=("examples/workspaces/$e-example"); done
+    for e in "${EXAMPLES[@]}"; do paths+=("examples/booths/$e-example"); done
     run "examples left the tree clean" "$REPO" tree_clean "${paths[@]}"
 fi
 

@@ -301,7 +301,7 @@ new each time. ngrok needs a free account for its authtoken (`NGROK_AUTHTOKEN`, 
 
 The tunnel connects outward from the booth, so it needs no `booth--expose`, no host port and no
 `--public`. Anyone who has the URL can reach the server. Both commands refuse the booth's own port
-(10000) unless given `--ok-booth`. See [share-example](../examples/workspaces/share-example/).
+(10000) unless given `--ok-booth`. See [share-example](../examples/booths/share-example/).
 
 ## Relationship to `-p` and `--expose`
 

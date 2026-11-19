@@ -16,7 +16,7 @@
 # target move; a newer pin, or an empty one (no freeze), is left alone.
 #
 # Usage: examples/sync-apt-snapshot.sh [--check] [--to <id>] [example ...]
-#   example   workspace folder name(s) under examples/workspaces/ (default: all)
+#   example   workspace folder name(s) under examples/booths/ (default: all)
 #   --to      the snapshot to move to (default: apt-snapshot.txt)
 #   --check   only list the examples that are behind; exit 1 when there are any
 
@@ -24,7 +24,7 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-WORKSPACES_DIR="${EXAMPLES_WORKSPACES_DIR:-$SCRIPT_DIR/workspaces}"
+BOOTHS_DIR="${EXAMPLES_BOOTHS_DIR:-$SCRIPT_DIR/booths}"
 CODINGBOOTH="${CODINGBOOTH:-$REPO_DIR/codingbooth}"
 
 # An --rc version has no release catalog to fetch, so use the repo's templates.
@@ -60,7 +60,7 @@ if ! $CHECK && [[ ! -x "$CODINGBOOTH" ]]; then
 fi
 
 if [[ ${#EXAMPLES[@]} -eq 0 ]]; then
-    for dir in "$WORKSPACES_DIR"/*/; do
+    for dir in "$BOOTHS_DIR"/*/; do
         dir="${dir%/}"
         [[ -f "$dir/.booth/Boothfile" ]] && EXAMPLES+=("$(basename "$dir")")
     done
@@ -68,7 +68,7 @@ fi
 
 behind=0 failed=0
 for name in "${EXAMPLES[@]}"; do
-    ws="$WORKSPACES_DIR/$name"
+    ws="$BOOTHS_DIR/$name"
     pinned="$(grep -m1 -o '^env APT_SNAPSHOT=[0-9TZ]*' "$ws/.booth/Boothfile" 2>/dev/null | cut -d= -f2)"
     [[ -n "$pinned" && "$pinned" < "$TARGET" ]] || continue
     behind=$((behind + 1))

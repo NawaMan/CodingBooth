@@ -71,7 +71,7 @@ prototype snapshots retain the counts for the versions they examined.
 | 4 | **template / extension** | `templates/**` | a selectable unit that *generates* `.booth/` — it does no work itself |
 | 5 | **recipe** | `--select @name` | a named, saved selection of templates and extensions |
 | 6 | **local** | a project's `.booth/` | the project-scoped version of every layer above, plus generated files and state |
-| 7 | **example** | `examples/workspaces/*` | published projects that run the whole pipeline, and test it |
+| 7 | **example** | `examples/booths/*` | published projects that run the whole pipeline, and test it |
 
 The one-sentence version: **templates generate config; setups and installs do the work; variants
 are setups pre-baked; local is each layer again, owned by one project; examples prove it all.**
@@ -221,13 +221,13 @@ setup are one file. When the template would be nothing but that one `setup` line
 
 ## 7. Example — the pipeline, end to end
 
-`examples/workspaces/*` are small real projects, each with a generated `.booth/`, a README, and
+`examples/booths/*` are small real projects, each with a generated `.booth/`, a README, and
 usually a `Justfile` and a `.cb-tests/` suite (`tags.txt`, an on-host test, in-booth assertions).
 They do three jobs:
 
 1. **demo** — published, with a README saying what it shows;
 2. **witness** — proof that a catalog piece actually works
-   (`examples/workspaces/run-example-tests.sh --example <name>`);
+   (`examples/booths/run-example-tests.sh --example <name>`);
 3. **try-it folder** — where a catalog change is exercised while it is being made (`setup-work`).
 
 An example's `.booth/setups/` holds **only project-specific scripts**, never copies of built-in
@@ -251,7 +251,7 @@ setups — a copy shadows the real script and drifts from it.
                                       ▼
                                     booth
 
-   examples/workspaces/* = real projects running this whole pipeline (+ .cb-tests)
+   examples/booths/* = real projects running this whole pipeline (+ .cb-tests)
 ```
 
 ## Where to go next

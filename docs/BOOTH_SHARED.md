@@ -159,7 +159,7 @@ Each also mounts the browser's profile like `+bookmarks-shared`. `booth config` 
 browser has no bookmarks there yet ([seeds](BOOTH_LOCALCACHE.md#initial-content)), so later
 changes are kept. **Not with `firefox+managed-policies`:** its `DisableTelemetry` policy stops
 current Firefox from creating its bookmarks toolbar on first start, so the import has nowhere to go.
-`examples/workspaces/browser-shared-example` uses both.
+`examples/booths/browser-shared-example` uses both.
 
 Selecting bookmarks **or** settings for Chrome is enough for both (same `Default/`).
 Selecting bookmarks **or** settings **or** extensions for Firefox is enough for all
@@ -256,7 +256,7 @@ when the setting is really project-scoped.
 
 ### Example workspace
 
-[`examples/workspaces/browser-shared-example/`](../examples/workspaces/browser-shared-example/) —
+[`examples/booths/browser-shared-example/`](../examples/booths/browser-shared-example/) —
 XFCE + Chrome + Firefox, shared dirs, sample gitignores, managed-policies setups.
 
 All are **opt-in** (`auto-select = false`).

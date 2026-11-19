@@ -123,7 +123,7 @@ const podmanDindSidecarImage = "quay.io/podman/stable"
 //     fails with "cannot set hostname when running in the host UTS
 //     namespace", since a host-shared UTS namespace has no hostname of its
 //     own to set. kind (Kubernetes-in-Docker, used by
-//     examples/workspaces/kind-example) does exactly that for its
+//     examples/booths/kind-example) does exactly that for its
 //     control-plane node and hit this for real.
 //   - `cgroups="disabled"` and `cgroupns="host"`: a container that boots
 //     systemd (kind's node image does, to run containerd + kubelet) needs
@@ -139,7 +139,7 @@ const podmanDindSidecarImage = "quay.io/podman/stable"
 // `open /dev/kmsg: operation not permitted` (its OOM watcher, in a user
 // namespace). That third fix belongs to kind's node config, not to this
 // sidecar — a `KubeletInUserNamespace` feature gate set in
-// examples/workspaces/kind-example/start-cluster.sh — and with it kind works
+// examples/booths/kind-example/start-cluster.sh — and with it kind works
 // end to end. See docs/PODMAN_SUPPORT.md, "kind (Kubernetes-in-Docker) works".
 //
 // The patch must happen before `podman system service` starts — it reads

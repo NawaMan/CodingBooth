@@ -5,9 +5,9 @@
 
 
 # Wrapper script to run all example workspace tests
-# Calls examples/workspaces/run-all-example-tests.sh
+# Calls examples/booths/run-all-example-tests.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-EXAMPLES_DIR="$SCRIPT_DIR/../examples/workspaces"
+EXAMPLES_DIR="$SCRIPT_DIR/../examples/booths"
 
 exec "$EXAMPLES_DIR/run-example-tests.sh"

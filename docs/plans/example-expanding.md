@@ -2,7 +2,7 @@
 
 > **Status:** Stages 1–3 implemented (15 examples + apache/nginx setups). Build & full automated test suite not yet rerun against the new content.
 >
-> Goal: grow `examples/workspaces/` beyond language-only examples to cover popular frameworks, hard-to-install stacks, and domains where booth replaces a multi-hour setup with a one-liner. Work proceeds in coherent stages of ~5 examples; each stage ships independently.
+> Goal: grow `examples/booths/` beyond language-only examples to cover popular frameworks, hard-to-install stacks, and domains where booth replaces a multi-hour setup with a one-liner. Work proceeds in coherent stages of ~5 examples; each stage ships independently.
 
 ---
 
@@ -168,7 +168,7 @@ Each is dominated by post-up admin work — realms, dynamic credentials, runner 
 
 ## Cross-cutting follow-ups (not a stage)
 
-- Update `examples/workspaces/run-example-tests.sh` (and any release-test job) to recognize each new example after the stage that introduces it.
+- Update `examples/booths/run-example-tests.sh` (and any release-test job) to recognize each new example after the stage that introduces it.
 - Each new framework example should add at least one `.cb-tests/test001-*-on-host.sh` so the release workflow validates it.
 - After Stage 1 ships, audit the `examples/recipes/` directory for overlap and consolidate or cross-link.
 

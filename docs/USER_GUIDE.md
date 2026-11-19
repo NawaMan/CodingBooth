@@ -131,8 +131,8 @@ The host shell reads a `{{run-in-booth}}` line first, so wrap `$VAR`, `|` or `&&
 
 Inside a booth, a `{{run-in-booth}}` line runs as is only in that booth's own project. Run
 from a booth on a parent folder — `cd ~/code/music-example` in a booth started on
-`examples/workspaces` — a recipe of a project with its own `.booth/` stops with
-`… has its own booth, and this is the workspaces booth - exit it and run the recipe on the host`,
+`examples/booths` — a recipe of a project with its own `.booth/` stops with
+`… has its own booth, and this is the booths booth - exit it and run the recipe on the host`,
 rather than failing on a tool the parent's booth does not have. A subfolder without its own
 `.booth/` is part of the booth's project and runs in place.
 

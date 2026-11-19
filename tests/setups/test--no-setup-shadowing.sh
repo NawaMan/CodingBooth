@@ -69,7 +69,7 @@ else
     report false "a copy of a built-in setup fails the check and is named" "rc=$rc" "$out"
 fi
 
-fixture examples/workspaces/demo/.booth/setups/libs/skip-setup.sh
+fixture examples/booths/demo/.booth/setups/libs/skip-setup.sh
 out="$(bash "$GUARD" "$TMP" 2>&1)" && rc=0 || rc=$?
 if [ "$rc" -eq 1 ] && echo "$out" | grep -qF "demo/.booth/setups/libs/skip-setup.sh"; then
     report true "a copy of a built-in lib fails the check"
@@ -77,7 +77,7 @@ else
     report false "a copy of a built-in lib fails the check" "rc=$rc" "$out"
 fi
 
-fixture examples/workspaces/lamp/.booth/setups/lamp-init--setup.sh
+fixture examples/booths/lamp/.booth/setups/lamp-init--setup.sh
 out="$(bash "$GUARD" "$TMP" 2>&1)" && rc=0 || rc=$?
 if [ "$rc" -eq 0 ]; then
     report true "a script the project adds under its own name passes"
