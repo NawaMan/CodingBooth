@@ -4,6 +4,13 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **gpg decrypts with an imported secret key again.** GnuPG 2.5.24 as released cannot decrypt
+  with a secret key that was imported without a passphrase
+  ([T8469](https://dev.gnupg.org/T8469)), which is every EnvFolio `.folio` export's key. The
+  base image's gpg now carries the two upstream fixes, the same ones Homebrew's `2.5.24_1`
+  applies, in the prebuilt asset and in the source build. The setup checks it after
+  installing: a prebuilt asset from before the fix is set aside and the release is built from
+  source instead. Images built earlier keep the unpatched gpg until they are rebuilt.
 - **A pinned GNU Make or Bash 5.x no longer compiles while the image builds.** `make:4.3`, `make:4.4.1`,
   `bash:5.2.37` and `bash:5.3` now come prebuilt (sha256-checked) from
   [CodingBoothPrebuilt](https://github.com/NawaMan/CodingBoothPrebuilt), built there with the

@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.3.0
+# cb-version: 0.4.0
 
 # gnupg--setup.sh — Install GnuPG 2.5 into /usr/local, so it shadows Ubuntu's
 # gpg on PATH: prebuilt when CodingBoothPrebuilt has it, else from the release.
@@ -21,7 +21,7 @@ Usage:
   $0 [--version <X.Y.Z>]
 
 Examples:
-  $0                       # GnuPG ${GNUPG_DEFAULT_VER:-2.5.24}
+  $0                       # GnuPG 2.5.24
   $0 --version 2.5.24      # pin a release
 
 Notes:
@@ -31,6 +31,9 @@ Notes:
 - A version not prebuilt (yet) is built from source: the release signature is checked
   against the GnuPG release keys, the default version's tarball against its pinned
   SHA256, and build tools and -dev packages are removed again after the build
+- Upstream fixes a release lacks are patched in (2.5.24: https://dev.gnupg.org/T8469,
+  a secret key imported without a passphrase could not decrypt). A prebuilt asset
+  from before a fix fails the check for it, and the release is built from source
 USAGE
 }
 
@@ -57,6 +60,19 @@ RELEASE_KEYS=(
   6DAA6E64A76D2840571B4902528897B826403ADA   # Werner Koch (dist signing 2020)
   AC8E115BF73E2D8D47FA9908E98E9B2D19C6C8BD   # NIIBE Yutaka (GnuPG Release Key)
 )
+
+# Upstream fixes a release lacks, "<commit> <sha256 of its .patch>" each, as Homebrew's
+# formula applies them. Keep in step with CodingBoothPrebuilt's tools/gnupg/build.sh.
+PATCHES=()
+case "$VERSION" in
+  2.5.24)
+    # https://dev.gnupg.org/T8469: a secret key imported without a passphrase cannot
+    # decrypt -- every EnvFolio .folio export's key (Homebrew 2.5.24_1).
+    PATCHES=(
+      "42386bcf8861f04c1bdec5cbb139a03da83d8ef9 93817449be3f93dcade3d79960e33e72959f54f95ff6108f22176bef28111f2b"
+      "5523cec6913bcbd1a374d183899a6f298d2c0e32 0a0acd2f7f25723f3f84ec5c4ecf03b786d73ca61c48487d4d00c0559be89d66"
+    ) ;;
+esac
 
 # ---- root check ----
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
@@ -91,9 +107,9 @@ install_prebuilt() {
 }
 
 build_from_source() {
-  echo "ℹ️  GnuPG ${VERSION}: not prebuilt for this image; building from source..."
+  echo "ℹ️  GnuPG ${VERSION}: building from source..."
   BUILD_DEPS=(
-    bzip2 ca-certificates curl gcc make pkgconf
+    bzip2 ca-certificates curl gcc make patch pkgconf
     libgpg-error-dev libgcrypt20-dev libassuan-dev libksba-dev libnpth0-dev
     libgnutls28-dev libsqlite3-dev libbz2-dev zlib1g-dev libreadline-dev libldap-dev
   )
@@ -145,6 +161,22 @@ build_from_source() {
 
   echo "🔨 Building GnuPG ${VERSION} ..."
   tar -xjf "$TMP/gnupg-${VERSION}.tar.bz2" -C "$TMP"
+  local entry commit sha256
+  for entry in ${PATCHES[@]+"${PATCHES[@]}"}; do
+    read -r commit sha256 <<< "$entry"
+    if ! curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL \
+           "https://github.com/gpg/gnupg/commit/${commit}.patch?full_index=1" -o "$TMP/${commit}.patch"; then
+      echo "❌ Download failed: upstream fix ${commit}" >&2
+      exit 1
+    fi
+    ACTUAL="$(sha256sum "$TMP/${commit}.patch" | awk '{ print $1 }')"
+    if [[ "$ACTUAL" != "$sha256" ]]; then
+      echo "❌ SHA256 mismatch for ${commit}.patch (expected '${sha256}', got '${ACTUAL}')" >&2
+      exit 1
+    fi
+    patch -s -d "$TMP/gnupg-${VERSION}" -p1 < "$TMP/${commit}.patch"
+    echo "🩹 Applied upstream fix ${commit:0:12}"
+  done
   # --with-pinentry-pgm keeps gpg-agent on /usr/bin/pinentry, the alternative
   # that pinentry--setup.sh repoints at a desktop flavour; the default would be
   # /usr/local/bin/pinentry, which nothing provides.
@@ -185,10 +217,43 @@ if [ ! -r "${SETUP_LIBS_DIR}/prebuilt-source.sh" ]; then
 fi
 source "${SETUP_LIBS_DIR}/prebuilt-source.sh"
 
+# A secret key made in one gpg home, exported and imported into another, has to
+# decrypt there (T8469). Run with the installed gpg, in throwaway homes.
+imported_key_decrypts() {
+  local check="$TMP/check" ok=1 gpg=/usr/local/bin/gpg
+  rm -rf "$check"
+  mkdir -p "$check" && mkdir -m 700 "$check/a" "$check/b"
+  GNUPGHOME="$check/a" "$gpg" --batch --quiet --passphrase '' \
+      --quick-generate-key "Check <check@example.com>" default default never >/dev/null 2>&1 || true
+  GNUPGHOME="$check/a" "$gpg" --batch --armor --export-secret-keys 2>/dev/null \
+      | GNUPGHOME="$check/b" "$gpg" --batch --quiet --import >/dev/null 2>&1 || true
+  if echo ok | GNUPGHOME="$check/b" "$gpg" --batch --trust-model always -e -r check@example.com 2>/dev/null \
+       | GNUPGHOME="$check/b" "$gpg" --batch --quiet -d 2>/dev/null | grep -qx ok; then
+    ok=0
+  fi
+  GNUPGHOME="$check/a" /usr/local/bin/gpgconf --kill all >/dev/null 2>&1 || true
+  GNUPGHOME="$check/b" /usr/local/bin/gpgconf --kill all >/dev/null 2>&1 || true
+  rm -rf "$check"
+  return $ok
+}
+
+BUILT_FROM_SOURCE=0
 if cb_prebuilt_install gnupg "$VERSION" native "$TMP/prebuilt"; then
   install_prebuilt
+  # An asset published before a fix was added here does not have it.
+  if ! imported_key_decrypts; then
+    echo "⚠️  The prebuilt GnuPG ${VERSION} cannot decrypt with an imported secret key (an asset from before the fix)."
+    BUILT_FROM_SOURCE=1
+    build_from_source
+  fi
 else
+  echo "ℹ️  GnuPG ${VERSION}: not prebuilt for this image."
+  BUILT_FROM_SOURCE=1
   build_from_source
+fi
+if (( BUILT_FROM_SOURCE )) && ! imported_key_decrypts; then
+  echo "❌ GnuPG ${VERSION} cannot decrypt with an imported secret key" >&2
+  exit 1
 fi
 
 # configure leaves out a component whose dependency it cannot find (dirmngr

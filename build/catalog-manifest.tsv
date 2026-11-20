@@ -129,7 +129,7 @@ setup	gimp	1.0.0	4b4effac44795f1c333af66c5f520921b98066c9dba84e8d5a3f096fd451b92
 setup	gleam	0.2.0	956d29f3571a07bc410dc1e03a027362800dc087961241a111f22378c71a6e49	variants/base/setups/gleam--setup.sh
 setup	gleam-code-extension	0.1.0	3c69d444f944b4a29febf2da07ef1da671db38f78af0677b41e544aa26b7e0ec	variants/base/setups/gleam-code-extension--setup.sh
 setup	glow	1.0.0	28b4080bb70b2a6d359a0ca21f12223e8ed0cd455cabe1c6a7c01377e5cd89fc	variants/base/setups/glow--setup.sh
-setup	gnupg	0.3.0	eff1ae7182559405c9b1eba12af7a191809e6e599c2401ce6503628037475407	variants/base/setups/gnupg--setup.sh
+setup	gnupg	0.4.0	71dc41aae20f04857d5df4118e637951a48e8d786be723bcefd2f40c6705ee30	variants/base/setups/gnupg--setup.sh
 setup	go	1.2.0	d54cbc8dceeba615fc1e7813d5b225d6710c68383d7f3f49028439b514f71c8b	variants/base/setups/go--setup.sh
 setup	go-code-extension	1.0.0	14b5c05adef0b6e5f5eb1593ef84feca1320bdf1ad6150cf845e96b39c822371	variants/base/setups/go-code-extension--setup.sh
 setup	go-nb-kernel	1.2.0	ab962f1468ed6933d31d98078003d71e37ad780dcd2aa4350e95f10d0c6ff2b4	variants/base/setups/go-nb-kernel--setup.sh
