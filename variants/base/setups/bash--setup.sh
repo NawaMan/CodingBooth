@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.3.1
+# cb-version: 0.4.0
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -22,7 +22,10 @@ Notes:
 - 3.2.48 to 3.2.57 come prebuilt (static, sha256-checked) from
   https://github.com/NawaMan/Bash32Ubuntu/releases. Nothing is compiled,
   unless that download fails: then the release is built from source.
-- Any other release is built from https://ftp.gnu.org/gnu/bash/ (or a mirror)
+- Any other release comes prebuilt (sha256-checked) from
+  https://github.com/NawaMan/CodingBoothPrebuilt when it has that version for
+  this Ubuntu and CPU (5.2.37 and 5.3 on Ubuntu 26.04). Otherwise it is built
+  from https://ftp.gnu.org/gnu/bash/ (or a mirror).
 - Installs under /opt/bash/bash-<version>
 - Links /usr/local/bin/bash-<major>.<minor> (and bash-<version> when that differs)
 - The distro bash moves to /usr/bin/bash.distro. /usr/bin/bash becomes a
@@ -218,9 +221,29 @@ build_from_source() {
   make install
 }
 
-if prebuilt_patch && fetch_prebuilt; then
-  install_prebuilt
-else
+# Any other release: CodingBoothPrebuilt's asset is the installed prefix, built
+# with this script's configure line and CFLAGS (its tools/bash/build.sh). It
+# links only libc and libtinfo, which the image's own bash needs too.
+SETUP_LIBS_DIR="${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}"
+if [ ! -r "${SETUP_LIBS_DIR}/prebuilt-source.sh" ]; then
+  SETUP_LIBS_DIR="$(dirname "$0")/libs"
+fi
+source "${SETUP_LIBS_DIR}/prebuilt-source.sh"
+
+install_cb_prebuilt() {
+  rm -rf "$TARGET_DIR"
+  cb_prebuilt_install bash "$VERSION" native "$TARGET_DIR" || return 1
+  [[ -x "$TARGET_DIR/bin/bash" ]] || { echo "❌ The prebuilt GNU Bash ${VERSION} has no bin/bash" >&2; exit 1; }
+}
+
+if prebuilt_patch; then
+  if fetch_prebuilt; then
+    install_prebuilt
+  else
+    build_from_source
+  fi
+elif ! install_cb_prebuilt; then
+  echo "ℹ️  GNU Bash ${VERSION}: not prebuilt for this image; building from source..."
   build_from_source
 fi
 

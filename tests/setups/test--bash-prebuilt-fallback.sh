@@ -18,6 +18,13 @@
 #   3. The download succeeds but the sha256 does not match: the setup fails, and
 #      builds nothing from source.
 #
+# Any other release (5.3) asks NawaMan/CodingBoothPrebuilt instead, under the
+# same two rules:
+#
+#   4. 3.2.57 never asks CodingBoothPrebuilt, and 5.3 never asks Bash32Ubuntu.
+#   5. No asset for 5.3: the script says so, and goes on to the source build.
+#   6. A 5.3 asset whose sha256 does not match stops the setup.
+#
 # Hermetic: curl, apt-get, uname, sha256sum, mkdir, mktemp and rm are stubs that
 # log their arguments. apt-get fails its install, so a fallback stops right after
 # showing itself; rm only removes inside the stub directory. Nothing is
@@ -82,11 +89,11 @@ done
 EOF
 chmod +x "$STUB/bin/"*
 
-run_setup() { # CURL_MODE; prints the output, sets RC
+run_setup() { # CURL_MODE [version]; prints the output, sets RC
     : > "$LOG"
     RC=0
     OUT=$(env EUID=0 PATH="$STUB/bin:/usr/bin:/bin" STUB_LOG="$LOG" STUB_ROOT="$STUB" CURL_MODE="$1" \
-        "$SCRIPT" --version 3.2.57 2>&1) || RC=$?
+        "$SCRIPT" --version "${2:-3.2.57}" 2>&1) || RC=$?
 }
 
 FAILED=0
@@ -106,6 +113,8 @@ grep -q "Bash32Ubuntu/releases/download/bash-3.2.57/bash-3.2.57-ubuntu26.04-arm6
   echo "$OUT" | grep -q "building GNU Bash 3.2.57 from source instead" &&
   grep -q "^apt-get install .*build-essential" "$LOG" && ok=true
 check 1 "a failed prebuilt download falls back to the source build" "$ok"
+asked_cb_prebuilt_for_32=false
+grep -q "CodingBoothPrebuilt" "$LOG" && asked_cb_prebuilt_for_32=true
 
 ok=false
 [[ "$(grep -c "^curl .*--retry 5 --retry-delay 5 .*Bash32Ubuntu" "$LOG" || true)" -ge 1 ]] && ok=true
@@ -116,6 +125,23 @@ ok=false
 [[ "$RC" -ne 0 ]] && echo "$OUT" | grep -q "does not match the release's" &&
   ! echo "$OUT" | grep -q "from source instead" && ! grep -q "build-essential" "$LOG" && ok=true
 check 3 "a sha256 mismatch stops the setup, with no source build" "$ok"
+
+run_setup fail 5.3
+ok=false
+[[ "$asked_cb_prebuilt_for_32" == false ]] && ! grep -q "Bash32Ubuntu" "$LOG" &&
+  grep -q "CodingBoothPrebuilt/releases/download/bash-5.3/bash-5.3-.*-arm64.tar.gz" "$LOG" && ok=true
+check 4 "3.2.57 asks Bash32Ubuntu only, 5.3 asks CodingBoothPrebuilt only" "$ok"
+
+ok=false
+echo "$OUT" | grep -q "GNU Bash 5.3: not prebuilt for this image; building from source" &&
+  grep -q "^apt-get install .*build-essential" "$LOG" && ok=true
+check 5 "a release with no CodingBoothPrebuilt asset falls back to the source build" "$ok"
+
+run_setup ok 5.3
+ok=false
+[[ "$RC" -ne 0 ]] && echo "$OUT" | grep -q "does not match the release's" &&
+  ! echo "$OUT" | grep -q "building from source" && ! grep -q "build-essential" "$LOG" && ok=true
+check 6 "a sha256 mismatch on a CodingBoothPrebuilt asset stops the setup, with no source build" "$ok"
 
 if [[ "$FAILED" -ne 0 ]]; then
     exit 1

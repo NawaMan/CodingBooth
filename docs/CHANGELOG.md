@@ -4,6 +4,13 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A pinned GNU Make or Bash 5.x no longer compiles while the image builds.** `make:4.4.1`,
+  `bash:5.2.37` and `bash:5.3` now come prebuilt (sha256-checked) from
+  [CodingBoothPrebuilt](https://github.com/NawaMan/CodingBoothPrebuilt), built there with the
+  same configure line the setups use, so the image gets the release in seconds and no
+  `build-essential`. A version, Ubuntu or CPU it has no asset for is built from source as
+  before; a checksum mismatch stops the setup. `MAKE_VERSION=apt` (the default) and Bash 3.2
+  (from Bash32Ubuntu) are unchanged.
 - **The examples moved from `examples/workspaces/` to `examples/booths/`.** Only the folder in
   the repository changed: the example names, the release zips and `booth example` are the same.
   A link or a script that points at `examples/workspaces/<name>` needs the new path, and
