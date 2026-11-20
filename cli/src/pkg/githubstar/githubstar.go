@@ -29,8 +29,21 @@ const TmpName = "github-star"
 // markerPath is the user-wide marker: the link was clicked in some booth. "" when
 // the config folder is unknown.
 func markerPath() string {
-	base, err := os.UserConfigDir()
-	if err != nil || base == "" {
+	return markerPathFrom(os.Getenv("XDG_CONFIG_HOME"), os.UserConfigDir)
+}
+
+// markerPathFrom puts the marker under XDG_CONFIG_HOME when it is set to an
+// absolute path, on every OS: os.UserConfigDir honours it on Linux only, and on
+// macOS would put the marker in ~/Library/Application Support even when the user
+// set XDG_CONFIG_HOME. Otherwise it is the OS's config folder.
+func markerPathFrom(xdg string, userConfigDir func() (string, error)) string {
+	base := ""
+	if filepath.IsAbs(xdg) {
+		base = xdg
+	} else if dir, err := userConfigDir(); err == nil {
+		base = dir
+	}
+	if base == "" {
 		return ""
 	}
 	return filepath.Join(base, "codingbooth", "github-star")

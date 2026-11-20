@@ -323,7 +323,8 @@ answered.
 - **Star on GitHub** opens the repository in a new tab and ends the prompt for good, in every
   booth on this host: the page posts `/booth-messages/api/star`, the booth writes
   `.booth/.tmp/github-star`, and the CLI copies that into `<config dir>/codingbooth/github-star`
-  (`~/.config/codingbooth/github-star` on Linux) on `booth stop`, when a foreground booth
+  (`$XDG_CONFIG_HOME` when set, on any OS; otherwise `~/.config` on Linux and
+  `~/Library/Application Support` on macOS) on `booth stop`, when a foreground booth
   exits, and when the next booth on that folder starts (before `.booth/.tmp/` is emptied). Booths started after that get
   `BOOTH_STAR_PROMPT=done`. The browser remembers the click as well, so the same browser stops
   asking at once.
