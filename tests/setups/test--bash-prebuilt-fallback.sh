@@ -126,22 +126,28 @@ ok=false
   ! echo "$OUT" | grep -q "from source instead" && ! grep -q "build-essential" "$LOG" && ok=true
 check 3 "a sha256 mismatch stops the setup, with no source build" "$ok"
 
-run_setup fail 5.3
-ok=false
-[[ "$asked_cb_prebuilt_for_32" == false ]] && ! grep -q "Bash32Ubuntu" "$LOG" &&
-  grep -q "CodingBoothPrebuilt/releases/download/bash-5.3/bash-5.3-.*-arm64.tar.gz" "$LOG" && ok=true
-check 4 "3.2.57 asks Bash32Ubuntu only, 5.3 asks CodingBoothPrebuilt only" "$ok"
+# A CodingBoothPrebuilt asset is named after /etc/os-release (ubuntu26.04), which
+# only Linux has: without it every 5.3 case would wrongly take "no asset".
+if [[ -r /etc/os-release ]]; then
+    run_setup fail 5.3
+    ok=false
+    [[ "$asked_cb_prebuilt_for_32" == false ]] && ! grep -q "Bash32Ubuntu" "$LOG" &&
+      grep -q "CodingBoothPrebuilt/releases/download/bash-5.3/bash-5.3-.*-arm64.tar.gz" "$LOG" && ok=true
+    check 4 "3.2.57 asks Bash32Ubuntu only, 5.3 asks CodingBoothPrebuilt only" "$ok"
 
-ok=false
-echo "$OUT" | grep -q "GNU Bash 5.3: not prebuilt for this image; building from source" &&
-  grep -q "^apt-get install .*build-essential" "$LOG" && ok=true
-check 5 "a release with no CodingBoothPrebuilt asset falls back to the source build" "$ok"
+    ok=false
+    echo "$OUT" | grep -q "GNU Bash 5.3: not prebuilt for this image; building from source" &&
+      grep -q "^apt-get install .*build-essential" "$LOG" && ok=true
+    check 5 "a release with no CodingBoothPrebuilt asset falls back to the source build" "$ok"
 
-run_setup ok 5.3
-ok=false
-[[ "$RC" -ne 0 ]] && echo "$OUT" | grep -q "does not match the release's" &&
-  ! echo "$OUT" | grep -q "building from source" && ! grep -q "build-essential" "$LOG" && ok=true
-check 6 "a sha256 mismatch on a CodingBoothPrebuilt asset stops the setup, with no source build" "$ok"
+    run_setup ok 5.3
+    ok=false
+    [[ "$RC" -ne 0 ]] && echo "$OUT" | grep -q "does not match the release's" &&
+      ! echo "$OUT" | grep -q "building from source" && ! grep -q "build-essential" "$LOG" && ok=true
+    check 6 "a sha256 mismatch on a CodingBoothPrebuilt asset stops the setup, with no source build" "$ok"
+else
+    echo "SKIP: tests 4-6 need /etc/os-release for the CodingBoothPrebuilt asset name ($(uname -s))"
+fi
 
 if [[ "$FAILED" -ne 0 ]]; then
     exit 1

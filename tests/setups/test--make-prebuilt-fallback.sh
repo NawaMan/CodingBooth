@@ -96,18 +96,24 @@ check() { # number, description, ok (true|false)
     fi
 }
 
-run_setup fail 4.4.1
-ok=false
-grep -q "CodingBoothPrebuilt/releases/download/make-4.4.1/make-4.4.1-.*-arm64.tar.gz" "$LOG" &&
-  echo "$OUT" | grep -q "GNU Make 4.4.1: not prebuilt for this image; building from source" &&
-  grep -q "^apt-get install .*build-essential" "$LOG" && ok=true
-check 1 "a release with no prebuilt asset falls back to the source build" "$ok"
+# The asset is named after /etc/os-release (ubuntu26.04), which only Linux has:
+# without it both cases would wrongly take "no asset".
+if [[ -r /etc/os-release ]]; then
+    run_setup fail 4.4.1
+    ok=false
+    grep -q "CodingBoothPrebuilt/releases/download/make-4.4.1/make-4.4.1-.*-arm64.tar.gz" "$LOG" &&
+      echo "$OUT" | grep -q "GNU Make 4.4.1: not prebuilt for this image; building from source" &&
+      grep -q "^apt-get install .*build-essential" "$LOG" && ok=true
+    check 1 "a release with no prebuilt asset falls back to the source build" "$ok"
 
-run_setup ok 4.4.1
-ok=false
-[[ "$RC" -ne 0 ]] && echo "$OUT" | grep -q "does not match the release's" &&
-  ! echo "$OUT" | grep -q "building from source" && ! grep -q "build-essential" "$LOG" && ok=true
-check 2 "a sha256 mismatch stops the setup, with no source build" "$ok"
+    run_setup ok 4.4.1
+    ok=false
+    [[ "$RC" -ne 0 ]] && echo "$OUT" | grep -q "does not match the release's" &&
+      ! echo "$OUT" | grep -q "building from source" && ! grep -q "build-essential" "$LOG" && ok=true
+    check 2 "a sha256 mismatch stops the setup, with no source build" "$ok"
+else
+    echo "SKIP: tests 1-2 need /etc/os-release for the CodingBoothPrebuilt asset name ($(uname -s))"
+fi
 
 run_setup ok apt
 ok=false

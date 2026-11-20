@@ -105,7 +105,7 @@ check $? "the line is in the template, the template is selected, the line is kep
 run booth config validate $prj
 check $? "validate: the booth is valid again"
 
-sed -i '/^setup claude-code/d' "$booth_dir/Boothfile"
+sed_inplace '/^setup claude-code/d' "$booth_dir/Boothfile"
 snapshot
 ! run booth config repair $prj --into other
 check $? "--into refuses a removed template line"
