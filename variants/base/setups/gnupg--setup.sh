@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.4.1
+# cb-version: 0.4.2
 
 # gnupg--setup.sh — Install GnuPG 2.5 into /usr/local, so it shadows Ubuntu's
 # gpg on PATH: prebuilt when CodingBoothPrebuilt has it, else from the release.
@@ -168,11 +168,17 @@ build_from_source() {
   local entry commit sha256
   for entry in ${PATCHES[@]+"${PATCHES[@]}"}; do
     read -r commit sha256 <<< "$entry"
-    # GitHub makes a commit's .patch on request and answers 503 far more often than not,
-    # for minutes at a time: six tries in 15 seconds failed two image builds in a row.
-    # So ask for up to five minutes.
+    # The fixes are kept beside this script (libs/gnupg-patches/): GitHub makes a commit's
+    # .patch on request and answers 503 far more often than not, for minutes at a time, which
+    # failed two image builds in a row. One that is not there is asked for, for up to five
+    # minutes. Either way it has to match the SHA-256 pinned above.
     local try got=0
+    if [ -r "${SETUP_LIBS_DIR}/gnupg-patches/${commit}.patch" ]; then
+      cp "${SETUP_LIBS_DIR}/gnupg-patches/${commit}.patch" "$TMP/${commit}.patch"
+      got=1
+    fi
     for try in $(seq 1 60); do
+      (( got )) && break
       if curl --connect-timeout 15 -fsSL \
            "https://github.com/gpg/gnupg/commit/${commit}.patch?full_index=1" -o "$TMP/${commit}.patch" 2>/dev/null; then
         got=1

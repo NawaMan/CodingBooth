@@ -18,6 +18,13 @@
 #   4. A source build whose gpg still fails stops the setup.
 #   5. An upstream fix whose sha256 does not match stops the setup before
 #      anything is compiled.
+#   6. Every fix the setup pins is kept in libs/gnupg-patches/ and matches its
+#      sha256 (the real one), so a build downloads none of them.
+#   7. With the fixes beside the setup, the source build applies them and asks
+#      GitHub for nothing.
+#
+# Cases 2-5 run with no libs/gnupg-patches/ beside the copy, so they cover the
+# download that is left for a fix not kept there.
 #
 # Hermetic: the setup runs from a copy beside a stub apt--install.sh and a stub
 # prebuilt-source.sh, with CB_GNUPG_TEST_ROOT putting /usr/local and the startup
@@ -219,6 +226,28 @@ ok=false
 [[ "$RC" -ne 0 ]] && echo "$OUT" | grep -q "SHA256 mismatch for 42386bcf8861f04c1bdec5cbb139a03da83d8ef9.patch" &&
   ! grep -q "^make \|^patch " "$LOG" && ok=true
 check 5 "an upstream fix whose sha256 does not match stops the setup before anything is compiled" "$ok"
+
+# The pinned fixes, read out of the setup: "<commit> <sha256>" lines.
+PINNED="$(sed -n 's/^ *"\([0-9a-f]\{40\}\) \([0-9a-f]\{64\}\)"$/\1 \2/p' "$SCRIPT")"
+PATCH_DIR="$REPO_ROOT/variants/base/setups/libs/gnupg-patches"
+ok=true; detail=""
+[[ -n "$PINNED" ]] || { ok=false; detail="no pinned fix found in the setup"; }
+while read -r commit want; do
+    [[ -n "$commit" ]] || continue
+    have="$(/usr/bin/sha256sum "$PATCH_DIR/$commit.patch" 2>/dev/null | awk '{ print $1 }')"
+    [[ "$have" == "$want" ]] || { ok=false; detail+=" $commit: ${have:-missing}"; }
+done <<< "$PINNED"
+RC=0; OUT="$detail"; : > "$LOG"
+check 6 "every pinned upstream fix is kept in libs/gnupg-patches/ and matches its sha256" "$ok"
+
+mkdir -p "$STUB/setups/libs/gnupg-patches"
+cp "$PATCH_DIR"/*.patch "$STUB/setups/libs/gnupg-patches/"
+run_setup none
+ok=false
+installed && [[ "$(grep -c '^patch ' "$LOG")" -eq 2 ]] && ! grep -q "curl .*gpg/gnupg/commit" "$LOG" &&
+  [[ -f "$ROOT/usr/local/share/patched" ]] && ok=true
+check 7 "with the fixes beside the setup the source build applies them and asks GitHub for nothing" "$ok"
+rm -rf "$STUB/setups/libs/gnupg-patches"
 
 if [[ "$FAILED" -ne 0 ]]; then
     exit 1
