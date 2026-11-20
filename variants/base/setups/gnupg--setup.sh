@@ -77,6 +77,10 @@ esac
 # ---- root check ----
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
+# Where the install lands. CB_GNUPG_TEST_ROOT (tests only) puts /usr/local and the startup
+# hook under a scratch folder; the build itself is always configured for /usr/local.
+PREFIX="${CB_GNUPG_TEST_ROOT:-}/usr/local"
+
 SETUPS_DIR="$(dirname "$0")"
 [ -x "${SETUPS_DIR}/apt--install.sh" ] || SETUPS_DIR=/opt/codingbooth/setups
 
@@ -99,10 +103,10 @@ install_prebuilt() {
   fi
   local d
   for d in bin sbin libexec share; do
-    [[ -d "$src/$d" ]] && cp -a "$src/$d" /usr/local/
+    [[ -d "$src/$d" ]] && cp -a "$src/$d" "$PREFIX/"
   done
-  mkdir -p /usr/local/share/doc/gnupg
-  cp "$src/BUILD-INFO.txt" "$src/COPYING" /usr/local/share/doc/gnupg/
+  mkdir -p "$PREFIX/share/doc/gnupg"
+  cp "$src/BUILD-INFO.txt" "$src/COPYING" "$PREFIX/share/doc/gnupg/"
   ldconfig
 }
 
@@ -194,7 +198,7 @@ build_from_source() {
 
   # Keep the runtime libraries the new binaries link against, then drop the rest
   # of what this run added (compilers, headers).
-  LIBS=$(for b in /usr/local/bin/* /usr/local/libexec/*; do
+  LIBS=$(for b in "$PREFIX"/bin/* "$PREFIX"/libexec/*; do
            ldd "$b" 2>/dev/null || true
          done | awk '$3 ~ /^\// { print $3 }' | LC_ALL=C sort -u)
   NEEDED=$(for lib in $LIBS; do
@@ -220,7 +224,7 @@ source "${SETUP_LIBS_DIR}/prebuilt-source.sh"
 # A secret key made in one gpg home, exported and imported into another, has to
 # decrypt there (T8469). Run with the installed gpg, in throwaway homes.
 imported_key_decrypts() {
-  local check="$TMP/check" ok=1 gpg=/usr/local/bin/gpg
+  local check="$TMP/check" ok=1 gpg="$PREFIX/bin/gpg"
   rm -rf "$check"
   mkdir -p "$check" && mkdir -m 700 "$check/a" "$check/b"
   GNUPGHOME="$check/a" "$gpg" --batch --quiet --passphrase '' \
@@ -231,8 +235,8 @@ imported_key_decrypts() {
        | GNUPGHOME="$check/b" "$gpg" --batch --quiet -d 2>/dev/null | grep -qx ok; then
     ok=0
   fi
-  GNUPGHOME="$check/a" /usr/local/bin/gpgconf --kill all >/dev/null 2>&1 || true
-  GNUPGHOME="$check/b" /usr/local/bin/gpgconf --kill all >/dev/null 2>&1 || true
+  GNUPGHOME="$check/a" "$PREFIX/bin/gpgconf" --kill all >/dev/null 2>&1 || true
+  GNUPGHOME="$check/b" "$PREFIX/bin/gpgconf" --kill all >/dev/null 2>&1 || true
   rm -rf "$check"
   return $ok
 }
@@ -261,7 +265,7 @@ fi
 # would fall through to Ubuntu's 2.4 copy, so check each.
 hash -r
 for b in bin/gpg bin/gpg-agent bin/gpgsm bin/gpgconf bin/dirmngr libexec/keyboxd libexec/scdaemon; do
-  if ! /usr/local/$b --version 2>/dev/null | head -1 | grep -qF "${VERSION}"; then
+  if ! "$PREFIX/$b" --version 2>/dev/null | head -1 | grep -qF "${VERSION}"; then
     echo "❌ /usr/local/$b is missing or does not report ${VERSION}" >&2
     exit 1
   fi
@@ -273,7 +277,7 @@ done
 # .booth/.tmp/gnupg-keys/private-keys/, and for gnupg+keys the host's public keyring into
 # pubkeys.asc. This hook puts them into the booth's gpg home, never over a key file already there;
 # the booth's own gpg-agent asks for a passphrase, in the booth, when a key is used.
-STARTUP_FILE="/usr/share/startup.d/55-cb-gnupg-keys--startup.sh"
+STARTUP_FILE="${CB_GNUPG_TEST_ROOT:-}/usr/share/startup.d/55-cb-gnupg-keys--startup.sh"
 mkdir -p "$(dirname "$STARTUP_FILE")"
 cat > "$STARTUP_FILE" <<'EOF'
 #!/usr/bin/env bash
