@@ -5,6 +5,8 @@
 package booth
 
 import (
+	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -100,5 +102,58 @@ func TestMarkVolumesCreate(t *testing.T) {
 		"-v", "/data:/home/coder/.folio/:ro,create", "-v", "/x:/home/coder/.gnupg:create", "-v", "/other:/srv"}
 	if !reflect.DeepEqual(flat, want) {
 		t.Errorf("marked = %q,\n want %q", flat, want)
+	}
+}
+
+func TestFolioHostAgentArgs(t *testing.T) {
+	got := folioHostAgentArgs("1000", "1001", "/run/user/1000/gnupg/d.abc/S.gpg-agent")
+	want := [][]string{
+		{"--tmpfs", "/run/user/1000/gnupg:uid=1000,gid=1001,mode=0700"},
+		{"-v", "/run/user/1000/gnupg/d.abc/S.gpg-agent:/run/user/1000/gnupg/S.gpg-agent"},
+		{"-e", "GPG_TTY=/dev/null"},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("args = %q,\n want %q", got, want)
+	}
+}
+
+func TestHostAgentSocket(t *testing.T) {
+	old := gpgconfCommand
+	t.Cleanup(func() { gpgconfCommand = old })
+	dir := t.TempDir()
+	// A gpgconf that names a socket, and records that it was asked to launch the agent.
+	script := filepath.Join(dir, "gpgconf")
+	body := "#!/bin/sh\ncase \"$*\" in\n" +
+		"  *--launch*) touch " + dir + "/launched ;;\n" +
+		"  *agent-socket*) echo " + dir + "/S.gpg-agent ;;\n" +
+		"esac\n"
+	if err := os.WriteFile(script, []byte(body), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	gpgconfCommand = script
+	launched := func() bool { _, err := os.Stat(filepath.Join(dir, "launched")); return err == nil }
+	yes, no := func(string) bool { return true }, func(string) bool { return false }
+
+	if socket, why := hostAgentSocket("darwin", dir, "/h", yes); socket != "" || !strings.Contains(why, "darwin") {
+		t.Errorf("a non-Linux host must share no socket and say so, got %q, %q", socket, why)
+	}
+	if socket, why := hostAgentSocket("linux", dir, "/h", yes); socket != dir+"/S.gpg-agent" || why != "" {
+		t.Errorf("a running agent: socket = %q, why = %q", socket, why)
+	}
+	if launched() {
+		t.Error("a running agent must not be launched again")
+	}
+	// Not running: launched; the socket appears with the second look.
+	looks := 0
+	appears := func(string) bool { looks++; return looks > 1 }
+	if socket, _ := hostAgentSocket("linux", dir, "/h", appears); socket != dir+"/S.gpg-agent" || !launched() {
+		t.Errorf("an agent that is not running must be launched, got socket %q, launched %v", socket, launched())
+	}
+	if socket, why := hostAgentSocket("linux", dir, "/h", no); socket != "" || !strings.Contains(why, "no gpg-agent socket") {
+		t.Errorf("no socket even after a launch must share none and say so, got %q, %q", socket, why)
+	}
+	gpgconfCommand = filepath.Join(dir, "missing")
+	if socket, why := hostAgentSocket("linux", dir, "/h", yes); socket != "" || !strings.Contains(why, "gpgconf") {
+		t.Errorf("no gpgconf on the host must share none and say so, got %q, %q", socket, why)
 	}
 }

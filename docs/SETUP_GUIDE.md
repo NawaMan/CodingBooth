@@ -210,6 +210,7 @@ booth's home at start, read-only:
 | `aws-cli+env` | the host's `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`, `AWS_REGION`, `AWS_DEFAULT_REGION`, by name; `aws-cli+env~credential` for these alone (CI, or `folio exec -s aws -- booth …`) — see [AWS in a Booth](demos/aws/README.md) |
 | `envfolio+seed` | chosen items of your host's EnvFolio store, still encrypted, and the store key (passphrase-protected), so `folio` in the booth opens the secrets itself (`envfolio+seed:"gh @app1 --secrets"` — the arguments you give `folio exec`) |
 | `envfolio+store-host` | your host's whole EnvFolio store and gpg keyring, live and writable — every private key included |
+| `envfolio+store-host+host-agent` | the same, and gpg in the booth uses your host's gpg-agent: the passphrase is asked and cached on the host, and the booth can use every key unlocked there (Linux hosts) |
 | `gnupg+keys` | chosen GPG keys (passphrase-protected) and your public keyring: `gnupg+keys:"me@example.com"` |
 | `claude-code+credential`, `codex+credential`, `gemini-cli+credential`, … | that AI tool's login |
 

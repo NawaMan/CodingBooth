@@ -93,7 +93,7 @@ setup	elixir	1.1.0	babd375fad790de916e90d4b579af09636776c061b51d4bd290e066fc1db9
 setup	elixir-code-extension	1.0.0	1743fe565bbebf15186049e8fc3dee0bfedf050c56c3e26cdf7fa2e2c03b1cc4	variants/base/setups/elixir-code-extension--setup.sh
 setup	elm	1.2.0	cde7019ecf2f9789bf0f9c4ad5bbf3690f001c69df6b9bf83836fc42994a20a2	variants/base/setups/elm--setup.sh
 setup	elm-code-extension	1.0.0	6e0caa93413bd80117a033e9a2f94c537a9867e775427f778347a4f8e312aedc	variants/base/setups/elm-code-extension--setup.sh
-setup	envfolio	2.9.0	41db0d175f274b626a6439d88ea9a220fe8c5d817327c745181f20b32356712f	variants/base/setups/envfolio--setup.sh
+setup	envfolio	2.10.0	ef0a73d682c4efdc90c34229c5547bcc4faa2ea338df6ef42fea99cdf3de8448	variants/base/setups/envfolio--setup.sh
 setup	erlang	1.0.0	24ad8e50ad69aef9725262acd39b14885d8007f85bacd31e360b75a39d6175ab	variants/base/setups/erlang--setup.sh
 setup	erlang-code-extension	1.0.0	6e5b09d75439bec5b67b899d850b0a99cb07c3fe72052e8061458843f60aff70	variants/base/setups/erlang-code-extension--setup.sh
 setup	excalidraw	1.1.0	02f04628f0678822959537b54d80a34743aae9c1d30c77b41fb45aaa06f34f87	variants/base/setups/excalidraw--setup.sh
@@ -129,7 +129,7 @@ setup	gimp	1.0.0	4b4effac44795f1c333af66c5f520921b98066c9dba84e8d5a3f096fd451b92
 setup	gleam	0.2.0	956d29f3571a07bc410dc1e03a027362800dc087961241a111f22378c71a6e49	variants/base/setups/gleam--setup.sh
 setup	gleam-code-extension	0.1.0	3c69d444f944b4a29febf2da07ef1da671db38f78af0677b41e544aa26b7e0ec	variants/base/setups/gleam-code-extension--setup.sh
 setup	glow	1.0.0	28b4080bb70b2a6d359a0ca21f12223e8ed0cd455cabe1c6a7c01377e5cd89fc	variants/base/setups/glow--setup.sh
-setup	gnupg	0.4.0	9a96e60b3f552f5d6831ef5c73d9350e07260d2facf55df7dedd5974108318fa	variants/base/setups/gnupg--setup.sh
+setup	gnupg	0.4.1	afd5ebce30f7f4b820521369bea15bf464c9cc7a9ee503998ba3c11d07df1f6a	variants/base/setups/gnupg--setup.sh
 setup	go	1.2.0	d54cbc8dceeba615fc1e7813d5b225d6710c68383d7f3f49028439b514f71c8b	variants/base/setups/go--setup.sh
 setup	go-code-extension	1.0.0	14b5c05adef0b6e5f5eb1593ef84feca1320bdf1ad6150cf845e96b39c822371	variants/base/setups/go-code-extension--setup.sh
 setup	go-nb-kernel	1.2.0	ab962f1468ed6933d31d98078003d71e37ad780dcd2aa4350e95f10d0c6ff2b4	variants/base/setups/go-nb-kernel--setup.sh
@@ -734,6 +734,7 @@ extension	elixir+mix-deps	1.0.0	22616ac46a460263aa755b2639698546c95cba7e46a5e638
 extension	elixir+repl-history	1.0.0	3516d04cfa6733442c41993f050f6d0d58a8d2400c95c7b161c0342be94ed53a	templates/languages/elixir/repl-history--extension.toml
 extension	elixir+vscode-ext	1.0.0	3957ded1247420d09f277913d2598a7717d4d1d6dc16dee3d8c08bdc7b0df913	templates/languages/elixir/vscode-ext--extension.toml
 extension	elm+vscode-ext	1.0.0	e7db7995335a5c73a4a79143ee82c59ad8d021edea1037bea9f06dcdbb367d9e	templates/languages/elm/vscode-ext--extension.toml
+extension	envfolio+host-agent	1.0.0	dc26d05ababa495a8117aa200689071a49fcad6cf4b852753e7fe823d67593a9	templates/tools/envfolio/host-agent--extension.toml
 extension	envfolio+seed	1.1.0	bc7c4cac150683bd22152cd253e75393d270d29f210f761834e0eddbc5ef6909	templates/tools/envfolio/seed--extension.toml
 extension	envfolio+store-cache	2.0.2	c77e5bd37b6041411f5089a8e2eb0c937ca1a98bcbf5c2a33b2ba8f46b1e37d5	templates/tools/envfolio/store-cache--extension.toml
 extension	envfolio+store-host	1.0.0	749ed674a2cd9ac08de9cf3b3eb40b0c6c8f97117c3d19197ecab3fe6dfa56c8	templates/tools/envfolio/store-host--extension.toml

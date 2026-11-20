@@ -4,6 +4,18 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`envfolio+host-agent`: unlock once on the host, not in every booth.** With
+  `envfolio+store-host`, each booth started its own gpg-agent, so the store key's passphrase was
+  asked inside the booth on every run and the cache went with the container. Selected together
+  with `+store-host`, the new extension has the booth's gpg use the host's gpg-agent: booth asks
+  the host's `gpgconf` for the agent socket (starting the agent if needed) and mounts it where
+  the booth's gpg looks for its own. The booth cannot ask for a passphrase — its shells have
+  `GPG_TTY=/dev/null`, since the terminal name gpg would pass belongs to another terminal on the
+  host — so unlock on the host first (any gpg command that uses the key); an uncached key fails
+  in the booth rather than prompting. While a key is unlocked on the host, anything in the booth
+  can decrypt and sign with it, and each start says so. Linux hosts only: on macOS and Windows
+  the extension does nothing and the booth asks as before. Refused without `+store-host` and
+  with `--booth-isolation kata`. Needs a base image built from this version.
 - **gpg decrypts with an imported secret key again.** GnuPG 2.5.24 as released cannot decrypt
   with a secret key that was imported without a passphrase
   ([T8469](https://dev.gnupg.org/T8469)), which is every EnvFolio `.folio` export's key. The

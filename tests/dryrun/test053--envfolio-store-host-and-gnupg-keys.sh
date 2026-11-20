@@ -13,6 +13,11 @@
 # refuses a combination. gnupg+keys passes the key names to the run; a dry run
 # only says what it would bring, and a name that looks like a gpg option is
 # refused before gpg could see it.
+#
+# envfolio+host-agent (with +store-host) mounts the host's gpg-agent socket in a
+# tmpfs of the booth user's own, sets GPG_TTY=/dev/null and warns; without
+# +store-host it is refused. A dry run names the default socket without asking
+# the host's gpgconf.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -78,3 +83,26 @@ OUT=$(dry 'gnupg')
 ok=false
 ! printf '%s\n' "$OUT" | grep -F "CB_GNUPG_KEYS" >/dev/null && ok=true
 result "$ok" 7 "gnupg alone brings nothing" "$OUT"
+
+OUT=$(dry 'envfolio+store-host+host-agent')
+U=$(id -u) G=$(id -g)
+ok=false
+printf '%s\n' "$OUT" | grep -F -- "--tmpfs '/run/user/$U/gnupg:uid=$U,gid=$G,mode=0700'" >/dev/null \
+  && printf '%s\n' "$OUT" | grep -F -- "-v /run/user/$U/gnupg/S.gpg-agent:/run/user/$U/gnupg/S.gpg-agent" >/dev/null \
+  && printf '%s\n' "$OUT" | grep -F -- "-e 'GPG_TTY=/dev/null'" >/dev/null \
+  && ok=true
+result "$ok" 8 "host-agent mounts the host's gpg-agent socket in the booth user's own tmpfs, with no terminal named" "$OUT"
+
+ok=false
+printf '%s\n' "$OUT" | grep -F "Warning: envfolio+host-agent: gpg in this booth uses the host's gpg-agent" >/dev/null && ok=true
+result "$ok" 9 "host-agent warns that the booth can use every key the host has unlocked" "$OUT"
+
+OUT=$(dry 'envfolio+host-agent')
+ok=false
+printf '%s\n' "$OUT" | grep -F "envfolio+host-agent: needs envfolio+store-host" >/dev/null && ok=true
+result "$ok" 10 "host-agent without store-host is refused" "$OUT"
+
+OUT=$(dry 'envfolio+store-host')
+ok=false
+! printf '%s\n' "$OUT" | grep -E "S\.gpg-agent|GPG_TTY|/run/user/$U/gnupg" >/dev/null && ok=true
+result "$ok" 11 "store-host alone mounts no agent socket and leaves GPG_TTY alone" "$OUT"
