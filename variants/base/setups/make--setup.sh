@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.1
+# cb-version: 1.1.0
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -13,13 +13,17 @@ Usage:
   $0 [--version <X.Y>] [--from-apt] [--with-docs]
 
 Examples:
-  $0                         # build GNU Make 4.4.1 from source into /opt/make
-  $0 --version 4.3           # build a specific version
+  $0                         # GNU Make 4.4.1 into /opt/make
+  $0 --version 4.3           # a specific version
   $0 --from-apt              # install distro's make package quickly
   $0 --version 4.4.1 --with-docs  # also install manpages (source build)
 
 Notes:
-- Source build installs to /opt/make/make-<ver> and links /opt/make-stable
+- A pinned release comes prebuilt (sha256-checked) from
+  https://github.com/NawaMan/CodingBoothPrebuilt when it has that version for
+  this Ubuntu and CPU. Otherwise it is built from source, which installs
+  build-essential.
+- Either way it installs to /opt/make/make-<ver> and links /opt/make-stable
 - Adds /usr/local/bin/make wrapper so it works in non-login shells
 - APT mode installs distro's 'make' and points /opt/make-stable to it
 USAGE
@@ -90,50 +94,74 @@ if [[ $FROM_APT -eq 1 ]]; then
   ln -sfn "$TARGET_DIR" "$LINK_DIR"
 
 else
-  # ---------- SOURCE BUILD MODE ----------
-  apt-get update
-  apt-get install -y --no-install-recommends \
-    build-essential curl ca-certificates tar xz-utils
-  # docs require help2man & groff (only if requested)
-  if [[ $WITH_DOCS -eq 1 ]]; then
-    apt-get install -y --no-install-recommends help2man groff
-  fi
-  rm -rf /var/lib/apt/lists/*
-
+  # ---------- PINNED RELEASE: prebuilt, else built from source ----------
   TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
-  TARBALL="make-${VERSION}.tar.gz"
-  # Three sources, tried in order. --connect-timeout keeps an unreachable host
-  # from costing minutes per retry before the next source gets its turn.
-  MIRRORS=(
-    "https://ftp.gnu.org/gnu/make"
-    "https://ftpmirror.gnu.org/make"
-    "https://mirrors.kernel.org/gnu/make"
-  )
 
-  echo "⬇️  Downloading GNU Make ${VERSION} ..."
-  got_tarball=0
-  for mirror in "${MIRRORS[@]}"; do
-    if curl --connect-timeout 15 --retry 3 --retry-delay 3 --retry-all-errors \
-        -fsSL "${mirror}/${TARBALL}" -o "$TMP/$TARBALL"; then
-      got_tarball=1
-      break
+  build_from_source() {
+    echo "ℹ️  GNU Make ${VERSION}: not prebuilt for this image; building from source..."
+    apt-get update
+    apt-get install -y --no-install-recommends \
+      build-essential curl ca-certificates tar xz-utils
+    # docs require help2man & groff (only if requested)
+    if [[ $WITH_DOCS -eq 1 ]]; then
+      apt-get install -y --no-install-recommends help2man groff
     fi
-    echo "   ${mirror} failed, trying the next mirror..."
-  done
-  (( got_tarball )) || { echo "❌ Could not download ${TARBALL} from any mirror" >&2; exit 1; }
+    rm -rf /var/lib/apt/lists/*
 
-  echo "📦 Building GNU Make ${VERSION} ..."
+    TARBALL="make-${VERSION}.tar.gz"
+    # Three sources, tried in order. --connect-timeout keeps an unreachable host
+    # from costing minutes per retry before the next source gets its turn.
+    MIRRORS=(
+      "https://ftp.gnu.org/gnu/make"
+      "https://ftpmirror.gnu.org/make"
+      "https://mirrors.kernel.org/gnu/make"
+    )
+
+    echo "⬇️  Downloading GNU Make ${VERSION} ..."
+    got_tarball=0
+    for mirror in "${MIRRORS[@]}"; do
+      if curl --connect-timeout 15 --retry 3 --retry-delay 3 --retry-all-errors \
+          -fsSL "${mirror}/${TARBALL}" -o "$TMP/$TARBALL"; then
+        got_tarball=1
+        break
+      fi
+      echo "   ${mirror} failed, trying the next mirror..."
+    done
+    (( got_tarball )) || { echo "❌ Could not download ${TARBALL} from any mirror" >&2; exit 1; }
+
+    echo "📦 Building GNU Make ${VERSION} ..."
+    rm -rf "$TARGET_DIR"
+    mkdir -p "$TARGET_DIR"
+
+    tar -xzf "$TMP/$TARBALL" -C "$TMP"
+    SRC_DIR="$(find "$TMP" -maxdepth 1 -type d -name "make-*")"
+    cd "$SRC_DIR"
+
+    # Configure with prefix to our /opt target
+    ./configure --prefix="$TARGET_DIR" >/dev/null
+    make -j"$(nproc)" >/dev/null
+    make install >/dev/null
+  }
+
+  # The prebuilt asset is the installed prefix, built with this script's configure
+  # line (CodingBoothPrebuilt's tools/make/build.sh). It links only libc.
+  SETUP_LIBS_DIR="${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}"
+  if [ ! -r "${SETUP_LIBS_DIR}/prebuilt-source.sh" ]; then
+    SETUP_LIBS_DIR="$(dirname "$0")/libs"
+  fi
+  source "${SETUP_LIBS_DIR}/prebuilt-source.sh"
+
   rm -rf "$TARGET_DIR"
-  mkdir -p "$TARGET_DIR"
-
-  tar -xzf "$TMP/$TARBALL" -C "$TMP"
-  SRC_DIR="$(find "$TMP" -maxdepth 1 -type d -name "make-*")"
-  cd "$SRC_DIR"
-
-  # Configure with prefix to our /opt target
-  ./configure --prefix="$TARGET_DIR" >/dev/null
-  make -j"$(nproc)" >/dev/null
-  make install >/dev/null
+  if cb_prebuilt_install make "$VERSION" native "$TARGET_DIR"; then
+    MODE="Prebuilt"
+  else
+    MODE="Source build"
+    build_from_source
+  fi
+  if ! "$TARGET_DIR/bin/make" --version 2>/dev/null | head -1 | grep -qF "GNU Make ${VERSION}"; then
+    echo "❌ ${TARGET_DIR}/bin/make is missing or does not report ${VERSION}" >&2
+    exit 1
+  fi
 
   # BSD-friendly alias
   ln -sfn "$TARGET_DIR/bin/make" "$TARGET_DIR/bin/gmake"
@@ -172,7 +200,7 @@ echo "✅ GNU Make installed."
 if [[ $FROM_APT -eq 1 ]]; then
   echo "   Mode: APT (system package wrapped under $LINK_DIR)"
 else
-  echo "   Mode: Source build ${VERSION} → ${TARGET_DIR}"
+  echo "   Mode: ${MODE} ${VERSION} → ${TARGET_DIR}"
 fi
 echo "   MAKE_HOME -> ${LINK_DIR}"
 echo -n "   make --version → "; "${BIN_DIR}/make" --version | head -n1 || true
@@ -183,7 +211,7 @@ cat <<'EON'
 - Works in login & non-login shells (wrapper primes PATH).
 
 Notes:
-- Source builds live under /opt/make/make-<ver>; re-run with --version to switch.
+- Pinned releases live under /opt/make/make-<ver>; re-run with --version to switch.
 - APT mode uses the distro's make but still exposes it via /opt/make-stable.
 - A BSD-friendly 'gmake' alias is provided.
 EON

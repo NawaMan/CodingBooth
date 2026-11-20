@@ -1,8 +1,8 @@
-cb-version = "1.1.0"
+cb-version = "1.1.1"
 display-name = "GNU Make"
 primary = true
 display-disc = "GNU Make build automation tool"
-display-detail = "Installs GNU Make and provides a 'gmake' alias for BSD compatibility. MAKE_VERSION=apt (the default) takes the distro package, which is fast; naming a version instead builds that release from source, which is exact but slow."
+display-detail = "Installs GNU Make and provides a 'gmake' alias for BSD compatibility. MAKE_VERSION=apt (the default) takes the distro package, which is fast; naming a version instead installs that exact release: prebuilt from NawaMan/CodingBoothPrebuilt when it has it for the image's Ubuntu and CPU (4.3 and 4.4.1), otherwise built from source, which is slow and adds a compiler to the image."
 display-order = 65
 tags = ["make", "build", "cpp", "c"]
 
