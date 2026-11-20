@@ -568,7 +568,7 @@ template	logo	0.1.0	04549157796baba24738e89cec29ab7fbf9131dbe17f12dcee9eb7670500
 template	lsp	0.2.0	9464c1f37dcc5390e135a9e246cb0841a21e76fd5ca914050553bd6197169cfd	templates/tools/lsp/template.toml
 template	lua	1.0.0	280f87fd4a9f035ceb5a1c0590f601c9f2532088d3ef8d4a45a2afa039b883d9	templates/languages/lua/template.toml
 template	lxqt	1.0.1	1e224dd346247cbc1b040622e2cad17e009a2e1c1553286c991eb377a686c4fd	templates/desktops/lxqt/template.toml
-template	make	1.1.1	44af6b09e4b0d630ffeba07f2a7ddc6816927fee19a904ee3abc93d353a70461	templates/tools/make/template.toml
+template	make	1.1.1	d5c9ac406d877934e0adb25b21a4809166f4bde1927da1241dcfa97874c7ff35	templates/tools/make/template.toml
 template	material-cursors	1.0.0	8b64d5c27d3113f60d8769aef239be563621a3cc8336df406386c46773f2be0c	templates/desktops/material-cursors/template.toml
 template	mc	0.1.2	4dd17fedddce6f4b22cc48a49673eb4aea760a0cfff0ead560756d993b971c94	templates/tools/mc/template.toml
 template	mermaid	1.2.0	9b470ce1cb8ba2fad013d550ee368836fa9d9f01e3853b5e5d589965008420e3	templates/tools/mermaid/template.toml

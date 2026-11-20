@@ -4,7 +4,7 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
-- **A pinned GNU Make or Bash 5.x no longer compiles while the image builds.** `make:4.4.1`,
+- **A pinned GNU Make or Bash 5.x no longer compiles while the image builds.** `make:4.3`, `make:4.4.1`,
   `bash:5.2.37` and `bash:5.3` now come prebuilt (sha256-checked) from
   [CodingBoothPrebuilt](https://github.com/NawaMan/CodingBoothPrebuilt), built there with the
   same configure line the setups use, so the image gets the release in seconds and no
