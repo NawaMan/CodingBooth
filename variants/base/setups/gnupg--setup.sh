@@ -179,7 +179,7 @@ build_from_source() {
     fi
     for try in $(seq 1 60); do
       (( got )) && break
-      if curl --connect-timeout 15 -fsSL \
+      if curl --connect-timeout 15 --retry 3 --retry-delay 2 -fsSL \
            "https://github.com/gpg/gnupg/commit/${commit}.patch?full_index=1" -o "$TMP/${commit}.patch" 2>/dev/null; then
         got=1
         break
