@@ -40,3 +40,6 @@ python          CB_VENV_DIR              # derived from CB_PY_VERSION per shell
 python          CB_VENV_SERIES_DIR       # derived from CB_PY_VERSION per shell
 python          PS1                      # interactive prompt
 python          PROMPT                   # interactive prompt (zsh)
+
+# --- Set only for one extension, by the CLI at `docker run` ----------------------
+envfolio        GPG_TTY   # only when the host's gpg-agent socket is mounted (envfolio+host-agent); the CLI adds -e GPG_TTY=/dev/null to that run, which `booth exec` inherits

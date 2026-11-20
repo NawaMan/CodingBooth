@@ -55,6 +55,9 @@ func ResolveBoothIsolation(ctx appctx.AppContext) (appctx.AppContext, error) {
 			return ctx, fmt.Errorf("invalid vm-cpus %q (expected a whole number of CPUs, 1 or more)", cpus)
 		}
 	}
+	if v, _ := runArgEnvValue(ctx.RunArgs(), folioHostAgentEnv); v == "1" {
+		return ctx, fmt.Errorf("--booth-isolation kata cannot be used with envfolio+host-agent: a Kata VM shares files with the host, not sockets, so the host's gpg-agent cannot reach it. Deselect envfolio+host-agent, or run without --booth-isolation. See docs/BOOTH_SECURITY.md#booth-isolation")
+	}
 	homeDir, _ := os.UserHomeDir()
 	if sockets := kataBoothSocketMounts(flattenUserArgs(ctx), homeDir, isHostSocket); len(sockets) > 0 {
 		return ctx, fmt.Errorf("--booth-isolation kata cannot mount a host socket into the VM (%s): a Kata VM shares files with the host, not sockets. Remove the mount (for host audio: the host-audio template), or run without --booth-isolation. See docs/BOOTH_SECURITY.md#booth-isolation",

@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 2.9.0
+# cb-version: 2.10.0
 
 set -Eeuo pipefail
 
@@ -109,6 +109,23 @@ rm -rf "${TMP_DIR}"
 # An image built on top of one with EnvFolio 0.3.0 or older still carries the
 # old command, which no longer matches the store this one uses.
 rm -f /usr/local/bin/envfolio
+
+# ---- profile: the host's gpg-agent (envfolio+host-agent) ----
+# The CLI mounts the host agent's socket at /run/user/<uid>/gnupg/S.gpg-agent. gpg tells the agent
+# which terminal to ask on, and the booth's /dev/pts/N names some other terminal on the host, so
+# every shell names none: a passphrase the host has not cached then fails instead of being asked
+# for there. The CLI passes the same to `docker run`; a login shell starts with a clean
+# environment, hence this file. A socket the booth's own agent made is not a mount: left alone.
+PROFILE_FILE="/etc/profile.d/60-cb-envfolio-host-agent--profile.sh"
+cat > "$PROFILE_FILE" <<'EOF'
+# Installed by envfolio--setup.sh: gpg uses the host's gpg-agent when its socket is mounted.
+_cb_agent="/run/user/$(id -u)/gnupg/S.gpg-agent"
+if [ -S "$_cb_agent" ] && grep -qsF " $_cb_agent " /proc/self/mountinfo; then
+  export GPG_TTY=/dev/null
+fi
+unset _cb_agent
+EOF
+chmod 644 "$PROFILE_FILE"
 
 # ---- startup: a store seeded from the host (envfolio+seed) ----
 # The CLI copies the items named by CB_FOLIO_SEED (`folio exec` arguments) from the host's store,

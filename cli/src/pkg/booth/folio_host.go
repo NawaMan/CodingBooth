@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"runtime"
 	"slices"
 	"strings"
 
@@ -27,8 +28,14 @@ import (
 //     in the shared gpg home: on Linux they would pile up there, and on macOS the host agent's
 //     own socket lives there, which the booth's gpg would find, fail to reach, and replace.
 // Every start says that the host's store and keys are live in the booth.
+//
+// envfolio+host-agent (-e CB_FOLIO_HOST_AGENT=1) goes one step further: the booth's gpg uses the
+// host's gpg-agent, so the passphrase is asked and cached on the host, once, instead of in every
+// booth. The host agent's socket is mounted where the booth's gpg looks for its own; see
+// folioHostAgentArgs.
 const (
 	folioHostEnv       = "CB_FOLIO_HOST"
+	folioHostAgentEnv  = "CB_FOLIO_HOST_AGENT"
 	folioHostStorePath = "/home/coder/.folio"
 	folioHostGnupgPath = "/home/coder/.gnupg"
 )
@@ -36,7 +43,12 @@ const (
 // PrepareFolioHost checks an envfolio+store-host run and adds its socket folder. It runs before
 // PrepareFolioSeed and PrepareGnupgKeys, so a refused combination copies nothing.
 func PrepareFolioHost(ctx appctx.AppContext) (appctx.AppContext, error) {
+	agent, _ := runArgEnvValue(ctx.RunArgs(), folioHostAgentEnv)
 	if v, _ := runArgEnvValue(ctx.RunArgs(), folioHostEnv); v != "1" {
+		if agent == "1" {
+			return ctx, fmt.Errorf("envfolio+host-agent: needs envfolio+store-host: the host's gpg-agent holds " +
+				"only the host's keys, so it cannot open a store whose key is the booth's own")
+		}
 		return ctx, nil
 	}
 	if err := checkFolioHostAlone(ctx.RunArgs()); err != nil {
@@ -73,7 +85,69 @@ func PrepareFolioHost(ctx appctx.AppContext) (appctx.AppContext, error) {
 	fmt.Fprintf(os.Stderr, "Warning: envfolio+store-host: the host's EnvFolio store (%s) and gpg home (%s), "+
 		"private keys included, are live in this booth: anything run in it can read, change or copy them.\n",
 		storeHost, gnupgHost)
+	if agent == "1" {
+		socket, why := folioHostAgentSocket(ctx, gnupgHost)
+		if socket == "" {
+			fmt.Fprintf(os.Stderr, "Info: envfolio+host-agent: %s; the booth's gpg runs its own agent and asks "+
+				"for the passphrase in the booth.\n", why)
+		} else {
+			for _, group := range folioHostAgentArgs(ctx.HostUID(), ctx.HostGID(), socket) {
+				builder.CommonArgs.Append(ilist.NewList[string](group...))
+			}
+			fmt.Fprintf(os.Stderr, "Warning: envfolio+host-agent: gpg in this booth uses the host's gpg-agent (%s): "+
+				"anything run in it can decrypt and sign with every key the host has unlocked, with no "+
+				"passphrase asked. The booth cannot ask for one: unlock the key on the host first.\n", socket)
+		}
+	}
 	return builder.Build(), nil
+}
+
+// folioHostAgentSocket is the host gpg-agent's socket for gnupgHost, or "" and why there is none
+// to mount. gpgconf names it (the default gpg home's is $XDG_RUNTIME_DIR/gnupg/S.gpg-agent,
+// another home's is in a folder of its own), and starts the agent when it is not running, as any
+// gpg command on the host would. A dry run names the default without asking.
+func folioHostAgentSocket(ctx appctx.AppContext, gnupgHost string) (socket, why string) {
+	if ctx.Dryrun() {
+		return fmt.Sprintf("/run/user/%s/gnupg/S.gpg-agent", ctx.HostUID()), ""
+	}
+	return hostAgentSocket(runtime.GOOS, ctx.Code(), gnupgHost, isHostSocket)
+}
+
+func hostAgentSocket(goos, dir, gnupgHost string, isSocket func(string) bool) (socket, why string) {
+	if goos != "linux" {
+		// On macOS and Windows the engine runs in a VM, which a host socket does not reach.
+		return "", "the host's gpg-agent socket cannot be shared with a booth on " + goos
+	}
+	out, err := runHost(dir, gpgconfCommand, "--homedir", gnupgHost, "--list-dirs", "agent-socket")
+	socket = strings.TrimSpace(out)
+	if err != nil || socket == "" {
+		return "", "gpgconf on the host could not name the gpg-agent socket"
+	}
+	if !isSocket(socket) {
+		_, _ = runHost(dir, gpgconfCommand, "--homedir", gnupgHost, "--launch", "gpg-agent")
+		if !isSocket(socket) {
+			return "", "the host has no gpg-agent socket at " + socket
+		}
+	}
+	return socket, ""
+}
+
+// folioHostAgentArgs is what the run gets when the host agent's socket is shared:
+//   - a tmpfs for /run/user/<uid>/gnupg, the booth user's own, mode 700. The engine would
+//     otherwise create that folder for the socket mount as root, and gpg ignores a socket folder
+//     that is not its user's (it falls back to ~/.gnupg and starts an agent of its own);
+//   - the host socket at S.gpg-agent in it, where the booth's gpg looks for its agent;
+//   - GPG_TTY=/dev/null: gpg tells the agent which terminal to ask on, and the booth's
+//     /dev/pts/N names some other terminal on the host. With no terminal named, an uncached
+//     passphrase fails (or the host's graphical pinentry asks) instead of a prompt landing there.
+//     The image's profile sets the same for login shells, which start with a clean environment.
+func folioHostAgentArgs(uid, gid, hostSocket string) [][]string {
+	dir := fmt.Sprintf("/run/user/%s/gnupg", uid)
+	return [][]string{
+		{"--tmpfs", fmt.Sprintf("%s:uid=%s,gid=%s,mode=0700", dir, uid, gid)},
+		{"-v", hostSocket + ":" + dir + "/S.gpg-agent"},
+		{"-e", "GPG_TTY=/dev/null"},
+	}
 }
 
 // folioHostSocketTmpfs is the --tmpfs value for the booth user's /run/user/<uid>: gpg puts its

@@ -1,0 +1,13 @@
+cb-version = "1.0.0"
+display-name = "Host gpg-agent"
+display-disc = "With +store-host: gpg in the booth uses the host's gpg-agent, so the passphrase is asked and cached on the host"
+display-detail = """Mounts the host's gpg-agent socket where the booth's gpg looks for its own, so every gpg in the booth — folio, pass, git signing — is served by the host's agent: the passphrase is asked on the host and cached there, once, not in every booth, and the booth runs no agent of its own. Select it together with +store-host: the host's agent holds only the host's keys, so a store whose key is the booth's own (envfolio alone, +store-cache, +seed) cannot be opened through it, and the booth does not start without +store-host. The booth cannot ask for a passphrase: its shells have GPG_TTY=/dev/null, because the terminal name gpg would pass belongs to some other terminal on the host. A passphrase the host has not cached makes gpg fail ("Inappropriate ioctl for device") unless the host's pinentry is a graphical one, which then asks on the host's desktop. So unlock on the host first, with any gpg command that uses the key there (`gpg --decrypt` of one of the store's files does it). This adds to what +store-host already trusts the booth with: while a key is unlocked on the host, anything run in the booth can decrypt and sign with it, with nothing asked. Each start says so. booth finds the socket with the host's gpgconf and starts the host's agent if it is not running. Linux hosts only: on macOS and Windows the engine runs in a VM a host socket does not reach, so the extension does nothing there and the booth's gpg asks in the booth, as without it. It cannot be used with --booth-isolation kata."""
+display-order = 95
+auto-select = false
+tags = ["secrets", "credential", "gpg", "host"]
+
+# The CLI reads CB_FOLIO_HOST_AGENT from these run-args before the container starts: it refuses
+# the run without +store-host, asks the host's gpgconf for the agent socket, and adds the mount.
+run-args = [
+    "-e", "CB_FOLIO_HOST_AGENT=1",
+]
