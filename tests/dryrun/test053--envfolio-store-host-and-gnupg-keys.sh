@@ -145,10 +145,18 @@ result "$ok" 12 "gnupg+store-host refuses gnupg+keys, envfolio+seed and envfolio
 
 OUT=$(dry 'gnupg+store-host/envfolio+host-agent')
 ok=false
-printf '%s\n' "$OUT" | grep -F -- "-v /run/user/$U/gnupg/S.gpg-agent:/run/user/$U/gnupg/S.gpg-agent" >/dev/null \
-  && printf '%s\n' "$OUT" | grep -F -- "-e 'GPG_TTY=/dev/null'" >/dev/null \
-  && ok=true
-result "$ok" 13 "host-agent works with gnupg+store-host too: the host's agent socket is mounted" "$OUT"
+if [[ "$(uname -s)" == Linux ]]; then
+  printf '%s\n' "$OUT" | grep -F -- "-v /run/user/$U/gnupg/S.gpg-agent:/run/user/$U/gnupg/S.gpg-agent" >/dev/null \
+    && printf '%s\n' "$OUT" | grep -F -- "-e 'GPG_TTY=/dev/null'" >/dev/null \
+    && ok=true
+  result "$ok" 13 "host-agent works with gnupg+store-host too: the host's agent socket is mounted" "$OUT"
+else
+  # As Test 8: the engine's VM cannot reach a host socket, and the dry run says so.
+  ! printf '%s\n' "$OUT" | grep -E "S\.gpg-agent|GPG_TTY" >/dev/null \
+    && printf '%s\n' "$OUT" | grep -F "Info: envfolio+host-agent: the host's gpg-agent socket cannot be shared" >/dev/null \
+    && ok=true
+  result "$ok" 13 "host-agent with gnupg+store-host on $(uname -s): no socket mount, no GPG_TTY, and it says why" "$OUT"
+fi
 
 OUT=$(dry 'gnupg+seed-host')
 ok=false

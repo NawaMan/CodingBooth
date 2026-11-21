@@ -35,7 +35,7 @@ NAME="booth-gnupg-seed-$RANDOM"
 PORT="$(pick_free_port)"
 mkdir -p "$PROJECT"
 cleanup() {
-  gpgconf --homedir "$SEED" --kill all >/dev/null 2>&1 || true
+  gpgconf --homedir "$WORK/g" --kill all >/dev/null 2>&1 || true
   docker rm -f "$NAME" >/dev/null 2>&1 || true
   # The booth writes the cached keyring as its own user, which may not be this one.
   rm -rf "$WORK" 2>/dev/null || docker run --rm -v "$WORK:/work" busybox rm -rf /work/project >/dev/null 2>&1 || true
@@ -54,13 +54,18 @@ if [[ ! -f "$SEED/.mount-this" ]]; then
   exit 1
 fi
 
-# The seed's keyring, and a message only its key opens.
-chmod 700 "$SEED"
-gpg --homedir "$SEED" --batch --quiet --passphrase '' \
+# The seed's keyring, and a message only its key opens. It is made in a short home and then
+# copied in: gpg-agent's socket goes in the home, and on macOS $SEED under $TMPDIR is past the
+# 104-byte socket path limit, so the agent would not start there.
+KEYGEN="$WORK/g"
+mkdir -m 700 "$KEYGEN"
+gpg --homedir "$KEYGEN" --batch --quiet --passphrase '' \
     --quick-generate-key "Seed Test <seed@example.com>" default default never >/dev/null 2>&1
-echo "seeded-message" | gpg --homedir "$SEED" --batch --quiet --trust-model always \
+echo "seeded-message" | gpg --homedir "$KEYGEN" --batch --quiet --trust-model always \
     -e -r seed@example.com > "$PROJECT/message.gpg" 2>/dev/null
-gpgconf --homedir "$SEED" --kill all >/dev/null 2>&1
+gpgconf --homedir "$KEYGEN" --kill all >/dev/null 2>&1
+cp -R "$KEYGEN"/. "$SEED"/
+chmod 700 "$SEED"
 if [[ ! -s "$PROJECT/message.gpg" ]]; then
   fail 0 "the throwaway seed key is made" "could not make it in $SEED"
   exit 1
