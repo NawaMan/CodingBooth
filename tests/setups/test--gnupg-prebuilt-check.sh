@@ -48,6 +48,9 @@ if ! grep -q 'CB_GNUPG_TEST_ROOT' "$SCRIPT"; then
     exit 1
 fi
 
+# The real sha256sum, found before $STUB/bin stubs it: /usr/bin on Ubuntu, /sbin on macOS.
+REAL_SHA256SUM="$(command -v sha256sum)"
+
 STUB="$(cd "$(mktemp -d)" && pwd -P)"
 trap 'rm -rf "$STUB"' EXIT
 mkdir -p "$STUB/bin" "$STUB/tmp" "$STUB/setups/libs"
@@ -234,7 +237,7 @@ ok=true; detail=""
 [[ -n "$PINNED" ]] || { ok=false; detail="no pinned fix found in the setup"; }
 while read -r commit want; do
     [[ -n "$commit" ]] || continue
-    have="$(/usr/bin/sha256sum "$PATCH_DIR/$commit.patch" 2>/dev/null | awk '{ print $1 }')"
+    have="$("$REAL_SHA256SUM" "$PATCH_DIR/$commit.patch" 2>/dev/null | awk '{ print $1 }')"
     [[ "$have" == "$want" ]] || { ok=false; detail+=" $commit: ${have:-missing}"; }
 done <<< "$PINNED"
 RC=0; OUT="$detail"; : > "$LOG"
