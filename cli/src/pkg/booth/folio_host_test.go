@@ -157,3 +157,16 @@ func TestHostAgentSocket(t *testing.T) {
 		t.Errorf("no gpgconf on the host must share none and say so, got %q, %q", socket, why)
 	}
 }
+
+// A dry run takes the same OS gate as the real run: on macOS it must not show the socket mount
+// (and with it GPG_TTY) that the real run never makes.
+func TestDryrunAgentSocket(t *testing.T) {
+	if socket, why := dryrunAgentSocket("linux", "1000"); socket != "/run/user/1000/gnupg/S.gpg-agent" || why != "" {
+		t.Errorf("linux: socket = %q, why = %q", socket, why)
+	}
+	for _, goos := range []string{"darwin", "windows"} {
+		if socket, why := dryrunAgentSocket(goos, "501"); socket != "" || !strings.Contains(why, goos) {
+			t.Errorf("%s: a dry run must share no socket and say why, got %q, %q", goos, socket, why)
+		}
+	}
+}

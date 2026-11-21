@@ -91,9 +91,18 @@ func PrepareFolioHost(ctx appctx.AppContext) (appctx.AppContext, error) {
 			fmt.Fprintf(os.Stderr, "Info: envfolio+host-agent: %s; the booth's gpg runs its own agent and asks "+
 				"for the passphrase in the booth.\n", why)
 		} else {
+			agentArgs := ilist.NewAppendableList[ilist.List[string]]()
 			for _, group := range folioHostAgentArgs(ctx.HostUID(), ctx.HostGID(), socket) {
-				builder.CommonArgs.Append(ilist.NewList[string](group...))
+				agentArgs.Append(ilist.NewList[string](group...))
 			}
+			if ctx.Dryrun() {
+				// A dry run names the default socket without starting the agent, so on a host
+				// whose agent is not running yet the missing-mount filter would drop it and print
+				// a run the real one never is. Marked `create`, the dry run takes it as there.
+				agentArgs = markVolumesCreate(agentArgs.ToList(),
+					fmt.Sprintf("/run/user/%s/gnupg/S.gpg-agent", ctx.HostUID()))
+			}
+			builder.CommonArgs.ExtendByList(agentArgs.ToList())
 			fmt.Fprintf(os.Stderr, "Warning: envfolio+host-agent: gpg in this booth uses the host's gpg-agent (%s): "+
 				"anything run in it can decrypt and sign with every key the host has unlocked, with no "+
 				"passphrase asked. The booth cannot ask for one: unlock the key on the host first.\n", socket)
@@ -108,15 +117,33 @@ func PrepareFolioHost(ctx appctx.AppContext) (appctx.AppContext, error) {
 // gpg command on the host would. A dry run names the default without asking.
 func folioHostAgentSocket(ctx appctx.AppContext, gnupgHost string) (socket, why string) {
 	if ctx.Dryrun() {
-		return fmt.Sprintf("/run/user/%s/gnupg/S.gpg-agent", ctx.HostUID()), ""
+		return dryrunAgentSocket(runtime.GOOS, ctx.HostUID())
 	}
 	return hostAgentSocket(runtime.GOOS, ctx.Code(), gnupgHost, isHostSocket)
 }
 
+// agentUnsharable is why no host gpg-agent socket can be shared on goos, or "" on Linux. On macOS
+// and Windows the engine runs in a VM, which a host socket does not reach.
+func agentUnsharable(goos string) string {
+	if goos == "linux" {
+		return ""
+	}
+	return "the host's gpg-agent socket cannot be shared with a booth on " + goos
+}
+
+// dryrunAgentSocket is what a dry run shows: the default socket on Linux, without asking gpgconf,
+// and elsewhere the same refusal as the real run — so the dry run never prints a mount that run
+// does not make.
+func dryrunAgentSocket(goos, uid string) (socket, why string) {
+	if why := agentUnsharable(goos); why != "" {
+		return "", why
+	}
+	return fmt.Sprintf("/run/user/%s/gnupg/S.gpg-agent", uid), ""
+}
+
 func hostAgentSocket(goos, dir, gnupgHost string, isSocket func(string) bool) (socket, why string) {
-	if goos != "linux" {
-		// On macOS and Windows the engine runs in a VM, which a host socket does not reach.
-		return "", "the host's gpg-agent socket cannot be shared with a booth on " + goos
+	if why := agentUnsharable(goos); why != "" {
+		return "", why
 	}
 	out, err := runHost(dir, gpgconfCommand, "--homedir", gnupgHost, "--list-dirs", "agent-socket")
 	socket = strings.TrimSpace(out)
