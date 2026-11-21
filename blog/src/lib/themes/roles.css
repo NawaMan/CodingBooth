@@ -430,6 +430,11 @@
 	--stepdots-cue: #ffb84d;
 	--stepdots-cue-bg: rgba(0, 0, 0, 0.78);
 	--stepdots-cue-fg: var(--stepdots-cue);
+	/* The countdown at the end of the cue, where a build steps by itself after a wait. */
+	--stepdots-count-bg: var(--stepdots-cue);
+	--stepdots-count-fg: #181818;
+	--stepdots-count-spent: rgba(0, 0, 0, 0.28);
+	--stepdots-count-held-bg: rgba(255, 255, 255, 0.16);
 
 	/* Diagram node (TextBlock.svelte) — a bordered box on the canvas surface, its
 	   border and label in the canvas ink. Fallbacks are the dark default. */

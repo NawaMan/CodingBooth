@@ -77,6 +77,8 @@
   `{ out: ['GH_TOKEN <- [', { text: 'gh/token', tone: 'warn' }, ']'] }`.
   A long command split with a trailing `\` carries on in `{ cmd: '…', cont: true }`: no
   prompt, the text lined up under the command above.
+  A command row may carry its own prompt, for a program that asks: `{ cmd: 'Ada', prompt:
+  'Your name:' }`; `prompt: ''` draws none on that row.
 
   In normal slide flow the console hugs its content. Wrap it in a <Block> to pin and
   size it — Block fills its content by default, so the console stretches to the box and
@@ -116,6 +118,7 @@
 	// The track is the same geometry as the Video scrubber's; one implementation.
 	import { seekFraction } from '$lib/utils/videoCore';
 	import {
+		BEFORE_STOP_MS,
 		checkpointsOf,
 		markersOf,
 		nextCheckpoint,
@@ -478,6 +481,13 @@
 		`--n:${chars}; animation-delay:${delayMs}ms; animation-duration:${durationMs}ms;` +
 		` animation-timing-function: steps(${stepsFor(chars)}, end);`;
 
+	// The caret's window on a command row. An EMPTY command (a hidden password, say) types
+	// for 0ms, which would give its caret no window at all — and a stepped console stopped
+	// as that row begins (StepTerminal's `stopAt={[{ before: n }]}`) is waiting for input, so
+	// it must show one. The window therefore always outlasts that stop; played straight
+	// through, the extra millisecond is never seen.
+	const gateMs = (durationMs: number) => Math.max(durationMs, BEFORE_STOP_MS + 1);
+
 	// The row itself only fades in. A command's row appears the instant it starts
 	// typing (1ms — the prompt should not fade in), an output line takes its `outMs`.
 	const rowStyle = (kind: 'cmd' | 'out', delayMs: number, durationMs: number) =>
@@ -503,14 +513,18 @@
 						class:spaced={i > 0 && !line.cont}
 						style={rowStyle('cmd', line.delayMs, line.durationMs)}
 					>
-						{#if prompt}<span class="prompt" class:cont={line.cont} aria-hidden="true"
-								>{prompt}</span
+						{#if line.prompt ?? prompt}<span
+								class="prompt"
+								class:cont={line.cont}
+								aria-hidden="true">{line.prompt ?? prompt}</span
 							>{/if}<span
 							class="typed tone-{line.tone}"
 							style={typedStyle(line.chars, line.delayMs, line.durationMs)}>{line.text}</span
 						>{#if caret && animating}<span
 								class="gate"
-								style="animation-delay:{line.delayMs}ms; animation-duration:{line.durationMs}ms;"
+								style="animation-delay:{line.delayMs}ms; animation-duration:{gateMs(
+									line.durationMs
+								)}ms;"
 								aria-hidden="true"><span class="caret"></span></span
 							>{/if}
 					</div>

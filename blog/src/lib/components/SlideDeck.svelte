@@ -110,7 +110,7 @@
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
 	import { base } from '$app/paths';
-	import { onMount, tick } from 'svelte';
+	import { onDestroy, onMount, tick } from 'svelte';
 	import { neighbourUrls, speculationRules } from '$lib/utils/preloadCore';
 	import { displayMode, displayFactor, clampFactor } from '$lib/stores/displayMode';
 	import type { DisplayMode } from '$lib/stores/displayMode';
@@ -158,6 +158,21 @@
 	} from '$lib/stores/kiosk';
 	import { DEFAULT_PAGE_MS, DEFAULT_STEP_MS, DEFAULT_WPM } from '$lib/kiosk/kioskCore';
 	import {
+		backHoldAfter,
+		resolveStepWait,
+		stepAutoLevel,
+		stepTimerArmed
+	} from '$lib/auto/stepAutoCore';
+	import { createStepTimer } from '$lib/auto/stepTimer';
+	import {
+		applyAutoParam,
+		stepBackHold,
+		stepCountdown,
+		stepHold,
+		stepHoverFrozen,
+		toggleStepHold
+	} from '$lib/stores/stepAuto';
+	import {
 		presenterMode,
 		publishCurrentSlide,
 		subscribeCurrentSlide,
@@ -176,11 +191,7 @@
 	import { roleOf } from '$lib/utils/relayCore';
 	import Spotlight from '$lib/components/Spotlight.svelte';
 	import StepDots from '$lib/components/StepDots.svelte';
-	import {
-		STEP_CUE_NEXT,
-		STEP_CUE_SPENT,
-		type StepDotsPosition
-	} from '$lib/utils/stepDotsCore';
+	import { STEP_CUE_NEXT, STEP_CUE_SPENT, type StepDotsPosition } from '$lib/utils/stepDotsCore';
 	import { progressOf } from '$lib/utils/progressCore';
 	import { setHighlight } from '$lib/stores/highlightTarget';
 	import { fireTrigger } from '$lib/stores/triggers';
@@ -396,6 +407,16 @@
 	/** The cue's wording. */
 	export let stepCueNext: string = STEP_CUE_NEXT;
 	export let stepCueSpent: string = STEP_CUE_SPENT;
+	/* The "normal" auto level: a build that has stopped for Space takes its next step by
+	   itself after this many ms, counted from when the step before it finished playing.
+	   Steps only — it never turns the page. Unset (the default) waits for ever, as a deck
+	   always has. `stepTimeoutMs` on a pages.ts entry sets it for one slide and `timeoutMs`
+	   on a <Steps> for one build; the narrowest wins, and `0` there opts out. Where a wait
+	   is set, the StepDots hint counts it down and a click on it (or Alt+. H) holds or
+	   releases it; sticky `?auto=steps` / `?auto=off` do the same, `?auto=all` is the
+	   kiosk. Never in a recording or a replay, with a presenter console live, in `?shot`,
+	   or while ADJUST is on. See auto/stepAutoCore.ts. */
+	export let stepTimeoutMs: number | undefined = undefined;
 	/** Idle ms on the first slide before that hint appears (a stray Enter/click/scroll
 	   brings it at once). */
 	export let onboardDelayMs = DEFAULT_ONBOARD_DELAY_MS;
@@ -592,6 +613,57 @@
 		!$consoleLive &&
 		!$recordingLook &&
 		!$replaying;
+	// The auto level (auto/stepAutoCore.ts). The author's wait: this build's, else this
+	// slide's, else the deck's. A window that must not move by itself forces it off —
+	// `?shot` above all, since a frame-by-frame render keeps its own time.
+	$: stepWaitMs = resolveStepWait({
+		deck: stepTimeoutMs,
+		slide: pages.find((p) => p.path === currentSlide)?.stepTimeoutMs,
+		build: $activeSteps?.timeoutMs
+	});
+	$: stepAutoForced =
+		!isTopWindow ||
+		!activated ||
+		present ||
+		shot ||
+		$consoleLive ||
+		$recordingLook ||
+		$replaying ||
+		($canAdjust && $adjustMode);
+	$: stepAuto = stepAutoLevel({
+		kiosk: $kioskActive,
+		waitMs: stepWaitMs,
+		forced: stepAutoForced,
+		held: $stepHold || $stepBackHold
+	});
+	// A step BACK holds the slide until the viewer steps forward again; a new build
+	// (another slide, in a client-side deck) starts with no hold. A plain subscription,
+	// not a `$:` — a reactive statement that set the store would be too late for the
+	// level above it, which has already run in the same flush.
+	let stepSeen: { owner: object; index?: number } | null = null;
+	const stopStepTrack = activeSteps.subscribe((build) => {
+		if (!build) {
+			stepSeen = null;
+			return;
+		}
+		const same = stepSeen?.owner === build.owner;
+		const hold = same ? backHoldAfter(stepSeen?.index, build.index) : false;
+		stepSeen = { owner: build.owner, index: build.index };
+		if (hold !== undefined && hold !== get(stepBackHold)) stepBackHold.set(hold);
+	});
+	onDestroy(stopStepTrack);
+	// One countdown; when it runs out it takes the step Space would. The hint draws
+	// what it publishes.
+	const stepTimer = createStepTimer((c) => stepCountdown.set(c));
+	$: if (browser)
+		stepTimer.set({
+			armed: stepTimerArmed(stepAuto, $activeSteps),
+			waitMs: stepWaitMs,
+			frozen: $stepHoverFrozen,
+			key: $activeSteps?.index,
+			fire: () => get(activeSteps)?.next()
+		});
+	onDestroy(() => stepTimer.stop());
 	// A spent build's Space pages on — except on the deck's last slide. (A hidden
 	// appendix is not "present" in the march, and its Space returns to the caller.)
 	$: deckProgress = progressOf(pages, currentSlide ?? '');
@@ -1027,11 +1099,7 @@
 			printMenuOpen = false;
 			if (browser && document.activeElement instanceof HTMLElement) {
 				const el = document.activeElement;
-				if (
-					el.closest?.('.overlay') ||
-					el.closest?.('.annot-tools') ||
-					el.closest?.('.ctrl-bar')
-				) {
+				if (el.closest?.('.overlay') || el.closest?.('.annot-tools') || el.closest?.('.ctrl-bar')) {
 					el.blur();
 				}
 			}
@@ -1090,6 +1158,11 @@
 				// Inert unless a kiosk is actually running/paused — U does nothing on a
 				// deck that never offered or started one.
 				if ($kioskActive) toggleKioskPause();
+				keepChromeArmed();
+				return;
+			case 'step-hold':
+				// Inert where the author gave no wait: there is nothing to hold.
+				if (stepAuto === 'normal' || stepAuto === 'pause') toggleStepHold();
 				keepChromeArmed();
 				return;
 		}
@@ -1418,6 +1491,8 @@
 		// Kiosk boot once per page load: ?kiosk starts, ?kiosk=off stops, else resume
 		// a session mid-loop after a full-page nav.
 		bootKioskFromUrl(new URL(window.location.href));
+		// `?auto=steps` / `?auto=off`: the viewer's level, once per load for the same reason.
+		applyAutoParam(new URL(window.location.href));
 
 		// The PRINT menu's "this slide + notes" grows the paper only for the print; once the
 		// dialog closes, the deck goes back to its screen self. `afterprint` fires whether the
@@ -1662,6 +1737,7 @@
 						cue={showStepCue}
 						cueNext={stepCueNext}
 						cueSpent={stepCueSpent}
+						auto={stepAuto}
 						{hasNextSlide}
 					/>
 				{/if}

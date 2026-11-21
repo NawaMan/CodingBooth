@@ -45,6 +45,11 @@
   every Fragment is shown at once and stepping is disabled — a document has no
   "current step".
 
+  `timeoutMs`: a build that has stopped for Space takes the next step by itself after
+  that wait — for a console that asks a question and should not wait for ever. Steps
+  only, never the page turn. A deck or a slide can set the same for every build on it
+  (auto/stepAutoCore.ts); the viewer can hold it from the StepDots hint.
+
   Chrome: the keyboard-owning Steps publishes itself to the `activeSteps` store, so
   NavigationBar's CONTINUE button clicks through the build and greys out when
   nothing is left to reveal (it never pages — that's what NEXT is for). The
@@ -78,6 +83,11 @@
 	    Shift+Space): 'end' (every Fragment showing, as the slide was left) or
 	    'start' (the `start` count, as on any other arrival). */
 	export let backTo: 'end' | 'start' = 'end';
+	/** Take the next step by itself once the build has waited this long for a Space (ms),
+	    counted from when the step before it finished playing. Never the page turn. Unset
+	    follows the slide's (`stepTimeoutMs` in pages.ts) or the deck's (<SlideDeck
+	    stepTimeoutMs>); `0` opts this build out of them. The viewer can hold it. */
+	export let timeoutMs: number | undefined = undefined;
 	/** Also advance when the presenter console relays a CONTINUE pulse (gp:continue). */
 	export let continueKey = true;
 
@@ -182,7 +192,8 @@
 			prev,
 			index: $revealed,
 			total: $total,
-			busy: $busy
+			busy: $busy,
+			timeoutMs
 		});
 
 	onDestroy(() => {

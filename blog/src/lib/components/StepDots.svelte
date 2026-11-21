@@ -23,6 +23,15 @@
   console is live, while recording or replaying, and with `stepCue: false`. Reduced
   motion: no blink, tooltip only. Tokens: --stepdots-cue, --stepdots-cue-bg/-fg.
 
+  THE AUTO LEVELS (`auto`, from SlideDeck; auto/stepAutoCore.ts). Where the deck's author
+  gave a wait, the "next step" cue is also a control. `normal`: it ends in a round
+  countdown — the seconds left, on their own background — and the step is taken when it
+  runs out; a click holds it. `pause`: the round shows pause bars and a click releases
+  it. Resting the pointer on it freezes the countdown. The "next slide" cue never counts:
+  the page turn is the viewer's. With no wait set (`manual`) the cue is exactly as above.
+  The countdown itself is SlideDeck's (auto/stepTimer.ts); this only draws
+  `stepCountdown`. Tokens: --stepdots-count-bg/-fg/-spent, --stepdots-count-held-bg.
+
   Renders nothing without a build (or in SSR, where no build has registered), so a
   slide with no Steps is untouched. Tagged `no-print`, so CAPTURE, print and `?shot`
   leave it out like the rest of the chrome — but deliberately NOT `gp-chrome`: that
@@ -50,6 +59,14 @@
 		stepDotsAnchorStyle,
 		type StepDotsPosition
 	} from '$lib/utils/stepDotsCore';
+	import {
+		STEP_AUTO_HOLD,
+		STEP_AUTO_RESUME,
+		secondsLeft,
+		type StepAuto
+	} from '$lib/auto/stepAutoCore';
+	import { countdownLeft } from '$lib/auto/stepTimer';
+	import { stepCountdown, stepHoverFrozen, toggleStepHold } from '$lib/stores/stepAuto';
 
 	/** Canvas size, to anchor the row against the chosen edge. */
 	export let canvasWidth = 1920;
@@ -67,6 +84,14 @@
 	export let cueNext: string = STEP_CUE_NEXT;
 	/** The tooltip once every step is taken (only when there is a next slide). */
 	export let cueSpent: string = STEP_CUE_SPENT;
+	/** The auto level here (auto/stepAutoCore.ts). In `normal` the "next step" cue ends in
+	    a round countdown and a click holds it; in `pause` the round shows it is held and a
+	    click releases it. `manual` (no wait set) and `kiosk` leave the cue as it always
+	    was: nothing to count, nothing to click. */
+	export let auto: StepAuto = 'manual';
+	/** The cue's tooltips in the two toggleable levels. */
+	export let autoHold: string = STEP_AUTO_HOLD;
+	export let autoResume: string = STEP_AUTO_RESUME;
 	/** Is there a slide for a spent build's Space to page to? */
 	export let hasNextSlide: boolean = true;
 	/** Inline style for the root element, applied last so it wins. */
@@ -94,6 +119,43 @@
 	onDestroy(() => clearTimeout(timer));
 
 	$: cueState = cue ? stepCue(view, { busy, settled, hasNextSlide }) : 'none';
+
+	// The cue as a control: only the "next step" one, and only where the author gave a
+	// wait. The countdown belongs to the step, never to the page turn.
+	$: toggles = cueState === 'next' && (auto === 'normal' || auto === 'pause');
+	$: counting = toggles && auto === 'normal' && $stepCountdown !== null;
+	// The pointer leaves no `mouseleave` behind when the cue goes away under it.
+	$: if (!toggles) stepHoverFrozen.set(false);
+
+	// A click must not leave the button focused: Space is not a step while a button has
+	// focus (utils/stepKeys.ts), and the viewer's next Space has to be one.
+	function onToggle(e: MouseEvent) {
+		toggleStepHold();
+		(e.currentTarget as HTMLElement | null)?.blur();
+	}
+
+	// The seconds left, re-read a few times a second while a countdown runs. The sweep
+	// is CSS; only the number needs a clock.
+	let nowMs = Date.now();
+	let ticker: ReturnType<typeof setInterval> | undefined;
+	$: watch(counting && !!$stepCountdown?.running);
+	function watch(on: boolean) {
+		clearInterval(ticker);
+		ticker = undefined;
+		nowMs = Date.now();
+		if (on) ticker = setInterval(() => (nowMs = Date.now()), 200);
+	}
+	onDestroy(() => {
+		clearInterval(ticker);
+		stepHoverFrozen.set(false);
+	});
+	$: seconds = secondsLeft(countdownLeft($stepCountdown, nowMs));
+	// The sweep starts where the countdown stands, and stops with it.
+	$: sweep = $stepCountdown
+		? `animation-duration:${$stepCountdown.totalMs}ms;` +
+			` animation-delay:${-($stepCountdown.totalMs - $stepCountdown.leftMs)}ms;` +
+			` animation-play-state:${$stepCountdown.running ? 'running' : 'paused'};`
+		: '';
 </script>
 
 {#if view.kind !== 'none'}
@@ -101,6 +163,7 @@
 		class="step-dots no-print {klass}"
 		class:vertical={placement.vertical}
 		class:cueing={cueState !== 'none'}
+		class:toggling={toggles}
 		data-position={placement.position}
 		id={id || undefined}
 		role="progressbar"
@@ -127,7 +190,34 @@
 				{/if}
 			</div>
 		{/key}
-		{#if cueState !== 'none'}
+		{#if toggles}
+			<!-- The one part of the indicator that takes the pointer: hold or release the
+			     auto-step. Resting on it freezes the countdown, so it cannot step out from
+			     under the click. -->
+			<button
+				type="button"
+				class="cue-tip toggle"
+				class:held={auto === 'pause'}
+				aria-pressed={auto === 'pause'}
+				aria-label="{cueNext}. {auto === 'pause' ? autoResume : autoHold}"
+				title={auto === 'pause' ? autoResume : autoHold}
+				on:mousedown|preventDefault
+				on:click={onToggle}
+				on:mouseenter={() => stepHoverFrozen.set(true)}
+				on:mouseleave={() => stepHoverFrozen.set(false)}
+			>
+				{cueNext}
+				{#if counting}
+					{#key $stepCountdown?.seq}
+						<span class="count" aria-hidden="true"
+							><span class="sweep" style={sweep}></span><span class="num">{seconds}</span></span
+						>
+					{/key}
+				{:else}
+					<span class="count held" aria-hidden="true"><span class="bars"></span></span>
+				{/if}
+			</button>
+		{:else if cueState !== 'none'}
 			<span class="cue-tip" aria-hidden="true">{cueState === 'next' ? cueNext : cueSpent}</span>
 		{/if}
 	</div>
@@ -187,7 +277,9 @@
 		display: block;
 		height: 100%;
 		background: currentColor;
-		transition: width 240ms ease, height 240ms ease;
+		transition:
+			width 240ms ease,
+			height 240ms ease;
 	}
 	.vertical .fill {
 		width: 100%;
@@ -209,7 +301,7 @@
 	.cue-tip {
 		position: absolute;
 		white-space: nowrap;
-		padding: 6px 14px;
+		padding: 2px 10px;
 		border-radius: 999px;
 		font-size: 22px;
 		font-weight: 600;
@@ -245,6 +337,74 @@
 	}
 	[data-position='right'] .cue-tip {
 		right: calc(100% + 14px);
+	}
+
+	/* The cue as a control (auto levels). Above the ANNOTATE ink surface (40) while it
+	   can be clicked, or an armed pen would take the click. */
+	.step-dots.toggling {
+		z-index: 44;
+	}
+	.cue-tip.toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		padding-right: 6px;
+		border: 0;
+		margin: 0;
+		font-family: inherit;
+		cursor: pointer;
+		pointer-events: auto;
+	}
+	.cue-tip.toggle:focus-visible {
+		outline: 3px solid var(--stepdots-cue, #ffb84d);
+		outline-offset: 3px;
+	}
+	/* The round area at the end of the sentence: the seconds left, on its own
+	   background, with a sweep that empties as the wait runs out. */
+	.count {
+		position: relative;
+		display: inline-grid;
+		place-items: center;
+		font-size: 0.78em;
+		width: 1.2em;
+		height: 1.2em;
+		border-radius: 50%;
+		overflow: hidden;
+		background: var(--stepdots-count-bg, #ffb84d);
+		color: var(--stepdots-count-fg, #181818);
+		font-variant-numeric: tabular-nums;
+		line-height: 1;
+	}
+	.sweep {
+		position: absolute;
+		inset: 0;
+		background: var(--stepdots-count-spent, rgba(0, 0, 0, 0.28));
+		transform-origin: 50% 100%;
+		transform: scaleY(0);
+		animation: stepdots-count-drain linear both;
+	}
+	.num {
+		position: relative;
+	}
+	/* Held: the same round, dimmed, with pause bars where the number was. */
+	.count.held {
+		background: var(--stepdots-count-held-bg, rgba(255, 255, 255, 0.16));
+		color: var(--stepdots-cue-fg, #ffb84d);
+	}
+	.bars {
+		width: 0.5em;
+		height: 0.7em;
+		border-left: 0.17em solid currentColor;
+		border-right: 0.17em solid currentColor;
+		box-sizing: border-box;
+	}
+	@keyframes stepdots-count-drain {
+		from {
+			transform: scaleY(0);
+		}
+		to {
+			transform: scaleY(1);
+		}
 	}
 
 	@keyframes stepdots-blink {
@@ -301,6 +461,10 @@
 		.bar.next,
 		.cue-tip {
 			animation: none;
+		}
+		/* The number still counts; only the sweep is dropped. */
+		.sweep {
+			display: none;
 		}
 		.step-dots.cueing .row {
 			opacity: 1;

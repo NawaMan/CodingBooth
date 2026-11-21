@@ -42,6 +42,10 @@ export interface Page {
     /** `false` drops the build's "SPACE for next step" cue on this one slide (see
         SlideDeck `stepCue`). The dots themselves stay. */
     stepCue?: boolean;
+    /** How long a build on this slide waits for a Space before it takes its next step
+        by itself, in ms. Overrides the deck's `stepTimeoutMs`; `0` turns it off here.
+        Steps only — it never turns the page. See SlideDeck `stepTimeoutMs`. */
+    stepTimeoutMs?: number;
     /** Keep this slide OUT of the deck's linear order and its Table of Contents.
 
         The appendix flag. A hidden slide is still a real, prerendered, linkable
