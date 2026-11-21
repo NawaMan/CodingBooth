@@ -128,6 +128,11 @@ type model struct {
 	cursor   int    // index in rows
 	offset   int    // first row shown when the table is taller than the screen
 	selected string // key of the selected row, kept across refreshes
+	// anchor is the key of the row a multiple selection (shift+↑/↓) starts
+	// from; "" when there is none. See multi.go.
+	anchor   string
+	batches  map[int]*batchRun // actions on several rows, being carried out
+	batchSeq int
 	busy     map[string]string
 	asking   map[string]int      // questions sent and not yet answered, per booth
 	git      map[string]gitEntry // each worktree's git status, by path (see gitstatus.go)
@@ -206,6 +211,8 @@ func (m model) checkBeforeDelete(r row) (tea.Model, tea.Cmd) {
 type pendingConfirm struct {
 	plan      plan
 	key, name string
+	// batch, when set, is the action on several rows the question is about.
+	batch *batch
 }
 
 type (
@@ -278,7 +285,7 @@ func newModel(deps Deps) model {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	return model{deps: deps, busy: map[string]string{}, asking: map[string]int{},
-		git: map[string]gitEntry{}, order: order,
+		git: map[string]gitEntry{}, batches: map[int]*batchRun{}, order: order,
 		loading: true, fetchSeq: 1, ctx: ctx, cancel: cancel}
 }
 
@@ -411,6 +418,12 @@ func (m model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m.run(msg.key, msg.row.worktree.Name(), deleteWorktreePlan(msg.row, msg.state, msg.err))
 
+	case deleteBatchCheckMsg:
+		return m.deleteChecked(msg)
+
+	case batchDoneMsg:
+		return m.batchDone(msg)
+
 	case actionDoneMsg:
 		delete(m.busy, msg.key)
 		m.staleGit()
@@ -480,27 +493,64 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 		pending := *m.confirm
 		m.confirm = nil
 		if key == "y" || key == "Y" {
+			if pending.batch != nil {
+				return m.executeBatch(*pending.batch)
+			}
 			return m.execute(pending.key, pending.name, pending.plan)
 		}
 		m.setStatus("Cancelled.", false)
 		return m, nil
 	}
 
+	// Several rows selected: these keys act on all of them (see multi.go).
+	if sel := m.selection(); len(sel) > 1 {
+		switch key {
+		case keyHide:
+			return m.hideRows(sel)
+		case keyStart:
+			return m.startRows(sel)
+		case keyStop, keyRestart:
+			return m.stopRows(key, sel)
+		case keyRemove:
+			return m.deleteRows(sel)
+		case keyRaise:
+			return m.reorderBlock(-1)
+		case keyLower:
+			return m.reorderBlock(1)
+		}
+	}
+
 	switch key {
 	case "q", "ctrl+c":
 		return m, tea.Quit
 	case "up", "k":
+		m.anchor = ""
 		m.move(-1)
 	case "down", "j":
+		m.anchor = ""
 		m.move(1)
 	case "home", "g":
+		m.anchor = ""
 		m.move(-len(m.rows))
 	case "end", "G":
+		m.anchor = ""
 		m.move(len(m.rows))
 	case "pgup":
+		m.anchor = ""
 		m.move(-m.tableRows())
 	case "pgdown":
+		m.anchor = ""
 		m.move(m.tableRows())
+	case keyExtendUp:
+		return m.extend(-1)
+	case keyExtendDown:
+		return m.extend(1)
+	case "esc":
+		if m.anchor != "" {
+			m.anchor = ""
+			m.setStatus("", false)
+		}
+		return m, nil
 	case keyRefresh:
 		m.setStatus("", false)
 		m.staleGit()

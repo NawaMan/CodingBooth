@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth dashboard`: `shift+↑`/`shift+↓` select several adjacent rows.** `h`, `s`, `x`, `r`, `d`
+  and `ctrl+↑`/`ctrl+↓` then act on all of them: hide them, start them one after another, stop or
+  restart them after one question, delete them after one question, or move them together. A row a
+  key does not apply to is left out and named. A multiple delete never discards work: a worktree
+  with uncommitted files or unmerged commits is left out, to be deleted on its own, and an
+  interactive booth is left out of a multiple start. `esc` or a plain `↑`/`↓` ends the selection.
 - **`gnupg+seed-host`: the host's whole keyring, as a copy the booth cannot write back.**
   `gnupg+store-host` mounts the host's `~/.gnupg` read-write, so code in the booth can change the
   host's keyring and its gpg configuration; mounting it read-only is not an alternative, because

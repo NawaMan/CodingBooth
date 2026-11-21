@@ -630,6 +630,8 @@ KEYS:
              among several booths on one checkout, swap it with the next first
              (kept across runs; new rows go to the bottom)
   -          Add a separator line below its group; ctrl+↑/↓ moves it, d deletes it
+  shift+↑/↓   Select several adjacent rows: h, s, x, r, d and ctrl+↑/↓ then act
+             on all of them (one question for all); esc or ↑/↓ ends it
   R          Refresh now             q      Quit
 
 VERSION shows the CodingBooth version that built each booth, in the warning
