@@ -19,6 +19,7 @@ var (
 	dimStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
 	headerStyle  = lipgloss.NewStyle().Bold(true)
 	cursorStyle  = lipgloss.NewStyle().Background(lipgloss.Color("24")).Foreground(lipgloss.Color("255"))
+	selectStyle  = lipgloss.NewStyle().Background(lipgloss.Color("238")).Foreground(lipgloss.Color("255"))
 	runningStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("82"))
 	busyStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("214"))
 	errorStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("203"))
@@ -32,6 +33,19 @@ const pickerHelpLine = "↑/↓ select · enter open · esc back"
 // helpLines: what to look at or into, then what changes the booth. K shows
 // only when GitKraken is there to open.
 func (m model) helpLines() []string {
+	if sel := m.selection(); len(sel) > 1 {
+		acts := "s start · x stop · r restart · del delete"
+		if m.deps.Hide != nil && m.showHidden {
+			acts = "h unhide · " + acts
+		} else if m.deps.Hide != nil {
+			acts = "h hide · " + acts
+		}
+		if m.deps.SaveOrder != nil {
+			acts += " · ctrl+↑/↓ move them"
+		}
+		return []string{fmt.Sprintf("%d rows selected: ", len(sel)) + acts,
+			"shift+↑/↓ select more or fewer · esc or ↑/↓ end the selection · other keys act on the row under the cursor · q quit"}
+	}
 	look := "i info"
 	if m.deps.Config != nil {
 		look += " · c config"
@@ -40,14 +54,14 @@ func (m model) helpLines() []string {
 	if m.deps.GitKraken != nil {
 		look += " · K GitKraken"
 	}
-	change := "↑/↓ move"
+	change := "↑/↓ move · shift+↑/↓ select"
 	if m.deps.SaveOrder != nil {
 		change += " · ctrl+↑/↓ reorder"
 		if !m.showHidden {
 			change += " · - separator"
 		}
 	}
-	change += " · s start · x stop · r restart · d delete · n new worktree"
+	change += " · s start · x stop · r restart · del delete · n new worktree"
 	switch {
 	case m.deps.Hide == nil:
 	case m.showHidden:
@@ -167,6 +181,9 @@ func (m model) titleLine() string {
 		} else if m.hiddenRows > 0 {
 			parts = append(parts, fmt.Sprintf("%d hidden", m.hiddenRows))
 		}
+		if sel := m.selection(); len(sel) > 1 {
+			parts = append(parts, warnStyle.Render(fmt.Sprintf("%d selected", len(sel))))
+		}
 		parts = append(parts, "refreshed "+m.refreshedAt.Format("15:04:05"))
 	}
 	if m.loaded && m.listErr != nil {
@@ -182,8 +199,20 @@ func (m model) titleLine() string {
 // what was kept and why, which a one-line cut would hide.
 const maxStatusLines = 3
 
+// maxBatchStatusLines is how far a question about several rows wraps: it names
+// each of them, and the ones it leaves out.
+const maxBatchStatusLines = 6
+
+// statusLimit is how many lines the status line may take now.
+func (m model) statusLimit() int {
+	if m.confirm != nil && m.confirm.batch != nil {
+		return maxBatchStatusLines
+	}
+	return maxStatusLines
+}
+
 // statusLine is the status, below the table: a question or an error wrapped to
-// at most maxStatusLines lines, anything else on one.
+// at most statusLimit lines, anything else on one.
 func (m model) statusLine() string {
 	if m.prompt != nil {
 		return m.promptLine()
@@ -228,7 +257,7 @@ func (m model) statusHeight() int {
 }
 
 // wrapStatus breaks text at spaces to the screen's width, in at most
-// maxStatusLines lines; what does not fit ends the last one in "…".
+// statusLimit lines; what does not fit ends the last one in "…".
 func (m model) wrapStatus(text string) []string {
 	if m.width <= 0 || text == "" {
 		return []string{text}
@@ -247,9 +276,9 @@ func (m model) wrapStatus(text string) []string {
 		}
 	}
 	lines = append(lines, line)
-	if len(lines) > maxStatusLines {
-		rest := strings.Join(lines[maxStatusLines-1:], " ")
-		lines = append(lines[:maxStatusLines-1], truncateRight(rest+" ", m.width))
+	if limit := m.statusLimit(); len(lines) > limit {
+		rest := strings.Join(lines[limit-1:], " ")
+		lines = append(lines[:limit-1], truncateRight(rest+" ", m.width))
 	}
 	for i := range lines {
 		lines[i] = truncateRight(lines[i], m.width) // a word wider than the screen
@@ -461,10 +490,12 @@ func (m model) table() string {
 
 	rows := m.tableRows()
 	end := min(len(m.rows), m.offset+rows)
+	selLo, selHi, multi := m.selectionRange()
 	for i := m.offset; i < end; i++ {
 		r := m.rows[i]
+		picked := multi && i >= selLo && i <= selHi && i != m.cursor
 		if r.sep != "" {
-			b.WriteString(separatorLine(i == m.cursor, widths) + "\n")
+			b.WriteString(separatorLine(i == m.cursor, picked, widths) + "\n")
 			continue
 		}
 		cells := make([]string, len(cols))
@@ -475,6 +506,8 @@ func (m model) table() string {
 		switch {
 		case i == m.cursor:
 			style = cursorStyle
+		case picked:
+			style = selectStyle
 		case m.busy[r.key()] != "":
 			style = busyStyle
 		case r.booth == nil, r.booth.Gone():
@@ -485,6 +518,8 @@ func (m model) table() string {
 		gutter := "  "
 		if i == m.cursor {
 			gutter = "› "
+		} else if picked {
+			gutter = "+ "
 		}
 		b.WriteString(style.Render(gutter) + render(&r, cells, style))
 		b.WriteString("\n")
@@ -492,8 +527,9 @@ func (m model) table() string {
 	return b.String()
 }
 
-// separatorLine draws a separator row across the table's columns.
-func separatorLine(selected bool, widths []int) string {
+// separatorLine draws a separator row across the table's columns: under the
+// cursor (selected), or one of several rows selected (picked).
+func separatorLine(selected, picked bool, widths []int) string {
 	width := 0
 	for _, w := range widths {
 		width += w + 2
@@ -501,6 +537,9 @@ func separatorLine(selected bool, widths []int) string {
 	line := strings.Repeat("─", max(1, width-2))
 	if selected {
 		return cursorStyle.Render("› " + line)
+	}
+	if picked {
+		return selectStyle.Render("+ " + line)
 	}
 	return "  " + dimStyle.Render(line)
 }

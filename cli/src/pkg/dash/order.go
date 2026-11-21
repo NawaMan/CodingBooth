@@ -315,7 +315,7 @@ func (m model) reorderBooth(r row, delta int) (bool, model) {
 
 // Separators (-) are lines the user puts between groups. Each is a group of
 // its own in the saved order ("separator:<n>", with no folder, so it is never
-// dropped): ctrl+↑/↓ moves it like any group, d deletes it. They are not
+// dropped): ctrl+↑/↓ moves it like any group, delete deletes it. They are not
 // hidden, so H does not show them.
 
 const separatorPrefix = "separator:"
@@ -369,7 +369,7 @@ func (m model) addSeparator() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	m.selected = key
-	m.setStatus("Added a separator. ctrl+↑/↓ moves it; d deletes it.", false)
+	m.setStatus("Added a separator. ctrl+↑/↓ moves it; delete deletes it.", false)
 	m.layout()
 	return m, nil
 }

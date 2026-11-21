@@ -165,6 +165,12 @@ func keyMsg(key string) tea.KeyMsg {
 		return tea.KeyMsg{Type: tea.KeyDown}
 	case "up":
 		return tea.KeyMsg{Type: tea.KeyUp}
+	case "delete":
+		return tea.KeyMsg{Type: tea.KeyDelete}
+	case "shift+up":
+		return tea.KeyMsg{Type: tea.KeyShiftUp}
+	case "shift+down":
+		return tea.KeyMsg{Type: tea.KeyShiftDown}
 	case "ctrl+up":
 		return tea.KeyMsg{Type: tea.KeyCtrlUp}
 	case "ctrl+down":
@@ -328,7 +334,7 @@ func TestFailedActionShowsCommandsError(t *testing.T) {
 	f := &fakeDeps{runErr: errors.New("exit status 1"), runOut: "web\nError: booth \"web\" is running. Stop it first or use --force.\n"}
 	m := loaded(f, stopped("web"))
 
-	m, cmd := press(t, m, "d", "y")
+	m, cmd := press(t, m, "delete", "y")
 	next, _ := m.Update(cmd())
 	m = next.(model)
 	if !m.statusErr || !strings.HasPrefix(m.status, "Error: booth \"web\" is running") {
@@ -718,5 +724,23 @@ func TestPlainStatusStaysOneLine(t *testing.T) {
 	m.setStatus(strings.Repeat("word ", 100), false)
 	if m.statusHeight() != 1 || strings.Contains(m.statusLine(), "\n") {
 		t.Errorf("a plain status wrapped: %q", m.statusLine())
+	}
+}
+
+func TestDeleteIsTheDeleteKeyAndBackspaceNotD(t *testing.T) {
+	f := &fakeDeps{}
+	m := loaded(f, stopped("web"))
+	m, cmd := press(t, m, "d")
+	if m.confirm != nil || cmd != nil || m.status != "" {
+		t.Fatalf("d must do nothing: confirm %+v status %q", m.confirm, m.status)
+	}
+	for _, key := range []string{"delete", "backspace"} {
+		asked, _ := press(t, m, key)
+		if asked.confirm == nil || asked.confirm.plan.Confirm != "Delete web and its home volume?" {
+			t.Errorf("%s: confirm %+v, want the delete question", key, asked.confirm)
+		}
+	}
+	if !strings.Contains(stripANSI(m.View()), "del delete") {
+		t.Errorf("help line lacks del delete:\n%s", stripANSI(m.View()))
 	}
 }

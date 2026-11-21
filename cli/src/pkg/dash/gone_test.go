@@ -92,7 +92,7 @@ func TestDeleteOnGoneBoothOnlyForgetsIt(t *testing.T) {
 	deps.Forget = func(b lifecycle.Booth) error { forgot = append(forgot, b.Name+"@"+b.Engine); return nil }
 	m := newModel(deps)
 	next, _ := m.Update(snapshotMsg{seq: 1, booths: []lifecycle.Booth{running("web"), goneBooth()}})
-	m, _ = press(t, next.(model), "down", "d")
+	m, _ = press(t, next.(model), "down", "delete")
 	if m.confirm == nil || m.confirm.plan.Danger || !strings.Contains(m.confirm.plan.Confirm, "Forget old? Its folder is not touched.") {
 		t.Fatalf("confirm %+v", m.confirm)
 	}

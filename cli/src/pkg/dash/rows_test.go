@@ -153,7 +153,7 @@ func deleteModel(f *fakeDeps, state lifecycle.GitState, err error) model {
 // pressDelete presses d on fix and feeds back its git check: the question it asks.
 func pressDelete(t *testing.T, m model) model {
 	t.Helper()
-	m, cmd := press(t, m, "down", "d")
+	m, cmd := press(t, m, "down", "delete")
 	if cmd == nil || m.confirm != nil || m.busy["worktree:/home/u/dev/proj/worktree/fix"] != "checking…" {
 		t.Fatalf("d must read the worktree first: cmd %v confirm %+v busy %v", cmd != nil, m.confirm, m.busy)
 	}
@@ -163,7 +163,7 @@ func pressDelete(t *testing.T, m model) model {
 
 func TestDeleteMainCheckoutIsRefused(t *testing.T) {
 	f := &fakeDeps{repos: testRepos()}
-	m, cmd := press(t, deleteModel(f, lifecycle.GitState{}, nil), "d")
+	m, cmd := press(t, deleteModel(f, lifecycle.GitState{}, nil), "delete")
 	if cmd != nil || m.confirm != nil || !strings.Contains(m.status, "main checkout") {
 		t.Fatalf("d on the main checkout: confirm %v status %q", m.confirm, m.status)
 	}

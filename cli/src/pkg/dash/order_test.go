@@ -268,7 +268,7 @@ func TestSeparatorMovesAndIsDeleted(t *testing.T) {
 	if got := sepSummary(m.rows); !reflect.DeepEqual(got, want) {
 		t.Fatalf("after reopening rows = %v, want %v", got, want)
 	}
-	m, cmd := press(t, m, "g", "down", "down", "d")
+	m, cmd := press(t, m, "g", "down", "down", "delete")
 	if cmd != nil || m.confirm != nil {
 		t.Errorf("d on a separator should delete it at once")
 	}
@@ -307,7 +307,7 @@ func TestSeparatorsAreNotInTheHiddenView(t *testing.T) {
 	m := newModel(deps)
 	next, _ := m.Update(snapshotMsg{seq: 1, booths: booths, repos: repos, hidden: deps.Hidden()})
 	m, _ = press(t, next.(model), "g", "-", "h") // h on a separator does not hide it
-	if !strings.Contains(m.status, "d deletes it") || len(hidden.keys) != 1 {
+	if !strings.Contains(m.status, "delete deletes it") || len(hidden.keys) != 1 {
 		t.Errorf("h on a separator: status %q hidden %v", m.status, hidden.keys)
 	}
 	m, _ = press(t, m, "H")
@@ -408,7 +408,7 @@ func TestOrderSeparatorKeepsAnotherDashboards(t *testing.T) {
 		t.Errorf("saved groups = %v: b's separator undid a's move", got)
 	}
 	// d on b's separator leaves a's alone.
-	b, _ = press(t, b, "d")
+	b, _ = press(t, b, "delete")
 	if got := store.keys(); !containsKey(got, "separator:1") || containsKey(got, "separator:2") {
 		t.Errorf("after b deleted its separator: %v", got)
 	}

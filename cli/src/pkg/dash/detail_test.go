@@ -85,7 +85,7 @@ func TestDetailPaneShowsEveryPart(t *testing.T) {
 		"Logs      last 3 lines",
 		"    one\n    two\n    progress 100%\n",
 		"i info · c config · l log",
-		"↑/↓ move · s start",
+		"↑/↓ move · shift+↑/↓ select · s start",
 	} {
 		if !strings.Contains(view, part) {
 			t.Errorf("pane lacks %q:\n%s", part, view)

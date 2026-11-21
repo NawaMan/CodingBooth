@@ -120,12 +120,13 @@ seconds (`--interval 5s` to change that) and takes `--engine` like the other com
 | `s` | Start it, as `booth start` does: a daemon booth's start, and an interactive booth's session, take the terminal and come back to the dashboard. On a worktree with no booth: start one there (`booth --worktree <name> --daemon`) |
 | `x` | Stop it |
 | `r` | Restart it |
-| `d` | Delete it and its home volume (`booth remove`, `--force` when it is running). On a gone booth: forget it. On a worktree with no booth: delete the worktree. It reads the worktree's git status first. A clean one is deleted with `booth worktree remove <name>`, which keeps a branch with commits found nowhere else. One with uncommitted files or unmerged commits, or whose status cannot be read, gets a warning in red that names what is lost and urges a last look (`t`, `e`, `K`); `y` force-deletes it with `booth worktree remove <name> --force --yes`, which discards that work, its branch and its booths' volumes |
+| `delete` | (The delete key; `backspace` does the same, which is the key marked delete on a Mac laptop.) Delete it and its home volume (`booth remove`, `--force` when it is running). On a gone booth: forget it. On a worktree with no booth: delete the worktree. It reads the worktree's git status first. A clean one is deleted with `booth worktree remove <name>`, which keeps a branch with commits found nowhere else. One with uncommitted files or unmerged commits, or whose status cannot be read, gets a warning in red that names what is lost and urges a last look (`t`, `e`, `K`); `y` force-deletes it with `booth worktree remove <name> --force --yes`, which discards that work, its branch and its booths' volumes |
 | `n` | New worktree in the selected row's repository: type a name (the new branch, from the repository's current commit); booth creates it and starts its booth (`booth --worktree <name> --daemon`) |
 | `h` | Hide it from the table; it stays hidden the next time the dashboard opens. Under `H`: show it again |
 | `H` | Show only the hidden rows (the title says how many); `H` again goes back |
 | `ctrl+↑`/`ctrl+↓` | Move its group (a repository with its worktrees, or a booth in no repository) up or down; on a linked worktree, move that worktree within its repository. Where several booths share one checkout, it first swaps the booth with the one above or below it there. The order is kept for the next time (see below) |
-| `-` | Add a separator line below its group, and select it: `ctrl+↑`/`ctrl+↓` moves it, `d` deletes it (see below) |
+| `-` | Add a separator line below its group, and select it: `ctrl+↑`/`ctrl+↓` moves it, `delete` deletes it (see below) |
+| `shift+↑`/`shift+↓` | Select several adjacent rows; `h`, `s`, `x`, `r`, `delete` and `ctrl+↑`/`ctrl+↓` then act on all of them (see below). `esc`, or a plain `↑`/`↓`, ends the selection |
 | `R` | Refresh now |
 | `q` | Quit |
 
@@ -143,12 +144,12 @@ shows as a warning line, and the rest of the table stays. `booth dashboard` need
 
 **Booths it has seen stay listed.** The dashboard remembers every booth it has shown, in
 `~/.cache/codingbooth/dashboard/seen.json` (the user cache directory). When such a booth's container
-is gone — removed by `d`, `booth remove`, or a `--run` that cleaned up after itself — it stays on its
+is gone — removed by `delete`, `booth remove`, or a `--run` that cleaned up after itself — it stays on its
 row, under its repository and worktree, for as long as its folder and that folder's `.booth` are
 still there (an express booth's own `.booth` folder). Its STATUS is `-`, the same as a worktree
 with no booth: the folder is there and nothing runs. The title counts only booths with a container.
 On a gone booth, `enter` asks, then starts a terminal (base) booth under its old name for a shell and
-removes it afterwards (`booth shell --run --name <name> --code <folder>`); `d` asks, then forgets it
+removes it afterwards (`booth shell --run --name <name> --code <folder>`); `delete` asks, then forgets it
 (the folder is not touched); `t`, `e` and `K` open its folder; keys that need a container say so. A
 booth whose engine did not answer is not shown as gone, and `--engine` shows only that engine's.
 Only booths the dashboard has seen are remembered; deleting the cache file forgets them all.
@@ -159,7 +160,7 @@ worktree, and a booth started on it later shows. Hiding the main checkout hides 
 worktrees stay listed. `H` switches to the hidden rows, where every key works as usual and `h` shows
 a row again; `H` again goes back. The hidden rows are kept in
 `~/.cache/codingbooth/dashboard/hidden.json`; an entry is dropped once its folder is gone, and
-forgetting a gone booth (`d`) unhides it too.
+forgetting a gone booth (`delete`) unhides it too.
 
 **Grouped by repository.** Booths are grouped by the git repository their code is in. A group has no heading line: its main checkout leads it, not indented, its NAME in
 the group colour — the booth's name, or the repository's when it has no booth, with `(here)` on the
@@ -168,7 +169,7 @@ a `-` row of its own (the WORKTREE column), so a worktree that has no booth yet 
 key away from one. A repository that is only its main checkout is therefore a single row. An
 express booth is marked `(express)` after its name (`CodingBooth (here, express)`): it reads a `.booth`
 of its own, not the one in its folder, so `c` and VERSION are about that one. A booth whose code is
-in no repository leads a group of its own (blue, not indented). `d` on a worktree row removes it only when
+in no repository leads a group of its own (blue, not indented). `delete` on a worktree row removes it only when
 nothing would be lost, as [`booth worktree remove`](BOOTH_WORKTREE.md#removing-a-worktree) does,
 and refuses while a booth runs on it; the main checkout is never removed. There is no landing or
 merging here: open the worktree in your editor or GitKraken for that.
@@ -190,8 +191,32 @@ undone by it.
 
 **Separators.** `-` adds a line below the selected row's group, to set groups apart; it is kept in the
 same order as the rows. A separator is selected like a row: `ctrl+↑`/`ctrl+↓` moves it past the next
-group, and `d` deletes it at once (no question: `-` brings it back). Other keys do nothing on it,
+group, and `delete` deletes it at once (no question: `-` brings it back). Other keys do nothing on it,
 it cannot be hidden, and `H` does not show it.
+
+**Selecting several rows.** `shift+↓` (or `shift+↑`) selects the row the cursor is on and the next
+one, and each further press takes one row more, or gives one back: the selection is always the rows
+from where it started to the cursor. The title says how many are selected, and the help lines list
+what acts on them. It stays on its rows across refreshes; `esc`, a plain `↑`/`↓`, or carrying an
+action out ends it. While several rows are selected:
+
+- `h` hides them all (under `H`: shows them all again).
+- `x` and `r` ask once, naming the booths, then stop or restart the running ones at the same time.
+- `s` starts them one after another in the terminal, as each start takes it: the stopped daemon
+  booths, and a booth on each worktree that has none. The first that fails ends the run, with its
+  reason left on screen. An interactive booth is left out (its start is its session, which would
+  hold the others up): start it on its own.
+- `delete` asks once, saying what happens to each: booths are deleted with their home volumes (running
+  ones force-deleted), gone booths forgotten, separators deleted, and worktrees with no booth
+  deleted with `booth worktree remove`. Each worktree's git status is read first, and one with
+  uncommitted files or unmerged commits (or whose status cannot be read) is left out and named:
+  discarding work stays a question of its own, on that row. The main checkout is left out too.
+- `ctrl+↑`/`ctrl+↓` move them together past the next row shown, in the widest unit they touch:
+  booths on one checkout move among the booths there, worktrees of one repository within it, and
+  anything wider moves the whole groups the rows are in. The selection is kept, to move them again.
+
+A row a key does not apply to (a booth that is not running, for `x`) is left out, and the question
+and the closing status line name it. Every other key acts on the row under the cursor, as usual.
 
 **GIT** is each worktree's status: `*3` files changed (uncommitted or untracked; booth's own
 `.booth/.tmp/` is not counted), `↑2` commits ahead and `↓5` behind, or `clean`. A worktree counts

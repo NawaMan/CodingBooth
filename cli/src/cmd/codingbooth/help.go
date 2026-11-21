@@ -620,7 +620,8 @@ KEYS:
   e          Open its folder in $VISUAL ($EDITOR, else code)
   K          Open its folder in GitKraken
   s          Start it                x      Stop it
-  r          Restart it              d      Delete it (and its home volume)
+  r          Restart it              delete Delete it (and its home volume);
+             backspace does the same
              On a worktree: delete it; one with uncommitted files or
              unmerged commits is force-deleted, after a warning
   n          New worktree in this repository, with its booth started
@@ -629,7 +630,10 @@ KEYS:
   ctrl+↑/↓    Move its group up or down; on a worktree, within its repository;
              among several booths on one checkout, swap it with the next first
              (kept across runs; new rows go to the bottom)
-  -          Add a separator line below its group; ctrl+↑/↓ moves it, d deletes it
+  -          Add a separator line below its group; ctrl+↑/↓ moves it, delete deletes it
+  shift+↑/↓   Select several adjacent rows: h, s, x, r, delete and ctrl+↑/↓
+             then act on all of them (one question for all); esc or ↑/↓
+             ends it
   R          Refresh now             q      Quit
 
 VERSION shows the CodingBooth version that built each booth, in the warning
@@ -638,14 +642,14 @@ image was rebuilt since; i says which, and how to update it.
 
 Booths are grouped by git repository: the main checkout leads (its NAME in
 blue), its worktrees are indented under it, each listed even without a booth.
-A booth in no repository leads a group of its own. Groups start sorted by name. On such a row, s starts a booth there and d removes the
+A booth in no repository leads a group of its own. Groups start sorted by name. On such a row, s starts a booth there and delete removes the
 worktree (as worktree remove does: never what would be lost). Starting a booth
 takes the terminal (booth may build, or ask before starting a booth that can
 reach the host) and comes back here when it is done.
 
 A booth seen here before whose container is gone stays listed (STATUS -,
 as for a worktree without a booth) while its folder and .booth are still there: enter starts a booth there just for a shell
-(shell --run), d forgets it (the folder is not touched).
+(shell --run), delete forgets it (the folder is not touched).
 
 OPTIONS:
   --engine <docker|podman|apple>  Show only this engine's booths

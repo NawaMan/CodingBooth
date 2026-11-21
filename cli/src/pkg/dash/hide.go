@@ -32,6 +32,9 @@ func (m *model) layout() {
 	}
 	m.rows = rows
 	m.reselect()
+	if !m.hasRow(m.anchor) {
+		m.anchor = "" // the row the selection started on is no longer shown
+	}
 }
 
 // rowName is how the status line names a row.
@@ -56,7 +59,7 @@ func (m model) toggleHide() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	if r.sep != "" {
-		m.setStatus("A separator is not hidden; d deletes it.", false)
+		m.setStatus("A separator is not hidden; delete deletes it.", false)
 		return m, nil
 	}
 	key, name, hide := r.key(), rowName(r), !m.showHidden
@@ -95,6 +98,7 @@ func (m model) toggleHiddenView() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	m.showHidden = !m.showHidden
+	m.anchor = ""
 	m.layout()
 	m.setStatus("", false)
 	return m, nil
