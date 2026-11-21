@@ -400,7 +400,7 @@ helper	booth--idle-monitor	1.0.0	bd5c81c416f04c2ac415482a17d3bade424219ada608643
 helper	booth--info	1.0.1	c9b1ec967222372e600a42102b264289904a39aa46e3d4e488716511e6764a38	variants/base/setups/booth--info
 helper	booth--lifecycle-log	0.2.0	ab036f4fa220fff45d886a18aba99958029ac96b44948468d521d2cb32833347	variants/base/setups/booth--lifecycle-log
 helper	booth--msg	1.0.0	d47d05298421df358bf477766632feba3459011db13d41cc652b510fb49ff8c0	variants/base/setups/booth--msg
-helper	booth--record	0.1.0	5e8490ae7f73135c2a24fb99cf4dc6ed607ca6c9a6003ee1ca16706844351fc3	variants/base/setups/booth--record
+helper	booth--record	0.1.1	73283ba4a8180c8c176a52b0ed9301b500f8217068038c21c36b3babfe199e9d	variants/base/setups/booth--record
 helper	booth--record-cast	0.1.0	9040bfba82b77e3708f5e01d16f2585ec8c0f93360ba134355a390572771eee9	variants/base/setups/booth--record-cast
 helper	booth--restart	1.0.0	ba42f1b4055bd6aa52e398d72c7cc33a5df7747a41d250080b47c51b6c0e6761	variants/base/setups/booth--restart
 helper	booth--shutdown	1.0.0	2b7d830b4da0ac0cd237e304c90454dda06febf68fe86c869ce424fa7da8b0b6	variants/base/setups/booth--shutdown
