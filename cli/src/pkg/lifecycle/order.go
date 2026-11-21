@@ -15,8 +15,9 @@ import (
 // group's ("repo:<root>", or a booth in no repository's name@engine) and a
 // linked worktree's within its group ("worktree:<path>"), and a booth's among
 // the booths on its checkout ("booth:<name>@<engine>"). Each is remembered
-// with its folder: once the folder is gone, the entry is dropped. A missing or
-// broken file only means no order yet.
+// with its folder: once the folder is gone, the entry is dropped. A separator
+// line ("separator:<n>") has no folder, so it is never dropped, and may have a
+// name. A missing or broken file only means no order yet.
 type Order struct {
 	Path string
 }
@@ -25,6 +26,8 @@ type Order struct {
 type OrderEntry struct {
 	Key  string `json:"key"`
 	Path string `json:"path"`
+	// Name is the name the user gave a separator line: it heads the rows below it.
+	Name string `json:"name,omitempty"`
 }
 
 // DefaultOrder is the store beside the hidden rows, under the user's cache

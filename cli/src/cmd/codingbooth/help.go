@@ -630,7 +630,8 @@ KEYS:
   ctrl+↑/↓    Move its group up or down; on a worktree, within its repository;
              among several booths on one checkout, swap it with the next first
              (kept across runs; new rows go to the bottom)
-  -          Add a separator line below its group; ctrl+↑/↓ moves it, delete deletes it
+  -          Add a separator line below its group; ctrl+↑/↓ moves it, delete deletes it,
+             enter names the rows below it (a top line is there for the first rows)
   shift+↑/↓   Select several adjacent rows: h, s, x, r, delete and ctrl+↑/↓
              then act on all of them (one question for all); esc or ↑/↓
              ends it

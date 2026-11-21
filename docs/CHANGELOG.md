@@ -4,6 +4,13 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth dashboard`: a separator can name the rows below it.** `enter` on a separator line asks
+  for a name, and the line shows it (`── Work ─────`): a heading for the rows down to the next
+  separator. An empty name makes it a plain line again. A table with at least one separator now
+  also has a top line, always the first row, so the rows above the first separator can be named the
+  same way; it is not moved or deleted, and goes with the last separator. Names are kept in
+  `order.json` with the separators, and are shared by dashboards open at the same time. See
+  [booth lifecycle → dashboard](BOOTH_LIFECYCLE.md#dashboard).
 - **`booth dashboard`: `shift+↑`/`shift+↓` select several adjacent rows.** `h`, `s`, `x`, `r`,
   `delete` and `ctrl+↑`/`ctrl+↓` then act on all of them: hide them, start them one after another, stop or
   restart them after one question, delete them after one question, or move them together. A row a

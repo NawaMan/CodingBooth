@@ -230,7 +230,8 @@ func TestSeparatorIsAddedBelowTheGroupAndSelected(t *testing.T) {
 	booths, repos := orderRepos()
 	m := orderModel(store, booths, repos)
 	m, _ = press(t, m, "g", "-") // on alpha
-	want := []string{"(none) @main", "---", "Mid", "(none) @main", "(none) @a-idea", "fixer @b-fix"}
+	// The first "---" is the top line, there once the table has a separator.
+	want := []string{"---", "(none) @main", "---", "Mid", "(none) @main", "(none) @a-idea", "fixer @b-fix"}
 	if got := sepSummary(m.rows); !reflect.DeepEqual(got, want) {
 		t.Fatalf("rows = %v, want %v", got, want)
 	}
@@ -259,7 +260,7 @@ func TestSeparatorMovesAndIsDeleted(t *testing.T) {
 	booths, repos := orderRepos()
 	m := orderModel(store, booths, repos)
 	m, _ = press(t, m, "g", "-", "ctrl+down")
-	want := []string{"(none) @main", "Mid", "---", "(none) @main", "(none) @a-idea", "fixer @b-fix"}
+	want := []string{"---", "(none) @main", "Mid", "---", "(none) @main", "(none) @a-idea", "fixer @b-fix"}
 	if got := sepSummary(m.rows); !reflect.DeepEqual(got, want) {
 		t.Fatalf("rows = %v, want %v", got, want)
 	}
@@ -268,7 +269,7 @@ func TestSeparatorMovesAndIsDeleted(t *testing.T) {
 	if got := sepSummary(m.rows); !reflect.DeepEqual(got, want) {
 		t.Fatalf("after reopening rows = %v, want %v", got, want)
 	}
-	m, cmd := press(t, m, "g", "down", "down", "delete")
+	m, cmd := press(t, m, "g", "down", "down", "down", "delete")
 	if cmd != nil || m.confirm != nil {
 		t.Errorf("d on a separator should delete it at once")
 	}
@@ -290,7 +291,7 @@ func TestSeparatorIgnoresBoothKeys(t *testing.T) {
 	m := newModel(deps)
 	next, _ := m.Update(snapshotMsg{seq: 1, booths: booths, repos: repos})
 	m, _ = press(t, next.(model), "g", "-")
-	for _, key := range []string{"s", "x", "r", "enter", "o", "p", "m", "l", "t", "e", "n", "i", "c"} {
+	for _, key := range []string{"s", "x", "r", "o", "p", "m", "l", "t", "e", "n", "i", "c"} {
 		m, _ = press(t, m, key)
 	}
 	if len(f.ran)+len(f.execed) != 0 || m.confirm != nil {
@@ -598,5 +599,183 @@ func TestBoothSwapSaveFailureKeepsTheOrder(t *testing.T) {
 	}
 	if !strings.Contains(m.status, "Could not save the row order") {
 		t.Errorf("status = %q", m.status)
+	}
+}
+
+// Naming a separator (enter), and the top line.
+
+// typed presses each rune of text.
+func typed(t *testing.T, m model, text string) model {
+	t.Helper()
+	for _, r := range text {
+		m, _ = press(t, m, string(r))
+	}
+	return m
+}
+
+// savedName is the name saved for key, and whether key is saved at all.
+func savedName(store *orderStore, key string) (string, bool) {
+	for _, e := range store.order {
+		if e.Key == key {
+			return e.Name, true
+		}
+	}
+	return "", false
+}
+
+func TestEnterNamesASeparator(t *testing.T) {
+	store := &orderStore{}
+	booths, repos := orderRepos()
+	m := orderModel(store, booths, repos)
+	m, _ = press(t, m, "g", "-", "enter")
+	if m.prompt == nil || m.prompt.sep != "separator:1" {
+		t.Fatalf("enter on a separator should ask for its name: %+v", m.prompt)
+	}
+	if view := stripANSI(m.View()); !strings.Contains(view, "Name of the rows below this line:") {
+		t.Errorf("prompt missing:\n%s", view)
+	}
+	m = typed(t, m, "Client work")
+	m, _ = press(t, m, "enter")
+	if name, _ := savedName(store, "separator:1"); name != "Client work" || m.prompt != nil {
+		t.Fatalf("saved name %q, prompt %+v", name, m.prompt)
+	}
+	if r, _ := m.currentRow(); r.sep != "separator:1" || r.label != "Client work" {
+		t.Errorf("cursor row = %+v, want the named separator", r)
+	}
+	m.width = 100
+	if view := stripANSI(m.View()); !strings.Contains(view, "── Client work ──") {
+		t.Errorf("name not in the line:\n%s", view)
+	}
+	// It moves with its name, and is there when the dashboard opens again.
+	m, _ = press(t, m, "ctrl+down")
+	if name, _ := savedName(store, "separator:1"); name != "Client work" {
+		t.Errorf("after a move the name is %q", name)
+	}
+	m = orderModel(store, booths, repos)
+	want := []string{"---", "(none) @main", "Mid", "---", "(none) @main", "(none) @a-idea", "fixer @b-fix"}
+	if got := sepSummary(m.rows); !reflect.DeepEqual(got, want) || m.rows[3].label != "Client work" {
+		t.Fatalf("reopened rows = %v label %q", got, m.rows[3].label)
+	}
+	// Enter again starts from the name it has; an empty one takes it away.
+	m, _ = press(t, m, "g", "down", "down", "down", "enter")
+	if got := m.prompt.field.String(); got != "Client work" {
+		t.Fatalf("prompt starts with %q, want the name it has", got)
+	}
+	m, _ = press(t, m, "ctrl+u", "enter")
+	if name, saved := savedName(store, "separator:1"); name != "" || !saved {
+		t.Errorf("cleared: name %q saved %v, want an unnamed separator", name, saved)
+	}
+}
+
+func TestEscLeavesASeparatorsNameAlone(t *testing.T) {
+	store := &orderStore{}
+	booths, repos := orderRepos()
+	m := orderModel(store, booths, repos)
+	m, _ = press(t, m, "g", "-", "enter")
+	m = typed(t, m, "Work")
+	saves := store.saves
+	m, _ = press(t, m, "esc")
+	if name, _ := savedName(store, "separator:1"); name != "" || store.saves != saves || m.prompt != nil {
+		t.Errorf("esc saved: name %q saves %d→%d", name, saves, store.saves)
+	}
+}
+
+func TestTopLineIsThereWithASeparatorAndIsNamed(t *testing.T) {
+	store := &orderStore{}
+	booths, repos := orderRepos()
+	m := orderModel(store, booths, repos)
+	for _, r := range m.rows {
+		if r.sep != "" {
+			t.Fatalf("no separator yet, so no top line: %v", sepSummary(m.rows))
+		}
+	}
+	m, _ = press(t, m, "G", "-", "g")
+	if r, _ := m.currentRow(); r.sep != separatorTop {
+		t.Fatalf("first row = %+v, want the top line", r)
+	}
+	if _, saved := savedName(store, separatorTop); saved {
+		t.Errorf("an unnamed top line is not saved: %v", store.keys())
+	}
+	if help := stripANSI(m.View()); !strings.Contains(help, "top line: enter name the rows below it") {
+		t.Errorf("top line help missing:\n%s", help)
+	}
+	m, _ = press(t, m, "enter")
+	m = typed(t, m, "Mine")
+	m, _ = press(t, m, "enter")
+	if name, _ := savedName(store, separatorTop); name != "Mine" || m.rows[0].label != "Mine" {
+		t.Fatalf("top line name saved %q shown %q", name, m.rows[0].label)
+	}
+
+	// It is not moved, deleted or added below, and nothing moves above it.
+	before := sepSummary(m.rows)
+	saves := store.saves
+	m, _ = press(t, m, "ctrl+down", "ctrl+up", "delete", "-")
+	if got := sepSummary(m.rows); !reflect.DeepEqual(got, before) || store.saves != saves || m.confirm != nil {
+		t.Errorf("the top line changed: rows %v → %v, saves %d → %d", before, got, saves, store.saves)
+	}
+	m, _ = press(t, m, "down", "ctrl+up")
+	if got := sepSummary(m.rows); !reflect.DeepEqual(got, before) {
+		t.Errorf("a group moved above the top line: %v", got)
+	}
+
+	// It goes with the last separator, and comes back, named, with the next.
+	m, _ = press(t, m, "G", "delete")
+	for _, r := range m.rows {
+		if r.sep != "" {
+			t.Fatalf("the last separator is deleted, so no top line: %v", sepSummary(m.rows))
+		}
+	}
+	m, _ = press(t, m, "-")
+	if m.rows[0].sep != separatorTop || m.rows[0].label != "Mine" {
+		t.Errorf("top line did not come back with its name: %+v", m.rows[0])
+	}
+	// An empty name takes it out of the saved order.
+	m, _ = press(t, m, "g", "enter", "ctrl+u", "enter")
+	if _, saved := savedName(store, separatorTop); saved || m.rows[0].sep != separatorTop || m.rows[0].label != "" {
+		t.Errorf("cleared top line: saved %v row %+v", saved, m.rows[0])
+	}
+}
+
+func TestDeleteOnSeveralRowsLeavesTheTopLine(t *testing.T) {
+	store := &orderStore{}
+	booths, repos := orderRepos()
+	m := orderModel(store, booths, repos)
+	m, _ = press(t, m, "g", "-", "g", "shift+down", "shift+down", "delete") // top line, alpha, the separator
+	if m.confirm != nil || !strings.Contains(m.status, "Deleted 1 row.") || !strings.Contains(m.status, "the top line: it stays") {
+		t.Fatalf("confirm %+v status %q", m.confirm, m.status)
+	}
+	if containsKey(store.keys(), "separator:1") {
+		t.Errorf("the separator is left: %v", store.keys())
+	}
+}
+
+func TestSeparatorNameIsSharedBetweenDashboards(t *testing.T) {
+	store := &orderStore{}
+	booths, repos := orderRepos()
+	a := sharedDashboard(store, booths, repos)
+	b := sharedDashboard(store, booths, repos)
+	a, _ = press(t, a, "-", "enter")
+	a = typed(t, a, "Work")
+	a, _ = press(t, a, "enter")
+	b = refreshed(b)
+	found := false
+	for _, r := range b.rows {
+		found = found || (r.sep == "separator:1" && r.label == "Work")
+	}
+	if !found {
+		t.Fatalf("b does not show a's name: %v", sepSummary(b.rows))
+	}
+	// b moves a group; a's name is kept.
+	b, _ = press(t, b, "ctrl+up")
+	if name, _ := savedName(store, "separator:1"); name != "Work" {
+		t.Errorf("b's move lost a's name: %q", name)
+	}
+	// a names a separator b has deleted meanwhile: nothing is saved.
+	a, _ = press(t, a, "enter")
+	store.order = nil
+	a = typed(t, a, "!")
+	a, _ = press(t, a, "enter")
+	if _, saved := savedName(store, "separator:1"); saved || !strings.Contains(a.status, "is gone") {
+		t.Errorf("named a deleted separator: saved %v status %q", saved, a.status)
 	}
 }

@@ -34,6 +34,9 @@ import (
 // groupKey names the group a row is in: its repository, else its booth (a
 // booth in no repository is a group of its own).
 func groupKey(r row) string {
+	if r.sep == separatorTop {
+		return "" // it has no place in the order: it is always first
+	}
 	if r.repo != nil && r.repo != otherBooths {
 		return "repo:" + r.repo.Root
 	}
@@ -106,6 +109,9 @@ func (m *model) arrange(all []row) []row {
 		pos[e.Key] = i
 	}
 	rank := func(r row) (int, int, int) {
+		if r.sep == separatorTop {
+			return -1, -1, -1
+		}
 		inner := -1 // the rows that lead come first in their group
 		if k := innerKey(r); k != "" {
 			inner = pos[k]
@@ -317,24 +323,85 @@ func (m model) reorderBooth(r row, delta int) (bool, model) {
 // its own in the saved order ("separator:<n>", with no folder, so it is never
 // dropped): ctrl+↑/↓ moves it like any group, delete deletes it. They are not
 // hidden, so H does not show them.
+//
+// A separator may have a name (enter), kept with it in the saved order: it
+// heads the rows below it, down to the next separator. So that the rows above
+// the first separator can have a name too, a table with a separator also has
+// the top line: a separator that is always the first row. It is not added,
+// moved or deleted, and is in the saved order only while it has a name
+// (separatorTop, wherever that entry is).
 
 const separatorPrefix = "separator:"
 
-// separatorRows are the separators in the saved order.
+// separatorTop is the top line's key.
+const separatorTop = separatorPrefix + "top"
+
+// separatorRows are the separators in the saved order, after the top line
+// when there is any.
 func (m model) separatorRows() []row {
+	top := row{sep: separatorTop}
 	var rows []row
 	for _, e := range m.order {
-		if strings.HasPrefix(e.Key, separatorPrefix) {
-			rows = append(rows, row{sep: e.Key})
+		switch {
+		case e.Key == separatorTop:
+			top.label = e.Name
+		case strings.HasPrefix(e.Key, separatorPrefix):
+			rows = append(rows, row{sep: e.Key, label: e.Name})
 		}
 	}
-	return rows
+	if len(rows) == 0 {
+		return nil
+	}
+	return append([]row{top}, rows...)
+}
+
+// nameSeparator gives the separator key a name, or with "" takes it away.
+func (m model) nameSeparator(key, name string) (tea.Model, tea.Cmd) {
+	// In the order as saved now: another dashboard may have changed it.
+	saved := m.savedOrder()
+	order := make([]lifecycle.OrderEntry, 0, len(saved)+1)
+	found := false
+	for _, e := range saved {
+		if e.Key == key {
+			found = true
+			if key == separatorTop && name == "" {
+				continue // the top line is saved only while it has a name
+			}
+			e.Name = name
+		}
+		order = append(order, e)
+	}
+	switch {
+	case found:
+	case key == separatorTop && name != "":
+		order = append(order, lifecycle.OrderEntry{Key: key, Name: name})
+	case key != separatorTop:
+		m.order = saved
+		m.layout()
+		m.setStatus("That separator is gone; nothing was named.", false)
+		return m, nil
+	}
+	if err := m.saveOrder(order); err != nil {
+		m.setStatus("Could not save the name: "+err.Error(), true)
+		return m, nil
+	}
+	if name == "" {
+		m.setStatus("The line has no name now.", false)
+	} else {
+		m.setStatus("Named the rows below the line: "+name+".", false)
+	}
+	m.layout()
+	return m, nil
 }
 
 // addSeparator puts a separator below the selected row's group (or at the
 // bottom of an empty table) and selects it.
 func (m model) addSeparator() (tea.Model, tea.Cmd) {
 	if m.deps.SaveOrder == nil || m.showHidden {
+		return m, nil
+	}
+	if r, ok := m.currentRow(); ok && r.sep == separatorTop {
+		m.setStatus("Select a row to add a separator below its group.", false)
 		return m, nil
 	}
 	// From the order as saved now, so a separator another dashboard added
@@ -369,13 +436,18 @@ func (m model) addSeparator() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	m.selected = key
-	m.setStatus("Added a separator. ctrl+↑/↓ moves it; delete deletes it.", false)
+	m.setStatus("Added a separator. enter names the rows below it; ctrl+↑/↓ moves it; delete deletes it.", false)
 	m.layout()
 	return m, nil
 }
 
-// deleteSeparator takes the separator key out of the order.
+// deleteSeparator takes the separator key out of the order. The top line is
+// not deleted: it goes with the last separator.
 func (m model) deleteSeparator(key string) (tea.Model, tea.Cmd) {
+	if key == separatorTop {
+		m.setStatus("The top line stays while the table has a separator; enter names the rows below it.", false)
+		return m, nil
+	}
 	saved := m.savedOrder()
 	order := make([]lifecycle.OrderEntry, 0, len(saved))
 	for _, e := range saved {

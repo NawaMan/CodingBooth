@@ -46,6 +46,14 @@ func (m model) helpLines() []string {
 		return []string{fmt.Sprintf("%d rows selected: ", len(sel)) + acts,
 			"shift+↑/↓ select more or fewer · esc or ↑/↓ end the selection · other keys act on the row under the cursor · q quit"}
 	}
+	if r, ok := m.currentRow(); ok && r.sep != "" && m.deps.SaveOrder != nil {
+		// A separator: only these keys do anything on it.
+		on := "separator: enter name the rows below it · ctrl+↑/↓ move it · del delete it"
+		if r.sep == separatorTop {
+			on = "top line: enter name the rows below it · it stays while the table has a separator"
+		}
+		return []string{on, "↑/↓ move · shift+↑/↓ select · - separator · R refresh · q quit"}
+	}
 	look := "i info"
 	if m.deps.Config != nil {
 		look += " · c config"
@@ -136,7 +144,7 @@ func (m model) View() string {
 	}
 	help := m.helpLines()
 	if m.prompt != nil {
-		help = promptHelpLines
+		help = m.promptHelp()
 	}
 	if m.compose != nil {
 		b.WriteString("\n")
@@ -495,7 +503,7 @@ func (m model) table() string {
 		r := m.rows[i]
 		picked := multi && i >= selLo && i <= selHi && i != m.cursor
 		if r.sep != "" {
-			b.WriteString(separatorLine(i == m.cursor, picked, widths) + "\n")
+			b.WriteString(separatorLine(i == m.cursor, picked, widths, r.label) + "\n")
 			continue
 		}
 		cells := make([]string, len(cols))
@@ -528,20 +536,30 @@ func (m model) table() string {
 }
 
 // separatorLine draws a separator row across the table's columns: under the
-// cursor (selected), or one of several rows selected (picked).
-func separatorLine(selected, picked bool, widths []int) string {
+// cursor (selected), or one of several rows selected (picked). Its name, when
+// it has one, is set in the line near its start ("── Work ─────"), in the
+// group colour.
+func separatorLine(selected, picked bool, widths []int, label string) string {
 	width := 0
 	for _, w := range widths {
 		width += w + 2
 	}
-	line := strings.Repeat("─", max(1, width-2))
+	width = max(1, width-2)
+	before, after := "", strings.Repeat("─", width)
+	if room := width - 6; label != "" && room > 0 { // "── " + label + " ─"
+		label = " " + truncateRight(label, room) + " "
+		before = "──"
+		after = strings.Repeat("─", max(1, width-2-lipgloss.Width(label)))
+	} else {
+		label = ""
+	}
 	if selected {
-		return cursorStyle.Render("› " + line)
+		return cursorStyle.Render("› " + before + label + after)
 	}
 	if picked {
-		return selectStyle.Render("+ " + line)
+		return selectStyle.Render("+ " + before + label + after)
 	}
-	return "  " + dimStyle.Render(line)
+	return "  " + dimStyle.Render(before) + groupStyle.Render(label) + dimStyle.Render(after)
 }
 
 // versionText is the VERSION cell: the version that built the booth. A booth

@@ -23,7 +23,8 @@ func TestOrderSaveAndLoadRoundTrip(t *testing.T) {
 	if got := o.Load(); len(got) != 0 {
 		t.Fatalf("no file: order = %v, want none", got)
 	}
-	want := []OrderEntry{{"repo:" + web, web}, {"api@docker", api}, {"nopath@docker", ""}}
+	want := []OrderEntry{{Key: "repo:" + web, Path: web}, {Key: "api@docker", Path: api},
+		{Key: "nopath@docker"}, {Key: "separator:1", Name: "Work"}}
 	if err := o.Save(want); err != nil {
 		t.Fatal(err)
 	}
@@ -39,10 +40,10 @@ func TestOrderDropsEntriesWhoseFolderIsGone(t *testing.T) {
 		t.Fatal(err)
 	}
 	o := Order{Path: filepath.Join(dir, "order.json")}
-	if err := o.Save([]OrderEntry{{"gone@docker", gone}, {"web@docker", web}, {"web@docker", web}}); err != nil {
+	if err := o.Save([]OrderEntry{{Key: "gone@docker", Path: gone}, {Key: "web@docker", Path: web}, {Key: "web@docker", Path: web}}); err != nil {
 		t.Fatal(err)
 	}
-	want := []OrderEntry{{"web@docker", web}}
+	want := []OrderEntry{{Key: "web@docker", Path: web}}
 	if got := o.Load(); !reflect.DeepEqual(got, want) {
 		t.Errorf("order = %v, want %v", got, want)
 	}

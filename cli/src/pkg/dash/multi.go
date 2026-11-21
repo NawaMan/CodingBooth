@@ -444,6 +444,8 @@ func (m model) deleteRows(sel []row) (tea.Model, tea.Cmd) {
 	for _, r := range sel {
 		name := rowName(r)
 		switch {
+		case r.sep == separatorTop:
+			d.left.add("it stays while the table has a separator", "the top line")
 		case r.sep != "":
 			d.batch.separators = append(d.batch.separators, r.sep)
 		case m.busy[r.key()] != "":

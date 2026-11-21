@@ -125,7 +125,7 @@ seconds (`--interval 5s` to change that) and takes `--engine` like the other com
 | `h` | Hide it from the table; it stays hidden the next time the dashboard opens. Under `H`: show it again |
 | `H` | Show only the hidden rows (the title says how many); `H` again goes back |
 | `ctrl+↑`/`ctrl+↓` | Move its group (a repository with its worktrees, or a booth in no repository) up or down; on a linked worktree, move that worktree within its repository. Where several booths share one checkout, it first swaps the booth with the one above or below it there. The order is kept for the next time (see below) |
-| `-` | Add a separator line below its group, and select it: `ctrl+↑`/`ctrl+↓` moves it, `delete` deletes it (see below) |
+| `-` | Add a separator line below its group, and select it: `ctrl+↑`/`ctrl+↓` moves it, `delete` deletes it, and `enter` on it names the rows below it (see below) |
 | `shift+↑`/`shift+↓` | Select several adjacent rows; `h`, `s`, `x`, `r`, `delete` and `ctrl+↑`/`ctrl+↓` then act on all of them (see below). `esc`, or a plain `↑`/`↓`, ends the selection |
 | `R` | Refresh now |
 | `q` | Quit |
@@ -194,6 +194,17 @@ same order as the rows. A separator is selected like a row: `ctrl+↑`/`ctrl+↓
 group, and `delete` deletes it at once (no question: `-` brings it back). Other keys do nothing on it,
 it cannot be hidden, and `H` does not show it.
 
+**Naming the rows below a separator.** `enter` on a separator asks for a name, and the line shows it
+(`── Work ─────`): it heads the rows below it, down to the next separator. `enter` again changes the
+name, starting from the one it has; an empty name (`ctrl+u`, then `enter`) makes it a plain line
+again, and `esc` leaves it as it was. The name is kept with the separator in `order.json`, so it
+moves with it and shows in other dashboards.
+
+So that the rows above the first separator can have a name too, a table with at least one separator
+also has a **top line**: a separator that is always the first row. `enter` names it like any other.
+It is not added, moved or deleted: it goes when the last separator is deleted, and comes back, with
+its name, with the next one. A table with no separator has no top line.
+
 **Selecting several rows.** `shift+↓` (or `shift+↑`) selects the row the cursor is on and the next
 one, and each further press takes one row more, or gives one back: the selection is always the rows
 from where it started to the cursor. The title says how many are selected, and the help lines list
@@ -210,7 +221,8 @@ action out ends it. While several rows are selected:
   ones force-deleted), gone booths forgotten, separators deleted, and worktrees with no booth
   deleted with `booth worktree remove`. Each worktree's git status is read first, and one with
   uncommitted files or unmerged commits (or whose status cannot be read) is left out and named:
-  discarding work stays a question of its own, on that row. The main checkout is left out too.
+  discarding work stays a question of its own, on that row. The main checkout is left out too, and
+  so is the top line.
 - `ctrl+↑`/`ctrl+↓` move them together past the next row shown, in the widest unit they touch:
   booths on one checkout move among the booths there, worktrees of one repository within it, and
   anything wider moves the whole groups the rows are in. The selection is kept, to move them again.

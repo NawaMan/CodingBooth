@@ -615,8 +615,17 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	if r.sep != "" {
-		if key == keyRemove {
+		switch key {
+		case keyRemove:
 			return m.deleteSeparator(r.sep)
+		case keyShell:
+			if m.deps.SaveOrder == nil {
+				return m, nil
+			}
+			// The prompt starts with the name it has, to change it.
+			name := []rune(r.label)
+			m.setStatus("", false)
+			m.prompt = &namePrompt{sep: r.sep, field: textField{text: name, cursor: len(name)}}
 		}
 		return m, nil
 	}

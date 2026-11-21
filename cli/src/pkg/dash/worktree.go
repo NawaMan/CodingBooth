@@ -12,16 +12,28 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/lifecycle"
 )
 
-// namePrompt asks, on the status line, for the name of a new worktree (n).
+// namePrompt asks, on the status line, for a name: a new worktree's (n), or
+// the one a separator gives the rows below it (enter on the separator).
 type namePrompt struct {
-	repo  *lifecycle.Repo
+	repo *lifecycle.Repo
+	// sep, when set, is the separator being named; repo is nil then.
+	sep   string
 	field textField
 	err   string
 }
 
-var promptHelpLines = []string{
-	"the name is the new branch; it starts at the repository's current commit",
-	"enter create it and start its booth · esc cancel",
+// promptHelp is the help lines while the prompt is open.
+func (m model) promptHelp() []string {
+	if m.prompt != nil && m.prompt.sep != "" {
+		return []string{
+			"the name heads the rows below the line, down to the next line",
+			"enter save it (no name: a plain line) · ctrl+u clear · esc cancel",
+		}
+	}
+	return []string{
+		"the name is the new branch; it starts at the repository's current commit",
+		"enter create it and start its booth · esc cancel",
+	}
 }
 
 func (m model) handlePromptKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -36,6 +48,10 @@ func (m model) handlePromptKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case "enter":
 		name := strings.TrimSpace(p.field.String())
+		if p.sep != "" {
+			m.prompt = nil
+			return m.nameSeparator(p.sep, name)
+		}
 		switch {
 		case name == "":
 			p.err = "A worktree needs a name."
@@ -60,7 +76,10 @@ func (m model) handlePromptKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 // promptLine is the prompt, in the status line's place.
 func (m model) promptLine() string {
 	p := m.prompt
-	label := "New worktree in " + p.repo.Name + ": "
+	label := "Name of the rows below this line: "
+	if p.sep == "" {
+		label = "New worktree in " + p.repo.Name + ": "
+	}
 	line := confirmStyle.Render(label) + p.field.view(max(10, m.width-len(label)-1), true)
 	if p.err != "" {
 		line += "  " + errorStyle.Render(p.err)

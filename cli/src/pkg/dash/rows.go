@@ -24,6 +24,8 @@ type row struct {
 	// sep: a separator line the user put between groups (its key in the
 	// saved order, "separator:<n>"); it has no booth, worktree or repository.
 	sep string
+	// label is the name the user gave the separator: it heads the rows below it.
+	label string
 }
 
 // key names a row across refreshes: its booth, else its worktree.
