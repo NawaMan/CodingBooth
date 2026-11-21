@@ -18,6 +18,11 @@
 # tmpfs of the booth user's own, sets GPG_TTY=/dev/null and warns; without
 # +store-host it is refused. A dry run names the default socket without asking
 # the host's gpgconf.
+#
+# gnupg+store-host is store-host for the gpg home alone: one mount, the same
+# tmpfs and warning, the same refusal of a second key (gnupg+keys, envfolio+seed)
+# and of envfolio+store-host, which mounts the same folder. It is enough for
+# envfolio+host-agent.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -113,10 +118,35 @@ fi
 
 OUT=$(dry 'envfolio+host-agent')
 ok=false
-printf '%s\n' "$OUT" | grep -F "envfolio+host-agent: needs envfolio+store-host" >/dev/null && ok=true
+printf '%s\n' "$OUT" | grep -F "envfolio+host-agent: needs envfolio+store-host or gnupg+store-host" >/dev/null && ok=true
 result "$ok" 10 "host-agent without store-host is refused" "$OUT"
+
+OUT=$(dry 'gnupg+store-host')
+ok=false
+printf '%s\n' "$OUT" | grep -F -- "-v $HOME/.gnupg:/home/coder/.gnupg" >/dev/null \
+  && printf '%s\n' "$OUT" | grep -F -- "--tmpfs '/run/user/$U:uid=$U,gid=$G,mode=0700'" >/dev/null \
+  && printf '%s\n' "$OUT" | grep -F "Warning: gnupg+store-host: the host's gpg home ($HOME/.gnupg)" >/dev/null \
+  && ! printf '%s\n' "$OUT" | grep -F -- ":/home/coder/.folio" >/dev/null \
+  && ok=true
+result "$ok" 11 "gnupg+store-host mounts the host's gpg home alone, with the socket tmpfs and the warning" "$OUT"
+
+ok=true
+out=$(dry 'gnupg+store-host+keys:"me@example.com"')
+printf '%s\n' "$out" | grep -F "gnupg+store-host: cannot be used with gnupg+keys" >/dev/null || { ok=false; OUT="$out"; }
+out=$(dry 'gnupg+store-host/envfolio+seed:"--secrets gh"')
+printf '%s\n' "$out" | grep -F "gnupg+store-host: cannot be used with envfolio+seed" >/dev/null || { ok=false; OUT="$out"; }
+out=$(dry 'gnupg+store-host/envfolio+store-host')
+printf '%s\n' "$out" | grep -F "gnupg+store-host: cannot be used with envfolio+store-host" >/dev/null || { ok=false; OUT="$out"; }
+result "$ok" 12 "gnupg+store-host refuses gnupg+keys, envfolio+seed and envfolio+store-host" "$OUT"
+
+OUT=$(dry 'gnupg+store-host/envfolio+host-agent')
+ok=false
+printf '%s\n' "$OUT" | grep -F -- "-v /run/user/$U/gnupg/S.gpg-agent:/run/user/$U/gnupg/S.gpg-agent" >/dev/null \
+  && printf '%s\n' "$OUT" | grep -F -- "-e 'GPG_TTY=/dev/null'" >/dev/null \
+  && ok=true
+result "$ok" 13 "host-agent works with gnupg+store-host too: the host's agent socket is mounted" "$OUT"
 
 OUT=$(dry 'envfolio+store-host')
 ok=false
 ! printf '%s\n' "$OUT" | grep -E "S\.gpg-agent|GPG_TTY|/run/user/$U/gnupg" >/dev/null && ok=true
-result "$ok" 11 "store-host alone mounts no agent socket and leaves GPG_TTY alone" "$OUT"
+result "$ok" 14 "store-host alone mounts no agent socket and leaves GPG_TTY alone" "$OUT"

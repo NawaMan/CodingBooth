@@ -29,6 +29,10 @@ import (
 //     own socket lives there, which the booth's gpg would find, fail to reach, and replace.
 // Every start says that the host's store and keys are live in the booth.
 //
+// gnupg+store-host (-e CB_GNUPG_HOST=1) is the same for the gpg home alone, with no EnvFolio
+// store: one mount, the same socket folder, the same warning, and the same refusal of what would
+// write a second key into the host's gpg home.
+//
 // envfolio+host-agent (-e CB_FOLIO_HOST_AGENT=1) goes one step further: the booth's gpg uses the
 // host's gpg-agent, so the passphrase is asked and cached on the host, once, instead of in every
 // booth. The host agent's socket is mounted where the booth's gpg looks for its own; see
@@ -36,41 +40,62 @@ import (
 const (
 	folioHostEnv       = "CB_FOLIO_HOST"
 	folioHostAgentEnv  = "CB_FOLIO_HOST_AGENT"
+	gnupgHostEnv       = "CB_GNUPG_HOST"
 	folioHostStorePath = "/home/coder/.folio"
 	folioHostGnupgPath = "/home/coder/.gnupg"
 )
 
-// PrepareFolioHost checks an envfolio+store-host run and adds its socket folder. It runs before
-// PrepareFolioSeed and PrepareGnupgKeys, so a refused combination copies nothing.
+// PrepareFolioHost checks an envfolio+store-host or gnupg+store-host run and adds its socket
+// folder. It runs before PrepareFolioSeed and PrepareGnupgKeys, so a refused combination copies
+// nothing.
 func PrepareFolioHost(ctx appctx.AppContext) (appctx.AppContext, error) {
 	agent, _ := runArgEnvValue(ctx.RunArgs(), folioHostAgentEnv)
-	if v, _ := runArgEnvValue(ctx.RunArgs(), folioHostEnv); v != "1" {
+	folioHost, _ := runArgEnvValue(ctx.RunArgs(), folioHostEnv)
+	gnupgHost, _ := runArgEnvValue(ctx.RunArgs(), gnupgHostEnv)
+	withStore := folioHost == "1"
+	if !withStore && gnupgHost != "1" {
 		if agent == "1" {
-			return ctx, fmt.Errorf("envfolio+host-agent: needs envfolio+store-host: the host's gpg-agent holds " +
-				"only the host's keys, so it cannot open a store whose key is the booth's own")
+			return ctx, fmt.Errorf("envfolio+host-agent: needs envfolio+store-host or gnupg+store-host: the " +
+				"host's gpg-agent holds only the host's keys, so it cannot open a key that is the booth's own")
 		}
 		return ctx, nil
 	}
-	if err := checkFolioHostAlone(ctx.RunArgs()); err != nil {
-		return ctx, fmt.Errorf("envfolio+store-host: %w", err)
+	name := "gnupg+store-host"
+	if withStore {
+		name = "envfolio+store-host"
+		if gnupgHost == "1" {
+			return ctx, fmt.Errorf("gnupg+store-host: cannot be used with envfolio+store-host, which already " +
+				"mounts the host's gpg home; select one of the two")
+		}
+	}
+	if err := checkHostKeysAlone(ctx.RunArgs(), withStore); err != nil {
+		return ctx, fmt.Errorf("%s: %w", name, err)
 	}
 	mounts := runArgBindSources(ctx.RunArgs())
 	store, gnupg := mounts[folioHostStorePath], mounts[folioHostGnupgPath]
-	if store == "" || gnupg == "" {
-		return ctx, fmt.Errorf("envfolio+store-host: run-args must mount the host store at %s and the host "+
-			"gpg home at %s; reselect the extension rather than editing them", folioHostStorePath, folioHostGnupgPath)
+	if gnupg == "" || (withStore && store == "") {
+		if withStore {
+			return ctx, fmt.Errorf("envfolio+store-host: run-args must mount the host store at %s and the host "+
+				"gpg home at %s; reselect the extension rather than editing them", folioHostStorePath, folioHostGnupgPath)
+		}
+		return ctx, fmt.Errorf("gnupg+store-host: run-args must mount the host gpg home at %s; reselect the "+
+			"extension rather than editing them", folioHostGnupgPath)
 	}
 	homeDir, _ := os.UserHomeDir()
 	storeHost := expandHostPath(os.ExpandEnv(store), homeDir)
-	gnupgHost := expandHostPath(os.ExpandEnv(gnupg), homeDir)
+	gnupgHost = expandHostPath(os.ExpandEnv(gnupg), homeDir)
+	gnupgParam := "GNUPG_HOST_HOME"
+	if withStore {
+		gnupgParam = "FOLIO_HOST_GNUPG"
+	}
 	if !ctx.Dryrun() {
-		if !isDir(storeHost) {
+		if withStore && !isDir(storeHost) {
 			return ctx, fmt.Errorf("envfolio+store-host: the host has no EnvFolio store at %s; make it on the "+
 				"host first (`folio init`), or set FOLIO_HOST_STORE to where it is", storeHost)
 		}
 		if !isDir(gnupgHost) {
-			return ctx, fmt.Errorf("envfolio+store-host: the host has no gpg home at %s; set FOLIO_HOST_GNUPG "+
-				"to where it is (`gpgconf --list-dirs homedir` on the host says)", gnupgHost)
+			return ctx, fmt.Errorf("%s: the host has no gpg home at %s; set %s "+
+				"to where it is (`gpgconf --list-dirs homedir` on the host says)", name, gnupgHost, gnupgParam)
 		}
 	}
 
@@ -82,9 +107,14 @@ func PrepareFolioHost(ctx appctx.AppContext) (appctx.AppContext, error) {
 		builder.RunArgs = markVolumesCreate(ctx.RunArgs(), folioHostStorePath, folioHostGnupgPath)
 	}
 	builder.CommonArgs.Append(ilist.NewList[string]("--tmpfs", folioHostSocketTmpfs(ctx.HostUID(), ctx.HostGID())))
-	fmt.Fprintf(os.Stderr, "Warning: envfolio+store-host: the host's EnvFolio store (%s) and gpg home (%s), "+
-		"private keys included, are live in this booth: anything run in it can read, change or copy them.\n",
-		storeHost, gnupgHost)
+	if withStore {
+		fmt.Fprintf(os.Stderr, "Warning: envfolio+store-host: the host's EnvFolio store (%s) and gpg home (%s), "+
+			"private keys included, are live in this booth: anything run in it can read, change or copy them.\n",
+			storeHost, gnupgHost)
+	} else {
+		fmt.Fprintf(os.Stderr, "Warning: gnupg+store-host: the host's gpg home (%s), private keys included, "+
+			"is live in this booth: anything run in it can read, change or copy the keys.\n", gnupgHost)
+	}
 	if agent == "1" {
 		socket, why := folioHostAgentSocket(ctx, gnupgHost)
 		if socket == "" {
@@ -183,13 +213,21 @@ func folioHostSocketTmpfs(uid, gid string) string {
 	return fmt.Sprintf("/run/user/%s:uid=%s,gid=%s,mode=0700", uid, uid, gid)
 }
 
-// checkFolioHostAlone refuses what would bring a second store or key next to the live ones.
-func checkFolioHostAlone(runArgs ilist.List[ilist.List[string]]) error {
+// checkHostKeysAlone refuses what would bring a second key (and, with the host's store, a second
+// store) next to the live ones.
+func checkHostKeysAlone(runArgs ilist.List[ilist.List[string]], withStore bool) error {
 	if v, _ := runArgEnvValue(runArgs, folioSeedEnv); strings.TrimSpace(v) != "" {
-		return fmt.Errorf("cannot be used with envfolio+seed: the host store is already in the booth, live")
+		if withStore {
+			return fmt.Errorf("cannot be used with envfolio+seed: the host store is already in the booth, live")
+		}
+		return fmt.Errorf("cannot be used with envfolio+seed: its store key would be copied into the host's " +
+			"gpg home, which is in the booth live")
 	}
 	if v, _ := runArgEnvValue(runArgs, gnupgKeysEnv); strings.TrimSpace(v) != "" {
 		return fmt.Errorf("cannot be used with gnupg+keys: the host's gpg home is already in the booth, live")
+	}
+	if !withStore {
+		return nil
 	}
 	for _, v := range runArgEnvValues(runArgs, "FOLIO_STORE_DIR") {
 		if path.Clean(v) != folioHostStorePath {

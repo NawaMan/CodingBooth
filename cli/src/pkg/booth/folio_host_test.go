@@ -28,9 +28,9 @@ func storeHostArgs(store, gnupg string) []string {
 		"-e", "FOLIO_STORE_DIR=/home/coder/.folio", "-e", "CB_FOLIO_HOST=1"}
 }
 
-func TestCheckFolioHostAlone(t *testing.T) {
+func TestCheckHostKeysAlone(t *testing.T) {
 	alone := runArgs(storeHostArgs("~/.folio", "~/.gnupg"))
-	if err := checkFolioHostAlone(alone); err != nil {
+	if err := checkHostKeysAlone(alone, true); err != nil {
 		t.Errorf("store-host alone must pass, got %v", err)
 	}
 	cases := map[string]struct {
@@ -42,15 +42,41 @@ func TestCheckFolioHostAlone(t *testing.T) {
 		"store-cache": {[]string{"-e", "FOLIO_STORE_DIR=/home/coder/.local/share/folio/store"}, "envfolio+store-cache"},
 	}
 	for name, c := range cases {
-		err := checkFolioHostAlone(runArgs(storeHostArgs("~/.folio", "~/.gnupg"), c.extra))
+		err := checkHostKeysAlone(runArgs(storeHostArgs("~/.folio", "~/.gnupg"), c.extra), true)
 		if err == nil || !strings.Contains(err.Error(), c.want) {
 			t.Errorf("%s: want an error naming %s, got %v", name, c.want, err)
 		}
 	}
 	// An empty seed selection is no seed (the extension's default), so it does not conflict.
-	if err := checkFolioHostAlone(runArgs(storeHostArgs("~/.folio", "~/.gnupg"),
-		[]string{"-e", "CB_FOLIO_SEED=", "-e", "CB_GNUPG_KEYS="})); err != nil {
+	if err := checkHostKeysAlone(runArgs(storeHostArgs("~/.folio", "~/.gnupg"),
+		[]string{"-e", "CB_FOLIO_SEED=", "-e", "CB_GNUPG_KEYS="}), true); err != nil {
 		t.Errorf("empty seed / keys values must not conflict, got %v", err)
+	}
+}
+
+// gnupg+store-host: the gpg home alone. A second key is refused as with the store; a store
+// elsewhere is not its business (envfolio+store-cache keeps the store, the host keeps the key).
+func TestCheckHostKeysAloneGnupgOnly(t *testing.T) {
+	gnupgHost := []string{"-v", "~/.gnupg:/home/coder/.gnupg", "-e", "CB_GNUPG_HOST=1"}
+	if err := checkHostKeysAlone(runArgs(gnupgHost), false); err != nil {
+		t.Errorf("gnupg+store-host alone must pass, got %v", err)
+	}
+	cases := map[string]struct {
+		extra []string
+		want  string
+	}{
+		"seed":       {[]string{"-e", "CB_FOLIO_SEED=--secrets gh"}, "envfolio+seed"},
+		"gnupg keys": {[]string{"-e", "CB_GNUPG_KEYS=me@example.com"}, "gnupg+keys"},
+	}
+	for name, c := range cases {
+		err := checkHostKeysAlone(runArgs(gnupgHost, c.extra), false)
+		if err == nil || !strings.Contains(err.Error(), c.want) {
+			t.Errorf("%s: want an error naming %s, got %v", name, c.want, err)
+		}
+	}
+	cached := []string{"-e", "FOLIO_STORE_DIR=/home/coder/.local/share/folio/store"}
+	if err := checkHostKeysAlone(runArgs(gnupgHost, cached), false); err != nil {
+		t.Errorf("a cached EnvFolio store must not conflict with the host's gpg home alone, got %v", err)
 	}
 }
 

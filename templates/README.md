@@ -454,7 +454,7 @@ with no dependency on a language, so they sit here too.
 | `tools/gcloud`             | Google Cloud SDK |
 | `tools/gh`                 | GitHub CLI |
 | `tools/glow`               | Glow |
-| `tools/gnupg`              | GnuPG keys: from the host (`+keys`), from the project (`+seed`, `+store-share`), kept on this machine (`+store-cache`) |
+| `tools/gnupg`              | GnuPG keys: from the host (`+keys`, `+store-host`), from the project (`+seed`, `+store-share`), kept on this machine (`+store-cache`) |
 | `tools/gradle`             | Gradle |
 | `tools/harlequin`          | Harlequin |
 | `tools/helm`               | Helm |

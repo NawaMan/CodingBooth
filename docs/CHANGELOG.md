@@ -4,6 +4,16 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`gnupg+store-host`: the host's gpg keyring in the booth, live, without EnvFolio.** Until now
+  the only way to mount the host's `~/.gnupg` was `envfolio+store-host`, which needs a host
+  EnvFolio store beside it. `gnupg+store-host` mounts the gpg home alone (`GNUPG_HOST_HOME`,
+  default `~/.gnupg`), read-write: the booth has every key the host has, with the host's trust in
+  each, and a key added or removed in the booth is added or removed on the host. It gets the same
+  `/run/user/<uid>` tmpfs for the booth's gpg-agent sockets and the same warning on every start,
+  refuses `gnupg+keys` and `envfolio+seed` (each would write a key into the host's gpg home) and
+  `envfolio+store-host` (the same folder), and stops the start when the host folder is missing.
+  `envfolio+host-agent` now accepts either of the two.
+
 - **A key brought from the host can encrypt, not only decrypt and sign.** `gnupg+keys` and
   `envfolio+seed` copy a key's files into the booth but not the host's trust database, so the key
   was "unknown" there, and gpg refuses to encrypt to an untrusted key unless it can ask:
