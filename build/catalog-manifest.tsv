@@ -520,7 +520,7 @@ template	gimp	1.0.0	1855591e9d1aee68552d78e04c8f42d3c312421e8544d23f134f3ef53d82
 template	git-credential	1.0.1	de28f82873973111f0982ec8cbda74e8dedaa57b15084e80b5bb234c9fe18720	templates/tools/git-credential/template.toml
 template	gleam	0.2.0	cd7dd2489d3c3dace9868b0b13857e58ba32cea312fd65d27f3870d2e49f73e1	templates/languages/gleam/template.toml
 template	glow	1.1.0	14da9a97178defa04034a0ac30767b473ad647a9dcca42f19a1a1768727399df	templates/tools/glow/template.toml
-template	gnupg	1.0.1	b1bada4cff7a4d8423a3fe2d9cffa91c899831995c6a6cfa3f6791feadc2f6ec	templates/tools/gnupg/template.toml
+template	gnupg	1.1.0	babc73fa6b3cead2aa7a5e30fd156b0a205733dca0f46540221c0b1facd5d940	templates/tools/gnupg/template.toml
 template	go	1.2.0	8f16643ccefe5622b7ccdd7ba28650bc41fdd98ec09ebf6491bcb81fe389be86	templates/languages/go/template.toml
 template	goland	1.0.0	e657667702b91cc74de699fc1a4fd329c253579685824186871c7f9d9aadc111	templates/ides/goland/template.toml
 template	google-chrome	1.1.0	8b44d76d188bb8d91b7b146d6486766f516bc6088ee8f89cdc6aacbf684a222f	templates/desktops/google-chrome/template.toml
@@ -772,6 +772,9 @@ extension	gh+token	0.2.1	19e553548f9dea3230edcedacbdab64a49720c31f872d70e280f7d7
 extension	ghostty+fancy	1.0.0	37f51efa6635527d3d359422f1cbba38c8f6e72daad9f9164b2d5ba96208edc7	templates/desktops/ghostty/fancy--extension.toml
 extension	gleam+vscode-ext	0.1.0	b74fa1fc7fed3a2882a520227a1a09f1502e7fcddf9a35d506a1b2fcbe474ffb	templates/languages/gleam/vscode-ext--extension.toml
 extension	gnupg+keys	1.0.0	222a2bd588b71a35a5d4aa039f89d8865b4ba0f3126fa06d1280ecfa31632729	templates/tools/gnupg/keys--extension.toml
+extension	gnupg+seed	1.0.0	2ba5d5e1f8c28470f841f4753a932b72204ae4cc113e2449f0f5995e94a4bfdc	templates/tools/gnupg/seed--extension.toml
+extension	gnupg+store-cache	1.0.0	d93a1c78130c1c31d2a0a6d45178d6c34147c40d0e2b60006855b1d80ba57ab5	templates/tools/gnupg/store-cache--extension.toml
+extension	gnupg+store-share	1.0.0	b67dff2fbb6fa40d7c3c57af6b6f31f873875e5c79ca3983c7347f3f43b71154	templates/tools/gnupg/store-share--extension.toml
 extension	go+go-mod	1.0.0	d0ce534aaa86760a1384b2241206a294bec0fe086d52eadafd8390e1c97b54b5	templates/languages/go/go-mod--extension.toml
 extension	go+go-pkg	1.0.0	9b7c75ede3885e70b0f33727564ff950e586a76adf8094fbc9c0c9a95da80053	templates/languages/go/go-pkg--extension.toml
 extension	go+kernel	1.1.0	63b0d7755dcff916e5197b0721231e56a175c75efb25987cce7ac47dab49f015	templates/languages/go/kernel--extension.toml

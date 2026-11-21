@@ -4,6 +4,16 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`gnupg+store-cache`, `gnupg+seed`, `gnupg+store-share`: a gpg keyring without EnvFolio.**
+  Until now only `envfolio+store-cache` kept `~/.gnupg` across containers. `tools/gnupg` now has
+  the three itself, beside `+keys` (which copies from the host). `+store-cache` keeps the booth's
+  keyring in `.booth/cache/`, on this machine. `+seed` starts that cached keyring from a gpg home
+  committed at `.booth/cache-seed/home/coder/.gnupg/`, copied only while the booth has no keyring
+  yet. `+store-share` keeps the keyring itself in `.booth/shared/`, committed and live. `+seed` and
+  `+store-share` put private key files in git: they are for keys made for the project, not
+  personal ones. `+store-share` cannot be combined with the other two (the same folder as Cache
+  and Shared).
+
 - **`envfolio+host-agent`: unlock once on the host, not in every booth.** With
   `envfolio+store-host`, each booth started its own gpg-agent, so the store key's passphrase was
   asked inside the booth on every run and the cache went with the container. Selected together

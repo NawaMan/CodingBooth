@@ -212,6 +212,8 @@ booth's home at start, read-only:
 | `envfolio+store-host` | your host's whole EnvFolio store and gpg keyring, live and writable — every private key included |
 | `envfolio+store-host+host-agent` | the same, and gpg in the booth uses your host's gpg-agent: the passphrase is asked and cached on the host, and the booth can use every key unlocked there (Linux hosts) |
 | `gnupg+keys` | chosen GPG keys (passphrase-protected) and your public keyring: `gnupg+keys:"me@example.com"` |
+| `gnupg+seed` | a keyring committed with the project (`.booth/cache-seed/home/coder/.gnupg/`), copied into the booth's cached keyring while that is still empty — its private keys are in git, so project keys only |
+| `gnupg+store-share` | the booth's keyring itself, kept in git (`.booth/shared/`) and live — private keys included, so project keys only |
 | `claude-code+credential`, `codex+credential`, `gemini-cli+credential`, … | that AI tool's login |
 
 Bring in only what the project needs. Every credential in the booth is reachable by whatever code

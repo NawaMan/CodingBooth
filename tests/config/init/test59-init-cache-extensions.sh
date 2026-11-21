@@ -185,4 +185,31 @@ assert_mode "$prj/.booth/cache/home/coder/.gnupg" 700 "envfolio+store-cache crea
 assert-line "$prj/.booth/config.toml" "run-args = " '["-e", "FOLIO_STORE_DIR=/home/coder/.local/share/folio/store"]' \
     "envfolio+store-cache points FOLIO_STORE_DIR inside the cache"
 
+# Test 18: gnupg+store-cache keeps the keyring alone, 0700 as gpg wants its home.
+run rm -Rf $prj ; mkdir -p $prj
+run booth config $prj --no-tui --select "gnupg+store-cache"
+assert_file "$prj/.booth/cache/home/coder/.gnupg/.mount-this" "gnupg+store-cache creates .gnupg dir"
+assert_mode "$prj/.booth/cache/home/coder/.gnupg" 700 "gnupg+store-cache creates .gnupg 0700"
+assert-line "$prj/.booth/config.toml" "cache-dirs = " '["home/coder/.gnupg:0700"]' \
+    "gnupg+store-cache declares the keyring as a Cache path"
+
+# Test 19: gnupg+seed declares the same Cache path and writes the seed folder's
+# marker — the folder is a whole-folder seed, and the keyring in it is the
+# project's to add. Without the declaration the seed would be skipped at start.
+run rm -Rf $prj ; mkdir -p $prj
+run booth config $prj --no-tui --select "gnupg+seed"
+assert_file "$prj/.booth/cache-seed/home/coder/.gnupg/.mount-this" "gnupg+seed writes the seed folder's marker"
+assert_file "$prj/.booth/cache/home/coder/.gnupg/.mount-this" "gnupg+seed creates the cached .gnupg dir"
+assert_mode "$prj/.booth/cache/home/coder/.gnupg" 700 "gnupg+seed creates the cached .gnupg 0700"
+assert-line "$prj/.booth/config.toml" "cache-dirs = " '["home/coder/.gnupg:0700"]' \
+    "gnupg+seed declares the keyring as a Cache path"
+
+# Test 20: gnupg+store-share keeps the keyring in .booth/shared/ (committed).
+run rm -Rf $prj ; mkdir -p $prj
+run booth config $prj --no-tui --select "gnupg+store-share"
+assert_file "$prj/.booth/shared/home/coder/.gnupg/.mount-this" "gnupg+store-share creates the shared .gnupg dir"
+assert_mode "$prj/.booth/shared/home/coder/.gnupg" 700 "gnupg+store-share creates the shared .gnupg 0700"
+assert-line "$prj/.booth/config.toml" "shared-dirs = " '["home/coder/.gnupg:0700"]' \
+    "gnupg+store-share declares the keyring as a Shared path"
+
 finally

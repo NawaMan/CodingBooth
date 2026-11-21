@@ -243,7 +243,9 @@ cache-files = ["home/coder/.config/tool/state.json"]
 the file is committed anyway, so a seed matters for a template: it is how one gives a shared file
 its first content instead of an empty one.
 
-Never put a secret in a seed: both seed folders are committed.
+Never put a secret in a seed: both seed folders are committed. The one deliberate exception is
+`gnupg+seed`, whose seed is a gpg home with the private keys of a key *made for the project* (a
+development or test key the team shares) — anyone with the repository has those key files.
 
 ---
 
@@ -396,6 +398,8 @@ For the team/git version of either, see [Shared State](BOOTH_SHARED.md).
 | Template Selection | What's Cached |
 |--------------------|---------------|
 | `envfolio+store-cache` | `~/.local/share/folio/` (the store is `store/` inside it), `~/.gnupg/` — both created `0700` |
+| `gnupg+store-cache` | `~/.gnupg/` — created `0700` |
+| `gnupg+seed` | `~/.gnupg/` — created `0700`, first filled from `.booth/cache-seed/home/coder/.gnupg/` |
 | `n8n+persist` | `~/.n8n/` — workflows, **saved credentials**, and the key that encrypts them |
 | `appwrite-server+persist` | `~/.appwrite-server/` — Appwrite's data, including projects and the console user |
 

@@ -1,0 +1,10 @@
+cb-version = "1.0.0"
+display-name = "Store Cache"
+display-disc = "Keep the booth's gpg keyring across sessions (.booth/cache)"
+display-detail = """Persists ~/.gnupg — the keyring, private keys included, each protected by its passphrase — in .booth/cache/, which stays on this machine and out of git. Without it, a key made or imported in the booth is lost when the container is recreated. The keyring is the booth's own: make a key there, import one, or start it from the host's with +keys or from the project's with +seed. tools/envfolio+store-cache caches the same folder, with the EnvFolio store beside it; the two can be selected together."""
+display-order = 2
+tags = ["persistence", "cache", "gpg", "key"]
+
+cache-dirs = [
+    "home/coder/.gnupg:0700",
+]

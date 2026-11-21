@@ -1,0 +1,18 @@
+cb-version = "1.0.0"
+display-name = "Seed from the Project"
+display-disc = "Start the booth's gpg keyring from one kept in the project (.booth/cache-seed)"
+display-detail = """Gives the booth a starting keyring from the project. Put a gpg home in .booth/cache-seed/home/coder/.gnupg/ and commit it — `gpg --homedir .booth/cache-seed/home/coder/.gnupg --import <key file>` on the host fills it (then `gpgconf --homedir … --kill all`, so no socket is left in it). It is copied into the cached keyring (.booth/cache/home/coder/.gnupg, mounted as with +store-cache) only while that holds no keyring yet, and never over one already there: after the first start the keyring is each machine's own, and a key added to it stays out of git. That puts the seed's private keys in git. Each is protected only by its passphrase, or by nothing when it has none, and anyone with the repository has the key files: use it for keys made for the project (a development or test key the team shares), never for a personal one. To bring your own keys, use +keys, which copies them from the host at each start and commits nothing."""
+display-order = 3
+auto-select = false
+tags = ["persistence", "cache", "gpg", "key", "git", "seed"]
+
+cache-dirs = [
+    "home/coder/.gnupg:0700",
+]
+
+# Only the marker that makes the folder a seed: the keyring in it is the project's to add.
+# (An inline file cannot be empty, hence the line in it; nothing reads a marker's content.)
+[files.cache-seed]
+"home/coder/.gnupg/.mount-this" = """
+Marks this folder as a whole-folder seed: put the project's gpg home here (tools/gnupg+seed).
+"""

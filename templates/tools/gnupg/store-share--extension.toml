@@ -1,0 +1,11 @@
+cb-version = "1.0.0"
+display-name = "Store Shared"
+display-disc = "Share the booth's gpg keyring with the team via git (.booth/shared) — private keys included"
+display-detail = """Mounts ~/.gnupg from .booth/shared/, which is committed: everyone who clones the project gets the same keyring, live — a key made, imported or removed in the booth shows in `git status`, to commit. That includes the private keys. Each is protected only by its passphrase, or by nothing when it has none, and anyone with the repository has the key files: use it for keys made for the project (a development or test key the team shares), never for a personal one. git keeps no folder mode, so in a fresh clone the folder is readable by others and gpg warns about it ("unsafe permissions on homedir") until `chmod 700 .booth/shared/home/coder/.gnupg` is run there, once. To give every clone a starting keyring that then stays on each machine, use +seed instead. It cannot be combined with +store-cache or +seed, which keep the same folder in .booth/cache/."""
+display-order = 4
+auto-select = false
+tags = ["persistence", "shared", "gpg", "key", "git"]
+
+shared-dirs = [
+    "home/coder/.gnupg:0700",
+]
