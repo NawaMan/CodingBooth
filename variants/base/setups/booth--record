@@ -193,6 +193,12 @@ snapshots_loop() {
         # The booth's own scratch, cache and downloaded tools are not the work.
         printf '%s\n' '/.booth/.tmp/' '/.booth/cache/' '/.booth/tools/' >> "$REC_DIR/snapshots.git/info/exclude"
     fi
+    # `init` with --work-tree records the code folder's container path as
+    # core.worktree. Every snap_git call passes --work-tree anyway, and on the host
+    # that path does not exist: git there refuses the whole repository
+    # ("fatal: Invalid path '/home/coder/...'"), so the snapshots could not be read
+    # outside the booth. Also clears it from a repository an older booth made.
+    snap_git config --unset core.worktree >/dev/null 2>&1 || true
     while true; do
         snapshot_once
         sleep "$SNAPSHOT_INTERVAL"
