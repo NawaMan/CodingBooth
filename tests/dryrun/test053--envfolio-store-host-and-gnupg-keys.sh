@@ -86,16 +86,30 @@ result "$ok" 7 "gnupg alone brings nothing" "$OUT"
 
 OUT=$(dry 'envfolio+store-host+host-agent')
 U=$(id -u) G=$(id -g)
-ok=false
-printf '%s\n' "$OUT" | grep -F -- "--tmpfs '/run/user/$U/gnupg:uid=$U,gid=$G,mode=0700'" >/dev/null \
-  && printf '%s\n' "$OUT" | grep -F -- "-v /run/user/$U/gnupg/S.gpg-agent:/run/user/$U/gnupg/S.gpg-agent" >/dev/null \
-  && printf '%s\n' "$OUT" | grep -F -- "-e 'GPG_TTY=/dev/null'" >/dev/null \
-  && ok=true
-result "$ok" 8 "host-agent mounts the host's gpg-agent socket in the booth user's own tmpfs, with no terminal named" "$OUT"
+if [[ "$(uname -s)" == Linux ]]; then
+  ok=false
+  printf '%s\n' "$OUT" | grep -F -- "--tmpfs '/run/user/$U/gnupg:uid=$U,gid=$G,mode=0700'" >/dev/null \
+    && printf '%s\n' "$OUT" | grep -F -- "-v /run/user/$U/gnupg/S.gpg-agent:/run/user/$U/gnupg/S.gpg-agent" >/dev/null \
+    && printf '%s\n' "$OUT" | grep -F -- "-e 'GPG_TTY=/dev/null'" >/dev/null \
+    && ok=true
+  result "$ok" 8 "host-agent mounts the host's gpg-agent socket in the booth user's own tmpfs, with no terminal named" "$OUT"
 
-ok=false
-printf '%s\n' "$OUT" | grep -F "Warning: envfolio+host-agent: gpg in this booth uses the host's gpg-agent" >/dev/null && ok=true
-result "$ok" 9 "host-agent warns that the booth can use every key the host has unlocked" "$OUT"
+  ok=false
+  printf '%s\n' "$OUT" | grep -F "Warning: envfolio+host-agent: gpg in this booth uses the host's gpg-agent" >/dev/null && ok=true
+  result "$ok" 9 "host-agent warns that the booth can use every key the host has unlocked" "$OUT"
+else
+  # macOS / Windows: the engine's VM cannot reach a host socket. The dry run must say so, as the
+  # real run does, and show no socket mount and no GPG_TTY.
+  ok=false
+  ! printf '%s\n' "$OUT" | grep -E "S\.gpg-agent|GPG_TTY" >/dev/null \
+    && printf '%s\n' "$OUT" | grep -F "Info: envfolio+host-agent: the host's gpg-agent socket cannot be shared" >/dev/null \
+    && ok=true
+  result "$ok" 8 "host-agent on $(uname -s): no socket mount, no GPG_TTY, and it says why" "$OUT"
+
+  ok=false
+  ! printf '%s\n' "$OUT" | grep -F "Warning: envfolio+host-agent:" >/dev/null && ok=true
+  result "$ok" 9 "host-agent on $(uname -s): no warning about the host's unlocked keys" "$OUT"
+fi
 
 OUT=$(dry 'envfolio+host-agent')
 ok=false

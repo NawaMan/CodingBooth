@@ -16,6 +16,10 @@ This file contains a list of changes for each released version.
   can decrypt and sign with it, and each start says so. Linux hosts only: on macOS and Windows
   the extension does nothing and the booth asks as before. Refused without `+store-host` and
   with `--booth-isolation kata`. Needs a base image built from this version.
+- **`--dryrun` with `envfolio+host-agent` shows the run that would happen.** On macOS and Windows
+  it printed the agent socket mount and `GPG_TTY=/dev/null`, which the real run never adds there;
+  it now says the socket cannot be shared, as the real run does. On Linux, with the host's agent
+  not running yet, it dropped the socket mount the real run makes after starting the agent.
 - **`envfolio+store-host` writes commit on a Mac.** Docker Desktop (and other VM-backed engines)
   present the mounted store's root folder as owned by root, so git in the booth refused it as
   "dubious ownership": `folio text insert` and the like wrote the item but failed its commit and
