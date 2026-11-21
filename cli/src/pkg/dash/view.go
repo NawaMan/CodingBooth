@@ -34,7 +34,7 @@ const pickerHelpLine = "↑/↓ select · enter open · esc back"
 // only when GitKraken is there to open.
 func (m model) helpLines() []string {
 	if sel := m.selection(); len(sel) > 1 {
-		acts := "s start · x stop · r restart · d delete"
+		acts := "s start · x stop · r restart · del delete"
 		if m.deps.Hide != nil && m.showHidden {
 			acts = "h unhide · " + acts
 		} else if m.deps.Hide != nil {
@@ -61,7 +61,7 @@ func (m model) helpLines() []string {
 			change += " · - separator"
 		}
 	}
-	change += " · s start · x stop · r restart · d delete · n new worktree"
+	change += " · s start · x stop · r restart · del delete · n new worktree"
 	switch {
 	case m.deps.Hide == nil:
 	case m.showHidden:

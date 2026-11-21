@@ -133,7 +133,7 @@ func planForWorktree(key string, r row) (plan, string) {
 	switch key {
 	case keyStart:
 		if w.Prunable {
-			return plan{}, fmt.Sprintf("%s's folder is gone; d deletes the worktree record.", w.Name())
+			return plan{}, fmt.Sprintf("%s's folder is gone; delete deletes the worktree record.", w.Name())
 		}
 		// The main checkout runs booth as it is; another worktree by name. It
 		// already exists, so booth leaves it in place when the booth ends.
@@ -155,7 +155,7 @@ func planForWorktree(key string, r row) (plan, string) {
 
 	case keyShell:
 		if w.Prunable {
-			return plan{}, fmt.Sprintf("%s's folder is gone; d deletes the worktree record.", w.Name())
+			return plan{}, fmt.Sprintf("%s's folder is gone; delete deletes the worktree record.", w.Name())
 		}
 		// `shell --run` creates a terminal (base) booth on the worktree and
 		// removes it again when the shell ends; s starts the project's own.
@@ -181,7 +181,7 @@ func newWorktreePlan(repo *lifecycle.Repo, name string) plan {
 // gitworktreeClean is the state of a worktree with nothing to lose.
 var gitworktreeClean = lifecycle.GitState{}
 
-// deleteWorktreePlan is d on a worktree row, once its git status is read:
+// deleteWorktreePlan is delete on a worktree row, once its git status is read:
 // state, or err when it could not be. A clean worktree is deleted as
 // `booth worktree remove` does it, keeping a branch with commits found nowhere
 // else. One with uncommitted files or unmerged commits, or whose status is not

@@ -120,7 +120,7 @@ func planFor(key string, booth lifecycle.Booth) (plan, string) {
 }
 
 // gonePlan is what key does to a remembered booth whose container is gone:
-// Enter makes one for a shell, d forgets it, the rest need a container.
+// Enter makes one for a shell, delete forgets it, the rest need a container.
 func gonePlan(key string, booth lifecycle.Booth) (plan, string) {
 	switch key {
 	case keyShell:

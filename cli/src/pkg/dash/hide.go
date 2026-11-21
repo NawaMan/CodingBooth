@@ -59,7 +59,7 @@ func (m model) toggleHide() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	if r.sep != "" {
-		m.setStatus("A separator is not hidden; d deletes it.", false)
+		m.setStatus("A separator is not hidden; delete deletes it.", false)
 		return m, nil
 	}
 	key, name, hide := r.key(), rowName(r), !m.showHidden

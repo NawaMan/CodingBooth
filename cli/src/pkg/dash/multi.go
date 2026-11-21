@@ -19,7 +19,7 @@ import (
 
 // Selecting several rows (shift+↑/↓) extends a range from the row the first
 // shift+arrow was pressed on (the anchor) to the cursor. While more than one
-// row is selected, h, s, x, r, d and ctrl+↑/↓ act on all of them; every other
+// row is selected, h, s, x, r, delete and ctrl+↑/↓ act on all of them; every other
 // key still acts on the row under the cursor. A plain ↑/↓ or esc ends it, and
 // so does an action once it is carried out (moving the rows keeps it, to move
 // them again). The range is held by row key, so it stays on its rows across
@@ -114,7 +114,7 @@ type batch struct {
 	done  string // "Stopped": the status line once it is done ("Stopped 3 booths.")
 	noun  string // what is counted: "booth", "row"
 	items []batchItem
-	// separators are deleted with the rows (d); they need no command.
+	// separators are deleted with the rows (delete); they need no command.
 	separators []string
 	skipped    string
 }
@@ -148,7 +148,7 @@ type (
 		results []batchResult
 	}
 	// deleteBatchCheckMsg is the git status of the selected worktrees, read
-	// fresh for d's question.
+	// fresh for delete's question.
 	deleteBatchCheckMsg struct {
 		draft  deleteDraft
 		rows   []row
@@ -424,7 +424,7 @@ func (r *runAll) Run() error {
 	return nil
 }
 
-// deleteDraft is d on several rows, while its question is put together.
+// deleteDraft is delete on several rows, while its question is put together.
 type deleteDraft struct {
 	batch                    batch
 	left                     skips
@@ -433,7 +433,7 @@ type deleteDraft struct {
 	selected                 int
 }
 
-// deleteRows is d on several rows: booths (with their home volumes), gone
+// deleteRows is delete on several rows: booths (with their home volumes), gone
 // booths (forgotten), separators and worktrees with no booth. A worktree is
 // read first, as for one row, and only a clean one is deleted here: one with
 // work to lose is left out and named, so that discarding work stays a
@@ -499,7 +499,7 @@ func (d *deleteDraft) addWorktree(r row) {
 		lane: "worktree:" + r.repo.Root})
 }
 
-// deleteChecked takes the worktrees' git status and asks d's question.
+// deleteChecked takes the worktrees' git status and asks delete's question.
 func (m model) deleteChecked(msg deleteBatchCheckMsg) (tea.Model, tea.Cmd) {
 	d := msg.draft
 	for i, r := range msg.rows {
@@ -527,7 +527,7 @@ func (m model) deleteChecked(msg deleteBatchCheckMsg) (tea.Model, tea.Cmd) {
 	return m.askDelete(d)
 }
 
-// askDelete asks d's question; separators alone are deleted at once, as one is.
+// askDelete asks delete's question; separators alone are deleted at once, as one is.
 func (m model) askDelete(d deleteDraft) (tea.Model, tea.Cmd) {
 	d.batch.skipped = d.left.String()
 	if len(d.batch.items) == 0 {
@@ -599,7 +599,7 @@ func (m model) hideRows(sel []row) (tea.Model, tea.Cmd) {
 	case failed != nil:
 		m.setStatus(fmt.Sprintf("Could not %s every row (%s done): %s", verb, plural(done, "row"), failed.Error()), true)
 	case done == 0:
-		m.setStatus("A separator is not hidden; d deletes it.", false)
+		m.setStatus("A separator is not hidden; delete deletes it.", false)
 	case hide:
 		m.setStatus(did+" "+plural(done, "row")+". H shows the hidden rows.", false)
 	default:

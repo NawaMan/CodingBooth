@@ -57,7 +57,7 @@ func TestShiftArrowsSelectARangeFromTheRowTheyStartOn(t *testing.T) {
 		t.Fatalf("selected %v, want web and api", got)
 	}
 	view := stripANSI(m.View())
-	for _, want := range []string{"2 selected", "2 rows selected: h hide · s start · x stop · r restart · d delete", "+ web"} {
+	for _, want := range []string{"2 selected", "2 rows selected: h hide · s start · x stop · r restart · del delete", "+ web"} {
 		if !strings.Contains(view, want) {
 			t.Errorf("view lacks %q:\n%s", want, view)
 		}
@@ -253,7 +253,7 @@ func TestDeleteAsksOnceForBoothsAndGoneBooths(t *testing.T) {
 	deps.Forget = func(b lifecycle.Booth) error { forgot = append(forgot, b.Name+"@"+b.Engine); return nil }
 	m := newModel(deps)
 	next, _ := m.Update(snapshotMsg{seq: 1, booths: []lifecycle.Booth{running("web"), goneBooth(), stopped("api")}})
-	m, _ = press(t, next.(model), "shift+down", "shift+down", "d")
+	m, _ = press(t, next.(model), "shift+down", "shift+down", "delete")
 	if m.confirm == nil || m.confirm.batch == nil || m.confirm.plan.Danger {
 		t.Fatalf("confirm %+v", m.confirm)
 	}
@@ -289,7 +289,7 @@ func TestDeleteLeavesOutAWorktreeWithWorkAndNeverForces(t *testing.T) {
 	}
 	m := newModel(deps)
 	next, _ := m.Update(snapshotMsg{seq: 1, repos: f.repos})
-	m, cmd := press(t, next.(model), "shift+down", "shift+down", "d") // main, fix, idea
+	m, cmd := press(t, next.(model), "shift+down", "shift+down", "delete") // main, fix, idea
 	if cmd == nil || m.confirm != nil || m.busy["worktree:/home/u/dev/proj/worktree/fix"] != "checking…" {
 		t.Fatalf("d must read the worktrees first: cmd %v confirm %+v busy %v", cmd != nil, m.confirm, m.busy)
 	}
@@ -320,7 +320,7 @@ func TestDeleteOnOnlyWorktreesWithWorkDeletesNothing(t *testing.T) {
 	}
 	m := newModel(deps)
 	next, _ := m.Update(snapshotMsg{seq: 1, repos: f.repos})
-	m, cmd := press(t, next.(model), "down", "shift+down", "d") // fix, idea
+	m, cmd := press(t, next.(model), "down", "shift+down", "delete") // fix, idea
 	m = settle(t, m, cmd)
 	if m.confirm != nil || len(f.ran) != 0 || !strings.HasPrefix(m.status, "Nothing to delete in the 2 selected rows (fix, idea: its git status cannot be read") {
 		t.Fatalf("confirm %+v ran %v status %q", m.confirm, f.ran, m.status)
@@ -332,7 +332,7 @@ func TestDeleteOnSeparatorsAloneDeletesThemAtOnce(t *testing.T) {
 	booths, repos := orderRepos()
 	m := orderModel(store, booths, repos)
 	m, _ = press(t, m, "g", "-", "-") // two separators below alpha, the cursor on the second
-	m, cmd := press(t, m, "shift+up", "d")
+	m, cmd := press(t, m, "shift+up", "delete")
 	if cmd != nil || m.confirm != nil {
 		t.Fatalf("separators are deleted without a question")
 	}

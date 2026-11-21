@@ -26,7 +26,9 @@ const (
 	keyStart   = "s"
 	keyStop    = "x"
 	keyRestart = "r"
-	keyRemove  = "d"
+	// Delete is the delete key (and backspace, which is the key marked delete
+	// on a Mac laptop), not a letter: it is not pressed by accident.
+	keyRemove  = "delete"
 	keyShell   = "enter"
 	keyOpen    = "o"
 	keyPorts   = "p"
@@ -62,7 +64,7 @@ type Deps struct {
 	// (State lifecycle.StateGone); nil remembers nothing. warnings are the
 	// snapshot's: an engine that did not answer has no gone booths.
 	Remembered func(live []lifecycle.Booth, warnings []string) []lifecycle.Booth
-	// Forget drops a remembered booth (d on a gone booth's row).
+	// Forget drops a remembered booth (delete on a gone booth's row).
 	Forget func(booth lifecycle.Booth) error
 	// Hidden reads the keys of the rows h hid (see row.key); nil hides nothing
 	// and turns h off.
@@ -184,7 +186,7 @@ type portPicker struct {
 	err     error
 }
 
-// deleteCheckMsg is a worktree's git status, read fresh for d's question.
+// deleteCheckMsg is a worktree's git status, read fresh for delete's question.
 type deleteCheckMsg struct {
 	key   string
 	row   row
@@ -500,6 +502,10 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 		}
 		m.setStatus("Cancelled.", false)
 		return m, nil
+	}
+
+	if key == "backspace" {
+		key = keyRemove
 	}
 
 	// Several rows selected: these keys act on all of them (see multi.go).
