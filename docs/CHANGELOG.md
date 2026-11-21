@@ -16,6 +16,19 @@ This file contains a list of changes for each released version.
   can decrypt and sign with it, and each start says so. Linux hosts only: on macOS and Windows
   the extension does nothing and the booth asks as before. Refused without `+store-host` and
   with `--booth-isolation kata`. Needs a base image built from this version.
+- **`envfolio+store-host` writes commit on a Mac.** Docker Desktop (and other VM-backed engines)
+  present the mounted store's root folder as owned by root, so git in the booth refused it as
+  "dubious ownership": `folio text insert` and the like wrote the item but failed its commit and
+  exited non-zero. The booth now marks the mounted store as a git `safe.directory`, as it already
+  does for the code folder.
+- **`booth --record` snapshots can be read on the host.** The snapshot repository recorded the
+  booth's code path (`/home/coder/...`) as its `core.worktree`, and recent git (2.56) refuses a
+  repository whose worktree does not exist, so `git --git-dir=.booth/.tmp/record/snapshots.git log`
+  failed outside the booth. That setting is no longer kept; an existing repository loses it on the
+  next recorded start.
+- **The GitHub star marker honours `XDG_CONFIG_HOME` on macOS too.** It was always
+  `~/Library/Application Support/codingbooth/github-star` there; now `$XDG_CONFIG_HOME` is used
+  on every OS when it is set.
 - **gpg decrypts with an imported secret key again.** GnuPG 2.5.24 as released cannot decrypt
   with a secret key that was imported without a passphrase
   ([T8469](https://dev.gnupg.org/T8469)), which is every EnvFolio `.folio` export's key. The

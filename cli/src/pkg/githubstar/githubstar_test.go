@@ -63,3 +63,26 @@ func TestPromote(t *testing.T) {
 		t.Fatalf("after promotion: got %q, want done", got)
 	}
 }
+
+// XDG_CONFIG_HOME wins on every OS (os.UserConfigDir ignores it on macOS); a relative
+// one is ignored, as the XDG spec says, and the OS folder is used instead.
+func TestMarkerPathFrom(t *testing.T) {
+	osDir := func() (string, error) { return "/os/config", nil }
+	noDir := func() (string, error) { return "", os.ErrNotExist }
+	cases := []struct {
+		name, xdg string
+		dir       func() (string, error)
+		want      string
+	}{
+		{"xdg set", "/xdg", osDir, filepath.Join("/xdg", "codingbooth", "github-star")},
+		{"xdg unset", "", osDir, filepath.Join("/os/config", "codingbooth", "github-star")},
+		{"xdg relative", "rel", osDir, filepath.Join("/os/config", "codingbooth", "github-star")},
+		{"xdg set, no os folder", "/xdg", noDir, filepath.Join("/xdg", "codingbooth", "github-star")},
+		{"nothing known", "", noDir, ""},
+	}
+	for _, c := range cases {
+		if got := markerPathFrom(c.xdg, c.dir); got != c.want {
+			t.Errorf("%s: got %q, want %q", c.name, got, c.want)
+		}
+	}
+}

@@ -459,6 +459,17 @@ if command -v git >/dev/null 2>&1; then
       || printf '[cb-setup] could not record %s as a git safe.directory; git may refuse to run there\n' \
          "$CODE_DIR" >&2
   fi
+  # envfolio+store-host bind-mounts the host's EnvFolio store, a git repository, at
+  # FOLIO_STORE_DIR -- a mount root like the code folder, so on those engines it
+  # arrives 0:0 too and every folio write failed its commit ("dubious ownership"),
+  # leaving the item written but uncommitted. Same trust: the user mounted their
+  # own store on purpose.
+  if [ "${CB_FOLIO_HOST:-}" = "1" ] && [ -n "${FOLIO_STORE_DIR:-}" ] \
+     && ! git config --system --get-all safe.directory 2>/dev/null | grep -qxF "$FOLIO_STORE_DIR"; then
+    git config --system --add safe.directory "$FOLIO_STORE_DIR" \
+      || printf '[cb-setup] could not record %s as a git safe.directory; folio may fail to commit\n' \
+         "$FOLIO_STORE_DIR" >&2
+  fi
 fi
 fi                                              # CB_TARGET: container only
 

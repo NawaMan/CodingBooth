@@ -36,7 +36,7 @@ function check() {
 }
 # changed-files: the files under .booth/ that differ from the snapshot in $before.
 function changed-files() {
-    (cd "$prj" && diff -rq before .booth 2>&1 | sed -E 's#^Files before/(.*) and .*#\1#; s#^Only in ([^:]*): (.*)#\1/\2#' | sort | tr '\n' ' ')
+    (cd "$prj" && diff -rq before .booth 2>&1 | sed -E 's#^Files before/(.*) and .*#\1#; s#^Only in ([^:]*): (.*)#\1/\2#' | LC_ALL=C sort | tr '\n' ' ')
 }
 
 unset CB_APT_SNAPSHOT
@@ -56,7 +56,7 @@ check $? "--apt-snapshot alone succeeds without --overwrite"
 [[ "$(snapshot-line)" == "env APT_SNAPSHOT=20250101T000000Z" ]]
 check $? "the snapshot line is moved"
 
-[[ "$(changed-files)" == "Boothfile .generated " ]]
+[[ "$(changed-files)" == ".generated Boothfile " ]]
 check $? "only the Boothfile and its fingerprint change"
 
 [[ "$(diff "$before/Boothfile" "$boothfile" | grep -c '^[<>]')" == "2" ]]
