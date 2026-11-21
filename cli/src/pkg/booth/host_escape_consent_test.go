@@ -170,6 +170,11 @@ func TestConsent_Dind_FlagSkipsPromptButStillWarns(t *testing.T) {
 		t.Fatal("--dind-allowed must not ask")
 	}
 	got := warnings.String()
+	// The block is closed by an empty line, as it is opened by one: what the start prints next
+	// is not part of the warning.
+	if !strings.HasSuffix(got, "starting without asking.\n\n") || strings.HasSuffix(got, "\n\n\n") {
+		t.Errorf("the warning should end with the closing line and one empty line, got:\n%q", got)
+	}
 	for _, want := range []string{
 		"--dind (privileged Docker-in-Docker sidecar)",
 		hostescape.Impact(hostescape.KindDind, hostescape.WhereHost),

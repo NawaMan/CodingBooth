@@ -144,7 +144,9 @@ func ensureHostEscapeConsent(ctx appctx.AppContext, env consentEnv) error {
 }
 
 // allowedNote is the closing line when nothing is left to ask: which flag, or an earlier "yes" in
-// this process (a booth--restart), covered the reasons.
+// this process (a booth--restart), covered the reasons. An empty line follows it: the block opens
+// with one, and what the start prints next (a template's own warning, the command's output) is
+// not part of it.
 func allowedNote(flags []string, earlier bool) string {
 	var why []string
 	if len(flags) > 0 {
@@ -153,7 +155,7 @@ func allowedNote(flags []string, earlier bool) string {
 	if earlier {
 		why = append(why, "approved earlier in this session")
 	}
-	return "  " + capitalize(strings.Join(why, "; ")) + " — starting without asking.\n"
+	return "  " + capitalize(strings.Join(why, "; ")) + " — starting without asking.\n\n"
 }
 
 func capitalize(text string) string {
