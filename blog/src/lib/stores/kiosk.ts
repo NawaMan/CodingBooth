@@ -26,6 +26,7 @@ import {
 	type Choice
 } from '$lib/kiosk/kioskCore';
 import { clearAllKioskMediaHold } from '$lib/stores/kioskMediaHold';
+import { readAutoParam } from '$lib/auto/stepAutoCore';
 
 export type KioskStatus = 'off' | 'running' | 'paused';
 
@@ -178,12 +179,18 @@ export function setCanKiosk(offered: boolean): void {
 	canKiosk.set(!!offered);
 }
 
-/** Persist sticky offer from `?kiosk` / `?kiosk=off`. Does NOT start/stop —
-    call `bootKioskFromUrl` once on mount for that (avoids a Stop being undone by
-    a reactive re-apply while the URL still says `?kiosk`). */
+/** What the URL says about KIOSK: `?kiosk` / `?kiosk=off` as ever, and `?auto=all`,
+    which is `?kiosk` under its newer name. `null` = it says nothing. */
+function readKioskChoice(search: URLSearchParams | null | undefined): Choice {
+	return readAutoParam(search) === 'all' ? true : readKioskParam(search);
+}
+
+/** Persist sticky offer from `?kiosk` / `?kiosk=off` (or `?auto=all`). Does NOT
+    start/stop — call `bootKioskFromUrl` once on mount for that (avoids a Stop being
+    undone by a reactive re-apply while the URL still says `?kiosk`). */
 export function applyKioskParam(url: URL): void {
 	if (!browser) return;
-	const choice = readKioskParam(url.searchParams);
+	const choice = readKioskChoice(url.searchParams);
 	if (choice !== null) {
 		try {
 			localStorage.setItem('canKiosk', String(choice));
@@ -194,15 +201,18 @@ export function applyKioskParam(url: URL): void {
 }
 
 /**
- * One-shot boot: `?kiosk` starts, `?kiosk=off` stops, absent restores a session
- * that still wants to run (full-page nav mid-loop).
+ * One-shot boot: `?kiosk` (or `?auto=all`) starts, `?kiosk=off` stops, absent restores
+ * a session that still wants to run (full-page nav mid-loop). `?auto=steps` and
+ * `?auto=off` name a level that is not kiosk, so they stop a running one too — without
+ * revoking the offer, as `?kiosk=off` does.
  */
 export function bootKioskFromUrl(url: URL): void {
 	if (!browser) return;
-	const choice = readKioskParam(url.searchParams);
+	const choice = readKioskChoice(url.searchParams);
+	const auto = readAutoParam(url.searchParams);
 	applyKioskParam(url);
 	if (choice === true) startKiosk();
-	else if (choice === false) stopKiosk();
+	else if (choice === false || auto === 'steps' || auto === 'off') stopKiosk();
 	else restoreKioskIfWanted();
 }
 
@@ -210,7 +220,7 @@ export function resolveOffered(dev: boolean, deckWide: boolean): boolean {
 	if (!browser) return dev || deckWide;
 	let sticky = readSticky(localStorage.getItem('canKiosk'));
 	// Live URL flag also counts as an offer for this page (before sticky is written).
-	const live = readKioskParam(
+	const live = readKioskChoice(
 		typeof window !== 'undefined' ? new URL(window.location.href).searchParams : null
 	);
 	if (live !== null) sticky = live;

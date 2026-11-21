@@ -44,6 +44,10 @@ export type ActiveSteps = {
 	    video running on to its next chapter)? <StepDots> cues the next Space only once
 	    this goes false. Left out = never busy. */
 	busy?: boolean;
+	/** This build's own wait before it takes its next step by itself, in ms (<Steps
+	    timeoutMs>). `0` opts it out of the deck's or the slide's; left out = follow
+	    them. See auto/stepAutoCore.ts. */
+	timeoutMs?: number;
 };
 
 export const activeSteps = writable<ActiveSteps | null>(null);

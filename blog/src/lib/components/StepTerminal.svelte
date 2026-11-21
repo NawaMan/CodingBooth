@@ -18,6 +18,13 @@
   window and nothing in it. A command continued with `cont: true` is one step with the
   line above it.
 
+  `stopAt` names the stops instead — for one command with a long run of output, or a
+  program that asks questions. `n` stops once line n has landed; `{ before: n }` stops as
+  line n begins: a command's row with its prompt up and nothing typed, a console waiting
+  for input. The last step plays to the end. Indexes are into `lines`:
+
+    <StepTerminal autoplay stopAt={[{ before: 2 }, 5]} lines={init} />   ← 3 steps
+
   `autoplay`: the first command takes no step of its own; it plays together with the step
   before it (on arrival, if the console comes first in the build), so it claims one step
   fewer.
@@ -37,10 +44,19 @@
 	import { onDestroy, onMount } from 'svelte';
 	import Terminal from '$lib/components/Terminal.svelte';
 	import { getStepsContext } from '$lib/utils/stepsContext';
-	import { markersOf, scheduleLines, type TerminalInput } from '$lib/utils/terminalCore';
+	import {
+		scheduleLines,
+		stepStopsOf,
+		type TerminalInput,
+		type TerminalStop
+	} from '$lib/utils/terminalCore';
 
 	/** The session: `{ cmd }` is typed, `{ out }` (or a bare string) is printed. */
 	export let lines: TerminalInput[] = [];
+	/** Where to stop, in place of the end of each command: `n` once line n has landed,
+	    `{ before: n }` as line n begins. The last step plays to the end. Read once, when the
+	    console claims its steps. */
+	export let stopAt: TerminalStop[] | undefined = undefined;
 	/** The first command plays with the step before it instead of taking a Space of its own. */
 	export let autoplay: boolean = false;
 	/** Timing, passed on to the Terminal; the stops are worked out from the same values. */
@@ -60,20 +76,13 @@
 
 	const ctx = getStepsContext();
 
-	// The stops: 0 (an empty console), then the end of each logical command's output. A
-	// session with no command still has one stop: it prints whole.
-	$: schedule = scheduleLines(lines, { charMs, startMs, pauseMs, outMs });
-	$: ends = (() => {
-		const m = markersOf(schedule);
-		return m.length ? m.map((x) => x.end) : [schedule.envelopeMs];
-	})();
-	$: stops = [0, ...ends];
+	// The stops: 0 (an empty console), then the end of each logical command's output — or
+	// the points `stopAt` names — up to the end of the session (terminalCore.stepStopsOf).
+	$: stops = stepStopsOf(scheduleLines(lines, { charMs, startMs, pauseMs, outMs }), stopAt);
 
 	// Steps are claimed once, at init, in document order — so the count is fixed then.
-	const count = Math.max(
-		1,
-		markersOf(scheduleLines(lines, { charMs, startMs, pauseMs, outMs })).length
-	);
+	const count =
+		stepStopsOf(scheduleLines(lines, { charMs, startMs, pauseMs, outMs }), stopAt).length - 1;
 	const ride = autoplay ? 1 : 0; // the first command rides the step before it
 	const first = ctx ? ctx.register(count - ride) : 0;
 	const revealed = ctx?.revealed;

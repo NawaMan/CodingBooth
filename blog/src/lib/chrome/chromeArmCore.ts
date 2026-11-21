@@ -51,6 +51,7 @@ export type ChromeKeyIntent =
 	| 'more'
 	| 'toc'
 	| 'kiosk-pause'
+	| 'step-hold'
 	| 'ignore';
 
 /** ☰ dropdown row letters (underlined on the rows). Collision-free with the bar alphabet. */
@@ -166,6 +167,10 @@ export function chromeKeyIntent(e: KeyboardEvent, armed: boolean): ChromeKeyInte
 			// Pause/resume a live kiosk run — the one free letter shared by "paUse"
 			// and "resUme". Caller no-ops it when no kiosk is running.
 			return 'kiosk-pause';
+		case 'h':
+			// Hold / release the auto-step (the "pause" and "normal" levels). Caller
+			// no-ops it where the author gave no wait to hold.
+			return 'step-hold';
 		default:
 			return 'ignore';
 	}

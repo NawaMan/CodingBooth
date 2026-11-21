@@ -36,6 +36,9 @@ export interface TerminalLine {
 	/** On a command: it carries on the one above (after a trailing `\`), so no prompt is drawn —
 	 *  the text sits under the command it continues. Ignored on output. */
 	cont?: boolean;
+	/** On a command: the prompt drawn on THIS row instead of the Terminal's own — a question
+	 *  (`{ cmd: 'Ada', prompt: 'Your name:' }`) or a password prompt. `''` draws none. */
+	prompt?: string;
 	/** Program output: rendered without a prompt, revealed all at once. A list of pieces mixes
 	 *  colours on one line: `['GH_TOKEN <- [', { text: 'gh/token', tone: 'warn' }, ']']`. */
 	out?: string | OutPart[];
@@ -59,6 +62,8 @@ export interface NormalizedLine {
 	lead?: string;
 	/** A command that continues the one above; only there when true. */
 	cont?: boolean;
+	/** A command's own prompt (may be `''`); only there when the line gave one. */
+	prompt?: string;
 	/** An output line's pieces, each with its tone resolved; only there when `out` was a list.
 	 *  `text` is then the pieces joined. */
 	parts?: { text: string; tone: Tone }[];
@@ -132,6 +137,7 @@ export function normalizeLines(
 		if (typeof entry.cmd === 'string') {
 			const line: NormalizedLine = { kind: 'cmd', text: entry.cmd, tone };
 			if (entry.cont === true) line.cont = true;
+			if (typeof entry.prompt === 'string') line.prompt = entry.prompt;
 			lines.push(line);
 		} else if (typeof entry.out === 'string' || Array.isArray(entry.out)) {
 			const parts = Array.isArray(entry.out) ? normalizeParts(entry.out, tone) : undefined;
@@ -271,6 +277,45 @@ export function markersOf(schedule: Schedule): Marker[] {
 			end: next ? next.line.delayMs : schedule.envelopeMs
 		};
 	});
+}
+
+/**
+ * Where a stepped console stops, as an author names it in `stopAt`: `n` once line n has
+ * landed, `{ before: n }` as line n begins. `n` is an index into the session's lines.
+ */
+export type TerminalStop = number | { before: number };
+
+/** How far into a line a `{ before }` stop sits: the row is up, nothing is typed yet. */
+export const BEFORE_STOP_MS = 1;
+
+/**
+ * The stops of a stepped console, as times: 0 (an empty console) first, the end of the
+ * session last, and one step between each pair.
+ *
+ * With no `stopAt` the stops are the end of each LOGICAL command's output (`markersOf`).
+ * With one, they are the named points, and the last step plays to the end; an empty list
+ * is one step, the whole session. A stop that names no line, or that does not fall after
+ * the stop before it (out of order, a repeat, the very end), is dropped — so the result is
+ * strictly increasing whatever was written, and a typo costs a step, never a throw.
+ */
+export function stepStopsOf(schedule: Schedule, stopAt?: readonly TerminalStop[] | null): number[] {
+	const end = schedule.envelopeMs;
+	if (!Array.isArray(stopAt)) {
+		const markers = markersOf(schedule);
+		return [0, ...(markers.length ? markers.map((m) => m.end) : [end])];
+	}
+	const stops = [0];
+	for (const stop of stopAt) {
+		const before = typeof stop === 'object' && stop !== null;
+		const n = before ? (stop as { before: unknown }).before : stop;
+		if (typeof n !== 'number' || !Number.isInteger(n)) continue;
+		const line = schedule.lines[n];
+		if (!line) continue;
+		const t = before ? line.delayMs + BEFORE_STOP_MS : line.delayMs + line.durationMs;
+		if (t > stops[stops.length - 1] && t < end) stops.push(t);
+	}
+	stops.push(end);
+	return stops;
 }
 
 /**

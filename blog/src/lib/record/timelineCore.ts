@@ -388,7 +388,7 @@ export function appendEvent(events: TimelineEvent[], action: TimelineAction, t: 
 // --- Slides and paths -------------------------------------------------------------------
 
 /** URL flags that belong to a WINDOW, not to the slide, and so never go in a timeline. */
-const WINDOW_FLAGS = ['present', 'clean', 'shot', 'adjust', 'annotate', 'bare', 'kiosk', 'capture'];
+const WINDOW_FLAGS = ['present', 'clean', 'shot', 'adjust', 'annotate', 'bare', 'kiosk', 'auto', 'capture'];
 
 /** A slide address as the timeline names it: relative to the deck when it is in the deck
     (`intro.html?return=title.html`), else its absolute path. Window flags are dropped.
