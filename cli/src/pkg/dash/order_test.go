@@ -447,3 +447,156 @@ func containsKey(keys []string, key string) bool {
 	}
 	return false
 }
+
+// siblingModel is orderRepos with three booths on zeta's main checkout (one,
+// two, three, as listed) and two on its worktree b-fix (fixer, helper).
+func siblingModel(t *testing.T, store *orderStore, hidden *hideStore) model {
+	t.Helper()
+	_, repos := orderRepos()
+	booths := []lifecycle.Booth{
+		running("Mid"),
+		boothAt("one", "/home/u/dev/zeta"), boothAt("two", "/home/u/dev/zeta"), boothAt("three", "/home/u/dev/zeta"),
+		boothAt("fixer", "/home/u/dev/zeta.wt/b-fix"), boothAt("helper", "/home/u/dev/zeta.wt/b-fix"),
+	}
+	deps := store.wire((&fakeDeps{snapshot: booths, repos: repos}).deps())
+	msg := snapshotMsg{seq: 1, booths: booths, repos: repos}
+	if hidden != nil {
+		deps = hidden.wire(deps)
+		msg.hidden = deps.Hidden()
+	}
+	next, _ := newModel(deps).Update(msg)
+	return next.(model)
+}
+
+// selectRow moves the cursor to the booth name.
+func selectRow(t *testing.T, m model, name string) model {
+	t.Helper()
+	for i, r := range m.rows {
+		if rowName(r) == name && r.booth != nil {
+			m.cursor = i
+			m.selected = r.key()
+			return m
+		}
+	}
+	t.Fatalf("no row %s in %v", name, rowSummary(m.rows))
+	return m
+}
+
+func TestCtrlArrowsSwapBoothsOnTheSameCheckout(t *testing.T) {
+	store := &orderStore{}
+	m := siblingModel(t, store, nil)
+	before := []string{"(none) @main", "Mid", "one @main", "two @main", "three @main",
+		"(none) @a-idea", "fixer @b-fix", "helper @b-fix"}
+	if got := rowSummary(m.rows); !reflect.DeepEqual(got, before) {
+		t.Fatalf("rows = %v, want %v", got, before)
+	}
+	for _, k := range store.keys() {
+		if strings.HasPrefix(k, boothOrderPrefix) {
+			t.Fatalf("a booth's place was saved before any was moved: %v", store.keys())
+		}
+	}
+	groups := func() []string {
+		var out []string
+		for _, k := range store.keys() {
+			if !strings.HasPrefix(k, boothOrderPrefix) {
+				out = append(out, k)
+			}
+		}
+		return out
+	}
+	groupsBefore := groups()
+
+	m, _ = press(t, selectRow(t, m, "two"), "ctrl+up")
+	want := []string{"(none) @main", "Mid", "two @main", "one @main", "three @main",
+		"(none) @a-idea", "fixer @b-fix", "helper @b-fix"}
+	if got := rowSummary(m.rows); !reflect.DeepEqual(got, want) {
+		t.Fatalf("rows = %v, want %v", got, want)
+	}
+	if r, _ := m.currentRow(); rowName(r) != "two" {
+		t.Errorf("cursor on %s, want two", rowName(r))
+	}
+	if got := groups(); !reflect.DeepEqual(got, groupsBefore) {
+		t.Errorf("the groups moved: %v, want %v", got, groupsBefore)
+	}
+
+	m, _ = press(t, m, "ctrl+down", "ctrl+down") // back below one, then below three
+	want = []string{"(none) @main", "Mid", "one @main", "three @main", "two @main",
+		"(none) @a-idea", "fixer @b-fix", "helper @b-fix"}
+	if got := rowSummary(m.rows); !reflect.DeepEqual(got, want) {
+		t.Fatalf("rows = %v, want %v", got, want)
+	}
+
+	// On a linked worktree too, and only among its own booths.
+	m, _ = press(t, selectRow(t, m, "helper"), "ctrl+up")
+	want = []string{"(none) @main", "Mid", "one @main", "three @main", "two @main",
+		"(none) @a-idea", "helper @b-fix", "fixer @b-fix"}
+	if got := rowSummary(m.rows); !reflect.DeepEqual(got, want) {
+		t.Fatalf("rows = %v, want %v", got, want)
+	}
+
+	// The next dashboard opens with it.
+	_, repos := orderRepos()
+	again := orderModel(store, m.booths, repos)
+	if got := rowSummary(again.rows); !reflect.DeepEqual(got, want) {
+		t.Errorf("reopened rows = %v, want %v", got, want)
+	}
+}
+
+func TestCtrlArrowsAtTheEdgeOfACheckoutMoveTheGroup(t *testing.T) {
+	store := &orderStore{}
+	m := siblingModel(t, store, nil)
+	m, _ = press(t, selectRow(t, m, "one"), "ctrl+up") // the first booth: zeta passes Mid
+	want := []string{"(none) @main", "one @main", "two @main", "three @main",
+		"(none) @a-idea", "fixer @b-fix", "helper @b-fix", "Mid"}
+	if got := rowSummary(m.rows); !reflect.DeepEqual(got, want) {
+		t.Fatalf("rows = %v, want %v", got, want)
+	}
+	m, _ = press(t, selectRow(t, m, "three"), "ctrl+down") // the last booth: zeta goes back
+	want = []string{"(none) @main", "Mid", "one @main", "two @main", "three @main",
+		"(none) @a-idea", "fixer @b-fix", "helper @b-fix"}
+	if got := rowSummary(m.rows); !reflect.DeepEqual(got, want) {
+		t.Fatalf("rows = %v, want %v", got, want)
+	}
+	// The first booth on a worktree moves the worktree within its repository.
+	m, _ = press(t, selectRow(t, m, "fixer"), "ctrl+up")
+	want = []string{"(none) @main", "Mid", "one @main", "two @main", "three @main",
+		"fixer @b-fix", "helper @b-fix", "(none) @a-idea"}
+	if got := rowSummary(m.rows); !reflect.DeepEqual(got, want) {
+		t.Fatalf("rows = %v, want %v", got, want)
+	}
+}
+
+func TestBoothSwapSkipsAHiddenSiblingAndKeepsItsPlace(t *testing.T) {
+	store := &orderStore{}
+	hidden := &hideStore{keys: map[string]bool{"two@docker": true}, paths: map[string]string{}}
+	m := siblingModel(t, store, hidden)
+	m, _ = press(t, selectRow(t, m, "three"), "ctrl+up") // passes one; two is hidden between
+	want := []string{"(none) @main", "Mid", "three @main", "one @main",
+		"(none) @a-idea", "fixer @b-fix", "helper @b-fix"}
+	if got := rowSummary(m.rows); !reflect.DeepEqual(got, want) {
+		t.Fatalf("rows = %v, want %v", got, want)
+	}
+	var saved []string
+	for _, k := range store.keys() {
+		if strings.HasPrefix(k, boothOrderPrefix) {
+			saved = append(saved, k)
+		}
+	}
+	if want := []string{"booth:three@docker", "booth:two@docker", "booth:one@docker"}; !reflect.DeepEqual(saved, want) {
+		t.Errorf("saved = %v, want %v (two kept its place)", saved, want)
+	}
+}
+
+func TestBoothSwapSaveFailureKeepsTheOrder(t *testing.T) {
+	store := &orderStore{}
+	m := siblingModel(t, store, nil)
+	before := rowSummary(m.rows)
+	store.err = errors.New("disk full")
+	m, _ = press(t, selectRow(t, m, "two"), "ctrl+up")
+	if got := rowSummary(m.rows); !reflect.DeepEqual(got, before) {
+		t.Errorf("rows = %v, want %v", got, before)
+	}
+	if !strings.Contains(m.status, "Could not save the row order") {
+		t.Errorf("status = %q", m.status)
+	}
+}

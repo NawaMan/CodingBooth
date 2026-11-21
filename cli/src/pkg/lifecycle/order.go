@@ -13,7 +13,8 @@ import (
 // Order is the order of booth dashboard's rows (ctrl+↑/↓), kept in a file so
 // the next dashboard opens with it. It is a list of keys, first on top: a
 // group's ("repo:<root>", or a booth in no repository's name@engine) and a
-// linked worktree's within its group ("worktree:<path>"). Each is remembered
+// linked worktree's within its group ("worktree:<path>"), and a booth's among
+// the booths on its checkout ("booth:<name>@<engine>"). Each is remembered
 // with its folder: once the folder is gone, the entry is dropped. A missing or
 // broken file only means no order yet.
 type Order struct {

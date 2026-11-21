@@ -96,6 +96,12 @@ This file contains a list of changes for each released version.
   `build-essential`. A version, Ubuntu or CPU it has no asset for is built from source as
   before; a checksum mismatch stops the setup. `MAKE_VERSION=apt` (the default) and Bash 3.2
   (from Bash32Ubuntu) are unchanged.
+- **`booth dashboard`: `ctrl+↑`/`ctrl+↓` reorder the booths that share a checkout.** With two or
+  more booths on the same folder (a repository's main checkout, or one linked worktree), the keys
+  moved the whole group whichever of them was selected, so their own order could not be changed.
+  They now swap the selected booth with the one above or below it on that checkout; the first one
+  going up, or the last going down, still moves the group (or the worktree within its repository).
+  The order is kept in the same `order.json`, and is shared by dashboards open at the same time.
 - **The examples moved from `examples/workspaces/` to `examples/booths/`.** Only the folder in
   the repository changed: the example names, the release zips and `booth example` are the same.
   A link or a script that points at `examples/workspaces/<name>` needs the new path, and

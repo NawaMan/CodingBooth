@@ -21,6 +21,12 @@ import (
 // next dashboard opens with it. Anything not in it yet goes to the bottom, by
 // name, and is added: the first time, that sorts everything by name.
 //
+// Several booths on one checkout (the main one or a linked worktree) have an
+// order of their own: ctrl+↑/↓ on one of them swaps it with the booth above or
+// below it there, and only at the edge (the first going up, the last going
+// down) moves the group or the worktree as above. That order is saved once
+// such a booth is first moved.
+//
 // Several dashboards share the one order. Each snapshot reads it again, so
 // one's changes show in the others; and every change starts from the order as
 // saved now, not from this dashboard's copy, so it never undoes another's.
@@ -41,6 +47,25 @@ func innerKey(r row) string {
 		return ""
 	}
 	return worktreeKey(*r.worktree)
+}
+
+// boothOrderPrefix starts the key of a booth's place among the booths on its
+// checkout. A booth in no repository has no such place: it is a group.
+const boothOrderPrefix = "booth:"
+
+// siblingKey names a booth's place among the booths on its checkout; "" for a
+// row that can have none (no booth, or a booth in no repository).
+func siblingKey(r row) string {
+	if r.booth == nil || r.repo == nil || r.repo == otherBooths || r.worktree == nil {
+		return ""
+	}
+	return boothOrderPrefix + boothKey(*r.booth)
+}
+
+// sameCheckout: a and b are booths on the one checkout.
+func sameCheckout(a, b row) bool {
+	return siblingKey(a) != "" && siblingKey(b) != "" &&
+		groupKey(a) == groupKey(b) && a.worktree.Path == b.worktree.Path
 }
 
 // unit is something that has a place in the order.
@@ -80,21 +105,30 @@ func (m *model) arrange(all []row) []row {
 	for i, e := range m.order {
 		pos[e.Key] = i
 	}
-	rank := func(r row) (int, int) {
+	rank := func(r row) (int, int, int) {
 		inner := -1 // the rows that lead come first in their group
 		if k := innerKey(r); k != "" {
 			inner = pos[k]
 		}
-		return pos[groupKey(r)], inner
+		// A booth never moved on its checkout comes after the ones that were,
+		// as built.
+		booth := len(m.order)
+		if at, ok := pos[siblingKey(r)]; ok {
+			booth = at
+		}
+		return pos[groupKey(r)], inner, booth
 	}
 	sorted := append([]row{}, all...)
 	sort.SliceStable(sorted, func(i, j int) bool {
-		gi, ii := rank(sorted[i])
-		gj, ij := rank(sorted[j])
+		gi, ii, bi := rank(sorted[i])
+		gj, ij, bj := rank(sorted[j])
 		if gi != gj {
 			return gi < gj
 		}
-		return ii < ij
+		if ii != ij {
+			return ii < ij
+		}
+		return bi < bj
 	})
 	return sorted
 }
@@ -165,6 +199,9 @@ func (m model) reorder(delta int) (tea.Model, tea.Cmd) {
 	if !ok {
 		return m, nil
 	}
+	if moved, next := m.reorderBooth(r, delta); moved {
+		return next, nil
+	}
 	key, group := innerKey(r), groupKey(r)
 	var units []string
 	shown := map[string]bool{}
@@ -215,6 +252,65 @@ func (m model) reorder(delta int) (tea.Model, tea.Cmd) {
 	m.setStatus("", false)
 	m.layout()
 	return m, nil
+}
+
+// reorderBooth swaps r with the booth delta places from it among the booths
+// shown on its checkout. It reports false, having changed nothing, when r has
+// no such neighbour: the caller then moves the group or the worktree. The
+// first move adds all the checkout's booths to the saved order as they are
+// now, so the hidden ones keep their place.
+func (m model) reorderBooth(r row, delta int) (bool, model) {
+	key := siblingKey(r)
+	if key == "" {
+		return false, m
+	}
+	var shown []string
+	at := -1
+	for _, x := range m.rows {
+		if !sameCheckout(r, x) {
+			continue
+		}
+		if siblingKey(x) == key {
+			at = len(shown)
+		}
+		shown = append(shown, siblingKey(x))
+	}
+	to := at + delta
+	if at < 0 || to < 0 || to >= len(shown) {
+		return false, m
+	}
+	order := append([]lifecycle.OrderEntry{}, m.order...)
+	known := make(map[string]bool, len(order))
+	for _, e := range order {
+		known[e.Key] = true
+	}
+	all := m.arrange(append(buildRows(m.booths, m.repos), m.separatorRows()...))
+	for _, x := range all {
+		if k := siblingKey(x); sameCheckout(r, x) && !known[k] {
+			known[k] = true
+			order = append(order, lifecycle.OrderEntry{Key: k, Path: x.path()})
+		}
+	}
+	i, j := -1, -1
+	for n, e := range order {
+		switch e.Key {
+		case key:
+			i = n
+		case shown[to]:
+			j = n
+		}
+	}
+	if i < 0 || j < 0 {
+		return false, m
+	}
+	order[i], order[j] = order[j], order[i]
+	if err := m.saveOrder(order); err != nil {
+		m.setStatus("Could not save the row order: "+err.Error(), true)
+		return true, m
+	}
+	m.setStatus("", false)
+	m.layout()
+	return true, m
 }
 
 // Separators (-) are lines the user puts between groups. Each is a group of

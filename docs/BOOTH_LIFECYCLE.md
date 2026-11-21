@@ -124,7 +124,7 @@ seconds (`--interval 5s` to change that) and takes `--engine` like the other com
 | `n` | New worktree in the selected row's repository: type a name (the new branch, from the repository's current commit); booth creates it and starts its booth (`booth --worktree <name> --daemon`) |
 | `h` | Hide it from the table; it stays hidden the next time the dashboard opens. Under `H`: show it again |
 | `H` | Show only the hidden rows (the title says how many); `H` again goes back |
-| `ctrl+↑`/`ctrl+↓` | Move its group (a repository with its worktrees, or a booth in no repository) up or down; on a linked worktree, move that worktree within its repository. The order is kept for the next time (see below) |
+| `ctrl+↑`/`ctrl+↓` | Move its group (a repository with its worktrees, or a booth in no repository) up or down; on a linked worktree, move that worktree within its repository. Where several booths share one checkout, it first swaps the booth with the one above or below it there. The order is kept for the next time (see below) |
 | `-` | Add a separator line below its group, and select it: `ctrl+↑`/`ctrl+↓` moves it, `d` deletes it (see below) |
 | `R` | Refresh now |
 | `q` | Quit |
@@ -177,7 +177,10 @@ merging here: open the worktree in your editor or GitKraken for that.
 and the booths in no repository among them), and each repository's linked worktrees by name under
 its main checkout. `ctrl+↑`/`ctrl+↓` moves the selected row's group past the next group shown; on a
 linked worktree's row it moves that worktree within its repository (the main checkout always leads,
-and the booths on a worktree move with it). Hidden rows keep their place. The order is kept in
+and the booths on a worktree move with it). When several booths run on the same checkout (the main
+one or a linked worktree), `ctrl+↑`/`ctrl+↓` on one of them swaps it with the booth above or below it
+there; only the first going up, or the last going down, moves the group (or the worktree) as
+described. Until one is moved they are listed as `booth list` gives them. Hidden rows keep their place. The order is kept in
 `~/.cache/codingbooth/dashboard/order.json`; anything not in it yet — a new repository, booth or
 worktree — goes to the bottom (of the table, or of its repository), and an entry is dropped once its
 folder is gone. The cursor starts on the repository the dashboard runs in, wherever it is. Dashboards

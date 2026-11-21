@@ -626,7 +626,8 @@ KEYS:
   n          New worktree in this repository, with its booth started
   h          Hide it (kept across runs); under H, show it again
   H          Show only the hidden rows; H again goes back
-  ctrl+↑/↓    Move its group up or down; on a worktree, within its repository
+  ctrl+↑/↓    Move its group up or down; on a worktree, within its repository;
+             among several booths on one checkout, swap it with the next first
              (kept across runs; new rows go to the bottom)
   -          Add a separator line below its group; ctrl+↑/↓ moves it, d deletes it
   R          Refresh now             q      Quit
