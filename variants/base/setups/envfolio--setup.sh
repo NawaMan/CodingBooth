@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 2.10.0
+# cb-version: 2.10.1
 
 set -Eeuo pipefail
 
@@ -155,7 +155,11 @@ say() { echo "EnvFolio seed: $*"; }
 
 # The store key's private key files come with every seed, but not through here: they go the way
 # every key reaches a booth, .booth/.tmp/gnupg-keys/, imported by the gnupg startup hook (55),
-# which runs before this one.
+# which runs before this one. Its public key is only in now, so this is where the key becomes
+# trusted as the user's own: without that, gpg will not encrypt to it and `folio secret insert`
+# fails in the booth.
+command -v booth--gnupg-trust-brought >/dev/null 2>&1 \
+    && booth--gnupg-trust-brought "${CB_GNUPG_KEYS_DIR:-$(dirname "$SEED")/gnupg-keys}"
 
 # commit_store MESSAGE -- record what was added, as folio does for its own changes.
 commit_store() {

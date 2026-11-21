@@ -4,6 +4,17 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A key brought from the host can encrypt, not only decrypt and sign.** `gnupg+keys` and
+  `envfolio+seed` copy a key's files into the booth but not the host's trust database, so the key
+  was "unknown" there, and gpg refuses to encrypt to an untrusted key unless it can ask:
+  `gpg --batch -e` to your own key failed with "Unusable public key", and so did `pass insert`
+  and adding a secret with `folio` in a seeded booth. The keys whose private key files came are now
+  marked as your own (ultimate trust) at start, as a key made in the booth is. Only those: the rest
+  of the public keyring `gnupg+keys` brings still has no trust in the booth, so encrypting to
+  someone else's key there needs `--trust-model always` — which the description of `tools/gnupg`
+  now says, where it used to promise it outright. A key that already has an owner trust (in a
+  cached keyring) keeps it. Images built earlier keep the old behaviour until they are rebuilt.
+
 - **`gnupg+store-cache`, `gnupg+seed`, `gnupg+store-share`: a gpg keyring without EnvFolio.**
   Until now only `envfolio+store-cache` kept `~/.gnupg` across containers. `tools/gnupg` now has
   the three itself, beside `+keys` (which copies from the host). `+store-cache` keeps the booth's

@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.4.2
+# cb-version: 0.5.0
 
 # gnupg--setup.sh — Install GnuPG 2.5 into /usr/local, so it shadows Ubuntu's
 # gpg on PATH: prebuilt when CodingBoothPrebuilt has it, else from the release.
@@ -289,12 +289,58 @@ for b in bin/gpg bin/gpg-agent bin/gpgsm bin/gpgconf bin/dirmngr libexec/keyboxd
   fi
 done
 
+# ---- helper: a key brought from the host is the user's own ----
+# gpg trusts a key it generated, not one whose files were copied in: the booth's trust database is
+# new (the host's is not brought), so a brought key is "unknown" and gpg refuses to encrypt to it
+# without being asked -- `pass insert`, `folio secret insert`, `gpg --batch -e`. This marks the keys
+# whose private key files came from the host as ultimately trusted, as they would be had they been
+# made here. Only those: the rest of the public keyring stays unknown, and a key that already has
+# an owner trust (set in a cached keyring, say) keeps it. Run by the keys hook below once the
+# public keyring is in, and by the envfolio hook after it imports the store's public key.
+TRUST_HELPER="$PREFIX/bin/booth--gnupg-trust-brought"
+cat > "$TRUST_HELPER" <<'EOT'
+#!/usr/bin/env bash
+# Installed by gnupg--setup.sh. Usage: booth--gnupg-trust-brought [<gnupg-keys folder>]
+set -uo pipefail
+
+KEYS="${1:-${CB_GNUPG_KEYS_DIR:-/home/coder/code/.booth/.tmp/gnupg-keys}}"
+[[ -d "$KEYS/private-keys" ]] || exit 0
+
+brought=" "
+for key in "$KEYS/private-keys"/*.key; do
+    [[ -f "$key" ]] && brought+="$(basename "$key" .key) "
+done
+[[ "$brought" != " " ]] || exit 0
+
+# The primary key (the fingerprint right after "sec") of each secret key one of whose keygrips
+# was brought. A secret key gpg has no public key for is not listed: nothing to trust yet.
+primaries=$(gpg --batch --with-colons --with-keygrip --list-secret-keys 2>/dev/null \
+    | awk -F: -v brought="$brought" '
+        $1 == "sec" { primary = ""; want = 1 }
+        $1 == "ssb" { want = 0 }
+        $1 == "fpr" && want { primary = $10; want = 0 }
+        $1 == "grp" && primary != "" && index(brought, " " $10 " ") { print primary }
+      ' | sort -u)
+[[ -n "$primaries" ]] || exit 0
+
+has_trust=$(gpg --batch --export-ownertrust 2>/dev/null | grep -v '^#' | cut -d: -f1)
+trusted=0
+for fpr in $primaries; do
+    grep -qx "$fpr" <<<"$has_trust" && continue
+    printf '%s:6:\n' "$fpr" | gpg --batch --quiet --import-ownertrust >/dev/null 2>&1 && trusted=$((trusted + 1))
+done
+(( trusted == 0 )) || echo "GnuPG keys: trusting $trusted key(s) brought from the host as your own (ultimate)."
+true
+EOT
+chmod 755 "$TRUST_HELPER"
+
 # ---- startup: keys brought from the host (gnupg+keys, envfolio+seed) ----
 # The CLI copies the private key files of the keys asked for -- private-keys-v1.d/<keygrip>.key, as
 # the host's gpg keeps them, still encrypted with the key's passphrase -- into
 # .booth/.tmp/gnupg-keys/private-keys/, and for gnupg+keys the host's public keyring into
 # pubkeys.asc. This hook puts them into the booth's gpg home, never over a key file already there;
-# the booth's own gpg-agent asks for a passphrase, in the booth, when a key is used.
+# the booth's own gpg-agent asks for a passphrase, in the booth, when a key is used. A brought key
+# is then trusted as the user's own (the helper above), once its public key is in the keyring.
 STARTUP_FILE="${CB_GNUPG_TEST_ROOT:-}/usr/share/startup.d/55-cb-gnupg-keys--startup.sh"
 mkdir -p "$(dirname "$STARTUP_FILE")"
 cat > "$STARTUP_FILE" <<'EOF'
@@ -326,6 +372,12 @@ if [[ -d "$KEYS/private-keys" ]]; then
         cp "$key" "$dst" && chmod 600 "$dst" && keys=$((keys + 1))
     done
     (( keys == 0 )) || say "brought $keys private key file(s) from the host (passphrase-protected)."
+fi
+
+# With the public keyring in (gnupg+keys), the brought keys can be trusted. A store key
+# (envfolio+seed) has no public key here yet: the envfolio hook imports it, and trusts it then.
+if [[ -s "$KEYS/pubkeys.asc" ]] && command -v booth--gnupg-trust-brought >/dev/null 2>&1; then
+    booth--gnupg-trust-brought "$KEYS"
 fi
 true
 EOF

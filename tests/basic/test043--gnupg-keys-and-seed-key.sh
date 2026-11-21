@@ -17,7 +17,7 @@ source ../common--source.sh
 #   envfolio+seed        -> the store's items and its key: a secret opens in the booth
 #
 # Needs gpg (and folio, for the seed case) on the host, and a base image with
-# the gnupg startup hook (gnupg--setup.sh 0.3.0+).
+# the gnupg startup hook and trust helper (gnupg--setup.sh 0.5.0+).
 # Deliberately NOT `set -e`: see test016--viewmd.sh.
 # -------------------------------------------------------
 
@@ -61,6 +61,8 @@ SCRIPT='
 echo SECRET=$(gpg --batch --with-colons --list-secret-keys 2>/dev/null | awk -F: "/^fpr/{print \$10}" | tr "\n" " ")
 echo PUBLIC=$(gpg --batch --with-colons --list-keys 2>/dev/null | awk -F: "/^pub/{getline; print \$10}" | tr "\n" " ")
 echo signed | gpg --batch --pinentry-mode loopback --passphrase "" -u named@example.com --clearsign >/dev/null 2>&1 && echo SIGN=ok
+echo x | gpg --batch -e -r named@example.com >/dev/null 2>&1 && echo ENC_NAMED=ok || echo ENC_NAMED=refused
+echo x | gpg --batch -e -r other@example.com >/dev/null 2>&1 && echo ENC_OTHER=ok || echo ENC_OTHER=refused
 '
 OUT=$(run_coding_booth express --code "$PROJECT" --templates-path "$REPO/templates" \
   --select 'gnupg+keys:"named@example.com"' -- "$SCRIPT" 2>&1) || true
@@ -86,11 +88,22 @@ else
   fail 3 "the start says which keys came (the primary key and its subkey)" "$(grep -i 'gnupg' <<<"$OUT" | head -3)"
 fi
 
+# A brought key is the user's own: gpg encrypts to it without asking. The other key is only in
+# the public keyring, with no trust in the booth, so gpg still refuses where it cannot ask.
+if grep -qx "ENC_NAMED=ok" <<<"$OUT" && grep -qx "ENC_OTHER=refused" <<<"$OUT"; then
+  print_test_result "true" "$0" "4" "gnupg+keys: gpg encrypts to the brought key without asking, and not to a key it only knows"
+else
+  fail 4 "gnupg+keys: gpg encrypts to the brought key without asking, and not to a key it only knows" \
+    "$(grep -E '^ENC_|trusting' <<<"$OUT" | tr '\n' ' ')"
+fi
+
 # -------------------------------------------------------
 # envfolio+seed: the store key comes with the items
 # -------------------------------------------------------
 SCRIPT='
 folio exec --secrets app -- bash -c "echo GOT=\$APP_TOKEN" 2>&1
+printf "added-here\nadded-here\n" | folio secret insert app/added >/dev/null 2>&1
+folio exec --secrets app -- bash -c "echo ADDED=\$APP_ADDED" 2>&1
 echo SECRET=$(gpg --batch --with-colons --list-secret-keys 2>/dev/null | awk -F: "/^fpr/{print \$10}" | tr "\n" " ")
 '
 OUT=$(run_coding_booth express --code "$PROJECT" --templates-path "$REPO/templates" \
@@ -98,10 +111,19 @@ OUT=$(run_coding_booth express --code "$PROJECT" --templates-path "$REPO/templat
 
 SECRET=$(sed -n 's/^SECRET=//p' <<<"$OUT")
 if grep -qx "GOT=seeded-secret" <<<"$OUT" && [[ "$SECRET" != *"$OTHER"* ]]; then
-  print_test_result "true" "$0" "4" "envfolio+seed brings the store key: the seeded secret opens in the booth, no other key comes"
+  print_test_result "true" "$0" "5" "envfolio+seed brings the store key: the seeded secret opens in the booth, no other key comes"
 else
-  fail 4 "envfolio+seed brings the store key: the seeded secret opens in the booth, no other key comes" \
+  fail 5 "envfolio+seed brings the store key: the seeded secret opens in the booth, no other key comes" \
     "$(grep -E '^GOT|rror|seed' <<<"$OUT" | head -4); secret keys: ${SECRET:-none}"
+fi
+
+# The store key is the user's own in the booth too: without that, gpg will not encrypt to it and a
+# secret cannot be added there.
+if grep -qx "ADDED=added-here" <<<"$OUT"; then
+  print_test_result "true" "$0" "6" "envfolio+seed: a secret added in the booth is encrypted to the store key and opens"
+else
+  fail 6 "envfolio+seed: a secret added in the booth is encrypted to the store key and opens" \
+    "$(grep -E '^ADDED|rror|trusting' <<<"$OUT" | head -3)"
 fi
 
 exit $FAILED
