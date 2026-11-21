@@ -129,7 +129,7 @@ setup	gimp	1.0.0	4b4effac44795f1c333af66c5f520921b98066c9dba84e8d5a3f096fd451b92
 setup	gleam	0.2.0	956d29f3571a07bc410dc1e03a027362800dc087961241a111f22378c71a6e49	variants/base/setups/gleam--setup.sh
 setup	gleam-code-extension	0.1.0	3c69d444f944b4a29febf2da07ef1da671db38f78af0677b41e544aa26b7e0ec	variants/base/setups/gleam-code-extension--setup.sh
 setup	glow	1.0.0	28b4080bb70b2a6d359a0ca21f12223e8ed0cd455cabe1c6a7c01377e5cd89fc	variants/base/setups/glow--setup.sh
-setup	gnupg	0.5.0	9037de3cb77ad75dab4a663baa5d510293b1892897f1cc753588c75852ba3f35	variants/base/setups/gnupg--setup.sh
+setup	gnupg	0.6.0	2875f6aaebc680a9bcd1dc03662bc3a3eaf45d04e2efb0aabb1f89f9ba89546d	variants/base/setups/gnupg--setup.sh
 setup	go	1.2.0	d54cbc8dceeba615fc1e7813d5b225d6710c68383d7f3f49028439b514f71c8b	variants/base/setups/go--setup.sh
 setup	go-code-extension	1.0.0	14b5c05adef0b6e5f5eb1593ef84feca1320bdf1ad6150cf845e96b39c822371	variants/base/setups/go-code-extension--setup.sh
 setup	go-nb-kernel	1.2.0	ab962f1468ed6933d31d98078003d71e37ad780dcd2aa4350e95f10d0c6ff2b4	variants/base/setups/go-nb-kernel--setup.sh
@@ -520,7 +520,7 @@ template	gimp	1.0.0	1855591e9d1aee68552d78e04c8f42d3c312421e8544d23f134f3ef53d82
 template	git-credential	1.0.1	de28f82873973111f0982ec8cbda74e8dedaa57b15084e80b5bb234c9fe18720	templates/tools/git-credential/template.toml
 template	gleam	0.2.0	cd7dd2489d3c3dace9868b0b13857e58ba32cea312fd65d27f3870d2e49f73e1	templates/languages/gleam/template.toml
 template	glow	1.1.0	14da9a97178defa04034a0ac30767b473ad647a9dcca42f19a1a1768727399df	templates/tools/glow/template.toml
-template	gnupg	1.2.0	8e88ab7935f95e6f5128307fe161c3ba2271221b01dccb176da167a197731361	templates/tools/gnupg/template.toml
+template	gnupg	1.3.0	dae3a9b869b7ea1bd1a13fa8a52ee636d3510a99ef63ffd49b210830546a2570	templates/tools/gnupg/template.toml
 template	go	1.2.0	8f16643ccefe5622b7ccdd7ba28650bc41fdd98ec09ebf6491bcb81fe389be86	templates/languages/go/template.toml
 template	goland	1.0.0	e657667702b91cc74de699fc1a4fd329c253579685824186871c7f9d9aadc111	templates/ides/goland/template.toml
 template	google-chrome	1.1.0	8b44d76d188bb8d91b7b146d6486766f516bc6088ee8f89cdc6aacbf684a222f	templates/desktops/google-chrome/template.toml
@@ -771,10 +771,11 @@ extension	gh+copilot	1.0.0	4352c563f6af159dfcccc995766c24e4ee6ad04dfa64142719f15
 extension	gh+token	0.2.1	19e553548f9dea3230edcedacbdab64a49720c31f872d70e280f7d7d0274464c	templates/tools/gh/token--extension.toml
 extension	ghostty+fancy	1.0.0	37f51efa6635527d3d359422f1cbba38c8f6e72daad9f9164b2d5ba96208edc7	templates/desktops/ghostty/fancy--extension.toml
 extension	gleam+vscode-ext	0.1.0	b74fa1fc7fed3a2882a520227a1a09f1502e7fcddf9a35d506a1b2fcbe474ffb	templates/languages/gleam/vscode-ext--extension.toml
-extension	gnupg+keys	1.1.0	faad51038ccec2354c984efb5d2a83b411477046141b872f75960877b2dfec41	templates/tools/gnupg/keys--extension.toml
+extension	gnupg+keys	1.1.1	88c3fc7df087142f285e8a2d80f29a36c09e6773630fe4aeda1eb8f4b0eff3bf	templates/tools/gnupg/keys--extension.toml
 extension	gnupg+seed	1.0.0	2ba5d5e1f8c28470f841f4753a932b72204ae4cc113e2449f0f5995e94a4bfdc	templates/tools/gnupg/seed--extension.toml
+extension	gnupg+seed-host	1.0.0	190870b96a3f519b96c8e41e53783314f86228926f247a8d8c394677decec3e0	templates/tools/gnupg/seed-host--extension.toml
 extension	gnupg+store-cache	1.0.0	d93a1c78130c1c31d2a0a6d45178d6c34147c40d0e2b60006855b1d80ba57ab5	templates/tools/gnupg/store-cache--extension.toml
-extension	gnupg+store-host	1.0.0	ff0d36d945e6c29021b48ad2146af063eefde77f69d12e89ce2289e338093fee	templates/tools/gnupg/store-host--extension.toml
+extension	gnupg+store-host	1.0.1	2673d57cee0622673f38a39e0e39ae343dee30e4dcde40ba0e98cdee4a5453eb	templates/tools/gnupg/store-host--extension.toml
 extension	gnupg+store-share	1.0.0	b67dff2fbb6fa40d7c3c57af6b6f31f873875e5c79ca3983c7347f3f43b71154	templates/tools/gnupg/store-share--extension.toml
 extension	go+go-mod	1.0.0	d0ce534aaa86760a1384b2241206a294bec0fe086d52eadafd8390e1c97b54b5	templates/languages/go/go-mod--extension.toml
 extension	go+go-pkg	1.0.0	9b7c75ede3885e70b0f33727564ff950e586a76adf8094fbc9c0c9a95da80053	templates/languages/go/go-pkg--extension.toml

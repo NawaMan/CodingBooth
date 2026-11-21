@@ -23,6 +23,10 @@
 # tmpfs and warning, the same refusal of a second key (gnupg+keys, envfolio+seed)
 # and of envfolio+store-host, which mounts the same folder. It is enough for
 # envfolio+host-agent.
+#
+# gnupg+seed-host mounts the host's gpg home read-only at a side path, for the
+# startup hook to copy from, and warns; it refuses gnupg+keys and both
+# store-hosts.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -146,7 +150,26 @@ printf '%s\n' "$OUT" | grep -F -- "-v /run/user/$U/gnupg/S.gpg-agent:/run/user/$
   && ok=true
 result "$ok" 13 "host-agent works with gnupg+store-host too: the host's agent socket is mounted" "$OUT"
 
+OUT=$(dry 'gnupg+seed-host')
+ok=false
+printf '%s\n' "$OUT" | grep -F -- "-v $HOME/.gnupg:/etc/cb-gnupg-host:ro" >/dev/null \
+  && printf '%s\n' "$OUT" | grep -F -- "CB_GNUPG_SEED_HOST=1" >/dev/null \
+  && printf '%s\n' "$OUT" | grep -F "Warning: gnupg+seed-host: the host's gpg keyring ($HOME/.gnupg)" >/dev/null \
+  && ! printf '%s\n' "$OUT" | grep -F -- ":/home/coder/.gnupg" >/dev/null \
+  && ! printf '%s\n' "$OUT" | grep -F "writable mount of host" >/dev/null \
+  && ok=true
+result "$ok" 14 "gnupg+seed-host mounts the host's gpg home read-only beside the booth's, and warns" "$OUT"
+
+ok=true
+out=$(dry 'gnupg+seed-host+keys:"me@example.com"')
+printf '%s\n' "$out" | grep -F "gnupg+seed-host: cannot be used with gnupg+keys" >/dev/null || { ok=false; OUT="$out"; }
+out=$(dry 'gnupg+seed-host+store-host')
+printf '%s\n' "$out" | grep -F "gnupg+store-host: cannot be used with gnupg+seed-host" >/dev/null || { ok=false; OUT="$out"; }
+out=$(dry 'gnupg+seed-host/envfolio+store-host')
+printf '%s\n' "$out" | grep -F "envfolio+store-host: cannot be used with gnupg+seed-host" >/dev/null || { ok=false; OUT="$out"; }
+result "$ok" 15 "gnupg+seed-host refuses gnupg+keys, and both store-hosts refuse it" "$OUT"
+
 OUT=$(dry 'envfolio+store-host')
 ok=false
 ! printf '%s\n' "$OUT" | grep -E "S\.gpg-agent|GPG_TTY|/run/user/$U/gnupg" >/dev/null && ok=true
-result "$ok" 14 "store-host alone mounts no agent socket and leaves GPG_TTY alone" "$OUT"
+result "$ok" 16 "store-host alone mounts no agent socket and leaves GPG_TTY alone" "$OUT"

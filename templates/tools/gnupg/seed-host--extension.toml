@@ -1,0 +1,17 @@
+cb-version = "1.0.0"
+display-name = "Seed from the Host"
+display-disc = "Start the booth's gpg keyring as a copy of the host's — all keys, and the booth cannot change the host's"
+display-detail = """Copies the host's whole gpg keyring into the booth at start: the public keys, every private key file as the host's gpg keeps it (still encrypted with the key's passphrase), and the trust given to each, so the keys are as usable in the booth as on the host. The host's gpg home (GNUPG_SEED_HOME, default ~/.gnupg) is mounted read-only beside the booth's, and copied from only while the booth has no keyring yet. After that the keyring is the booth's own: a key added, changed or removed there never reaches the host, which is what tells this from +store-host, where the host's gpg home is the booth's, live and writable. Alone, the copy is made in every new container, so it follows the host; with +store-cache it is made once and then kept in .booth/cache/ (delete the cached folder to copy again). The host's gpg.conf and gpg-agent.conf are not copied — they may name programs only the host has. Nothing is unlocked on the host and no passphrase is asked there: the booth's own gpg-agent asks for it, in the booth's terminal (the Console UI too), the first time a key is used. The risk is the keys themselves: every private key of the host is in the booth, protected only by its passphrase, and any code there can copy a key file (and see the passphrase when it is typed there). Each start says so. To bring only chosen keys, use +keys instead. The host folder must exist. It cannot be combined with +keys (the whole keyring comes already), nor with +store-host or tools/envfolio+store-host (the host's keyring is then the booth's, live), and the booth does not start if it is. Needs the booth to run on the machine that has the keyring: not for a remote or cloud booth."""
+display-order = 6
+auto-select = false
+tags = ["gpg", "credential", "key", "host", "seed"]
+
+# The CLI reads CB_GNUPG_SEED_HOST from these run-args before the container starts: it checks the
+# combination and the host folder, and warns. The gnupg startup hook copies from the mount.
+run-args = [
+    "-v", "${GNUPG_SEED_HOME}:/etc/cb-gnupg-host:ro",
+    "-e", "CB_GNUPG_SEED_HOST=1",
+]
+
+[params.GNUPG_SEED_HOME]
+default = "~/.gnupg"

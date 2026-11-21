@@ -173,3 +173,52 @@ func exportHostPublicKeys(dir, dst string, ids []string) error {
 	}
 	return os.WriteFile(dst, []byte(out), 0o644)
 }
+
+// GnuPG seed from the host (gnupg+seed-host): the booth's keyring starts as a copy of the host's
+// whole gpg home -- public keys, private key files (still encrypted with each key's passphrase)
+// and the trust given to each -- and is the booth's own from then on: nothing the booth does
+// reaches the host's. The extension's run-args mount the host's gpg home read-only at a side path
+// (never at ~/.gnupg: gpg cannot start its agent on a read-only home) and carry
+// -e CB_GNUPG_SEED_HOST=1; the gnupg startup hook copies from there while the booth has no keyring.
+// No key file passes through the project folder. This step checks what the mount cannot say for
+// itself: the host folder exists (a missing source is dropped from the run with a warning, and the
+// booth would start with no keys and no word about it), and nothing else brings keys the copy
+// would then be skipped for.
+const (
+	gnupgSeedHostEnv  = "CB_GNUPG_SEED_HOST"
+	gnupgSeedHostPath = "/etc/cb-gnupg-host"
+)
+
+// PrepareGnupgSeedHost checks a gnupg+seed-host run. It runs after PrepareFolioHost, which
+// refuses the combination with a live host gpg home.
+func PrepareGnupgSeedHost(ctx appctx.AppContext) (appctx.AppContext, error) {
+	if v, _ := runArgEnvValue(ctx.RunArgs(), gnupgSeedHostEnv); v != "1" {
+		return ctx, nil
+	}
+	if v, _ := runArgEnvValue(ctx.RunArgs(), gnupgKeysEnv); strings.TrimSpace(v) != "" {
+		return ctx, fmt.Errorf("gnupg+seed-host: cannot be used with gnupg+keys: the whole keyring comes " +
+			"already, the named keys with it")
+	}
+	source := runArgBindSources(ctx.RunArgs())[gnupgSeedHostPath]
+	if source == "" {
+		return ctx, fmt.Errorf("gnupg+seed-host: run-args must mount the host gpg home at %s; reselect the "+
+			"extension rather than editing them", gnupgSeedHostPath)
+	}
+	homeDir, _ := os.UserHomeDir()
+	gnupgHost := expandHostPath(os.ExpandEnv(source), homeDir)
+	if ctx.Dryrun() {
+		// As for store-host: the check below is skipped, so the missing-mount filter would drop a
+		// folder this host lacks and print a run the real one never is.
+		builder := ctx.ToBuilder()
+		builder.RunArgs = markVolumesCreate(ctx.RunArgs(), gnupgSeedHostPath)
+		ctx = builder.Build()
+	} else if !isDir(gnupgHost) {
+		return ctx, fmt.Errorf("gnupg+seed-host: the host has no gpg home at %s; set GNUPG_SEED_HOME to "+
+			"where it is (`gpgconf --list-dirs homedir` on the host says)", gnupgHost)
+	}
+	// Every start says what came in, so a keyring brought by someone else's config is seen.
+	fmt.Fprintf(os.Stderr, "Warning: gnupg+seed-host: the host's gpg keyring (%s), private keys included "+
+		"(each still protected by its passphrase), is copied into this booth: anything run in it can "+
+		"read and copy the keys. The host's own keyring cannot be changed from the booth.\n", gnupgHost)
+	return ctx, nil
+}

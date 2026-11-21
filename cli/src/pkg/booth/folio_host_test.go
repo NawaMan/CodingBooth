@@ -39,6 +39,7 @@ func TestCheckHostKeysAlone(t *testing.T) {
 	}{
 		"seed":        {[]string{"-e", "CB_FOLIO_SEED=--secrets gh", "-e", "CB_FOLIO_SEED_MODE=seed"}, "envfolio+seed"},
 		"gnupg keys":  {[]string{"-e", "CB_GNUPG_KEYS=me@example.com"}, "gnupg+keys"},
+		"seed-host":   {[]string{"-e", "CB_GNUPG_SEED_HOST=1"}, "gnupg+seed-host"},
 		"store-cache": {[]string{"-e", "FOLIO_STORE_DIR=/home/coder/.local/share/folio/store"}, "envfolio+store-cache"},
 	}
 	for name, c := range cases {
@@ -67,6 +68,7 @@ func TestCheckHostKeysAloneGnupgOnly(t *testing.T) {
 	}{
 		"seed":       {[]string{"-e", "CB_FOLIO_SEED=--secrets gh"}, "envfolio+seed"},
 		"gnupg keys": {[]string{"-e", "CB_GNUPG_KEYS=me@example.com"}, "gnupg+keys"},
+		"seed-host":  {[]string{"-e", "CB_GNUPG_SEED_HOST=1"}, "gnupg+seed-host"},
 	}
 	for name, c := range cases {
 		err := checkHostKeysAlone(runArgs(gnupgHost, c.extra), false)

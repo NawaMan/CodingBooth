@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.5.0
+# cb-version: 0.6.0
 
 # gnupg--setup.sh — Install GnuPG 2.5 into /usr/local, so it shadows Ubuntu's
 # gpg on PATH: prebuilt when CodingBoothPrebuilt has it, else from the release.
@@ -341,6 +341,11 @@ chmod 755 "$TRUST_HELPER"
 # pubkeys.asc. This hook puts them into the booth's gpg home, never over a key file already there;
 # the booth's own gpg-agent asks for a passphrase, in the booth, when a key is used. A brought key
 # is then trusted as the user's own (the helper above), once its public key is in the keyring.
+#
+# gnupg+seed-host: the host's whole gpg home is mounted read-only at /etc/cb-gnupg-host, and this
+# hook copies the keyring out of it -- public keys, private key files, the trust database -- while
+# the booth has none. Never the host's gpg.conf / gpg-agent.conf: they may name programs that are
+# only on the host (a pinentry). common.conf comes: it only says whether the keyring is keyboxd's.
 STARTUP_FILE="${CB_GNUPG_TEST_ROOT:-}/usr/share/startup.d/55-cb-gnupg-keys--startup.sh"
 mkdir -p "$(dirname "$STARTUP_FILE")"
 cat > "$STARTUP_FILE" <<'EOF'
@@ -348,10 +353,41 @@ cat > "$STARTUP_FILE" <<'EOF'
 set -uo pipefail
 
 KEYS="${CB_GNUPG_KEYS_DIR:-/home/coder/code/.booth/.tmp/gnupg-keys}"   # override: tests only
-[[ -d "$KEYS" ]] || exit 0
 
 say() { echo "GnuPG keys: $*"; }
 gnupg_home="${GNUPGHOME:-$HOME/.gnupg}"
+
+# ---- the host's keyring, copied (gnupg+seed-host) ----
+HOST="${CB_GNUPG_SEED_HOST_DIR:-/etc/cb-gnupg-host}"   # override: tests only
+if [[ "${CB_GNUPG_SEED_HOST:-}" == "1" && -d "$HOST" ]]; then
+    # Only into a home with no keyring yet: one kept by +store-cache, or made in this container,
+    # is the booth's own. A cached folder that holds nothing but its .mount-this marker is empty.
+    if [[ -d "$gnupg_home" && -n "$(ls -A "$gnupg_home" 2>/dev/null | grep -vx '.mount-this')" ]]; then
+        say "the booth already has a keyring; the host's is not copied over it."
+    else
+        mkdir -p "$gnupg_home" && chmod 700 "$gnupg_home"
+        for f in pubring.kbx trustdb.gpg common.conf; do
+            [[ -f "$HOST/$f" ]] && cp "$HOST/$f" "$gnupg_home/$f" && chmod 600 "$gnupg_home/$f"
+        done
+        if [[ -f "$HOST/public-keys.d/pubring.db" ]]; then
+            mkdir -p "$gnupg_home/public-keys.d" && chmod 700 "$gnupg_home/public-keys.d"
+            cp "$HOST/public-keys.d/pubring.db" "$gnupg_home/public-keys.d/" \
+                && chmod 600 "$gnupg_home/public-keys.d/pubring.db"
+        fi
+        host_keys=0
+        if [[ -d "$HOST/private-keys-v1.d" ]]; then
+            mkdir -p "$gnupg_home/private-keys-v1.d" && chmod 700 "$gnupg_home/private-keys-v1.d"
+            for key in "$HOST/private-keys-v1.d"/*.key; do
+                [[ -f "$key" ]] || continue
+                dst="$gnupg_home/private-keys-v1.d/$(basename "$key")"
+                cp "$key" "$dst" && chmod 600 "$dst" && host_keys=$((host_keys + 1))
+            done
+        fi
+        say "copied the host's keyring: public keys, trust, and $host_keys private key file(s) (passphrase-protected)."
+    fi
+fi
+
+[[ -d "$KEYS" ]] || exit 0
 mkdir -p "$gnupg_home" && chmod 700 "$gnupg_home"
 
 if [[ -s "$KEYS/pubkeys.asc" ]]; then
@@ -391,7 +427,7 @@ cat <<'EON'
 - gpg, gpg-agent, gpgconf, dirmngr from /usr/local/bin shadow Ubuntu's 2.4.
 - Post-quantum key:   gpg --quick-gen-key you@example.com pqc
 - If an older agent is still running:   gpgconf --kill all
-- Keys from the host:   select tools/gnupg+keys:"<key id or email>"
+- Keys from the host:   select tools/gnupg+keys:"<key id or email>", or +seed-host for all of them
 
 Notes:
 - Ubuntu's gnupg packages stay installed for apt; /usr/bin/gpg is still 2.4.

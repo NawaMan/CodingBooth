@@ -226,6 +226,10 @@ func checkHostKeysAlone(runArgs ilist.List[ilist.List[string]], withStore bool) 
 	if v, _ := runArgEnvValue(runArgs, gnupgKeysEnv); strings.TrimSpace(v) != "" {
 		return fmt.Errorf("cannot be used with gnupg+keys: the host's gpg home is already in the booth, live")
 	}
+	if v, _ := runArgEnvValue(runArgs, gnupgSeedHostEnv); v == "1" {
+		return fmt.Errorf("cannot be used with gnupg+seed-host: the host's gpg home is already in the booth, " +
+			"live, and a copy of it has nowhere to go")
+	}
 	if !withStore {
 		return nil
 	}

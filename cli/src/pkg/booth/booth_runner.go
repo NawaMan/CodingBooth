@@ -79,6 +79,9 @@ func (runner *BoothRunner) Run() error {
 	}
 	// After PrepareBoothTmp, which empties .booth/.tmp/: the seed and keys written there are this
 	// start's.
+	if ctx, err = PrepareGnupgSeedHost(ctx); err != nil {
+		return err
+	}
 	if ctx, err = PrepareFolioSeed(ctx); err != nil {
 		return err
 	}

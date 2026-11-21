@@ -4,6 +4,18 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`gnupg+seed-host`: the host's whole keyring, as a copy the booth cannot write back.**
+  `gnupg+store-host` mounts the host's `~/.gnupg` read-write, so code in the booth can change the
+  host's keyring and its gpg configuration; mounting it read-only is not an alternative, because
+  gpg cannot start its agent on a read-only home and nothing that needs a private key works.
+  `gnupg+seed-host` mounts the host's gpg home (`GNUPG_SEED_HOME`, default `~/.gnupg`) read-only
+  beside the booth's, and the booth copies the keyring out of it at start — public keys, private
+  key files (still protected by their passphrase) and the trust in each — while it has none. From
+  then on the keyring is the booth's own. Alone, the copy is made in every new container; with
+  `+store-cache`, once. The host's `gpg.conf` and `gpg-agent.conf` are not copied. Every private
+  key of the host is still readable in the booth, and each start says so. It refuses `gnupg+keys`
+  and both store-hosts. Needs a rebuilt base image.
+
 - **`--quiet` hides the "Not mounting what config.toml does not declare" notice.** A Cache or
   Shared leftover of a deselected template is named at every start until it is pruned; that is
   information, not a warning, and it now stays out of a `--quiet` run. The leftovers are still not

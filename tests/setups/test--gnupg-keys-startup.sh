@@ -13,6 +13,10 @@
 # start, puts the key files into ~/.gnupg/private-keys-v1.d (700/600), never over
 # one already there, and imports pubkeys.asc.
 #
+# gnupg+seed-host mounts the host's whole gpg home read-only beside the booth's;
+# the same hook copies the keyring out of it (public keys, trust, private key
+# files -- never gpg.conf or gpg-agent.conf) while the booth has no keyring.
+#
 # The hook is extracted from gnupg--setup.sh and run with a stub gpg that records
 # the import.
 # -----------------------------------------------------------------------------
@@ -106,5 +110,64 @@ run_hook "$WORK/h4" "$K4"
 [[ "$RUN_EXIT" -eq 0 && -f "$WORK/h4/.gnupg/private-keys-v1.d/$GRIP1.key" && ! -s "$WORK/gpg.log" ]] \
     && check "true"  "key files without pubkeys.asc: copied, and gpg is not run" \
     || check "false" "key files without pubkeys.asc: copied, and gpg is not run" "$(cat "$WORK/gpg.log")"$'\n'"$OUT"
+
+# ---- 5. the host's keyring, copied (gnupg+seed-host) ----
+# run_seed HOME HOST_DIR [VAR=value…]
+run_seed() {
+    local home="$1" host="$2"; shift 2
+    mkdir -p "$home"
+    : > "$WORK/gpg.log"
+    OUT=$(env -i HOME="$home" PATH="$WORK/bin:/usr/bin:/bin" CB_GNUPG_KEYS_DIR="$WORK/no-such-dir" \
+              CB_GNUPG_SEED_HOST_DIR="$host" "$@" bash "$HOOK" 2>&1) && RUN_EXIT=0 || RUN_EXIT=$?
+}
+HOSTHOME="$WORK/hosthome"
+mk "$HOSTHOME/pubring.kbx"                      "PUBLIC"
+mk "$HOSTHOME/trustdb.gpg"                      "TRUST"
+mk "$HOSTHOME/common.conf"                      "use-keyboxd"
+mk "$HOSTHOME/public-keys.d/pubring.db"         "KEYBOXD"
+mk "$HOSTHOME/public-keys.d/pubring.db.lock"    "lock"
+mk "$HOSTHOME/private-keys-v1.d/$GRIP1.key"     "protected-primary"
+mk "$HOSTHOME/private-keys-v1.d/$GRIP2.key"     "protected-sub"
+mk "$HOSTHOME/gpg.conf"                         "keyserver host-only"
+mk "$HOSTHOME/gpg-agent.conf"                   "pinentry-program /host/only/pinentry"
+mk "$HOSTHOME/random_seed"                      "seed"
+chmod 644 "$HOSTHOME/private-keys-v1.d/"*.key
+
+run_seed "$WORK/h5" "$HOSTHOME" CB_GNUPG_SEED_HOST=1
+G="$WORK/h5/.gnupg"
+got=$(cd "$G" 2>/dev/null && find . -type f | sed 's|^\./||' | LC_ALL=C sort | tr '\n' ' ')
+want="common.conf private-keys-v1.d/$GRIP2.key private-keys-v1.d/$GRIP1.key public-keys.d/pubring.db pubring.kbx trustdb.gpg "
+want=$(tr ' ' '\n' <<<"$want" | grep . | LC_ALL=C sort | tr '\n' ' ')
+[[ "$RUN_EXIT" -eq 0 && "$got" == "$want" && "$(cat "$G/trustdb.gpg")" == TRUST \
+   && "$(file_mode "$G")" == 700 && "$(file_mode "$G/private-keys-v1.d/$GRIP1.key")" == 600 \
+   && "$(file_mode "$G/private-keys-v1.d")" == 700 ]] \
+    && check "true"  "seed-host: the keyring, trust and private key files are copied (600 in 700 folders), nothing else" \
+    || check "false" "seed-host: the keyring, trust and private key files are copied (600 in 700 folders), nothing else" \
+         "got:  $got"$'\n'"want: $want"$'\n'"$OUT"
+
+[[ ! -e "$G/gpg.conf" && ! -e "$G/gpg-agent.conf" && "$OUT" == *"2 private key file(s)"* && ! -s "$WORK/gpg.log" ]] \
+    && check "true"  "seed-host: the host's gpg.conf and gpg-agent.conf stay on the host; the hook says what came" \
+    || check "false" "seed-host: the host's gpg.conf and gpg-agent.conf stay on the host; the hook says what came" "$OUT"
+
+# ---- 6. a keyring already in the booth is kept ----
+mkdir -p "$WORK/h6/.gnupg" && echo "booth-own" > "$WORK/h6/.gnupg/pubring.kbx"
+run_seed "$WORK/h6" "$HOSTHOME" CB_GNUPG_SEED_HOST=1
+[[ "$RUN_EXIT" -eq 0 && "$(cat "$WORK/h6/.gnupg/pubring.kbx")" == booth-own && ! -e "$WORK/h6/.gnupg/trustdb.gpg" \
+   && "$OUT" == *"already has a keyring"* ]] \
+    && check "true"  "seed-host: a keyring the booth already has is not copied over" \
+    || check "false" "seed-host: a keyring the booth already has is not copied over" "$OUT"
+
+# ---- 7. a cached folder with only its marker counts as empty (+store-cache) ----
+mkdir -p "$WORK/h7/.gnupg" && : > "$WORK/h7/.gnupg/.mount-this"
+run_seed "$WORK/h7" "$HOSTHOME" CB_GNUPG_SEED_HOST=1
+[[ "$RUN_EXIT" -eq 0 && -f "$WORK/h7/.gnupg/pubring.kbx" && -f "$WORK/h7/.gnupg/.mount-this" ]] \
+    && check "true"  "seed-host: a cached folder holding only .mount-this is seeded" \
+    || check "false" "seed-host: a cached folder holding only .mount-this is seeded" "$OUT"
+
+# ---- 8. the mount alone does nothing: the extension has to ask ----
+run_seed "$WORK/h8" "$HOSTHOME"
+[[ "$RUN_EXIT" -eq 0 && ! -e "$WORK/h8/.gnupg" ]] \
+    && check "true"  "seed-host: without CB_GNUPG_SEED_HOST nothing is copied" \
+    || check "false" "seed-host: without CB_GNUPG_SEED_HOST nothing is copied" "$OUT"
 
 $ALL_PASSED
