@@ -27,7 +27,7 @@ func TestConfigPaneShowsSelectDSL(t *testing.T) {
 	for _, part := range []string{
 		"web · Config · ~/dev/web/.booth",
 		"  Select    aws-cli+credential\n            Go\n            zig+zls\n",
-		"i info · c config · l log",
+		"? help · q quit",
 	} {
 		if !strings.Contains(view, part) {
 			t.Errorf("pane lacks %q:\n%s", part, view)

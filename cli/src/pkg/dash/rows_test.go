@@ -319,12 +319,12 @@ func TestScrollingStartsAtTheGroupsMainCheckout(t *testing.T) {
 func TestGitKrakenKeyOnlyWhenInstalled(t *testing.T) {
 	f := &fakeDeps{repos: testRepos()}
 	m := loaded(f)
-	if !strings.Contains(stripANSI(m.View()), "K GitKraken") {
-		t.Errorf("with GitKraken, the hint must offer K:\n%s", stripANSI(m.View()))
+	if !strings.Contains(helpText(m), "K  ") || !strings.Contains(helpText(m), "GitKraken") {
+		t.Errorf("with GitKraken, the help page must offer K:\n%s", helpText(m))
 	}
 	m.deps.GitKraken = nil
-	if strings.Contains(stripANSI(m.View()), "GitKraken") {
-		t.Errorf("without GitKraken, no K hint:\n%s", stripANSI(m.View()))
+	if strings.Contains(helpText(m), "GitKraken") {
+		t.Errorf("without GitKraken, no K on the help page:\n%s", helpText(m))
 	}
 	if _, cmd := press(t, m, "K"); cmd != nil || len(f.krakened) != 0 {
 		t.Error("K must do nothing without GitKraken")
@@ -379,8 +379,8 @@ func TestHostTerminalOpensInRowFolder(t *testing.T) {
 	if want := []string{"/home/u/dev/proj", "/home/u/dev/proj/worktree/fix"}; !reflect.DeepEqual(f.shelled, want) {
 		t.Errorf("shells in %v, want %v", f.shelled, want)
 	}
-	if !strings.Contains(stripANSI(m.View()), "t terminal") {
-		t.Errorf("hint lacks t:\n%s", stripANSI(m.View()))
+	if !strings.Contains(helpText(m), "open a host shell in its folder") {
+		t.Errorf("the help page lacks t:\n%s", helpText(m))
 	}
 
 	gone := []lifecycle.Repo{{Name: "p", Root: "/p", Worktrees: []lifecycle.Worktree{{Path: "/p", Main: true}, {Path: "/p/w", Branch: "w", Prunable: true}}}}

@@ -30,56 +30,6 @@ var (
 
 const pickerHelpLine = "↑/↓ select · enter open · esc back"
 
-// helpLines: what to look at or into, then what changes the booth. K shows
-// only when GitKraken is there to open.
-func (m model) helpLines() []string {
-	if sel := m.selection(); len(sel) > 1 {
-		acts := "s start · x stop · r restart · del delete"
-		if m.deps.Hide != nil && m.showHidden {
-			acts = "h unhide · " + acts
-		} else if m.deps.Hide != nil {
-			acts = "h hide · " + acts
-		}
-		if m.deps.SaveOrder != nil {
-			acts += " · ctrl+↑/↓ move them"
-		}
-		return []string{fmt.Sprintf("%d rows selected: ", len(sel)) + acts,
-			"shift+↑/↓ select more or fewer · esc or ↑/↓ end the selection · other keys act on the row under the cursor · q quit"}
-	}
-	if r, ok := m.currentRow(); ok && r.sep != "" && m.deps.SaveOrder != nil {
-		// A separator: only these keys do anything on it.
-		on := "separator: enter name the rows below it · ctrl+↑/↓ move it · del delete it"
-		if r.sep == separatorTop {
-			on = "top line: enter name the rows below it · it stays while the table has a separator"
-		}
-		return []string{on, "↑/↓ move · shift+↑/↓ select · - separator · R refresh · q quit"}
-	}
-	look := "i info"
-	if m.deps.Config != nil {
-		look += " · c config"
-	}
-	look += " · l log · enter shell · t terminal · o open · p ports · m message · e editor"
-	if m.deps.GitKraken != nil {
-		look += " · K GitKraken"
-	}
-	change := "↑/↓ move · shift+↑/↓ select"
-	if m.deps.SaveOrder != nil {
-		change += " · ctrl+↑/↓ reorder"
-		if !m.showHidden {
-			change += " · - separator"
-		}
-	}
-	change += " · s start · x stop · r restart · del delete · n new worktree"
-	switch {
-	case m.deps.Hide == nil:
-	case m.showHidden:
-		change += " · h unhide · H back"
-	default:
-		change += " · h hide · H hidden"
-	}
-	return []string{look, change + " · R refresh · q quit"}
-}
-
 // chromeLines is everything but the table rows: title, blank, header, and
 // below the table a blank, the status line and the two help lines.
 const chromeLines = 7
@@ -115,6 +65,11 @@ func (m model) View() string {
 	var b strings.Builder
 	b.WriteString(m.titleLine())
 	b.WriteString("\n\n")
+
+	if m.helpOpen {
+		b.WriteString(m.helpView())
+		return b.String()
+	}
 
 	if m.picker != nil {
 		b.WriteString(m.pickerView())

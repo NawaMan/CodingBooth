@@ -4,6 +4,11 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth dashboard`: a compact command hint, and `?` for every key.** The two hint lines at the
+  bottom had grown past any terminal's width and were cut (`q quit` was never shown). They now name
+  only the keys used most, each line at most 80 characters, and end in `? help · q quit`. `?` shows
+  every key, grouped, in place of the table; `?` or `esc` goes back. See
+  [booth lifecycle → dashboard](BOOTH_LIFECYCLE.md#dashboard).
 - **`booth dashboard`: a separator can name the rows below it.** `enter` on a separator line asks
   for a name, and the line shows it (`── Work ─────`): a heading for the rows down to the next
   separator. An empty name makes it a plain line again. A table with at least one separator now
