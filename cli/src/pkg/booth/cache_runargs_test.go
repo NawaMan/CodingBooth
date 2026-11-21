@@ -287,3 +287,48 @@ func TestAddCacheAndSharedMounts_LeftoverNotMounted(t *testing.T) {
 		t.Errorf("a declared folder is not a leftover:\n%s", notices)
 	}
 }
+
+// A leftover (a folder in .booth/cache/ or .booth/shared/ that config.toml no longer declares) is
+// named at each start, and not mounted either way. --quiet hides the notice: it is information
+// that repeats until the leftovers are pruned, not a warning.
+func TestAddCacheAndSharedMounts_QuietHidesLeftoverNotice(t *testing.T) {
+	for _, quiet := range []bool{false, true} {
+		project := t.TempDir()
+		spec := t.TempDir()
+		for _, kind := range []string{"cache", "shared"} {
+			dir := filepath.Join(spec, kind, "home", "coder", ".gnupg")
+			if err := os.MkdirAll(dir, 0755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(dir, ".mount-this"), nil, 0644); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if err := os.WriteFile(filepath.Join(spec, ".gitignore"), []byte("cache/\n"), 0644); err != nil {
+			t.Fatal(err)
+		}
+		writeBoothConfig(t, spec, "")
+
+		builder := &appctx.AppContextBuilder{
+			CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+			RunArgs:    runArgsOf(),
+			BoothDir:   spec,
+		}
+		builder.Config.Quiet = quiet
+		out := captureStderr(t, func() { addCacheAndSharedMounts(builder, project, "docker", "") })
+
+		said := strings.Count(out, "Not mounting what config.toml does not declare")
+		if quiet && said != 0 {
+			t.Errorf("--quiet must hide the leftover notices, got:\n%s", out)
+		}
+		if !quiet && said != 2 {
+			t.Errorf("without --quiet both trees' leftovers are named (2 notices), got %d:\n%s", said, out)
+		}
+		builder.CommonArgs.Snapshot().Range(func(_ int, group ilist.List[string]) bool {
+			if group.Length() == 2 && group.At(0) == "-v" && volumeTarget(group.At(1)) == "/home/coder/.gnupg" {
+				t.Errorf("quiet=%v: a leftover must not mount: %s", quiet, group.At(1))
+			}
+			return true
+		})
+	}
+}

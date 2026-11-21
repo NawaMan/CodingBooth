@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`--quiet` hides the "Not mounting what config.toml does not declare" notice.** A Cache or
+  Shared leftover of a deselected template is named at every start until it is pruned; that is
+  information, not a warning, and it now stays out of a `--quiet` run. The leftovers are still not
+  mounted. Warnings are unchanged: the security warning and the live-host-store warnings always
+  print.
+
 - **`gnupg+store-host`: the host's gpg keyring in the booth, live, without EnvFolio.** Until now
   the only way to mount the host's `~/.gnupg` was `envfolio+store-host`, which needs a host
   EnvFolio store beside it. `gnupg+store-host` mounts the gpg home alone (`GNUPG_HOST_HOME`,

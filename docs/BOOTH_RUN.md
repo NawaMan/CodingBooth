@@ -517,8 +517,11 @@ failure the full build log is printed, exactly as before.
 ### Quiet Mode (`--quiet`, `-q`)
 
 Hides lifecycle chatter — the daemon/foreground banners, the visit URL, the
-container id. Implies `--silence-build` and `--no-browser`. A failed build still
-prints the log.
+container id, and the notice naming Cache or Shared
+[leftovers](BOOTH_LOCALCACHE.md#leftovers-of-a-deselected-template) that are not
+mounted. Implies `--silence-build` and `--no-browser`. A failed build still
+prints the log, and warnings — the security warning, a live host store — are
+always shown.
 
 `--silence-build` alone is the narrower switch: `booth --silence-build --daemon`
 still prints the URL you need to open. `--quiet` is for when the booth is only a

@@ -1091,7 +1091,10 @@ func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath, engine
 			os.Exit(1)
 		}
 		mounts, protected, left := collectDeclaredMounts(hostPath, "cache")
-		fmt.Fprint(os.Stderr, pathmount.LeftoverNotice("cache", left))
+		// A notice, repeated at every start until the leftovers are pruned: --quiet hides it.
+		if !builder.Config.Quiet {
+			fmt.Fprint(os.Stderr, pathmount.LeftoverNotice("cache", left))
+		}
 		if len(protected) > 0 {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", protectedPathMountsError("cache", protected))
 			os.Exit(1)
@@ -1119,7 +1122,9 @@ func addCacheAndSharedMounts(builder *appctx.AppContextBuilder, codePath, engine
 	sharedPath := filepath.Join(hostPath, "shared")
 	if info, err := os.Stat(sharedPath); err == nil && info.IsDir() {
 		mounts, protected, left := collectDeclaredMounts(hostPath, "shared")
-		fmt.Fprint(os.Stderr, pathmount.LeftoverNotice("shared", left))
+		if !builder.Config.Quiet {
+			fmt.Fprint(os.Stderr, pathmount.LeftoverNotice("shared", left))
+		}
 		if len(protected) > 0 {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", protectedPathMountsError("shared", protected))
 			os.Exit(1)

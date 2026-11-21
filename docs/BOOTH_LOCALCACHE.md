@@ -95,7 +95,7 @@ Deselecting a template removes its paths from `config.toml`, but `booth config` 
 what `.booth/cache/` holds — a cached key, store or database is data. Those folders and files
 are then *leftovers*: booth does not mount them, so a booth never gets half of a template (its
 cached `~/.gnupg` without the `FOLIO_STORE_DIR` that `envfolio+store-cache` sets with it), and
-each start names them:
+each start names them (unless it is run with `--quiet`):
 
 ```
    Not mounting what config.toml does not declare (left by a deselected template?):
