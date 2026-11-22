@@ -127,8 +127,19 @@ seconds (`--interval 5s` to change that) and takes `--engine` like the other com
 | `ctrl+↑`/`ctrl+↓` | Move its group (a repository with its worktrees, or a booth in no repository) up or down; on a linked worktree, move that worktree within its repository. Where several booths share one checkout, it first swaps the booth with the one above or below it there. The order is kept for the next time (see below) |
 | `-` | Add a separator line below its group, and select it: `ctrl+↑`/`ctrl+↓` moves it, `delete` deletes it, and `enter` on it names the rows below it (see below) |
 | `shift+↑`/`shift+↓` | Select several adjacent rows; `h`, `s`, `x`, `r`, `delete` and `ctrl+↑`/`ctrl+↓` then act on all of them (see below). `esc`, or a plain `↑`/`↓`, ends the selection |
+| `?` | Show every key, in place of the table (see below); `?` or `esc` goes back |
 | `R` | Refresh now |
 | `q` | Quit |
+
+**The command hint and the help page.** The two lines at the bottom of the screen are a hint, not
+the whole list: they name the keys used most, and each line is at most 80 characters, so they are
+never cut on a terminal of the usual width. On a wider terminal a row's hint names more keys, as
+many as fit, up to 100 characters. They follow what is selected: a row, several rows, a
+separator, or the hidden rows. `?` shows every key, grouped (move, look, booth, worktree, arrange,
+several rows), in place of the table; it lists only what is on (no `K` without GitKraken). There
+`↑`/`↓`, `pgup`/`pgdown` and `home`/`end` scroll it when it is taller than the screen, and `?`, `esc`,
+`q` or `enter` goes back to the table. No other key does anything while it is open, and the table
+keeps refreshing behind it.
 
 Starting takes the terminal, because booth may build an image, and asks before starting a booth
 that could reach the host (`--dind`, `--privileged`, …); when a start fails, the dashboard waits for

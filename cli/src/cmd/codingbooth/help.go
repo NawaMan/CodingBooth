@@ -635,6 +635,10 @@ KEYS:
   shift+↑/↓   Select several adjacent rows: h, s, x, r, delete and ctrl+↑/↓
              then act on all of them (one question for all); esc or ↑/↓
              ends it
+  ?          Show every key, in place of the table (↑/↓ scroll); ? or esc
+             goes back. The two hint lines at the bottom name only the keys
+             used most, so that they fit an 80-column terminal whole (a wider
+             one shows more of them, up to 100 columns)
   R          Refresh now             q      Quit
 
 VERSION shows the CodingBooth version that built each booth, in the warning

@@ -131,8 +131,8 @@ func TestCtrlArrowsMoveTheGroup(t *testing.T) {
 	if m.rows[0].repo.Name != "alpha" || m.rows[1].repo.Name != "zeta" {
 		t.Errorf("ctrl+down did not move zeta back: %v", rowSummary(m.rows))
 	}
-	if !strings.Contains(stripANSI(m.View()), "ctrl+↑/↓ reorder") {
-		t.Errorf("help line does not mention reorder")
+	if !strings.Contains(helpText(m), "ctrl+↑/↓") {
+		t.Errorf("the help page does not mention ctrl+↑/↓")
 	}
 }
 

@@ -167,6 +167,9 @@ type model struct {
 	detailGen  int // bumped for each booth the pane loads
 	detailSeq  int // bumped each time the pane opens; ends the old tick chain
 
+	helpOpen   bool // ?: the help page takes the table's place (see help.go)
+	helpOffset int  // its first line shown
+
 	configOpen bool // c: the config pane takes the detail pane's place
 	config     *configPane
 
@@ -488,6 +491,9 @@ func (m model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
+	if m.helpOpen {
+		return m.handleHelpKey(key)
+	}
 	if m.picker != nil {
 		return m.handlePickerKey(key)
 	}
@@ -557,6 +563,8 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 			m.setStatus("", false)
 		}
 		return m, nil
+	case keyHelp:
+		return m.toggleHelp()
 	case keyRefresh:
 		m.setStatus("", false)
 		m.staleGit()

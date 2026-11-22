@@ -57,7 +57,7 @@ func TestShiftArrowsSelectARangeFromTheRowTheyStartOn(t *testing.T) {
 		t.Fatalf("selected %v, want web and api", got)
 	}
 	view := stripANSI(m.View())
-	for _, want := range []string{"2 selected", "2 rows selected: h hide · s start · x stop · r restart · del delete", "+ web"} {
+	for _, want := range []string{"2 selected", "2 selected: h hide · s start · x stop · r restart · del delete", "+ web"} {
 		if !strings.Contains(view, want) {
 			t.Errorf("view lacks %q:\n%s", want, view)
 		}
