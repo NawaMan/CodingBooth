@@ -206,11 +206,12 @@ one or a linked worktree), `ctrl+↑`/`ctrl+↓` on one of them swaps it with th
 there; only the first going up, or the last going down, moves the group (or the worktree) as
 described. Until one is moved they are listed as `booth list` gives them. Hidden rows keep their place. The order is kept in
 `~/.cache/codingbooth/dashboard/order.json`; anything not in it yet — a new repository, booth or
-worktree — goes to the bottom (of the table, or of its repository), and an entry is dropped once its
-folder is gone. A booth that leads a group of its own loses its place when the booth is gone, so
-one that comes back is new again: the booths a test run or an example creates show up together at
-the bottom each time, where `shift+↑`/`shift+↓` selects them all. A repository and a worktree keep
-their place while their folder exists. The cursor starts on the repository the dashboard runs in, wherever it is. Dashboards
+worktree — goes to the bottom (of the table, or of its repository). A place is kept only while its row
+exists: once a booth is deleted or forgotten and its row is gone (with it a repository's, when that
+was its last booth), the entry is dropped, so what comes back is new again. The booths a test run
+or an example creates therefore show up together at the bottom each time, where
+`shift+↑`/`shift+↓` selects them all. A stopped booth is still a row, and so is a hidden one: both
+keep their place. Separators always stay. The cursor starts on the repository the dashboard runs in, wherever it is. Dashboards
 open at the same time share the file: each reads it again at every refresh, and each move starts
 from the order as saved then, so one dashboard's moves and separators show in another and are never
 undone by it.

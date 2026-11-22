@@ -6,9 +6,10 @@ This file contains a list of changes for each released version.
 
 - **`booth dashboard`: new booths show up together at the bottom.** A booth whose code is a folder
   inside a checkout (a test's or an example's) was put in that repository's group, among its own
-  rows; it is now a row of its own, like a booth in no repository. Such a booth also loses its
-  place in the saved order once it is gone, so the booths of the next run are added at the bottom
-  again, together, where `shift+↑`/`shift+↓` selects them all. See
+  rows; it is now a row of its own, like a booth in no repository. And a place in the saved order
+  is kept only while its row exists: a booth or repository that was deleted and comes back is added
+  at the bottom again, so the booths of the next test run show up together, where
+  `shift+↑`/`shift+↓` selects them all. See
   [booth lifecycle → dashboard](BOOTH_LIFECYCLE.md#dashboard).
 - **`booth dashboard`: `d` reads a project's README.** On a booth or a worktree row, `d` (docs)
   shows the README in that folder in a pager and comes back on `q`: Markdown rendered by `glow -p`
