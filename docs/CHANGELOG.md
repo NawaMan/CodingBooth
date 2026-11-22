@@ -4,6 +4,8 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+## 0.83.0
+
 - **Catalog versions refreshed for 0.83.0.** New defaults: Go 1.27.4, Julia 1.13.4, Swift 6.4.3,
   Gradle 9.9.2, Obsidian 1.15.1, Freeplane 1.13.5, PlantUML 1.2026.10, Hoppscotch 2026.10.1, n8n
   2.48.7, lean-lsp-mcp 0.33.0 and EnvFolio 2.2.0 — the base image runs `setup envfolio` at its
@@ -15,6 +17,20 @@ This file contains a list of changes for each released version.
   `freeplane_<version>.upstream-1_all.deb`; the setup asked for the `~upstream` spelling, which is
   a 404 for every version.
 
+- **New example: git-example.** A booth that commits as you and pushes to GitHub with no key or
+  token copied into the project or the image: `git-credential` brings the host's `~/.gitconfig`,
+  and `gh+token` passes the host's GitHub token to the GitHub CLI, which git uses as its
+  credential helper. Generated with `--select gh+token/git-credential`.
+- **claude-example and claude-token-example: `just ask --quiet "…"` prints only the answer.** The
+  booth runs with `--quiet`, so nothing but Claude's reply reaches the terminal or a pipe. The
+  READMEs also show a one-off prompt without `just`, and how to pass `CLAUDE_CODE_OAUTH_TOKEN`
+  directly or through EnvFolio.
+- **server-example-2 takes the next free port again.** 0.82.0 shipped it with a fixed
+  `port = "10000"`, so a second copy stopped on the port-in-use check, which is the one thing the
+  example is there to show. It is `port = "NEXT:10000"` again.
+- **The host-reach warning ends with an empty line when the booth starts without asking.** What
+  the start prints next (a template's own warning, the command's output) no longer runs on from
+  the warning block.
 - **`booth dashboard`: new booths show up together at the bottom.** A booth whose code is a folder
   inside a checkout (a test's or an example's) was put in that repository's group, among its own
   rows; it is now a row of its own, like a booth in no repository. And a place in the saved order
