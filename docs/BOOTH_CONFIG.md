@@ -739,7 +739,7 @@ Use `booth template` to explore what's available before running init.
 
 Use `--full` with `list` or `search` to include secondary (non-primary) templates.
 
-The v0.83.0--rc1 catalog has **223 templates** and **371 extensions** across **9 categories**:
+The v0.83.0 catalog has **223 templates** and **377 extensions** across **9 categories**:
 Languages, Frameworks, Middlewares, Tools, AI Tools, IDEs, Desktop, Education, and Booth VM
 (macOS). Browsers live under Desktop. See the [catalog inventory](UNDERSTAND_SETUPS.md#catalog-inventory)
 for per-category counts and how to reproduce them.

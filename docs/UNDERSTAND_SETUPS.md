@@ -5,14 +5,14 @@ container. Read this first; the detailed references are linked from each section
 
 ## Catalog inventory
 
-Counts for **v0.83.0--rc1**, including the experimental OCaml prebuilt toolchain:
+Counts for **v0.83.0**, including the experimental OCaml prebuilt toolchain:
 
 | Kind | Count | What is counted |
 | --- | ---: | --- |
 | Setup scripts | **368** | Top-level `variants/base/setups/*--setup.sh` |
 | Install scripts | **24** | Top-level `variants/base/setups/*--install.sh` |
 | Templates | **223** | `templates/<category>/<name>/template.toml` |
-| Extensions | **371** | `*--extension.toml` beside a parent template, including auto-selected extensions |
+| Extensions | **377** | `*--extension.toml` beside a parent template, including auto-selected extensions |
 | Categories | **9** | Category directories containing `meta.toml` and templates |
 
 | Category | Templates | Extensions |
@@ -20,13 +20,13 @@ Counts for **v0.83.0--rc1**, including the experimental OCaml prebuilt toolchain
 | Languages | 41 | 132 |
 | Frameworks | 7 | 0 |
 | Middlewares | 8 | 18 |
-| Tools | 101 | 117 |
+| Tools | 101 | 123 |
 | AI Tools | 18 | 35 |
 | IDEs | 17 | 29 |
 | Desktop | 20 | 36 |
 | Education | 8 | 4 |
 | Booth VM (macOS) | 3 | 0 |
-| **Total** | **223** | **371** |
+| **Total** | **223** | **377** |
 
 These are distinct layers, not a count of unique applications: one template can invoke several
 setups or only change configuration, and extensions can add tools, credentials, ports or other
