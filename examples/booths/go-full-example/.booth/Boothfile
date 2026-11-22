@@ -1,7 +1,7 @@
 # syntax=codingbooth/boothfile:1
 # Configured by: booth config --no-tui --overwrite --variant xfce --port 30000 --select go:1.25.7+vscode-ext+kernel+mod-cache/python:3.13.12+pip-config+vscode-ext/notebook:18888/codeserver:19999
 
-env APT_SNAPSHOT=20261023T000000Z
+env APT_SNAPSHOT=20261115T000000Z
 
 arg CODESERVER_PORT=19999
 arg GONB_VERSION=0.11.5

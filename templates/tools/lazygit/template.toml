@@ -1,4 +1,4 @@
-cb-version = "1.2.0"
+cb-version = "1.2.1"
 display-name = "Lazygit"
 primary = true
 display-disc = "Simple terminal UI for git commands"
@@ -12,7 +12,7 @@ tags = ["git", "tui", "cli"]
 
 [params.LAZYGIT_VERSION]
 default = "latest"
-suggests = ["latest", "0.66.2"]
+suggests = ["latest", "0.66.3"]
 
 [segments]
 Boothfile = """

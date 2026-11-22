@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.3.0
+# cb-version: 0.3.1
 
 # fresh--setup.sh — Install the Fresh terminal editor from GitHub releases.
 set -Eeuo pipefail
@@ -15,7 +15,7 @@ Usage:
 
 Examples:
   $0                       # latest stable Fresh
-  $0 --version 0.5.4       # pin a release
+  $0 --version 0.5.9       # pin a release
 
 Notes:
 - Installs the static musl build under /opt/fresh-editor
@@ -32,7 +32,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
 # ---- defaults / args ----
-FRESH_FALLBACK_VER="0.5.4"
+FRESH_FALLBACK_VER="0.5.9"
 REQ_VER="latest"
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -75,7 +75,7 @@ else
 fi
 
 if ! [[ "$VERSION" =~ $VERSION_RE ]]; then
-  echo "❌ Not a Fresh version: '${VERSION}' (expected X.Y.Z, for example 0.5.4)" >&2
+  echo "❌ Not a Fresh version: '${VERSION}' (expected X.Y.Z, for example 0.5.9)" >&2
   exit 2
 fi
 

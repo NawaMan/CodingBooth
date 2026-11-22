@@ -1,4 +1,4 @@
-cb-version = "0.3.0"
+cb-version = "0.3.1"
 display-name = "Fresh"
 primary = true
 display-disc = "Terminal text editor with familiar keybindings"
@@ -12,7 +12,7 @@ tags = [
 
 [params.FRESH_VERSION]
 default = "latest"
-suggests = ["latest", "0.5.4"]
+suggests = ["latest", "0.5.9"]
 
 [segments]
 Boothfile = """

@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.0.1"
 display-name = "sql-studio"
 primary = true
 display-disc = "Browser-based single-binary SQL database explorer"
@@ -13,7 +13,7 @@ tags = [
 
 [params.SQLSTUDIO_VERSION]
 default = "latest"
-suggests = ["latest", "0.1.53"]
+suggests = ["latest", "0.1.54"]
 
 [params.SQLSTUDIO_PORT]
 default = "21100"

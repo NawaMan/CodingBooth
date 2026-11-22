@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.1.0
+# cb-version: 1.2.0
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -13,12 +13,12 @@ Usage:
   $0 [VERSION] [PORT]
 
 Arguments:
-  VERSION  PlantUML version (default: 1.2026.9)
+  VERSION  PlantUML version (default: 1.2026.10)
   PORT     Port for the PlantUML web server (default: 20900)
 
 Examples:
   $0                     # install with defaults
-  $0 1.2026.9 20900      # specific version and port
+  $0 1.2026.10 20900      # specific version and port
 
 Notes:
 - Installs Java (if not present), PlantUML jar, and PlantUML Server
@@ -39,7 +39,7 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
 fi
 
 # ---- defaults / args ----
-PLANTUML_VERSION="${1:-1.2026.9}"
+PLANTUML_VERSION="${1:-1.2026.10}"
 PLANTUML_PORT="${2:-20900}"
 PLANTUML_DIR="/opt/plantuml"
 PLANTUML_JAR="${PLANTUML_DIR}/plantuml.jar"

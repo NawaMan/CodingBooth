@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -13,11 +13,11 @@ Usage:
   $0 [VERSION]
 
 Arguments:
-  VERSION  Freeplane version (default: 1.13.3)
+  VERSION  Freeplane version (default: 1.13.5)
 
 Examples:
   $0             # install with default version
-  $0 1.13.3      # specific version
+  $0 1.13.5      # specific version
 
 Notes:
 - Downloads Freeplane .deb from GitHub releases (pinned version)
@@ -35,7 +35,7 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
 fi
 
 # ---- defaults / args ----
-FREEPLANE_VERSION="${1:-1.13.3}"
+FREEPLANE_VERSION="${1:-1.13.5}"
 
 export DEBIAN_FRONTEND=noninteractive
 
@@ -59,7 +59,7 @@ DEB_FILE="/tmp/freeplane_${FREEPLANE_VERSION}.deb"
 
 echo "• Downloading Freeplane ${FREEPLANE_VERSION} ..."
 curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL -o "$DEB_FILE" \
-  "https://github.com/freeplane/freeplane/releases/download/release-${FREEPLANE_VERSION}/freeplane_${FREEPLANE_VERSION}~upstream-1_all.deb"
+  "https://github.com/freeplane/freeplane/releases/download/release-${FREEPLANE_VERSION}/freeplane_${FREEPLANE_VERSION}.upstream-1_all.deb"
 
 echo "• Installing Freeplane ..."
 apt-get update

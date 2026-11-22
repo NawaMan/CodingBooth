@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.1.0"
 display-name = "Freeplane"
 display-disc = "Freeplane mind mapping tool (requires desktop variant)"
 display-detail = "Installs Freeplane mind mapping and knowledge management tool. Requires a desktop variant and Java (installed automatically)."
@@ -11,11 +11,11 @@ tags = [
 ]
 
 [params.FREEPLANE_VERSION]
-default = "1.13.3"
+default = "1.13.5"
 suggests = [
+    "1.13.5",
     "1.13.3",
     "1.12.8",
-    "1.12.7",
 ]
 
 [segments]

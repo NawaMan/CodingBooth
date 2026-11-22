@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 
 # Clojure setup script
 # Installs Clojure CLI (tools.deps) and optionally Leiningen
@@ -31,7 +31,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "Run as root (use sudo)"; exit 1; }
 
 # ---- defaults / args ----
-CLJ_DEFAULT_VER="1.12.6.1673"
+CLJ_DEFAULT_VER="1.12.7.1681"
 REQ_VER=""
 WITH_LEIN=1
 

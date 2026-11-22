@@ -1,4 +1,4 @@
-cb-version = "0.2.0"
+cb-version = "0.2.1"
 display-name = "Croft"
 primary = true
 display-disc = "WARNING: no way to quit Croft on the base Console"
@@ -15,7 +15,7 @@ tags = [
 
 [params.CROFT_VERSION]
 default = "latest"
-suggests = ["latest", "0.2.82"]
+suggests = ["latest", "0.2.132"]
 
 [segments]
 Boothfile = """

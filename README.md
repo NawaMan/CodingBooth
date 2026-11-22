@@ -162,7 +162,7 @@ Not sure which example to start from? See **[Examples](EXAMPLES.md)** — the fu
 
 CodingBooth provides `config` and `template` commands to quickly create a new project.
 
-The v0.83.0--rc1 catalog contains **223 templates and 371 extensions across 9 categories**,
+The v0.83.0 catalog contains **223 templates and 377 extensions across 9 categories**,
 with **368 setup scripts** and **24 install scripts**. See the
 [catalog inventory](docs/UNDERSTAND_SETUPS.md#catalog-inventory) for the breakdown and counting method.
 
