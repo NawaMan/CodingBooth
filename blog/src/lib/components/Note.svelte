@@ -33,6 +33,10 @@
 	import { getHandout } from '$lib/presentation';
 	import { kioskActive, kioskPaces, setKioskNoteItems, clearKioskNotes } from '$lib/stores/kiosk';
 	import { noteItemsFrom } from '$lib/kiosk/kioskCore';
+	import {
+		NOTE_KEY_EVENT, afterNoteCheck, noteUncheckTarget, stepNoteFocus, type NoteKeyAction
+	} from '$lib/note/noteFocusCore';
+	import { noteFocus } from '$lib/stores/noteFocus';
 
 	/** Inline style for the root element, applied last so it wins. */
 	export let style: string = '';
@@ -108,6 +112,15 @@
 	// be cleared page-wide or deck-wide from the console (gp:checks-clear event, after
 	// it wipes the relevant localStorage). Only in the presenter panel; the SCALED
 	// below-slide note stays untouched.
+	//
+	// The KEYBOARD CURSOR (note/noteFocusCore.ts): one line is "under the cursor" and
+	// acts as if the pointer were on it — a `data-highlight` line lights its target.
+	// ↑/↓ move it, Space checks its line and moves on, Shift+Space takes that back, Esc
+	// puts it away; the console sends those as `gp:note-key` events. The mouse moves
+	// the same cursor (so the two never show different lines), but a cursor the mouse
+	// only hovered onto goes away again when the pointer leaves, as a hover always
+	// did; one placed by a key or a click stays. Each line carries `data-note-line`
+	// (its index) and the one under the cursor `aria-current`, for a script to find.
 	interface CheckCtx { enabled: boolean; deckKey: string; slidePath: string; }
 	function checklist(node: HTMLElement, ctx: CheckCtx) {
 		let lines: HTMLElement[] = [];
@@ -151,6 +164,57 @@
 			const name = line.getAttribute('data-trigger');
 			if (name) { fireTrigger(name); publishTrigger(ctx.deckKey, name); }
 		};
+		// The cursor. `hovered`: the mouse put it there and no key or click has claimed
+		// it since, so it leaves with the pointer — and the console is NOT told about it:
+		// a pointer that merely rests on the notes must not turn Space from "continue the
+		// build" into "check this line".
+		let focus: number | null = null;
+		let hovered = false;
+		const tell = () => noteFocus.set(hovered ? null : focus);
+		const checks = () => lines.map((l) => l.classList.contains('gp-checked'));
+		const focusAt = (i: number | null, byHover = false) => {
+			const next = i !== null && lines[i] ? i : null;
+			hovered = next !== null && byHover;
+			if (next === focus) return tell();
+			if (focus !== null) {
+				lines[focus]?.classList.remove('gp-note-focus');
+				lines[focus]?.removeAttribute('aria-current');
+			}
+			focus = next;
+			const line = next === null ? null : lines[next];
+			if (line) {
+				line.classList.add('gp-note-focus');
+				line.setAttribute('aria-current', 'true');
+				if (!byHover && typeof line.scrollIntoView === 'function')
+					line.scrollIntoView({ block: 'nearest' });
+			}
+			light(line?.getAttribute('data-highlight') ?? null);
+			tell();
+		};
+		const onNoteKey = (e: Event) => {
+			const action = (e as CustomEvent<NoteKeyAction>).detail;
+			if (action === 'blur') return focusAt(null);
+			if (action === 'down' || action === 'up') {
+				const to = stepNoteFocus(focus, checks(), action === 'down' ? 1 : -1);
+				return focusAt(to); // a key claims a cursor the mouse had placed
+			}
+			if (focus === null) return;
+			if (action === 'check') {
+				const line = lines[focus];
+				if (!line.classList.contains('gp-checked')) {
+					setChecked(line, true);
+					fire(line);
+					persist();
+				}
+				focusAt(afterNoteCheck(focus, lines.length));
+			} else if (action === 'uncheck') {
+				const target = noteUncheckTarget(focus, checks());
+				if (target === null) return;
+				setChecked(lines[target], false);
+				persist();
+				focusAt(target);
+			}
+		};
 		function setup() {
 			teardown();
 			if (!ctx.enabled) return;
@@ -158,6 +222,21 @@
 			const saved = loadChecks(ctx.deckKey, ctx.slidePath);
 			lines.forEach((line, i) => {
 				line.classList.add('gp-note-line');
+				line.setAttribute('data-note-line', String(i));
+				// The mouse moves the cursor too: a hover while it is on the line, a click to
+				// leave it there.
+				const onOver = () => focusAt(i, true);
+				const onOut = () => { if (hovered && focus === i) focusAt(null); };
+				const onPick = () => focusAt(i);
+				line.addEventListener('pointerenter', onOver);
+				line.addEventListener('pointerleave', onOut);
+				line.addEventListener('click', onPick);
+				cleanups.push(() => {
+					line.removeEventListener('pointerenter', onOver);
+					line.removeEventListener('pointerleave', onOut);
+					line.removeEventListener('click', onPick);
+					line.removeAttribute('data-note-line');
+				});
 				const box = document.createElement('span');
 				box.className = 'gp-check';
 				box.setAttribute('role', 'checkbox');
@@ -168,29 +247,30 @@
 				const onDbl = (e: Event) => toggle(e as MouseEvent, i);
 				line.addEventListener('dblclick', onDbl);
 				cleanups.push(() => line.removeEventListener('dblclick', onDbl));
-				// A `data-highlight="name"` line becomes a spotlight trigger: hover to
-				// light the named Block, leave to clear. Ephemeral by design — the cue
-				// tracks the speaker's attention, it is not a persistent check.
-				const hl = line.getAttribute('data-highlight');
-				if (hl) {
+				// A `data-highlight="name"` line is a spotlight trigger: while the cursor is
+				// on it (a hover, or ↑/↓) the named Block is lit, and it clears when the
+				// cursor leaves. Ephemeral by design — the cue tracks the speaker's
+				// attention, it is not a persistent check. `focusAt` does the lighting.
+				if (line.hasAttribute('data-highlight')) {
 					line.classList.add('gp-hl-line');
-					const onEnter = () => light(hl);
-					const onLeave = () => light(null);
-					line.addEventListener('pointerenter', onEnter);
-					line.addEventListener('pointerleave', onLeave);
-					cleanups.push(() => {
-						line.classList.remove('gp-hl-line');
-						line.removeEventListener('pointerenter', onEnter);
-						line.removeEventListener('pointerleave', onLeave);
-					});
+					cleanups.push(() => line.classList.remove('gp-hl-line'));
 				}
 				if (line.hasAttribute('data-trigger')) line.classList.add('gp-trigger-line');
 				setChecked(line, !!saved[i]); // restore persisted state
 			});
 			window.addEventListener('gp:checks-clear', onClear);
+			window.addEventListener(NOTE_KEY_EVENT, onNoteKey);
 		}
 		function teardown() {
 			window.removeEventListener('gp:checks-clear', onClear);
+			window.removeEventListener(NOTE_KEY_EVENT, onNoteKey);
+			if (focus !== null) {
+				lines[focus]?.classList.remove('gp-note-focus');
+				lines[focus]?.removeAttribute('aria-current');
+				focus = null;
+				noteFocus.set(null);
+			}
+			hovered = false;
 			cleanups.forEach((fn) => fn());
 			cleanups = [];
 			light(null); // never leave a spotlight stuck when the note re-sets or unmounts
@@ -305,6 +385,12 @@
 }
 .note.presenter :global(.gp-hl-line:hover) {
 	color: var(--spotlight-ring, #F0A33E);
+}
+/* The line under the cursor (↑/↓, or the mouse): a bar down its left edge and a tint,
+   strong enough to find at a glance from a lectern. */
+.note.presenter :global(.gp-note-focus) {
+	box-shadow: inset 6px 0 0 var(--note-focus, #F0A33E);
+	background-color: var(--note-focus-bg, rgba(240, 163, 62, 0.22));
 }
 .note.presenter :global(.gp-check) {
 	display: inline-block;
