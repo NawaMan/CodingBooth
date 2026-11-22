@@ -66,6 +66,10 @@ type fakeDeps struct {
 	shelled   []string
 	logViewed []string
 
+	readmeFor []string // each folder whose README was asked for
+	noReadme  bool     // the folders have no README
+	readmeErr error
+
 	configs    map[string]ProjectConfig // by .booth dir
 	configRead []string                 // each .booth dir read
 }
@@ -115,6 +119,13 @@ func (f *fakeDeps) deps() Deps {
 			f.edited = append(f.edited, path)
 			if f.editorErr != nil {
 				return nil, f.editorErr
+			}
+			return exec.Command("true"), nil
+		},
+		Readme: func(path string) (*exec.Cmd, error) {
+			f.readmeFor = append(f.readmeFor, path)
+			if f.readmeErr != nil || f.noReadme {
+				return nil, f.readmeErr
 			}
 			return exec.Command("true"), nil
 		},
@@ -730,9 +741,9 @@ func TestPlainStatusStaysOneLine(t *testing.T) {
 func TestDeleteIsTheDeleteKeyAndBackspaceNotD(t *testing.T) {
 	f := &fakeDeps{}
 	m := loaded(f, stopped("web"))
-	m, cmd := press(t, m, "d")
-	if m.confirm != nil || cmd != nil || m.status != "" {
-		t.Fatalf("d must do nothing: confirm %+v status %q", m.confirm, m.status)
+	// d is the README now; it must never ask to delete.
+	if asked, _ := press(t, m, "d"); asked.confirm != nil || len(f.ran) != 0 {
+		t.Fatalf("d must not delete: confirm %+v ran %v", asked.confirm, f.ran)
 	}
 	for _, key := range []string{"delete", "backspace"} {
 		asked, _ := press(t, m, key)

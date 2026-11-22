@@ -87,6 +87,35 @@ func (m model) promptLine() string {
 	return line
 }
 
+// openReadme shows the README of the selected row's folder (d) in a pager,
+// which takes the terminal and comes back here when it is left.
+func (m model) openReadme() (tea.Model, tea.Cmd) {
+	r, ok := m.currentRow()
+	if !ok || r.path() == "" || m.deps.Readme == nil {
+		return m, nil
+	}
+	path := r.path()
+	if r.worktree != nil && r.worktree.Prunable {
+		m.setStatus(r.worktree.Name()+"'s folder is gone.", false)
+		return m, nil
+	}
+	cmd, err := m.deps.Readme(path)
+	switch {
+	case err != nil:
+		m.setStatus(err.Error(), true)
+		return m, nil
+	case cmd == nil:
+		m.setStatus("No README in "+m.shortPath(path)+".", false)
+		return m, nil
+	}
+	m.setStatus("", false)
+	p := plan{Verb: "show the README of"}
+	return m, tea.ExecProcess(cmd, func(err error) tea.Msg {
+		// Leaving a pager with a non-zero status is not a failure.
+		return execDoneMsg{name: path, plan: p, err: endedByUser(err)}
+	})
+}
+
 // openIn opens path in the user's editor (e) or in GitKraken (K).
 func (m model) openIn(key, path string) (tea.Model, tea.Cmd) {
 	if key == keyEditor {

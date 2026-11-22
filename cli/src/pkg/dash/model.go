@@ -37,8 +37,10 @@ const (
 	keyConfig  = "c"
 	keyNew     = "n"
 	keyEditor  = "e"
-	keyTerm    = "t"
-	keyLog     = "l"
+	// The README is d (docs): r restarts, R refreshes.
+	keyReadme = "d"
+	keyTerm   = "t"
+	keyLog    = "l"
 	// GitKraken is K: g already jumps to the top.
 	keyGitKraken = "K"
 	keyRefresh   = "R"
@@ -80,6 +82,10 @@ type Deps struct {
 	// Editor is the command that opens path in the user's editor; it gets the
 	// terminal, so a terminal editor works too.
 	Editor func(path string) (*exec.Cmd, error)
+	// Readme is the command that shows the README of the folder path, taking
+	// the terminal (a pager); nil with no error when the folder has none. A
+	// nil Readme turns d off.
+	Readme func(path string) (*exec.Cmd, error)
 	// LogView is how l shows a booth's log: the log command, and the pager
 	// it is piped into (nil: the log command takes the terminal itself).
 	LogView func(booth lifecycle.Booth) (logs, pager *exec.Cmd)
@@ -610,6 +616,8 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 		return m, tea.Exec(shell, func(err error) tea.Msg {
 			return execDoneMsg{name: path, plan: plan{Verb: "open a host shell in"}, err: err}
 		})
+	case keyReadme:
+		return m.openReadme()
 	case keyEditor, keyGitKraken:
 		r, ok := m.currentRow()
 		if !ok || r.path() == "" {

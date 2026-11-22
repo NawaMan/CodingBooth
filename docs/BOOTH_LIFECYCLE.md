@@ -111,6 +111,7 @@ seconds (`--interval 5s` to change that) and takes `--engine` like the other com
 | `i` | Show or hide its details below the table (see below) |
 | `c` | Show or hide its project config in the same place (see below) |
 | `l` | Show its whole log, following it while it runs: piped into `less +F` (`ctrl+c` pauses to scroll or search with `/`, `F` follows again, `q` comes back); without `less`, `booth logs -f`, which `ctrl+c` ends |
+| `d` | Read the README in its folder (docs) — the booth's code path, or the worktree — in a pager; `q` comes back to the dashboard (see below) |
 | `t` | Open a shell on the host (`$SHELL`) in its folder — the booth's code path, or the worktree; `exit` comes back to the dashboard |
 | `o` | Open its page in the browser (`http://localhost:<port>`, `https` for a `--public` booth) |
 | `p` | Pick one of its TCP ports — what `booth expose list` shows: front door, published ports, `booth--expose` tunnels — and open it (`enter`; `esc` goes back) |
@@ -140,6 +141,15 @@ several rows), in place of the table; it lists only what is on (no `K` without G
 `↑`/`↓`, `pgup`/`pgdown` and `home`/`end` scroll it when it is taller than the screen, and `?`, `esc`,
 `q` or `enter` goes back to the table. No other key does anything while it is open, and the table
 keeps refreshing behind it.
+
+**Reading a project's README.** `d` shows the README of the selected row's folder, so what a
+project or a worktree is for is one key away. It takes the first of `README.md`,
+`README.markdown`, `README`, `README.txt` and `README.rst` that the folder has, whatever the case of
+its name, and only in that folder itself: a worktree's row shows the worktree's copy. Markdown is
+rendered by [glow](https://github.com/charmbracelet/glow) (`glow -p`) when it is installed on the
+host; without glow, and for the other kinds, the file is shown as it is in `less` (`more` where
+there is no `less`). `q` leaves the pager and comes back. A folder with no README says so on the
+status line.
 
 Starting takes the terminal, because booth may build an image, and asks before starting a booth
 that could reach the host (`--dind`, `--privileged`, …); when a start fails, the dashboard waits for

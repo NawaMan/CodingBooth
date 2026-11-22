@@ -4,6 +4,10 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth dashboard`: `d` reads a project's README.** On a booth or a worktree row, `d` (docs)
+  shows the README in that folder in a pager and comes back on `q`: Markdown rendered by `glow -p`
+  when glow is installed on the host, otherwise as it is in `less`. A folder with no README says
+  so. See [booth lifecycle → dashboard](BOOTH_LIFECYCLE.md#dashboard).
 - **`booth dashboard`: a compact command hint, and `?` for every key.** The two hint lines at the
   bottom had grown past any terminal's width and were cut (`q quit` was never shown). They now name
   only the keys used most, each line at most 80 characters (more keys on a wider terminal, up to

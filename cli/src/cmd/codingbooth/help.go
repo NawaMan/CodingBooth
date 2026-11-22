@@ -616,6 +616,8 @@ KEYS:
              answer comes back here (as message send does)
   l          Show its whole log, following it (in less: ctrl+c pauses, F
              follows again, q comes back)
+  d          Read the README in its folder (docs): Markdown through glow -p
+             when glow is installed, else in less (q comes back)
   t          Open a host shell ($SHELL) in its folder (back here on exit)
   e          Open its folder in $VISUAL ($EDITOR, else code)
   K          Open its folder in GitKraken

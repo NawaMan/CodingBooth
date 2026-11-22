@@ -34,7 +34,7 @@ func TestCommandHintIsTwoLinesThatFit(t *testing.T) {
 	hints := map[string][]string{"a row": m.helpLines()}
 
 	plain := loaded(&fakeDeps{}, running("web"))
-	plain.deps.Hide, plain.deps.SaveOrder, plain.deps.GitKraken, plain.deps.Config = nil, nil, nil, nil
+	plain.deps.Hide, plain.deps.SaveOrder, plain.deps.GitKraken, plain.deps.Config, plain.deps.Readme = nil, nil, nil, nil, nil
 	hints["nothing optional"] = plain.helpLines()
 
 	// Every row selected, to make the count as wide as it gets here.
@@ -123,7 +123,7 @@ func TestCommandHintNamesMoreKeysOnAWiderTerminal(t *testing.T) {
 	}
 	m.width = 100
 	wide := m.helpLines()
-	if !strings.Contains(wide[0], "· o open · p ports") || !strings.Contains(wide[1], "· H hidden") {
+	if !strings.Contains(wide[0], "· o open · p ports · d docs") || !strings.Contains(wide[1], "· H hidden") {
 		t.Errorf("at 100 columns the hint names no more keys: %q", wide)
 	}
 	// It stops growing at hintMax, and is drawn whole.
@@ -152,7 +152,7 @@ func TestHelpPageListsEveryKey(t *testing.T) {
 		}
 	}
 	for _, key := range []string{keyStart, keyStop, keyRestart, keyRemove, keyShell, keyOpen, keyPorts, keyMessage,
-		keyDetail, keyConfig, keyNew, keyEditor, keyTerm, keyLog, keyGitKraken, keyRefresh, keyHide, keyHidden,
+		keyDetail, keyConfig, keyNew, keyEditor, keyReadme, keyTerm, keyLog, keyGitKraken, keyRefresh, keyHide, keyHidden,
 		keySeparator, keyHelp, "ctrl+↑/↓", "shift+↑/↓", "esc", "q", "j", "k", "g", "G", "pgup", "pgdown", "home", "end"} {
 		if !keys[key] {
 			t.Errorf("the help page does not list %q:\n%s", key, strings.Join(page, "\n"))
@@ -164,9 +164,9 @@ func TestHelpPageListsEveryKey(t *testing.T) {
 		}
 	}
 	// What is off is not offered.
-	m.deps.GitKraken, m.deps.Config, m.deps.Hide, m.deps.SaveOrder = nil, nil, nil, nil
+	m.deps.GitKraken, m.deps.Config, m.deps.Hide, m.deps.SaveOrder, m.deps.Readme = nil, nil, nil, nil, nil
 	off := helpText(m)
-	for _, gone := range []string{"GitKraken", "project config", "hide it;", "separator", "ctrl+↑/↓", "Arrange"} {
+	for _, gone := range []string{"README", "GitKraken", "project config", "hide it;", "separator", "ctrl+↑/↓", "Arrange"} {
 		if strings.Contains(off, gone) {
 			t.Errorf("with it off, the help page still says %q:\n%s", gone, off)
 		}

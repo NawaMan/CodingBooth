@@ -100,6 +100,9 @@ func runDashboard(version string) {
 		},
 		GitStatus: lifecycle.GitStatus,
 		Editor:    editorCommand,
+		Readme: func(path string) (*exec.Cmd, error) {
+			return readmeCommand(path, exec.LookPath)
+		},
 		HostShell: hostShell,
 		LogView: func(b lifecycle.Booth) (*exec.Cmd, *exec.Cmd) {
 			return logView(self, b)
@@ -171,6 +174,50 @@ func editorCommand(path string) (*exec.Cmd, error) {
 		return nil, fmt.Errorf("editor %q is not installed", fields[0])
 	}
 	return exec.Command(bin, append(fields[1:], path)...), nil
+}
+
+// readmeNames are the file names d takes for a folder's README, the first
+// found winning; case is ignored (README.md, Readme.md, readme.md).
+var readmeNames = []string{"readme.md", "readme.markdown", "readme", "readme.txt", "readme.rst"}
+
+// findReadme is the README file in dir, "" when it has none.
+func findReadme(dir string) string {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return ""
+	}
+	for _, want := range readmeNames {
+		for _, entry := range entries { // sorted by name, so the pick is the same every time
+			if !entry.IsDir() && strings.ToLower(entry.Name()) == want {
+				return filepath.Join(dir, entry.Name())
+			}
+		}
+	}
+	return ""
+}
+
+// readmeCommand shows dir's README in a pager: Markdown rendered by glow when
+// it is installed (`glow -p`), anything else — and Markdown without glow — as
+// it is, in less (more, where there is no less). It is nil, with no error,
+// when dir has no README. look is exec.LookPath.
+func readmeCommand(dir string, look func(string) (string, error)) (*exec.Cmd, error) {
+	file := findReadme(dir)
+	if file == "" {
+		return nil, nil
+	}
+	switch strings.ToLower(filepath.Ext(file)) {
+	case ".md", ".markdown":
+		if glow, err := look("glow"); err == nil {
+			return exec.Command(glow, "-p", file), nil
+		}
+	}
+	if less, err := look("less"); err == nil {
+		return exec.Command(less, "-R", file), nil
+	}
+	if more, err := look("more"); err == nil {
+		return exec.Command(more, file), nil
+	}
+	return nil, fmt.Errorf("no pager to show %s: install glow or less", filepath.Base(file))
 }
 
 // openGitKraken starts GitKraken on path and leaves it running.

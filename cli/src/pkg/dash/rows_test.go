@@ -477,3 +477,63 @@ func TestGroupsFollowEachOtherWithNoBlankOrHeadingLine(t *testing.T) {
 		t.Fatalf("up from loose, then t, lands on idea: %+v", r)
 	}
 }
+
+func TestDShowsTheRowsReadme(t *testing.T) {
+	f := &fakeDeps{repos: testRepos()}
+	m := loaded(f, boothAt("fixer", "/home/u/dev/proj/worktree/fix"))
+	// The main checkout, with no booth: its own folder.
+	if _, cmd := press(t, m, "d"); cmd == nil {
+		t.Fatal("d must open the README of a row without a booth")
+	}
+	// A booth on a worktree: the worktree's copy.
+	m, _ = press(t, m, "down")
+	m2, cmd := press(t, m, "d")
+	if cmd == nil || m2.status != "" || m2.confirm != nil {
+		t.Fatalf("d on a booth: cmd %v status %q confirm %+v", cmd != nil, m2.status, m2.confirm)
+	}
+	if want := []string{"/home/u/dev/proj", "/home/u/dev/proj/worktree/fix"}; !reflect.DeepEqual(f.readmeFor, want) {
+		t.Errorf("README asked for %v, want %v", f.readmeFor, want)
+	}
+	if len(f.ran)+len(f.execed) != 0 {
+		t.Errorf("d ran booth: %v %v", f.ran, f.execed)
+	}
+
+	f.noReadme = true
+	m3, cmd := press(t, m, "d")
+	if cmd != nil || m3.statusErr || m3.status != "No README in ~/dev/proj/worktree/fix." {
+		t.Errorf("no README: cmd %v status %q err %v", cmd != nil, m3.status, m3.statusErr)
+	}
+	f.readmeErr = errors.New("no pager: install glow or less")
+	m4, cmd := press(t, m, "d")
+	if cmd != nil || !m4.statusErr || !strings.Contains(m4.status, "no pager") {
+		t.Errorf("no pager: cmd %v status %q", cmd != nil, m4.status)
+	}
+
+	// Off without a reader.
+	m.deps.Readme = nil
+	if off, cmd := press(t, m, "d"); cmd != nil || off.status != "" {
+		t.Errorf("d without a README reader: cmd %v status %q", cmd != nil, off.status)
+	}
+}
+
+func TestDOnAGoneBoothAndASeparator(t *testing.T) {
+	gone := boothAt("old", "/home/u/dev/old")
+	gone.State = lifecycle.StateGone
+	store := &orderStore{}
+	f := &fakeDeps{}
+	m := newModel(store.wire(f.deps()))
+	next, _ := m.Update(snapshotMsg{seq: 1, booths: []lifecycle.Booth{gone}})
+	m = next.(model)
+	// A gone booth still has its folder.
+	if _, cmd := press(t, m, "d"); cmd == nil || !reflect.DeepEqual(f.readmeFor, []string{"/home/u/dev/old"}) {
+		t.Fatalf("d on a gone booth: cmd %v asked %v", cmd != nil, f.readmeFor)
+	}
+	// A separator has none: d does nothing on it.
+	m, _ = press(t, m, "-")
+	if r, _ := m.currentRow(); r.sep == "" {
+		t.Fatalf("not on the separator")
+	}
+	if sep, cmd := press(t, m, "d"); cmd != nil || len(f.readmeFor) != 1 || sep.statusErr {
+		t.Errorf("d on a separator: cmd %v asked %v", cmd != nil, f.readmeFor)
+	}
+}

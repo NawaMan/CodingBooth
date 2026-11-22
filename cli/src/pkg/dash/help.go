@@ -67,7 +67,11 @@ func (m model) helpLines() []string {
 		return []string{on, "↑/↓ move · - separator · ? help · q quit"}
 	}
 	// What a wider terminal has room for, most used first.
-	look := []string{"o open", "p ports", "m message", "t terminal", "e editor"}
+	look := []string{"o open", "p ports"}
+	if m.deps.Readme != nil {
+		look = append(look, "d docs")
+	}
+	look = append(look, "m message", "t terminal", "e editor")
 	if m.deps.Config != nil {
 		look = append(look, "c config")
 	}
@@ -116,6 +120,11 @@ func (m model) helpSections() []helpSection {
 		helpEntry{"l", "show its whole log, following it while it runs"},
 		helpEntry{"o", "open its page in the browser"},
 		helpEntry{"p", "pick one of its exposed ports to open"},
+	)
+	if m.deps.Readme != nil {
+		look = append(look, helpEntry{"d", "read the README in its folder (docs)"})
+	}
+	look = append(look,
 		helpEntry{"t", "open a host shell in its folder"},
 		helpEntry{"e", "open its folder in your editor ($VISUAL, $EDITOR, code)"},
 	)
