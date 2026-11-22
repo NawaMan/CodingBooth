@@ -35,6 +35,12 @@
 // mouse-only. The menu's own search box claims those keys itself once focused
 // (stopPropagation); this is the fallback for browsing without the caret there.
 //
+// The NOTE LINES take ↑/↓ (while the TOC menu is closed): they move a cursor from line
+// to line, and the line under it acts as if the pointer were on it. While that cursor
+// is out, Space checks its line and moves on (Shift+Space takes it back) and Enter
+// becomes the CONTINUE that Space was. Esc puts the cursor away, and Space is CONTINUE
+// again. Where the cursor lands is note/noteFocusCore.ts.
+//
 // Total: garbage input → 'ignore', never throws.
 
 import { isChromeTypingTarget } from './chromeArmCore';
@@ -56,6 +62,10 @@ export type PresenterKeyIntent =
 	| 'tocUp'
 	| 'tocDown'
 	| 'tocSelect'
+	| 'noteUp'
+	| 'noteDown'
+	| 'noteCheck'
+	| 'noteUncheck'
 	| 'ignore';
 
 /**
@@ -68,11 +78,14 @@ export type PresenterKeyIntent =
  *   its rows instead of doing nothing — the fallback for browsing it without the
  *   caret in its search box, which claims those keys itself (stopPropagation)
  *   once focused.
+ * @param noteFocused  is the note-line cursor out? While it is, Space checks its line
+ *   (Shift+Space unchecks) and Enter is the CONTINUE.
  */
 export function presenterKeyIntent(
 	e: KeyboardEvent,
 	inkOffered: boolean = false,
-	tocOpen: boolean = false
+	tocOpen: boolean = false,
+	noteFocused: boolean = false
 ): PresenterKeyIntent {
 	const k = (e?.key ?? '').toLowerCase();
 
@@ -99,6 +112,17 @@ export function presenterKeyIntent(
 		if (k === 'arrowdown') return 'tocDown';
 		if (k === 'arrowup') return 'tocUp';
 		if (k === 'enter') return 'tocSelect';
+	}
+
+	// The note lines: ↑/↓ move the cursor (a closed TOC menu leaves them free), and
+	// while it is out Space checks its line and Enter takes over CONTINUE.
+	if (!tocOpen) {
+		if (k === 'arrowdown') return 'noteDown';
+		if (k === 'arrowup') return 'noteUp';
+	}
+	if (noteFocused) {
+		if (isSpaceKey(e)) return e.shiftKey ? 'noteUncheck' : 'noteCheck';
+		if (k === 'enter') return 'continue';
 	}
 
 	// Paging. Space defers to the build via a CONTINUE relay ('continue'); Shift+Space

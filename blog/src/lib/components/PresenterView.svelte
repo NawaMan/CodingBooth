@@ -45,6 +45,8 @@
 	} from '$lib/stores/presenter';
 	import { canAnnotate, strokes, resetSlideInk, resetAllInk } from '$lib/stores/annotation';
 	import { presenterKeyIntent } from '$lib/chrome/presenterKeyCore';
+	import { NOTE_KEY_EVENT, type NoteKeyAction } from '$lib/note/noteFocusCore';
+	import { noteFocus } from '$lib/stores/noteFocus';
 	import { audienceBare, setBareChoice } from '$lib/stores/chromeBare';
 	import { overviewOpen } from '$lib/stores/overviewOpen';
 	import type { Page } from '$lib/utils/navigate';
@@ -285,10 +287,33 @@
 		? 'Editing notes needs the dev server (pnpm dev) — there is no source to write here.'
 		: 'Edit this slide\'s speaker note (E)';
 
+	// The note lines' keyboard cursor lives in <Note> (it owns the lines); the console
+	// only says what was pressed.
+	function noteKey(action: NoteKeyAction) {
+		if (browser) window.dispatchEvent(new CustomEvent(NOTE_KEY_EVENT, { detail: action }));
+	}
+
 	function onKeydown(e: KeyboardEvent) {
-		switch (presenterKeyIntent(e, $canAnnotate, tocOpen)) {
+		switch (presenterKeyIntent(e, $canAnnotate, tocOpen, $noteFocus !== null)) {
 			case 'close':
 				closeMenus();
+				noteKey('blur');
+				break;
+			case 'noteDown':
+				e.preventDefault();
+				noteKey('down');
+				break;
+			case 'noteUp':
+				e.preventDefault();
+				noteKey('up');
+				break;
+			case 'noteCheck':
+				e.preventDefault();
+				noteKey('check');
+				break;
+			case 'noteUncheck':
+				e.preventDefault();
+				noteKey('uncheck');
 				break;
 			case 'toc': {
 				e.preventDefault();

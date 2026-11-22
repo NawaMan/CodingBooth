@@ -119,6 +119,11 @@
 	--spotlight-ring: var(--ACCENT-WARM, #f0a33e);
 	--spotlight-glow: var(--ACCENT-WARM, #f0a33e);
 	--spotlight-scrim: var(--BACKDROP, #000000);
+	/* The keyboard cursor on the presenter console's note lines (Note.svelte): a bar down
+	   the line's left edge and a tint. The notes panel is light paper on every theme, so
+	   these are fixed, not theme ink. */
+	--note-focus: #f0a33e;
+	--note-focus-bg: rgba(240, 163, 62, 0.22);
 
 	/* Toast — a transient banner the speaker (or a build) raises over the live slide,
 	   optionally dimming the slide around a named Block (Spotlight's punch-out geometry).
