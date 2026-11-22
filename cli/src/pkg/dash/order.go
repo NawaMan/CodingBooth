@@ -19,7 +19,8 @@ import (
 // linked worktree's row it moves that worktree within its repository instead;
 // the main checkout always leads. The order is kept by Deps.SaveOrder, so the
 // next dashboard opens with it. Anything not in it yet goes to the bottom, by
-// name, and is added: the first time, that sorts everything by name.
+// name, and is added: the first time, that sorts everything by name. What has
+// no row any more is taken out of it (see withoutGone).
 //
 // Several booths on one checkout (the main one or a linked worktree) have an
 // order of their own: ctrl+↑/↓ on one of them swaps it with the booth above or
@@ -88,15 +89,16 @@ func (m *model) arrange(all []row) []row {
 	if m.deps.SaveOrder == nil {
 		return all
 	}
-	if groups, inners := missingUnits(all, m.order); len(groups)+len(inners) > 0 {
+	groups, inners := missingUnits(all, m.order)
+	if _, gone := m.withoutGone(all, m.order); len(groups)+len(inners)+gone > 0 {
 		// Another dashboard may have added them, or changed the order, since
-		// it was read: add to the order as saved now.
-		order := m.savedOrder()
+		// it was read: change the order as saved now.
+		order, gone := m.withoutGone(all, m.savedOrder())
 		groups, inners = missingUnits(all, order)
 		for _, u := range append(groups, inners...) {
 			order = append(order, lifecycle.OrderEntry{Key: u.key, Path: u.path})
 		}
-		if len(groups)+len(inners) == 0 {
+		if len(groups)+len(inners)+gone == 0 {
 			m.order = order
 		} else if err := m.saveOrder(order); err != nil {
 			m.order = order // still shown in this order; the next change saves it again
@@ -137,6 +139,34 @@ func (m *model) arrange(all []row) []row {
 		return bi < bj
 	})
 	return sorted
+}
+
+// withoutGone is order without the places of what has no row in all any more:
+// a repository's or a booth's as a group, a linked worktree's in its
+// repository, and a booth's among the booths on its checkout. So what was
+// deleted and comes back (a test's booth, run again; a project given a booth
+// again) is new, and goes to the bottom with the other new ones. It reports
+// how many it dropped. A separator's place stays, and so does a hidden row's:
+// it is a row. Nothing is dropped before the first snapshot, or while an
+// engine did not answer: its booths are only not listed.
+func (m *model) withoutGone(all []row, order []lifecycle.OrderEntry) ([]lifecycle.OrderEntry, int) {
+	if !m.loaded || len(m.warnings) > 0 {
+		return order, 0
+	}
+	live := map[string]bool{}
+	for _, r := range all {
+		live[groupKey(r)] = true
+		live[innerKey(r)] = true
+		live[siblingKey(r)] = true
+	}
+	kept := make([]lifecycle.OrderEntry, 0, len(order))
+	for _, e := range order {
+		if !live[e.Key] && !strings.HasPrefix(e.Key, separatorPrefix) {
+			continue
+		}
+		kept = append(kept, e)
+	}
+	return kept, len(order) - len(kept)
 }
 
 // missingUnits are the groups and the worktrees of all that order does not
