@@ -96,6 +96,49 @@ func TestCommandHintIsTwoLinesThatFit(t *testing.T) {
 	}
 }
 
+func TestCommandHintNamesMoreKeysOnAWiderTerminal(t *testing.T) {
+	m, _ := hintModel(t)
+	narrow := m.helpLines()
+	for width := 0; width <= 200; width++ {
+		m.width = width
+		lines := m.helpLines()
+		room := hintWidth
+		if width > hintWidth {
+			room = min(width, hintMax)
+		}
+		for i, line := range lines {
+			if w := lipgloss.Width(line); w > room {
+				t.Fatalf("at %d columns a hint line is %d wide, over %d: %q", width, w, room, line)
+			}
+			if !strings.HasPrefix(line, strings.TrimSuffix(narrow[i], " · ? help · q quit")) {
+				t.Fatalf("at %d columns the hint lost its first keys: %q", width, line)
+			}
+		}
+		if !strings.HasSuffix(lines[1], " · ? help · q quit") {
+			t.Fatalf("at %d columns the hint does not end in ? help · q quit: %q", width, lines[1])
+		}
+		if width <= hintWidth && (lines[0] != narrow[0] || lines[1] != narrow[1]) {
+			t.Fatalf("at %d columns the hint is not the narrow one: %q", width, lines)
+		}
+	}
+	m.width = 100
+	wide := m.helpLines()
+	if !strings.Contains(wide[0], "· o open · p ports") || !strings.Contains(wide[1], "· H hidden") {
+		t.Errorf("at 100 columns the hint names no more keys: %q", wide)
+	}
+	// It stops growing at hintMax, and is drawn whole.
+	m.width, m.height = 200, 30
+	if got := m.helpLines(); got[0] != wide[0] || got[1] != wide[1] {
+		t.Errorf("at 200 columns the hint is %q, want the one at %d: %q", got, hintMax, wide)
+	}
+	view := stripANSI(m.View())
+	for _, line := range wide {
+		if !strings.Contains(view, line) {
+			t.Errorf("the wide hint is cut: %q\n%s", line, view)
+		}
+	}
+}
+
 func TestHelpPageListsEveryKey(t *testing.T) {
 	m, _ := hintModel(t)
 	page := m.helpPage()

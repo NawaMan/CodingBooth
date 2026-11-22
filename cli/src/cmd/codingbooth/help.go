@@ -637,7 +637,8 @@ KEYS:
              ends it
   ?          Show every key, in place of the table (↑/↓ scroll); ? or esc
              goes back. The two hint lines at the bottom name only the keys
-             used most, so that they fit an 80-column terminal whole
+             used most, so that they fit an 80-column terminal whole (a wider
+             one shows more of them, up to 100 columns)
   R          Refresh now             q      Quit
 
 VERSION shows the CodingBooth version that built each booth, in the warning

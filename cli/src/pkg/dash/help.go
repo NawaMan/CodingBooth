@@ -14,13 +14,34 @@ import (
 
 // The command hint is the two lines below the status line. It names only the
 // keys used most, so that it fits a narrow terminal whole: each line is at
-// most hintWidth cells, whatever is selected. The help page (?) lists every
-// key.
+// most hintWidth cells, whatever is selected. On a wider terminal a row's
+// hint names more keys, as many as fit, up to hintMax cells: it stays compact
+// on a very wide one. The help page (?) lists every key.
 
 const keyHelp = "?"
 
-// hintWidth is the widest a command hint line may be.
+// hintWidth is the widest a command hint line may be on any terminal.
 const hintWidth = 80
+
+// hintMax is the widest a command hint line grows to on a wider terminal.
+const hintMax = 100
+
+// hintRoom is how wide a hint line may be on this terminal.
+func (m model) hintRoom() int {
+	return max(hintWidth, min(m.width, hintMax))
+}
+
+// hintLine is base, then as many of more as still fit in room, in their order
+// (one too long is passed over for a shorter one after it), then end.
+func hintLine(room int, base string, more []string, end string) string {
+	line := base
+	for _, item := range more {
+		if lipgloss.Width(line+" · "+item+end) <= room {
+			line += " · " + item
+		}
+	}
+	return line + end
+}
 
 // helpLines is the command hint for what is selected now.
 func (m model) helpLines() []string {
@@ -45,17 +66,32 @@ func (m model) helpLines() []string {
 		}
 		return []string{on, "↑/↓ move · - separator · ? help · q quit"}
 	}
+	// What a wider terminal has room for, most used first.
+	look := []string{"o open", "p ports", "m message", "t terminal", "e editor"}
+	if m.deps.Config != nil {
+		look = append(look, "c config")
+	}
 	move := "↑/↓ move · shift+↑/↓ select · n new worktree"
+	var arrange []string
 	switch {
 	case m.deps.Hide == nil:
 	case m.showHidden:
 		move = "↑/↓ move · shift+↑/↓ select · h unhide · H back"
 	default:
 		move += " · h hide"
+		arrange = append(arrange, "H hidden")
 	}
+	if m.deps.SaveOrder != nil {
+		arrange = append(arrange, "ctrl+↑/↓ reorder")
+		if !m.showHidden {
+			arrange = append(arrange, "- separator")
+		}
+	}
+	arrange = append(arrange, "R refresh")
+	room := m.hintRoom()
 	return []string{
-		"enter shell · s start · x stop · r restart · del delete · i info · l log",
-		move + " · ? help · q quit",
+		hintLine(room, "enter shell · s start · x stop · r restart · del delete · i info · l log", look, ""),
+		hintLine(room, move, arrange, " · ? help · q quit"),
 	}
 }
 

@@ -133,7 +133,8 @@ seconds (`--interval 5s` to change that) and takes `--engine` like the other com
 
 **The command hint and the help page.** The two lines at the bottom of the screen are a hint, not
 the whole list: they name the keys used most, and each line is at most 80 characters, so they are
-never cut on a terminal of the usual width. They follow what is selected: a row, several rows, a
+never cut on a terminal of the usual width. On a wider terminal a row's hint names more keys, as
+many as fit, up to 100 characters. They follow what is selected: a row, several rows, a
 separator, or the hidden rows. `?` shows every key, grouped (move, look, booth, worktree, arrange,
 several rows), in place of the table; it lists only what is on (no `K` without GitKraken). There
 `↑`/`↓`, `pgup`/`pgdown` and `home`/`end` scroll it when it is taller than the screen, and `?`, `esc`,
