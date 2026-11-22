@@ -6,6 +6,7 @@ package dash
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/nawaman/codingbooth/src/pkg/lifecycle"
@@ -58,9 +59,12 @@ func (r row) path() string {
 var otherBooths = &lifecycle.Repo{Name: "Other booths"}
 
 // buildRows lays the booths out under their repositories. Each worktree shows
-// its booths (a booth belongs to the worktree holding its code path), or one
-// row of its own when it has none. Booths in no repository come last under
-// "Other booths". Without repositories the table is the plain booth list.
+// its booths (a booth belongs to the worktree its code path is), or one row of
+// its own when it has none. The other booths come last under "Other booths":
+// those in no repository, and those on a folder inside a worktree (a test's or
+// an example's), which are not the worktree's own. A repository found only by
+// such a booth is left out, unless it is the one the dashboard runs in. Without
+// repositories the table is the plain booth list.
 func buildRows(booths []lifecycle.Booth, repos []lifecycle.Repo) []row {
 	if len(repos) == 0 {
 		rows := make([]row, len(booths))
@@ -70,25 +74,31 @@ func buildRows(booths []lifecycle.Booth, repos []lifecycle.Repo) []row {
 		return rows
 	}
 
-	// Each booth goes to the deepest worktree holding its code (a worktree may
-	// sit inside the main checkout).
+	// Each booth goes to the worktree its code path is. One on a folder inside
+	// a worktree is not that worktree's: it goes with the others.
 	type place struct{ repo, worktree int }
 	placed := map[place][]int{}
+	own, inside := map[int]bool{}, map[int]bool{}
 	var others []int
 	for i, b := range booths {
-		best, depth := place{-1, -1}, -1
+		at := place{-1, -1}
 		for r := range repos {
 			for w, wt := range repos[r].Worktrees {
-				if b.CodePath != "" && lifecycle.Within(b.CodePath, wt.Path) && len(wt.Path) > depth {
-					best, depth = place{r, w}, len(wt.Path)
+				switch {
+				case b.CodePath == "":
+				case filepath.Clean(b.CodePath) == filepath.Clean(wt.Path):
+					at = place{r, w}
+				case lifecycle.Within(b.CodePath, wt.Path):
+					inside[r] = true
 				}
 			}
 		}
-		if best.repo < 0 {
+		if at.repo < 0 {
 			others = append(others, i)
 			continue
 		}
-		placed[best] = append(placed[best], i)
+		placed[at] = append(placed[at], i)
+		own[at.repo] = true
 	}
 
 	// No heading lines: each repository's main checkout leads its group and
@@ -97,6 +107,9 @@ func buildRows(booths []lifecycle.Booth, repos []lifecycle.Repo) []row {
 	var rows []row
 	for r := range repos {
 		repo := &repos[r]
+		if inside[r] && !own[r] && !repo.Here {
+			continue // found only by a booth on a folder inside it
+		}
 		for w := range repo.Worktrees {
 			wt := &repo.Worktrees[w]
 			lead := w == 0 // the main checkout comes first (a bare repository's first worktree stands in)

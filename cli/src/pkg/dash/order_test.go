@@ -779,3 +779,72 @@ func TestSeparatorNameIsSharedBetweenDashboards(t *testing.T) {
 		t.Errorf("named a deleted separator: saved %v status %q", saved, a.status)
 	}
 }
+
+// A test's booth that is removed and comes back is new again: it goes to the
+// bottom, below what was added meanwhile, not to the place it had.
+func TestABoothThatComesBackGoesToTheBottom(t *testing.T) {
+	store := &orderStore{}
+	test := boothAt("basic", "/home/u/dev/zeta/tests/basic")
+	booths, repos := orderRepos()
+	m := orderModel(store, append(booths, test), repos)
+	// By name the first time: alpha, basic, Mid, zeta.
+	if got := rowSummary(m.rows)[:3]; !reflect.DeepEqual(got, []string{"(none) @main", "basic", "Mid"}) {
+		t.Fatalf("setup: rows = %v, order = %v", rowSummary(m.rows), store.keys())
+	}
+
+	// The test ends: its booth is gone, and so is its place.
+	next, _ := m.Update(snapshotMsg{seq: 2, booths: booths, repos: repos})
+	m = next.(model)
+	for _, k := range store.keys() {
+		if k == "basic@docker" {
+			t.Fatalf("order = %v: the gone booth kept its place", store.keys())
+		}
+	}
+
+	// Run again, with another: both at the bottom, by name.
+	other := boothAt("aaa-test", "/home/u/dev/zeta/tests/aaa")
+	next, _ = m.Update(snapshotMsg{seq: 3, booths: append(append([]lifecycle.Booth{}, booths...), test, other), repos: repos})
+	m = next.(model)
+	rows := rowSummary(m.rows)
+	if got := rows[len(rows)-2:]; !reflect.DeepEqual(got, []string{"aaa-test", "basic"}) {
+		t.Errorf("rows = %v, want aaa-test and basic last", rows)
+	}
+}
+
+func TestGoneBoothPlacesAreDroppedButNotOtherPlaces(t *testing.T) {
+	booths, repos := orderRepos()
+	store := &orderStore{order: []lifecycle.OrderEntry{
+		{Key: "old-test@docker"}, // a container with no folder: never dropped by the store
+		{Key: "repo:/home/u/dev/zeta", Path: "/home/u/dev/zeta"},
+		{Key: "booth:old-sibling@docker", Path: "/home/u/dev/zeta"},
+		{Key: "separator:1", Name: "Tests"},
+		{Key: "repo:/home/u/dev/elsewhere", Path: "/home/u/dev/elsewhere"}, // no row now; a repository keeps its place
+		{Key: "worktree:/home/u/dev/zeta.wt/old", Path: "/home/u/dev/zeta.wt/old"},
+	}}
+	deps := store.wire((&fakeDeps{snapshot: booths, repos: repos}).deps())
+	m := newModel(deps)
+
+	// An engine that did not answer lists none of its booths: nothing is dropped.
+	next, _ := m.Update(snapshotMsg{seq: 1, booths: booths, repos: repos, order: store.order, orderRead: true,
+		warnings: []string{"Warning: could not list podman booths: down"}})
+	m = next.(model)
+	keys := strings.Join(store.keys(), " ")
+	if !strings.Contains(keys, "old-test@docker") || !strings.Contains(keys, "booth:old-sibling@docker") {
+		t.Fatalf("order = %v: dropped while an engine did not answer", keys)
+	}
+
+	next, _ = m.Update(snapshotMsg{seq: 2, booths: booths, repos: repos, order: store.order, orderRead: true})
+	m = next.(model)
+	keys = strings.Join(store.keys(), " ")
+	for _, gone := range []string{"old-test@docker", "booth:old-sibling@docker"} {
+		if strings.Contains(keys, gone) {
+			t.Errorf("order = %v: %s kept its place", keys, gone)
+		}
+	}
+	for _, kept := range []string{"repo:/home/u/dev/zeta", "separator:1", "repo:/home/u/dev/elsewhere",
+		"worktree:/home/u/dev/zeta.wt/old", "Mid@docker"} {
+		if !strings.Contains(keys, kept) {
+			t.Errorf("order = %v: %s lost its place", keys, kept)
+		}
+	}
+}

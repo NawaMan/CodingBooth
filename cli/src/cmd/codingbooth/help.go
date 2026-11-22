@@ -649,7 +649,9 @@ image was rebuilt since; i says which, and how to update it.
 
 Booths are grouped by git repository: the main checkout leads (its NAME in
 blue), its worktrees are indented under it, each listed even without a booth.
-A booth in no repository leads a group of its own. Groups start sorted by name. On such a row, s starts a booth there and delete removes the
+A booth in no repository, or on a folder inside a checkout (a test's, an
+example's), leads a group of its own; new ones are added at the bottom.
+Groups start sorted by name. On a worktree's row, s starts a booth there and delete removes the
 worktree (as worktree remove does: never what would be lost). Starting a booth
 takes the terminal (booth may build, or ask before starting a booth that can
 reach the host) and comes back here when it is done.

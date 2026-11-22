@@ -59,15 +59,36 @@ func TestBuildRowsGroupsBoothsUnderWorktrees(t *testing.T) {
 	var got []string
 	rows := buildRows(booths, testRepos())
 	got = rowSummary(rows)
-	want := []string{"example @main", "proj @main", "fixer @fix", "(none) @idea", "loose"}
+	// example's code is a folder inside the main checkout: it is not the
+	// checkout's booth, so it goes with the booths in no repository.
+	want := []string{"proj @main", "fixer @fix", "(none) @idea", "example", "loose"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("rows = %q\nwant %q", got, want)
 	}
-	if !rows[0].main || !rows[1].main || rows[2].main || rows[3].main || !rows[4].main {
-		t.Errorf("the main checkout's rows and a booth in no repository lead; worktrees do not: %+v", rows)
+	if !rows[0].main || rows[1].main || rows[2].main || !rows[3].main || !rows[4].main {
+		t.Errorf("the main checkout's row and a booth in no group lead; worktrees do not: %+v", rows)
 	}
 	if flat := rowSummary(buildRows(booths, nil)); !reflect.DeepEqual(flat, []string{"fixer", "example", "proj", "loose"}) {
 		t.Errorf("without repositories = %v, want the plain list", flat)
+	}
+}
+
+func TestARepositoryFoundOnlyByABoothInsideItIsLeftOut(t *testing.T) {
+	booths := []lifecycle.Booth{boothAt("basic", "/home/u/dev/proj/tests/basic")}
+	away := testRepos()
+	away[0].Here = false
+	if got := rowSummary(buildRows(booths, away)); !reflect.DeepEqual(got, []string{"basic"}) {
+		t.Errorf("rows = %q, want only the booth: no booth is on the repository's own checkouts", got)
+	}
+	here := testRepos()
+	here[0].Here = true
+	want := []string{"(none) @main", "(none) @fix", "(none) @idea", "basic"}
+	if got := rowSummary(buildRows(booths, here)); !reflect.DeepEqual(got, want) {
+		t.Errorf("rows = %q, want %q: the repository the dashboard runs in always shows", got, want)
+	}
+	// A repository no booth is in at all (as the tests build them) shows.
+	if got := rowSummary(buildRows(nil, testRepos())); len(got) != 3 {
+		t.Errorf("rows = %q, want the repository's three worktrees", got)
 	}
 }
 

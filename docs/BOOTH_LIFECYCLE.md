@@ -183,14 +183,16 @@ a row again; `H` again goes back. The hidden rows are kept in
 `~/.cache/codingbooth/dashboard/hidden.json`; an entry is dropped once its folder is gone, and
 forgetting a gone booth (`delete`) unhides it too.
 
-**Grouped by repository.** Booths are grouped by the git repository their code is in. A group has no heading line: its main checkout leads it, not indented, its NAME in
+**Grouped by repository.** A booth on a repository's checkout (its main checkout or a linked worktree) is grouped under that repository. A group has no heading line: its main checkout leads it, not indented, its NAME in
 the group colour — the booth's name, or the repository's when it has no booth, with `(here)` on the
 repository the dashboard runs in. Its linked worktrees follow, indented, each with its booths or as
 a `-` row of its own (the WORKTREE column), so a worktree that has no booth yet is still one
 key away from one. A repository that is only its main checkout is therefore a single row. An
 express booth is marked `(express)` after its name (`CodingBooth (here, express)`): it reads a `.booth`
 of its own, not the one in its folder, so `c` and VERSION are about that one. A booth whose code is
-in no repository leads a group of its own (blue, not indented). `delete` on a worktree row removes it only when
+in no repository leads a group of its own (blue, not indented). So does a booth whose code is a
+folder inside a checkout, such as a test's or an example's: it is not that checkout's booth, so it
+is not put in the repository's group. `delete` on a worktree row removes it only when
 nothing would be lost, as [`booth worktree remove`](BOOTH_WORKTREE.md#removing-a-worktree) does,
 and refuses while a booth runs on it; the main checkout is never removed. There is no landing or
 merging here: open the worktree in your editor or GitKraken for that.
@@ -205,7 +207,10 @@ there; only the first going up, or the last going down, moves the group (or the 
 described. Until one is moved they are listed as `booth list` gives them. Hidden rows keep their place. The order is kept in
 `~/.cache/codingbooth/dashboard/order.json`; anything not in it yet — a new repository, booth or
 worktree — goes to the bottom (of the table, or of its repository), and an entry is dropped once its
-folder is gone. The cursor starts on the repository the dashboard runs in, wherever it is. Dashboards
+folder is gone. A booth that leads a group of its own loses its place when the booth is gone, so
+one that comes back is new again: the booths a test run or an example creates show up together at
+the bottom each time, where `shift+↑`/`shift+↓` selects them all. A repository and a worktree keep
+their place while their folder exists. The cursor starts on the repository the dashboard runs in, wherever it is. Dashboards
 open at the same time share the file: each reads it again at every refresh, and each move starts
 from the order as saved then, so one dashboard's moves and separators show in another and are never
 undone by it.
