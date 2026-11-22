@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.0.1"
 display-name = "Node.js"
 primary = true
 display-disc = "Node.js runtime with npm package manager"
@@ -12,7 +12,7 @@ tags = [
 
 [params.NODE_VERSION]
 default = "24"
-suggests = ["24", "22", "20"]
+suggests = ["24", "26", "22", "20"]
 
 [segments]
 Boothfile = """

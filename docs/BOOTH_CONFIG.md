@@ -251,7 +251,7 @@ same summary a save prints at its end — and writes nothing:
 
 ```
 $ booth config print
-  - Go (GO_VERSION=1.27.3)
+  - Go (GO_VERSION=1.27.4)
     + Go VS Code Extension (auto)
 ```
 

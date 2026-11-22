@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.1.1
 
 # goose-lang--setup.sh — Install the Goose programming language (aardappel/goose) from GitHub releases
 set -Eeuo pipefail
@@ -62,7 +62,7 @@ apt-get install -y --no-install-recommends "${PKGS[@]}"
 rm -rf /var/lib/apt/lists/*
 
 # Known-good pin when the GitHub API is rate-limited.
-FALLBACK_VERSION="2026.3"
+FALLBACK_VERSION="2026.4"
 VERSION_RE='^[0-9]{4}\.[0-9]+(\.[0-9]+)?$'
 
 if [[ "$REQ_VER" == "latest" ]]; then

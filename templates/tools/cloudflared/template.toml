@@ -1,4 +1,4 @@
-cb-version = "0.1.0"
+cb-version = "0.1.1"
 display-name = "Cloudflare Tunnel"
 primary = true
 display-disc = "cloudflared: share a booth server on a public URL, no account needed"
@@ -13,7 +13,7 @@ tags = [
 
 [params.CLOUDFLARED_VERSION]
 default = "latest"
-suggests = ["latest", "2026.11.0", "2026.10.7"]
+suggests = ["latest", "2026.11.1", "2026.11.0"]
 
 [segments]
 Boothfile = """

@@ -4,6 +4,17 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Catalog versions refreshed for 0.83.0.** New defaults: Go 1.27.4, Julia 1.13.4, Swift 6.4.3,
+  Gradle 9.9.2, Obsidian 1.15.1, Freeplane 1.13.5, PlantUML 1.2026.10, Hoppscotch 2026.10.1, n8n
+  2.48.7, lean-lsp-mcp 0.33.0 and EnvFolio 2.2.0 — the base image runs `setup envfolio` at its
+  default, so every booth now carries EnvFolio 2.2.0. Fallbacks and suggestions for `latest`
+  defaults move to the current releases (Clojure, viewmd, dblab, lazygit, cloudflared, PostgREST,
+  appwrite-cli, Orca, Zed, sql-studio, Goose, Wails `v3.1.0`, ThinkRail, Croft, Fresh, gh, Flutter,
+  Lean). Node.js 26 is an LTS now and is offered beside the default 24.
+- **`setup freeplane` downloads again.** GitHub serves the release's `.deb` as
+  `freeplane_<version>.upstream-1_all.deb`; the setup asked for the `~upstream` spelling, which is
+  a 404 for every version.
+
 - **`booth dashboard`: new booths show up together at the bottom.** A booth whose code is a folder
   inside a checkout (a test's or an example's) was put in that repository's group, among its own
   rows; it is now a row of its own, like a booth in no repository. And a place in the saved order

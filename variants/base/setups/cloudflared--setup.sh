@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.1.1
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -14,7 +14,7 @@ Usage:
 
 Examples:
   $0                          # install the latest cloudflared release
-  $0 --version 2026.11.0      # pin a specific release
+  $0 --version 2026.11.1      # pin a specific release
 
 Notes:
 - Installs cloudflared (Cloudflare Tunnel client) to /usr/local/bin/cloudflared
@@ -27,7 +27,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
 # ---- defaults / args ----
-CLOUDFLARED_DEFAULT_VER="2026.11.0"   # fallback when 'latest' cannot be resolved
+CLOUDFLARED_DEFAULT_VER="2026.11.1"   # fallback when 'latest' cannot be resolved
 REQ_VER="latest"
 while [[ $# -gt 0 ]]; do
   case "$1" in

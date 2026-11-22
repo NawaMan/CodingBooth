@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -14,7 +14,7 @@ Usage:
 
 Examples:
   $0                            # install latest sql-studio, port 21100
-  $0 --version 0.1.53           # pin specific version
+  $0 --version 0.1.54           # pin specific version
   $0 --port 13030               # use a different default port
 
 Notes:
@@ -38,7 +38,7 @@ HOME=/root
 SCRIPT_DIR="$(dirname "$0")"
 
 # ---- defaults / args ----
-SQLSTUDIO_DEFAULT_VER="0.1.53"   # fallback when 'latest' cannot be resolved
+SQLSTUDIO_DEFAULT_VER="0.1.54"   # fallback when 'latest' cannot be resolved
 REQ_VER="latest"
 PORT="21100"
 while [[ $# -gt 0 ]]; do

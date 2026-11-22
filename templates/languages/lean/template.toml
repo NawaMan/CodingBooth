@@ -1,4 +1,4 @@
-cb-version = "0.1.0"
+cb-version = "0.1.1"
 display-name = "Lean 4 [experimental]"
 display-disc = "Experimental — Lean 4 theorem prover and language, via elan and lake"
 display-detail = """EXPERIMENTAL — new, not yet battle-tested; expect rough edges. \
@@ -27,7 +27,7 @@ tags = [
 
 [params.LEAN_VERSION]
 default = "stable"
-suggests = ["stable", "4.35.0", "nightly"]
+suggests = ["stable", "4.36.0", "nightly"]
 
 # Image environment, not a shell profile. `booth exec` runs the command with no
 # shell, so /etc/profile.d never runs: these mirror what the setup's profile sets.
