@@ -17,6 +17,10 @@ the booth.
 >      the booth. Anything inside can read them.
 >    - **`--dind` (Docker-in-Docker)** launches a **privileged** sidecar and is, by design, a
 >      **host-escape path**. Never enable it for untrusted code.
+>    - **The code folder** is read-write. Code in the booth can leave files there that run **on the
+>      host** the next time you use git or a build tool in that folder (§1).
+>    - **The network is open, including to other booths.** A booth can reach another booth's web
+>      UI (a shell, with no password by default), host services on `0.0.0.0`, and your LAN (§1).
 > 3. Decide per booth: **trusted code** can keep the conveniences; **untrusted code** must not.
 > 4. Before starting a booth that can reach the host as root, booth **stops and asks** (§4).
 > 5. CodingBooth prioritizes developer experience over strict isolation. For untrusted or
@@ -37,10 +41,88 @@ container, and it is **not** a security boundary when you deliberately hand it p
 | Can code in the booth escape to root on the host? | **Not** via filesystem, devices, or namespaces in a normal booth (verified). **Yes**, by design, in a `--dind` booth — see §4. |
 | Can code in the booth read secrets you mounted in? | **Yes — trivially.** A mounted credential is one `cat` away. `:ro` stops writes, not reads. |
 | Are container processes root on the host? | No. They run as the unprivileged `coder` user mapped to your host UID/GID. (`coder` has passwordless `sudo` *inside* the container only — see §5.) |
+| Can code in the booth make something run on the host? | **Yes, if you let it.** It can write files in the code folder (git hooks, `.git/config`, build files) that run as you when you next use the folder on the host. With `sudo`, it can also leave a root-owned setuid file there. See [below](#code-folder). |
+| Can code in the booth reach other booths? | **Yes.** Docker booths share one network, and their web UIs have no password unless `--public` is used. See [below](#network-reach). |
+| Can code in the booth reach the host's network services? | **Only those not bound to `127.0.0.1`.** Services on `0.0.0.0`, your LAN, and the internet are reachable. See [below](#network-reach). |
 
 **Mental model:** treat everything you mount into a booth, and every privilege you grant it, as
 "handed to whatever runs inside." The question is never "is the booth isolated?" — it is **"what
 did I put inside it, and do I trust the code that will run there?"**
+
+A normal booth is safe enough for code, prompts and skills **you trust**. It is not a sandbox for
+code you do not, because of the three things below. Each was checked on a real host (2026-11-23,
+CodingBooth 0.83.0, Docker 29.5.2, rootless Podman 5.7.0, Kata with guest kernel 6.18).
+
+<a id="code-folder"></a>
+### The code folder works in both directions
+
+The code folder is mounted read-write. Only `.booth/` and the `booth` wrapper are read-only. So code
+in the booth can:
+
+- **read everything in it**, including `.env` files and the logins kept under `.booth/cache/`;
+- **delete or rewrite work**: uncommitted changes, branches, the reflog, the `.git` directory itself.
+  Pushing needs git credentials, which a default booth does not have;
+- **leave files that run on the host** the next time you use the folder there:
+  - git hooks (`.git/hooks/*`);
+  - `.git/config` entries such as `core.fsmonitor`, `core.hooksPath` or an alias. A plain
+    `git status` on the host runs `core.fsmonitor`;
+  - build and editor files: `Justfile`, `Makefile`, `package.json` scripts, `.vscode/tasks.json`,
+    `.envrc`.
+
+  Hooks and `.git/config` are not tracked, so `git status`, `git reset --hard` and `git clean` do not
+  show or remove them;
+- **with `sudo`, leave a root-owned setuid file.** In the booth, `sudo chown 0:0 f && sudo chmod 4755
+  f` shows on the host as `root:root -rwsr-xr-x`. On a filesystem mounted without `nosuid`, which
+  includes most `/home` partitions, that file runs **as root** for whoever executes it on the host.
+  Kata does not prevent this, because virtio-fs keeps the guest's root ownership. `--sudo false`
+  does prevent it (§5).
+
+None of these needs an exploit. Each one waits for you to run something on the host. After untrusted
+code has run in a booth:
+
+1. Do not run git, build tools or the editor in that folder on the host.
+2. Make a **fresh clone** in a new folder.
+3. Copy over only the changes you have reviewed.
+
+Cleaning the old folder in place is not enough.
+
+<a id="network-reach"></a>
+### What a booth can reach on the network
+
+Measured from inside a booth:
+
+| Target | Docker | Podman, rootless | `--booth-isolation kata` | Kata + `--egress` |
+| --- | --- | --- | --- | --- |
+| Host service on `127.0.0.1` | blocked | blocked | blocked | blocked |
+| Host service on `0.0.0.0`, via `host.docker.internal` | reached | reached | reached | blocked |
+| Host service on `0.0.0.0`, via the host's LAN IP | reached | blocked | reached | blocked |
+| **Another booth, by its container IP** (its UI on port 10000) | **reached** | reaches Docker booths; has no container IP of its own | **reached**, in both directions | blocked, in both directions |
+| Your LAN (for example the router's admin page) | reached | reached | reached | blocked |
+| Internet | open | open | open | allowlist only |
+
+**Why other booths matter.** Docker booths get no `--network` of their own, so they all join
+Docker's default bridge, where containers can talk to each other directly. Publishing the UI on
+`127.0.0.1` limits only the host side; another container connects to `<container-ip>:10000`. The
+Console UI is a writable terminal (`ttyd --writable`). Like code-server and Jupyter, it has no
+password unless one is set, and a local booth sets one only with `--public`, which also opens the
+port to your network. So **any booth, or any container on the default bridge, can open a shell in
+another booth.** A rootless Podman booth reaches Docker booths too, because its traffic leaves
+through the host.
+
+Until booths get networks of their own, keep untrusted code in a booth with `--egress`, or in no
+booth at all while booths with work you care about are running.
+
+**Why host services matter.** `host.docker.internal` points at the host on purpose, so a booth can
+use a database or dev server you run there. Anything bound to `0.0.0.0` is reachable that way, which
+includes every `docker run -p <port>:<port>` without an address. Bind host services to `127.0.0.1`
+when they need not be reached from a booth.
+
+### Root in the booth is root on the host's kernel
+
+`coder` has passwordless `sudo`, and a normal booth has no user-namespace remapping, so root in the
+booth is root to the host's kernel. Every layer in §2 holds against it today, but a kernel or
+runtime bug would land as host root. §5 covers what changes that: `--sudo false`, rootless Podman,
+or a Kata VM.
 
 ---
 
@@ -51,7 +133,9 @@ These held up under active testing and you can rely on them for a **normal** boo
 - **No host filesystem access** beyond explicit mounts — no upward traversal out of a mount.
 - **No raw disk access.** Even as container-root, the cgroup device filter blocks opening host
   block devices, and `mount` is blocked (no `CAP_SYS_ADMIN`).
-- **Separate PID and network namespaces** — no host processes visible, no host sockets reachable.
+- **Separate PID and network namespaces** — no host processes visible, and no host service bound to
+  `127.0.0.1` reachable. Services on other host addresses, other booths and the LAN *are* reachable;
+  see [What a booth can reach](#network-reach).
 - **Masked `/proc` and `/sys`** — `kcore` (host memory), `sysrq`, keys, etc. are neutralized.
 - **No Docker socket** mounted — no "control the daemon → own the host" path.
 
@@ -517,17 +601,44 @@ Even without `--dind`, there is currently **no last line of defense** if a kerne
 the booth runs with `uid_map = 0 0 4294967295` (no user-namespace remapping), so container-root maps
 to host-root. Every other layer holds today, but you can shrink the blast radius:
 
+- **Turn off `sudo`: `--sudo false`** (or the `no-sudo` template, `sudo = false` in
+  `.booth/config.toml`). Setup and startup scripts still run with `sudo`, which is revoked after them.
+  Code in the booth then cannot become root, so it loses root's capabilities, cannot use an exploit
+  that starts from root, and cannot leave a root-owned setuid file in the code folder
+  ([above](#code-folder)). It does not help against a kernel exploit that works from an ordinary
+  user, the network, or the code folder's other risks.
 - **Use rootless Podman** so container-root ≠ host-root (Docker's `userns-remap` and rootless mode
-  are not supported by CodingBooth).
+  are not supported by CodingBooth). Root in the booth is then *your account* on the host. A kernel
+  escape lands as you, not as root, and a privileged `--dind` sidecar is privileged only inside your
+  user namespace. Your account still holds a lot (`~/.ssh`, shell start-up files, tokens). The code
+  folder and network risks are unchanged, and a rootless Podman booth can still reach Docker booths
+  ([table](#network-reach)). Podman support is experimental.
 - **Drop `CAP_MKNOD`** (`--cap-drop=MKNOD` via `run-args`) — a dev booth never needs to create device
   nodes, and it removes the first step of a disk-escape chain.
-- **Reconsider passwordless `sudo`** inside the booth for untrusted work, or pair it with the above.
 - **Scope mounts to the project directory.** Avoid mounts that reach up into `~` for anything but
   explicitly needed files.
 - **Use `--egress`** to restrict outbound connections when running third-party or untrusted
   dependencies (not a boundary in a `--dind` booth). See **[Egress](implementations/EGRESS.md)**.
 - **Put the booth in its own VM: `--booth-isolation kata`** (experimental) — container-root is then
   root in a throwaway VM with its own kernel. See **[below](#booth-isolation)**.
+
+<a id="isolation-levels"></a>
+### Choosing a level
+
+Each level keeps what the one before it gives. Pick by how much you trust the code, prompts and
+skills that will run.
+
+| Level | Flags | What it adds | What is still open |
+| --- | --- | --- | --- |
+| 1. Normal booth | none | Host filesystem, devices and processes are out of reach (§2) | The [code folder](#code-folder), the [network](#network-reach), root to the host's kernel |
+| 2. No root | `--sudo false` | No root, no root capabilities, no setuid-root files | The code folder, the network, kernel bugs reachable from an ordinary user |
+| 3. A VM | `--booth-isolation kata` | A kernel exploit lands in a throwaway guest kernel | The code folder; the network, **including other booths** |
+| 4. A VM with filtered traffic | `--booth-isolation kata --egress --sudo false` | No route to other booths, host services or the LAN, in or out; outbound traffic only to the allowlist | The code folder, anything you mount in, a hypervisor escape |
+
+Level 1 is fine for trusted work. For code you do not trust, use level 4 where Kata runs (Linux,
+Docker Engine, KVM), and treat the code folder as untrusted afterwards either way. Rootless Podman is
+a separate axis: it turns "root on the host" into "your account" at levels 1 to 3, but changes
+nothing else.
 
 <a id="booth-isolation"></a>
 
@@ -568,9 +679,11 @@ privileged sidecar on this machine, reachable from the booth, would undo the VM.
 **Not protected**
 
 - **What you mount in.** The code folder is shared into the VM (virtio-fs) read-write, as are any
-  convenience mounts (§3). Code in the booth can change them, as you.
-- **The network.** The VM has full outbound access and reaches your LAN — unless you add
-  `--egress` ([below](#booth-isolation-egress)).
+  convenience mounts (§3). Code in the booth can change them, as you. Root in the VM can also leave
+  a root-owned setuid file there ([code folder](#code-folder)); add `--sudo false`.
+- **The network.** The VM has full outbound access and reaches your LAN and host services on
+  `0.0.0.0`. It is still on Docker's default bridge, so **other booths reach its UI and it reaches
+  theirs** ([table](#network-reach)). `--egress` closes all of this ([below](#booth-isolation-egress)).
 - **The hypervisor.** A QEMU/KVM escape would still reach the host.
 
 #### What it needs
@@ -726,7 +839,12 @@ If untrusted code may have read a mounted credential:
 - [ ] Using a throwaway account for untrusted work? (in-booth login persists to `.booth/cache`)
 - [ ] `--dind` only if the code here is trusted? (DinD = privileged = host-escape path; never with
       untrusted code). Booth asks every run — or needs `--dind-allowed` with no terminal.
-- [ ] Want extra hardening? rootless Podman / `CAP_MKNOD` dropped / `--egress` filter.
+- [ ] Want extra hardening? `--sudo false` / rootless Podman / `CAP_MKNOD` dropped / `--egress`
+      filter / `--booth-isolation kata`. See [Choosing a level](#isolation-levels).
+- [ ] Are other booths running with work you care about? An untrusted booth can open a shell in
+      them unless it runs with `--egress` ([network](#network-reach)).
+- [ ] After untrusted code ran: no git, build tool or editor in that folder on the host until it is
+      reviewed; recover from a fresh clone ([code folder](#code-folder)).
 - [ ] Know how to revoke each mounted credential if it leaks?
 - [ ] After any suspected exposure: revoked tokens → fixed config → re-authed?
 

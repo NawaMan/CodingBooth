@@ -1,6 +1,6 @@
 # CodingBooth
 
-**Current Version:** v0.83.0--rc1
+**Current Version:** v0.83.0--security-findings
 
 ![Works On My Machine](docs/Works-On-My-Machine-small.png)
 
@@ -618,10 +618,12 @@ CodingBooth is designed for development environments, not production workloads. 
 | Aspect               | Behavior                                                                  |
 |----------------------|---------------------------------------------------------------------------|
 | **User privileges**  | Processes run as unprivileged `coder` user, not root                      |
-| **Sudo access**      | `coder` has passwordless sudo (for installing packages)                   |
-| **File ownership**   | Files match your host UID/GID — no root-owned files                       |
+| **Sudo access**      | `coder` has passwordless sudo (for installing packages); `--sudo false` turns it off |
+| **File ownership**   | Files match your host UID/GID. Only `sudo` in the booth can create root-owned files |
 | **`.booth/` config** | Read-only inside the container by default (`--writable-booth` to opt out) |
-| **Network**          | Full network access by default                                            |
+| **Code folder**      | Read-write: files written in the booth (git hooks, build files) can run on the host when you next use the folder there |
+| **Network**          | Full network access by default: the internet, your LAN, host services on `0.0.0.0`, and **other booths**, whose UIs have no password unless `--public` is used ([details](docs/BOOTH_SECURITY.md#network-reach)) |
+| **Booth isolation**  | Optional `--booth-isolation kata` runs the booth in its own VM (experimental) — see [Choosing a level](docs/BOOTH_SECURITY.md#isolation-levels) |
 | **Egress**   | Optional `--egress` mode restricts outbound connections to allowlisted domains via Envoy proxy + iptables ([details](docs/implementations/EGRESS.md)) |
 | **DinD mode**        | Privileged sidecar — host-root-equivalent; booth asks before starting one |
 | **Host-escape run-args** | `--privileged`, `--pid=host`, a `docker.sock` mount, … — booth asks first ([details](docs/BOOTH_SECURITY.md)) |

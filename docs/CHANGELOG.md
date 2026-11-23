@@ -4,6 +4,19 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Security guide: what a normal booth still exposes.**
+  [BOOTH_SECURITY.md](BOOTH_SECURITY.md) now covers three risks it did not before, each checked on a
+  real host:
+  - the read-write code folder, including files that run on the host later and root-owned setuid
+    files left by `sudo`;
+  - what a booth reaches on the network, compared across Docker, rootless Podman, Kata and
+    Kata + `--egress`. Any booth can open another booth's Console UI, which has no password by
+    default;
+  - root in the booth being root to the host's kernel.
+
+  It also has a table for choosing an isolation level, and corrects the old claim that "no host
+  sockets" are reachable: only services on `127.0.0.1` are out of reach.
+
 ## 0.83.0
 
 - **Catalog versions refreshed for 0.83.0.** New defaults: Go 1.27.4, Julia 1.13.4, Swift 6.4.3,
