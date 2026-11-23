@@ -69,7 +69,12 @@ check() {
 # PATHs that decide whether the booth "has ssh", whatever the host has:
 # nossh holds only what the hook needs besides gh; withssh adds a stub ssh.
 mkdir -p "$WORK/nossh" "$WORK/withssh"
-for tool in git grep; do ln -s "$(command -v "$tool")" "$WORK/nossh/$tool"; done
+# Wrappers, not links: on Windows `ln -s` copies, and a copied git.exe cannot find its DLLs
+# (they are beside the real one). /usr/bin is not put on PATH: Git for Windows has ssh there.
+for tool in git grep; do
+    printf '#!/bin/sh\nexec "%s" "$@"\n' "$(command -v "$tool")" > "$WORK/nossh/$tool"
+    chmod +x "$WORK/nossh/$tool"
+done
 printf '#!/bin/sh\nexit 0\n' > "$WORK/withssh/ssh"
 chmod +x "$WORK/withssh/ssh"
 PATH_NOSSH="$WORK/bin:$WORK/nossh"

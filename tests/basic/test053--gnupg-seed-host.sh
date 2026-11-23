@@ -33,6 +33,7 @@ fi
 
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 WORK="$(mktemp -d)"
+HWORK="$(host_path "$WORK")"   # as booth is handed it: C:/… on Windows
 PROJECT="$WORK/project"
 mkdir -p "$PROJECT"
 cleanup() {
@@ -66,10 +67,10 @@ gpgconf --kill all >/dev/null 2>&1
 '
 run_seeded() { # run_seeded HOSTHOME MSG
   run_coding_booth express --code "$PROJECT" --templates-path "$REPO/templates" \
-    --select "gnupg+seed-host:\"$1\"" -- "MSG=$2; $SCRIPT" 2>&1 </dev/null || true
+    --select "gnupg+seed-host:\"$(host_path "$1")\"" -- "MSG=$2; $SCRIPT" 2>&1 </dev/null || true
 }
 
-mkdir -m 700 "$WORK/gnupg"
+mkdir_private "$WORK/gnupg"
 if ! make_host "$WORK/gnupg" plain; then
   fail 0 "the throwaway host key is made" "could not make it in $WORK/gnupg"
   exit 1
@@ -105,7 +106,7 @@ gpgconf --homedir "$WORK/gnupg" --kill all >/dev/null 2>&1
 # (The hook's own line goes to the booth's /tmp/startups.log, not here; the
 # setups test for the hook covers it.)
 # -------------------------------------------------------
-if grep -qF "Warning: gnupg+seed-host: the host's gpg keyring ($WORK/gnupg), private keys included" <<<"$OUT" \
+if grep -qF "Warning: gnupg+seed-host: the host's gpg keyring ($HWORK/gnupg), private keys included" <<<"$OUT" \
    && ! grep -qF "writable mount of host" <<<"$OUT"; then
   print_test_result "true" "$0" "3" "the start warns that the host's keys are copied in, and asks no consent for a writable mount"
 else
@@ -117,8 +118,8 @@ fi
 # Test 4: a missing host gpg home stops the start
 # -------------------------------------------------------
 OUT=$(run_coding_booth express --code "$PROJECT" --templates-path "$REPO/templates" \
-  --select "gnupg+seed-host:\"$WORK/no-gnupg\"" -- true 2>&1) && RC=0 || RC=$?
-if [[ "$RC" -ne 0 ]] && grep -qF "the host has no gpg home at $WORK/no-gnupg" <<<"$OUT" && [[ ! -e "$WORK/no-gnupg" ]]; then
+  --select "gnupg+seed-host:\"$HWORK/no-gnupg\"" -- true 2>&1) && RC=0 || RC=$?
+if [[ "$RC" -ne 0 ]] && grep -qF "the host has no gpg home at $HWORK/no-gnupg" <<<"$OUT" && [[ ! -e "$WORK/no-gnupg" ]]; then
   print_test_result "true" "$0" "4" "a missing host gpg home stops the start, and nothing is created on the host"
 else
   fail 4 "a missing host gpg home stops the start, and nothing is created on the host" "rc=$RC $(tail -3 <<<"$OUT")"
@@ -127,7 +128,7 @@ fi
 # -------------------------------------------------------
 # Test 5: a host keyring kept by keyboxd
 # -------------------------------------------------------
-mkdir -m 700 "$WORK/gnupg-kbxd"
+mkdir_private "$WORK/gnupg-kbxd"
 echo "use-keyboxd" > "$WORK/gnupg-kbxd/common.conf"
 if ! make_host "$WORK/gnupg-kbxd" kbxd || [[ ! -f "$WORK/gnupg-kbxd/public-keys.d/pubring.db" ]]; then
   echo "⏭️  basic/test053: Test 5 skipped — the host's gpg cannot keep a keyring with keyboxd"

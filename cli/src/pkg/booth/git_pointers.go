@@ -148,6 +148,13 @@ func gitRepoName(hostCommon string) string {
 	return clean
 }
 
+// hostPathHasColon reports whether a host path has a ':' that `-v host:container` would split
+// on. A Windows drive's own (C:) is not one: the engine reads it as part of the path, and the
+// neutral layout mounts it at a container path of its own.
+func hostPathHasColon(hostPath string) bool {
+	return strings.Contains(hostPath[len(filepath.VolumeName(hostPath)):], ":")
+}
+
 // planNeutralGit works out the neutral layout for a booth on codePath. ok is false when there is
 // nothing to do (no repo, a submodule, a broken gitfile -- warning says why).
 func planNeutralGit(codePath string) (plan neutralGitPlan, ok bool, warning string) {
@@ -165,7 +172,7 @@ func planNeutralGit(codePath string) (plan neutralGitPlan, ok bool, warning stri
 		if inBooth, in := inWorkspace(codePath, hostCommon); in {
 			containerCommon = inBooth
 		} else {
-			if strings.Contains(hostCommon, ":") {
+			if hostPathHasColon(hostCommon) {
 				return plan, false, fmt.Sprintf("cannot mount %s: the path contains ':'", hostCommon)
 			}
 			containerCommon = path.Join(neutralGitRoot, gitRepoName(hostCommon), ".git")

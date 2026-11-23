@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -146,6 +147,9 @@ func TestFolioHostAgentArgs(t *testing.T) {
 }
 
 func TestHostAgentSocket(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("shell stubs")
+	}
 	old := gpgconfCommand
 	t.Cleanup(func() { gpgconfCommand = old })
 	dir := t.TempDir()

@@ -69,15 +69,16 @@ func TestPromote(t *testing.T) {
 func TestMarkerPathFrom(t *testing.T) {
 	osDir := func() (string, error) { return "/os/config", nil }
 	noDir := func() (string, error) { return "", os.ErrNotExist }
+	xdg := filepath.Join(t.TempDir(), "xdg") // "/xdg" is not absolute on Windows
 	cases := []struct {
 		name, xdg string
 		dir       func() (string, error)
 		want      string
 	}{
-		{"xdg set", "/xdg", osDir, filepath.Join("/xdg", "codingbooth", "github-star")},
+		{"xdg set", xdg, osDir, filepath.Join(xdg, "codingbooth", "github-star")},
 		{"xdg unset", "", osDir, filepath.Join("/os/config", "codingbooth", "github-star")},
 		{"xdg relative", "rel", osDir, filepath.Join("/os/config", "codingbooth", "github-star")},
-		{"xdg set, no os folder", "/xdg", noDir, filepath.Join("/xdg", "codingbooth", "github-star")},
+		{"xdg set, no os folder", xdg, noDir, filepath.Join(xdg, "codingbooth", "github-star")},
 		{"nothing known", "", noDir, ""},
 	}
 	for _, c := range cases {

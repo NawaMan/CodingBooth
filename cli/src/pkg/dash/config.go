@@ -6,7 +6,6 @@ package dash
 
 import (
 	"fmt"
-	"path/filepath"
 	"slices"
 	"strings"
 
@@ -51,7 +50,7 @@ func configBoothDir(r row) string {
 		return r.booth.BoothDir
 	}
 	if path := r.path(); path != "" {
-		return filepath.Join(path, ".booth")
+		return boothDirIn(path)
 	}
 	return ""
 }

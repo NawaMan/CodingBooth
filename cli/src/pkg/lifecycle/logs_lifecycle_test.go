@@ -90,10 +90,10 @@ func TestCopyAppendedRestartsAfterTrim(t *testing.T) {
 }
 
 func TestHostLogPath(t *testing.T) {
-	if got := hostLogPath("/p/.booth", "lifecycle"); got != "/p/.booth/.tmp/lifecycle.log" {
+	if got := hostLogPath("/p/.booth", "lifecycle"); got != filepath.FromSlash("/p/.booth/.tmp/lifecycle.log") {
 		t.Errorf("lifecycle = %q", got)
 	}
-	if got := hostLogPath("/p/.booth", "activity"); got != "/p/.booth/.tmp/record/activity.log" {
+	if got := hostLogPath("/p/.booth", "activity"); got != filepath.FromSlash("/p/.booth/.tmp/record/activity.log") {
 		t.Errorf("activity = %q", got)
 	}
 }

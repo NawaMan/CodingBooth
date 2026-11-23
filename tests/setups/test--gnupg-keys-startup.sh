@@ -83,9 +83,8 @@ mk "$K2/pubkeys.asc"             "PUBLIC KEYRING"
 chmod 644 "$K2/private-keys/"*.key
 run_hook "$WORK/h2" "$K2"
 P="$WORK/h2/.gnupg/private-keys-v1.d"
-[[ "$RUN_EXIT" -eq 0 && "$(cat "$P/$GRIP1.key")" == protected-primary && "$(cat "$P/$GRIP2.key")" == protected-sub \
-   && "$(file_mode "$P/$GRIP1.key")" == 600 && "$(file_mode "$P")" == 700 \
-   && "$(file_mode "$WORK/h2/.gnupg")" == 700 ]] \
+[[ "$RUN_EXIT" -eq 0 && "$(cat "$P/$GRIP1.key")" == protected-primary && "$(cat "$P/$GRIP2.key")" == protected-sub ]] \
+   && mode_is "$P/$GRIP1.key" 600 && mode_is "$P" 700 && mode_is "$WORK/h2/.gnupg" 700 \
     && check "true"  "the key files go to ~/.gnupg/private-keys-v1.d as they are, 600 in 700 folders" \
     || check "false" "the key files go to ~/.gnupg/private-keys-v1.d as they are, 600 in 700 folders" "$(ls -laR "$WORK/h2/.gnupg" 2>&1)"$'\n'"$OUT"
 
@@ -138,9 +137,8 @@ G="$WORK/h5/.gnupg"
 got=$(cd "$G" 2>/dev/null && find . -type f | sed 's|^\./||' | LC_ALL=C sort | tr '\n' ' ')
 want="common.conf private-keys-v1.d/$GRIP2.key private-keys-v1.d/$GRIP1.key public-keys.d/pubring.db pubring.kbx trustdb.gpg "
 want=$(tr ' ' '\n' <<<"$want" | grep . | LC_ALL=C sort | tr '\n' ' ')
-[[ "$RUN_EXIT" -eq 0 && "$got" == "$want" && "$(cat "$G/trustdb.gpg")" == TRUST \
-   && "$(file_mode "$G")" == 700 && "$(file_mode "$G/private-keys-v1.d/$GRIP1.key")" == 600 \
-   && "$(file_mode "$G/private-keys-v1.d")" == 700 ]] \
+[[ "$RUN_EXIT" -eq 0 && "$got" == "$want" && "$(cat "$G/trustdb.gpg")" == TRUST ]] \
+   && mode_is "$G" 700 && mode_is "$G/private-keys-v1.d/$GRIP1.key" 600 && mode_is "$G/private-keys-v1.d" 700 \
     && check "true"  "seed-host: the keyring, trust and private key files are copied (600 in 700 folders), nothing else" \
     || check "false" "seed-host: the keyring, trust and private key files are copied (600 in 700 folders), nothing else" \
          "got:  $got"$'\n'"want: $want"$'\n'"$OUT"

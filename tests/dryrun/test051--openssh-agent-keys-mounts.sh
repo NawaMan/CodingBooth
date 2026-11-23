@@ -37,6 +37,14 @@ SOCK="$WORK/agent.sock"
 mkdir -p "$PROJECT" "$FAKE_HOME/.ssh" "$KEYS"
 : > "$SOCK"
 
+# The paths as booth sees them. On Windows MSYS rewrites SSH_AUTH_SOCK to C:/… and HOME to
+# C:\…, but cannot see the path inside a --select value, so +keys is given the host form.
+# Elsewhere each is the path itself.
+KEYS="$(host_path "$KEYS")"
+SOCK_SEEN="$(host_path "$WORK")/agent.sock"
+FAKE_HOME_SEEN="$FAKE_HOME"
+[[ "$HOST_OS" == "WIN" ]] && FAKE_HOME_SEEN="$(cygpath -w "$FAKE_HOME")"
+
 # dry SELECTION [AGENT_SOCK] -- the dryrun output of express with that selection,
 # with SSH_AUTH_SOCK set to AGENT_SOCK, or unset when it is not given.
 dry() {
@@ -65,7 +73,7 @@ has()  { printf '%s\n' "$1" | grep -F -- "$2" >/dev/null; }
 # ---- +agent ----
 
 OUT=$(dry 'openssh+agent' "$SOCK")
-has "$OUT" "$SOCK:/run/cb-ssh-agent.sock:ro" && has "$OUT" "SSH_AUTH_SOCK=/run/cb-ssh-agent.sock" \
+has "$OUT" "$SOCK_SEEN:/run/cb-ssh-agent.sock:ro" && has "$OUT" "SSH_AUTH_SOCK=/run/cb-ssh-agent.sock" \
   && check "true"  "+agent with an agent: socket mounted read-only, SSH_AUTH_SOCK points at it" \
   || check "false" "+agent with an agent: socket mounted read-only, SSH_AUTH_SOCK points at it" "$OUT"
 
@@ -85,11 +93,11 @@ has "$OUT" "$KEYS:/etc/cb-ssh-keys:ro" && ! has "$OUT" "/etc/cb-home-seed/.ssh" 
 
 OUT=$(dry 'openssh+keys')
 ! has "$OUT" ":/etc/cb-ssh-keys" \
-  && has "$OUT" "Skipping volume mount: host path does not exist: $FAKE_HOME/.ssh/booth" \
+  && has "$OUT" "Skipping volume mount: host path does not exist: $FAKE_HOME_SEEN/.ssh/booth" \
   && check "true"  "+keys with the default ~/.ssh/booth missing: skipped with a notice" \
   || check "false" "+keys with the default ~/.ssh/booth missing: skipped with a notice" "$OUT"
 
 OUT=$(dry "openssh+keys:\"$KEYS\"+credential")
-has "$OUT" "$KEYS:/etc/cb-ssh-keys:ro" && has "$OUT" "$FAKE_HOME/.ssh:/etc/cb-home-seed/.ssh:ro" \
+has "$OUT" "$KEYS:/etc/cb-ssh-keys:ro" && has "$OUT" "$FAKE_HOME_SEEN/.ssh:/etc/cb-home-seed/.ssh:ro" \
   && check "true"  "+keys with +credential: both mounted, each on its own target" \
   || check "false" "+keys with +credential: both mounted, each on its own target" "$OUT"

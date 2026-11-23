@@ -159,3 +159,25 @@ func TestConfigNameMatchesNameCell(t *testing.T) {
 		t.Errorf("a linked worktree's name = %q, want %q", got, want)
 	}
 }
+
+// A Windows host's paths ("C:\Users\u\dev\web") keep their own separator and still show under ~.
+func TestBoothDirAndShortPathKeepThePathStyle(t *testing.T) {
+	cases := map[string]string{
+		"/home/u/dev/web":    "/home/u/dev/web/.booth",
+		`C:\Users\u\dev\web`: `C:\Users\u\dev\web\.booth`,
+		`C:\`:                `C:\.booth`,
+		"/":                  "/.booth",
+	}
+	for folder, want := range cases {
+		if got := boothDirIn(folder); got != want {
+			t.Errorf("boothDirIn(%q) = %q, want %q", folder, got, want)
+		}
+	}
+	m := model{deps: Deps{Home: `C:\Users\u`}}
+	if got := m.shortPath(`C:\Users\u\dev\web\.booth`); got != `~\dev\web\.booth` {
+		t.Errorf(`shortPath = %q, want ~\dev\web\.booth`, got)
+	}
+	if got := m.shortPath(`C:\Users\uv\web`); got != `C:\Users\uv\web` {
+		t.Errorf("a sibling of home must not shorten, got %q", got)
+	}
+}

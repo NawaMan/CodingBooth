@@ -571,14 +571,26 @@ func (m model) fit(line string) string {
 	return truncateRight(line, m.width)
 }
 
+// shortPath shows a path under home as ~/…; on Windows the separator after home is "\".
 func (m model) shortPath(path string) string {
 	if path == "" {
 		return "-"
 	}
-	if m.deps.Home != "" && (path == m.deps.Home || strings.HasPrefix(path, m.deps.Home+"/")) {
-		return "~" + strings.TrimPrefix(path, m.deps.Home)
+	home := m.deps.Home
+	if home != "" && (path == home || strings.HasPrefix(path, home+"/") || strings.HasPrefix(path, home+`\`)) {
+		return "~" + strings.TrimPrefix(path, home)
 	}
 	return path
+}
+
+// boothDirIn is the .booth in folder, joined with the separator folder already uses, so the
+// path keeps one style ("C:\p\.booth", "/p/.booth") whatever host reads it.
+func boothDirIn(folder string) string {
+	sep := "/"
+	if strings.Contains(folder, `\`) {
+		sep = `\`
+	}
+	return strings.TrimRight(folder, sep) + sep + ".booth"
 }
 
 func dashIfEmpty(value string) string {

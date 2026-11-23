@@ -6,7 +6,6 @@ package dash
 
 import (
 	"fmt"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -395,5 +394,5 @@ func (m model) boothDirText(b lifecycle.Booth) string {
 	if b.CodePath == "" {
 		return "-"
 	}
-	return m.shortPath(filepath.Join(b.CodePath, ".booth"))
+	return m.shortPath(boothDirIn(b.CodePath))
 }

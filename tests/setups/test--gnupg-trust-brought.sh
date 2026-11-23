@@ -70,7 +70,7 @@ trust_of() { g "$1" --export-ownertrust 2>/dev/null | awk -F: -v f="$2" '$1 == f
 can_encrypt() { echo x | g "$1" -e -r "$2" >/dev/null 2>&1; }
 
 # The host: two keys, as its gpg made them.
-mkdir -m 700 "$WORK/host"
+mkdir_private "$WORK/host"
 g "$WORK/host" --passphrase '' --quick-generate-key "Mine <mine@example.com>"   default default never 2>/dev/null
 g "$WORK/host" --passphrase '' --quick-generate-key "Other <other@example.com>" default default never 2>/dev/null
 MINE=$(fpr_of "$WORK/host" mine@example.com)
@@ -82,7 +82,7 @@ fi
 
 # new_booth NAME -- a gpg home holding both keys, imported: neither has an owner trust.
 new_booth() {
-    mkdir -m 700 "$WORK/$1"
+    mkdir_private "$WORK/$1"
     g "$WORK/host" --armor --export-secret-keys | g "$WORK/$1" --import 2>/dev/null
 }
 # The folder the CLI writes: the private key files of "mine" only.

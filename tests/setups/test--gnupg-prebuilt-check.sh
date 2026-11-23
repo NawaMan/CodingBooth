@@ -165,6 +165,23 @@ for a in "$@"; do
   esac
 done
 EOF
+# A host with no modes (Windows): MSYS makes the folder for the setup's `mkdir -m 700`, then
+# fails to set the mode and stops it. Drop the mode; the folders are still made.
+if ! unix_modes; then
+    cat > "$STUB/bin/mkdir" <<'EOF'
+#!/bin/bash
+args=() skip=0
+for a in "$@"; do
+  if (( skip )); then skip=0; continue; fi
+  case "$a" in
+    -m) skip=1 ;;
+    -m*) ;;
+    *) args+=("$a") ;;
+  esac
+done
+exec /usr/bin/mkdir "${args[@]}"
+EOF
+fi
 chmod +x "$STUB/bin/"*
 
 ROOT=""

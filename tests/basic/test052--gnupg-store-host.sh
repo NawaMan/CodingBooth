@@ -28,6 +28,7 @@ fi
 
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 WORK="$(mktemp -d)"
+HWORK="$(host_path "$WORK")"   # as booth is handed it: C:/… on Windows
 PROJECT="$WORK/project"
 mkdir -p "$PROJECT"
 export GNUPGHOME="$WORK/gnupg"
@@ -38,7 +39,7 @@ FAILED=0
 fail() { print_test_result "false" "$0" "$1" "$2"; echo "  $3"; FAILED=$((FAILED + 1)); }
 
 # The host side: a key with no passphrase, and a message only it opens.
-mkdir -m 700 "$GNUPGHOME"
+mkdir_private "$GNUPGHOME"
 gpg --batch --quiet --passphrase '' --quick-generate-key 'Host <host@example.com>' default default never >/dev/null 2>&1
 echo "from-host" | gpg --batch --quiet -e -r host@example.com > "$PROJECT/message.gpg" 2>/dev/null
 if [[ ! -s "$PROJECT/message.gpg" ]]; then
@@ -55,7 +56,7 @@ echo SOCKET=$(gpgconf --list-dirs agent-socket)
 gpgconf --kill all >/dev/null 2>&1
 '
 OUT=$(run_coding_booth express --code "$PROJECT" --templates-path "$REPO/templates" \
-  --select "gnupg+store-host:\"$WORK/gnupg\"" -- "$SCRIPT" 2>&1) || true
+  --select "gnupg+store-host:\"$HWORK/gnupg\"" -- "$SCRIPT" 2>&1) || true
 
 # -------------------------------------------------------
 # Test 1: the booth has the host's key, and the host's trust in it
@@ -92,7 +93,7 @@ fi
 # -------------------------------------------------------
 # Test 4: every start says the keys are live
 # -------------------------------------------------------
-if grep -qF "Warning: gnupg+store-host: the host's gpg home ($WORK/gnupg), private keys included, is live in this booth" <<<"$OUT"; then
+if grep -qF "Warning: gnupg+store-host: the host's gpg home ($HWORK/gnupg), private keys included, is live in this booth" <<<"$OUT"; then
   print_test_result "true" "$0" "4" "the start warns that the host's keys are live in the booth"
 else
   fail 4 "the start warns that the host's keys are live in the booth" "no warning in the output"
@@ -102,8 +103,8 @@ fi
 # Test 5: a missing host gpg home stops the start
 # -------------------------------------------------------
 OUT=$(run_coding_booth express --code "$PROJECT" --templates-path "$REPO/templates" \
-  --select "gnupg+store-host:\"$WORK/no-gnupg\"" -- true 2>&1) && RC=0 || RC=$?
-if [[ "$RC" -ne 0 ]] && grep -qF "the host has no gpg home at $WORK/no-gnupg" <<<"$OUT" && [[ ! -e "$WORK/no-gnupg" ]]; then
+  --select "gnupg+store-host:\"$HWORK/no-gnupg\"" -- true 2>&1) && RC=0 || RC=$?
+if [[ "$RC" -ne 0 ]] && grep -qF "the host has no gpg home at $HWORK/no-gnupg" <<<"$OUT" && [[ ! -e "$WORK/no-gnupg" ]]; then
   print_test_result "true" "$0" "5" "a missing host gpg home stops the start, and nothing is created on the host"
 else
   fail 5 "a missing host gpg home stops the start, and nothing is created on the host" "rc=$RC $(tail -3 <<<"$OUT")"

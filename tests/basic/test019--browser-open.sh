@@ -93,16 +93,22 @@ opened_url() {
 }
 
 # Runs one booth to completion, then reports the URL it opened (empty if none).
-# Daemon mode returns once the page is open, so there is no settling to wait on;
-# the extra second covers the opener being started rather than waited on.
+# Daemon mode returns once the page is open, so there is no settling to wait on
+# but the opener itself: booth starts it rather than waiting on it. When booth
+# says it opened one, wait for the stand-in's record — on a loaded Windows host
+# cmd.exe can take seconds to run rundll32.cmd. Otherwise a second is enough to
+# catch an open booth did not mention.
 run_booth() {
+  local out
   : > "$OPENED"
   docker rm -f "$NAME" >/dev/null 2>&1 || true
-  {
-    echo "=== booth $* ==="
-    run_coding_booth --code "$WORK" --variant base --name "$NAME" --port "$PORT" "$@" 2>&1
-  } >> "$LOG" || true
-  sleep 1
+  out="$(run_coding_booth --code "$WORK" --variant base --name "$NAME" --port "$PORT" "$@" 2>&1)" || true
+  printf '=== booth %s ===\n%s\n' "$*" "$out" >> "$LOG"
+  if grep -q "Opened http" <<<"$out"; then
+    for _ in $(seq 1 100); do [[ -s "$OPENED" ]] && break; sleep 0.1; done
+  else
+    sleep 1
+  fi
   opened_url
 }
 

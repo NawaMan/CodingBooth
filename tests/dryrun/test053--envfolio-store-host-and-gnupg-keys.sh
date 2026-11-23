@@ -50,14 +50,20 @@ result() { # result <ok> <n> <desc> [<output to show on failure>]
 }
 
 OUT=$(dry 'envfolio+store-host')
+# ~ as booth expands it: on Windows MSYS hands it HOME as C:\… (and the mount is then quoted).
+HOME_SEEN="$HOME"
+[[ "$HOST_OS" == "WIN" ]] && HOME_SEEN="$(cygpath -w "$HOME")"
+# The booth user's uid and gid are the host's, except on Windows, where booth uses 1000.
+U=$(printf '%s\n' "$OUT" | sed -n "s/.*-e '\{0,1\}HOST_UID=\([0-9]*\).*/\1/p" | head -1)
+G=$(printf '%s\n' "$OUT" | sed -n "s/.*-e '\{0,1\}HOST_GID=\([0-9]*\).*/\1/p" | head -1)
 ok=false
-printf '%s\n' "$OUT" | grep -F -- "-v $HOME/.folio:/home/coder/.folio" >/dev/null \
-  && printf '%s\n' "$OUT" | grep -F -- "-v $HOME/.gnupg:/home/coder/.gnupg" >/dev/null \
+printf '%s\n' "$OUT" | grep -F -- "$HOME_SEEN/.folio:/home/coder/.folio" >/dev/null \
+  && printf '%s\n' "$OUT" | grep -F -- "$HOME_SEEN/.gnupg:/home/coder/.gnupg" >/dev/null \
   && ok=true
 result "$ok" 1 "store-host mounts the host store and gpg home, ~ expanded at the start" "$OUT"
 
 ok=false
-printf '%s\n' "$OUT" | grep -F -- "--tmpfs '/run/user/$(id -u):uid=$(id -u),gid=$(id -g),mode=0700'" >/dev/null && ok=true
+printf '%s\n' "$OUT" | grep -F -- "--tmpfs '/run/user/$U:uid=$U,gid=$G,mode=0700'" >/dev/null && ok=true
 result "$ok" 2 "store-host gives gpg-agent its own /run/user/<uid> tmpfs, out of the shared gpg home" "$OUT"
 
 ok=false
@@ -94,7 +100,6 @@ ok=false
 result "$ok" 7 "gnupg alone brings nothing" "$OUT"
 
 OUT=$(dry 'envfolio+store-host+host-agent')
-U=$(id -u) G=$(id -g)
 if [[ "$(uname -s)" == Linux ]]; then
   ok=false
   printf '%s\n' "$OUT" | grep -F -- "--tmpfs '/run/user/$U/gnupg:uid=$U,gid=$G,mode=0700'" >/dev/null \
@@ -127,9 +132,9 @@ result "$ok" 10 "host-agent without store-host is refused" "$OUT"
 
 OUT=$(dry 'gnupg+store-host')
 ok=false
-printf '%s\n' "$OUT" | grep -F -- "-v $HOME/.gnupg:/home/coder/.gnupg" >/dev/null \
+printf '%s\n' "$OUT" | grep -F -- "$HOME_SEEN/.gnupg:/home/coder/.gnupg" >/dev/null \
   && printf '%s\n' "$OUT" | grep -F -- "--tmpfs '/run/user/$U:uid=$U,gid=$G,mode=0700'" >/dev/null \
-  && printf '%s\n' "$OUT" | grep -F "Warning: gnupg+store-host: the host's gpg home ($HOME/.gnupg)" >/dev/null \
+  && printf '%s\n' "$OUT" | grep -F "Warning: gnupg+store-host: the host's gpg home ($HOME_SEEN/.gnupg)" >/dev/null \
   && ! printf '%s\n' "$OUT" | grep -F -- ":/home/coder/.folio" >/dev/null \
   && ok=true
 result "$ok" 11 "gnupg+store-host mounts the host's gpg home alone, with the socket tmpfs and the warning" "$OUT"
@@ -160,9 +165,9 @@ fi
 
 OUT=$(dry 'gnupg+seed-host')
 ok=false
-printf '%s\n' "$OUT" | grep -F -- "-v $HOME/.gnupg:/etc/cb-gnupg-host:ro" >/dev/null \
+printf '%s\n' "$OUT" | grep -F -- "$HOME_SEEN/.gnupg:/etc/cb-gnupg-host:ro" >/dev/null \
   && printf '%s\n' "$OUT" | grep -F -- "CB_GNUPG_SEED_HOST=1" >/dev/null \
-  && printf '%s\n' "$OUT" | grep -F "Warning: gnupg+seed-host: the host's gpg keyring ($HOME/.gnupg)" >/dev/null \
+  && printf '%s\n' "$OUT" | grep -F "Warning: gnupg+seed-host: the host's gpg keyring ($HOME_SEEN/.gnupg)" >/dev/null \
   && ! printf '%s\n' "$OUT" | grep -F -- ":/home/coder/.gnupg" >/dev/null \
   && ! printf '%s\n' "$OUT" | grep -F "writable mount of host" >/dev/null \
   && ok=true

@@ -7,6 +7,7 @@ package booth
 import (
 	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -163,7 +164,7 @@ func TestKataBoothResolvConf(t *testing.T) {
 
 func TestKataBoothSocketMounts(t *testing.T) {
 	isSocket := func(path string) bool {
-		return path == "/run/user/1000/pulse/native" || path == "/home/me/app.sock"
+		return path == "/run/user/1000/pulse/native" || path == filepath.Join("/home/me", "app.sock")
 	}
 	args := []string{
 		"-v", "/run/user/1000/pulse/native:/run/pulse/native:ro",

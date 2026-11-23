@@ -58,7 +58,7 @@ fi
 # copied in: gpg-agent's socket goes in the home, and on macOS $SEED under $TMPDIR is past the
 # 104-byte socket path limit, so the agent would not start there.
 KEYGEN="$WORK/g"
-mkdir -m 700 "$KEYGEN"
+mkdir_private "$KEYGEN"
 gpg --homedir "$KEYGEN" --batch --quiet --passphrase '' \
     --quick-generate-key "Seed Test <seed@example.com>" default default never >/dev/null 2>&1
 echo "seeded-message" | gpg --homedir "$KEYGEN" --batch --quiet --trust-model always \
@@ -99,7 +99,10 @@ else
     "$(grep -E '^GOT|Seeded|rror' <<<"$OUT" | head -4)"
 fi
 
-if grep -qx "MODE=700" <<<"$OUT"; then
+if ! unix_modes; then
+  # ~/.gnupg is cached in the project's .booth/cache: a host folder, and a Windows one keeps no mode.
+  echo "SKIP: test 2: the cached keyring is in a host folder, and this host keeps no modes"
+elif grep -qx "MODE=700" <<<"$OUT"; then
   print_test_result "true" "$0" "2" "the seeded keyring is 0700, though the seed's folder was not"
 else
   fail 2 "the seeded keyring is 0700, though the seed's folder was not" "$(grep '^MODE' <<<"$OUT")"

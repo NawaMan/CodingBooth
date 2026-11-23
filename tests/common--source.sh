@@ -1103,6 +1103,17 @@ is_link_or_copy() {
 # for the same reason.
 unix_modes() { [[ "$HOST_OS" != "WIN" ]]; }
 
+# mode_is PATH MODE holds when PATH has MODE, or when this host keeps no modes —
+# for a check whose other parts still hold everywhere:
+#
+#     [[ "$(cat "$f")" == x ]] && mode_is "$f" 600 && check "true" ... || check "false" ...
+mode_is() { ! unix_modes || [[ "$(file_mode "$1")" == "$2" ]]; }
+
+# mkdir_private DIR… makes each DIR, mode 700 where the host keeps modes. A bare
+# `mkdir -m 700` fails on Windows: MSYS makes the folder, then cannot set the
+# mode, and the error stops a `set -e` test.
+mkdir_private() { if unix_modes; then mkdir -m 700 "$@"; else mkdir "$@"; fi; }
+
 # utf8_locale prints a UTF-8 locale this host actually has, for the one kind of
 # command that needs one: GNU grep refuses `-P` unless the locale is unibyte or
 # UTF-8, and several product scripts read a version with `grep -oP`. Returns 1

@@ -78,8 +78,8 @@ run_startup "$WORK/home-none" "$WORK/does-not-exist"
 run_startup "$WORK/home-copy" "$SRC"
 h="$WORK/home-copy/.ssh"
 got="dir=$(mode "$h") key=$(mode "$h/id_deploy") pub=$(mode "$h/id_deploy.pub") config=$(mode "$h/config") known=$(mode "$h/known_hosts")"
-[[ "$RUN_EXIT" -eq 0 && "$got" == "dir=700 key=600 pub=644 config=600 known=644" \
-   && "$(cat "$h/id_deploy")" == "PRIVATE" ]] \
+[[ "$RUN_EXIT" -eq 0 && "$(cat "$h/id_deploy")" == "PRIVATE" ]] \
+   && { ! unix_modes || [[ "$got" == "dir=700 key=600 pub=644 config=600 known=644" ]]; } \
     && check "true"  "keys are copied with ssh's modes (700 dir, 600 private, 644 public)" \
     || check "false" "keys are copied with ssh's modes (700 dir, 600 private, 644 public)" "exit=$RUN_EXIT"$'\n'"$got"
 
@@ -101,7 +101,7 @@ nh="$WORK/home-clash/.ssh"
          "id_deploy=$(cat "$nh/id_deploy" 2>/dev/null)"
 
 run_startup "$WORK/home-copy" "$SRC"
-[[ "$RUN_EXIT" -eq 0 && "$(ls "$h" | wc -l)" -eq 4 && "$(mode "$h/id_deploy")" == "600" ]] \
+[[ "$RUN_EXIT" -eq 0 && "$(ls "$h" | wc -l)" -eq 4 ]] && mode_is "$h/id_deploy" 600 \
     && check "true"  "a restart copies nothing twice and does not fail" \
     || check "false" "a restart copies nothing twice and does not fail" "$(ls -la "$h")"
 
