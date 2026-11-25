@@ -9,6 +9,9 @@ status=0
 for lang in "Fortran" "COBOL" "ALGOL 68" "Prolog" "Smalltalk" "Pascal"; do
   if echo "$OUT" | grep -qE "^ *${lang}: +${EXPECTED// / +} *$"; then
     echo "ok   - $lang"
+  elif [[ "$lang" == "Smalltalk" ]] && echo "$OUT" | grep -q "^pharo is not installed:"; then
+    # pharo--setup.sh installs this placeholder on arm64, where no current Pharo VM exists.
+    echo "skip - $lang (no Pharo VM for this architecture)"
   else
     echo "FAIL - $lang"; status=1
   fi

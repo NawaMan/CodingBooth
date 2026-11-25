@@ -40,11 +40,17 @@ echo
 # Pre-cleanup: ensure no leftover container
 docker stop "$CONTAINER_NAME" 2>/dev/null || true
 docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
-sleep 1
+# A --rm booth is removed asynchronously after it stops, so the name can still be taken
+# for a moment. Wait until it is really gone: starting on a taken name fails.
+for _ in $(seq 1 30); do
+    docker container inspect "$CONTAINER_NAME" >/dev/null 2>&1 || break
+    sleep 1
+done
 
 # Start workspace in daemon mode
 echo "Starting codingbooth..."
-"$BOOTH" --no-browser --daemon --variant base --port "${CB_PORT:-50161}" --name "$CONTAINER_NAME" -p "$CONTAINER_PORT":8080 || true
+"$BOOTH" --no-browser --daemon --variant base --port "${CB_PORT:-50161}" --name "$CONTAINER_NAME" -p "$CONTAINER_PORT":8080 \
+    || fail "booth failed to start"
 
 # Wait for npm install to complete (up to 120 seconds)
 echo "Waiting for npm install to complete..."

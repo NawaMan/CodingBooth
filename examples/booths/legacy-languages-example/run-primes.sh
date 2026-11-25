@@ -18,9 +18,13 @@ run() {
 }
 
 if [[ "${1:-all}" == "all" ]]; then
+  # Run every language even when one fails, so one missing toolchain (Pharo on arm64)
+  # does not hide the results of the ones after it. Exit non-zero if any failed.
+  status=0
   for lang in fortran cobol algol68 prolog smalltalk pascal; do
-    run "$lang"
+    run "$lang" || status=1
   done
+  exit $status
 else
   run "$1"
 fi
