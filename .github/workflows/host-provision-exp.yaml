@@ -16,13 +16,13 @@ jobs:
   cli:
     runs-on: ubuntu-26.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: cli/go.mod
           cache-dependency-path: cli/go.sum
       - run: ./build/cli-build.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: booth-linux-amd64
           path: bin/codingbooth-linux-amd64
@@ -137,7 +137,7 @@ jobs:
           - wordpress-example
           - zig-snake-example
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: What the runner already has
         run: |
@@ -145,7 +145,7 @@ jobs:
           for t in go zig python3 node java gpg just; do printf '%-8s %s\n' "$t" "$(command -v $t || echo -)"; done
           apt-cache madison clang-18 | head -n 3
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: booth-linux-amd64
           path: ${{ runner.temp }}/cli
@@ -177,7 +177,7 @@ jobs:
 
       - name: Upload report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: host-provision-report-${{ matrix.example }}
           path: |
@@ -193,7 +193,7 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           pattern: host-provision-report-*
           path: reports
@@ -213,7 +213,7 @@ jobs:
               echo "| $ex | $pf | $tp | $tf | ${first} |"
             done
           } | tee summary.md >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: host-provision-summary
           path: summary.md

@@ -20,7 +20,7 @@ jobs:
       # Checkout and Setup
       # ---------------------------------------------------------
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Full history and tags: the catalog version check compares against the
           # manifest at the previous release tag.
@@ -167,7 +167,7 @@ jobs:
       # Publish versioned release (binary + examples)
       # ---------------------------------------------------------
       - name: Publish versioned release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.get_version.outputs.version }}
           name: ${{ steps.get_version.outputs.version }}
@@ -199,7 +199,7 @@ jobs:
       # Publish latest release (stable only, replaces on each run)
       # ---------------------------------------------------------
       - name: Publish latest release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: latest
           name: latest

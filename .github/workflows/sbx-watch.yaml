@@ -34,7 +34,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       WATCH_REPO: docker/sbx-releases
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Compare latest sbx release to pinned baseline
         env:

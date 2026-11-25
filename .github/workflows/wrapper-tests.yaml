@@ -48,17 +48,17 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       # Built through Buildx with a GitHub Actions layer cache: the image
       # installs docker-ce and gh from apt, which is minutes cold and seconds
       # warm. `load: true` puts it in the local daemon under the tag run-all.sh
       # expects, so the suite finds it and skips its own build.
       - name: Build test image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: tests/wrapper
           file: tests/wrapper/dockerfile
@@ -67,7 +67,7 @@ jobs:
           cache-from: type=gha,scope=wrapper-tests
           cache-to: type=gha,scope=wrapper-tests,mode=max
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: cli/go.mod
           cache-dependency-path: cli/go.sum

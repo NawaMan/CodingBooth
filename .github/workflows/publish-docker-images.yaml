@@ -39,7 +39,7 @@ jobs:
     outputs:
       apt_snapshot: ${{ steps.snapshot.outputs.apt_snapshot }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Reject pre-release (--rc) versions
         run: |
@@ -96,7 +96,7 @@ jobs:
             runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Build & push base (${{ matrix.arch }}, by digest)
         run: ./build/docker-build.sh --push --arch ${{ matrix.arch }} base
@@ -106,7 +106,7 @@ jobs:
           CB_APT_SNAPSHOT:    ${{ needs.guard-no-rc.outputs.apt_snapshot }}
 
       - name: Upload base digest (${{ matrix.arch }})
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: digests-base-${{ matrix.arch }}
           path: build/.digests/base-${{ matrix.arch }}.digest
@@ -120,13 +120,13 @@ jobs:
     needs: build-base
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install cosign
         uses: sigstore/cosign-installer@v3
 
       - name: Download base digests
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           pattern: digests-base-*
           merge-multiple: true
@@ -163,7 +163,7 @@ jobs:
             runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Clean up disk space
         if: matrix.variant == 'desktop-kde' || matrix.variant == 'desktop-lxqt' || matrix.variant == 'desktop-wayland'
@@ -182,7 +182,7 @@ jobs:
           CB_APT_SNAPSHOT:    ${{ needs.guard-no-rc.outputs.apt_snapshot }}
 
       - name: Upload ${{ matrix.variant }} digest (${{ matrix.arch }})
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: digests-${{ matrix.variant }}-${{ matrix.arch }}
           path: build/.digests/${{ matrix.variant }}-${{ matrix.arch }}.digest
@@ -200,13 +200,13 @@ jobs:
         variant: [notebook, codeserver, desktop-xfce, desktop-kde, desktop-lxqt, desktop-wayland]
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install cosign
         uses: sigstore/cosign-installer@v3
 
       - name: Download ${{ matrix.variant }} digests
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           pattern: digests-${{ matrix.variant }}-*
           merge-multiple: true
@@ -238,10 +238,10 @@ jobs:
     needs: [merge-base, merge-variants]
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.27.3'
 
@@ -255,10 +255,10 @@ jobs:
     needs: [merge-base, merge-variants]
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.27.3'
 
@@ -277,10 +277,10 @@ jobs:
         shard: [1, 2, 3, 4]
     name: complex-tests (shard ${{ matrix.shard }}/4)
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.27.3'
 
