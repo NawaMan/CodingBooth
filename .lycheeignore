@@ -32,3 +32,7 @@ codingbooth\.io/tour(/|$)
 
 # lsp-example's guide links to missing.md on purpose: it shows marksman flagging a broken link.
 /lsp-example/docs/missing\.md$
+
+# dev.gnupg.org (GnuPG's Phabricator bug tracker) has outages that fail CI. The
+# T8469 ticket cited by the vendored gnupg-patches is stable; skip the host.
+^https?://dev\.gnupg\.org/
