@@ -222,6 +222,11 @@ type AppConfig struct {
 	// Container configuration
 	// --------------------
 	Name string `toml:"name,omitempty"           envconfig:"CB_NAME"`
+	// NameDefaulted is true when Name was not given (no --name, CB_NAME or config.toml name) and
+	// fell back to the project name. Only such a derived name may be auto-suffixed on a collision;
+	// a name the user chose is a contract, even when it happens to equal the project name.
+	NameDefaulted bool `toml:"-" ignored:"true"`
+
 	Port string `toml:"port,omitempty"           envconfig:"CB_PORT" default:"NEXT"`
 	// OffsetBase is what a "+OFFSET" host port counts from. Empty means the booth
 	// port, which is what keeps two local booths of one project off each other's

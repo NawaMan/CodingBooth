@@ -21,7 +21,7 @@ func TestResolveUniqueName(t *testing.T) {
 	tests := []struct {
 		name         string
 		reqName      string
-		project      string
+		defaulted    bool
 		port         int
 		occupied     []string
 		wantName     string
@@ -29,33 +29,39 @@ func TestResolveUniqueName(t *testing.T) {
 		wantErr      bool
 	}{
 		{
-			name:     "free default name used as-is",
-			reqName:  "myproj", project: "myproj", port: 10000,
+			name:    "free default name used as-is",
+			reqName: "myproj", defaulted: true, port: 10000,
 			occupied: nil,
 			wantName: "myproj", wantSuffixed: false,
 		},
 		{
 			name:    "taken default name auto-suffixes with port",
-			reqName: "myproj", project: "myproj", port: 11000,
+			reqName: "myproj", defaulted: true, port: 11000,
 			occupied:     []string{"myproj"},
 			wantName:     "myproj-11000",
 			wantSuffixed: true,
 		},
 		{
 			name:    "explicit custom name collision is an error (no suffix)",
-			reqName: "custom", project: "myproj", port: 11000,
+			reqName: "custom", defaulted: false, port: 11000,
 			occupied: []string{"custom"},
 			wantErr:  true,
 		},
 		{
 			name:    "default and suffixed both taken is an error",
-			reqName: "myproj", project: "myproj", port: 11000,
+			reqName: "myproj", defaulted: true, port: 11000,
 			occupied: []string{"myproj", "myproj-11000"},
 			wantErr:  true,
 		},
 		{
+			name:    "explicit name equal to the project name collision is an error (no suffix)",
+			reqName: "myproj", defaulted: false, port: 11000,
+			occupied: []string{"myproj"},
+			wantErr:  true,
+		},
+		{
 			name:    "free explicit name used as-is",
-			reqName: "custom", project: "myproj", port: 12000,
+			reqName: "custom", defaulted: false, port: 12000,
 			occupied: []string{"myproj"}, // default taken, but not what was requested
 			wantName: "custom", wantSuffixed: false,
 		},
@@ -63,7 +69,7 @@ func TestResolveUniqueName(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, suffixed, err := resolveUniqueName(tt.reqName, tt.project, tt.port, takenSet(tt.occupied...))
+			got, suffixed, err := resolveUniqueName(tt.reqName, tt.defaulted, tt.port, takenSet(tt.occupied...))
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("resolveUniqueName err = %v, wantErr %v", err, tt.wantErr)
 			}

@@ -4,6 +4,14 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **An explicit `--name` equal to the project name no longer auto-suffixes.**
+  The default name falls back to `<project>-<port>` when it is taken, and an explicit `--name` was
+  meant to error instead. But the check compared the name to the project name rather than asking
+  whether one was given, so `--name myproj` run from `./myproj` was quietly renamed to
+  `myproj-<port>`. Anything that then addressed the booth by the name it asked for — a script's
+  `docker stop myproj` — missed it and left it running. Now a name from `--name`, `CB_NAME` or
+  `config.toml` errors on collision whatever its value; only an unset name auto-suffixes.
+
 - **Security guide: what a normal booth still exposes.**
   [BOOTH_SECURITY.md](BOOTH_SECURITY.md) now covers three risks it did not before, each checked on a
   real host:

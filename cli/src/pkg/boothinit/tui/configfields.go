@@ -287,6 +287,7 @@ var unrenderedKeys = map[string]string{
 	"dindisolationunavailable":  "run-time only (toml:\"-\") — why this machine fell back from --dind-isolation, worked out at the start of each run",
 	"tlscert":                   "start-time only (toml:\"-\"), paired with --public",
 	"tlskey":                    "start-time only (toml:\"-\"), paired with --public",
+	"namedefaulted":             "run-time only (toml:\"-\") — records that no name was given, worked out at the start of each run",
 	// Consent overrides (--dind-allowed / --privileged-allowed) are command-line only by design.
 	"dindallowed":       "command-line consent (--dind-allowed); a committed key would let a repo approve its own privileged sidecar",
 	"privilegedallowed": "command-line consent (--privileged-allowed); a committed key would let a repo approve its own host-escape run-args",

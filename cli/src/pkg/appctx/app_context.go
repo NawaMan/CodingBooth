@@ -209,6 +209,7 @@ func (ctx AppContext) Timezone() string    { return ctx.values.Config.Timezone }
 
 // Container Configuration
 func (ctx AppContext) Name() string              { return ctx.values.Config.Name }
+func (ctx AppContext) NameDefaulted() bool       { return ctx.values.Config.NameDefaulted }
 func (ctx AppContext) Port() string              { return ctx.values.Config.Port }
 func (ctx AppContext) OffsetBase() string        { return ctx.values.Config.OffsetBase }
 func (ctx AppContext) BrowserPort() string       { return ctx.values.Config.BrowserPort }

@@ -13,7 +13,8 @@
 #
 # Test 1: first run (no --name) uses the bare project name.
 # Test 2: second run (no --name) in the same dir auto-suffixes to <project>-<port>.
-# Test 3: no-arg `booth stop` still targets the first (bare-named) booth.
+# Test 3: an EXPLICIT --name equal to the project name never auto-suffixes — it errors.
+# Test 4: no-arg `booth stop` still targets the first (bare-named) booth.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -63,17 +64,34 @@ else
   FAILED=$((FAILED + 1))
 fi
 
-# Test 3: no-arg `booth stop` still targets the bare-named first booth.
+# Test 3: an explicit --name that happens to equal the project name is a contract, not a
+# default: with '$PROJECT' taken it must fail rather than quietly start '$PROJECT-<port>'.
+# (A silent rename left js-example's test booth running after its cleanup, holding its ports.)
+BEFORE="$(docker ps -aq --filter "label=cb.project=$PROJECT" 2>/dev/null | wc -l | tr -d ' ')"
+if run_coding_booth --variant base --daemon --keep-alive --name "$PROJECT" -- 'sleep 120' >/dev/null 2>&1; then
+  print_test_result "false" "$0" "3" "explicit --name '$PROJECT' should fail on collision, but it started"
+  FAILED=$((FAILED + 1))
+else
+  AFTER="$(docker ps -aq --filter "label=cb.project=$PROJECT" 2>/dev/null | wc -l | tr -d ' ')"
+  if [[ "$AFTER" == "$BEFORE" ]]; then
+    print_test_result "true" "$0" "3" "explicit --name '$PROJECT' errors on collision (no suffix)"
+  else
+    print_test_result "false" "$0" "3" "explicit --name '$PROJECT' failed but created a container ($BEFORE -> $AFTER)"
+    FAILED=$((FAILED + 1))
+  fi
+fi
+
+# Test 4: no-arg `booth stop` still targets the bare-named first booth.
 if run_coding_booth stop >/dev/null 2>&1; then
   # keep-alive booths return to 'exited' when stopped (they are not removed).
   if [[ "$(state_of "$PROJECT")" == "exited" ]] && [[ "$(state_of "$SECOND")" == "running" ]]; then
-    print_test_result "true" "$0" "3" "no-arg stop targets the stable '$PROJECT', leaving '$SECOND' up"
+    print_test_result "true" "$0" "4" "no-arg stop targets the stable '$PROJECT', leaving '$SECOND' up"
   else
-    print_test_result "false" "$0" "3" "no-arg stop should stop '$PROJECT' only (states: $PROJECT=$(state_of "$PROJECT"), $SECOND=$(state_of "$SECOND"))"
+    print_test_result "false" "$0" "4" "no-arg stop should stop '$PROJECT' only (states: $PROJECT=$(state_of "$PROJECT"), $SECOND=$(state_of "$SECOND"))"
     FAILED=$((FAILED + 1))
   fi
 else
-  print_test_result "false" "$0" "3" "no-arg stop should succeed"
+  print_test_result "false" "$0" "4" "no-arg stop should succeed"
   FAILED=$((FAILED + 1))
 fi
 

@@ -102,6 +102,7 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 	}
 	if context.Config.Name == "" {
 		context.Config.Name = context.Config.ProjectName
+		context.Config.NameDefaulted = true
 	}
 
 	// Sync list fields from Config to Builder

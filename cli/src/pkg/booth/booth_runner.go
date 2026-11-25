@@ -124,14 +124,17 @@ func (runner *BoothRunner) Run() error {
 //     a specific one) auto-falls back to "<name>-<port>", so running the same
 //     project again does not collide — the port is unique, and the stable base name
 //     stays with the first booth. See resolveUniqueName for the decision logic.
-//   - A taken name the user chose explicitly is a contract: a collision is an error.
+//   - A taken name the user chose explicitly is a contract: a collision is an error —
+//     even when it equals the project name (`--name myproj` run from ./myproj).
 func EnsureContainerName(ctx appctx.AppContext) (appctx.AppContext, error) {
 	name := ctx.Name()
+	defaulted := ctx.NameDefaulted()
 	if name == "" {
 		name = ctx.ProjectName()
+		defaulted = true
 	}
 
-	final, suffixed, err := resolveUniqueName(name, ctx.ProjectName(), ctx.PortNumber(), func(candidate string) (bool, error) {
+	final, suffixed, err := resolveUniqueName(name, defaulted, ctx.PortNumber(), func(candidate string) (bool, error) {
 		return containerNameTaken(ctx, candidate)
 	})
 	if err != nil {
@@ -152,7 +155,8 @@ func EnsureContainerName(ctx appctx.AppContext) (appctx.AppContext, error) {
 // resolveUniqueName decides the final container name given a taken-ness checker.
 // It is pure except for the injected checker, so the decision is unit-testable.
 // Returns the chosen name and whether it was auto-suffixed.
-func resolveUniqueName(name, projectName string, port int, isTaken func(string) (bool, error)) (string, bool, error) {
+// defaulted reports that name is the derived project default rather than one the user gave.
+func resolveUniqueName(name string, defaulted bool, port int, isTaken func(string) (bool, error)) (string, bool, error) {
 	taken, err := isTaken(name)
 	if err != nil {
 		return "", false, err
@@ -161,8 +165,11 @@ func resolveUniqueName(name, projectName string, port int, isTaken func(string) 
 		return name, false, nil
 	}
 
-	// Only the derived default name auto-suffixes; an explicit name stays a contract.
-	if name == projectName {
+	// Only the derived default name auto-suffixes; an explicit name stays a contract,
+	// even one that matches the project name. Comparing against the project name instead
+	// silently renamed `--name js-example` to js-example-<port>, and cleanup keyed on the
+	// requested name then left that container running.
+	if defaulted {
 		suffixed := fmt.Sprintf("%s-%d", name, port)
 		takenToo, err := isTaken(suffixed)
 		if err != nil {
