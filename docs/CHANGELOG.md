@@ -4,6 +4,15 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`wails` and `go+kernel` no longer compile their Go tools in every image build.**
+  Both used to `go install` a CLI each time an image was built: `wails3` for `wails`, and goimports
+  (which GoNB runs on every cell) for `go+kernel`. Both now come prebuilt and sha256-checked from
+  [CodingBoothPrebuilt](https://github.com/NawaMan/CodingBoothPrebuilt) on x86_64 and arm64, and
+  fall back to `go install` for a version that has no asset yet. For `wails`, `latest` is now
+  resolved through the Go module proxy before installing, so it finds the asset; if the proxy can't
+  be reached, it installs 3.1.0. goimports is **pinned** to `golang.org/x/tools` v0.53.0 instead of
+  `@latest`, so every booth gets the same build. It still lands in the booth user's `~/go/bin`.
+
 - **An explicit `--name` equal to the project name no longer auto-suffixes.**
   The default name falls back to `<project>-<port>` when it is taken, and an explicit `--name` was
   meant to error instead. But the check compared the name to the project name rather than asking

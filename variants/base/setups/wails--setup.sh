@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.3.1
+# cb-version: 0.4.0
 
 # wails--setup.sh — Install the Wails v3 CLI and the Linux GTK4/WebKitGTK
 # toolchain it compiles against.
@@ -26,6 +26,10 @@ Notes:
   WebKitGTK 6.0 (the v3 default; Ubuntu 24.04 ships it).
 - The wails3 binary is copied to /usr/local/bin so a non-login shell
   (booth -- cmd) finds it, not only an interactive login via GOPATH/bin.
+- wails3 comes prebuilt (sha256-checked) from
+  https://github.com/NawaMan/CodingBoothPrebuilt on both CPUs (upstream publishes
+  no Linux binaries); a version not prebuilt (yet) is built with \`go install\`.
+  "latest" is resolved through the Go module proxy first, so it finds its asset.
 - See: https://v3.wails.io/quick-start/installation/
 USAGE
 }
@@ -78,58 +82,71 @@ fi
 
 # ---- resolve the Go module version ----
 MODULE="github.com/wailsapp/wails/v3/cmd/wails3"
-FALLBACK_VERSION="v3.1.0"
+FALLBACK_VERSION="3.1.0"
 
+# A prebuilt asset is named after a concrete version, so "latest" is resolved here rather
+# than left to go install. An unreachable proxy falls back to the known-good release.
 if [[ "$REQ_VER" == "latest" ]]; then
-  SPEC="${MODULE}@latest"
+  VER="$(curl --connect-timeout 15 --retry 3 --retry-delay 3 -fsSL \
+          https://proxy.golang.org/github.com/wailsapp/wails/v3/@latest 2>/dev/null \
+        | sed -n 's/.*"Version":"v\{0,1\}\([^"]*\)".*/\1/p' || true)"
+  if [[ -z "$VER" ]]; then
+    echo "⚠️  Could not resolve the latest wails3 from proxy.golang.org; using ${FALLBACK_VERSION}." >&2
+    VER="$FALLBACK_VERSION"
+  fi
 else
   VER="${REQ_VER#v}"
-  SPEC="${MODULE}@v${VER}"
 fi
+SPEC="${MODULE}@v${VER}"
 
-echo "📦 Installing wails3 (${SPEC}) ..."
+# ---- prebuilt first ----
+if [[ ! -r "${SETUP_LIBS_DIR}/prebuilt-source.sh" ]]; then
+  SETUP_LIBS_DIR="$SCRIPT_DIR/libs"
+fi
+source "${SETUP_LIBS_DIR}/prebuilt-source.sh"
 
-# Install as the booth user (coder unless CB_USER_NAME says otherwise) so the module cache lives in the booth user's GOPATH, then
-# copy the binary to /usr/local/bin. go install talks to proxy.golang.org,
-# which resets often enough to fail a build; retry with backoff like go--install.sh.
-CB_USER_NAME="${CB_USER_NAME:-coder}"
-CB_USER_HOME="${CB_USER_HOME:-$(getent passwd "$CB_USER_NAME" 2>/dev/null | cut -d: -f6 || true)}"
-CB_USER_HOME="${CB_USER_HOME:-/home/${CB_USER_NAME}}"
-install -d -o "$CB_USER_NAME" -g "$(id -gn "$CB_USER_NAME")" "$CB_USER_HOME/go/bin" "$CB_USER_HOME/go/pkg" "$CB_USER_HOME/go/src"
+PREBUILT_TMP="$(mktemp -d)"
+if cb_prebuilt_install wails3 "$VER" native "$PREBUILT_TMP"; then
+  install -m 755 "$PREBUILT_TMP/bin/wails3" /usr/local/bin/wails3
+  rm -rf "$PREBUILT_TMP"
+else
+  rm -rf "$PREBUILT_TMP"
+  echo "ℹ️  wails3 ${VER}: not prebuilt for this image; building with go install..."
+  echo "📦 Installing wails3 (${SPEC}) ..."
 
-install_cli() {
-  local spec="$1"
-  sudo -u "$CB_USER_NAME" bash -lc "go install '${spec}'"
-}
+  # Install as the booth user (coder unless CB_USER_NAME says otherwise) so the module cache
+  # lives in the booth user's GOPATH, then copy the binary to /usr/local/bin. go install talks
+  # to proxy.golang.org, which resets often enough to fail a build; retry with backoff like
+  # go--install.sh.
+  CB_USER_NAME="${CB_USER_NAME:-coder}"
+  CB_USER_HOME="${CB_USER_HOME:-$(getent passwd "$CB_USER_NAME" 2>/dev/null | cut -d: -f6 || true)}"
+  CB_USER_HOME="${CB_USER_HOME:-/home/${CB_USER_NAME}}"
+  install -d -o "$CB_USER_NAME" -g "$(id -gn "$CB_USER_NAME")" "$CB_USER_HOME/go/bin" "$CB_USER_HOME/go/pkg" "$CB_USER_HOME/go/src"
 
-attempt=1
-until install_cli "$SPEC"; do
-  if [[ "$REQ_VER" == "latest" && $attempt -ge 1 && "$SPEC" == "${MODULE}@latest" ]]; then
-    echo "⚠️  go install @latest failed; falling back to ${FALLBACK_VERSION}." >&2
-    SPEC="${MODULE}@${FALLBACK_VERSION}"
-  fi
-  if [[ $attempt -ge 3 ]]; then
-    echo "❌ go install '${SPEC}' failed after ${attempt} attempts." >&2
+  attempt=1
+  until sudo -u "$CB_USER_NAME" bash -lc "go install '${SPEC}'"; do
+    if [[ $attempt -ge 3 ]]; then
+      echo "❌ go install '${SPEC}' failed after ${attempt} attempts." >&2
+      exit 1
+    fi
+    echo "⚠️  go install '${SPEC}' failed (attempt ${attempt}); retrying in $((attempt * 5))s..." >&2
+    sleep "$((attempt * 5))"
+    attempt=$((attempt + 1))
+  done
+
+  WAILS_SRC=""
+  for candidate in "$CB_USER_HOME/go/bin/wails3" /root/go/bin/wails3; do
+    if [[ -x "$candidate" ]]; then
+      WAILS_SRC="$candidate"
+      break
+    fi
+  done
+  if [[ -z "$WAILS_SRC" ]]; then
+    echo "❌ go install succeeded but wails3 was not in GOPATH/bin" >&2
     exit 1
   fi
-  echo "⚠️  go install '${SPEC}' failed (attempt ${attempt}); retrying in $((attempt * 5))s..." >&2
-  sleep "$((attempt * 5))"
-  attempt=$((attempt + 1))
-done
-
-WAILS_SRC=""
-for candidate in "$CB_USER_HOME/go/bin/wails3" /root/go/bin/wails3; do
-  if [[ -x "$candidate" ]]; then
-    WAILS_SRC="$candidate"
-    break
-  fi
-done
-if [[ -z "$WAILS_SRC" ]]; then
-  echo "❌ go install succeeded but wails3 was not in GOPATH/bin" >&2
-  exit 1
+  install -m 755 "$WAILS_SRC" /usr/local/bin/wails3
 fi
-
-install -m 755 "$WAILS_SRC" /usr/local/bin/wails3
 
 # WebKitGTK 6.0 sandboxes the renderer with bubblewrap, which needs user
 # namespaces a booth container does not grant. Same class of workaround as

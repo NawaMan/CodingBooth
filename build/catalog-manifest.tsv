@@ -132,7 +132,7 @@ setup	glow	1.0.0	28b4080bb70b2a6d359a0ca21f12223e8ed0cd455cabe1c6a7c01377e5cd89f
 setup	gnupg	0.6.0	2875f6aaebc680a9bcd1dc03662bc3a3eaf45d04e2efb0aabb1f89f9ba89546d	variants/base/setups/gnupg--setup.sh
 setup	go	1.3.0	d34d1844fd67e7487a354af3333e62029748f4c420d980cb5c324072bbb9a6e9	variants/base/setups/go--setup.sh
 setup	go-code-extension	1.0.0	14b5c05adef0b6e5f5eb1593ef84feca1320bdf1ad6150cf845e96b39c822371	variants/base/setups/go-code-extension--setup.sh
-setup	go-nb-kernel	1.2.0	ab962f1468ed6933d31d98078003d71e37ad780dcd2aa4350e95f10d0c6ff2b4	variants/base/setups/go-nb-kernel--setup.sh
+setup	go-nb-kernel	1.3.0	fe102a2e59f6c19521f6fb74ec6454a4ea55601ce474c54c105ee6c8f9cc0f65	variants/base/setups/go-nb-kernel--setup.sh
 setup	google-chrome	1.1.0	4747c061f49b7eea76796abc4425f0e563611222452911f064464f8531b1a21b	variants/base/setups/google-chrome--setup.sh
 setup	goose	1.0.0	138c554d9ab722ea3b71731ecad135583e355b03a5072c0e20ad3cfdf3ff0971	variants/base/setups/goose--setup.sh
 setup	goose-lang	0.1.1	864cfb09a3ea64e0cdb29c9e459ba43cf42b86b5eadc9964ae6be923b9024b91	variants/base/setups/goose-lang--setup.sh
@@ -357,7 +357,7 @@ setup	viewmd-desktop-icon	1.0.1	2e3381d469cd79bad5cb3f24203fdc55107c2d0f94d7fa03
 setup	vscode	1.0.0	41130a71e8da3f8bd0a755dc1e4a7d9563d2abde5fbd44be3b9634dcb885f4e8	variants/base/setups/vscode--setup.sh
 setup	vscode-copilot	0.1.0	09554289ba4bd3093d39132bf13aaca986614ef7c84fab9927d3dae4b16f530e	variants/base/setups/vscode-copilot--setup.sh
 setup	vue-code-extension	0.1.0	e75b46cd8553f1ee3b70b23d5b98f8ddc7215c1204f43180a418d303f30965ab	variants/base/setups/vue-code-extension--setup.sh
-setup	wails	0.3.1	05b3e6ef3205ac07c6562bc8bc93ce922ef552f94f3197563234097873096137	variants/base/setups/wails--setup.sh
+setup	wails	0.4.0	4a3690c46175e8b7c3c6eed11234ddcb7f49dfe54ec9ed72c37f36c1ef058511	variants/base/setups/wails--setup.sh
 setup	wails-android	0.1.0	4f4373e30df218c77731d7c37a8b7a260aae56831b6e0b5eb8f2875bb340e001	variants/base/setups/wails-android--setup.sh
 setup	warp	1.0.0	a7b2ea3c833b92cee4b52150e3d0be5bb7a7e290f045c40e2042ecc92441abbd	variants/base/setups/warp--setup.sh
 setup	wayland	1.0.2	7b90f4f633a20de4f7d1f532c17da8dd0c3bcdcc3a0001b7b2a75859ff40916a	variants/base/setups/wayland--setup.sh

@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.2.0
+# cb-version: 1.3.0
 
 # go-nb-kernel--setup.sh
 #
@@ -31,11 +31,16 @@ Notes:
 - Comes prebuilt (sha256-checked) from https://github.com/NawaMan/CodingBoothPrebuilt
   on both CPUs (upstream publishes source only); a version not prebuilt (yet) is
   built with \`go install\` into the booth user's ~/go/bin
-- goimports, which GoNB runs on every cell, is installed with \`go install\`
+- goimports, which GoNB runs on every cell, is pinned to golang.org/x/tools
+  v${GOIMPORTS_VER:-0.53.0} and comes prebuilt from CodingBoothPrebuilt too, else
+  \`go install\`; either way it lands in the booth user's ~/go/bin
 USAGE
 }
 
 GONB_DEFAULT_VER="0.11.5"
+# goimports is a golang.org/x/tools release. Pinned (it used to be @latest) so a prebuilt
+# asset exists for it and every booth gets the same one; bump it with the other pins.
+GOIMPORTS_VER="0.53.0"
 VERSION="$GONB_DEFAULT_VER"
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -109,7 +114,17 @@ else
   sudo -u "$CB_USER_NAME" bash -lc "go install github.com/janpfeifer/gonb@v${VERSION}"
   GONB_BIN="${CB_USER_HOME}/go/bin/gonb"
 fi
-sudo -u "$CB_USER_NAME" bash -lc "go install golang.org/x/tools/cmd/goimports@latest"
+# goimports goes where go install would put it, the booth user's ~/go/bin, which the go
+# setup's profile puts on PATH, so GoNB finds it the same way either way.
+GOIMPORTS_DIR="${CB_USER_HOME}/go/bin"
+install -d -o "$CB_USER_NAME" -g "$(id -gn "$CB_USER_NAME")" "$GOIMPORTS_DIR"
+if cb_prebuilt_install goimports "$GOIMPORTS_VER" native "$TMP/goimports"; then
+  install -m 755 -o "$CB_USER_NAME" -g "$(id -gn "$CB_USER_NAME")" \
+    "$TMP/goimports/bin/goimports" "$GOIMPORTS_DIR/goimports"
+else
+  echo "ℹ️  goimports ${GOIMPORTS_VER}: not prebuilt for this image; building with go install..."
+  sudo -u "$CB_USER_NAME" bash -lc "go install golang.org/x/tools/cmd/goimports@v${GOIMPORTS_VER}"
+fi
 
 if [ ! -x "${GONB_BIN}" ]; then
   echo "❌ gonb binary not found at ${GONB_BIN}" >&2
