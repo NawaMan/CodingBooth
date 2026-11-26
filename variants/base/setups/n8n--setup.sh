@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.4.0
+# cb-version: 0.5.0
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -90,11 +90,21 @@ if ! node_ok; then
 fi
 node_ok || { echo "❌ Node.js >= 24 is still not on PATH ($(node -v 2>/dev/null || echo missing))" >&2; exit 1; }
 
-# node-gyp fallback when a native module has no prebuild for this Node.
+# No compiler on purpose: the default path compiles nothing. Every native module n8n
+# needs ships a prebuilt binary for Node 24 on amd64 and arm64 (sqlite3, isolated-vm,
+# the Kafka client, msgpackr, @parcel/watcher, @napi-rs/*, oxc). The ones that don't
+# are optional and are skipped without a compiler, npm still exiting 0: cpu-features
+# and ssh2's crypto binding (ssh2 then uses its JS crypto). Should a future n8n need a
+# native module with no prebuild, the install fails here instead of compiling.
+#
+# The Python task runner's venv (below) is built on Ubuntu's own /usr/bin/python3,
+# not the catalog's, so it needs that exact interpreter. Its websockets has no wheel
+# for Python 3.14 yet; uv builds it from source as pure Python, without its optional
+# C speedups.
 export DEBIAN_FRONTEND=noninteractive
-if ! command -v python3 >/dev/null 2>&1 || ! command -v g++ >/dev/null 2>&1; then
+if [[ ! -x /usr/bin/python3 ]]; then
   apt-get update
-  apt-get install -y --no-install-recommends python3 make g++
+  apt-get install -y --no-install-recommends python3
   rm -rf /var/lib/apt/lists/*
 fi
 
