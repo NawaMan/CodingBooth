@@ -87,6 +87,19 @@ user's pin silently does nothing:
 2. `[params.<NAME>_VERSION] default` in `template.toml`,
 3. the `suggests` list — put the new version first, drop the oldest.
 
+**And the new default must be prebuilt first** (`AGENTS.md` Rule 4). If the setup builds
+anything — `cb_prebuilt_install`, a `go`/`cargo`/`cabal` install, a source build — check that
+CodingBoothPrebuilt has that exact version for both CPUs before editing:
+
+```bash
+gh release view <tool>-<version> -R NawaMan/CodingBoothPrebuilt --json assets -q '.assets[].name'
+# want …-ubuntu<ver>-x86_64.tar.gz AND …-ubuntu<ver>-arm64.tar.gz (or one <tool>-<version>.tar.gz)
+```
+
+Missing? Add or track it in `../CodingBoothPrebuild` (its tool's `latest.sh`/`tracked.sh`;
+`TRACK_ALSO` for a pinned default that upstream tracking would drop), let its workflow publish it,
+and only then move the default. A default must never fall back to compiling.
+
 **Every changed file also bumps its own `cb-version`** — the item's semver, not the tool's. A new
 default tool version is a **minor** bump; a removed or renamed flag or param (or reordered params)
 is **major**; a fix is **patch**. Each extension is versioned on its own. Then run
@@ -273,6 +286,13 @@ the wrong default for most tools.
 | **Versioned toolchain** | A language/runtime users pin a version of | `go--setup.sh` |
 | **apt meta-package** | Ubuntu already packages it well | `build-essential--setup.sh` |
 | **Guarded add-on** | Only meaningful when a host tool exists (VS Code ext, notebook kernel, desktop app) | `go-code-extension--setup.sh`, `go-nb-kernel--setup.sh` |
+| **Prebuilt, source fallback** | Upstream ships no binary for both CPUs, so it would compile | `nim--setup.sh`, `protoc-gen-prost--setup.sh` (`cb_prebuilt_install … \|\| build_from_source`) |
+
+**Nothing compiles by default** (`AGENTS.md` Rule 4). If the tool has no upstream binary for both
+amd64 and arm64, add it to `../CodingBoothPrebuild` first (a `tools/<tool>/` folder: `tool.conf`,
+`latest.sh`, `build.sh`), let it publish the default version for both CPUs, and install that with
+`cb_prebuilt_install`. Keep the source build only as the fallback for versions a user names, and do
+not `apt-get install` a compiler for it on the default path.
 
 **Single release binary** — arch-map, resolve `latest` from the GitHub API or take `--version`,
 `install -m 755` into `/usr/local/bin`. No profile, no startup, **no LEVEL**. Most tools land here.

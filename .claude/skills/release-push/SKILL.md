@@ -74,6 +74,12 @@ stable versions — not after, when the images are already built from the old pi
 This is an **offer**, same shape as the CHANGELOG promotion at the end: report, wait, apply only
 what the user picks. "Cut a release" is not consent to bump Go.
 
+**A bump is offered only when it stays prebuilt** (`AGENTS.md` Rule 4). For a setup that builds
+anything, the new default must already be published by CodingBoothPrebuilt for x86_64 and arm64
+(`gh release view <tool>-<version> -R NawaMan/CodingBoothPrebuilt`); if it is not, offer the
+CodingBoothPrebuild change (track it, let the Monday run or a dispatch build it) instead of the
+bump. Also check the current defaults the same way: a default no longer prebuilt is a finding.
+
 ### Inventory
 
 Two surfaces; a pin that lives on only one of them is already a finding (script↔template drift).

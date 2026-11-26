@@ -452,6 +452,25 @@ half they all point at — port picking, the `set -euo pipefail` traps, cleanup.
 3. **Keep product docs coherent with behaviour.** When behaviour changes, update the relevant
    `docs/BOOTH_*.md` / CHANGELOG Unreleased section when the change is user-visible. Do not invent
    docs churn for pure internal refactors.
+4. **Default versions are prebuilt.** A setup's default — the script's pinned default, the
+   template's `default`, or the "latest" it resolves — must not compile during an image build, on
+   amd64 or arm64. Whatever it would build is published by
+   [CodingBoothPrebuilt](https://github.com/NawaMan/CodingBoothPrebuilt) (`../CodingBoothPrebuild`)
+   for x86_64 **and** arm64 (or as an `any` asset), and stays in that tool's tracked versions
+   there (`TRACK_ALSO` in its `tool.conf`, when upstream tracking would drop it), so its Monday run
+   keeps it built. So:
+   - **Changing a default** (or adding a setup that builds something): check first that the asset
+     exists for both CPUs (`gh release view <tool>-<version> -R NawaMan/CodingBoothPrebuilt`). If
+     it does not, add or track it in CodingBoothPrebuilt and let it build *before* the default
+     moves — never ship a default that falls back to compiling.
+   - **The compile fallback** (`cb_prebuilt_install … || build_from_source`) stays, but only for
+     versions a user names.
+   - **Nor does a default install a compiler for a build fallback** (`build-essential`, `g++`,
+     `make`): an optional native extension with no prebuilt is left out, as n8n leaves out
+     cpu-features and ssh2's crypto.
+   - **The one exception:** lean-interact builds its Lean REPL with `lake` during the image build.
+     It uses Lean's own toolchain (no system compiler) and takes about 10 s; a prebuilt would be a
+     ~230 MB binary per Lean version. Keep it as is.
 8. **No push / PR / merge unless the user asks. Commit freely inside a linked worktree.**
    - **In a worktree** (`worktree/<name>`, on its own branch): commit without asking, once a
      coherent step is done and verified. The branch is the session's scratch history, and landing
