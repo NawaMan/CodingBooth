@@ -46,6 +46,8 @@ chmod +x "$STUB/sudo" "$STUB/cargo"
 # at the stub cargo. Captures stdout+stderr (the stub `sudo` echo lands here).
 run_cargo_install() {
     PATH="$STUB:$PATH" CARGO_BIN="$STUB/cargo" \
+    CB_PREBUILT_URL="file:///nonexistent" CB_CRATES_API_URL="file:///nonexistent" \
+    CB_GO_PROXY_URL="file:///nonexistent" CB_HACKAGE_URL="file:///nonexistent" \
         ${ROOT_RUN[@]+"${ROOT_RUN[@]}"} bash "$CARGO_SCRIPT" "$@" 2>&1
 }
 

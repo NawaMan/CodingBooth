@@ -1,4 +1,4 @@
-cb-version = "1.0.0"
+cb-version = "1.1.0"
 display-name = "Go Linter"
 display-disc = "golangci-lint for Go code quality analysis"
 display-order = 1
@@ -11,5 +11,5 @@ tags = [
 
 [segments]
 Boothfile = """
-install go github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+install go github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
 """

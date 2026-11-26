@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.1.0
+# cb-version: 1.2.0
 
 # This script installs Rust crates for the booth user ('coder' unless CB_USER_NAME says otherwise).
 # It requires rust--setup.sh to have been run first.
@@ -83,7 +83,48 @@ fi
 # expands to nothing; the difference only shows when a test runs this script on
 # a Mac host.
 CB_USER_NAME="${CB_USER_NAME:-coder}"
+
+# The crates the catalog installs (ripgrep, fd-find, bat) come prebuilt from
+# NawaMan/CodingBoothPrebuilt, built with `cargo install --locked` at the version cargo
+# would pick (crates.io's newest stable, or the @version asked for). They land where
+# cargo puts them, the booth user's ~/.cargo/bin. Only with no flags or --locked alone:
+# any other flag (--features, --git, ...) asks for a different build, which is compiled
+# below exactly as before -- as is any other crate, or a version with no asset yet.
+SETUP_LIBS_DIR="${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}"
+if [ ! -r "${SETUP_LIBS_DIR}/prebuilt-packages.sh" ]; then
+    SETUP_LIBS_DIR="$(dirname "$0")/libs"
+fi
+source "${SETUP_LIBS_DIR}/prebuilt-packages.sh"
+
+PREBUILT_OK=true
+for flag in ${FLAGS[@]+"${FLAGS[@]}"}; do
+    [ "$flag" = "--locked" ] || PREBUILT_OK=false
+done
+CB_USER_HOME="${CB_USER_HOME:-$(getent passwd "$CB_USER_NAME" 2>/dev/null | cut -d: -f6 || true)}"
+CB_USER_HOME="${CB_USER_HOME:-/home/${CB_USER_NAME}}"
+CARGO_BIN_DIR="${CB_USER_HOME}/.cargo/bin"
+PREBUILT_TMP="$(mktemp -d)"
+trap 'rm -rf "$PREBUILT_TMP"' EXIT
+
+TO_BUILD=()
 for spec in "${SPECS[@]}"; do
+    if [ "$PREBUILT_OK" = true ] && found="$(cb_prebuilt_crate "$spec")"; then
+        read -r tool version bins <<< "$found"
+        if cb_prebuilt_install "$tool" "$version" native "$PREBUILT_TMP/$tool"; then
+            install -d -o "$CB_USER_NAME" -g "$(id -gn "$CB_USER_NAME")" "$CB_USER_HOME/.cargo" "$CARGO_BIN_DIR"
+            for bin in $bins; do
+                install -m 755 -o "$CB_USER_NAME" -g "$(id -gn "$CB_USER_NAME")" \
+                    "$PREBUILT_TMP/$tool/bin/$bin" "$CARGO_BIN_DIR/$bin"
+            done
+            echo "✅ $spec → prebuilt $tool $version in $CARGO_BIN_DIR"
+            continue
+        fi
+        echo "ℹ️  $tool $version: not prebuilt for this image; building with cargo install..."
+    fi
+    TO_BUILD+=("$spec")
+done
+
+for spec in ${TO_BUILD[@]+"${TO_BUILD[@]}"}; do
     crate="${spec%@*}"
     if [ "$crate" = "$spec" ]; then
         echo "📦 Installing $crate..."

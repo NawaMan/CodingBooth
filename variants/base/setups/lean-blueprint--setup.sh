@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 # lean-blueprint--setup.sh — Install leanblueprint: a LaTeX blueprint of a formalization,
 # linked to its Lean declarations, built to PDF and to a web page with a dependency graph.
@@ -22,8 +22,11 @@ Examples:
 Notes:
 - Needs Python (python--setup.sh) and LaTeX (latex--setup.sh) already in the image.
 - Adds what leanblueprint's two builds need beyond them: graphviz (the dependency graph of
-  the web version, via pygraphviz, which compiles against it) and XeLaTeX with the Latin
-  Modern Math font (the PDF version uses unicode-math).
+  the web version, via pygraphviz) and XeLaTeX with the Latin Modern Math font (the PDF
+  version uses unicode-math).
+- Nothing is compiled: pygraphviz (2.0 on) ships abi3 wheels for x86_64 and arm64 Linux,
+  and it is installed from a wheel only, so a Python it has no wheel for (older than 3.10)
+  fails here instead of quietly building from source.
 - The leanblueprint command looks for the project's git repository; run it inside one.
 - See: https://github.com/PatrickMassot/leanblueprint
 USAGE
@@ -60,16 +63,17 @@ fi
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-# graphviz + libgraphviz-dev + a compiler: pygraphviz has no binary wheel for Linux.
+# graphviz: the dot tools beside pygraphviz's wheel, which brings its own libraries.
 # texlive-xetex + fonts-lmodern: the PDF is built with xelatex and unicode-math.
 apt-get install -y --no-install-recommends \
-  graphviz libgraphviz-dev pkg-config build-essential \
+  graphviz \
   texlive-xetex fonts-lmodern
 rm -rf /var/lib/apt/lists/*
 
 echo "⬇️  Installing leanblueprint ${VERSION} ..."
 env PIP_CACHE_DIR="${PIP_CACHE_DIR:-}" PIP_DISABLE_PIP_VERSION_CHECK=1 \
-  python -m pip install "leanblueprint==${VERSION}" >/dev/null
+  python -m pip install --only-binary=pygraphviz "leanblueprint==${VERSION}" >/dev/null \
+  || { echo "❌ leanblueprint ${VERSION} did not install; pygraphviz needs Python 3.10+ for its wheel ($(python --version 2>&1))" >&2; exit 1; }
 
 # The two builds leanblueprint runs, checked directly: plasTeX with the blueprint plugin
 # (web) and xelatex (pdf).

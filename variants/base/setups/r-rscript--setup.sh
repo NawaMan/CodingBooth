@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 set -Eeuo pipefail
 
@@ -98,6 +98,9 @@ TARGET_DIR="${INSTALL_PARENT}/R-${R_MAJOR_MINOR}"
 LINK_DIR=/opt/R-stable
 BIN_DIR=/usr/local/bin
 SITE_LIB=/opt/R/site-library
+# Ubuntu's r-cran-* packages (apt) install here; R_LIBS_SITE replaces R's default list, so
+# it is named after the shared library, which stays first for install.packages().
+APT_SITE_LIB=/usr/lib/R/site-library
 
 rm -rf "$TARGET_DIR"
 mkdir -p "$TARGET_DIR/bin" "$SITE_LIB"
@@ -116,7 +119,7 @@ cat >/etc/profile.d/99-r--profile.sh <<EOF
 export R_HOME=$LINK_DIR
 export PATH="\$R_HOME/bin:\$PATH"
 # Shared site library for all users/CI
-export R_LIBS_SITE=${SITE_LIB}
+export R_LIBS_SITE=${SITE_LIB}:${APT_SITE_LIB}
 # Default CRAN repo (can be overridden in user ~/.Rprofile)
 export R_DEFAULT_CRAN_MIRROR=${CRAN_URL}
 EOF
@@ -125,7 +128,7 @@ chmod 0644 /etc/profile.d/99-r--profile.sh
 # Also configure system-wide R settings:
 install -d /etc/R
 cat >/etc/R/Renviron.site <<EOF
-R_LIBS_SITE=${SITE_LIB}
+R_LIBS_SITE=${SITE_LIB}:${APT_SITE_LIB}
 LANG=en_US.UTF-8
 LC_ALL=en_US.UTF-8
 EOF
@@ -145,7 +148,7 @@ install -d "$BIN_DIR"
 cat >"${BIN_DIR}/rwrap" <<'EOF'
 #!/bin/sh
 : "${R_HOME:=/opt/R-stable}"
-: "${R_LIBS_SITE:=/opt/R/site-library}"
+: "${R_LIBS_SITE:=/opt/R/site-library:/usr/lib/R/site-library}"
 : "${R_DEFAULT_CRAN_MIRROR:=https://cloud.r-project.org}"
 export R_HOME R_LIBS_SITE PATH="$R_HOME/bin:$PATH" LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
 tool="$(basename "$0")"

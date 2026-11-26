@@ -4,6 +4,45 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Go, Rust and Haskell booths no longer compile the catalog's tools, and PECL extensions come
+  from apt.**
+  `install go`, `install cargo` and `install cabal` compiled every package in every image build,
+  including the ones the catalog itself installs: gopls and dlv in every Go booth, the protobuf
+  plugins, golangci-lint, ripgrep/fd/bat, and hlint. `go--install.sh`, `cargo--install.sh` and
+  `cabal--install.sh` now take these from
+  [CodingBoothPrebuilt](https://github.com/NawaMan/CodingBoothPrebuilt) (sha256-checked, x86_64
+  and arm64). They resolve the version the package manager would have picked (`@latest` through
+  the Go module proxy, crates.io's newest stable, Hackage's preferred one, or the version you
+  pinned) and put the binary where it would have gone (`~/go/bin`, `~/.cargo/bin`,
+  `/usr/local/bin`). Anything else, or a version with no asset yet, still compiles as before.
+  cargo uses the prebuilt only with no flags or `--locked` alone; cabal only with no flags.
+  `install pecl <ext>` now installs `php<ver>-<ext>` from apt when Ubuntu or ppa:ondrej/php
+  packages it (redis, xdebug, imagick, ...), built for exactly that PHP. A pinned `redis-6.0.2`, or an
+  extension apt does not have, still goes through pecl.
+
+- **`go+linter` installs golangci-lint 2.x.**
+  It installed `github.com/golangci/golangci-lint/cmd/golangci-lint@latest`, which is 1.64.8, the
+  last 1.x release. That version cannot load packages built by current Go ("export data version 5
+  is greater than maximum supported version 2"), so it failed on every module. The extension now
+  installs the `/v2` module. golangci-lint 2.x reads a `version: "2"` config; run
+  `golangci-lint migrate` on an existing 1.x `.golangci.yml`.
+
+- **The R notebook kernel no longer compiles, and R sees apt-installed packages.**
+  `r+kernel` ran `install.packages('IRkernel')`, and CRAN serves Linux packages as source, so every
+  image compiled pbdZMQ, uuid, digest, base64enc and jsonlite. It now installs `r-cran-irkernel`
+  from [r2u](https://eddelbuettel.github.io/r2u/), which publishes CRAN as apt packages built
+  against CRAN's current R (4.6) for amd64 and arm64. The source is pinned above Ubuntu's archive,
+  and its signing key is checked by fingerprint. Ubuntu's own `r-cran-*` packages are built
+  against Ubuntu's R 4.5 and do not load in R 4.6. A Ubuntu release r2u does not cover falls
+  back to the CRAN source build. Separately, `r` set `R_LIBS_SITE` to its shared library only,
+  which hid `/usr/lib/R/site-library`, where every `r-cran-*` apt package installs. That folder
+  now comes after the shared one.
+
+- **`lean-blueprint` no longer installs a compiler.**
+  pygraphviz 2.0 ships wheels for x86_64 and arm64 Linux, so nothing is built and
+  `build-essential` / `libgraphviz-dev` are gone. pygraphviz is installed from a wheel only, so a
+  Python older than 3.10 (which it has no wheel for) fails the setup instead of quietly compiling.
+
 - **`wails` and `go+kernel` no longer compile their Go tools in every image build.**
   Both used to `go install` a CLI each time an image was built: `wails3` for `wails`, and goimports
   (which GoNB runs on every cell) for `go+kernel`. Both now come prebuilt and sha256-checked from

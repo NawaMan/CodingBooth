@@ -487,7 +487,7 @@ auto-select   = false
 
 [segments]
 Boothfile = """
-install go github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+install go github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
 """
 ```
 

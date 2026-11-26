@@ -201,7 +201,7 @@ setup	lazydocker	1.0.0	d9578b308e4d6d396fc098f3072e0459ee0c4d8aed4ca9767a80fb5dd
 setup	lazygit	1.1.1	f539c79a6cbd50c39da7693a2e6a76fe434e568cd1e32b9699022a49d80f11a7	variants/base/setups/lazygit--setup.sh
 setup	lazysql	0.2.0	1c724940f447b0393b32d5ca30bc01bb09c1b46fa60b79510611c7795ddf3199	variants/base/setups/lazysql--setup.sh
 setup	lean	0.1.0	e0563b104c0d1e6dd35749e3b6609b6840fbfa3e7552d1b91e5db86620783669	variants/base/setups/lean--setup.sh
-setup	lean-blueprint	0.1.0	6822aea37305be0d2dbc039d8a70fe6d0573ed08a539bdc46188f332e34ead12	variants/base/setups/lean-blueprint--setup.sh
+setup	lean-blueprint	0.2.0	54e971b10a680935a16d27f02cf0aac1eed7ad4ce3952f5be2168e838d151a91	variants/base/setups/lean-blueprint--setup.sh
 setup	lean-code-extension	0.1.0	513d434971801d29f4a57f650ab4ab945a14d92e9108080229ed1d811e6c2c51	variants/base/setups/lean-code-extension--setup.sh
 setup	lean-interact	0.1.0	434fc4e12befea435dd02f98d4b48ac1092c0fdf669a05470afcbc23486976a4	variants/base/setups/lean-interact--setup.sh
 setup	lean-lsp-mcp	0.3.0	15ace731baab61007d6ea34764276ea5ea44b7cbc56e0b0fe95dc640363194d2	variants/base/setups/lean-lsp-mcp--setup.sh
@@ -299,8 +299,8 @@ setup	python	1.2.0	63725500f8481899163e3072f8adf79b26931438a96fdcad9af90fcfb1287
 setup	python-code-extension	1.0.0	dc43a56df63a4880c42d17c128dd6b9dbce6e387f65bbee9aa88122c76c95b9e	variants/base/setups/python-code-extension--setup.sh
 setup	python-nb-kernel	1.0.0	334b4f82403debaf8ff7e489ff3c2bd9aece6e4dd67c827e978bb7458a384934	variants/base/setups/python-nb-kernel--setup.sh
 setup	r-code-extension	1.0.0	8d7a601a2720f3ab924fb01bfe3b3b9f591df4d0a07f1561a683711f6c909467	variants/base/setups/r-code-extension--setup.sh
-setup	r-nb-kernel	1.0.0	b39b1c76be6a1a5fb5855647fcbb304f8c255395dc802dd04f6b2bca0fa372c1	variants/base/setups/r-nb-kernel--setup.sh
-setup	r-rscript	1.0.0	ce3ef7c5817f65216cc0d7de0a24ddc64b1feb9013c16e332e3128e622c1232a	variants/base/setups/r-rscript--setup.sh
+setup	r-nb-kernel	1.1.0	3e1cbe149acaf390474c74508eabf1e30b636ee44c64ad905184e5c74c55062f	variants/base/setups/r-nb-kernel--setup.sh
+setup	r-rscript	1.1.0	74bcc3dd04cda58af751c83f39c7a3d4d68b6a0cf121ac1032b3285817ba9a47	variants/base/setups/r-rscript--setup.sh
 setup	rabbitmq	1.0.0	a5e324a05d784123c249be40cb9c41414329fd6ce56a4ef8fac635ec0f4522e5	variants/base/setups/rabbitmq--setup.sh
 setup	rabbitmq-start	1.0.0	bb57019f9e5c917228a3ada0d261e1be1a5d94a93effa8b19d29d4b5c1a44bbc	variants/base/setups/rabbitmq-start--setup.sh
 setup	react-code-extension	1.0.0	8bb6ef0bb516214b1c400b43adab0c66850b0eb3d1ea6da4cf505cf98536f21e	variants/base/setups/react-code-extension--setup.sh
@@ -372,8 +372,8 @@ setup	zig-code-extension	1.0.0	2b398b4a16070263e1e4929a512e1cbf7c997bb6b7124688a
 install	apt	1.3.0	9f27151c289fd06e1d0ed926bb1949a8c0da899435df821999e3253849d5873d	variants/base/setups/apt--install.sh
 install	brew	1.1.0	32dad9bef6f985460b7597fa0d1595a386e18df5c16e9a576d3d19a6cc6300fa	variants/base/setups/brew--install.sh
 install	bun	1.1.0	f87fab5c1327111cdda83a31966ee46b6123e0ede051b89295cc7777817d7dda	variants/base/setups/bun--install.sh
-install	cabal	1.0.0	0960aa673e85c85a5745402a35984fa84a37f5de601ef3b0c98f176b7ce3a960	variants/base/setups/cabal--install.sh
-install	cargo	1.1.0	d0a73b255baf4a123a518bb6c0e1185afbbf9083cb87318db961b74fe561e6ab	variants/base/setups/cargo--install.sh
+install	cabal	1.1.0	d0c8e2f980cd07e43a90d19f63eaed266d9ce92f0235c83b73f8e2636ad54fe3	variants/base/setups/cabal--install.sh
+install	cargo	1.2.0	8bdc1e65c3af94549fb0bc28789d6acbaec3d951919bd83006f1357263bb83dc	variants/base/setups/cargo--install.sh
 install	code-extension	1.0.0	c7a1cc933d5182c313e9094dcbd541b7eaca0e34e1fb2e3abca7b5532e02243d	variants/base/setups/code-extension--install.sh
 install	conan	1.1.0	c021c0a314e342b14064473bc4454f5fd73877e9e618219c7c4206656e8b998a	variants/base/setups/conan--install.sh
 install	conda	1.0.0	e12b02d5e3509bf2a6ae99daedb981ff2370c4b1f860a93971140905a9e60ad5	variants/base/setups/conda--install.sh
@@ -381,13 +381,13 @@ install	deno	1.1.0	2905be7c89ba5e4373b977e9e4808110b9962e1390c84e94887a19b75ad24
 install	deno-pkg	1.1.0	f5d1c561bfa7bce83383f46107fb364ee0c35c167255dbaa1f79dd5338771d6d	variants/base/setups/deno-pkg--install.sh
 install	dotnet	1.1.0	b6d90ac63653d095a9b2b1f61f7ccdbda34b40da5dd8c6819a97f31470d0d77c	variants/base/setups/dotnet--install.sh
 install	gem	1.1.0	5120cbba3d841894c5f2a3a314bb435c40d71dd3b652b79a7071d42b5bc4b74c	variants/base/setups/gem--install.sh
-install	go	1.1.0	9ae629367cf88f4104842edbe073413c3e5a1fba50f30e6c4ff3c38e04889c1d	variants/base/setups/go--install.sh
+install	go	1.2.0	38f2792e4eabc0fc1f8adb32612d472b92a6519ba27b17a653d7f80813b6a374	variants/base/setups/go--install.sh
 install	hex	1.0.0	5a5be06dabc640025bc5462f5c635c7f3a6c9db38eb06d4094791d2c24db088f	variants/base/setups/hex--install.sh
 install	jetbrains-plugin	0.1.0	f3a0db39c95e8e5da538e772999657b98246abf6e30582825335433d1c90e3fb	variants/base/setups/jetbrains-plugin--install.sh
 install	lsp	0.2.0	e99814e1fe99ab11818b8d2091fa9f4f34b8f91dc8417ecc7276945828605799	variants/base/setups/lsp--install.sh
 install	luarocks	1.0.0	038f6604928bdd69f3b8b919a0cd7c8afa780b3485c7e9ddbc315ae5cb4949ab	variants/base/setups/luarocks--install.sh
 install	npm	1.0.0	60dd3186f1fa122ab66f0ae61ffa07b6e272a2d05100b08ba4e5b051ca8dcdc0	variants/base/setups/npm--install.sh
-install	pecl	1.0.0	10f8728a1a8c4fd3eda484340ec53e938de18659504d14de5230037194ca3d69	variants/base/setups/pecl--install.sh
+install	pecl	1.1.0	a427ee225d3ce25d867e732ca60fe49033f611a2c456a50eec01ff365a123177	variants/base/setups/pecl--install.sh
 install	pg-ext	0.1.0	f0eec31ac19347fc2241b0718d651eb6412abcfc23aa24bbded735e1f01a3ad3	variants/base/setups/pg-ext--install.sh
 install	pip	1.0.0	394290c20cee100e0ba26ad1292fa6aa8a92c72eede84fd5848f6fbc1ee3c257	variants/base/setups/pip--install.sh
 install	rustup	0.1.0	a14d69ac4fdfbbb714e46254e9434da32e53557a267422e3ab76ebaa68044fe2	variants/base/setups/rustup--install.sh
@@ -427,6 +427,7 @@ lib	booth-proxy-response.conf	0.1.0	605ebfc3f0a878a1a68212190bf254cdfbb889393a01
 lib	code-extension-source.sh	1.0.0	2c81911a7aeb0b25195cd4cd67785c9125d186d4eb99e6fe362d1b09bf875d0d	variants/base/setups/libs/code-extension-source.sh
 lib	ghc-source.sh	0.2.0	0373243ad7b801145d433542a2d0a4d64552e667fe6ee47457e8b7e41110a545	variants/base/setups/libs/ghc-source.sh
 lib	jetbrains-source.sh	0.1.0	dd1f0922678630909118a128d045d047eb49d0541ff439f72f3a1b5681290e8b	variants/base/setups/libs/jetbrains-source.sh
+lib	prebuilt-packages.sh	0.1.0	c596d67079196c62a5d6973bbf363df76826da5d3ee78483507e92ce16d9c6cd	variants/base/setups/libs/prebuilt-packages.sh
 lib	prebuilt-source.sh	0.1.1	014b77e8a84b3d36872954ce4690b1a6bd06cd5a63ad9bc91c9e999790901ac3	variants/base/setups/libs/prebuilt-source.sh
 lib	retry-source.sh	0.1.0	dc80e4474b59095be79b52489947dd6e7edae0bcb7efb5bc687b32e7f932d09e	variants/base/setups/libs/retry-source.sh
 lib	skip-setup.sh	1.0.0	ed256a1d9f447f755a6e7eb20cc5cef612aedf38d085740781eb064079da03ae	variants/base/setups/libs/skip-setup.sh
@@ -780,7 +781,7 @@ extension	gnupg+store-share	1.0.0	b67dff2fbb6fa40d7c3c57af6b6f31f873875e5c79ca39
 extension	go+go-mod	1.0.0	d0ce534aaa86760a1384b2241206a294bec0fe086d52eadafd8390e1c97b54b5	templates/languages/go/go-mod--extension.toml
 extension	go+go-pkg	1.0.0	9b7c75ede3885e70b0f33727564ff950e586a76adf8094fbc9c0c9a95da80053	templates/languages/go/go-pkg--extension.toml
 extension	go+kernel	1.1.0	63b0d7755dcff916e5197b0721231e56a175c75efb25987cce7ac47dab49f015	templates/languages/go/kernel--extension.toml
-extension	go+linter	1.0.0	7c64fa4a74e3fa9d723f909f97c67aec172fd518e4742e8148d4f5cf642d284e	templates/languages/go/linter--extension.toml
+extension	go+linter	1.1.0	970a6488e547b6348baa00dd30806882370c056c7d9e5446cc9891e3b9c734d9	templates/languages/go/linter--extension.toml
 extension	go+mod-cache	0.2.0	17439e016b3514927a23702608e06c5822f3c988fe366fbfd5573c25f7fed9e3	templates/languages/go/mod-cache--extension.toml
 extension	go+vscode-ext	1.0.0	19f0f4aebb35aa43293d3f6dacc9e1bd50471df2dba7f1ab0cb366792657543a	templates/languages/go/vscode-ext--extension.toml
 extension	goland+import-project	0.1.0	044f2d86d524a2f7897307480eebfb3d105a32228f9b1e1e14ee73d811291d19	templates/ides/goland/import-project--extension.toml

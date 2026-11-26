@@ -58,6 +58,8 @@ done
 run_install() {
     local script="$1"; shift
     PATH="$STUB:$PATH" \
+    CB_PREBUILT_URL="file:///nonexistent" CB_CRATES_API_URL="file:///nonexistent" \
+    CB_GO_PROXY_URL="file:///nonexistent" CB_HACKAGE_URL="file:///nonexistent" \
     CARGO_BIN="$STUB/cargo" \
     LUA_HOME="$STUB/luahome" \
     MIX_HOME="$STUB/mixhome" \

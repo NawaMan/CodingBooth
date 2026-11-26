@@ -287,18 +287,25 @@ Each `install` command maps to a `*--install.sh` script. For example, `install p
 | `install yarn` | Node.js | `yarn global add` |
 | `install bun` | Bun | `bun install -g` |
 | `install deno` | Deno | `deno install` |
-| `install go` | Go | `go install` (as coder user) |
-| `install cargo` | Rust | `cargo install` (as coder user) |
+| `install go` | Go | `go install` (as coder user); prebuilt for the catalog's tools ¹ |
+| `install cargo` | Rust | `cargo install` (as coder user); prebuilt for the catalog's tools ¹ |
 | `install dotnet` | .NET | `dotnet tool install --global` (as coder user); pin with `tool@version` |
 | `install gem` | Ruby | `gem install` |
 | `install brew` | Homebrew | `brew install` |
-| `install cabal` | Haskell | `cabal install` |
+| `install cabal` | Haskell | `cabal install`; prebuilt for the catalog's tools ¹ |
 | `install hex` | Elixir | `mix archive.install hex` |
 | `install luarocks` | Lua | `luarocks install` |
-| `install pecl` | PHP | `pecl install` |
+| `install pecl` | PHP | `apt-get install php<ver>-<ext>` when apt packages it, else `pecl install` |
 | `install conan` | C/C++ | `conan install` |
 | `install apt` | Debian/Ubuntu | `apt-get install --no-install-recommends` |
 | `install code-extension` | VS Code / code-server | `--install-extension` by Open VSX id; pin with `id@version` |
+
+¹ The packages the catalog itself installs are not compiled in your image build. They come
+prebuilt and sha256-checked from [CodingBoothPrebuilt](https://github.com/NawaMan/CodingBoothPrebuilt)
+on x86_64 and arm64, at the version the package manager would have picked. For `go`, that is gopls,
+dlv, goimports, protoc-gen-go, protoc-gen-go-grpc, golangci-lint (v2) and hey; for `cargo`, ripgrep,
+fd-find and bat (with no flags, or `--locked` alone); for `cabal`, hlint and ormolu (with no flags).
+Every other package, or a version with no asset yet, is compiled as usual.
 
 `install code-extension` bakes any editor extension into the image by marketplace
 id, and is the escape hatch beside the curated per-language extensions
@@ -792,7 +799,7 @@ tags = ["go", "lint", "quality"]
 
 [segments]
 Boothfile = """
-install go github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+install go github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
 """
 ```
 

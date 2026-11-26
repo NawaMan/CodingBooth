@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.1.0
+# cb-version: 1.2.0
 
 # This script installs Go packages for the booth user ('coder' unless CB_USER_NAME says otherwise).
 # It requires go--setup.sh to have been run first.
@@ -41,7 +41,9 @@ if [ $# -eq 0 ]; then
     exit 0
 fi
 
-if [ ! -x /usr/local/go-current/bin/go ]; then
+# The go binary used for the presence check (overridable for testing).
+GO_BIN="${GO_BIN:-/usr/local/go-current/bin/go}"
+if [ ! -x "$GO_BIN" ]; then
     echo "❌ Go is not installed. Run go--setup.sh first." >&2
     exit 1
 fi
@@ -55,6 +57,41 @@ for go_profile in /etc/profile.d/*-cb-go--profile.sh; do
     [ -f "$go_profile" ] && source "$go_profile" 2>/dev/null || true
 done
 unset go_profile
+
+# The commands the catalog installs (gopls and dlv in every Go booth, the protobuf
+# plugins, golangci-lint, ...) come prebuilt from NawaMan/CodingBoothPrebuilt, at the
+# version `go install` would pick (@latest through the module proxy, or the @vX.Y.Z
+# asked for). They land where `go install` puts them, the booth user's GOBIN
+# (~/go/bin, which the go profile puts on PATH). Anything else -- or a version with no
+# asset yet -- is compiled below exactly as before.
+SETUP_LIBS_DIR="${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}"
+if [ ! -r "${SETUP_LIBS_DIR}/prebuilt-packages.sh" ]; then
+    SETUP_LIBS_DIR="$(dirname "$0")/libs"
+fi
+source "${SETUP_LIBS_DIR}/prebuilt-packages.sh"
+
+CB_USER_HOME="${CB_USER_HOME:-$(getent passwd "$CB_USER_NAME" 2>/dev/null | cut -d: -f6 || true)}"
+CB_USER_HOME="${CB_USER_HOME:-/home/${CB_USER_NAME}}"
+GO_BIN_DIR="${CB_USER_HOME}/go/bin"
+PREBUILT_TMP="$(mktemp -d)"
+trap 'rm -rf "$PREBUILT_TMP"' EXIT
+
+TO_BUILD=()
+for pkg in "$@"; do
+    if found="$(cb_prebuilt_go "$pkg")"; then
+        read -r tool version exe <<< "$found"
+        if cb_prebuilt_install "$tool" "$version" native "$PREBUILT_TMP/$tool"; then
+            install -d -o "$CB_USER_NAME" -g "$(id -gn "$CB_USER_NAME")" "$GO_BIN_DIR"
+            install -m 755 -o "$CB_USER_NAME" -g "$(id -gn "$CB_USER_NAME")" \
+                "$PREBUILT_TMP/$tool/bin/$exe" "$GO_BIN_DIR/$exe"
+            echo "✅ $pkg → prebuilt $tool $version in $GO_BIN_DIR/$exe"
+            continue
+        fi
+        echo "ℹ️  $tool $version: not prebuilt for this image; building with go install..."
+    fi
+    TO_BUILD+=("$pkg")
+done
+set -- ${TO_BUILD[@]+"${TO_BUILD[@]}"}
 
 # Install packages as the booth user so they go to that user's GOPATH.
 #

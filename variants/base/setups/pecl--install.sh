@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 # This script installs PHP PECL extensions.
 # It requires php--setup.sh to have been run first.
@@ -54,7 +54,34 @@ if ! command -v pecl &> /dev/null; then
     exit 1
 fi
 
+# An unpinned extension comes from apt when Ubuntu's archive or ppa:ondrej/php -- where
+# php--setup.sh got this PHP -- packages it as php<major.minor>-<ext> (redis, xdebug,
+# imagick, mongodb, apcu, ...): built for exactly this PHP, so nothing is compiled, and its
+# postinst enables it for every SAPI. A pinned version (redis-6.0.2), or an extension apt
+# does not package, is built with pecl below, as before.
+PHP_MM="$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;' 2>/dev/null || true)"
+[[ "$PHP_MM" =~ ^[0-9]+\.[0-9]+$ ]] || PHP_MM=""
+APT_UPDATED=false
+apt_has() { # package -- true when apt can install it (a real or a single-provider virtual one)
+    if [ "$APT_UPDATED" = false ]; then
+        cb_retry apt-get update -qq
+        APT_UPDATED=true
+    fi
+    DEBIAN_FRONTEND=noninteractive apt-get install -s -qq --no-install-recommends "$1" >/dev/null 2>&1
+}
+
 for spec in "$@"; do
+    if [ -n "$PHP_MM" ] && [[ "$spec" =~ ^[a-z][a-z0-9_]*$ ]] && apt_has "php${PHP_MM}-${spec}"; then
+        echo "Installing PHP extension ${spec} from apt (php${PHP_MM}-${spec}), built for this PHP"
+        DEBIAN_FRONTEND=noninteractive cb_retry apt-get install -y --no-install-recommends "php${PHP_MM}-${spec}"
+        if ! php -m | grep -qix "$spec"; then
+            echo "php${PHP_MM}-${spec} installed but PHP does not load '${spec}'" >&2
+            exit 1
+        fi
+        echo "  enabled by the package (php -m lists ${spec})"
+        continue
+    fi
+
     # The version is part of the *request*, never part of the extension name:
     # `pecl install redis-6.0.2` builds redis.so. Checking for redis-6.0.2.so
     # failed every pinned install, which is why the pin was undocumented. Strip
