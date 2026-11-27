@@ -6,6 +6,13 @@ This file contains a list of changes for each released version.
 
 ## 0.83.0
 
+- **The release job's upload survives GitHub's secondary rate limit.** It uploaded all ~120 files
+  to each release at once, tripped the limit (0.82.0, and both attempts of 0.83.0), and left the
+  run failed and the site undeployed. `build/release-publish.sh` now uploads one file at a time,
+  retries a failed upload with a growing wait (from a minute, up to 10), skips a file the release
+  already has with the same sha256 so a re-run finishes only what is missing, and names every
+  file it could not upload.
+
 - **A setup's "latest" no longer fails when api.github.com rate-limits.** 57 setups asked the
   GitHub API for their newest release unauthenticated, 60 requests an hour per IP; on a shared CI
   runner a dozen came back empty and failed the first 0.83.0 release run. They now ask through
