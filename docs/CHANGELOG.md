@@ -4,6 +4,8 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+## 0.83.0
+
 - **Go, Rust and Haskell booths no longer compile the catalog's tools, and PECL extensions come
   from apt.**
   `install go`, `install cargo` and `install cabal` compiled every package in every image build,
@@ -72,8 +74,6 @@ This file contains a list of changes for each released version.
 
   It also has a table for choosing an isolation level, and corrects the old claim that "no host
   sockets" are reachable: only services on `127.0.0.1` are out of reach.
-
-## 0.83.0
 
 - **Catalog versions refreshed for 0.83.0.** New defaults: Go 1.27.4, Julia 1.13.4, Swift 6.4.3,
   Gradle 9.9.2, Obsidian 1.15.1, Freeplane 1.13.5, PlantUML 1.2026.10, Hoppscotch 2026.10.1, n8n
