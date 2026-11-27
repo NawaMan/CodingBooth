@@ -6,6 +6,11 @@ This file contains a list of changes for each released version.
 
 ## 0.83.0
 
+- **`envfolio+host-agent` warns when the host's gpg-agent is older than 2.5.** The booth's gpg is
+  2.5, and through a 2.4 agent (Ubuntu 24.04, Debian) it cannot decrypt with a key the host has
+  unlocked: gpg says "Wrong secret key used". The start now reads the host agent's version and,
+  below 2.5, says so and what to do: upgrade GnuPG on the host, or drop `+host-agent`.
+
 - **Go, Rust and Haskell booths no longer compile the catalog's tools, and PECL extensions come
   from apt.**
   `install go`, `install cargo` and `install cabal` compiled every package in every image build,

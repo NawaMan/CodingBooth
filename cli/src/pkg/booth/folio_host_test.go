@@ -202,3 +202,53 @@ func TestDryrunAgentSocket(t *testing.T) {
 		}
 	}
 }
+
+// A host gpg-agent older than 2.5 cannot decrypt for the booth's gpg 2.5, so the start warns;
+// the version comes from gpg-connect-agent's `getinfo version` reply.
+func TestHostAgentVersionCheck(t *testing.T) {
+	for _, tc := range []struct {
+		out, version string
+	}{
+		{"D 2.4.4\nOK\n", "2.4.4"},
+		{"D 2.5.24\r\nOK\r\n", "2.5.24"},
+		{"ERR 67109141 IPC connect call failed\n", ""},
+		{"", ""},
+	} {
+		if got := parseAgentVersion(tc.out); got != tc.version {
+			t.Errorf("parseAgentVersion(%q) = %q, want %q", tc.out, got, tc.version)
+		}
+	}
+	for version, old := range map[string]bool{
+		"2.4.4": true, "2.2.40": true, "1.4.23": true,
+		"2.5.0": false, "2.5.24": false, "2.6.1": false, "3.0": false,
+		"": false, "x.y": false, "2": false,
+	} {
+		if got := agentTooOldToDecrypt(version); got != old {
+			t.Errorf("agentTooOldToDecrypt(%q) = %v, want %v", version, got, old)
+		}
+	}
+}
+
+func TestHostAgentVersion(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("shell stubs")
+	}
+	old := gpgConnectAgentCommand
+	t.Cleanup(func() { gpgConnectAgentCommand = old })
+	dir := t.TempDir()
+	script := filepath.Join(dir, "gpg-connect-agent")
+	// Answers only when asked the way hostAgentVersion asks: the home, no autostart, the query.
+	body := "#!/bin/sh\n[ \"$*\" = \"--homedir /h --no-autostart getinfo version /bye\" ] || exit 1\n" +
+		"printf 'D 2.4.4\\nOK\\n'\n"
+	if err := os.WriteFile(script, []byte(body), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	gpgConnectAgentCommand = script
+	if got := hostAgentVersion(dir, "/h"); got != "2.4.4" {
+		t.Errorf("hostAgentVersion = %q, want 2.4.4", got)
+	}
+	gpgConnectAgentCommand = filepath.Join(dir, "missing")
+	if got := hostAgentVersion(dir, "/h"); got != "" {
+		t.Errorf("no gpg-connect-agent on the host: version = %q, want \"\"", got)
+	}
+}

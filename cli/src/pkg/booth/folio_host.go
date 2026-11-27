@@ -10,6 +10,7 @@ import (
 	"path"
 	"runtime"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
@@ -27,6 +28,7 @@ import (
 //   - the booth's gpg-agent keeps its sockets in /run/user/<uid>/gnupg (a tmpfs added here), not
 //     in the shared gpg home: on Linux they would pile up there, and on macOS the host agent's
 //     own socket lives there, which the booth's gpg would find, fail to reach, and replace.
+//
 // Every start says that the host's store and keys are live in the booth.
 //
 // gnupg+store-host (-e CB_GNUPG_HOST=1) is the same for the gpg home alone, with no EnvFolio
@@ -136,6 +138,14 @@ func PrepareFolioHost(ctx appctx.AppContext) (appctx.AppContext, error) {
 			fmt.Fprintf(os.Stderr, "Warning: envfolio+host-agent: gpg in this booth uses the host's gpg-agent (%s): "+
 				"anything run in it can decrypt and sign with every key the host has unlocked, with no "+
 				"passphrase asked. The booth cannot ask for one: unlock the key on the host first.\n", socket)
+			if !ctx.Dryrun() {
+				if version := hostAgentVersion(ctx.Code(), gnupgHost); agentTooOldToDecrypt(version) {
+					fmt.Fprintf(os.Stderr, "Warning: envfolio+host-agent: the host's gpg-agent is %s, older than "+
+						"the booth's gpg (2.5): decrypting in the booth through it fails (\"Wrong secret key "+
+						"used\"). Upgrade GnuPG on the host to 2.5 or later, or drop +host-agent so the booth "+
+						"runs its own agent.\n", version)
+				}
+			}
 		}
 	}
 	return builder.Build(), nil
@@ -187,6 +197,44 @@ func hostAgentSocket(goos, dir, gnupgHost string, isSocket func(string) bool) (s
 		}
 	}
 	return socket, ""
+}
+
+// hostAgentVersion is the version of the host's gpg-agent for gnupgHost ("2.4.4"), or "" when it
+// cannot tell. It does not start an agent: hostAgentSocket has already found one running.
+func hostAgentVersion(dir, gnupgHost string) string {
+	out, err := runHost(dir, gpgConnectAgentCommand, "--homedir", gnupgHost, "--no-autostart",
+		"getinfo version", "/bye")
+	if err != nil {
+		return ""
+	}
+	return parseAgentVersion(out)
+}
+
+// parseAgentVersion picks the version out of gpg-connect-agent's `getinfo version` reply, the
+// line "D 2.4.4" before "OK"; "" when there is none.
+func parseAgentVersion(out string) string {
+	for _, line := range strings.Split(out, "\n") {
+		if v, ok := strings.CutPrefix(strings.TrimSpace(line), "D "); ok {
+			return strings.TrimSpace(v)
+		}
+	}
+	return ""
+}
+
+// agentTooOldToDecrypt reports whether a host gpg-agent of this version fails the booth's gpg
+// (2.5) on decryption: through a 2.4 agent, gpg 2.5 gets "Wrong secret key used" for a key the
+// agent has unlocked (a cv25519 key, gpg's default). An unknown version is not reported.
+func agentTooOldToDecrypt(version string) bool {
+	parts := strings.SplitN(version, ".", 3)
+	if len(parts) < 2 {
+		return false
+	}
+	major, err1 := strconv.Atoi(parts[0])
+	minor, err2 := strconv.Atoi(parts[1])
+	if err1 != nil || err2 != nil {
+		return false
+	}
+	return major < 2 || (major == 2 && minor < 5)
 }
 
 // folioHostAgentArgs is what the run gets when the host agent's socket is shared:

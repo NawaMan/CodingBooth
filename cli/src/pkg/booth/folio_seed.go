@@ -44,6 +44,8 @@ var (
 	folioCommand   = "folio"
 	gpgCommand     = "gpg"
 	gpgconfCommand = "gpgconf"
+	// gpgConnectAgentCommand asks the host's gpg-agent its version (see hostAgentVersion).
+	gpgConnectAgentCommand = "gpg-connect-agent"
 )
 
 // PrepareFolioSeed builds .booth/.tmp/folio-seed/ when run-args ask for a seed. It runs after
@@ -403,4 +405,3 @@ func copyStoreFile(storeDir, seedDir, rel string) error {
 	}
 	return out.Close()
 }
-

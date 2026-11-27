@@ -210,7 +210,7 @@ booth's home at start, read-only:
 | `aws-cli+env` | the host's `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`, `AWS_REGION`, `AWS_DEFAULT_REGION`, by name; `aws-cli+env~credential` for these alone (CI, or `folio exec -s aws -- booth …`) — see [AWS in a Booth](demos/aws/README.md) |
 | `envfolio+seed` | chosen items of your host's EnvFolio store, still encrypted, and the store key (passphrase-protected), so `folio` in the booth opens the secrets itself (`envfolio+seed:"gh @app1 --secrets"` — the arguments you give `folio exec`) |
 | `envfolio+store-host` | your host's whole EnvFolio store and gpg keyring, live and writable — every private key included |
-| `envfolio+store-host+host-agent` | the same, and gpg in the booth uses your host's gpg-agent: the passphrase is asked and cached on the host, and the booth can use every key unlocked there (Linux hosts) |
+| `envfolio+store-host+host-agent` | the same, and gpg in the booth uses your host's gpg-agent: the passphrase is asked and cached on the host, and the booth can use every key unlocked there (Linux hosts, GnuPG 2.5 or later on the host: through an older agent the booth cannot decrypt, and the start warns) |
 | `gnupg+seed-host` | a copy of your host's whole gpg keyring, with your trust in each key, made at start — the booth's own from then on, and it cannot change yours |
 | `gnupg+store-host` | your host's whole gpg keyring, live and writable — every private key included, and no EnvFolio store (`+host-agent` works with it too) |
 | `gnupg+keys` | chosen GPG keys (passphrase-protected) and your public keyring: `gnupg+keys:"me@example.com"` |

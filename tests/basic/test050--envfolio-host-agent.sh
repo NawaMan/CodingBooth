@@ -17,6 +17,8 @@ source ../common--source.sh
 # use that home's agent on the host.
 #
 #   1. The key is unlocked on the host: the booth decrypts with no passphrase.
+#      With a host gpg-agent older than 2.5 it cannot (gpg 2.5 in the booth gets
+#      "Wrong secret key used"), and the start warns instead: that is checked.
 #   2. That is the host's agent (same pid), found at /run/user/<uid>/gnupg.
 #   3. A login shell in the booth has GPG_TTY=/dev/null.
 #   4. The host's cache is emptied: the booth's decrypt fails, and does not ask.
@@ -55,6 +57,15 @@ if ! { gpg --batch --pinentry-mode loopback --passphrase hostpass \
 fi
 unlock() { gpg --batch --pinentry-mode loopback --passphrase hostpass -d "$PROJECT/msg.gpg" >/dev/null 2>&1; }
 HOST_PID=$(gpg-connect-agent 'getinfo pid' /bye 2>/dev/null | awk '$1 == "D" { print $2 }')
+# Through a host agent older than 2.5 the booth's gpg (2.5) cannot decrypt, and the start says so
+# (GitHub's ubuntu-24.04 runners have 2.4.4): Test 1 then checks that warning instead.
+HOST_AGENT_VERSION=$(gpg-connect-agent 'getinfo version' /bye 2>/dev/null | awk '$1 == "D" { print $2 }')
+HOST_AGENT_OLD=false
+IFS=. read -r AGENT_MAJOR AGENT_MINOR _ <<<"$HOST_AGENT_VERSION"
+if [[ "$AGENT_MAJOR" =~ ^[0-9]+$ && "$AGENT_MINOR" =~ ^[0-9]+$ ]] \
+   && (( AGENT_MAJOR < 2 || (AGENT_MAJOR == 2 && AGENT_MINOR < 5) )); then
+  HOST_AGENT_OLD=true
+fi
 
 SCRIPT='
 echo GOT=$(timeout 30 gpg --batch --decrypt ~/code/msg.gpg 2>/dev/null)
@@ -73,7 +84,13 @@ OUT=$(run_booth) || true
 # -------------------------------------------------------
 # Test 1: unlocked on the host, the booth decrypts with no passphrase
 # -------------------------------------------------------
-if grep -qxF "GOT=from-host" <<<"$OUT"; then
+if [[ "$HOST_AGENT_OLD" == true ]]; then
+  if grep -qF "Warning: envfolio+host-agent: the host's gpg-agent is $HOST_AGENT_VERSION, older than the booth's gpg (2.5)" <<<"$OUT"; then
+    print_test_result "true" "$0" "1" "a host gpg-agent $HOST_AGENT_VERSION (< 2.5): the start warns that the booth cannot decrypt through it"
+  else
+    fail 1 "a host gpg-agent $HOST_AGENT_VERSION (< 2.5): the start warns that the booth cannot decrypt through it" "Output: $(tail -8 <<<"$OUT")"
+  fi
+elif grep -qxF "GOT=from-host" <<<"$OUT"; then
   print_test_result "true" "$0" "1" "a key unlocked on the host decrypts in the booth, with no passphrase asked"
 else
   fail 1 "a key unlocked on the host decrypts in the booth, with no passphrase asked" "Output: $(tail -8 <<<"$OUT")"
