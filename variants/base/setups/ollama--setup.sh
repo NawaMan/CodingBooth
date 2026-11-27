@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 
 set -Eeuo pipefail
 
@@ -56,9 +56,8 @@ if [[ "$REQ_VER" == "latest" ]]; then
   # that limit is hit the body is a JSON error, no tag_name matches, and VERSION
   # comes back empty — which used to build the URL ".../download/v/ollama-..."
   # and fail as a 404 much later, naming a file rather than the real cause.
-  VERSION=$(curl -fsSL --connect-timeout 10 --max-time 30 \
-    --retry 3 --retry-delay 3 --retry-all-errors \
-    https://api.github.com/repos/ollama/ollama/releases/latest \
+  VERSION=$(cb-github-api.sh \
+    repos/ollama/ollama/releases/latest \
     | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v[^"]+"' | head -1 | sed -E 's/.*"v([^"]+)".*/\1/')
 else
   VERSION="$REQ_VER"

@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -58,7 +58,7 @@ rm -rf /var/lib/apt/lists/*
 # ---- resolve version ----
 if [[ "$REQ_VER" == "latest" ]]; then
   echo "🔍 Resolving latest CMake version ..."
-  VERSION="$(curl --retry 3 --retry-delay 2 -s https://api.github.com/repos/Kitware/CMake/releases/latest | jq -r '.tag_name' | sed 's/^v//')"
+  VERSION="$(cb-github-api.sh repos/Kitware/CMake/releases/latest | jq -r '.tag_name' | sed 's/^v//')"
   if [[ -z "$VERSION" || "$VERSION" == "null" ]]; then
     echo "❌ Failed to resolve latest CMake version"; exit 1
   fi

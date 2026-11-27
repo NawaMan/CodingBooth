@@ -6,6 +6,13 @@ This file contains a list of changes for each released version.
 
 ## 0.83.0
 
+- **A setup's "latest" no longer fails when api.github.com rate-limits.** 57 setups asked the
+  GitHub API for their newest release unauthenticated, 60 requests an hour per IP; on a shared CI
+  runner a dozen came back empty and failed the first 0.83.0 release run. They now ask through
+  `cb-github-api.sh`, which sends `GH_TOKEN`/`GITHUB_TOKEN` when set and, when the API fails, reads
+  the tag from github.com's `releases/latest` redirect (or the `releases.atom` feed for a release
+  list) instead. See `docs/BOOTH_SETUP.md`.
+
 - **`envfolio+host-agent` warns when the host's gpg-agent is older than 2.5.** The booth's gpg is
   2.5, and through a 2.4 agent (Ubuntu 24.04, Debian) it cannot decrypt with a key the host has
   unlocked: gpg says "Wrong secret key used". The start now reads the host agent's version and,

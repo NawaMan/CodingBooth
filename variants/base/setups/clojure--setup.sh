@@ -50,7 +50,7 @@ if [[ -z "$REQ_VER" ]]; then
   CLJ_VER="$CLJ_DEFAULT_VER"
 elif [[ "$REQ_VER" == "latest" ]]; then
   # Clojure releases are on GitHub
-  CLJ_VER="$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/clojure/brew-install/releases/latest | grep -oP '"tag_name"\s*:\s*"\K[^"]+' | sed 's/^v//')"
+  CLJ_VER="$(cb-github-api.sh repos/clojure/brew-install/releases/latest | grep -oP '"tag_name"\s*:\s*"\K[^"]+' | sed 's/^v//')"
   [[ -n "$CLJ_VER" ]] || { echo "Failed to resolve latest Clojure version"; exit 1; }
 else
   CLJ_VER="$REQ_VER"

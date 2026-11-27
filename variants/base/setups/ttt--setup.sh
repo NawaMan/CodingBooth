@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.3.0
+# cb-version: 0.3.1
 
 # ttt--setup.sh — Install the TTT terminal editor from GitHub releases.
 set -Eeuo pipefail
@@ -67,8 +67,8 @@ fi
 # API falls back to the pinned release.
 VERSION_RE='^[0-9]+\.[0-9]+\.[0-9]+$'
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors \
-              https://api.github.com/repos/eugenioenko/ttt/releases/latest 2>/dev/null \
+  VERSION=$(cb-github-api.sh \
+              repos/eugenioenko/ttt/releases/latest 2>/dev/null \
             | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' \
             | head -1 \
             | sed -E 's/.*"v?([^"]+)".*/\1/' || true)

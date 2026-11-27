@@ -228,6 +228,22 @@ the build continues, or **42** interactively to signal "not applicable" to the c
 
 Use `cb-has-desktop.sh` at build time and `cb-has-desktop-running.sh` from startup scripts.
 
+### Asking GitHub for "latest" — `cb-github-api.sh`
+
+```bash
+VERSION=$(cb-github-api.sh repos/junegunn/fzf/releases/latest \
+          | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' | head -1 | sed -E 's/.*"v?([^"]+)".*/\1/')
+```
+
+Use it, never `curl https://api.github.com/...`, for a release lookup. It prints the API's JSON,
+authenticated when `GH_TOKEN` (or `GITHUB_TOKEN`) is set. Unauthenticated, the API allows 60
+requests an hour per IP, which a shared CI runner runs out of. When the API fails, it falls back to
+lookups that are not API calls: `repos/<repo>/releases/latest` → the github.com redirect, printed as
+`{"tag_name": "<tag>"}`; `repos/<repo>/releases[?…]` → the `releases.atom` feed, as
+`[{"tag_name": …}, …]`. Only `tag_name` survives the fallback, so a setup that needs assets or
+digests from the JSON still keeps a pinned version to fall back on. It is on `PATH`
+(`/opt/codingbooth/setups`), so call it by name.
+
 ### Before extracting a tarball — `cb-check-tar-extract.sh`
 
 ```bash

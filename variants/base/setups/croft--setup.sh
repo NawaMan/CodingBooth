@@ -58,8 +58,8 @@ fi
 # API falls back to the pinned release.
 VERSION_RE='^[0-9]+\.[0-9]+\.[0-9]+$'
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors \
-              https://api.github.com/repos/vitali87/croft/releases/latest 2>/dev/null \
+  VERSION=$(cb-github-api.sh \
+              repos/vitali87/croft/releases/latest 2>/dev/null \
             | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' \
             | head -1 \
             | sed -E 's/.*"v?([^"]+)".*/\1/' || true)

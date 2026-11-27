@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.2.0
+# cb-version: 0.2.1
 
 # floci--setup.sh — Install the Floci CLI from GitHub releases
 set -Eeuo pipefail
@@ -60,8 +60,8 @@ if ! command -v curl >/dev/null 2>&1; then
 fi
 
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors \
-              "https://api.github.com/repos/${REPO}/releases/latest" 2>/dev/null \
+  VERSION=$(cb-github-api.sh \
+              "repos/${REPO}/releases/latest" 2>/dev/null \
             | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' \
             | head -1 \
             | sed -E 's/.*"v?([^"]+)".*/\1/' || true)

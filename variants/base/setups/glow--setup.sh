@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 
 # glow--setup.sh — Install glow, Charm's terminal Markdown renderer, from
 # GitHub releases.
@@ -67,8 +67,8 @@ fi
 
 # Tags are vX.Y.Z. A rate-limited API falls back to the pinned release.
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors \
-              https://api.github.com/repos/charmbracelet/glow/releases/latest 2>/dev/null \
+  VERSION=$(cb-github-api.sh \
+              repos/charmbracelet/glow/releases/latest 2>/dev/null \
             | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' \
             | head -1 \
             | sed -E 's/.*"v?([^"]+)".*/\1/' || true)

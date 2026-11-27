@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.1.0
+# cb-version: 1.1.1
 
 set -Eeuo pipefail
 
@@ -54,7 +54,7 @@ done
 if [[ -z "$REQ_VER" ]]; then
   ELIX_VER="$ELIXIR_DEFAULT"
 elif [[ "$REQ_VER" == "latest" ]]; then
-  ELIX_VER="$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/elixir-lang/elixir/releases/latest \
+  ELIX_VER="$(cb-github-api.sh repos/elixir-lang/elixir/releases/latest \
     | grep -oP '"tag_name"\s*:\s*"\K[^"]+' | sed 's/^v//' || true)"
   if [[ -z "$ELIX_VER" ]]; then
     # Unauthenticated GitHub API calls are rate-limited (60/hr per IP), so a busy

@@ -75,7 +75,7 @@ rm -rf /var/lib/apt/lists/*
 
 # ---- resolve version ----
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/zed-industries/zed/releases/latest \
+  VERSION=$(cb-github-api.sh repos/zed-industries/zed/releases/latest \
             | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v[^"]+"' | head -1 \
             | sed -E 's/.*"v([^"]+)".*/\1/' || true)
   if [[ -z "$VERSION" ]]; then

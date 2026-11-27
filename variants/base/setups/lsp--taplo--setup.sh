@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.1.1
 
 # lsp--taplo--setup.sh — Install taplo, the TOML toolkit and language server.
 set -Eeuo pipefail
@@ -44,7 +44,7 @@ esac
 
 VERSION_RE='^[0-9]+\.[0-9]+\.[0-9]+$'
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl -fsSL --retry 3 --retry-delay 2 https://api.github.com/repos/tamasfe/taplo/releases/latest 2>/dev/null \
+  VERSION=$(cb-github-api.sh repos/tamasfe/taplo/releases/latest 2>/dev/null \
             | jq -r '.tag_name // empty' 2>/dev/null | sed 's/^v//' || true)
   if [[ -z "$VERSION" ]] || ! [[ "$VERSION" =~ $VERSION_RE ]]; then
     echo "⚠️  Could not resolve the latest taplo release; using ${TAPLO_FALLBACK_VER}."

@@ -54,8 +54,8 @@ fi
 FALLBACK_VERSION="16.6"
 
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL \
-              https://api.github.com/repos/PostgREST/postgrest/releases/latest \
+  VERSION=$(cb-github-api.sh \
+              repos/PostgREST/postgrest/releases/latest \
             | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v[^"]+"' \
             | head -1 \
             | sed -E 's/.*"v([^"]+)".*/\1/' || true)

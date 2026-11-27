@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.1.0
+# cb-version: 1.1.1
 
 # haskell-tools--setup.sh
 #
@@ -72,7 +72,7 @@ fetch() {
 
 # Newest release tag of a GitHub repo, without a leading "v".
 latest_release() {
-  curl --connect-timeout 15 --retry 3 --retry-delay 3 -fsSL "https://api.github.com/repos/$1/releases/latest" \
+  cb-github-api.sh "repos/$1/releases/latest" \
     | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"[^"]+"' | head -1 | sed -E 's/.*"v?([^"]+)"$/\1/'
 }
 

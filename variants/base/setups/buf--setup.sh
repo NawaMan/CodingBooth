@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.1.0
+# cb-version: 1.1.1
 
 # buf--setup.sh — Install the Buf CLI from GitHub releases
 set -Eeuo pipefail
@@ -59,8 +59,8 @@ FALLBACK_VERSION="1.75.0"
 if [[ "$REQ_VER" == "latest" ]]; then
   # Match the tag_name *key* only — never sed the whole JSON line (minified
   # payloads put everything on one line; greedy sed grabs the last quote).
-  VERSION=$(curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors \
-              https://api.github.com/repos/bufbuild/buf/releases/latest 2>/dev/null \
+  VERSION=$(cb-github-api.sh \
+              repos/bufbuild/buf/releases/latest 2>/dev/null \
             | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' \
             | head -1 \
             | sed -E 's/.*"v?([^"]+)".*/\1/' || true)

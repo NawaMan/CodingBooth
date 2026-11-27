@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 
 # selenium--setup.sh — Install browser drivers (+ Chrome for Testing) for Selenium
 set -Eeuo pipefail
@@ -174,7 +174,7 @@ EOF
 install_geckodriver() {
   echo "⬇️  Installing geckodriver ..."
   local tag url tmp
-  tag="$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/mozilla/geckodriver/releases/latest | jq -r '.tag_name')"
+  tag="$(cb-github-api.sh repos/mozilla/geckodriver/releases/latest | jq -r '.tag_name')"
   url="https://github.com/mozilla/geckodriver/releases/download/${tag}/geckodriver-${tag}-${GECKO_ASSET}.tar.gz"
   tmp="$(mktemp -d)"
   curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$url" -o "$tmp/geckodriver.tgz"

@@ -54,8 +54,8 @@ fi
 FALLBACK_VERSION="28.14.0"
 
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors \
-              https://api.github.com/repos/appwrite/sdk-for-cli/releases/latest 2>/dev/null \
+  VERSION=$(cb-github-api.sh \
+              repos/appwrite/sdk-for-cli/releases/latest 2>/dev/null \
             | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' \
             | head -1 \
             | sed -E 's/.*"v?([^"]+)".*/\1/' || true)

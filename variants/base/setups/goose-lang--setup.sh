@@ -68,8 +68,8 @@ VERSION_RE='^[0-9]{4}\.[0-9]+(\.[0-9]+)?$'
 if [[ "$REQ_VER" == "latest" ]]; then
   # Match the tag_name *key* only — never sed the whole JSON line (minified
   # payloads put everything on one line; greedy sed grabs the last quote).
-  VERSION=$(curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors \
-              https://api.github.com/repos/aardappel/goose/releases/latest 2>/dev/null \
+  VERSION=$(cb-github-api.sh \
+              repos/aardappel/goose/releases/latest 2>/dev/null \
             | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' \
             | head -1 \
             | sed -E 's/.*"v?([^"]+)".*/\1/' || true)

@@ -74,7 +74,7 @@ fi
 # sql-studio tags releases without a leading "v" (e.g. "0.1.53"), unlike
 # lazygit/duckdb/sqluv — the regex below does not assume one.
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/frectonz/sql-studio/releases/latest \
+  VERSION=$(cb-github-api.sh repos/frectonz/sql-studio/releases/latest \
             | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"[^"]+"' | head -1 \
             | sed -E 's/.*"([^"]+)".*/\1/' || true)
   if [[ -z "$VERSION" ]]; then

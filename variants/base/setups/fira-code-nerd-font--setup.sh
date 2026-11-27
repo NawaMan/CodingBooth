@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.1
+# cb-version: 0.1.2
 
 # fira-code-nerd-font--setup.sh — installs the Nerd Fonts-patched Fira Code
 # family system-wide. Patched with icon/powerline glyphs, so shell prompts
@@ -73,7 +73,7 @@ fi
 
 # ---- resolve version ----
 if [[ "$REQ_VER" == "latest" ]]; then
-  FONT_VERSION=$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest \
+  FONT_VERSION=$(cb-github-api.sh repos/ryanoasis/nerd-fonts/releases/latest \
                 | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v[^"]+"' | head -1 \
                 | sed -E 's/.*"v([^"]+)".*/\1/' || true)
   if [[ -z "$FONT_VERSION" ]]; then

@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.3.0
+# cb-version: 0.3.1
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -61,7 +61,7 @@ esac
 
 # ---- resolve version ----
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/HeidiSQL/HeidiSQL/releases/latest \
+  VERSION=$(cb-github-api.sh repos/HeidiSQL/HeidiSQL/releases/latest \
             | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v[^"]+"' | head -1 \
             | sed -E 's/.*"v([^"]+)".*/\1/' || true)
   if [[ -z "$VERSION" ]]; then

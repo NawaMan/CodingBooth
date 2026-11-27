@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.2.0
+# cb-version: 0.2.1
 
 # gleam--setup.sh — Install the Gleam compiler from GitHub releases
 set -Eeuo pipefail
@@ -66,8 +66,8 @@ if [[ "$REQ_VER" == "latest" ]]; then
   # /releases/latest skips prereleases, so this never picks an -rc.
   # Match the tag_name *key* only — never sed the whole JSON line (minified
   # payloads put everything on one line; greedy sed grabs the last quote).
-  VERSION=$(curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors \
-              https://api.github.com/repos/gleam-lang/gleam/releases/latest 2>/dev/null \
+  VERSION=$(cb-github-api.sh \
+              repos/gleam-lang/gleam/releases/latest 2>/dev/null \
             | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' \
             | head -1 \
             | sed -E 's/.*"v?([^"]+)".*/\1/' || true)

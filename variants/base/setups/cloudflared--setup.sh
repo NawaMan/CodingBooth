@@ -55,7 +55,7 @@ fi
 
 # ---- resolve version ----
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/cloudflare/cloudflared/releases/latest \
+  VERSION=$(cb-github-api.sh repos/cloudflare/cloudflared/releases/latest \
             | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"[^"]+"' | head -1 \
             | sed -E 's/.*"([^"]+)".*/\1/' || true)
   if [[ -z "$VERSION" ]]; then

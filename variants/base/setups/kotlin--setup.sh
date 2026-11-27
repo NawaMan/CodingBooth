@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.1.0
+# cb-version: 1.1.1
 
 set -Eeuo pipefail
 trap 'echo "Error on line $LINENO"; exit 1' ERR
@@ -50,7 +50,7 @@ done
 if [[ -z "$REQ_VER" ]]; then
   KVER="$KOTLIN_DEFAULT_VER"
 elif [[ "$REQ_VER" == "latest" ]]; then
-  KVER="$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/JetBrains/kotlin/releases/latest | grep -oP '"tag_name"\s*:\s*"\K[^"]+' | sed 's/^v//' || true)"
+  KVER="$(cb-github-api.sh repos/JetBrains/kotlin/releases/latest | grep -oP '"tag_name"\s*:\s*"\K[^"]+' | sed 's/^v//' || true)"
   if [[ -z "$KVER" ]]; then
     # See elixir--setup.sh: the GitHub API is rate-limited, so degrade to the
     # pinned default instead of failing the build.

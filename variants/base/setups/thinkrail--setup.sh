@@ -69,7 +69,7 @@ fi
 # ---- resolve version ----
 # releases/latest skips the -nightly.N prereleases, so 'latest' is the stable channel.
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/JetBrains/thinkrail/releases/latest \
+  VERSION=$(cb-github-api.sh repos/JetBrains/thinkrail/releases/latest \
             | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v[^"]+"' | head -1 \
             | sed -E 's/.*"v([^"]+)".*/\1/' || true)
   if [[ -z "$VERSION" ]]; then
