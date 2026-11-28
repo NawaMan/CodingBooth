@@ -374,10 +374,39 @@ preceded:
 | Failed job | Already published | Notes |
 |------------|-------------------|-------|
 | `images` | possibly some image tags | It pushes per-arch by digest, then merges and signs. A late failure (e.g. its integration tests) means signed multi-arch tags are already on Docker Hub. |
-| `release` | all images | GitHub release absent or partial. Re-dispatching republishes the images too — harmless but slow. |
+| `release` | all images | GitHub release absent or partial. Dispatch `Release CodingBooth` alone, then `Deploy Site to codingbooth.io` (the site was skipped). Re-dispatching the whole chain rebuilds every image (~1.5 h) for nothing. |
 | `site` | images + GitHub release | Only the site is stale. Dispatch `Deploy Site to codingbooth.io` alone instead of the whole chain. |
 
 Never re-dispatch on the user's behalf after a failure. Report and ask.
+
+### Recovering a failed run — learned on 0.83.0
+
+- **Find the failed step, not only the job:**
+  `gh run view <id> --json jobs --jq '.jobs[]|select(.conclusion=="failure")|.name, (.steps[]|select(.conclusion=="failure")|.name)'`
+  and `gh run view <id> --log-failed | grep '##\[error\]'`.
+- **The release job publishes two GitHub releases:** the versioned `X.Y.Z` and the rolling `latest`
+  (its own tag, updated each stable release, never marked Latest). Check both before calling the
+  release complete — file count, `version.txt` and the `.sha256` files:
+  ```bash
+  for t in X.Y.Z latest; do gh release view $t --json assets --jq '[.assets[]|select(.state=="uploaded")]|length'; done
+  ```
+  On 0.83.0 the versioned release was whole while `latest` was missing a file, and I reported done.
+- **`gh run rerun --failed` reuses the workflow of the commit the run was dispatched on.** It is
+  fine for a flake (a runner-side 403 from packages.microsoft.com, a 502). It cannot pick up a fix:
+  push the fix, then dispatch the single workflow on the new commit.
+- **A fix that lands after the release commit is part of the release** when it fixes the release
+  itself: commit it on `X.Y.Z` (before the step-3 bump — `git reset --keep HEAD~1`, land, redo the
+  bump), CHANGELOG under `## X.Y.Z`, push only that commit (`git push origin <sha>:main`), dispatch.
+  The binaries are then rebuilt from the new commit, so offer to move the tag there:
+  `git tag -f X.Y.Z <sha> && git push --force origin refs/tags/X.Y.Z`, then re-check local vs
+  `git ls-remote --tags origin X.Y.Z` a minute later (GitKraken's auto-fetch can restore the old
+  tag locally).
+- **Rate limits seen in CI:** api.github.com unauthenticated "latest" lookups (setups use
+  `cb-github-api.sh` since 0.83.0) and the secondary limit on asset uploads (the release job uses
+  `build/release-publish.sh` since 0.83.0: one file at a time, retried, and a re-run skips assets
+  already there with the same sha256). If either comes back, that is where to look.
+- **Watching:** `gh run watch` can exit early on a transient 502 from the jobs API. Polling
+  `gh run view <id> --json status,conclusion` in a background loop survives it.
 
 **Do not push the step-3 bump as part of this step.** Reopening the tree stays a separate act, so the
 release and the next cycle never collapse into one irreversible command.
